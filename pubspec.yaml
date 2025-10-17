@@ -1,0 +1,58 @@
+name: plezy
+description: "A beautiful Plex client for Flutter"
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  dio: ^5.4.0
+  json_annotation: ^4.8.1
+  xml: ^6.5.0
+  shared_preferences: ^2.2.2
+  dtd: ^4.0.0
+  cached_network_image: ^3.4.1
+  media_kit: ^1.1.10+1
+  media_kit_video: ^1.2.4
+  media_kit_libs_video: ^1.0.4
+  macos_window_utils: ^1.9.0
+  url_launcher: ^6.3.0
+  uuid: ^4.4.0
+  window_manager: ^0.4.3
+  logger: ^2.0.2
+
+dependency_overrides:
+  media_kit:
+    git:
+      url: https://github.com/edde746/media-kit
+      path: media_kit
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/data/iso_639_codes.json
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/plezy.png"
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/plezy_android_foreground.png"
+  macos:
+    generate: false
+  windows:
+    generate: true
+  linux:
+    generate: true
