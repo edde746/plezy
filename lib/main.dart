@@ -105,7 +105,7 @@ class _SetupScreenState extends State<SetupScreen> {
           await storage.saveServerUrl(connection.uri);
 
           // Create client with working connection
-          final config = PlexConfig(
+          final config = await PlexConfig.create(
             baseUrl: connection.uri,
             token: server.accessToken,
             clientIdentifier: clientId,

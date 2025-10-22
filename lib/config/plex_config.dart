@@ -1,3 +1,5 @@
+import 'package:package_info_plus/package_info_plus.dart';
+
 class PlexConfig {
   final String baseUrl;
   final String? token;
@@ -12,12 +14,34 @@ class PlexConfig {
     required this.baseUrl,
     this.token,
     required this.clientIdentifier,
-    this.product = 'Plezy',
-    this.version = '1.0.0',
+    required this.product,
+    required this.version,
     this.platform = 'Flutter',
     this.device,
     this.acceptJson = true,
   });
+
+  static Future<PlexConfig> create({
+    required String baseUrl,
+    String? token,
+    required String clientIdentifier,
+    String? product,
+    String? platform,
+    String? device,
+    bool acceptJson = true,
+  }) async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    return PlexConfig(
+      baseUrl: baseUrl,
+      token: token,
+      clientIdentifier: clientIdentifier,
+      product: product ?? 'Plezy',
+      version: packageInfo.version,
+      platform: platform ?? 'Flutter',
+      device: device,
+      acceptJson: acceptJson,
+    );
+  }
 
   Map<String, String> get headers {
     final headers = {

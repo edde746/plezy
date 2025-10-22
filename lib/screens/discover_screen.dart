@@ -266,7 +266,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable {
     }
 
     // Create new client
-    final config = PlexConfig(
+    final config = await PlexConfig.create(
       baseUrl: connection.uri,
       token: server.accessToken,
       clientIdentifier: clientId,

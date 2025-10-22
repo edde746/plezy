@@ -1,13 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../widgets/desktop_app_bar.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
   @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  String _appName = '';
+  String _appVersion = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPackageInfo();
+  }
+
+  Future<void> _loadPackageInfo() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appName = 'Plezy';
+      _appVersion = packageInfo.version;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    const appName = 'Plezy';
-    const appVersion = '1.0.0';
+    final appName = _appName;
+    final appVersion = _appVersion;
 
     return Scaffold(
       body: CustomScrollView(

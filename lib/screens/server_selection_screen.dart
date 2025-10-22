@@ -96,7 +96,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
         storage.getClientIdentifier() ?? widget.authService.clientIdentifier;
 
     // Create client and navigate to main app
-    final config = PlexConfig(
+    final config = await PlexConfig.create(
       baseUrl: connection.uri,
       token: server.accessToken,
       clientIdentifier: clientId,
