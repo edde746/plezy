@@ -274,6 +274,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   imageUrl: widget.client.getThumbnailUrl(
                                     metadata.clearLogo,
                                   ),
+                                  filterQuality: FilterQuality.medium,
                                   fit: BoxFit.contain,
                                   alignment: Alignment.centerLeft,
                                   placeholder: (context, url) => Align(

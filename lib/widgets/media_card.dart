@@ -294,7 +294,7 @@ class _MediaCardState extends State<MediaCard> {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        filterQuality: FilterQuality.high,
+        filterQuality: FilterQuality.medium,
         placeholder: (context, url) => Container(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),

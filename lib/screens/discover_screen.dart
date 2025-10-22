@@ -628,6 +628,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable {
                             imageUrl: widget.client.getThumbnailUrl(
                               heroItem.clearLogo,
                             ),
+                            filterQuality: FilterQuality.medium,
                             fit: BoxFit.contain,
                             alignment: Alignment.centerLeft,
                             placeholder: (context, url) => Align(
