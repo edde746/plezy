@@ -8,9 +8,9 @@ Plezy is a modern Plex media client that provides a seamless streaming experienc
 Coming soon
 
 ### Desktop
-- [Windows (x64)](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-x64.zip)
-- [macOS (Universal)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg)
-- [Linux (x64)](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz)
+- [Windows (x64)](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe)
+- [macOS (Universal)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.zip)
+- [Linux (x64)](https://github.com/edde746/plezy/releases/latest/download/plezy-linux.tar.gz)
 
 > Download the latest release from the [Releases page](https://github.com/edde746/plezy/releases)
 
