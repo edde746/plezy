@@ -83,36 +83,16 @@ jobs:
       - name: Build macOS
         run: flutter build macos --release
 
-      - name: Install create-dmg
-        run: brew install create-dmg
-
-      - name: Create DMG
+      - name: Create ZIP
         run: |
           cd build/macos/Build/Products/Release
+          zip -r $GITHUB_WORKSPACE/plezy-macos.zip plezy.app
 
-          # Create a temporary directory for DMG contents
-          mkdir -p dmg_temp
-          cp -R plezy.app dmg_temp/
-
-          # Create DMG with create-dmg
-          create-dmg \
-            --volname "Plezy" \
-            --volicon "plezy.app/Contents/Resources/AppIcon.icns" \
-            --window-pos 200 120 \
-            --window-size 800 400 \
-            --icon-size 100 \
-            --icon "plezy.app" 200 190 \
-            --hide-extension "plezy.app" \
-            --app-drop-link 600 185 \
-            --hdiutil-quiet \
-            "$GITHUB_WORKSPACE/plezy-macos.dmg" \
-            "dmg_temp/"
-
-      - name: Upload macOS DMG
+      - name: Upload macOS ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: macos-dmg
-          path: plezy-macos.dmg
+          name: macos-zip
+          path: plezy-macos.zip
 
   build-windows:
     runs-on: windows-latest
