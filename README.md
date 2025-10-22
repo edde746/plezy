@@ -17,7 +17,7 @@ Coming soon
 ## Features
 
 ### 🔐 Authentication & Server Management
-- OAuth PIN-based authentication
+- Sign in with Plex
 - Automatic server discovery with smart connection selection
 - Persistent sessions with auto-login
 
@@ -27,18 +27,12 @@ Coming soon
 - Advanced search across all media
 - Season and episode navigation
 
-### 🎬 Video Playback (MediaKit/mpv)
+### 🎬 Video Playback
 - Wide codec support including HEVC, AV1, VP9, and more
 - Advanced subtitle rendering with full ASS/SSA support
 - Audio and subtitle track selection with user profile preferences
 - Playback progress sync and resume functionality
 - Auto-play next episode
-
-### 🎨 User Experience
-- Material Design 3 with dark theme
-- Custom controls and context menus
-- Desktop window management with custom macOS titlebar
-- Fullscreen support with adaptive orientation
 
 ## Platform Support
 
