@@ -9,6 +9,10 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -53,6 +57,11 @@ jobs:
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk plezy-android.apk
 
+      - name: Attest APK
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: plezy-android.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -61,6 +70,10 @@ jobs:
 
   build-ios:
     runs-on: macos-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -102,6 +115,11 @@ jobs:
           cp -r build/ios/iphoneos/Runner.app Payload/
           zip -r plezy-ios.ipa Payload
 
+      - name: Attest IPA
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: plezy-ios.ipa
+
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
@@ -110,6 +128,10 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -150,6 +172,11 @@ jobs:
           cd build/macos/Build/Products/Release
           zip -r $GITHUB_WORKSPACE/plezy-macos.zip plezy.app
 
+      - name: Attest macOS ZIP
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: plezy-macos.zip
+
       - name: Upload macOS ZIP
         uses: actions/upload-artifact@v4
         with:
@@ -158,6 +185,10 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -185,6 +216,13 @@ jobs:
       - name: Build Windows Installer
         run: .\windows\build-installer.ps1
 
+      - name: Attest Windows artifacts
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            plezy-windows-portable.zip
+            plezy-windows-installer.exe
+
       - name: Upload Portable Archive
         uses: actions/upload-artifact@v4
         with:
@@ -199,6 +237,10 @@ jobs:
 
   build-linux:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -238,6 +280,11 @@ jobs:
         run: |
           cd build/linux/x64/release/bundle
           tar -czf $GITHUB_WORKSPACE/plezy-linux.tar.gz *
+
+      - name: Attest Linux tarball
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: plezy-linux.tar.gz
 
       - name: Upload Linux App
         uses: actions/upload-artifact@v4
