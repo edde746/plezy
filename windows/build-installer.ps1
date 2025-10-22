@@ -18,8 +18,8 @@ Set-Location $ProjectRoot
 
 # Define paths
 $BuildDir = "build\windows\x64\runner\Release"
-$PortableZip = Join-Path $OutputDir "plezy-windows-portable.zip"
-$InstallerExe = Join-Path $OutputDir "plezy-windows-installer.exe"
+$PortableZip = Join-Path (Resolve-Path $OutputDir) "plezy-windows-portable.zip"
+$InstallerExe = Join-Path (Resolve-Path $OutputDir) "plezy-windows-installer.exe"
 $SetupScript = "setup.iss"
 
 # Check if build exists
