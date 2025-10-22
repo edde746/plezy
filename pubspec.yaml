@@ -24,6 +24,7 @@ dependencies:
   uuid: ^4.4.0
   window_manager: ^0.4.3
   logger: ^2.0.2
+  flutter_svg: ^2.0.10
 
 dependency_overrides:
   media_kit:
@@ -43,6 +44,7 @@ flutter:
   uses-material-design: true
   assets:
     - lib/data/iso_639_codes.json
+    - assets/plezy.png
 
 flutter_launcher_icons:
   android: true

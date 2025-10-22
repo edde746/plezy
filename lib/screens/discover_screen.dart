@@ -14,6 +14,7 @@ import '../mixins/refreshable.dart';
 import '../utils/app_logger.dart';
 import 'video_player_screen.dart';
 import 'main_screen.dart';
+import 'about_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final PlexClient client;
@@ -336,6 +337,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable {
                       _handleSwitchServer();
                     } else if (value == 'logout') {
                       _handleLogout();
+                    } else if (value == 'about') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AboutScreen(),
+                        ),
+                      );
                     }
                   },
                   itemBuilder: (context) => [
@@ -346,6 +354,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable {
                           Icon(Icons.swap_horiz),
                           SizedBox(width: 8),
                           Text('Switch Server'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'about',
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline),
+                          SizedBox(width: 8),
+                          Text('About'),
                         ],
                       ),
                     ),

@@ -95,10 +95,10 @@ class _AuthScreenState extends State<AuthScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                Icons.video_library,
-                size: 80,
-                color: Theme.of(context).colorScheme.primary,
+              Image.asset(
+                'assets/plezy.png',
+                width: 120,
+                height: 120,
               ),
               const SizedBox(height: 24),
               Text(
