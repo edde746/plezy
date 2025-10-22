@@ -49,7 +49,12 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // Only use release signing if key.properties exists (not in CI/CD)
+            val keystorePropertiesFile = rootProject.file("key.properties")
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            // If key.properties doesn't exist, it will use debug signing for CI builds
         }
     }
 }
