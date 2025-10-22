@@ -312,7 +312,7 @@ jobs:
           files: |
             artifacts/android-apk/plezy-android.apk
             artifacts/ios-ipa/plezy-ios.ipa
-            artifacts/macos-dmg/plezy-macos.dmg
+            artifacts/macos-zip/plezy-macos.zip
             artifacts/windows-portable/plezy-windows-portable.zip
             artifacts/windows-installer/plezy-windows-installer.exe
             artifacts/linux-app/plezy-linux.tar.gz
