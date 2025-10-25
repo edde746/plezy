@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
@@ -8,7 +9,8 @@ import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
 import '../services/fullscreen_state_manager.dart';
-import 'desktop_app_bar.dart';
+import '../utils/desktop_window_padding.dart';
+import 'app_bar_back_button.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
@@ -54,10 +56,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
   bool _isFullscreen = false;
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
     _loadChapters();
     _startHideTimer();
     // Add window listener for tracking fullscreen state (for button icon)
@@ -69,6 +73,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void dispose() {
     _hideTimer?.cancel();
+    _focusNode.dispose();
     // Remove window listener
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.removeListener(this);
@@ -221,25 +226,38 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   Future<void> _toggleFullscreen() async {
     if (!_isMobile(context)) {
-      setState(() {
-        _isFullscreen = !_isFullscreen;
-      });
+      // Query actual window state to determine what action to take
+      // This ensures we always toggle correctly regardless of local state
+      final isCurrentlyFullscreen = await windowManager.isFullScreen();
 
       if (Platform.isMacOS) {
         // Use native macOS fullscreen - titlebar is handled automatically
-        if (_isFullscreen) {
-          await WindowManipulator.enterFullscreen();
-        } else {
+        // Window listener will update _isFullscreen for UI
+        if (isCurrentlyFullscreen) {
           await WindowManipulator.exitFullscreen();
+        } else {
+          await WindowManipulator.enterFullscreen();
         }
       } else {
         // For Windows/Linux, use window_manager
-        if (_isFullscreen) {
-          await windowManager.setFullScreen(true);
-        } else {
+        // Window listener will update _isFullscreen for UI
+        if (isCurrentlyFullscreen) {
           await windowManager.setFullScreen(false);
+        } else {
+          await windowManager.setFullScreen(true);
         }
       }
+    }
+  }
+
+  void _togglePlayPause() {
+    final isPlaying = widget.player.state.playing;
+    if (isPlaying) {
+      widget.player.pause();
+      _hideTimer?.cancel(); // Cancel auto-hide when paused
+    } else {
+      widget.player.play();
+      _startHideTimer(); // Start auto-hide when playing
     }
   }
 
@@ -247,49 +265,82 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
 
-    return Stack(
-      children: [
-        // Invisible tap detector that always covers the full area
-        Positioned.fill(
-          child: GestureDetector(
-            onTap: _toggleControls,
-            behavior: HitTestBehavior.opaque,
-            child: Container(color: Colors.transparent),
+    return Focus(
+      focusNode: _focusNode,
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        // Only respond to key down events (not key up)
+        if (event is KeyDownEvent) {
+          // Handle spacebar for play/pause
+          if (event.logicalKey == LogicalKeyboardKey.space) {
+            _togglePlayPause();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: MouseRegion(
+        cursor: _showControls ? SystemMouseCursors.basic : SystemMouseCursors.none,
+        onHover: (_) {
+          // Show controls when mouse moves
+          if (!_showControls) {
+            setState(() {
+              _showControls = true;
+            });
+            _startHideTimer();
+            // On macOS, show traffic lights when controls appear
+            if (Platform.isMacOS) {
+              _updateTrafficLightVisibility();
+            }
+          }
+        },
+        child: Stack(
+        children: [
+          // Invisible tap detector that always covers the full area
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _toggleControls,
+              onDoubleTap: _toggleFullscreen,
+              behavior: HitTestBehavior.opaque,
+              child: Container(color: Colors.transparent),
+            ),
           ),
-        ),
-        // Custom controls overlay - use AnimatedOpacity to keep widget tree alive
-        Positioned.fill(
-          child: IgnorePointer(
-            ignoring: !_showControls,
-            child: AnimatedOpacity(
-              opacity: _showControls ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 200),
-              child: GestureDetector(
-                onTap: _toggleControls,
-                behavior: HitTestBehavior.deferToChild,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.7),
-                        Colors.transparent,
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.7),
-                      ],
-                      stops: const [0.0, 0.2, 0.8, 1.0],
+          // Custom controls overlay - use AnimatedOpacity to keep widget tree alive
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: !_showControls,
+              child: AnimatedOpacity(
+                opacity: _showControls ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: GestureDetector(
+                  onTap: _toggleControls,
+                  onDoubleTap: _toggleFullscreen,
+                  behavior: HitTestBehavior.deferToChild,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.7),
+                          Colors.transparent,
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.7),
+                        ],
+                        stops: const [0.0, 0.2, 0.8, 1.0],
+                      ),
                     ),
+                    child: isMobile
+                        ? _buildMobileLayout()
+                        : _buildDesktopLayout(),
                   ),
-                  child: isMobile
-                      ? _buildMobileLayout()
-                      : _buildDesktopLayout(),
                 ),
               ),
             ),
           ),
+        ],
         ),
-      ],
+      ),
     );
   }
 
