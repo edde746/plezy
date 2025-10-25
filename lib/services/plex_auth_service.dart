@@ -109,11 +109,17 @@ class PlexAuthService {
   /// Poll the PIN until it's claimed or timeout
   Future<String?> pollPinUntilClaimed(
     int pinId, {
-    Duration timeout = const Duration(minutes: 5),
+    Duration timeout = const Duration(minutes: 2),
+    bool Function()? shouldCancel,
   }) async {
     final endTime = DateTime.now().add(timeout);
 
     while (DateTime.now().isBefore(endTime)) {
+      // Check if polling should be cancelled
+      if (shouldCancel != null && shouldCancel()) {
+        return null;
+      }
+
       final token = await checkPin(pinId);
       if (token != null) {
         return token;

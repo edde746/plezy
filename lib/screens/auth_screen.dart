@@ -15,6 +15,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isAuthenticating = false;
   String? _errorMessage;
   late PlexAuthService _authService;
+  bool _shouldCancelPolling = false;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() {
       _isAuthenticating = true;
       _errorMessage = null;
+      _shouldCancelPolling = false;
     });
 
     try {
@@ -49,8 +51,16 @@ class _AuthScreenState extends State<AuthScreen> {
         throw Exception('Could not launch auth URL');
       }
 
-      // Poll for authentication
-      final token = await _authService.pollPinUntilClaimed(pinId);
+      // Poll for authentication with cancellation support
+      final token = await _authService.pollPinUntilClaimed(
+        pinId,
+        shouldCancel: () => _shouldCancelPolling,
+      );
+
+      // If polling was cancelled, don't show error
+      if (_shouldCancelPolling) {
+        return;
+      }
 
       if (token == null) {
         setState(() {
@@ -58,6 +68,13 @@ class _AuthScreenState extends State<AuthScreen> {
           _errorMessage = 'Authentication timed out. Please try again.';
         });
         return;
+      }
+
+      // Auto-close the in-app browser on mobile (no-op on desktop)
+      try {
+        await closeInAppWebView();
+      } catch (e) {
+        // Ignore errors - browser might already be closed or on desktop
       }
 
       // Store the token
@@ -82,6 +99,15 @@ class _AuthScreenState extends State<AuthScreen> {
         _errorMessage = 'Authentication failed: $e';
       });
     }
+  }
+
+  void _retryAuthentication() {
+    setState(() {
+      _shouldCancelPolling = true;
+      _isAuthenticating = false;
+    });
+    // Start new authentication after a brief delay to ensure cleanup
+    Future.delayed(const Duration(milliseconds: 100), _startAuthentication);
   }
 
   @override
@@ -116,6 +142,14 @@ class _AuthScreenState extends State<AuthScreen> {
                   'Waiting for authentication...\nPlease complete sign-in in your browser.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                OutlinedButton(
+                  onPressed: _retryAuthentication,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  ),
+                  child: const Text('Retry'),
                 ),
               ] else ...[
                 ElevatedButton(
