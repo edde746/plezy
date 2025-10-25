@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../widgets/app_bar_back_button.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -38,17 +39,8 @@ class _AboutScreenState extends State<AboutScreen> {
           DesktopSliverAppBar(
             title: const Text('About'),
             pinned: true,
-            leading: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
-                padding: EdgeInsets.zero,
-              ),
+            leading: const AppBarBackButton(
+              style: BackButtonStyle.circular,
             ),
           ),
           SliverPadding(

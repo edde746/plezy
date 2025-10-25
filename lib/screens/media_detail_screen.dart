@@ -4,6 +4,7 @@ import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../widgets/app_bar_back_button.dart';
 import '../widgets/media_context_menu.dart';
 import '../utils/app_logger.dart';
 import 'season_detail_screen.dart';
@@ -196,19 +197,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
           DesktopSliverAppBar(
             expandedHeight: headerHeight,
             pinned: true,
-            leading: SafeArea(
-              child: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => Navigator.of(context).pop(),
-                  padding: EdgeInsets.zero,
-                ),
-              ),
+            leading: const AppBarBackButton(
+              style: BackButtonStyle.circular,
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(

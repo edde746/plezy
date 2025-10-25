@@ -6,6 +6,7 @@ import '../models/plex_filter.dart';
 import '../models/plex_user_profile.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../widgets/app_bar_back_button.dart';
 import '../services/storage_service.dart';
 import '../mixins/refreshable.dart';
 
@@ -518,8 +519,8 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
                 ),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
+                    AppBarBackButton(
+                      style: BackButtonStyle.plain,
                       onPressed: _goBack,
                     ),
                     const SizedBox(width: 8),

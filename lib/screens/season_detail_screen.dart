@@ -4,6 +4,7 @@ import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../widgets/app_bar_back_button.dart';
 import 'video_player_screen.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
@@ -58,17 +59,8 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> {
           DesktopSliverAppBar(
             title: Text(widget.season.title),
             pinned: true,
-            leading: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
-                padding: EdgeInsets.zero,
-              ),
+            leading: const AppBarBackButton(
+              style: BackButtonStyle.circular,
             ),
           ),
           if (_isLoadingEpisodes)

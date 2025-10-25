@@ -326,8 +326,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          AppBarBackButton(
+            style: BackButtonStyle.video,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(width: 16),
@@ -547,8 +547,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       ),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+          AppBarBackButton(
+            style: BackButtonStyle.video,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(width: 16),

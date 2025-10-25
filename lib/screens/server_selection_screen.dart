@@ -4,6 +4,7 @@ import '../services/storage_service.dart';
 import '../client/plex_client.dart';
 import '../config/plex_config.dart';
 import '../widgets/server_list_tile.dart';
+import '../widgets/desktop_app_bar.dart';
 import 'main_screen.dart';
 
 class ServerSelectionScreen extends StatefulWidget {
@@ -114,7 +115,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Select Server')),
+      appBar: const DesktopAppBar(title: Text('Select Server')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
