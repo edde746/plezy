@@ -205,6 +205,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            IconButton(
+              icon: const Icon(Icons.speed, color: Colors.white),
+              onPressed: _showPlaybackSpeedBottomSheet,
+            ),
             if (_hasMultipleAudioTracks(tracks))
               IconButton(
                 icon: const Icon(Icons.audiotrack, color: Colors.white),
@@ -1569,6 +1573,91 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         },
                       ),
                     ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showPlaybackSpeedBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      isScrollControlled: true,
+      constraints: _getBottomSheetConstraints(),
+      builder: (context) => StreamBuilder<double>(
+        stream: widget.player.stream.rate,
+        initialData: widget.player.state.rate,
+        builder: (context, snapshot) {
+          final currentRate = snapshot.data ?? 1.0;
+
+          // Define available playback speeds
+          final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
+          return SafeArea(
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.75,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.speed, color: Colors.white),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Playback Speed',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(color: Colors.white24, height: 1),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: speeds.length,
+                      itemBuilder: (context, index) {
+                        final speed = speeds[index];
+                        final isSelected = (currentRate - speed).abs() < 0.01;
+
+                        // Format speed label
+                        final label = speed == 1.0
+                            ? 'Normal'
+                            : '${speed.toStringAsFixed(2)}x';
+
+                        return ListTile(
+                          title: Text(
+                            label,
+                            style: TextStyle(
+                              color: isSelected ? Colors.blue : Colors.white,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.blue,
+                                )
+                              : null,
+                          onTap: () {
+                            widget.player.setRate(speed);
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),

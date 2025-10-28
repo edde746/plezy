@@ -15,6 +15,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
   final AudioTrack? preferredAudioTrack;
   final SubtitleTrack? preferredSubtitleTrack;
+  final double? preferredPlaybackRate;
   final PlexUserProfile? userProfile;
 
   const VideoPlayerScreen({
@@ -23,6 +24,7 @@ class VideoPlayerScreen extends StatefulWidget {
     required this.metadata,
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
+    this.preferredPlaybackRate,
     this.userProfile,
   });
 
@@ -545,6 +547,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       appLogger.i('Final subtitle selection: $finalSubtitle');
       player.setSubtitleTrack(subtitleToSelect);
 
+      // Set playback rate if preferred rate was provided
+      if (widget.preferredPlaybackRate != null) {
+        appLogger.d(
+          'Setting preferred playback rate: ${widget.preferredPlaybackRate}x',
+        );
+        player.setRate(widget.preferredPlaybackRate!);
+      }
+
       appLogger.d('Track selection complete');
     }
 
@@ -621,6 +631,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Navigate to the next episode using pushReplacement to destroy current player
     if (mounted) {
+      final currentRate = player.state.rate;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => VideoPlayerScreen(
@@ -628,6 +639,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             metadata: _nextEpisode!,
             preferredAudioTrack: currentAudioTrack,
             preferredSubtitleTrack: currentSubtitleTrack,
+            preferredPlaybackRate: currentRate,
             userProfile: widget.userProfile,
           ),
         ),
@@ -649,6 +661,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Navigate to the previous episode using pushReplacement to destroy current player
     if (mounted) {
+      final currentRate = player.state.rate;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => VideoPlayerScreen(
@@ -656,6 +669,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             metadata: _previousEpisode!,
             preferredAudioTrack: currentAudioTrack,
             preferredSubtitleTrack: currentSubtitleTrack,
+            preferredPlaybackRate: currentRate,
             userProfile: widget.userProfile,
           ),
         ),
