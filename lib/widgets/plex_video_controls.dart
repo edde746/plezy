@@ -307,6 +307,37 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
+  void _adjustVolume(double delta) {
+    final currentVolume = widget.player.state.volume;
+    final newVolume = (currentVolume + delta).clamp(0.0, 100.0);
+    widget.player.setVolume(newVolume);
+  }
+
+  void _toggleMute() {
+    final currentVolume = widget.player.state.volume;
+    if (currentVolume == 0) {
+      // Unmute to 100%
+      widget.player.setVolume(100.0);
+    } else {
+      // Mute
+      widget.player.setVolume(0.0);
+    }
+  }
+
+  void _seek(Duration offset) {
+    final currentPosition = widget.player.state.position;
+    final newPosition = currentPosition + offset;
+    // Clamp to valid range
+    final duration = widget.player.state.duration;
+    if (newPosition < Duration.zero) {
+      widget.player.seek(Duration.zero);
+    } else if (newPosition > duration) {
+      widget.player.seek(duration);
+    } else {
+      widget.player.seek(newPosition);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = _isMobile(context);
@@ -317,10 +348,105 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       onKeyEvent: (node, event) {
         // Only respond to key down events (not key up)
         if (event is KeyDownEvent) {
-          // Handle spacebar for play/pause
-          if (event.logicalKey == LogicalKeyboardKey.space) {
+          final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
+          final isCtrlPressed = HardwareKeyboard.instance.isControlPressed;
+
+          // Play/Pause shortcuts
+          if (event.logicalKey == LogicalKeyboardKey.space ||
+              event.logicalKey == LogicalKeyboardKey.keyK) {
             _togglePlayPause();
             return KeyEventResult.handled;
+          }
+
+          // Arrow key handling - check for modifiers first
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            if (isCtrlPressed) {
+              // Ctrl+Left: Seek backward 1 minute
+              _seek(const Duration(minutes: -1));
+            } else if (isShiftPressed) {
+              // Shift+Left: Seek backward 5 seconds
+              _seek(const Duration(seconds: -5));
+            } else {
+              // Left: Seek backward 10 seconds
+              _seek(const Duration(seconds: -10));
+            }
+            return KeyEventResult.handled;
+          }
+
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            if (isCtrlPressed) {
+              // Ctrl+Right: Seek forward 1 minute
+              _seek(const Duration(minutes: 1));
+            } else if (isShiftPressed) {
+              // Shift+Right: Seek forward 5 seconds
+              _seek(const Duration(seconds: 5));
+            } else {
+              // Right: Seek forward 10 seconds
+              _seek(const Duration(seconds: 10));
+            }
+            return KeyEventResult.handled;
+          }
+
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            // Up: Volume up 5%
+            _adjustVolume(5.0);
+            return KeyEventResult.handled;
+          }
+
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            // Down: Volume down 5%
+            _adjustVolume(-5.0);
+            return KeyEventResult.handled;
+          }
+
+          // J/L keys for seeking (alternative to arrows)
+          if (event.logicalKey == LogicalKeyboardKey.keyJ) {
+            // J: Seek backward 10 seconds
+            _seek(const Duration(seconds: -10));
+            return KeyEventResult.handled;
+          }
+
+          if (event.logicalKey == LogicalKeyboardKey.keyL) {
+            // L: Seek forward 10 seconds
+            _seek(const Duration(seconds: 10));
+            return KeyEventResult.handled;
+          }
+
+          // Fullscreen shortcuts
+          if (event.logicalKey == LogicalKeyboardKey.keyF) {
+            _toggleFullscreen();
+            return KeyEventResult.handled;
+          }
+
+          if (event.logicalKey == LogicalKeyboardKey.escape) {
+            // Escape: Exit fullscreen (only if currently fullscreen)
+            if (_isFullscreen) {
+              _toggleFullscreen();
+              return KeyEventResult.handled;
+            }
+          }
+
+          // Mute shortcut
+          if (event.logicalKey == LogicalKeyboardKey.keyM) {
+            _toggleMute();
+            return KeyEventResult.handled;
+          }
+
+          // Episode navigation shortcuts
+          if (event.logicalKey == LogicalKeyboardKey.keyN) {
+            // N: Next episode
+            if (widget.onNext != null) {
+              widget.onNext!();
+              return KeyEventResult.handled;
+            }
+          }
+
+          if (event.logicalKey == LogicalKeyboardKey.keyP) {
+            // P: Previous episode
+            if (widget.onPrevious != null) {
+              widget.onPrevious!();
+              return KeyEventResult.handled;
+            }
           }
         }
         return KeyEventResult.ignored;
@@ -346,7 +472,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           Positioned.fill(
             child: GestureDetector(
               onTap: _toggleControls,
-              onDoubleTap: isMobile ? null : _toggleFullscreen,
               behavior: HitTestBehavior.opaque,
               child: Container(color: Colors.transparent),
             ),
@@ -405,6 +530,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         right: 0,
                         bottom: bottomExclude,
                         child: GestureDetector(
+                          onTap: _toggleControls,
                           onDoubleTap: _toggleFullscreen,
                           behavior: HitTestBehavior.translucent,
                           child: Container(color: Colors.transparent),
