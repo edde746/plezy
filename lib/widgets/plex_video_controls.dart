@@ -180,6 +180,52 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     return platform == TargetPlatform.iOS || platform == TargetPlatform.android;
   }
 
+  bool _hasMultipleAudioTracks(Tracks? tracks) {
+    if (tracks == null) return false;
+    final audioTracks = tracks.audio
+        .where((track) => track.id != 'auto' && track.id != 'no')
+        .toList();
+    return audioTracks.length > 1;
+  }
+
+  bool _hasSubtitles(Tracks? tracks) {
+    if (tracks == null) return false;
+    final subtitles = tracks.subtitle
+        .where((track) => track.id != 'auto' && track.id != 'no')
+        .toList();
+    return subtitles.isNotEmpty;
+  }
+
+  Widget _buildTrackAndChapterControls() {
+    return StreamBuilder<Tracks>(
+      stream: widget.player.stream.tracks,
+      initialData: widget.player.state.tracks,
+      builder: (context, snapshot) {
+        final tracks = snapshot.data;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_hasMultipleAudioTracks(tracks))
+              IconButton(
+                icon: const Icon(Icons.audiotrack, color: Colors.white),
+                onPressed: _showAudioBottomSheet,
+              ),
+            if (_hasSubtitles(tracks))
+              IconButton(
+                icon: const Icon(Icons.subtitles, color: Colors.white),
+                onPressed: _showSubtitleBottomSheet,
+              ),
+            if (_chapters.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.video_library, color: Colors.white),
+                onPressed: _showChapterBottomSheet,
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   void _seekToPreviousChapter() {
     if (_chapters.isEmpty) {
       // No chapters - seek backward 10 seconds
@@ -300,7 +346,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           Positioned.fill(
             child: GestureDetector(
               onTap: _toggleControls,
-              onDoubleTap: _toggleFullscreen,
+              onDoubleTap: isMobile ? null : _toggleFullscreen,
               behavior: HitTestBehavior.opaque,
               child: Container(color: Colors.transparent),
             ),
@@ -314,7 +360,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 duration: const Duration(milliseconds: 200),
                 child: GestureDetector(
                   onTap: _toggleControls,
-                  onDoubleTap: _toggleFullscreen,
                   behavior: HitTestBehavior.deferToChild,
                   child: Container(
                     decoration: BoxDecoration(
@@ -338,6 +383,38 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               ),
             ),
           ),
+          // Middle area double-tap detector for fullscreen (desktop only)
+          // Only covers the clear video area (20% to 80% vertically)
+          if (!isMobile)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final height = constraints.maxHeight;
+                  final topExclude = height * 0.20; // Top 20%
+                  final bottomExclude = height * 0.20; // Bottom 20%
+
+                  return Stack(
+                    children: [
+                      Positioned(
+                        top: topExclude,
+                        left: 0,
+                        right: 0,
+                        bottom: bottomExclude,
+                        child: GestureDetector(
+                          onDoubleTap: _toggleFullscreen,
+                          behavior: HitTestBehavior.translucent,
+                          child: Container(color: Colors.transparent),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
         ],
         ),
       ),
@@ -408,18 +485,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             ),
           ),
           // Track and chapter controls in top right
-          IconButton(
-            icon: const Icon(Icons.audiotrack, color: Colors.white),
-            onPressed: _showAudioBottomSheet,
-          ),
-          IconButton(
-            icon: const Icon(Icons.subtitles, color: Colors.white),
-            onPressed: _showSubtitleBottomSheet,
-          ),
-          IconButton(
-            icon: const Icon(Icons.video_library, color: Colors.white),
-            onPressed: _showChapterBottomSheet,
-          ),
+          _buildTrackAndChapterControls(),
         ],
       ),
     );
@@ -784,21 +850,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               // Volume control
               _buildVolumeControl(),
               const SizedBox(width: 16),
-              // Audio track
-              IconButton(
-                icon: const Icon(Icons.audiotrack, color: Colors.white),
-                onPressed: _showAudioBottomSheet,
-              ),
-              // Subtitle track
-              IconButton(
-                icon: const Icon(Icons.subtitles, color: Colors.white),
-                onPressed: _showSubtitleBottomSheet,
-              ),
-              // Chapters
-              IconButton(
-                icon: const Icon(Icons.video_library, color: Colors.white),
-                onPressed: _showChapterBottomSheet,
-              ),
+              // Audio track, subtitle, and chapter controls
+              _buildTrackAndChapterControls(),
               // Fullscreen
               IconButton(
                 icon: Icon(
