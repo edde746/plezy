@@ -1,6 +1,15 @@
-# Plezy
+<h1>
+  <img src="assets/plezy.png" alt="Plezy Logo" height="24" style="vertical-align: middle;" />
+  Plezy
+</h1>
 
 Plezy is a modern Plex media client that provides a seamless streaming experience across desktop and mobile platforms. Built with Flutter, it offers native performance and a clean, intuitive interface for browsing and playing your Plex media library.
+
+<p align="center">
+  <img src="screenshots/macos-home.png" alt="Plezy macOS Home Screen" width="800" />
+</p>
+
+*See more screenshots in the [screenshots folder](screenshots/#readme)*
 
 ## Download
 
