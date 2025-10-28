@@ -43,14 +43,6 @@ Coming soon
 - Playback progress sync and resume functionality
 - Auto-play next episode
 
-## Platform Support
-
-- ✅ macOS
-- ✅ Windows
-- ✅ Linux
-- ✅ Android
-- ✅ iOS
-
 ## Prerequisites
 
 - Flutter SDK 3.8.1 or higher
@@ -79,15 +71,6 @@ dart run build_runner build
 ```bash
 flutter run
 ```
-
-## Configuration
-
-On first launch, Plezy will guide you through:
-1. Authenticating with your Plex account
-2. Selecting your Plex Media Server
-3. Testing connections to find the optimal one
-
-Your credentials and preferences are securely stored locally for automatic sign-in on subsequent launches.
 
 ## Development
 

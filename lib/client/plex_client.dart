@@ -139,6 +139,64 @@ class PlexClient {
     return ConnectionTestResult(success: true, latencyMs: avgLatency);
   }
 
+  // ============================================================================
+  // API Response Parsing Helpers
+  // ============================================================================
+
+  /// Extract MediaContainer from API response
+  Map<String, dynamic>? _getMediaContainer(Response response) {
+    if (response.data is Map && response.data.containsKey('MediaContainer')) {
+      return response.data['MediaContainer'];
+    }
+    return null;
+  }
+
+  /// Extract list of PlexMetadata from response
+  List<PlexMetadata> _extractMetadataList(Response response) {
+    final container = _getMediaContainer(response);
+    if (container != null && container['Metadata'] != null) {
+      return (container['Metadata'] as List)
+          .map((json) => PlexMetadata.fromJson(json))
+          .toList();
+    }
+    return [];
+  }
+
+  /// Extract first metadata JSON from response (returns raw Map or null)
+  Map<String, dynamic>? _getFirstMetadataJson(Response response) {
+    final container = _getMediaContainer(response);
+    if (container != null &&
+        container['Metadata'] != null &&
+        (container['Metadata'] as List).isNotEmpty) {
+      return container['Metadata'][0] as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  /// Extract single PlexMetadata from response (returns first item or null)
+  PlexMetadata? _extractSingleMetadata(Response response) {
+    final metadataJson = _getFirstMetadataJson(response);
+    return metadataJson != null ? PlexMetadata.fromJson(metadataJson) : null;
+  }
+
+  /// Generic helper to extract and map Directory list from response
+  List<T> _extractDirectoryList<T>(
+    Response response,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    final container = _getMediaContainer(response);
+    if (container != null && container['Directory'] != null) {
+      return (container['Directory'] as List)
+          .map((json) => fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
+
+  // ============================================================================
+  // API Methods
+  // ============================================================================
+
   /// Get server identity
   Future<Map<String, dynamic>> getServerIdentity() async {
     final response = await _dio.get('/identity');
@@ -148,17 +206,7 @@ class PlexClient {
   /// Get library sections
   Future<List<PlexLibrary>> getLibraries() async {
     final response = await _dio.get('/library/sections');
-
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Directory'] != null) {
-        return (container['Directory'] as List)
-            .map((json) => PlexLibrary.fromJson(json))
-            .toList();
-      }
-    }
-
-    return [];
+    return _extractDirectoryList(response, PlexLibrary.fromJson);
   }
 
   /// Get library content by section ID
@@ -182,31 +230,13 @@ class PlexClient {
       queryParameters: queryParams,
     );
 
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null) {
-        return (container['Metadata'] as List)
-            .map((json) => PlexMetadata.fromJson(json))
-            .toList();
-      }
-    }
-
-    return [];
+    return _extractMetadataList(response);
   }
 
   /// Get metadata by rating key
   Future<PlexMetadata?> getMetadata(String ratingKey) async {
     final response = await _dio.get('/library/metadata/$ratingKey');
-
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null &&
-          (container['Metadata'] as List).isNotEmpty) {
-        return PlexMetadata.fromJson(container['Metadata'][0]);
-      }
-    }
-
-    return null;
+    return _extractSingleMetadata(response);
   }
 
   /// Get metadata by rating key with images (includes clearLogo and OnDeck)
@@ -221,26 +251,20 @@ class PlexClient {
     PlexMetadata? metadata;
     PlexMetadata? onDeckEpisode;
 
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
+    final metadataJson = _getFirstMetadataJson(response);
+    if (metadataJson != null) {
+      metadata = PlexMetadata.fromJsonWithImages(metadataJson);
 
-      // Get main metadata
-      if (container['Metadata'] != null &&
-          (container['Metadata'] as List).isNotEmpty) {
-        final metadataJson = container['Metadata'][0];
-        metadata = PlexMetadata.fromJsonWithImages(metadataJson);
+      // Check if OnDeck is nested inside Metadata
+      if (metadataJson.containsKey('OnDeck') &&
+          metadataJson['OnDeck'] != null) {
+        final onDeckData = metadataJson['OnDeck'];
 
-        // Check if OnDeck is nested inside Metadata
-        if (metadataJson.containsKey('OnDeck') &&
-            metadataJson['OnDeck'] != null) {
-          final onDeckData = metadataJson['OnDeck'];
-
-          // OnDeck can be either a Map with 'Metadata' key or direct metadata
-          if (onDeckData is Map && onDeckData.containsKey('Metadata')) {
-            final onDeckMetadata = onDeckData['Metadata'];
-            if (onDeckMetadata != null) {
-              onDeckEpisode = PlexMetadata.fromJson(onDeckMetadata);
-            }
+        // OnDeck can be either a Map with 'Metadata' key or direct metadata
+        if (onDeckData is Map && onDeckData.containsKey('Metadata')) {
+          final onDeckMetadata = onDeckData['Metadata'];
+          if (onDeckMetadata != null) {
+            onDeckEpisode = PlexMetadata.fromJson(onDeckMetadata);
           }
         }
       }
@@ -252,16 +276,10 @@ class PlexClient {
   /// Get metadata by rating key with images (includes clearLogo)
   Future<PlexMetadata?> getMetadataWithImages(String ratingKey) async {
     final response = await _dio.get('/library/metadata/$ratingKey');
-
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null &&
-          (container['Metadata'] as List).isNotEmpty) {
-        return PlexMetadata.fromJsonWithImages(container['Metadata'][0]);
-      }
-    }
-
-    return null;
+    final metadataJson = _getFirstMetadataJson(response);
+    return metadataJson != null
+        ? PlexMetadata.fromJsonWithImages(metadataJson)
+        : null;
   }
 
   /// Search across all libraries using the hub search endpoint
@@ -326,49 +344,25 @@ class PlexClient {
       '/library/recentlyAdded',
       queryParameters: {'X-Plex-Container-Size': limit, 'includeGuids': 1},
     );
-
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null) {
-        return (container['Metadata'] as List)
-            .map((json) => PlexMetadata.fromJson(json))
-            .toList();
-      }
-    }
-
-    return [];
+    return _extractMetadataList(response);
   }
 
   /// Get on deck items (continue watching)
   Future<List<PlexMetadata>> getOnDeck() async {
     final response = await _dio.get('/library/onDeck');
-
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null) {
-        return (container['Metadata'] as List)
-            .map((json) => PlexMetadata.fromJsonWithImages(json))
-            .toList();
-      }
+    final container = _getMediaContainer(response);
+    if (container != null && container['Metadata'] != null) {
+      return (container['Metadata'] as List)
+          .map((json) => PlexMetadata.fromJsonWithImages(json))
+          .toList();
     }
-
     return [];
   }
 
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)
   Future<List<PlexMetadata>> getChildren(String ratingKey) async {
     final response = await _dio.get('/library/metadata/$ratingKey/children');
-
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null) {
-        return (container['Metadata'] as List)
-            .map((json) => PlexMetadata.fromJson(json))
-            .toList();
-      }
-    }
-
-    return [];
+    return _extractMetadataList(response);
   }
 
   /// Get thumbnail URL
@@ -384,26 +378,19 @@ class PlexClient {
   /// Get video URL for direct playback
   Future<String?> getVideoUrl(String ratingKey) async {
     final response = await _dio.get('/library/metadata/$ratingKey');
+    final metadataJson = _getFirstMetadataJson(response);
 
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null &&
-          (container['Metadata'] as List).isNotEmpty) {
-        final metadata = container['Metadata'][0];
+    if (metadataJson != null &&
+        metadataJson['Media'] != null &&
+        (metadataJson['Media'] as List).isNotEmpty) {
+      final media = metadataJson['Media'][0];
+      if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
+        final part = media['Part'][0];
+        final partKey = part['key'] as String?;
 
-        // Get the first Media item and its Part
-        if (metadata['Media'] != null &&
-            (metadata['Media'] as List).isNotEmpty) {
-          final media = metadata['Media'][0];
-          if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
-            final part = media['Part'][0];
-            final partKey = part['key'] as String?;
-
-            if (partKey != null) {
-              // Return direct play URL
-              return '${config.baseUrl}$partKey?X-Plex-Token=${config.token}';
-            }
-          }
+        if (partKey != null) {
+          // Return direct play URL
+          return '${config.baseUrl}$partKey?X-Plex-Token=${config.token}';
         }
       }
     }
@@ -418,26 +405,19 @@ class PlexClient {
       queryParameters: {'includeChapters': 1},
     );
 
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null &&
-          (container['Metadata'] as List).isNotEmpty) {
-        final metadata = container['Metadata'][0];
-
-        if (metadata['Chapter'] != null) {
-          final chapterList = metadata['Chapter'] as List<dynamic>;
-          return chapterList.map((chapter) {
-            return PlexChapter(
-              id: chapter['id'] as int,
-              index: chapter['index'] as int?,
-              startTimeOffset: chapter['startTimeOffset'] as int?,
-              endTimeOffset: chapter['endTimeOffset'] as int?,
-              title: chapter['tag'] as String?,
-              thumb: chapter['thumb'] as String?,
-            );
-          }).toList();
-        }
-      }
+    final metadataJson = _getFirstMetadataJson(response);
+    if (metadataJson != null && metadataJson['Chapter'] != null) {
+      final chapterList = metadataJson['Chapter'] as List<dynamic>;
+      return chapterList.map((chapter) {
+        return PlexChapter(
+          id: chapter['id'] as int,
+          index: chapter['index'] as int?,
+          startTimeOffset: chapter['startTimeOffset'] as int?,
+          endTimeOffset: chapter['endTimeOffset'] as int?,
+          title: chapter['tag'] as String?,
+          thumb: chapter['thumb'] as String?,
+        );
+      }).toList();
     }
 
     return [];
@@ -446,91 +426,84 @@ class PlexClient {
   /// Get detailed media info including chapters and tracks
   Future<PlexMediaInfo?> getMediaInfo(String ratingKey) async {
     final response = await _dio.get('/library/metadata/$ratingKey');
+    final metadataJson = _getFirstMetadataJson(response);
 
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null &&
-          (container['Metadata'] as List).isNotEmpty) {
-        final metadata = container['Metadata'][0];
+    if (metadataJson != null &&
+        metadataJson['Media'] != null &&
+        (metadataJson['Media'] as List).isNotEmpty) {
+      final media = metadataJson['Media'][0];
+      if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
+        final part = media['Part'][0];
+        final partKey = part['key'] as String?;
 
-        // Get the first Media item and its Part
-        if (metadata['Media'] != null &&
-            (metadata['Media'] as List).isNotEmpty) {
-          final media = metadata['Media'][0];
-          if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
-            final part = media['Part'][0];
-            final partKey = part['key'] as String?;
+        if (partKey != null) {
+          // Parse streams (audio and subtitle tracks)
+          final streams = part['Stream'] as List<dynamic>? ?? [];
+          final audioTracks = <PlexAudioTrack>[];
+          final subtitleTracks = <PlexSubtitleTrack>[];
 
-            if (partKey != null) {
-              // Parse streams (audio and subtitle tracks)
-              final streams = part['Stream'] as List<dynamic>? ?? [];
-              final audioTracks = <PlexAudioTrack>[];
-              final subtitleTracks = <PlexSubtitleTrack>[];
+          for (var stream in streams) {
+            final streamType = stream['streamType'] as int?;
 
-              for (var stream in streams) {
-                final streamType = stream['streamType'] as int?;
-
-                if (streamType == 2) {
-                  // Audio track
-                  audioTracks.add(
-                    PlexAudioTrack(
-                      id: stream['id'] as int,
-                      index: stream['index'] as int?,
-                      codec: stream['codec'] as String?,
-                      language: stream['language'] as String?,
-                      languageCode: stream['languageCode'] as String?,
-                      title: stream['title'] as String?,
-                      displayTitle: stream['displayTitle'] as String?,
-                      channels: stream['channels'] as int?,
-                      selected: stream['selected'] == 1,
-                    ),
-                  );
-                } else if (streamType == 3) {
-                  // Subtitle track
-                  subtitleTracks.add(
-                    PlexSubtitleTrack(
-                      id: stream['id'] as int,
-                      index: stream['index'] as int?,
-                      codec: stream['codec'] as String?,
-                      language: stream['language'] as String?,
-                      languageCode: stream['languageCode'] as String?,
-                      title: stream['title'] as String?,
-                      displayTitle: stream['displayTitle'] as String?,
-                      selected: stream['selected'] == 1,
-                      forced: stream['forced'] == 1,
-                      key: stream['key'] as String?,
-                    ),
-                  );
-                }
-              }
-
-              // Parse chapters
-              final chapters = <PlexChapter>[];
-              if (metadata['Chapter'] != null) {
-                final chapterList = metadata['Chapter'] as List<dynamic>;
-                for (var chapter in chapterList) {
-                  chapters.add(
-                    PlexChapter(
-                      id: chapter['id'] as int,
-                      index: chapter['index'] as int?,
-                      startTimeOffset: chapter['startTimeOffset'] as int?,
-                      endTimeOffset: chapter['endTimeOffset'] as int?,
-                      title: chapter['title'] as String?,
-                      thumb: chapter['thumb'] as String?,
-                    ),
-                  );
-                }
-              }
-
-              return PlexMediaInfo(
-                videoUrl:
-                    '${config.baseUrl}$partKey?X-Plex-Token=${config.token}',
-                audioTracks: audioTracks,
-                subtitleTracks: subtitleTracks,
-                chapters: chapters,
+            if (streamType == 2) {
+              // Audio track
+              audioTracks.add(
+                PlexAudioTrack(
+                  id: stream['id'] as int,
+                  index: stream['index'] as int?,
+                  codec: stream['codec'] as String?,
+                  language: stream['language'] as String?,
+                  languageCode: stream['languageCode'] as String?,
+                  title: stream['title'] as String?,
+                  displayTitle: stream['displayTitle'] as String?,
+                  channels: stream['channels'] as int?,
+                  selected: stream['selected'] == 1,
+                ),
+              );
+            } else if (streamType == 3) {
+              // Subtitle track
+              subtitleTracks.add(
+                PlexSubtitleTrack(
+                  id: stream['id'] as int,
+                  index: stream['index'] as int?,
+                  codec: stream['codec'] as String?,
+                  language: stream['language'] as String?,
+                  languageCode: stream['languageCode'] as String?,
+                  title: stream['title'] as String?,
+                  displayTitle: stream['displayTitle'] as String?,
+                  selected: stream['selected'] == 1,
+                  forced: stream['forced'] == 1,
+                  key: stream['key'] as String?,
+                ),
               );
             }
           }
+
+          // Parse chapters
+          final chapters = <PlexChapter>[];
+          if (metadataJson['Chapter'] != null) {
+            final chapterList = metadataJson['Chapter'] as List<dynamic>;
+            for (var chapter in chapterList) {
+              chapters.add(
+                PlexChapter(
+                  id: chapter['id'] as int,
+                  index: chapter['index'] as int?,
+                  startTimeOffset: chapter['startTimeOffset'] as int?,
+                  endTimeOffset: chapter['endTimeOffset'] as int?,
+                  title: chapter['title'] as String?,
+                  thumb: chapter['thumb'] as String?,
+                ),
+              );
+            }
+          }
+
+          return PlexMediaInfo(
+            videoUrl:
+                '${config.baseUrl}$partKey?X-Plex-Token=${config.token}',
+            audioTracks: audioTracks,
+            subtitleTracks: subtitleTracks,
+            chapters: chapters,
+          );
         }
       }
     }
@@ -588,51 +561,34 @@ class PlexClient {
   /// Get sessions (currently playing)
   Future<List<dynamic>> getSessions() async {
     final response = await _dio.get('/status/sessions');
-
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Metadata'] != null) {
-        return container['Metadata'] as List;
-      }
+    final container = _getMediaContainer(response);
+    if (container != null && container['Metadata'] != null) {
+      return container['Metadata'] as List;
     }
-
     return [];
   }
 
   /// Get available filters for a library section
   Future<List<PlexFilter>> getLibraryFilters(String sectionId) async {
     final response = await _dio.get('/library/sections/$sectionId/filters');
-
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Directory'] != null) {
-        return (container['Directory'] as List)
-            .map((json) => PlexFilter.fromJson(json))
-            .toList();
-      }
-    }
-
-    return [];
+    return _extractDirectoryList(response, PlexFilter.fromJson);
   }
 
   /// Get filter values (e.g., list of genres, years, etc.)
   Future<List<PlexFilterValue>> getFilterValues(String filterKey) async {
     final response = await _dio.get(filterKey);
-
-    if (response.data is Map && response.data.containsKey('MediaContainer')) {
-      final container = response.data['MediaContainer'];
-      if (container['Directory'] != null) {
-        return (container['Directory'] as List)
-            .map((json) => PlexFilterValue.fromJson(json))
-            .toList();
-      }
-    }
-
-    return [];
+    return _extractDirectoryList(response, PlexFilterValue.fromJson);
   }
 
-  /// Get next episode for a TV show episode
-  Future<PlexMetadata?> getNextEpisode(PlexMetadata currentEpisode) async {
+  /// Find adjacent episode in a given direction
+  ///
+  /// [direction]: +1 for next episode, -1 for previous episode
+  ///
+  /// Handles navigation within current season and across seasons automatically.
+  Future<PlexMetadata?> findAdjacentEpisode(
+    PlexMetadata currentEpisode,
+    int direction,
+  ) async {
     if (currentEpisode.type.toLowerCase() != 'episode') {
       return null;
     }
@@ -653,73 +609,43 @@ class PlexClient {
         (e) => e.ratingKey == currentEpisode.ratingKey,
       );
 
-      if (currentIndex != -1 && currentIndex < episodes.length - 1) {
-        // Return next episode in the same season
-        return episodes[currentIndex + 1];
-      } else if (currentIndex == episodes.length - 1) {
-        // Last episode of the season, try to get first episode of next season
-        final seasons = await getChildren(grandparentKey);
-        final currentSeasonIndex = seasons.indexWhere(
-          (s) => s.ratingKey == parentKey,
-        );
+      if (currentIndex == -1) return null;
 
-        if (currentSeasonIndex != -1 &&
-            currentSeasonIndex < seasons.length - 1) {
-          final nextSeason = seasons[currentSeasonIndex + 1];
-          final nextSeasonEpisodes = await getChildren(nextSeason.ratingKey);
+      final targetIndex = currentIndex + direction;
 
-          if (nextSeasonEpisodes.isNotEmpty) {
-            return nextSeasonEpisodes.first;
-          }
-        }
+      // Check if target episode is within current season
+      if (targetIndex >= 0 && targetIndex < episodes.length) {
+        return episodes[targetIndex];
       }
-    } catch (e) {
-      // Silently handle errors
-    }
 
-    return null;
-  }
+      // Need to move to adjacent season
+      final isAtBoundary = direction > 0
+          ? currentIndex == episodes.length - 1
+          : currentIndex == 0;
 
-  /// Get previous episode for a TV show episode
-  Future<PlexMetadata?> getPreviousEpisode(PlexMetadata currentEpisode) async {
-    if (currentEpisode.type.toLowerCase() != 'episode') {
-      return null;
-    }
-
-    final parentKey = currentEpisode.parentRatingKey;
-    final grandparentKey = currentEpisode.grandparentRatingKey;
-
-    if (parentKey == null || grandparentKey == null) {
-      return null;
-    }
-
-    try {
-      // Get all episodes in the current season
-      final episodes = await getChildren(parentKey);
-
-      // Find the current episode index
-      final currentIndex = episodes.indexWhere(
-        (e) => e.ratingKey == currentEpisode.ratingKey,
-      );
-
-      if (currentIndex > 0) {
-        // Return previous episode in the same season
-        return episodes[currentIndex - 1];
-      } else if (currentIndex == 0) {
-        // First episode of the season, try to get last episode of previous season
+      if (isAtBoundary) {
+        // Get all seasons
         final seasons = await getChildren(grandparentKey);
         final currentSeasonIndex = seasons.indexWhere(
           (s) => s.ratingKey == parentKey,
         );
 
-        if (currentSeasonIndex > 0) {
-          final previousSeason = seasons[currentSeasonIndex - 1];
-          final previousSeasonEpisodes = await getChildren(
-            previousSeason.ratingKey,
+        if (currentSeasonIndex == -1) return null;
+
+        final targetSeasonIndex = currentSeasonIndex + direction;
+
+        // Check if target season exists
+        if (targetSeasonIndex >= 0 && targetSeasonIndex < seasons.length) {
+          final targetSeason = seasons[targetSeasonIndex];
+          final targetSeasonEpisodes = await getChildren(
+            targetSeason.ratingKey,
           );
 
-          if (previousSeasonEpisodes.isNotEmpty) {
-            return previousSeasonEpisodes.last;
+          if (targetSeasonEpisodes.isNotEmpty) {
+            // Return first episode for next season, last for previous
+            return direction > 0
+                ? targetSeasonEpisodes.first
+                : targetSeasonEpisodes.last;
           }
         }
       }

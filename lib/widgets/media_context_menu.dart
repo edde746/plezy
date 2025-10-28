@@ -175,99 +175,94 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
 
     switch (selected) {
       case 'watch':
-        try {
-          await widget.client.markAsWatched(widget.metadata.ratingKey);
-          if (context.mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Marked as watched')));
-            // Refresh parent screen to update UI
-            widget.onRefresh?.call();
-          }
-        } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Error: $e')));
-          }
-        }
+        await _executeAction(
+          context,
+          () => widget.client.markAsWatched(widget.metadata.ratingKey),
+          'Marked as watched',
+        );
         break;
+
       case 'unwatch':
-        try {
-          await widget.client.markAsUnwatched(widget.metadata.ratingKey);
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Marked as unwatched')),
-            );
-            // Refresh parent screen to update UI
-            widget.onRefresh?.call();
-          }
-        } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Error: $e')));
-          }
-        }
+        await _executeAction(
+          context,
+          () => widget.client.markAsUnwatched(widget.metadata.ratingKey),
+          'Marked as unwatched',
+        );
         break;
+
       case 'series':
-        // Navigate to series detail screen
-        if (widget.metadata.grandparentRatingKey != null) {
-          try {
-            final seriesMetadata = await widget.client.getMetadata(
-              widget.metadata.grandparentRatingKey!,
-            );
-            if (seriesMetadata != null && context.mounted) {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MediaDetailScreen(
-                    client: widget.client,
-                    metadata: seriesMetadata,
-                  ),
-                ),
-              );
-              // Refresh parent screen after returning
-              widget.onRefresh?.call();
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error loading series: $e')),
-              );
-            }
-          }
-        }
+        await _navigateToRelated(
+          context,
+          widget.metadata.grandparentRatingKey,
+          (metadata) => MediaDetailScreen(
+            client: widget.client,
+            metadata: metadata,
+          ),
+          'Error loading series',
+        );
         break;
+
       case 'season':
-        // Navigate to season detail screen
-        if (widget.metadata.parentRatingKey != null) {
-          try {
-            final seasonMetadata = await widget.client.getMetadata(
-              widget.metadata.parentRatingKey!,
-            );
-            if (seasonMetadata != null && context.mounted) {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SeasonDetailScreen(
-                    client: widget.client,
-                    season: seasonMetadata,
-                  ),
-                ),
-              );
-              // Refresh parent screen after returning
-              widget.onRefresh?.call();
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error loading season: $e')),
-              );
-            }
-          }
-        }
+        await _navigateToRelated(
+          context,
+          widget.metadata.parentRatingKey,
+          (metadata) => SeasonDetailScreen(
+            client: widget.client,
+            season: metadata,
+          ),
+          'Error loading season',
+        );
         break;
+    }
+  }
+
+  /// Execute an action with error handling and refresh
+  Future<void> _executeAction(
+    BuildContext context,
+    Future<void> Function() action,
+    String successMessage,
+  ) async {
+    try {
+      await action();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(successMessage)),
+        );
+        widget.onRefresh?.call();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  /// Navigate to a related item (series or season)
+  Future<void> _navigateToRelated(
+    BuildContext context,
+    String? ratingKey,
+    Widget Function(PlexMetadata) screenBuilder,
+    String errorPrefix,
+  ) async {
+    if (ratingKey == null) return;
+
+    try {
+      final metadata = await widget.client.getMetadata(ratingKey);
+      if (metadata != null && context.mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => screenBuilder(metadata)),
+        );
+        widget.onRefresh?.call();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$errorPrefix: $e')),
+        );
+      }
     }
   }
 

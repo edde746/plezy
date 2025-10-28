@@ -11,7 +11,7 @@ class PlexAuthService {
   static const String _clientsApi = 'https://clients.plex.tv/api/v2';
 
   final Dio _dio;
-  late final String _clientIdentifier;
+  final String _clientIdentifier;
 
   PlexAuthService._(this._dio, this._clientIdentifier);
 
@@ -20,33 +20,43 @@ class PlexAuthService {
     final dio = Dio();
 
     // Get or create client identifier
-    String? clientId = storage.getClientIdentifier();
-    if (clientId == null) {
-      clientId = const Uuid().v4();
-      await storage.saveClientIdentifier(clientId);
+    String? clientIdentifier = storage.getClientIdentifier();
+    if (clientIdentifier == null) {
+      clientIdentifier = const Uuid().v4();
+      await storage.saveClientIdentifier(clientIdentifier);
     }
 
-    return PlexAuthService._(dio, clientId);
+    return PlexAuthService._(dio, clientIdentifier);
   }
 
   String get clientIdentifier => _clientIdentifier;
 
+  Options _getCommonOptions({String? authToken}) {
+    final headers = {
+      'Accept': 'application/json',
+      'X-Plex-Product': _appName,
+      'X-Plex-Client-Identifier': _clientIdentifier,
+    };
+
+    if (authToken != null) {
+      headers['X-Plex-Token'] = authToken;
+    }
+
+    return Options(headers: headers);
+  }
+
+  Future<Response> _getUser(String authToken) {
+    return _dio.get(
+      '$_plexApiBase/user',
+      options: _getCommonOptions(authToken: authToken),
+    );
+  }
+
   /// Verify if a plex.tv token is valid
-  Future<bool> verifyToken(String token) async {
+  Future<bool> verifyToken(String authToken) async {
     try {
-      final response = await _dio.get(
-        '$_plexApiBase/user',
-        options: Options(
-          headers: {
-            'Accept': 'application/json',
-            'X-Plex-Product': _appName,
-            'X-Plex-Client-Identifier': _clientIdentifier,
-            'X-Plex-Token': token,
-          },
-          validateStatus: (status) => status != null && status < 500,
-        ),
-      );
-      return response.statusCode == 200;
+      await _getUser(authToken);
+      return true;
     } catch (e) {
       return false;
     }
@@ -56,13 +66,7 @@ class PlexAuthService {
   Future<Map<String, dynamic>> createPin() async {
     final response = await _dio.post(
       '$_plexApiBase/pins?strong=true',
-      options: Options(
-        headers: {
-          'Accept': 'application/json',
-          'X-Plex-Product': _appName,
-          'X-Plex-Client-Identifier': _clientIdentifier,
-        },
-      ),
+      options: _getCommonOptions(),
     );
 
     return response.data as Map<String, dynamic>;
@@ -91,12 +95,7 @@ class PlexAuthService {
     try {
       final response = await _dio.get(
         '$_plexApiBase/pins/$pinId',
-        options: Options(
-          headers: {
-            'Accept': 'application/json',
-            'X-Plex-Client-Identifier': _clientIdentifier,
-          },
-        ),
+        options: _getCommonOptions(),
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -133,17 +132,10 @@ class PlexAuthService {
   }
 
   /// Fetch available Plex servers for the authenticated user
-  Future<List<PlexServer>> fetchServers(String plexToken) async {
+  Future<List<PlexServer>> fetchServers(String authToken) async {
     final response = await _dio.get(
       '$_clientsApi/resources?includeHttps=1&includeRelay=1&includeIPv6=1',
-      options: Options(
-        headers: {
-          'Accept': 'application/json',
-          'X-Plex-Product': _appName,
-          'X-Plex-Client-Identifier': _clientIdentifier,
-          'X-Plex-Token': plexToken,
-        },
-      ),
+      options: _getCommonOptions(authToken: authToken),
     );
 
     final List<dynamic> resources = response.data as List<dynamic>;
@@ -156,34 +148,17 @@ class PlexAuthService {
   }
 
   /// Get user information
-  Future<Map<String, dynamic>> getUserInfo(String token) async {
-    final response = await _dio.get(
-      '$_plexApiBase/user',
-      options: Options(
-        headers: {
-          'Accept': 'application/json',
-          'X-Plex-Product': _appName,
-          'X-Plex-Client-Identifier': _clientIdentifier,
-          'X-Plex-Token': token,
-        },
-      ),
-    );
+  Future<Map<String, dynamic>> getUserInfo(String authToken) async {
+    final response = await _getUser(authToken);
 
     return response.data as Map<String, dynamic>;
   }
 
   /// Get user profile with preferences (audio/subtitle settings)
-  Future<PlexUserProfile> getUserProfile(String token) async {
+  Future<PlexUserProfile> getUserProfile(String authToken) async {
     final response = await _dio.get(
       '$_clientsApi/user',
-      options: Options(
-        headers: {
-          'Accept': 'application/json',
-          'X-Plex-Product': _appName,
-          'X-Plex-Client-Identifier': _clientIdentifier,
-          'X-Plex-Token': token,
-        },
-      ),
+      options: _getCommonOptions(authToken: authToken),
     );
 
     return PlexUserProfile.fromJson(response.data as Map<String, dynamic>);
@@ -259,25 +234,50 @@ class PlexServer {
   /// Check if server is online using the presence field
   bool get isOnline => presence;
 
+  PlexConnection? _selectBest(Iterable<PlexConnection> candidates) {
+    final local = candidates.where((c) => c.local && !c.relay).toList();
+    if (local.isNotEmpty) return local.first;
+
+    final remote = candidates.where((c) => !c.local && !c.relay).toList();
+    if (remote.isNotEmpty) return remote.first;
+
+    final relay = candidates.where((c) => c.relay).toList();
+    if (relay.isNotEmpty) return relay.first;
+
+    if (candidates.isNotEmpty) return candidates.first;
+    return null;
+  }
+
   /// Get the best connection URL
   /// Priority: local > remote > relay
   PlexConnection? getBestConnection() {
-    if (connections.isEmpty) return null;
+    return _selectBest(connections);
+  }
 
-    // Try to find local connection first
-    final local = connections.where((c) => c.local && !c.relay).toList();
-    if (local.isNotEmpty) return local.first;
+  PlexConnection? _findLowestLatency(
+    List<MapEntry<PlexConnection, ConnectionTestResult>> entries,
+  ) {
+    if (entries.isEmpty) return null;
+    final bestEntry = entries.reduce(
+      (a, b) => a.value.latencyMs < b.value.latencyMs ? a : b,
+    );
+    return bestEntry.key;
+  }
 
-    // Try remote (non-relay) connection
-    final remote = connections.where((c) => !c.local && !c.relay).toList();
-    if (remote.isNotEmpty) return remote.first;
+  PlexConnection? _selectBestWithLatency(
+    Map<PlexConnection, ConnectionTestResult> results,
+  ) {
+    final localEntries = results.entries
+        .where((e) => e.key.local && !e.key.relay)
+        .toList();
+    final remoteEntries = results.entries
+        .where((e) => !e.key.local && !e.key.relay)
+        .toList();
+    final relayEntries = results.entries.where((e) => e.key.relay).toList();
 
-    // Fall back to relay as last resort
-    final relay = connections.where((c) => c.relay).toList();
-    if (relay.isNotEmpty) return relay.first;
-
-    // Return any connection
-    return connections.first;
+    return _findLowestLatency(localEntries) ??
+        _findLowestLatency(remoteEntries) ??
+        _findLowestLatency(relayEntries);
   }
 
   /// Find the best working connection by testing them
@@ -344,47 +344,7 @@ class PlexServer {
     }
 
     // Find the best connection considering both priority and latency
-    PlexConnection? bestConnection;
-    int bestLatency = double.maxFinite.toInt();
-
-    // Group connections by priority
-    final localConnections = connectionResults.entries
-        .where((e) => e.key.local && !e.key.relay)
-        .toList();
-    final remoteConnections = connectionResults.entries
-        .where((e) => !e.key.local && !e.key.relay)
-        .toList();
-    final relayConnections = connectionResults.entries
-        .where((e) => e.key.relay)
-        .toList();
-
-    // Find best local connection
-    for (final entry in localConnections) {
-      if (entry.value.latencyMs < bestLatency) {
-        bestLatency = entry.value.latencyMs;
-        bestConnection = entry.key;
-      }
-    }
-
-    // If no local connection, find best remote connection
-    if (bestConnection == null) {
-      for (final entry in remoteConnections) {
-        if (entry.value.latencyMs < bestLatency) {
-          bestLatency = entry.value.latencyMs;
-          bestConnection = entry.key;
-        }
-      }
-    }
-
-    // If no remote connection, find best relay connection
-    if (bestConnection == null) {
-      for (final entry in relayConnections) {
-        if (entry.value.latencyMs < bestLatency) {
-          bestLatency = entry.value.latencyMs;
-          bestConnection = entry.key;
-        }
-      }
-    }
+    final bestConnection = _selectBestWithLatency(connectionResults);
 
     // Emit the best connection if it's different from the first one
     if (bestConnection != null && bestConnection.uri != firstConnection.uri) {
@@ -399,40 +359,20 @@ class PlexServer {
     if (connections.isEmpty) return null;
 
     // Test all connections simultaneously
-    final results = await Future.wait(
+    final working = <PlexConnection>[];
+    await Future.wait(
       connections.map((connection) async {
         final works = await PlexClient.testConnectionUrl(
           connection.uri,
           accessToken,
         );
-        return works ? connection : null;
+        if (works) {
+          working.add(connection);
+        }
       }),
     );
 
-    // Filter out failed connections
-    final workingConnections = results
-        .where((c) => c != null)
-        .cast<PlexConnection>()
-        .toList();
-
-    if (workingConnections.isEmpty) return null;
-
-    // From working connections, prefer local > remote > relay
-    final localWorking = workingConnections
-        .where((c) => c.local && !c.relay)
-        .toList();
-    if (localWorking.isNotEmpty) return localWorking.first;
-
-    final remoteWorking = workingConnections
-        .where((c) => !c.local && !c.relay)
-        .toList();
-    if (remoteWorking.isNotEmpty) return remoteWorking.first;
-
-    final relayWorking = workingConnections.where((c) => c.relay).toList();
-    if (relayWorking.isNotEmpty) return relayWorking.first;
-
-    // Fallback to any working connection
-    return workingConnections.first;
+    return _selectBest(working);
   }
 }
 

@@ -104,131 +104,11 @@ class _MediaCardState extends State<MediaCard> {
                   SizedBox(
                     width: double.infinity,
                     height: widget.height,
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: SizedBox(
-                            width: double.infinity,
-                            height: widget.height,
-                            child: _buildPosterImage(context),
-                          ),
-                        ),
-                        if (widget.item.isWatched)
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        // Progress bar for partially watched episodes
-                        if (widget.item.viewOffset != null &&
-                            widget.item.duration != null &&
-                            widget.item.viewOffset! > 0 &&
-                            !widget.item.isWatched)
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                bottomLeft: Radius.circular(8),
-                                bottomRight: Radius.circular(8),
-                              ),
-                              child: LinearProgressIndicator(
-                                value:
-                                    widget.item.viewOffset! /
-                                    widget.item.duration!,
-                                backgroundColor: Colors.black.withValues(
-                                  alpha: 0.5,
-                                ),
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Colors.red,
-                                ),
-                                minHeight: 4,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                    child: _buildPosterWithOverlay(context),
                   )
                 else
                   Expanded(
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: _buildPosterImage(context),
-                        ),
-                        if (widget.item.isWatched)
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.3),
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        // Progress bar for partially watched episodes
-                        if (widget.item.viewOffset != null &&
-                            widget.item.duration != null &&
-                            widget.item.viewOffset! > 0 &&
-                            !widget.item.isWatched)
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                bottomLeft: Radius.circular(8),
-                                bottomRight: Radius.circular(8),
-                              ),
-                              child: LinearProgressIndicator(
-                                value:
-                                    widget.item.viewOffset! /
-                                    widget.item.duration!,
-                                backgroundColor: Colors.black.withValues(
-                                  alpha: 0.5,
-                                ),
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Colors.red,
-                                ),
-                                minHeight: 4,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                    child: _buildPosterWithOverlay(context),
                   ),
                 const SizedBox(height: 4),
                 // Text content
@@ -287,6 +167,18 @@ class _MediaCardState extends State<MediaCard> {
     );
   }
 
+  Widget _buildPosterWithOverlay(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: _buildPosterImage(context),
+        ),
+        _PosterOverlay(item: widget.item),
+      ],
+    );
+  }
+
   Widget _buildPosterImage(BuildContext context) {
     if (widget.item.posterThumb != null) {
       return CachedNetworkImage(
@@ -309,5 +201,66 @@ class _MediaCardState extends State<MediaCard> {
         child: const Center(child: Icon(Icons.movie, size: 40)),
       );
     }
+  }
+}
+
+/// Overlay widget for poster showing watched indicator and progress bar
+class _PosterOverlay extends StatelessWidget {
+  final PlexMetadata item;
+
+  const _PosterOverlay({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Watched indicator (green checkmark)
+        if (item.isWatched)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.check,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+        // Progress bar for partially watched content
+        if (item.viewOffset != null &&
+            item.duration != null &&
+            item.viewOffset! > 0 &&
+            !item.isWatched)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              child: LinearProgressIndicator(
+                value: item.viewOffset! / item.duration!,
+                backgroundColor: Colors.black.withValues(alpha: 0.5),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+                minHeight: 4,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

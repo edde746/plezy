@@ -105,8 +105,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
 
     try {
-      final next = await widget.client.getNextEpisode(widget.metadata);
-      final previous = await widget.client.getPreviousEpisode(widget.metadata);
+      final next = await widget.client.findAdjacentEpisode(widget.metadata, 1);
+      final previous = await widget.client.findAdjacentEpisode(widget.metadata, -1);
 
       if (mounted) {
         setState(() {
@@ -196,43 +196,68 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     });
   }
 
-  AudioTrack? _findBestAudioMatch(
-    List<AudioTrack> availableTracks,
-    AudioTrack preferred,
+  /// Generic track matching for audio and subtitle tracks
+  /// Returns the best matching track based on hierarchical criteria:
+  /// 1. Exact match (id + title + language)
+  /// 2. Partial match (title + language)
+  /// 3. Language-only match
+  T? _findBestTrackMatch<T>(
+    List<T> availableTracks,
+    T preferred,
+    String Function(T) getId,
+    String? Function(T) getTitle,
+    String? Function(T) getLanguage,
   ) {
     if (availableTracks.isEmpty) return null;
 
     // Filter out auto and no tracks
     final validTracks = availableTracks
-        .where((t) => t.id != 'auto' && t.id != 'no')
+        .where((t) => getId(t) != 'auto' && getId(t) != 'no')
         .toList();
     if (validTracks.isEmpty) return null;
 
-    // Try to match: index, title, and language
+    final preferredId = getId(preferred);
+    final preferredTitle = getTitle(preferred);
+    final preferredLanguage = getLanguage(preferred);
+
+    // Try to match: id, title, and language
     for (var track in validTracks) {
-      if (track.id == preferred.id &&
-          track.title == preferred.title &&
-          track.language == preferred.language) {
+      if (getId(track) == preferredId &&
+          getTitle(track) == preferredTitle &&
+          getLanguage(track) == preferredLanguage) {
         return track;
       }
     }
 
     // Try to match: title and language
     for (var track in validTracks) {
-      if (track.title == preferred.title &&
-          track.language == preferred.language) {
+      if (getTitle(track) == preferredTitle &&
+          getLanguage(track) == preferredLanguage) {
         return track;
       }
     }
 
     // Try to match: language only
     for (var track in validTracks) {
-      if (track.language == preferred.language) {
+      if (getLanguage(track) == preferredLanguage) {
         return track;
       }
     }
 
     return null;
+  }
+
+  AudioTrack? _findBestAudioMatch(
+    List<AudioTrack> availableTracks,
+    AudioTrack preferred,
+  ) {
+    return _findBestTrackMatch<AudioTrack>(
+      availableTracks,
+      preferred,
+      (t) => t.id,
+      (t) => t.title,
+      (t) => t.language,
+    );
   }
 
   AudioTrack? _findAudioTrackByProfile(
@@ -284,44 +309,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     List<SubtitleTrack> availableTracks,
     SubtitleTrack preferred,
   ) {
-    // If preferred is "no", return no subtitles
+    // Handle special "no subtitles" case
     if (preferred.id == 'no') {
       return SubtitleTrack.no();
     }
 
-    if (availableTracks.isEmpty) return null;
-
-    // Filter out auto and no tracks
-    final validTracks = availableTracks
-        .where((t) => t.id != 'auto' && t.id != 'no')
-        .toList();
-    if (validTracks.isEmpty) return null;
-
-    // Try to match: index, title, and language
-    for (var track in validTracks) {
-      if (track.id == preferred.id &&
-          track.title == preferred.title &&
-          track.language == preferred.language) {
-        return track;
-      }
-    }
-
-    // Try to match: title and language
-    for (var track in validTracks) {
-      if (track.title == preferred.title &&
-          track.language == preferred.language) {
-        return track;
-      }
-    }
-
-    // Try to match: language only
-    for (var track in validTracks) {
-      if (track.language == preferred.language) {
-        return track;
-      }
-    }
-
-    return null;
+    return _findBestTrackMatch<SubtitleTrack>(
+      availableTracks,
+      preferred,
+      (t) => t.id,
+      (t) => t.title,
+      (t) => t.language,
+    );
   }
 
   SubtitleTrack? _findSubtitleTrackByProfile(
