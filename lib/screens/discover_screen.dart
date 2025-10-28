@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../client/plex_client.dart';
-import '../config/plex_config.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../services/storage_service.dart';
 import '../services/plex_auth_service.dart';
+import '../services/server_connection_service.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/server_list_tile.dart';
@@ -229,34 +229,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable {
       );
     }
 
-    // Test connections to find best working one
-    final connection = await server.findBestWorkingConnection();
-
-    // Close loading dialog
-    if (mounted) {
-      Navigator.pop(context);
-    }
-
-    if (connection == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No working connections found for this server'),
-          ),
-        );
-      }
-      return;
-    }
-
-    // Store server information
-    final storage = await StorageService.getInstance();
-    await storage.saveServerData(server.toJson());
-    await storage.saveServerUrl(connection.uri);
-    await storage.saveServerAccessToken(server.accessToken);
-
     // Get client identifier
+    final storage = await StorageService.getInstance();
     final clientId = storage.getClientIdentifier();
+
     if (clientId == null) {
+      // Close loading dialog
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Client identifier not found')),
@@ -265,20 +247,35 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable {
       return;
     }
 
-    // Create new client
-    final config = await PlexConfig.create(
-      baseUrl: connection.uri,
-      token: server.accessToken,
+    // Connect using the optimized service
+    final result = await ServerConnectionService.connectToServer(
+      server,
       clientIdentifier: clientId,
     );
-    final client = PlexClient(config);
 
-    // Replace current screen with main screen (includes bottom nav)
+    // Close loading dialog
     if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainScreen(client: client)),
-      );
+      Navigator.pop(context);
+    }
+
+    // Handle result
+    if (result.isSuccess) {
+      // Replace current screen with main screen (includes bottom nav)
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MainScreen(client: result.client!),
+          ),
+        );
+      }
+    } else {
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.error ?? 'Connection failed')),
+        );
+      }
     }
   }
 

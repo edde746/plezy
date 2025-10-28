@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
-import '../client/plex_client.dart';
-import '../config/plex_config.dart';
+import '../services/server_connection_service.dart';
 import '../widgets/server_list_tile.dart';
 import '../widgets/desktop_app_bar.dart';
 import 'main_screen.dart';
@@ -66,49 +65,41 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
       );
     }
 
-    // Test connections to find best working one
-    final connection = await server.findBestWorkingConnection();
+    // Get client identifier
+    final storage = await StorageService.getInstance();
+    final clientId =
+        storage.getClientIdentifier() ?? widget.authService.clientIdentifier;
+
+    // Connect using the optimized service
+    final result = await ServerConnectionService.connectToServer(
+      server,
+      clientIdentifier: clientId,
+      plexToken: widget.plexToken,
+    );
 
     // Close loading dialog
     if (mounted) {
       Navigator.pop(context);
     }
 
-    if (connection == null) {
+    // Handle result
+    if (result.isSuccess) {
+      // Navigate to main app
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No working connections found for this server'),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MainScreen(client: result.client!),
           ),
         );
       }
-      return;
-    }
-
-    // Store server information
-    final storage = await StorageService.getInstance();
-    await storage.saveServerData(server.toJson());
-    await storage.saveServerUrl(connection.uri);
-    await storage.saveServerAccessToken(server.accessToken);
-    await storage.savePlexToken(widget.plexToken);
-
-    // Get client identifier
-    final clientId =
-        storage.getClientIdentifier() ?? widget.authService.clientIdentifier;
-
-    // Create client and navigate to main app
-    final config = await PlexConfig.create(
-      baseUrl: connection.uri,
-      token: server.accessToken,
-      clientIdentifier: clientId,
-    );
-    final client = PlexClient(config);
-
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainScreen(client: client)),
-      );
+    } else {
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.error ?? 'Connection failed')),
+        );
+      }
     }
   }
 

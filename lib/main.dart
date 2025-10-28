@@ -3,15 +3,13 @@ import 'package:flutter/services.dart';
 import 'dart:io' show Platform;
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
-import 'client/plex_client.dart';
-import 'config/plex_config.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
 import 'services/plex_auth_service.dart';
+import 'services/server_connection_service.dart';
 import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
-import 'models/plex_user_profile.dart';
 import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
 
@@ -97,52 +95,37 @@ class _SetupScreenState extends State<SetupScreen> {
         // Recreate PlexServer from stored data
         final server = PlexServer.fromJson(serverData);
 
-        // Test connections to find best working one
-        final connection = await server.findBestWorkingConnection();
+        // Connect using the optimized service
+        final result = await ServerConnectionService.connectToServer(
+          server,
+          clientIdentifier: clientId,
+          verifyServer: true,
+          fetchUserProfile: plexToken != null,
+          plexToken: plexToken,
+        );
 
-        if (connection != null) {
-          // Update stored server URL with working connection
-          await storage.saveServerUrl(connection.uri);
-
-          // Create client with working connection
-          final config = await PlexConfig.create(
-            baseUrl: connection.uri,
-            token: server.accessToken,
-            clientIdentifier: clientId,
-          );
-          final client = PlexClient(config);
-
-          // Verify server is accessible
-          try {
-            await client.getServerIdentity();
-
-            // Fetch and cache user profile if we have a plex token
-            PlexUserProfile? userProfile;
-            if (plexToken != null) {
-              userProfile = await _fetchAndCacheUserProfile(plexToken);
-            }
-
-            // Success! Navigate to main screen
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      MainScreen(client: client, userProfile: userProfile),
+        // Handle result
+        if (result.isSuccess) {
+          // Success! Navigate to main screen
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainScreen(
+                  client: result.client!,
+                  userProfile: result.userProfile,
                 ),
-              );
-              return;
-            }
-          } catch (e) {
-            // Server identity check failed
-            await storage.clearCredentials();
+              ),
+            );
           }
+          return;
         } else {
-          // No working connections found
+          // Connection failed, clear credentials
           await storage.clearCredentials();
         }
       } catch (e) {
         // Error loading or testing server
+        appLogger.e('Error during auto-login', error: e);
         await storage.clearCredentials();
       }
     }
@@ -153,62 +136,6 @@ class _SetupScreenState extends State<SetupScreen> {
         context,
         MaterialPageRoute(builder: (context) => const AuthScreen()),
       );
-    }
-  }
-
-  Future<PlexUserProfile?> _fetchAndCacheUserProfile(String plexToken) async {
-    appLogger.d('Fetching user profile from Plex API');
-    try {
-      final authService = await PlexAuthService.create();
-      final profile = await authService.getUserProfile(plexToken);
-
-      appLogger.i(
-        'Successfully fetched user profile',
-        error: {
-          'autoSelectAudio': profile.autoSelectAudio,
-          'defaultAudioLanguage': profile.defaultAudioLanguage ?? 'not set',
-          'autoSelectSubtitle': profile.autoSelectSubtitle,
-          'defaultSubtitleLanguage':
-              profile.defaultSubtitleLanguage ?? 'not set',
-          'defaultSubtitleForced': profile.defaultSubtitleForced,
-        },
-      );
-
-      // Cache the profile
-      final storage = await StorageService.getInstance();
-      await storage.saveUserProfile(profile.toJson());
-      appLogger.d('User profile cached locally');
-
-      return profile;
-    } catch (e) {
-      appLogger.w(
-        'Failed to fetch user profile from API, attempting to load from cache',
-        error: e,
-      );
-
-      // Failed to fetch profile, try to load from cache
-      final storage = await StorageService.getInstance();
-      final cachedProfile = storage.getUserProfile();
-      if (cachedProfile != null) {
-        final profile = PlexUserProfile.fromJson(cachedProfile);
-        appLogger.i(
-          'Loaded user profile from cache',
-          error: {
-            'autoSelectAudio': profile.autoSelectAudio,
-            'defaultAudioLanguage': profile.defaultAudioLanguage ?? 'not set',
-            'autoSelectSubtitle': profile.autoSelectSubtitle,
-            'defaultSubtitleLanguage':
-                profile.defaultSubtitleLanguage ?? 'not set',
-            'defaultSubtitleForced': profile.defaultSubtitleForced,
-          },
-        );
-        return profile;
-      }
-
-      appLogger.w(
-        'No cached user profile available, track selection will use defaults',
-      );
-      return null;
     }
   }
 

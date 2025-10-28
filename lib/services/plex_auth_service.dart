@@ -281,9 +281,121 @@ class PlexServer {
   }
 
   /// Find the best working connection by testing them
-  /// Tests ALL connections simultaneously and returns the best working one
+  /// Returns a Stream that emits connections progressively:
+  /// 1. First emission: The first connection that responds successfully
+  /// 2. Second emission (optional): The best connection after latency testing
   /// Priority: local > remote > relay (from successful connections)
-  Future<PlexConnection?> findBestWorkingConnection() async {
+  Stream<PlexConnection> findBestWorkingConnection() async* {
+    if (connections.isEmpty) return;
+
+    // Phase 1: Race to find first working connection
+    final completer = Completer<PlexConnection?>();
+    PlexConnection? firstConnection;
+    int completedTests = 0;
+
+    // Start testing all connections simultaneously
+    for (final connection in connections) {
+      PlexClient.testConnectionWithLatency(connection.uri, accessToken).then((
+        result,
+      ) {
+        completedTests++;
+
+        // If this is the first successful connection, emit it immediately
+        if (result.success && !completer.isCompleted) {
+          completer.complete(connection);
+        }
+
+        // If all tests complete without success, complete with null
+        if (completedTests == connections.length && !completer.isCompleted) {
+          completer.complete(null);
+        }
+      });
+    }
+
+    // Wait for and emit the first successful connection
+    firstConnection = await completer.future;
+    if (firstConnection == null) {
+      return; // No working connections found
+    }
+
+    yield firstConnection;
+
+    // Phase 2: Continue testing in background to find best connection
+    // Test each connection 2-3 times and average the latency
+    final connectionResults = <PlexConnection, ConnectionTestResult>{};
+
+    await Future.wait(
+      connections.map((connection) async {
+        final result = await PlexClient.testConnectionWithAverageLatency(
+          connection.uri,
+          accessToken,
+          attempts: 2,
+        );
+
+        if (result.success) {
+          connectionResults[connection] = result;
+        }
+      }),
+    );
+
+    // If no connections succeeded, we're done
+    if (connectionResults.isEmpty) {
+      return;
+    }
+
+    // Find the best connection considering both priority and latency
+    PlexConnection? bestConnection;
+    int bestLatency = double.maxFinite.toInt();
+
+    // Group connections by priority
+    final localConnections = connectionResults.entries
+        .where((e) => e.key.local && !e.key.relay)
+        .toList();
+    final remoteConnections = connectionResults.entries
+        .where((e) => !e.key.local && !e.key.relay)
+        .toList();
+    final relayConnections = connectionResults.entries
+        .where((e) => e.key.relay)
+        .toList();
+
+    // Find best local connection
+    for (final entry in localConnections) {
+      if (entry.value.latencyMs < bestLatency) {
+        bestLatency = entry.value.latencyMs;
+        bestConnection = entry.key;
+      }
+    }
+
+    // If no local connection, find best remote connection
+    if (bestConnection == null) {
+      for (final entry in remoteConnections) {
+        if (entry.value.latencyMs < bestLatency) {
+          bestLatency = entry.value.latencyMs;
+          bestConnection = entry.key;
+        }
+      }
+    }
+
+    // If no remote connection, find best relay connection
+    if (bestConnection == null) {
+      for (final entry in relayConnections) {
+        if (entry.value.latencyMs < bestLatency) {
+          bestLatency = entry.value.latencyMs;
+          bestConnection = entry.key;
+        }
+      }
+    }
+
+    // Emit the best connection if it's different from the first one
+    if (bestConnection != null && bestConnection.uri != firstConnection.uri) {
+      yield bestConnection;
+    }
+  }
+
+  /// Legacy method for backward compatibility - returns first working connection
+  /// For optimal performance, use findBestWorkingConnection() stream instead
+  @Deprecated('Use findBestWorkingConnection() stream for optimized connection')
+  Future<PlexConnection?> findBestWorkingConnectionLegacy() async {
     if (connections.isEmpty) return null;
 
     // Test all connections simultaneously

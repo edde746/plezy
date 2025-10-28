@@ -6,6 +6,14 @@ import '../models/plex_media_info.dart';
 import '../models/plex_filter.dart';
 import '../utils/app_logger.dart';
 
+/// Result of testing a connection, including success status and latency
+class ConnectionTestResult {
+  final bool success;
+  final int latencyMs;
+
+  ConnectionTestResult({required this.success, required this.latencyMs});
+}
+
 class PlexClient {
   final PlexConfig config;
   late final Dio _dio;
@@ -43,12 +51,28 @@ class PlexClient {
     }
   }
 
-  /// Test connection to a specific URL with token
+  /// Test connection to a specific URL with token (legacy method)
   static Future<bool> testConnectionUrl(
     String baseUrl,
     String token, {
     Duration timeout = const Duration(seconds: 5),
   }) async {
+    final result = await testConnectionWithLatency(
+      baseUrl,
+      token,
+      timeout: timeout,
+    );
+    return result.success;
+  }
+
+  /// Test connection to a specific URL with token and measure latency
+  static Future<ConnectionTestResult> testConnectionWithLatency(
+    String baseUrl,
+    String token, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final stopwatch = Stopwatch()..start();
+
     try {
       final dio = Dio(
         BaseOptions(
@@ -64,10 +88,55 @@ class PlexClient {
         options: Options(headers: {'X-Plex-Token': token}),
       );
 
-      return response.statusCode == 200 || response.statusCode == 401;
+      stopwatch.stop();
+      final success = response.statusCode == 200 || response.statusCode == 401;
+
+      return ConnectionTestResult(
+        success: success,
+        latencyMs: stopwatch.elapsedMilliseconds,
+      );
     } catch (e) {
-      return false;
+      stopwatch.stop();
+      return ConnectionTestResult(
+        success: false,
+        latencyMs: stopwatch.elapsedMilliseconds,
+      );
     }
+  }
+
+  /// Test connection multiple times and return average latency
+  static Future<ConnectionTestResult> testConnectionWithAverageLatency(
+    String baseUrl,
+    String token, {
+    int attempts = 3,
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final results = <ConnectionTestResult>[];
+
+    for (int i = 0; i < attempts; i++) {
+      final result = await testConnectionWithLatency(
+        baseUrl,
+        token,
+        timeout: timeout,
+      );
+
+      // If any attempt fails, return failed result immediately
+      if (!result.success) {
+        return ConnectionTestResult(
+          success: false,
+          latencyMs: result.latencyMs,
+        );
+      }
+
+      results.add(result);
+    }
+
+    // Calculate average latency from successful attempts
+    final avgLatency =
+        results.fold<int>(0, (sum, result) => sum + result.latencyMs) ~/
+        results.length;
+
+    return ConnectionTestResult(success: true, latencyMs: avgLatency);
   }
 
   /// Get server identity
