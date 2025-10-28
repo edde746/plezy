@@ -620,36 +620,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       _showPlayNextDialog = false;
     });
 
-    // Capture current track selection BEFORE pausing
-    final currentAudioTrack = player.state.track.audio;
-    final currentSubtitleTrack = player.state.track.subtitle;
-
-    // Pause and stop current playback
-    player.pause();
-    _progressTimer?.cancel();
-    _sendProgress('stopped');
-
-    // Navigate to the next episode using pushReplacement to destroy current player
-    if (mounted) {
-      final currentRate = player.state.rate;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => VideoPlayerScreen(
-            client: widget.client,
-            metadata: _nextEpisode!,
-            preferredAudioTrack: currentAudioTrack,
-            preferredSubtitleTrack: currentSubtitleTrack,
-            preferredPlaybackRate: currentRate,
-            userProfile: widget.userProfile,
-          ),
-        ),
-      );
-    }
+    await _navigateToEpisode(_nextEpisode!);
   }
 
   Future<void> _playPrevious() async {
     if (_previousEpisode == null) return;
+    await _navigateToEpisode(_previousEpisode!);
+  }
 
+  /// Navigates to a new episode, preserving playback state and track selections
+  Future<void> _navigateToEpisode(PlexMetadata episodeMetadata) async {
     // Capture current track selection BEFORE pausing
     final currentAudioTrack = player.state.track.audio;
     final currentSubtitleTrack = player.state.track.subtitle;
@@ -659,19 +639,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _progressTimer?.cancel();
     _sendProgress('stopped');
 
-    // Navigate to the previous episode using pushReplacement to destroy current player
+    // Navigate to the episode using pushReplacement to destroy current player
     if (mounted) {
       final currentRate = player.state.rate;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => VideoPlayerScreen(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              VideoPlayerScreen(
             client: widget.client,
-            metadata: _previousEpisode!,
+            metadata: episodeMetadata,
             preferredAudioTrack: currentAudioTrack,
             preferredSubtitleTrack: currentSubtitleTrack,
             preferredPlaybackRate: currentRate,
             userProfile: widget.userProfile,
           ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         ),
       );
     }
