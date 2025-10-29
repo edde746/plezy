@@ -13,7 +13,7 @@ class MediaCard extends StatefulWidget {
   final PlexMetadata item;
   final double? width;
   final double? height;
-  final VoidCallback? onRefresh;
+  final void Function(String ratingKey)? onRefresh;
   final PlexUserProfile? userProfile;
 
   const MediaCard({
@@ -48,7 +48,7 @@ class _MediaCardState extends State<MediaCard> {
       );
       // Refresh parent screen if result indicates it's needed
       if (result == true) {
-        widget.onRefresh?.call();
+        widget.onRefresh?.call(widget.item.ratingKey);
       }
     } else if (itemType == 'season') {
       // For seasons, show season detail screen
@@ -63,7 +63,7 @@ class _MediaCardState extends State<MediaCard> {
         ),
       );
       // Season screen doesn't return a refresh flag, but we can refresh anyway
-      widget.onRefresh?.call();
+      widget.onRefresh?.call(widget.item.ratingKey);
     } else {
       // For all other types (shows, movies), show detail screen
       final result = await Navigator.push<bool>(
@@ -78,7 +78,7 @@ class _MediaCardState extends State<MediaCard> {
       );
       // Refresh parent screen if result indicates it's needed
       if (result == true) {
-        widget.onRefresh?.call();
+        widget.onRefresh?.call(widget.item.ratingKey);
       }
     }
   }

@@ -32,11 +32,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   PlexMetadata? _fullMetadata;
   PlexMetadata? _onDeckEpisode;
   bool _isLoadingMetadata = true;
+  late final ScrollController _scrollController;
+  bool _watchStateChanged = false;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _loadFullMetadata();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFullMetadata() async {
@@ -105,6 +114,33 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       setState(() {
         _isLoadingSeasons = false;
       });
+    }
+  }
+
+  /// Update watch state without full screen rebuild
+  /// This preserves scroll position and only updates watch-related data
+  Future<void> _updateWatchState() async {
+    try {
+      final metadata = await widget.client.getMetadataWithImages(widget.metadata.ratingKey);
+
+      if (metadata != null) {
+        // For shows, also refetch seasons to update their watch counts
+        List<PlexMetadata>? updatedSeasons;
+        if (metadata.type.toLowerCase() == 'show') {
+          updatedSeasons = await widget.client.getChildren(widget.metadata.ratingKey);
+        }
+
+        // Single setState to minimize rebuilds - scroll position is preserved by controller
+        setState(() {
+          _fullMetadata = metadata;
+          if (updatedSeasons != null) {
+            _seasons = updatedSeasons;
+          }
+        });
+      }
+    } catch (e) {
+      appLogger.e('Failed to update watch state', error: e);
+      // Silently fail - user can manually refresh if needed
     }
   }
 
@@ -192,13 +228,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
     return Scaffold(
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           // Hero header with background art
           DesktopSliverAppBar(
             expandedHeight: headerHeight,
             pinned: true,
-            leading: const AppBarBackButton(
+            leading: AppBarBackButton(
               style: BackButtonStyle.circular,
+              onPressed: () => Navigator.pop(context, _watchStateChanged),
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
@@ -495,13 +533,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               metadata.ratingKey,
                             );
                             if (context.mounted) {
+                              _watchStateChanged = true;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Marked as watched'),
                                 ),
                               );
-                              // Refresh metadata to update UI
-                              _loadFullMetadata();
+                              // Update watch state without full rebuild
+                              _updateWatchState();
                             }
                           } catch (e) {
                             if (context.mounted) {
@@ -527,13 +566,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               metadata.ratingKey,
                             );
                             if (context.mounted) {
+                              _watchStateChanged = true;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Marked as unwatched'),
                                 ),
                               );
-                              // Refresh metadata to update UI
-                              _loadFullMetadata();
+                              // Update watch state without full rebuild
+                              _updateWatchState();
                             }
                           } catch (e) {
                             if (context.mounted) {
@@ -642,15 +682,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       child: MediaContextMenu(
         client: widget.client,
         metadata: season,
-        onRefresh: _loadFullMetadata,
-        onTap: () {
-          Navigator.push(
+        onRefresh: (ratingKey) {
+          _watchStateChanged = true;
+          _updateWatchState();
+        },
+        onTap: () async {
+          final watchStateChanged = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
               builder: (context) =>
                   SeasonDetailScreen(client: widget.client, season: season),
             ),
           );
+          if (watchStateChanged == true) {
+            _watchStateChanged = true;
+            _updateWatchState();
+          }
         },
         child: InkWell(
           child: Padding(

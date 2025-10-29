@@ -11,6 +11,7 @@ import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/server_list_tile.dart';
 import '../mixins/refreshable.dart';
+import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
 import 'video_player_screen.dart';
 import 'main_screen.dart';
@@ -32,7 +33,10 @@ class DiscoverScreen extends StatefulWidget {
   State<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
-class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable {
+class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemUpdatable {
+  @override
+  PlexClient get client => widget.client;
+
   List<PlexMetadata> _onDeck = [];
   List<PlexMetadata> _recentlyAdded = [];
   bool _isLoading = true;
@@ -108,6 +112,21 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable {
   void refresh() {
     appLogger.d('DiscoverScreen.refresh() called');
     _loadContent();
+  }
+
+  @override
+  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+    // Check and update in _onDeck list
+    final onDeckIndex = _onDeck.indexWhere((item) => item.ratingKey == ratingKey);
+    if (onDeckIndex != -1) {
+      _onDeck[onDeckIndex] = updatedMetadata;
+    }
+
+    // Check and update in _recentlyAdded list
+    final recentlyAddedIndex = _recentlyAdded.indexWhere((item) => item.ratingKey == ratingKey);
+    if (recentlyAddedIndex != -1) {
+      _recentlyAdded[recentlyAddedIndex] = updatedMetadata;
+    }
   }
 
   Future<void> _handleSwitchServer() async {
@@ -808,11 +827,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: MediaCard(
+                    key: Key(item.ratingKey),
                     client: widget.client,
                     item: item,
                     width: cardWidth,
                     height: cardHeight,
-                    onRefresh: _loadContent,
+                    onRefresh: updateItem,
                     userProfile: widget.userProfile,
                   ),
                 );

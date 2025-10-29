@@ -5,6 +5,8 @@ import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
+import '../widgets/media_context_menu.dart';
+import '../mixins/item_updatable.dart';
 import 'video_player_screen.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
@@ -23,9 +25,13 @@ class SeasonDetailScreen extends StatefulWidget {
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
 }
 
-class _SeasonDetailScreenState extends State<SeasonDetailScreen> {
+class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdatable {
+  @override
+  PlexClient get client => widget.client;
+
   List<PlexMetadata> _episodes = [];
   bool _isLoadingEpisodes = false;
+  bool _watchStateChanged = false;
 
   @override
   void initState() {
@@ -52,6 +58,20 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> {
   }
 
   @override
+  Future<void> updateItem(String ratingKey) async {
+    _watchStateChanged = true;
+    await super.updateItem(ratingKey);
+  }
+
+  @override
+  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+    final index = _episodes.indexWhere((item) => item.ratingKey == ratingKey);
+    if (index != -1) {
+      _episodes[index] = updatedMetadata;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
@@ -59,8 +79,9 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> {
           DesktopSliverAppBar(
             title: Text(widget.season.title),
             pinned: true,
-            leading: const AppBarBackButton(
+            leading: AppBarBackButton(
               style: BackButtonStyle.circular,
+              onPressed: () => Navigator.pop(context, _watchStateChanged),
             ),
           ),
           if (_isLoadingEpisodes)
@@ -117,23 +138,27 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> {
         ? episode.viewOffset! / episode.duration!
         : 0.0;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VideoPlayerScreen(
-                client: widget.client,
-                metadata: episode,
-                userProfile: widget.userProfile,
-              ),
+    return MediaContextMenu(
+      client: widget.client,
+      metadata: episode,
+      onRefresh: updateItem,
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoPlayerScreen(
+              client: widget.client,
+              metadata: episode,
+              userProfile: widget.userProfile,
             ),
-          );
-          // Refresh episodes when returning from video player
-          _loadEpisodes();
-        },
+          ),
+        );
+        // Refresh episodes when returning from video player
+        _loadEpisodes();
+      },
+      child: Card(
+        key: Key(episode.ratingKey),
+        clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(

@@ -6,6 +6,7 @@ import '../models/plex_user_profile.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../mixins/refreshable.dart';
+import '../mixins/item_updatable.dart';
 
 class SearchScreen extends StatefulWidget {
   final PlexClient client;
@@ -17,7 +18,10 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with Refreshable {
+class _SearchScreenState extends State<SearchScreen> with Refreshable, ItemUpdatable {
+  @override
+  PlexClient get client => widget.client;
+
   final _searchController = TextEditingController();
   List<PlexMetadata> _searchResults = [];
   bool _isSearching = false;
@@ -98,6 +102,14 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
     // Re-run the current search if there is one
     if (_searchController.text.isNotEmpty) {
       _performSearch(_searchController.text);
+    }
+  }
+
+  @override
+  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+    final index = _searchResults.indexWhere((item) => item.ratingKey == ratingKey);
+    if (index != -1) {
+      _searchResults[index] = updatedMetadata;
     }
   }
 
@@ -196,9 +208,10 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final item = _searchResults[index];
                     return MediaCard(
+                      key: Key(item.ratingKey),
                       client: widget.client,
                       item: item,
-                      onRefresh: refresh,
+                      onRefresh: updateItem,
                       userProfile: widget.userProfile,
                     );
                   }, childCount: _searchResults.length),

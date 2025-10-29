@@ -23,7 +23,7 @@ class _MenuAction {
 class MediaContextMenu extends StatefulWidget {
   final PlexClient client;
   final PlexMetadata metadata;
-  final VoidCallback? onRefresh;
+  final void Function(String ratingKey)? onRefresh;
   final VoidCallback? onTap;
   final Widget child;
 
@@ -228,7 +228,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(successMessage)),
         );
-        widget.onRefresh?.call();
+        widget.onRefresh?.call(widget.metadata.ratingKey);
       }
     } catch (e) {
       if (context.mounted) {
@@ -255,7 +255,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           context,
           MaterialPageRoute(builder: (context) => screenBuilder(metadata)),
         );
-        widget.onRefresh?.call();
+        widget.onRefresh?.call(widget.metadata.ratingKey);
       }
     } catch (e) {
       if (context.mounted) {

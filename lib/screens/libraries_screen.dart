@@ -9,6 +9,7 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../services/storage_service.dart';
 import '../mixins/refreshable.dart';
+import '../mixins/item_updatable.dart';
 
 class LibrariesScreen extends StatefulWidget {
   final PlexClient client;
@@ -20,7 +21,10 @@ class LibrariesScreen extends StatefulWidget {
   State<LibrariesScreen> createState() => _LibrariesScreenState();
 }
 
-class _LibrariesScreenState extends State<LibrariesScreen> with Refreshable {
+class _LibrariesScreenState extends State<LibrariesScreen> with Refreshable, ItemUpdatable {
+  @override
+  PlexClient get client => widget.client;
+
   List<PlexLibrary> _libraries = [];
   List<PlexMetadata> _items = [];
   List<PlexFilter> _filters = [];
@@ -164,6 +168,14 @@ class _LibrariesScreenState extends State<LibrariesScreen> with Refreshable {
         _errorMessage = 'Failed to load library content: $e';
         _isLoadingItems = false;
       });
+    }
+  }
+
+  @override
+  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+    final index = _items.indexWhere((item) => item.ratingKey == ratingKey);
+    if (index != -1) {
+      _items[index] = updatedMetadata;
     }
   }
 
@@ -374,9 +386,10 @@ class _LibrariesScreenState extends State<LibrariesScreen> with Refreshable {
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final item = _items[index];
                     return MediaCard(
+                      key: Key(item.ratingKey),
                       client: widget.client,
                       item: item,
-                      onRefresh: _applyFilters,
+                      onRefresh: updateItem,
                       userProfile: widget.userProfile,
                     );
                   }, childCount: _items.length),
