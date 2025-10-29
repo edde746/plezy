@@ -10,6 +10,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../utils/desktop_window_padding.dart';
+import '../utils/platform_detector.dart';
 import 'app_bar_back_button.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
@@ -175,11 +176,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
-  bool _isMobile(BuildContext context) {
-    final platform = Theme.of(context).platform;
-    return platform == TargetPlatform.iOS || platform == TargetPlatform.android;
-  }
-
   bool _hasMultipleAudioTracks(Tracks? tracks) {
     if (tracks == null) return false;
     final audioTracks = tracks.audio
@@ -275,7 +271,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   Future<void> _toggleFullscreen() async {
-    if (!_isMobile(context)) {
+    if (!PlatformDetector.isMobile(context)) {
       // Query actual window state to determine what action to take
       // This ensures we always toggle correctly regardless of local state
       final isCurrentlyFullscreen = await windowManager.isFullScreen();
@@ -344,7 +340,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = _isMobile(context);
+    final isMobile = PlatformDetector.isMobile(context);
 
     return Focus(
       focusNode: _focusNode,
@@ -456,7 +452,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return KeyEventResult.ignored;
       },
       child: MouseRegion(
-        cursor: _showControls ? SystemMouseCursors.basic : SystemMouseCursors.none,
+        cursor: _showControls
+            ? SystemMouseCursors.basic
+            : SystemMouseCursors.none,
         onHover: (_) {
           // Show controls when mouse moves
           if (!_showControls) {
@@ -471,81 +469,81 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           }
         },
         child: Stack(
-        children: [
-          // Invisible tap detector that always covers the full area
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: _toggleControls,
-              behavior: HitTestBehavior.opaque,
-              child: Container(color: Colors.transparent),
+          children: [
+            // Invisible tap detector that always covers the full area
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _toggleControls,
+                behavior: HitTestBehavior.opaque,
+                child: Container(color: Colors.transparent),
+              ),
             ),
-          ),
-          // Custom controls overlay - use AnimatedOpacity to keep widget tree alive
-          Positioned.fill(
-            child: IgnorePointer(
-              ignoring: !_showControls,
-              child: AnimatedOpacity(
-                opacity: _showControls ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                child: GestureDetector(
-                  onTap: _toggleControls,
-                  behavior: HitTestBehavior.deferToChild,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.7),
-                          Colors.transparent,
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.7),
-                        ],
-                        stops: const [0.0, 0.2, 0.8, 1.0],
+            // Custom controls overlay - use AnimatedOpacity to keep widget tree alive
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: AnimatedOpacity(
+                  opacity: _showControls ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: GestureDetector(
+                    onTap: _toggleControls,
+                    behavior: HitTestBehavior.deferToChild,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.7),
+                            Colors.transparent,
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.7),
+                          ],
+                          stops: const [0.0, 0.2, 0.8, 1.0],
+                        ),
                       ),
+                      child: isMobile
+                          ? _buildMobileLayout()
+                          : _buildDesktopLayout(),
                     ),
-                    child: isMobile
-                        ? _buildMobileLayout()
-                        : _buildDesktopLayout(),
                   ),
                 ),
               ),
             ),
-          ),
-          // Middle area double-tap detector for fullscreen (desktop only)
-          // Only covers the clear video area (20% to 80% vertically)
-          if (!isMobile)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final height = constraints.maxHeight;
-                  final topExclude = height * 0.20; // Top 20%
-                  final bottomExclude = height * 0.20; // Bottom 20%
+            // Middle area double-tap detector for fullscreen (desktop only)
+            // Only covers the clear video area (20% to 80% vertically)
+            if (!isMobile)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final height = constraints.maxHeight;
+                    final topExclude = height * 0.20; // Top 20%
+                    final bottomExclude = height * 0.20; // Bottom 20%
 
-                  return Stack(
-                    children: [
-                      Positioned(
-                        top: topExclude,
-                        left: 0,
-                        right: 0,
-                        bottom: bottomExclude,
-                        child: GestureDetector(
-                          onTap: _toggleControls,
-                          onDoubleTap: _toggleFullscreen,
-                          behavior: HitTestBehavior.translucent,
-                          child: Container(color: Colors.transparent),
+                    return Stack(
+                      children: [
+                        Positioned(
+                          top: topExclude,
+                          left: 0,
+                          right: 0,
+                          bottom: bottomExclude,
+                          child: GestureDetector(
+                            onTap: _toggleControls,
+                            onDoubleTap: _toggleFullscreen,
+                            behavior: HitTestBehavior.translucent,
+                            child: Container(color: Colors.transparent),
+                          ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-        ],
+          ],
         ),
       ),
     );
@@ -1645,10 +1643,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                             ),
                           ),
                           trailing: isSelected
-                              ? const Icon(
-                                  Icons.check,
-                                  color: Colors.blue,
-                                )
+                              ? const Icon(Icons.check, color: Colors.blue)
                               : null,
                           onTap: () {
                             widget.player.setRate(speed);

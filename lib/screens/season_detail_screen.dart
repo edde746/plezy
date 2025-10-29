@@ -7,6 +7,7 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/media_context_menu.dart';
 import '../mixins/item_updatable.dart';
+import '../theme/theme_helper.dart';
 import 'video_player_screen.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
@@ -25,7 +26,8 @@ class SeasonDetailScreen extends StatefulWidget {
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
 }
 
-class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdatable {
+class _SeasonDetailScreenState extends State<SeasonDetailScreen>
+    with ItemUpdatable {
   @override
   PlexClient get client => widget.client;
 
@@ -94,35 +96,30 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.movie_outlined,
                       size: 64,
-                      color: Colors.grey,
+                      color: tokens(context).textMuted,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No episodes found',
                       style: Theme.of(
                         context,
-                      ).textTheme.titleLarge?.copyWith(color: Colors.grey),
+                      ).textTheme.titleLarge?.copyWith(
+                        color: tokens(context).textMuted,
+                      ),
                     ),
                   ],
                 ),
               ),
             )
           else
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  if (index.isOdd) {
-                    return const SizedBox(height: 12);
-                  }
-                  final episodeIndex = index ~/ 2;
-                  final episode = _episodes[episodeIndex];
-                  return _buildEpisodeCard(episode);
-                }, childCount: _episodes.length * 2 - 1),
-              ),
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final episode = _episodes[index];
+                return _buildEpisodeCard(episode);
+              }, childCount: _episodes.length),
             ),
         ],
       ),
@@ -156,11 +153,19 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
         // Refresh episodes when returning from video player
         _loadEpisodes();
       },
-      child: Card(
+      child: InkWell(
         key: Key(episode.ratingKey),
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
+        hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: tokens(context).outline,
+                width: 0.5,
+              ),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -178,6 +183,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
                                 imageUrl: widget.client.getThumbnailUrl(
                                   episode.thumb,
                                 ),
+                                filterQuality: FilterQuality.medium,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => Container(
                                   color: Theme.of(
@@ -231,31 +237,6 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
                       ),
                     ),
 
-                    // Watched indicator
-                    if (episode.isWatched)
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                        ),
-                      ),
-
                     // Progress bar at bottom
                     if (hasProgress && !episode.isWatched)
                       Positioned(
@@ -269,33 +250,8 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
                           ),
                           child: LinearProgressIndicator(
                             value: progress,
-                            backgroundColor: Colors.grey.withValues(alpha: 0.3),
+                            backgroundColor: tokens(context).outline,
                             minHeight: 3,
-                          ),
-                        ),
-                      ),
-
-                    // Duration badge
-                    if (episode.duration != null)
-                      Positioned(
-                        bottom: 4,
-                        right: 4,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: Text(
-                            _formatDuration(episode.duration!),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
                           ),
                         ),
                       ),
@@ -356,13 +312,47 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
                       Text(
                         episode.summary!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
+                          color: tokens(context).textMuted,
                           height: 1.3,
                         ),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
+
+                    // Metadata row (duration, watched status)
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if (episode.duration != null)
+                          Text(
+                            _formatDuration(episode.duration!),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: tokens(context).textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        if (episode.duration != null && episode.isWatched) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Text(
+                              '•',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: tokens(context).textMuted,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            'Watched ✓',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: tokens(context).textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),

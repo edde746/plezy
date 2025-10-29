@@ -121,11 +121,7 @@ class _AuthScreenState extends State<AuthScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Image.asset(
-                'assets/plezy.png',
-                width: 120,
-                height: 120,
-              ),
+              Image.asset('assets/plezy.png', width: 120, height: 120),
               const SizedBox(height: 24),
               Text(
                 'Plezy',
@@ -147,7 +143,10 @@ class _AuthScreenState extends State<AuthScreen> {
                 OutlinedButton(
                   onPressed: _retryAuthentication,
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 24,
+                    ),
                   ),
                   child: const Text('Retry'),
                 ),

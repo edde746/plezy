@@ -7,6 +7,7 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/media_context_menu.dart';
 import '../utils/app_logger.dart';
+import '../theme/theme_helper.dart';
 import 'season_detail_screen.dart';
 import 'video_player_screen.dart';
 
@@ -121,13 +122,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   /// This preserves scroll position and only updates watch-related data
   Future<void> _updateWatchState() async {
     try {
-      final metadata = await widget.client.getMetadataWithImages(widget.metadata.ratingKey);
+      final metadata = await widget.client.getMetadataWithImages(
+        widget.metadata.ratingKey,
+      );
 
       if (metadata != null) {
         // For shows, also refetch seasons to update their watch counts
         List<PlexMetadata>? updatedSeasons;
         if (metadata.type.toLowerCase() == 'show') {
-          updatedSeasons = await widget.client.getChildren(widget.metadata.ratingKey);
+          updatedSeasons = await widget.client.getChildren(
+            widget.metadata.ratingKey,
+          );
         }
 
         // Single setState to minimize rebuilds - scroll position is preserved by controller
@@ -476,7 +481,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               // Otherwise, play the first episode of the first season
                               if (metadata.type.toLowerCase() == 'show') {
                                 if (_onDeckEpisode != null) {
-                                  appLogger.d('Playing on deck episode: ${_onDeckEpisode!.title}');
+                                  appLogger.d(
+                                    'Playing on deck episode: ${_onDeckEpisode!.title}',
+                                  );
                                   await Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -487,7 +494,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       ),
                                     ),
                                   );
-                                  appLogger.d('Returned from playback, refreshing metadata');
+                                  appLogger.d(
+                                    'Returned from playback, refreshing metadata',
+                                  );
                                   // Refresh metadata when returning from video player
                                   _loadFullMetadata();
                                 } else {
@@ -507,7 +516,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                     ),
                                   ),
                                 );
-                                appLogger.d('Returned from playback, refreshing metadata');
+                                appLogger.d(
+                                  'Returned from playback, refreshing metadata',
+                                );
                                 // Refresh metadata when returning from video player
                                 _loadFullMetadata();
                               }
@@ -768,12 +779,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            LinearProgressIndicator(
-                              value:
-                                  season.viewedLeafCount! / season.leafCount!,
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
+                            SizedBox(
+                              width: 200,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value:
+                                      season.viewedLeafCount! / season.leafCount!,
+                                  backgroundColor: tokens(context).outline,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Theme.of(context).colorScheme.primary,
+                                  ),
+                                  minHeight: 6,
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(

@@ -498,8 +498,7 @@ class PlexClient {
           }
 
           return PlexMediaInfo(
-            videoUrl:
-                '${config.baseUrl}$partKey?X-Plex-Token=${config.token}',
+            videoUrl: '${config.baseUrl}$partKey?X-Plex-Token=${config.token}',
             audioTracks: audioTracks,
             subtitleTracks: subtitleTracks,
             chapters: chapters,

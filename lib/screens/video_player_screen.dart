@@ -106,7 +106,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     try {
       final next = await widget.client.findAdjacentEpisode(widget.metadata, 1);
-      final previous = await widget.client.findAdjacentEpisode(widget.metadata, -1);
+      final previous = await widget.client.findAdjacentEpisode(
+        widget.metadata,
+        -1,
+      );
 
       if (mounted) {
         setState(() {
@@ -645,13 +648,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
               VideoPlayerScreen(
-            client: widget.client,
-            metadata: episodeMetadata,
-            preferredAudioTrack: currentAudioTrack,
-            preferredSubtitleTrack: currentSubtitleTrack,
-            preferredPlaybackRate: currentRate,
-            userProfile: widget.userProfile,
-          ),
+                client: widget.client,
+                metadata: episodeMetadata,
+                preferredAudioTrack: currentAudioTrack,
+                preferredSubtitleTrack: currentSubtitleTrack,
+                preferredPlaybackRate: currentRate,
+                userProfile: widget.userProfile,
+              ),
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
         ),

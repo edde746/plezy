@@ -103,7 +103,9 @@ class DesktopSliverAppBar extends StatelessWidget {
       floating: floating,
       pinned: pinned,
       expandedHeight: expandedHeight,
-      flexibleSpace: DesktopAppBarHelper.buildAdjustedFlexibleSpace(flexibleSpace),
+      flexibleSpace: DesktopAppBarHelper.buildAdjustedFlexibleSpace(
+        flexibleSpace,
+      ),
       bottom: bottom,
     );
   }

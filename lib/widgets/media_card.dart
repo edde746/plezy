@@ -6,6 +6,7 @@ import '../models/plex_user_profile.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../screens/video_player_screen.dart';
+import '../theme/theme_helper.dart';
 import 'media_context_menu.dart';
 
 class MediaCard extends StatefulWidget {
@@ -30,7 +31,11 @@ class MediaCard extends StatefulWidget {
   State<MediaCard> createState() => _MediaCardState();
 }
 
-class _MediaCardState extends State<MediaCard> {
+class _MediaCardState extends State<MediaCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   void _handleTap(BuildContext context) async {
     final itemType = widget.item.type.toLowerCase();
 
@@ -85,6 +90,7 @@ class _MediaCardState extends State<MediaCard> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return SizedBox(
       width: widget.width,
       child: MediaContextMenu(
@@ -107,9 +113,7 @@ class _MediaCardState extends State<MediaCard> {
                     child: _buildPosterWithOverlay(context),
                   )
                 else
-                  Expanded(
-                    child: _buildPosterWithOverlay(context),
-                  ),
+                  Expanded(child: _buildPosterWithOverlay(context)),
                 const SizedBox(height: 4),
                 // Text content
                 Column(
@@ -132,7 +136,7 @@ class _MediaCardState extends State<MediaCard> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
+                          color: tokens(context).textMuted,
                           fontSize: 11,
                           height: 1.1,
                         ),
@@ -143,7 +147,7 @@ class _MediaCardState extends State<MediaCard> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
+                          color: tokens(context).textMuted,
                           fontSize: 11,
                           height: 1.1,
                         ),
@@ -152,7 +156,7 @@ class _MediaCardState extends State<MediaCard> {
                       Text(
                         '${widget.item.year}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
+                          color: tokens(context).textMuted,
                           fontSize: 11,
                           height: 1.1,
                         ),
@@ -187,6 +191,7 @@ class _MediaCardState extends State<MediaCard> {
         width: double.infinity,
         height: double.infinity,
         filterQuality: FilterQuality.medium,
+        fadeInDuration: const Duration(milliseconds: 300),
         placeholder: (context, url) => Container(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
@@ -214,7 +219,7 @@ class _PosterOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Watched indicator (green checkmark)
+        // Watched indicator (checkmark)
         if (item.isWatched)
           Positioned(
             top: 4,
@@ -222,7 +227,7 @@ class _PosterOverlay extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: tokens(context).text,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -231,11 +236,7 @@ class _PosterOverlay extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.check,
-                color: Colors.white,
-                size: 16,
-              ),
+              child: Icon(Icons.check, color: tokens(context).bg, size: 16),
             ),
           ),
         // Progress bar for partially watched content
@@ -254,8 +255,10 @@ class _PosterOverlay extends StatelessWidget {
               ),
               child: LinearProgressIndicator(
                 value: item.viewOffset! / item.duration!,
-                backgroundColor: Colors.black.withValues(alpha: 0.5),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+                backgroundColor: tokens(context).outline,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
                 minHeight: 4,
               ),
             ),

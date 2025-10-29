@@ -10,6 +10,7 @@ import '../widgets/app_bar_back_button.dart';
 import '../services/storage_service.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
+import '../theme/theme_helper.dart';
 
 class LibrariesScreen extends StatefulWidget {
   final PlexClient client;
@@ -21,7 +22,8 @@ class LibrariesScreen extends StatefulWidget {
   State<LibrariesScreen> createState() => _LibrariesScreenState();
 }
 
-class _LibrariesScreenState extends State<LibrariesScreen> with Refreshable, ItemUpdatable {
+class _LibrariesScreenState extends State<LibrariesScreen>
+    with Refreshable, ItemUpdatable {
   @override
   PlexClient get client => widget.client;
 
@@ -297,6 +299,7 @@ class _LibrariesScreenState extends State<LibrariesScreen> with Refreshable, Ite
                     children: List.generate(_libraries.length, (index) {
                       final library = _libraries[index];
                       final isSelected = index == _selectedLibraryIndex;
+                      final t = tokens(context);
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
@@ -306,13 +309,7 @@ class _LibrariesScreenState extends State<LibrariesScreen> with Refreshable, Ite
                               Icon(
                                 _getLibraryIcon(library.type),
                                 size: 16,
-                                color: isSelected
-                                    ? Theme.of(
-                                        context,
-                                      ).colorScheme.onSecondaryContainer
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
+                                color: isSelected ? t.bg : t.text,
                               ),
                               const SizedBox(width: 6),
                               Text(library.title),
@@ -324,6 +321,16 @@ class _LibrariesScreenState extends State<LibrariesScreen> with Refreshable, Ite
                               _loadLibraryContent(index);
                             }
                           },
+                          backgroundColor: t.surface,
+                          selectedColor: t.text,
+                          side: BorderSide(color: t.outline),
+                          labelStyle: TextStyle(
+                            color: isSelected ? t.bg : t.text,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                          showCheckmark: false,
                         ),
                       );
                     }),

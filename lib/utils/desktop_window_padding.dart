@@ -24,10 +24,7 @@ class DesktopAppBarHelper {
 
     // macOS: Add padding to keep actions away from edge
     if (actions != null) {
-      return [
-        ...actions,
-        SizedBox(width: DesktopWindowPadding.macOSRight),
-      ];
+      return [...actions, SizedBox(width: DesktopWindowPadding.macOSRight)];
     } else {
       return [SizedBox(width: DesktopWindowPadding.macOSRight)];
     }
@@ -60,7 +57,8 @@ class DesktopAppBarHelper {
         if (includeGestureDetector) {
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
+            onPanDown:
+                (_) {}, // Consume pan gestures to prevent window dragging
             child: paddedWidget,
           );
         }
@@ -135,7 +133,8 @@ class DesktopTitleBarPadding extends StatelessWidget {
       builder: (context, _) {
         final isFullscreen = FullscreenStateManager().isFullscreen;
         // In fullscreen, use minimal padding since traffic lights auto-hide
-        final left = leftPadding ??
+        final left =
+            leftPadding ??
             (isFullscreen
                 ? DesktopWindowPadding.macOSLeftFullscreen
                 : DesktopWindowPadding.macOSLeft);

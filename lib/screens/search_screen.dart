@@ -18,7 +18,8 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with Refreshable, ItemUpdatable {
+class _SearchScreenState extends State<SearchScreen>
+    with Refreshable, ItemUpdatable {
   @override
   PlexClient get client => widget.client;
 
@@ -107,7 +108,9 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, ItemUpdat
 
   @override
   void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
-    final index = _searchResults.indexWhere((item) => item.ratingKey == ratingKey);
+    final index = _searchResults.indexWhere(
+      (item) => item.ratingKey == ratingKey,
+    );
     if (index != -1) {
       _searchResults[index] = updatedMetadata;
     }

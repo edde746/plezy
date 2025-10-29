@@ -11,11 +11,7 @@ class _MenuAction {
   final IconData icon;
   final String label;
 
-  _MenuAction({
-    required this.value,
-    required this.icon,
-    required this.label,
-  });
+  _MenuAction({required this.value, required this.icon, required this.label});
 }
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
@@ -87,11 +83,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     if ((itemType == 'episode' || itemType == 'season') &&
         widget.metadata.grandparentTitle != null) {
       menuActions.add(
-        _MenuAction(
-          value: 'series',
-          icon: Icons.tv,
-          label: 'Go to series',
-        ),
+        _MenuAction(value: 'series', icon: Icons.tv, label: 'Go to series'),
       );
     }
 
@@ -125,27 +117,33 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              ...menuActions.map((action) => ListTile(
-                leading: Icon(action.icon),
-                title: Text(action.label),
-                onTap: () => Navigator.pop(context, action.value),
-              )),
+              ...menuActions.map(
+                (action) => ListTile(
+                  leading: Icon(action.icon),
+                  title: Text(action.label),
+                  onTap: () => Navigator.pop(context, action.value),
+                ),
+              ),
             ],
           ),
         ),
       );
     } else {
       // Show popup menu on larger screens
-      final menuItems = menuActions.map((action) => PopupMenuItem(
-        value: action.value,
-        child: Row(
-          children: [
-            Icon(action.icon),
-            const SizedBox(width: 12),
-            Expanded(child: Text(action.label)),
-          ],
-        ),
-      )).toList();
+      final menuItems = menuActions
+          .map(
+            (action) => PopupMenuItem(
+              value: action.value,
+              child: Row(
+                children: [
+                  Icon(action.icon),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(action.label)),
+                ],
+              ),
+            ),
+          )
+          .toList();
 
       // Use stored tap position or fallback to widget position
       final RenderBox? overlay =
@@ -159,15 +157,62 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
       }
 
-      selected = await showMenu<String>(
+      // Use custom dialog with fast animations for desktop
+      selected = await showGeneralDialog<String>(
         context: context,
-        position: RelativeRect.fromLTRB(
-          position.dx,
-          position.dy,
-          position.dx,
-          position.dy,
-        ),
-        items: menuItems,
+        barrierDismissible: true,
+        barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+        barrierColor: Colors.transparent,
+        transitionDuration: const Duration(milliseconds: 150),
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          // Fast fade + scale animation
+          const curve = Curves.easeOutCubic;
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: curve,
+            reverseCurve: Curves.easeIn, // Faster close
+          );
+
+          return FadeTransition(
+            opacity: curvedAnimation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.9, end: 1.0).animate(curvedAnimation),
+              child: child,
+            ),
+          );
+        },
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return Stack(
+            children: [
+              Positioned(
+                left: position.dx,
+                top: position.dy,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(8),
+                  child: IntrinsicWidth(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: menuItems.map((item) {
+                        return InkWell(
+                          onTap: () => Navigator.pop(context, item.value),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: item.child,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       );
     }
 
@@ -194,10 +239,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         await _navigateToRelated(
           context,
           widget.metadata.grandparentRatingKey,
-          (metadata) => MediaDetailScreen(
-            client: widget.client,
-            metadata: metadata,
-          ),
+          (metadata) =>
+              MediaDetailScreen(client: widget.client, metadata: metadata),
           'Error loading series',
         );
         break;
@@ -206,10 +249,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         await _navigateToRelated(
           context,
           widget.metadata.parentRatingKey,
-          (metadata) => SeasonDetailScreen(
-            client: widget.client,
-            season: metadata,
-          ),
+          (metadata) =>
+              SeasonDetailScreen(client: widget.client, season: metadata),
           'Error loading season',
         );
         break;
@@ -225,16 +266,16 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     try {
       await action();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(successMessage)));
         widget.onRefresh?.call(widget.metadata.ratingKey);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -259,9 +300,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$errorPrefix: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$errorPrefix: $e')));
       }
     }
   }

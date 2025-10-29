@@ -12,6 +12,7 @@ import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
+import 'theme/mono_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,11 +58,8 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: 'Plezy',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData.dark(useMaterial3: true),
+      theme: monoTheme(dark: false),
+      darkTheme: monoTheme(dark: true),
       navigatorObservers: [routeObserver],
       home: const SetupScreen(),
     );

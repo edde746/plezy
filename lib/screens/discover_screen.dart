@@ -13,6 +13,7 @@ import '../widgets/server_list_tile.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 import 'video_player_screen.dart';
 import 'main_screen.dart';
 import 'about_screen.dart';
@@ -33,7 +34,8 @@ class DiscoverScreen extends StatefulWidget {
   State<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
-class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemUpdatable {
+class _DiscoverScreenState extends State<DiscoverScreen>
+    with Refreshable, ItemUpdatable, SingleTickerProviderStateMixin {
   @override
   PlexClient get client => widget.client;
 
@@ -42,12 +44,18 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
   bool _isLoading = true;
   String? _errorMessage;
   final PageController _heroController = PageController();
+  final ScrollController _scrollController = ScrollController();
   int _currentHeroIndex = 0;
   Timer? _autoScrollTimer;
+  late AnimationController _indicatorAnimationController;
 
   @override
   void initState() {
     super.initState();
+    _indicatorAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    );
     _loadContent();
     _startAutoScroll();
   }
@@ -56,10 +64,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
   void dispose() {
     _autoScrollTimer?.cancel();
     _heroController.dispose();
+    _scrollController.dispose();
+    _indicatorAnimationController.dispose();
     super.dispose();
   }
 
   void _startAutoScroll() {
+    _indicatorAnimationController.forward(from: 0.0);
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (_onDeck.isEmpty || !_heroController.hasClients) return;
 
@@ -69,6 +80,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
+      // Wait for page transition to complete before resetting progress
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _indicatorAnimationController.forward(from: 0.0);
+      });
     });
   }
 
@@ -117,13 +132,17 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
   @override
   void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
     // Check and update in _onDeck list
-    final onDeckIndex = _onDeck.indexWhere((item) => item.ratingKey == ratingKey);
+    final onDeckIndex = _onDeck.indexWhere(
+      (item) => item.ratingKey == ratingKey,
+    );
     if (onDeckIndex != -1) {
       _onDeck[onDeckIndex] = updatedMetadata;
     }
 
     // Check and update in _recentlyAdded list
-    final recentlyAddedIndex = _recentlyAdded.indexWhere((item) => item.ratingKey == ratingKey);
+    final recentlyAddedIndex = _recentlyAdded.indexWhere(
+      (item) => item.ratingKey == ratingKey,
+    );
     if (recentlyAddedIndex != -1) {
       _recentlyAdded[recentlyAddedIndex] = updatedMetadata;
     }
@@ -332,6 +351,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
+          controller: _scrollController,
           slivers: [
             DesktopSliverAppBar(
               title: const Text('Discover'),
@@ -517,27 +537,62 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
                 return _buildHeroItem(_onDeck[index]);
               },
             ),
-            // Page indicators
+            // Page indicators with animated progress
             Positioned(
               bottom: 16,
               left: 0,
               right: 0,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _onDeck.length,
-                  (index) => Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: _currentHeroIndex == index ? 24 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: _currentHeroIndex == index
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
+                children: List.generate(_onDeck.length, (index) {
+                  final isActive = _currentHeroIndex == index;
+                  if (isActive) {
+                    // Animated progress indicator for active page
+                    return AnimatedBuilder(
+                      animation: _indicatorAnimationController,
+                      builder: (context, child) {
+                        // Fill width animates from 8px to 24px
+                        final fillWidth =
+                            8.0 + (16.0 * _indicatorAnimationController.value);
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: 24,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              width: fillWidth,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  } else {
+                    // Static indicator for inactive pages
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    );
+                  }
+                }),
               ),
             ),
           ],
@@ -549,10 +604,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
   Widget _buildHeroItem(PlexMetadata heroItem) {
     final isEpisode = heroItem.type.toLowerCase() == 'episode';
     final showName = heroItem.grandparentTitle ?? heroItem.title;
-    final episodeInfo =
-        isEpisode && heroItem.parentIndex != null && heroItem.index != null
-        ? 'S${heroItem.parentIndex} · E${heroItem.index} · ${heroItem.title}'
-        : null;
 
     return GestureDetector(
       onTap: () {
@@ -585,22 +636,45 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Background Image - use episode art or grandparent art
+              // Background Image with fade/zoom animation and parallax
               if (heroItem.art != null || heroItem.grandparentArt != null)
-                CachedNetworkImage(
-                  imageUrl: widget.client.getThumbnailUrl(
-                    heroItem.art ?? heroItem.grandparentArt,
-                  ),
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                AnimatedBuilder(
+                  animation: _scrollController,
+                  builder: (context, child) {
+                    final scrollOffset = _scrollController.hasClients
+                        ? _scrollController.offset
+                        : 0.0;
+                    return Transform.translate(
+                      offset: Offset(0, scrollOffset * 0.3),
+                      child: child,
+                    );
+                  },
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeOut,
+                    builder: (context, value, child) {
+                      return Transform.scale(
+                        scale: 1.0 + (0.1 * (1 - value)),
+                        child: Opacity(opacity: value, child: child),
+                      );
+                    },
+                    child: CachedNetworkImage(
+                      imageUrl: widget.client.getThumbnailUrl(
+                        heroItem.art ?? heroItem.grandparentArt,
+                      ),
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                      ),
+                    ),
                   ),
                 )
               else
@@ -624,13 +698,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
                 ),
               ),
 
-              // Content
+              // Content with responsive alignment
               Positioned(
-                bottom: 70,
+                bottom: PlatformDetector.isDesktop(context) ? 80 : 70,
                 left: 0,
-                right: 0,
+                right: PlatformDetector.isDesktop(context) ? 200 : 0,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: PlatformDetector.isDesktop(context) ? 40 : 16,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -716,78 +792,152 @@ class _DiscoverScreenState extends State<DiscoverScreen> with Refreshable, ItemU
                           overflow: TextOverflow.ellipsis,
                         ),
 
-                      // Episode info
-                      if (episodeInfo != null) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            episodeInfo,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                      // Metadata as dot-separated text
+                      if (heroItem.year != null ||
+                          heroItem.contentRating != null ||
+                          heroItem.rating != null) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          [
+                            if (heroItem.rating != null)
+                              '★ ${(heroItem.rating! / 10).toStringAsFixed(1)}',
+                            if (heroItem.contentRating != null)
+                              heroItem.contentRating!,
+                            if (heroItem.year != null) heroItem.year.toString(),
+                          ].join(' • '),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
 
-                      // Summary
+                      // Summary with episode info (Apple TV style)
                       if (heroItem.summary != null) ...[
                         const SizedBox(height: 12),
-                        Text(
-                          heroItem.summary!,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
+                        RichText(
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                          text: TextSpan(
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                            children: [
+                              if (isEpisode &&
+                                  heroItem.parentIndex != null &&
+                                  heroItem.index != null)
+                                TextSpan(
+                                  text:
+                                      'S${heroItem.parentIndex}, E${heroItem.index}: ',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              TextSpan(text: heroItem.summary!),
+                            ],
+                          ),
                         ),
                       ],
 
                       const SizedBox(height: 20),
 
-                      // Play Button
-                      FilledButton.icon(
-                        onPressed: () {
-                          appLogger.d('Playing: ${heroItem.title}');
-                          Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => VideoPlayerScreen(
-                                client: widget.client,
-                                metadata: heroItem,
-                                userProfile: widget.userProfile,
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.play_arrow, size: 20),
-                        label: const Text('Play'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
+                      // Smart Play Button with progress
+                      _buildSmartPlayButton(heroItem),
                     ],
                   ),
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmartPlayButton(PlexMetadata heroItem) {
+    final hasProgress =
+        heroItem.viewOffset != null &&
+        heroItem.duration != null &&
+        heroItem.viewOffset! > 0 &&
+        heroItem.duration! > 0;
+
+    final minutesLeft = hasProgress
+        ? ((heroItem.duration! - heroItem.viewOffset!) / 60000).round()
+        : 0;
+
+    final progress = hasProgress
+        ? heroItem.viewOffset! / heroItem.duration!
+        : 0.0;
+
+    return InkWell(
+      onTap: () {
+        appLogger.d('Playing: ${heroItem.title}');
+        Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VideoPlayerScreen(
+              client: widget.client,
+              metadata: heroItem,
+              userProfile: widget.userProfile,
+            ),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.play_arrow, size: 20, color: Colors.black),
+            const SizedBox(width: 8),
+            if (hasProgress) ...[
+              // Progress bar
+              Container(
+                width: 40,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: progress,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$minutesLeft min left',
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ] else
+              const Text(
+                'Play',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+          ],
         ),
       ),
     );
