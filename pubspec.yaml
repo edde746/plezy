@@ -9,12 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.2.0
   dio: ^5.4.0
   json_annotation: ^4.8.1
-  xml: ^6.5.0
   shared_preferences: ^2.2.2
-  dtd: ^4.0.0
   cached_network_image: ^3.4.1
   media_kit: ^1.1.10+1
   media_kit_video: ^1.2.4
@@ -24,7 +21,6 @@ dependencies:
   uuid: ^4.4.0
   window_manager: ^0.4.3
   logger: ^2.0.2
-  flutter_svg: ^2.0.10
   package_info_plus: ^9.0.0
 
 dependency_overrides:

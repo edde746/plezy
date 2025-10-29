@@ -112,7 +112,20 @@ ThemeData monoTheme({required bool dark}) {
         backgroundColor: WidgetStatePropertyAll(c.text),
         foregroundColor: WidgetStatePropertyAll(dark ? c.bg : Colors.white),
         shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: ButtonStyle(
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        ),
+        elevation: const WidgetStatePropertyAll(0),
+        backgroundColor: WidgetStatePropertyAll(c.text),
+        foregroundColor: WidgetStatePropertyAll(dark ? c.bg : Colors.white),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
       ),
     ),

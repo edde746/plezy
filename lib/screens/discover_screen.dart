@@ -17,6 +17,7 @@ import '../utils/platform_detector.dart';
 import 'video_player_screen.dart';
 import 'main_screen.dart';
 import 'about_screen.dart';
+import 'auth_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final PlexClient client;
@@ -341,7 +342,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       await storage.clearCredentials();
 
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
+          (route) => false,
+        );
       }
     }
   }

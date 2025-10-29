@@ -51,20 +51,6 @@ class PlexClient {
     }
   }
 
-  /// Test connection to a specific URL with token (legacy method)
-  static Future<bool> testConnectionUrl(
-    String baseUrl,
-    String token, {
-    Duration timeout = const Duration(seconds: 5),
-  }) async {
-    final result = await testConnectionWithLatency(
-      baseUrl,
-      token,
-      timeout: timeout,
-    );
-    return result.success;
-  }
-
   /// Test connection to a specific URL with token and measure latency
   static Future<ConnectionTestResult> testConnectionWithLatency(
     String baseUrl,

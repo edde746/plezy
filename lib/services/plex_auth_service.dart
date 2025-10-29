@@ -351,29 +351,6 @@ class PlexServer {
       yield bestConnection;
     }
   }
-
-  /// Legacy method for backward compatibility - returns first working connection
-  /// For optimal performance, use findBestWorkingConnection() stream instead
-  @Deprecated('Use findBestWorkingConnection() stream for optimized connection')
-  Future<PlexConnection?> findBestWorkingConnectionLegacy() async {
-    if (connections.isEmpty) return null;
-
-    // Test all connections simultaneously
-    final working = <PlexConnection>[];
-    await Future.wait(
-      connections.map((connection) async {
-        final works = await PlexClient.testConnectionUrl(
-          connection.uri,
-          accessToken,
-        );
-        if (works) {
-          working.add(connection);
-        }
-      }),
-    );
-
-    return _selectBest(working);
-  }
 }
 
 /// Represents a connection to a Plex server
