@@ -157,62 +157,28 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
       }
 
-      // Use custom dialog with fast animations for desktop
-      selected = await showGeneralDialog<String>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-        barrierColor: Colors.transparent,
-        transitionDuration: const Duration(milliseconds: 150),
-        transitionBuilder: (context, animation, secondaryAnimation, child) {
-          // Fast fade + scale animation
-          const curve = Curves.easeOutCubic;
-          final curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: curve,
-            reverseCurve: Curves.easeIn, // Faster close
-          );
+      // Calculate position for menu using RelativeRect
+      final overlayRect = RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      );
 
-          return FadeTransition(
-            opacity: curvedAnimation,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.9, end: 1.0).animate(curvedAnimation),
-              child: child,
-            ),
-          );
-        },
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return Stack(
-            children: [
-              Positioned(
-                left: position.dx,
-                top: position.dy,
-                child: Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(8),
-                  child: IntrinsicWidth(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: menuItems.map((item) {
-                        return InkWell(
-                          onTap: () => Navigator.pop(context, item.value),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            child: item.child,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+      // Use showMenu with fast animations via PopupMenuTheme
+      selected = await showMenu<String>(
+        context: context,
+        position: overlayRect,
+        items: menuItems,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        menuPadding: EdgeInsets.zero,
+        // Override animation duration for faster animations
+        popUpAnimationStyle: AnimationStyle(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeIn,
+        ),
       );
     }
 
