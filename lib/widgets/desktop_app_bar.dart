@@ -30,7 +30,12 @@ class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final appBar = AppBar(
-      title: title != null ? DesktopTitleBarPadding(child: title!) : null,
+      title: title != null
+          ? DesktopTitleBarPadding(
+              leftPadding: leading != null ? 0 : null,
+              child: title!,
+            )
+          : null,
       actions: DesktopAppBarHelper.buildAdjustedActions(actions),
       leading: DesktopAppBarHelper.buildAdjustedLeading(leading),
       automaticallyImplyLeading: automaticallyImplyLeading,
@@ -87,7 +92,12 @@ class DesktopSliverAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      title: title != null ? DesktopTitleBarPadding(child: title!) : null,
+      title: title != null
+          ? DesktopTitleBarPadding(
+              leftPadding: leading != null ? 0 : null,
+              child: title!,
+            )
+          : null,
       actions: DesktopAppBarHelper.buildAdjustedActions(actions),
       leading: DesktopAppBarHelper.buildAdjustedLeading(
         leading,
