@@ -28,6 +28,7 @@ class _SearchScreenState extends State<SearchScreen>
   bool _isSearching = false;
   bool _hasSearched = false;
   Timer? _debounceTimer;
+  String _lastSearchedQuery = '';
 
   @override
   void initState() {
@@ -54,7 +55,13 @@ class _SearchScreenState extends State<SearchScreen>
         _searchResults = [];
         _hasSearched = false;
         _isSearching = false;
+        _lastSearchedQuery = '';
       });
+      return;
+    }
+
+    // Only search if the query has actually changed
+    if (query.trim() == _lastSearchedQuery.trim()) {
       return;
     }
 
@@ -84,6 +91,7 @@ class _SearchScreenState extends State<SearchScreen>
         setState(() {
           _searchResults = results;
           _isSearching = false;
+          _lastSearchedQuery = query.trim();
         });
       }
     } catch (e) {
