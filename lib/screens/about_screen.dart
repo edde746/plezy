@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../widgets/app_bar_back_button.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -36,11 +35,7 @@ class _AboutScreenState extends State<AboutScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          DesktopSliverAppBar(
-            title: const Text('About'),
-            pinned: true,
-            leading: const AppBarBackButton(style: BackButtonStyle.circular),
-          ),
+          CustomAppBar(title: const Text('About'), pinned: true),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(

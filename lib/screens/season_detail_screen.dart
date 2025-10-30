@@ -7,7 +7,6 @@ import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../widgets/app_bar_back_button.dart';
 import '../widgets/media_context_menu.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
@@ -81,13 +80,10 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          DesktopSliverAppBar(
+          CustomAppBar(
             title: Text(widget.season.title),
             pinned: true,
-            leading: AppBarBackButton(
-              style: BackButtonStyle.circular,
-              onPressed: () => Navigator.pop(context, _watchStateChanged),
-            ),
+            onBackPressed: () => Navigator.pop(context, _watchStateChanged),
           ),
           if (_isLoadingEpisodes)
             const SliverFillRemaining(

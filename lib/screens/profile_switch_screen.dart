@@ -16,7 +16,7 @@ class ProfileSwitchScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const DesktopSliverAppBar(title: Text('Switch Profile')),
+          const CustomAppBar(title: Text('Switch Profile')),
           SliverFillRemaining(
             child: Consumer<UserProfileProvider>(
               builder: (context, userProvider, child) {

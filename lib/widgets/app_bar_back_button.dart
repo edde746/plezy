@@ -23,7 +23,7 @@ enum BackButtonStyle {
 /// ```dart
 /// AppBarBackButton(style: BackButtonStyle.circular)
 /// ```
-class AppBarBackButton extends StatelessWidget {
+class AppBarBackButton extends StatefulWidget {
   /// Creates a back button with the specified style.
   ///
   /// [style] determines the visual appearance of the back button.
@@ -45,9 +45,44 @@ class AppBarBackButton extends StatelessWidget {
   /// The color of the back arrow icon. If null, uses style-appropriate default.
   final Color? color;
 
-  void _handlePressed(BuildContext context) {
-    if (onPressed != null) {
-      onPressed!();
+  @override
+  State<AppBarBackButton> createState() => _AppBarBackButtonState();
+}
+
+class _AppBarBackButtonState extends State<AppBarBackButton>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _backgroundAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _backgroundAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onHoverChange(bool isHovered) {
+    if (isHovered) {
+      _animationController.forward();
+    } else {
+      _animationController.reverse();
+    }
+  }
+
+  void _handlePressed() {
+    if (widget.onPressed != null) {
+      widget.onPressed!();
     } else {
       Navigator.of(context).pop();
     }
@@ -55,57 +90,72 @@ class AppBarBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    switch (style) {
-      case BackButtonStyle.circular:
-        return _buildCircularBackButton(context);
-      case BackButtonStyle.plain:
-        return _buildPlainBackButton(context);
-      case BackButtonStyle.video:
-        return _buildVideoBackButton(context);
-    }
-  }
+    final theme = Theme.of(context);
+    final isDarkTheme = theme.brightness == Brightness.dark;
 
-  /// Builds a back button with circular semi-transparent background
-  Widget _buildCircularBackButton(BuildContext context) {
-    return SafeArea(
+    final Color effectiveColor;
+    switch (widget.style) {
+      case BackButtonStyle.plain:
+        effectiveColor =
+            widget.color ?? (isDarkTheme ? Colors.white : Colors.black);
+        break;
+      case BackButtonStyle.circular:
+      case BackButtonStyle.video:
+        effectiveColor = widget.color ?? Colors.white;
+        break;
+    }
+
+    final Color baseColor;
+    final Color hoverColor;
+    switch (widget.style) {
+      case BackButtonStyle.circular:
+        baseColor = Colors.black.withValues(alpha: 0.3);
+        hoverColor = Colors.black.withValues(alpha: 0.5);
+        break;
+      case BackButtonStyle.plain:
+        hoverColor = (isDarkTheme ? Colors.white : Colors.black).withValues(
+          alpha: 0.2,
+        );
+        baseColor = Colors.transparent;
+        break;
+      case BackButtonStyle.video:
+        baseColor = Colors.transparent;
+        hoverColor = Colors.black.withValues(alpha: 0.3);
+        break;
+    }
+
+    final button = MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => _onHoverChange(true),
+      onExit: (_) => _onHoverChange(false),
       child: GestureDetector(
-        onTap: () => _handlePressed(context),
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.5),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.arrow_back,
-            color: color ?? Colors.white,
-            size: 20,
-          ),
+        onTap: _handlePressed,
+        child: AnimatedBuilder(
+          animation: _backgroundAnimation,
+          builder: (context, child) {
+            final currentColor = Color.lerp(
+              baseColor,
+              hoverColor,
+              _backgroundAnimation.value,
+            );
+
+            return Container(
+              margin: const EdgeInsets.all(8),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: currentColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.arrow_back, color: effectiveColor, size: 20),
+            );
+          },
         ),
       ),
     );
-  }
 
-  /// Builds a plain back button without background
-  Widget _buildPlainBackButton(BuildContext context) {
-    return IconButton(
-      icon: Icon(Icons.arrow_back, color: color),
-      onPressed: () => _handlePressed(context),
-      tooltip: 'Back',
-    );
-  }
-
-  /// Builds a back button styled for video player overlay
-  Widget _buildVideoBackButton(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(left: 8),
-      child: IconButton(
-        icon: Icon(Icons.arrow_back, color: color ?? Colors.white),
-        onPressed: () => _handlePressed(context),
-        tooltip: 'Back',
-      ),
-    );
+    return widget.style == BackButtonStyle.circular
+        ? SafeArea(child: button)
+        : button;
   }
 }

@@ -186,7 +186,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const DesktopSliverAppBar(title: Text('Select Server')),
+          const CustomAppBar(title: Text('Select Server')),
           SliverFillRemaining(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())

@@ -789,8 +789,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       padding: EdgeInsets.only(
         left: leftPadding,
         right: 16,
-        top: isMacOS ? 8 : 16,
-        bottom: isMacOS ? 8 : 16,
       ),
       child: Row(
         children: [
