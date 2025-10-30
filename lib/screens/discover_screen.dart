@@ -13,7 +13,6 @@ import '../widgets/server_list_tile.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
-import '../utils/platform_detector.dart';
 import 'video_player_screen.dart';
 import 'main_screen.dart';
 import 'about_screen.dart';
@@ -608,6 +607,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Widget _buildHeroItem(PlexMetadata heroItem) {
     final isEpisode = heroItem.type.toLowerCase() == 'episode';
     final showName = heroItem.grandparentTitle ?? heroItem.title;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLargeScreen = screenWidth > 800;
+
+    // Determine content type label for chip
+    final contentTypeLabel = heroItem.type.toLowerCase() == 'movie'
+        ? 'Movie'
+        : 'TV Show';
 
     return GestureDetector(
       onTap: () {
@@ -704,15 +710,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
               // Content with responsive alignment
               Positioned(
-                bottom: PlatformDetector.isDesktop(context) ? 80 : 70,
+                bottom: isLargeScreen ? 80 : 50,
                 left: 0,
-                right: PlatformDetector.isDesktop(context) ? 200 : 0,
+                right: isLargeScreen ? 200 : 0,
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: PlatformDetector.isDesktop(context) ? 40 : 16,
+                    horizontal: isLargeScreen ? 40 : 16,
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: isLargeScreen
+                        ? CrossAxisAlignment.start
+                        : CrossAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Show logo or name/title
@@ -726,9 +734,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             ),
                             filterQuality: FilterQuality.medium,
                             fit: BoxFit.contain,
-                            alignment: Alignment.centerLeft,
+                            alignment: isLargeScreen
+                                ? Alignment.bottomLeft
+                                : Alignment.bottomCenter,
                             placeholder: (context, url) => Align(
-                              alignment: Alignment.centerLeft,
+                              alignment: isLargeScreen
+                                  ? Alignment.centerLeft
+                                  : Alignment.center,
                               child: Text(
                                 showName,
                                 style: Theme.of(context).textTheme.displaySmall
@@ -748,12 +760,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                     ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
+                                textAlign: isLargeScreen
+                                    ? TextAlign.left
+                                    : TextAlign.center,
                               ),
                             ),
                             errorWidget: (context, url, error) {
                               // Fallback to text if logo fails to load
                               return Align(
-                                alignment: Alignment.centerLeft,
+                                alignment: isLargeScreen
+                                    ? Alignment.centerLeft
+                                    : Alignment.center,
                                 child: Text(
                                   showName,
                                   style: Theme.of(context)
@@ -773,6 +790,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                       ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
+                                  textAlign: isLargeScreen
+                                      ? TextAlign.left
+                                      : TextAlign.center,
                                 ),
                               );
                             },
@@ -794,15 +814,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                          textAlign: isLargeScreen
+                              ? TextAlign.left
+                              : TextAlign.center,
                         ),
 
-                      // Metadata as dot-separated text
+                      // Metadata as dot-separated text with content type
                       if (heroItem.year != null ||
                           heroItem.contentRating != null ||
                           heroItem.rating != null) ...[
                         const SizedBox(height: 16),
                         Text(
                           [
+                            contentTypeLabel,
                             if (heroItem.rating != null)
                               '★ ${(heroItem.rating! / 10).toStringAsFixed(1)}',
                             if (heroItem.contentRating != null)
@@ -814,7 +838,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
+                          textAlign: isLargeScreen
+                              ? TextAlign.left
+                              : TextAlign.center,
                         ),
+                      ],
+
+                      // On small screens: show button before summary
+                      if (!isLargeScreen) ...[
+                        const SizedBox(height: 20),
+                        _buildSmartPlayButton(heroItem),
                       ],
 
                       // Summary with episode info (Apple TV style)
@@ -823,6 +856,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         RichText(
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                          textAlign: isLargeScreen
+                              ? TextAlign.left
+                              : TextAlign.center,
                           text: TextSpan(
                             style: const TextStyle(
                               color: Colors.white70,
@@ -841,16 +877,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                     color: Colors.white,
                                   ),
                                 ),
-                              TextSpan(text: heroItem.summary!),
+                              TextSpan(
+                                text: heroItem.summary?.isNotEmpty == true
+                                    ? heroItem.summary!
+                                    : 'No description available',
+                              ),
                             ],
                           ),
                         ),
                       ],
 
-                      const SizedBox(height: 20),
-
-                      // Smart Play Button with progress
-                      _buildSmartPlayButton(heroItem),
+                      // On large screens: show button after summary
+                      if (isLargeScreen) ...[
+                        const SizedBox(height: 20),
+                        _buildSmartPlayButton(heroItem),
+                      ],
                     ],
                   ),
                 ),
