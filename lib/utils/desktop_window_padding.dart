@@ -12,21 +12,33 @@ class DesktopWindowPadding {
 
   /// Right padding for macOS to prevent actions from being too close to edge
   static const double macOSRight = 16.0;
+
+  /// Right padding for mobile devices to prevent actions from being too close to edge
+  static const double mobileRight = 6.0;
 }
 
 /// Helper class for adjusting app bar widgets to account for desktop window controls
 class DesktopAppBarHelper {
-  /// Builds actions list with appropriate right padding for macOS
+  /// Builds actions list with appropriate right padding for macOS and mobile
   static List<Widget>? buildAdjustedActions(List<Widget>? actions) {
-    if (!Platform.isMacOS) {
+    double? rightPadding;
+
+    if (Platform.isMacOS) {
+      rightPadding = DesktopWindowPadding.macOSRight;
+    } else if (Platform.isIOS || Platform.isAndroid) {
+      rightPadding = DesktopWindowPadding.mobileRight;
+    }
+
+    // If no platform-specific padding needed, return original actions
+    if (rightPadding == null) {
       return actions;
     }
 
-    // macOS: Add padding to keep actions away from edge
+    // Add padding to keep actions away from edge
     if (actions != null) {
-      return [...actions, SizedBox(width: DesktopWindowPadding.macOSRight)];
+      return [...actions, SizedBox(width: rightPadding)];
     } else {
-      return [SizedBox(width: DesktopWindowPadding.macOSRight)];
+      return [SizedBox(width: rightPadding)];
     }
   }
 

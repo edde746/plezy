@@ -13,10 +13,10 @@ import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';
+import 'providers/theme_provider.dart';
 import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
 import 'utils/provider_extensions.dart';
-import 'theme/mono_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,14 +65,20 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => UserProfileProvider()..initialize(),
         ),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'Plezy',
-        debugShowCheckedModeBanner: false,
-        theme: monoTheme(dark: false),
-        darkTheme: monoTheme(dark: true),
-        navigatorObservers: [routeObserver],
-        home: const SetupScreen(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Plezy',
+            debugShowCheckedModeBanner: false,
+            theme: themeProvider.lightTheme,
+            darkTheme: themeProvider.darkTheme,
+            themeMode: themeProvider.materialThemeMode,
+            navigatorObservers: [routeObserver],
+            home: const SetupScreen(),
+          );
+        },
       ),
     );
   }

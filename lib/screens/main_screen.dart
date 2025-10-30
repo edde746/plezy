@@ -8,6 +8,7 @@ import '../mixins/refreshable.dart';
 import 'discover_screen.dart';
 import 'libraries_screen.dart';
 import 'search_screen.dart';
+import 'settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final PlexClient client;
@@ -26,6 +27,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
+  final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       ),
       LibrariesScreen(key: _librariesKey, userProfile: widget.userProfile),
       SearchScreen(key: _searchKey, userProfile: widget.userProfile),
+      SettingsScreen(key: _settingsKey),
     ];
 
     // Set up data invalidation callback for profile switching
@@ -140,6 +143,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
             icon: Icon(Icons.search),
             selectedIcon: Icon(Icons.search),
             label: 'Search',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),

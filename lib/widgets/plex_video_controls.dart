@@ -10,6 +10,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
 import '../providers/plex_client_provider.dart';
 import '../services/fullscreen_state_manager.dart';
+import '../services/keyboard_shortcuts_service.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
@@ -56,6 +57,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   Timer? _hideTimer;
   bool _isFullscreen = false;
   late final FocusNode _focusNode;
+  KeyboardShortcutsService? _keyboardService;
 
   @override
   void initState() {
@@ -63,9 +65,43 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _focusNode = FocusNode();
     _loadChapters();
     _startHideTimer();
+    _initKeyboardService();
     // Add window listener for tracking fullscreen state (for button icon)
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.addListener(this);
+    }
+  }
+
+  Future<void> _initKeyboardService() async {
+    _keyboardService = await KeyboardShortcutsService.getInstance();
+  }
+
+  void _toggleSubtitles() {
+    // Toggle subtitle visibility - this would need to be implemented based on your subtitle system
+    // For now, this is a placeholder
+  }
+
+  void _nextAudioTrack() {
+    // Switch to next audio track - this would need to be implemented based on your track system
+    // For now, this is a placeholder
+  }
+
+  void _nextSubtitleTrack() {
+    // Switch to next subtitle track - this would need to be implemented based on your subtitle system
+    // For now, this is a placeholder
+  }
+
+  void _nextChapter() {
+    // Go to next chapter - this would use your existing chapter navigation
+    if (widget.onNext != null) {
+      widget.onNext!();
+    }
+  }
+
+  void _previousChapter() {
+    // Go to previous chapter - this would use your existing chapter navigation
+    if (widget.onPrevious != null) {
+      widget.onPrevious!();
     }
   }
 
@@ -348,110 +384,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       focusNode: _focusNode,
       autofocus: true,
       onKeyEvent: (node, event) {
-        // Only respond to key down events (not key up)
-        if (event is KeyDownEvent) {
-          final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
-          final isCtrlPressed = HardwareKeyboard.instance.isControlPressed;
+        if (_keyboardService == null) return KeyEventResult.ignored;
 
-          // Play/Pause shortcuts
-          if (event.logicalKey == LogicalKeyboardKey.space ||
-              event.logicalKey == LogicalKeyboardKey.keyK) {
-            _togglePlayPause();
-            return KeyEventResult.handled;
-          }
-
-          // Arrow key handling - check for modifiers first
-          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-            if (isCtrlPressed) {
-              // Ctrl+Left: Seek backward 1 minute
-              _seek(const Duration(minutes: -1));
-            } else if (isShiftPressed) {
-              // Shift+Left: Seek backward 5 seconds
-              _seek(const Duration(seconds: -5));
-            } else {
-              // Left: Seek backward 10 seconds
-              _seek(const Duration(seconds: -10));
-            }
-            return KeyEventResult.handled;
-          }
-
-          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-            if (isCtrlPressed) {
-              // Ctrl+Right: Seek forward 1 minute
-              _seek(const Duration(minutes: 1));
-            } else if (isShiftPressed) {
-              // Shift+Right: Seek forward 5 seconds
-              _seek(const Duration(seconds: 5));
-            } else {
-              // Right: Seek forward 10 seconds
-              _seek(const Duration(seconds: 10));
-            }
-            return KeyEventResult.handled;
-          }
-
-          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            // Up: Volume up 5%
-            _adjustVolume(5.0);
-            return KeyEventResult.handled;
-          }
-
-          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            // Down: Volume down 5%
-            _adjustVolume(-5.0);
-            return KeyEventResult.handled;
-          }
-
-          // J/L keys for seeking (alternative to arrows)
-          if (event.logicalKey == LogicalKeyboardKey.keyJ) {
-            // J: Seek backward 10 seconds
-            _seek(const Duration(seconds: -10));
-            return KeyEventResult.handled;
-          }
-
-          if (event.logicalKey == LogicalKeyboardKey.keyL) {
-            // L: Seek forward 10 seconds
-            _seek(const Duration(seconds: 10));
-            return KeyEventResult.handled;
-          }
-
-          // Fullscreen shortcuts
-          if (event.logicalKey == LogicalKeyboardKey.keyF) {
-            _toggleFullscreen();
-            return KeyEventResult.handled;
-          }
-
-          if (event.logicalKey == LogicalKeyboardKey.escape) {
-            // Escape: Exit fullscreen (only if currently fullscreen)
-            if (_isFullscreen) {
-              _toggleFullscreen();
-              return KeyEventResult.handled;
-            }
-          }
-
-          // Mute shortcut
-          if (event.logicalKey == LogicalKeyboardKey.keyM) {
-            _toggleMute();
-            return KeyEventResult.handled;
-          }
-
-          // Episode navigation shortcuts
-          if (event.logicalKey == LogicalKeyboardKey.keyN) {
-            // N: Next episode
-            if (widget.onNext != null) {
-              widget.onNext!();
-              return KeyEventResult.handled;
-            }
-          }
-
-          if (event.logicalKey == LogicalKeyboardKey.keyP) {
-            // P: Previous episode
-            if (widget.onPrevious != null) {
-              widget.onPrevious!();
-              return KeyEventResult.handled;
-            }
-          }
-        }
-        return KeyEventResult.ignored;
+        return _keyboardService!.handleVideoPlayerKeyEvent(
+          event,
+          widget.player,
+          _toggleFullscreen,
+          _toggleSubtitles,
+          _nextAudioTrack,
+          _nextSubtitleTrack,
+          _nextChapter,
+          _previousChapter,
+        );
       },
       child: MouseRegion(
         cursor: _showControls
