@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../client/plex_client.dart';
 import '../models/plex_user_profile.dart';
 import '../utils/app_logger.dart';
+import '../utils/provider_extensions.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
 import 'discover_screen.dart';
@@ -23,6 +24,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
   late final List<Widget> _screens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
+  final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
+  final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
 
   @override
   void initState() {
@@ -31,13 +34,20 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     _screens = [
       DiscoverScreen(
         key: _discoverKey,
-        client: widget.client,
         userProfile: widget.userProfile,
         onBecameVisible: _onDiscoverBecameVisible,
       ),
-      LibrariesScreen(client: widget.client, userProfile: widget.userProfile),
-      SearchScreen(client: widget.client, userProfile: widget.userProfile),
+      LibrariesScreen(key: _librariesKey, userProfile: widget.userProfile),
+      SearchScreen(key: _searchKey, userProfile: widget.userProfile),
     ];
+
+    // Set up data invalidation callback for profile switching
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.userProfile.setDataInvalidationCallback(_invalidateAllScreens);
+
+      // Set the client in the provider so profile switching can update its token
+      context.plexClient.setClient(widget.client);
+    });
   }
 
   @override
@@ -74,6 +84,29 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     final discoverState = _discoverKey.currentState;
     if (discoverState != null && discoverState is Refreshable) {
       (discoverState as Refreshable).refresh();
+    }
+  }
+
+  /// Invalidate all cached data across all screens when profile is switched
+  void _invalidateAllScreens() {
+    appLogger.d('Invalidating all screen data due to profile switch');
+
+    // Refresh discover screen
+    final discoverState = _discoverKey.currentState;
+    if (discoverState != null && discoverState is Refreshable) {
+      (discoverState as Refreshable).refresh();
+    }
+
+    // Refresh libraries screen
+    final librariesState = _librariesKey.currentState;
+    if (librariesState != null && librariesState is Refreshable) {
+      (librariesState as Refreshable).refresh();
+    }
+
+    // Refresh search screen
+    final searchState = _searchKey.currentState;
+    if (searchState != null && searchState is Refreshable) {
+      (searchState as Refreshable).refresh();
     }
   }
 

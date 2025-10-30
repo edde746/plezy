@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 import 'storage_service.dart';
 import '../client/plex_client.dart';
 import '../models/plex_user_profile.dart';
+import '../models/plex_home.dart';
+import '../models/user_switch_response.dart';
 
 class PlexAuthService {
   static const String _appName = 'Plezy';
@@ -162,6 +164,52 @@ class PlexAuthService {
     );
 
     return PlexUserProfile.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Get home users for the authenticated user
+  Future<PlexHome> getHomeUsers(String authToken) async {
+    final response = await _dio.get(
+      '$_clientsApi/home/users',
+      options: _getCommonOptions(authToken: authToken),
+    );
+
+    return PlexHome.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Switch to a different user in the home
+  Future<UserSwitchResponse> switchToUser(
+    String userUUID,
+    String currentToken,
+  ) async {
+    final queryParams = {
+      'includeSubscriptions': '1',
+      'includeProviders': '1',
+      'includeSettings': '1',
+      'includeSharedSettings': '1',
+      'X-Plex-Product': _appName,
+      'X-Plex-Version': '1.1.0',
+      'X-Plex-Client-Identifier': _clientIdentifier,
+      'X-Plex-Platform': 'Flutter',
+      'X-Plex-Platform-Version': '3.8.1',
+      'X-Plex-Token': currentToken,
+      'X-Plex-Language': 'en',
+    };
+
+    final queryString = queryParams.entries
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
+        .join('&');
+
+    final response = await _dio.post(
+      '$_clientsApi/home/users/$userUUID/switch?$queryString',
+      options: Options(
+        headers: {'Accept': 'application/json', 'Content-Length': '0'},
+      ),
+    );
+
+    return UserSwitchResponse.fromJson(response.data as Map<String, dynamic>);
   }
 }
 

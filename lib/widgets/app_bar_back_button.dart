@@ -68,17 +68,21 @@ class AppBarBackButton extends StatelessWidget {
   /// Builds a back button with circular semi-transparent background
   Widget _buildCircularBackButton(BuildContext context) {
     return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.5),
-          shape: BoxShape.circle,
-        ),
-        child: IconButton(
-          icon: Icon(Icons.arrow_back, color: color ?? Colors.white),
-          onPressed: () => _handlePressed(context),
-          padding: EdgeInsets.zero,
-          tooltip: 'Back',
+      child: GestureDetector(
+        onTap: () => _handlePressed(context),
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.5),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.arrow_back,
+            color: color ?? Colors.white,
+            size: 20,
+          ),
         ),
       ),
     );

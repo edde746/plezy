@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../client/plex_client.dart';
+import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
+import '../providers/plex_client_provider.dart';
+import '../utils/provider_extensions.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../screens/video_player_screen.dart';
@@ -10,7 +12,6 @@ import '../theme/theme_helper.dart';
 import 'media_context_menu.dart';
 
 class MediaCard extends StatefulWidget {
-  final PlexClient client;
   final PlexMetadata item;
   final double? width;
   final double? height;
@@ -19,7 +20,6 @@ class MediaCard extends StatefulWidget {
 
   const MediaCard({
     super.key,
-    required this.client,
     required this.item,
     this.width,
     this.height,
@@ -37,6 +37,9 @@ class _MediaCardState extends State<MediaCard>
   bool get wantKeepAlive => true;
 
   void _handleTap(BuildContext context) async {
+    final client = context.client;
+    if (client == null) return;
+
     final itemType = widget.item.type.toLowerCase();
 
     // For episodes, start playback directly
@@ -45,7 +48,6 @@ class _MediaCardState extends State<MediaCard>
         context,
         MaterialPageRoute(
           builder: (context) => VideoPlayerScreen(
-            client: widget.client,
             metadata: widget.item,
             userProfile: widget.userProfile,
           ),
@@ -61,7 +63,6 @@ class _MediaCardState extends State<MediaCard>
         context,
         MaterialPageRoute(
           builder: (context) => SeasonDetailScreen(
-            client: widget.client,
             season: widget.item,
             userProfile: widget.userProfile,
           ),
@@ -75,7 +76,6 @@ class _MediaCardState extends State<MediaCard>
         context,
         MaterialPageRoute(
           builder: (context) => MediaDetailScreen(
-            client: widget.client,
             metadata: widget.item,
             userProfile: widget.userProfile,
           ),
@@ -94,7 +94,6 @@ class _MediaCardState extends State<MediaCard>
     return SizedBox(
       width: widget.width,
       child: MediaContextMenu(
-        client: widget.client,
         metadata: widget.item,
         onRefresh: widget.onRefresh,
         onTap: () => _handleTap(context),
@@ -185,20 +184,32 @@ class _MediaCardState extends State<MediaCard>
 
   Widget _buildPosterImage(BuildContext context) {
     if (widget.item.posterThumb != null) {
-      return CachedNetworkImage(
-        imageUrl: widget.client.getThumbnailUrl(widget.item.posterThumb),
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        filterQuality: FilterQuality.medium,
-        fadeInDuration: const Duration(milliseconds: 300),
-        placeholder: (context, url) => Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        ),
-        errorWidget: (context, url, error) => Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const Center(child: Icon(Icons.broken_image, size: 40)),
-        ),
+      return Consumer<PlexClientProvider>(
+        builder: (context, clientProvider, child) {
+          final client = clientProvider.client;
+          if (client == null) {
+            return Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: const Center(child: Icon(Icons.movie, size: 40)),
+            );
+          }
+
+          return CachedNetworkImage(
+            imageUrl: client.getThumbnailUrl(widget.item.posterThumb),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            filterQuality: FilterQuality.medium,
+            fadeInDuration: const Duration(milliseconds: 300),
+            placeholder: (context, url) => Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            ),
+            errorWidget: (context, url, error) => Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: const Center(child: Icon(Icons.broken_image, size: 40)),
+            ),
+          );
+        },
       );
     } else {
       return Container(

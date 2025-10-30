@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
+import '../providers/plex_client_provider.dart';
+import '../utils/provider_extensions.dart';
 import '../widgets/plex_video_controls.dart';
 import '../utils/language_codes.dart';
 import '../utils/app_logger.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
-  final PlexClient client;
   final PlexMetadata metadata;
   final AudioTrack? preferredAudioTrack;
   final SubtitleTrack? preferredSubtitleTrack;
@@ -20,7 +20,6 @@ class VideoPlayerScreen extends StatefulWidget {
 
   const VideoPlayerScreen({
     super.key,
-    required this.client,
     required this.metadata,
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
@@ -40,6 +39,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   PlexMetadata? _previousEpisode;
   bool _isLoadingNext = false;
   bool _showPlayNextDialog = false;
+  PlexClientProvider? _cachedClientProvider;
 
   @override
   void initState() {
@@ -87,6 +87,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
+    // Cache provider reference for safe access in dispose()
+    try {
+      _cachedClientProvider = context.plexClient;
+    } catch (e) {
+      appLogger.w('Failed to cache PlexClientProvider', error: e);
+      _cachedClientProvider = null;
+    }
+
     // Ensure landscape orientation is set even after navigation
     _setLandscapeOrientation();
   }
@@ -105,11 +114,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
 
     try {
-      final next = await widget.client.findAdjacentEpisode(widget.metadata, 1);
-      final previous = await widget.client.findAdjacentEpisode(
-        widget.metadata,
-        -1,
-      );
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) return;
+
+      final next = await client.findAdjacentEpisode(widget.metadata, 1);
+      final previous = await client.findAdjacentEpisode(widget.metadata, -1);
 
       if (mounted) {
         setState(() {
@@ -124,10 +134,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   Future<void> _startPlayback() async {
     try {
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
       // Get the direct file URL from the server
-      final videoUrl = await widget.client.getVideoUrl(
-        widget.metadata.ratingKey,
-      );
+      final videoUrl = await client.getVideoUrl(widget.metadata.ratingKey);
 
       if (videoUrl != null) {
         // Open video without auto-playing
@@ -593,7 +607,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final duration = player.state.duration.inMilliseconds;
 
     if (duration > 0) {
-      widget.client
+      final clientProvider = _cachedClientProvider;
+      final client = clientProvider?.client;
+      if (client == null) return;
+
+      client
           .updateProgress(
             widget.metadata.ratingKey,
             time: position,
@@ -648,7 +666,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
               VideoPlayerScreen(
-                client: widget.client,
                 metadata: episodeMetadata,
                 preferredAudioTrack: currentAudioTrack,
                 preferredSubtitleTrack: currentSubtitleTrack,
@@ -676,7 +693,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 controller: controller,
                 controls: (state) => plexVideoControlsBuilder(
                   player,
-                  widget.client,
                   widget.metadata,
                   onNext: _nextEpisode != null ? _playNext : null,
                   onPrevious: _previousEpisode != null ? _playPrevious : null,

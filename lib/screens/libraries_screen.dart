@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_filter.dart';
 import '../models/plex_user_profile.dart';
+import '../providers/plex_client_provider.dart';
+import '../utils/provider_extensions.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
@@ -13,10 +16,9 @@ import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
 
 class LibrariesScreen extends StatefulWidget {
-  final PlexClient client;
   final PlexUserProfile? userProfile;
 
-  const LibrariesScreen({super.key, required this.client, this.userProfile});
+  const LibrariesScreen({super.key, this.userProfile});
 
   @override
   State<LibrariesScreen> createState() => _LibrariesScreenState();
@@ -25,7 +27,7 @@ class LibrariesScreen extends StatefulWidget {
 class _LibrariesScreenState extends State<LibrariesScreen>
     with Refreshable, ItemUpdatable {
   @override
-  PlexClient get client => widget.client;
+  PlexClient get client => context.clientSafe;
 
   List<PlexLibrary> _libraries = [];
   List<PlexMetadata> _items = [];
@@ -50,7 +52,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     });
 
     try {
-      final libraries = await widget.client.getLibraries();
+      final clientProvider = Provider.of<PlexClientProvider>(
+        context,
+        listen: false,
+      );
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final libraries = await client.getLibraries();
       setState(() {
         _libraries = libraries;
         _isLoadingLibraries = false;
@@ -88,6 +99,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     final isChangingLibrary = !_isInitialLoad && _selectedLibraryIndex != index;
 
+    // Extract context dependencies before async operations
+    final clientProvider = context.plexClient;
+    final client = clientProvider.client;
+    if (client == null) {
+      setState(() {
+        _errorMessage = 'No client available';
+        _isLoadingItems = false;
+      });
+      return;
+    }
+
     setState(() {
       _selectedLibraryIndex = index;
       _isLoadingItems = true;
@@ -117,7 +139,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       _loadFilters(index);
 
       // Load content
-      final items = await widget.client.getLibraryContent(
+      final items = await client.getLibraryContent(
         _libraries[index].key,
         filters: _selectedFilters,
       );
@@ -137,9 +159,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     if (index < 0 || index >= _libraries.length) return;
 
     try {
-      final filters = await widget.client.getLibraryFilters(
-        _libraries[index].key,
+      final clientProvider = Provider.of<PlexClientProvider>(
+        context,
+        listen: false,
       );
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final filters = await client.getLibraryFilters(_libraries[index].key);
       setState(() {
         _filters = filters;
       });
@@ -157,7 +186,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     });
 
     try {
-      final items = await widget.client.getLibraryContent(
+      final clientProvider = Provider.of<PlexClientProvider>(
+        context,
+        listen: false,
+      );
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final items = await client.getLibraryContent(
         _libraries[_selectedLibraryIndex].key,
         filters: _selectedFilters,
       );
@@ -196,7 +234,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       builder: (context) => _FiltersBottomSheet(
         filters: _filters,
         selectedFilters: _selectedFilters,
-        client: widget.client,
         onFiltersChanged: (filters) async {
           setState(() {
             _selectedFilters.clear();
@@ -394,7 +431,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     final item = _items[index];
                     return MediaCard(
                       key: Key(item.ratingKey),
-                      client: widget.client,
                       item: item,
                       onRefresh: updateItem,
                       userProfile: widget.userProfile,
@@ -427,13 +463,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 class _FiltersBottomSheet extends StatefulWidget {
   final List<PlexFilter> filters;
   final Map<String, String> selectedFilters;
-  final PlexClient client;
   final Function(Map<String, String>) onFiltersChanged;
 
   const _FiltersBottomSheet({
     required this.filters,
     required this.selectedFilters,
-    required this.client,
     required this.onFiltersChanged,
   });
 
@@ -480,7 +514,16 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
     });
 
     try {
-      final values = await widget.client.getFilterValues(filter.key);
+      final clientProvider = Provider.of<PlexClientProvider>(
+        context,
+        listen: false,
+      );
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final values = await client.getFilterValues(filter.key);
       setState(() {
         _filterValues = values;
         _isLoadingValues = false;

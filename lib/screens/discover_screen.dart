@@ -1,34 +1,31 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
+import '../providers/plex_client_provider.dart';
 import '../services/storage_service.dart';
 import '../services/plex_auth_service.dart';
-import '../services/server_connection_service.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../widgets/server_list_tile.dart';
+import '../widgets/user_avatar_widget.dart';
+import 'profile_switch_screen.dart';
+import 'server_selection_screen.dart';
+import '../providers/user_profile_provider.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
+import '../utils/provider_extensions.dart';
 import 'video_player_screen.dart';
-import 'main_screen.dart';
-import 'about_screen.dart';
 import 'auth_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
-  final PlexClient client;
   final PlexUserProfile? userProfile;
   final VoidCallback? onBecameVisible;
 
-  const DiscoverScreen({
-    super.key,
-    required this.client,
-    this.userProfile,
-    this.onBecameVisible,
-  });
+  const DiscoverScreen({super.key, this.userProfile, this.onBecameVisible});
 
   @override
   State<DiscoverScreen> createState() => _DiscoverScreenState();
@@ -37,7 +34,7 @@ class DiscoverScreen extends StatefulWidget {
 class _DiscoverScreenState extends State<DiscoverScreen>
     with Refreshable, ItemUpdatable, SingleTickerProviderStateMixin {
   @override
-  PlexClient get client => widget.client;
+  PlexClient get client => context.clientSafe;
 
   List<PlexMetadata> _onDeck = [];
   List<PlexMetadata> _recentlyAdded = [];
@@ -101,8 +98,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     try {
       appLogger.d('Fetching onDeck and recentlyAdded from Plex');
-      final onDeck = await widget.client.getOnDeck();
-      final recentlyAdded = await widget.client.getRecentlyAdded(limit: 20);
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final onDeck = await client.getOnDeck();
+      final recentlyAdded = await client.getRecentlyAdded(limit: 20);
 
       appLogger.d(
         'Received ${onDeck.length} on deck items and ${recentlyAdded.length} recently added items',
@@ -163,155 +166,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return;
     }
 
-    // Show loading dialog
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Loading servers...'),
-            ],
-          ),
-        ),
-      );
-    }
-
     try {
-      // Fetch available servers
       final authService = await PlexAuthService.create();
-      final servers = await authService.fetchServers(plexToken);
 
-      // Close loading dialog
+      // Navigate to server selection screen
       if (mounted) {
-        Navigator.pop(context);
-      }
-
-      if (servers.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('No servers found')));
-        }
-        return;
-      }
-
-      // Show server selection dialog
-      if (mounted) {
-        final selectedServer = await showDialog<PlexServer>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Switch Server'),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: servers.length,
-                itemBuilder: (context, index) {
-                  final server = servers[index];
-                  return ServerListTile(
-                    server: server,
-                    onTap: () => Navigator.pop(context, server),
-                    showTrailingIcon: false,
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-            ],
-          ),
-        );
-
-        if (selectedServer != null) {
-          await _connectToServer(selectedServer);
-        }
-      }
-    } catch (e) {
-      // Close loading dialog if still open
-      if (mounted) {
-        Navigator.pop(context);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load servers: $e')));
-      }
-    }
-  }
-
-  Future<void> _connectToServer(PlexServer server) async {
-    // Show loading dialog
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Testing connections...'),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Get client identifier
-    final storage = await StorageService.getInstance();
-    final clientId = storage.getClientIdentifier();
-
-    if (clientId == null) {
-      // Close loading dialog
-      if (mounted) {
-        Navigator.pop(context);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Client identifier not found')),
-        );
-      }
-      return;
-    }
-
-    // Connect using the optimized service
-    final result = await ServerConnectionService.connectToServer(
-      server,
-      clientIdentifier: clientId,
-    );
-
-    // Close loading dialog
-    if (mounted) {
-      Navigator.pop(context);
-    }
-
-    // Handle result
-    if (result.isSuccess) {
-      // Replace current screen with main screen (includes bottom nav)
-      if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => MainScreen(client: result.client!),
+            builder: (context) => ServerSelectionScreen(
+              authService: authService,
+              plexToken: plexToken,
+            ),
           ),
         );
       }
-    } else {
-      // Show error
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result.error ?? 'Connection failed')),
+          SnackBar(content: Text('Failed to initialize server selection: $e')),
         );
       }
     }
@@ -349,6 +222,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
+  void _handleSwitchProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -369,54 +249,61 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   icon: const Icon(Icons.refresh),
                   onPressed: _loadContent,
                 ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (value) {
-                    if (value == 'switch_server') {
-                      _handleSwitchServer();
-                    } else if (value == 'logout') {
-                      _handleLogout();
-                    } else if (value == 'about') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AboutScreen(),
+                Consumer<UserProfileProvider>(
+                  builder: (context, userProvider, child) {
+                    return PopupMenuButton<String>(
+                      icon: userProvider.currentUser?.thumb != null
+                          ? UserAvatarWidget(
+                              user: userProvider.currentUser!,
+                              size: 32,
+                              showIndicators: false,
+                            )
+                          : const Icon(Icons.account_circle, size: 32),
+                      onSelected: (value) {
+                        if (value == 'switch_profile') {
+                          _handleSwitchProfile(context);
+                        } else if (value == 'switch_server') {
+                          _handleSwitchServer();
+                        } else if (value == 'logout') {
+                          _handleLogout();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        // Only show Switch Profile if multiple users available
+                        if (userProvider.hasMultipleUsers)
+                          const PopupMenuItem(
+                            value: 'switch_profile',
+                            child: Row(
+                              children: [
+                                Icon(Icons.people),
+                                SizedBox(width: 8),
+                                Text('Switch Profile'),
+                              ],
+                            ),
+                          ),
+                        const PopupMenuItem(
+                          value: 'switch_server',
+                          child: Row(
+                            children: [
+                              Icon(Icons.swap_horiz),
+                              SizedBox(width: 8),
+                              Text('Switch Server'),
+                            ],
+                          ),
                         ),
-                      );
-                    }
+                        const PopupMenuItem(
+                          value: 'logout',
+                          child: Row(
+                            children: [
+                              Icon(Icons.logout),
+                              SizedBox(width: 8),
+                              Text('Logout'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'switch_server',
-                      child: Row(
-                        children: [
-                          Icon(Icons.swap_horiz),
-                          SizedBox(width: 8),
-                          Text('Switch Server'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'about',
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline),
-                          SizedBox(width: 8),
-                          Text('About'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'logout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout),
-                          SizedBox(width: 8),
-                          Text('Logout'),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -617,12 +504,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     return GestureDetector(
       onTap: () {
+        final clientProvider = context.plexClient;
+        final client = clientProvider.client;
+        if (client == null) return;
+
         appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
         Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (context) => VideoPlayerScreen(
-              client: widget.client,
               metadata: heroItem,
               userProfile: widget.userProfile,
             ),
@@ -669,21 +559,33 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         child: Opacity(opacity: value, child: child),
                       );
                     },
-                    child: CachedNetworkImage(
-                      imageUrl: widget.client.getThumbnailUrl(
-                        heroItem.art ?? heroItem.grandparentArt,
-                      ),
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                      ),
+                    child: Consumer<PlexClientProvider>(
+                      builder: (context, clientProvider, child) {
+                        final client = clientProvider.client;
+                        if (client == null) {
+                          return Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                          );
+                        }
+                        return CachedNetworkImage(
+                          imageUrl: client.getThumbnailUrl(
+                            heroItem.art ?? heroItem.grandparentArt,
+                          ),
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 )
@@ -728,72 +630,82 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         SizedBox(
                           height: 120,
                           width: 400,
-                          child: CachedNetworkImage(
-                            imageUrl: widget.client.getThumbnailUrl(
-                              heroItem.clearLogo,
-                            ),
-                            filterQuality: FilterQuality.medium,
-                            fit: BoxFit.contain,
-                            alignment: isLargeScreen
-                                ? Alignment.bottomLeft
-                                : Alignment.bottomCenter,
-                            placeholder: (context, url) => Align(
-                              alignment: isLargeScreen
-                                  ? Alignment.centerLeft
-                                  : Alignment.center,
-                              child: Text(
-                                showName,
-                                style: Theme.of(context).textTheme.displaySmall
-                                    ?.copyWith(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                      fontWeight: FontWeight.bold,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.5,
-                                          ),
-                                          blurRadius: 8,
-                                        ),
-                                      ],
-                                    ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: isLargeScreen
-                                    ? TextAlign.left
-                                    : TextAlign.center,
-                              ),
-                            ),
-                            errorWidget: (context, url, error) {
-                              // Fallback to text if logo fails to load
-                              return Align(
-                                alignment: isLargeScreen
-                                    ? Alignment.centerLeft
-                                    : Alignment.center,
-                                child: Text(
-                                  showName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .displaySmall
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.5,
-                                            ),
-                                            blurRadius: 8,
-                                          ),
-                                        ],
-                                      ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: isLargeScreen
-                                      ? TextAlign.left
-                                      : TextAlign.center,
+                          child: Consumer<PlexClientProvider>(
+                            builder: (context, clientProvider, child) {
+                              final client = clientProvider.client;
+                              if (client == null) {
+                                return Container();
+                              }
+                              return CachedNetworkImage(
+                                imageUrl: client.getThumbnailUrl(
+                                  heroItem.clearLogo,
                                 ),
+                                filterQuality: FilterQuality.medium,
+                                fit: BoxFit.contain,
+                                alignment: isLargeScreen
+                                    ? Alignment.bottomLeft
+                                    : Alignment.bottomCenter,
+                                placeholder: (context, url) => Align(
+                                  alignment: isLargeScreen
+                                      ? Alignment.centerLeft
+                                      : Alignment.center,
+                                  child: Text(
+                                    showName,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .displaySmall
+                                        ?.copyWith(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          fontWeight: FontWeight.bold,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.5,
+                                              ),
+                                              blurRadius: 8,
+                                            ),
+                                          ],
+                                        ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: isLargeScreen
+                                        ? TextAlign.left
+                                        : TextAlign.center,
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) {
+                                  // Fallback to text if logo fails to load
+                                  return Align(
+                                    alignment: isLargeScreen
+                                        ? Alignment.centerLeft
+                                        : Alignment.center,
+                                    child: Text(
+                                      showName,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displaySmall
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            shadows: [
+                                              Shadow(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.5,
+                                                ),
+                                                blurRadius: 8,
+                                              ),
+                                            ],
+                                          ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: isLargeScreen
+                                          ? TextAlign.left
+                                          : TextAlign.center,
+                                    ),
+                                  );
+                                },
                               );
                             },
                           ),
@@ -920,12 +832,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     return InkWell(
       onTap: () {
+        final clientProvider = context.plexClient;
+        final client = clientProvider.client;
+        if (client == null) return;
+
         appLogger.d('Playing: ${heroItem.title}');
         Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (context) => VideoPlayerScreen(
-              client: widget.client,
               metadata: heroItem,
               userProfile: widget.userProfile,
             ),
@@ -1023,7 +938,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: MediaCard(
                     key: Key(item.ratingKey),
-                    client: widget.client,
                     item: item,
                     width: cardWidth,
                     height: cardHeight,

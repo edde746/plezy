@@ -10,6 +10,9 @@ class StorageService {
   static const String _keySelectedLibraryIndex = 'selected_library_index';
   static const String _keyLibraryFilters = 'library_filters';
   static const String _keyUserProfile = 'user_profile';
+  static const String _keyCurrentUserUUID = 'current_user_uuid';
+  static const String _keyHomeUsersCache = 'home_users_cache';
+  static const String _keyHomeUsersCacheExpiry = 'home_users_cache_expiry';
 
   static StorageService? _instance;
   late SharedPreferences _prefs;
@@ -179,5 +182,75 @@ class StorageService {
     } catch (e) {
       return null;
     }
+  }
+
+  // Current User UUID
+  Future<void> saveCurrentUserUUID(String uuid) async {
+    await _prefs.setString(_keyCurrentUserUUID, uuid);
+  }
+
+  String? getCurrentUserUUID() {
+    return _prefs.getString(_keyCurrentUserUUID);
+  }
+
+  // Home Users Cache (stored as JSON string with expiry)
+  Future<void> saveHomeUsersCache(Map<String, dynamic> homeData) async {
+    final jsonString = json.encode(homeData);
+    await _prefs.setString(_keyHomeUsersCache, jsonString);
+
+    // Set cache expiry to 1 hour from now
+    final expiry = DateTime.now()
+        .add(const Duration(hours: 1))
+        .millisecondsSinceEpoch;
+    await _prefs.setInt(_keyHomeUsersCacheExpiry, expiry);
+  }
+
+  Map<String, dynamic>? getHomeUsersCache() {
+    final expiry = _prefs.getInt(_keyHomeUsersCacheExpiry);
+    if (expiry == null || DateTime.now().millisecondsSinceEpoch > expiry) {
+      // Cache expired, clear it
+      clearHomeUsersCache();
+      return null;
+    }
+
+    final jsonString = _prefs.getString(_keyHomeUsersCache);
+    if (jsonString == null) return null;
+
+    try {
+      return json.decode(jsonString) as Map<String, dynamic>;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> clearHomeUsersCache() async {
+    await Future.wait([
+      _prefs.remove(_keyHomeUsersCache),
+      _prefs.remove(_keyHomeUsersCacheExpiry),
+    ]);
+  }
+
+  // Clear current user UUID (for server switching)
+  Future<void> clearCurrentUserUUID() async {
+    await _prefs.remove(_keyCurrentUserUUID);
+  }
+
+  // Clear all user-related data (for logout)
+  Future<void> clearUserData() async {
+    await Future.wait([
+      clearCredentials(),
+      clearLibraryPreferences(),
+      _prefs.remove(_keyUserProfile),
+      _prefs.remove(_keyCurrentUserUUID),
+      clearHomeUsersCache(),
+    ]);
+  }
+
+  // Update current user after switching
+  Future<void> updateCurrentUser(String userUUID, String authToken) async {
+    await Future.wait([
+      saveCurrentUserUUID(userUUID),
+      saveToken(authToken), // Update the main token
+    ]);
   }
 }

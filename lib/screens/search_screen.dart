@@ -3,16 +3,16 @@ import 'package:flutter/material.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
+import '../utils/provider_extensions.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 
 class SearchScreen extends StatefulWidget {
-  final PlexClient client;
   final PlexUserProfile? userProfile;
 
-  const SearchScreen({super.key, required this.client, this.userProfile});
+  const SearchScreen({super.key, this.userProfile});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -21,7 +21,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen>
     with Refreshable, ItemUpdatable {
   @override
-  PlexClient get client => widget.client;
+  PlexClient get client => context.clientSafe;
 
   final _searchController = TextEditingController();
   List<PlexMetadata> _searchResults = [];
@@ -86,7 +86,13 @@ class _SearchScreenState extends State<SearchScreen>
     });
 
     try {
-      final results = await widget.client.search(query);
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final results = await client.search(query);
       if (mounted) {
         setState(() {
           _searchResults = results;
@@ -220,7 +226,6 @@ class _SearchScreenState extends State<SearchScreen>
                     final item = _searchResults[index];
                     return MediaCard(
                       key: Key(item.ratingKey),
-                      client: widget.client,
                       item: item,
                       onRefresh: updateItem,
                       userProfile: widget.userProfile,

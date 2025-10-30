@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../client/plex_client.dart';
+import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
+import '../providers/plex_client_provider.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/media_context_menu.dart';
 import '../utils/app_logger.dart';
+import '../utils/provider_extensions.dart';
 import '../theme/theme_helper.dart';
 import 'season_detail_screen.dart';
 import 'video_player_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
-  final PlexClient client;
   final PlexMetadata metadata;
   final PlexUserProfile? userProfile;
 
   const MediaDetailScreen({
     super.key,
-    required this.client,
     required this.metadata,
     this.userProfile,
   });
@@ -55,8 +55,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     });
 
     try {
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
       // Fetch full metadata with clearLogo and OnDeck episode
-      final result = await widget.client.getMetadataWithImagesAndOnDeck(
+      final result = await client.getMetadataWithImagesAndOnDeck(
         widget.metadata.ratingKey,
       );
       final metadata = result['metadata'] as PlexMetadata?;
@@ -104,9 +110,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     });
 
     try {
-      final seasons = await widget.client.getChildren(
-        widget.metadata.ratingKey,
-      );
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final seasons = await client.getChildren(widget.metadata.ratingKey);
       setState(() {
         _seasons = seasons;
         _isLoadingSeasons = false;
@@ -122,7 +132,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   /// This preserves scroll position and only updates watch-related data
   Future<void> _updateWatchState() async {
     try {
-      final metadata = await widget.client.getMetadataWithImages(
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final metadata = await client.getMetadataWithImages(
         widget.metadata.ratingKey,
       );
 
@@ -130,9 +146,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         // For shows, also refetch seasons to update their watch counts
         List<PlexMetadata>? updatedSeasons;
         if (metadata.type.toLowerCase() == 'show') {
-          updatedSeasons = await widget.client.getChildren(
-            widget.metadata.ratingKey,
-          );
+          updatedSeasons = await client.getChildren(widget.metadata.ratingKey);
         }
 
         // Single setState to minimize rebuilds - scroll position is preserved by controller
@@ -151,6 +165,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   Future<void> _playFirstEpisode() async {
     try {
+      // Extract context dependencies before async operations
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
       // If seasons aren't loaded yet, wait for them or load them
       if (_seasons.isEmpty && !_isLoadingSeasons) {
         await _loadSeasons();
@@ -174,7 +195,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       final firstSeason = _seasons.first;
 
       // Get episodes of the first season
-      final episodes = await widget.client.getChildren(firstSeason.ratingKey);
+      final episodes = await client.getChildren(firstSeason.ratingKey);
 
       if (episodes.isEmpty) {
         if (mounted) {
@@ -188,12 +209,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       // Play the first episode
       final firstEpisode = episodes.first;
       if (mounted) {
+        final clientProvider = context.plexClient;
+        final client = clientProvider.client;
+        if (client == null) return;
+
         appLogger.d('Playing first episode: ${firstEpisode.title}');
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => VideoPlayerScreen(
-              client: widget.client,
               metadata: firstEpisode,
               userProfile: widget.userProfile,
             ),
@@ -249,19 +273,31 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 children: [
                   // Background Art
                   if (metadata.art != null)
-                    CachedNetworkImage(
-                      imageUrl: widget.client.getThumbnailUrl(metadata.art),
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                      ),
+                    Consumer<PlexClientProvider>(
+                      builder: (context, clientProvider, child) {
+                        final client = clientProvider.client;
+                        if (client == null) {
+                          return Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                          );
+                        }
+                        return CachedNetworkImage(
+                          imageUrl: client.getThumbnailUrl(metadata.art),
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                          ),
+                        );
+                      },
                     )
                   else
                     Container(
@@ -303,42 +339,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               SizedBox(
                                 height: 120,
                                 width: 400,
-                                child: CachedNetworkImage(
-                                  imageUrl: widget.client.getThumbnailUrl(
-                                    metadata.clearLogo,
-                                  ),
-                                  filterQuality: FilterQuality.medium,
-                                  fit: BoxFit.contain,
-                                  alignment: Alignment.centerLeft,
-                                  placeholder: (context, url) => Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      metadata.title,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .displaySmall
-                                          ?.copyWith(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.3,
-                                            ),
-                                            fontWeight: FontWeight.bold,
-                                            shadows: [
-                                              Shadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.5,
-                                                ),
-                                                blurRadius: 8,
-                                              ),
-                                            ],
-                                          ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) {
-                                    return Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
+                                child: Consumer<PlexClientProvider>(
+                                  builder: (context, clientProvider, child) {
+                                    final client = clientProvider.client;
+                                    if (client == null) {
+                                      return Text(
                                         metadata.title,
                                         style: Theme.of(context)
                                             .textTheme
@@ -346,17 +351,66 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                             ?.copyWith(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,
-                                              shadows: [
-                                                Shadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.5),
-                                                  blurRadius: 8,
-                                                ),
-                                              ],
                                             ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                                      );
+                                    }
+                                    return CachedNetworkImage(
+                                      imageUrl: client.getThumbnailUrl(
+                                        metadata.clearLogo,
                                       ),
+                                      filterQuality: FilterQuality.medium,
+                                      fit: BoxFit.contain,
+                                      alignment: Alignment.centerLeft,
+                                      placeholder: (context, url) => Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          metadata.title,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displaySmall
+                                              ?.copyWith(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.3,
+                                                ),
+                                                fontWeight: FontWeight.bold,
+                                                shadows: [
+                                                  Shadow(
+                                                    color: Colors.black
+                                                        .withValues(alpha: 0.5),
+                                                    blurRadius: 8,
+                                                  ),
+                                                ],
+                                              ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) {
+                                        return Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            metadata.title,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .displaySmall
+                                                ?.copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  shadows: [
+                                                    Shadow(
+                                                      color: Colors.black
+                                                          .withValues(
+                                                            alpha: 0.5,
+                                                          ),
+                                                      blurRadius: 8,
+                                                    ),
+                                                  ],
+                                                ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        );
+                                      },
                                     );
                                   },
                                 ),
@@ -481,6 +535,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               // Otherwise, play the first episode of the first season
                               if (metadata.type.toLowerCase() == 'show') {
                                 if (_onDeckEpisode != null) {
+                                  final clientProvider = context.plexClient;
+                                  final client = clientProvider.client;
+                                  if (client == null) return;
+
                                   appLogger.d(
                                     'Playing on deck episode: ${_onDeckEpisode!.title}',
                                   );
@@ -488,7 +546,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => VideoPlayerScreen(
-                                        client: widget.client,
                                         metadata: _onDeckEpisode!,
                                         userProfile: widget.userProfile,
                                       ),
@@ -504,13 +561,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   await _playFirstEpisode();
                                 }
                               } else {
+                                final clientProvider = context.plexClient;
+                                final client = clientProvider.client;
+                                if (client == null) return;
+
                                 appLogger.d('Playing: ${metadata.title}');
                                 // For movies or episodes, play directly
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => VideoPlayerScreen(
-                                      client: widget.client,
                                       metadata: metadata,
                                       userProfile: widget.userProfile,
                                     ),
@@ -540,9 +600,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       IconButton.filledTonal(
                         onPressed: () async {
                           try {
-                            await widget.client.markAsWatched(
-                              metadata.ratingKey,
-                            );
+                            final clientProvider = context.plexClient;
+                            final client = clientProvider.client;
+                            if (client == null) return;
+
+                            await client.markAsWatched(metadata.ratingKey);
                             if (context.mounted) {
                               _watchStateChanged = true;
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -573,9 +635,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       IconButton.filledTonal(
                         onPressed: () async {
                           try {
-                            await widget.client.markAsUnwatched(
-                              metadata.ratingKey,
-                            );
+                            final clientProvider = context.plexClient;
+                            final client = clientProvider.client;
+                            if (client == null) return;
+
+                            await client.markAsUnwatched(metadata.ratingKey);
                             if (context.mounted) {
                               _watchStateChanged = true;
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -691,7 +755,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: MediaContextMenu(
-        client: widget.client,
         metadata: season,
         onRefresh: (ratingKey) {
           _watchStateChanged = true;
@@ -701,8 +764,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
           final watchStateChanged = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  SeasonDetailScreen(client: widget.client, season: season),
+              builder: (context) => SeasonDetailScreen(season: season),
             ),
           );
           if (watchStateChanged == true) {
@@ -719,26 +781,41 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 if (season.thumb != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: CachedNetworkImage(
-                      imageUrl: widget.client.getThumbnailUrl(season.thumb),
-                      width: 80,
-                      height: 120,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        width: 80,
-                        height: 120,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        width: 80,
-                        height: 120,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        child: const Icon(Icons.movie, size: 32),
-                      ),
+                    child: Consumer<PlexClientProvider>(
+                      builder: (context, clientProvider, child) {
+                        final client = clientProvider.client;
+                        if (client == null) {
+                          return Container(
+                            width: 80,
+                            height: 120,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            child: const Icon(Icons.movie, size: 32),
+                          );
+                        }
+                        return CachedNetworkImage(
+                          imageUrl: client.getThumbnailUrl(season.thumb),
+                          width: 80,
+                          height: 120,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: 80,
+                            height: 120,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            width: 80,
+                            height: 120,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            child: const Icon(Icons.movie, size: 32),
+                          ),
+                        );
+                      },
                     ),
                   )
                 else
@@ -785,7 +862,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                 borderRadius: BorderRadius.circular(4),
                                 child: LinearProgressIndicator(
                                   value:
-                                      season.viewedLeafCount! / season.leafCount!,
+                                      season.viewedLeafCount! /
+                                      season.leafCount!,
                                   backgroundColor: tokens(context).outline,
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     Theme.of(context).colorScheme.primary,

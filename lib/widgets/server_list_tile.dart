@@ -5,12 +5,14 @@ class ServerListTile extends StatelessWidget {
   final PlexServer server;
   final VoidCallback onTap;
   final bool showTrailingIcon;
+  final bool isCurrentServer;
 
   const ServerListTile({
     super.key,
     required this.server,
     required this.onTap,
     this.showTrailingIcon = true,
+    this.isCurrentServer = false,
   });
 
   @override
@@ -57,8 +59,26 @@ class ServerListTile extends StatelessWidget {
           ),
         ],
       ),
-      trailing: showTrailingIcon ? const Icon(Icons.chevron_right) : null,
-      onTap: onTap,
+      trailing: isCurrentServer
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'CURRENT',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            )
+          : (showTrailingIcon ? const Icon(Icons.chevron_right) : null),
+      onTap: isCurrentServer ? null : onTap,
+      enabled: !isCurrentServer,
     );
   }
 }

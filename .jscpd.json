@@ -1,0 +1,21 @@
+{
+  "threshold": 5,
+  "reporters": ["html", "console"],
+  "ignore": [
+    "**/*.g.dart",
+    "**/*.freezed.dart",
+    "**/*.mocks.dart",
+    "**/generated/**",
+    "**/*.config.dart"
+  ],
+  "absolute": true,
+  "gitignore": true,
+  "format": ["dart"],
+  "minLines": 5,
+  "minTokens": 50,
+  "output": "./duplication-report",
+  "mode": "strict",
+  "formatsExts": {
+    "dart": ["dart"]
+  }
+}

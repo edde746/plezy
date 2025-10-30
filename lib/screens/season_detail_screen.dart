@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
+import '../providers/plex_client_provider.dart';
+import '../utils/provider_extensions.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/media_context_menu.dart';
@@ -11,16 +14,10 @@ import '../theme/theme_helper.dart';
 import 'video_player_screen.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
-  final PlexClient client;
   final PlexMetadata season;
   final PlexUserProfile? userProfile;
 
-  const SeasonDetailScreen({
-    super.key,
-    required this.client,
-    required this.season,
-    this.userProfile,
-  });
+  const SeasonDetailScreen({super.key, required this.season, this.userProfile});
 
   @override
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
@@ -29,7 +26,7 @@ class SeasonDetailScreen extends StatefulWidget {
 class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     with ItemUpdatable {
   @override
-  PlexClient get client => widget.client;
+  PlexClient get client => context.clientSafe;
 
   List<PlexMetadata> _episodes = [];
   bool _isLoadingEpisodes = false;
@@ -47,7 +44,13 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     });
 
     try {
-      final episodes = await widget.client.getChildren(widget.season.ratingKey);
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final episodes = await client.getChildren(widget.season.ratingKey);
       setState(() {
         _episodes = episodes;
         _isLoadingEpisodes = false;
@@ -104,9 +107,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                     const SizedBox(height: 16),
                     Text(
                       'No episodes found',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleLarge?.copyWith(
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: tokens(context).textMuted,
                       ),
                     ),
@@ -136,7 +137,6 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
         : 0.0;
 
     return MediaContextMenu(
-      client: widget.client,
       metadata: episode,
       onRefresh: updateItem,
       onTap: () async {
@@ -144,7 +144,6 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
           context,
           MaterialPageRoute(
             builder: (context) => VideoPlayerScreen(
-              client: widget.client,
               metadata: episode,
               userProfile: widget.userProfile,
             ),
@@ -155,14 +154,13 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
       },
       child: InkWell(
         key: Key(episode.ratingKey),
-        hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
+        hoverColor: Theme.of(
+          context,
+        ).colorScheme.surface.withValues(alpha: 0.05),
         child: Container(
           decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(
-                color: tokens(context).outline,
-                width: 0.5,
-              ),
+              bottom: BorderSide(color: tokens(context).outline, width: 0.5),
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -179,23 +177,42 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
                         child: episode.thumb != null
-                            ? CachedNetworkImage(
-                                imageUrl: widget.client.getThumbnailUrl(
-                                  episode.thumb,
-                                ),
-                                filterQuality: FilterQuality.medium,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                ),
-                                errorWidget: (context, url, error) => Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                  child: const Icon(Icons.movie, size: 32),
-                                ),
+                            ? Consumer<PlexClientProvider>(
+                                builder: (context, clientProvider, child) {
+                                  final client = clientProvider.client;
+                                  if (client == null) {
+                                    return Container(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                      child: const Center(
+                                        child: Icon(Icons.movie, size: 40),
+                                      ),
+                                    );
+                                  }
+                                  return CachedNetworkImage(
+                                    imageUrl: client.getThumbnailUrl(
+                                      episode.thumb,
+                                    ),
+                                    filterQuality: FilterQuality.medium,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                          child: const Icon(
+                                            Icons.movie,
+                                            size: 32,
+                                          ),
+                                        ),
+                                  );
+                                },
                               )
                             : Container(
                                 color: Theme.of(
@@ -327,28 +344,31 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                         if (episode.duration != null)
                           Text(
                             _formatDuration(episode.duration!),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: tokens(context).textMuted,
-                              fontSize: 12,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: tokens(context).textMuted,
+                                  fontSize: 12,
+                                ),
                           ),
                         if (episode.duration != null && episode.isWatched) ...[
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 6),
                             child: Text(
                               '•',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: tokens(context).textMuted,
-                                fontSize: 12,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: tokens(context).textMuted,
+                                    fontSize: 12,
+                                  ),
                             ),
                           ),
                           Text(
                             'Watched ✓',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: tokens(context).textMuted,
-                              fontSize: 12,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: tokens(context).textMuted,
+                                  fontSize: 12,
+                                ),
                           ),
                         ],
                       ],

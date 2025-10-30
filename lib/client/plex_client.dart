@@ -15,7 +15,7 @@ class ConnectionTestResult {
 }
 
 class PlexClient {
-  final PlexConfig config;
+  PlexConfig config;
   late final Dio _dio;
 
   PlexClient(this.config) {
@@ -39,6 +39,14 @@ class PlexClient {
         responseHeader: false,
       ),
     );
+  }
+
+  /// Update the token used by this client
+  void updateToken(String newToken) {
+    // Update both the Dio headers and the config to ensure consistency
+    _dio.options.headers['X-Plex-Token'] = newToken;
+    config = config.copyWith(token: newToken);
+    appLogger.d('PlexClient token updated (headers and config)');
   }
 
   /// Test connection to server

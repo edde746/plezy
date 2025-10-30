@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
+import '../utils/provider_extensions.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 
@@ -17,7 +17,6 @@ class _MenuAction {
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
 class MediaContextMenu extends StatefulWidget {
-  final PlexClient client;
   final PlexMetadata metadata;
   final void Function(String ratingKey)? onRefresh;
   final VoidCallback? onTap;
@@ -25,7 +24,6 @@ class MediaContextMenu extends StatefulWidget {
 
   const MediaContextMenu({
     super.key,
-    required this.client,
     required this.metadata,
     this.onRefresh,
     this.onTap,
@@ -44,6 +42,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   void _showContextMenu(BuildContext context) async {
+    final client = context.client;
+    if (client == null) return;
+
     final itemType = widget.metadata.type.toLowerCase();
     final isPartiallyWatched =
         widget.metadata.viewedLeafCount != null &&
@@ -188,7 +189,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       case 'watch':
         await _executeAction(
           context,
-          () => widget.client.markAsWatched(widget.metadata.ratingKey),
+          () => client.markAsWatched(widget.metadata.ratingKey),
           'Marked as watched',
         );
         break;
@@ -196,7 +197,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       case 'unwatch':
         await _executeAction(
           context,
-          () => widget.client.markAsUnwatched(widget.metadata.ratingKey),
+          () => client.markAsUnwatched(widget.metadata.ratingKey),
           'Marked as unwatched',
         );
         break;
@@ -205,8 +206,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         await _navigateToRelated(
           context,
           widget.metadata.grandparentRatingKey,
-          (metadata) =>
-              MediaDetailScreen(client: widget.client, metadata: metadata),
+          (metadata) => MediaDetailScreen(metadata: metadata),
           'Error loading series',
         );
         break;
@@ -215,8 +215,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         await _navigateToRelated(
           context,
           widget.metadata.parentRatingKey,
-          (metadata) =>
-              SeasonDetailScreen(client: widget.client, season: metadata),
+          (metadata) => SeasonDetailScreen(season: metadata),
           'Error loading season',
         );
         break;
@@ -255,8 +254,12 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   ) async {
     if (ratingKey == null) return;
 
+    final clientProvider = context.plexClient;
+    final client = clientProvider.client;
+    if (client == null) return;
+
     try {
-      final metadata = await widget.client.getMetadata(ratingKey);
+      final metadata = await client.getMetadata(ratingKey);
       if (metadata != null && context.mounted) {
         await Navigator.push(
           context,

@@ -3,27 +3,27 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
-import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
+import '../providers/plex_client_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/platform_detector.dart';
+import '../utils/provider_extensions.dart';
 import 'app_bar_back_button.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
   Player player,
-  PlexClient client,
   PlexMetadata metadata, {
   VoidCallback? onNext,
   VoidCallback? onPrevious,
 }) {
   return PlexVideoControls(
     player: player,
-    client: client,
     metadata: metadata,
     onNext: onNext,
     onPrevious: onPrevious,
@@ -32,7 +32,6 @@ Widget plexVideoControlsBuilder(
 
 class PlexVideoControls extends StatefulWidget {
   final Player player;
-  final PlexClient client;
   final PlexMetadata metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
@@ -40,7 +39,6 @@ class PlexVideoControls extends StatefulWidget {
   const PlexVideoControls({
     super.key,
     required this.player,
-    required this.client,
     required this.metadata,
     this.onNext,
     this.onPrevious,
@@ -167,7 +165,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   Future<void> _loadChapters() async {
-    final chapters = await widget.client.getChapters(widget.metadata.ratingKey);
+    final clientProvider = context.plexClient;
+    final client = clientProvider.client;
+    if (client == null) return;
+
+    final chapters = await client.getChapters(widget.metadata.ratingKey);
     if (mounted) {
       setState(() {
         _chapters = chapters;
@@ -1505,20 +1507,37 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                     children: [
                                       ClipRRect(
                                         borderRadius: BorderRadius.circular(4),
-                                        child: Image.network(
-                                          widget.client.getThumbnailUrl(
-                                            chapter.thumb,
-                                          ),
-                                          width: 60,
-                                          height: 34,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  const Icon(
+                                        child: Consumer<PlexClientProvider>(
+                                          builder:
+                                              (context, clientProvider, child) {
+                                                final client =
+                                                    clientProvider.client;
+                                                if (client == null) {
+                                                  return const Icon(
                                                     Icons.image,
                                                     color: Colors.white54,
                                                     size: 34,
+                                                  );
+                                                }
+                                                return Image.network(
+                                                  client.getThumbnailUrl(
+                                                    chapter.thumb,
                                                   ),
+                                                  width: 60,
+                                                  height: 34,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder:
+                                                      (
+                                                        context,
+                                                        error,
+                                                        stackTrace,
+                                                      ) => const Icon(
+                                                        Icons.image,
+                                                        color: Colors.white54,
+                                                        size: 34,
+                                                      ),
+                                                );
+                                              },
                                         ),
                                       ),
                                       if (isCurrentChapter)

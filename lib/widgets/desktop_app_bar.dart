@@ -91,20 +91,39 @@ class DesktopSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine the effective leading widget
+    Widget? effectiveLeading = leading;
+
+    // If no leading is provided but automaticallyImplyLeading is true,
+    // create a back button manually so it goes through our padding logic
+    if (leading == null && automaticallyImplyLeading) {
+      final parentRoute = ModalRoute.of(context);
+      final canPop = parentRoute?.canPop ?? false;
+
+      if (canPop) {
+        effectiveLeading = IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        );
+      }
+    }
+
     return SliverAppBar(
       title: title != null
           ? DesktopTitleBarPadding(
-              leftPadding: leading != null ? 0 : null,
+              leftPadding: effectiveLeading != null ? 0 : null,
               child: title!,
             )
           : null,
       actions: DesktopAppBarHelper.buildAdjustedActions(actions),
       leading: DesktopAppBarHelper.buildAdjustedLeading(
-        leading,
+        effectiveLeading,
         includeGestureDetector: true,
       ),
-      leadingWidth: DesktopAppBarHelper.calculateLeadingWidth(leading),
-      automaticallyImplyLeading: automaticallyImplyLeading,
+      leadingWidth: DesktopAppBarHelper.calculateLeadingWidth(effectiveLeading),
+      automaticallyImplyLeading:
+          false, // Always false since we handle it manually
       elevation: elevation,
       backgroundColor: backgroundColor,
       surfaceTintColor: surfaceTintColor,
