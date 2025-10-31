@@ -120,6 +120,9 @@ class StorageService {
       _prefs.remove(_keyServerData),
       _prefs.remove(_keyClientId),
       _prefs.remove(_keyUserProfile),
+      _prefs.remove(_keyCurrentUserUUID),
+      _prefs.remove(_keyHomeUsersCache),
+      _prefs.remove(_keyHomeUsersCacheExpiry),
     ]);
   }
 
@@ -240,9 +243,6 @@ class StorageService {
     await Future.wait([
       clearCredentials(),
       clearLibraryPreferences(),
-      _prefs.remove(_keyUserProfile),
-      _prefs.remove(_keyCurrentUserUUID),
-      clearHomeUsersCache(),
     ]);
   }
 

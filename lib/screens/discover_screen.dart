@@ -210,8 +210,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
 
     if (confirm == true && mounted) {
-      final storage = await StorageService.getInstance();
-      await storage.clearCredentials();
+      // Use comprehensive logout through UserProfileProvider
+      final userProfileProvider = Provider.of<UserProfileProvider>(context, listen: false);
+      final plexClientProvider = Provider.of<PlexClientProvider>(context, listen: false);
+
+      // Clear all user data and provider states
+      await userProfileProvider.logout();
+      plexClientProvider.clearClient();
 
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(

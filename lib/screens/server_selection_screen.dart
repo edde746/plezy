@@ -5,6 +5,7 @@ import '../services/server_connection_service.dart';
 import '../widgets/server_list_tile.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../utils/app_logger.dart';
+import '../utils/provider_extensions.dart';
 import 'main_screen.dart';
 
 class ServerSelectionScreen extends StatefulWidget {
@@ -139,8 +140,11 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
 
       // Handle result
       if (result.isSuccess) {
-        // Navigate to main app and clear navigation stack
+        // Set client in provider before navigation (same pattern as auto-login)
         if (mounted) {
+          context.plexClient.setClient(result.client!);
+
+          // Navigate to main app and clear navigation stack
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(

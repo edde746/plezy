@@ -318,8 +318,12 @@ class UserProfileProvider extends ChangeNotifier {
 
     try {
       await _storageService!.clearUserData();
+
+      // Clear user-specific provider state but keep services for future sign-ins
       _home = null;
       _currentUser = null;
+      _onDataInvalidationRequested = null;
+
       _clearError();
       notifyListeners();
 

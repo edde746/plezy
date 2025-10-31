@@ -111,9 +111,7 @@ ThemeData monoTheme({required bool dark}) {
         elevation: const WidgetStatePropertyAll(0),
         backgroundColor: WidgetStatePropertyAll(c.text),
         foregroundColor: WidgetStatePropertyAll(dark ? c.bg : Colors.white),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
+        shape: const WidgetStatePropertyAll(StadiumBorder()),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
@@ -124,9 +122,7 @@ ThemeData monoTheme({required bool dark}) {
         elevation: const WidgetStatePropertyAll(0),
         backgroundColor: WidgetStatePropertyAll(c.text),
         foregroundColor: WidgetStatePropertyAll(dark ? c.bg : Colors.white),
-        shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
+        shape: const WidgetStatePropertyAll(StadiumBorder()),
       ),
     ),
     dividerTheme: DividerThemeData(space: 0, thickness: 1, color: c.outline),

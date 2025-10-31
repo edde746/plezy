@@ -45,11 +45,13 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     ];
 
     // Set up data invalidation callback for profile switching
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.userProfile.setDataInvalidationCallback(_invalidateAllScreens);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Initialize UserProfileProvider to ensure it's ready after sign-in
+      final userProfileProvider = context.userProfile;
+      await userProfileProvider.initialize();
 
-      // Set the client in the provider so profile switching can update its token
-      context.plexClient.setClient(widget.client);
+      // Set up data invalidation callback for profile switching
+      userProfileProvider.setDataInvalidationCallback(_invalidateAllScreens);
     });
   }
 
