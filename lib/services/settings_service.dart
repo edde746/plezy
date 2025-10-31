@@ -489,8 +489,6 @@ class SettingsService {
 
       return null;
     }
-
-    return null;
   }
 
 

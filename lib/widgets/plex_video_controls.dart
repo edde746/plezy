@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
@@ -334,47 +333,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
-  void _togglePlayPause() {
-    final isPlaying = widget.player.state.playing;
-    if (isPlaying) {
-      widget.player.pause();
-      _hideTimer?.cancel(); // Cancel auto-hide when paused
-    } else {
-      widget.player.play();
-      _startHideTimer(); // Start auto-hide when playing
-    }
-  }
-
-  void _adjustVolume(double delta) {
-    final currentVolume = widget.player.state.volume;
-    final newVolume = (currentVolume + delta).clamp(0.0, 100.0);
-    widget.player.setVolume(newVolume);
-  }
-
-  void _toggleMute() {
-    final currentVolume = widget.player.state.volume;
-    if (currentVolume == 0) {
-      // Unmute to 100%
-      widget.player.setVolume(100.0);
-    } else {
-      // Mute
-      widget.player.setVolume(0.0);
-    }
-  }
-
-  void _seek(Duration offset) {
-    final currentPosition = widget.player.state.position;
-    final newPosition = currentPosition + offset;
-    // Clamp to valid range
-    final duration = widget.player.state.duration;
-    if (newPosition < Duration.zero) {
-      widget.player.seek(Duration.zero);
-    } else if (newPosition > duration) {
-      widget.player.seek(duration);
-    } else {
-      widget.player.seek(newPosition);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

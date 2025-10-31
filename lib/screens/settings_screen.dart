@@ -252,38 +252,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              RadioListTile<settings.ThemeMode>(
+              ListTile(
+                leading: Icon(
+                  themeProvider.themeMode == settings.ThemeMode.system
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
                 title: const Text('System'),
                 subtitle: const Text('Follow system settings'),
-                value: settings.ThemeMode.system,
-                groupValue: themeProvider.themeMode,
-                onChanged: (value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                    Navigator.pop(context);
-                  }
+                onTap: () {
+                  themeProvider.setThemeMode(settings.ThemeMode.system);
+                  Navigator.pop(context);
                 },
               ),
-              RadioListTile<settings.ThemeMode>(
+              ListTile(
+                leading: Icon(
+                  themeProvider.themeMode == settings.ThemeMode.light
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
                 title: const Text('Light'),
-                value: settings.ThemeMode.light,
-                groupValue: themeProvider.themeMode,
-                onChanged: (value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                    Navigator.pop(context);
-                  }
+                onTap: () {
+                  themeProvider.setThemeMode(settings.ThemeMode.light);
+                  Navigator.pop(context);
                 },
               ),
-              RadioListTile<settings.ThemeMode>(
+              ListTile(
+                leading: Icon(
+                  themeProvider.themeMode == settings.ThemeMode.dark
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
                 title: const Text('Dark'),
-                value: settings.ThemeMode.dark,
-                groupValue: themeProvider.themeMode,
-                onChanged: (value) {
-                  if (value != null) {
-                    themeProvider.setThemeMode(value);
-                    Navigator.pop(context);
-                  }
+                onTap: () {
+                  themeProvider.setThemeMode(settings.ThemeMode.dark);
+                  Navigator.pop(context);
                 },
               ),
             ],
@@ -313,23 +316,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: options.map((size) {
-              return RadioListTile<int>(
+              return ListTile(
+                leading: Icon(
+                  currentSize == size
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
                 title: Text('${size}MB'),
-                value: size,
-                groupValue: currentSize,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      if (isVideo) {
-                        _videoBufferSize = value;
-                        _settingsService.setVideoBufferSize(value);
-                      } else {
-                        _audioBufferSize = value;
-                        _settingsService.setAudioBufferSize(value);
-                      }
-                    });
-                    Navigator.pop(context);
-                  }
+                onTap: () {
+                  setState(() {
+                    if (isVideo) {
+                      _videoBufferSize = size;
+                      _settingsService.setVideoBufferSize(size);
+                    } else {
+                      _audioBufferSize = size;
+                      _settingsService.setAudioBufferSize(size);
+                    }
+                  });
+                  Navigator.pop(context);
                 },
               );
             }).toList(),
@@ -372,11 +376,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             TextButton(
               onPressed: () async {
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
                 await _settingsService.clearCache();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Cache cleared successfully')),
-                );
+                if (mounted) {
+                  navigator.pop();
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Cache cleared successfully')),
+                  );
+                }
               },
               child: const Text('Clear'),
             ),
@@ -402,14 +410,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             TextButton(
               onPressed: () async {
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
                 await _settingsService.resetAllSettings();
                 await _keyboardService.resetToDefaults();
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Settings reset successfully')),
-                );
-                // Reload settings
-                _loadSettings();
+                if (mounted) {
+                  navigator.pop();
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Settings reset successfully')),
+                  );
+                  // Reload settings
+                  _loadSettings();
+                }
               },
               child: const Text('Reset'),
             ),
@@ -465,10 +477,11 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
             actions: [
               TextButton(
                 onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
                   await widget.keyboardService.resetToDefaults();
                   await _loadHotkeys();
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       const SnackBar(content: Text('Shortcuts reset to defaults')),
                     );
                   }
@@ -523,11 +536,14 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
           actionName: widget.keyboardService.getActionDisplayName(action),
           currentHotKey: currentHotkey,
           onHotKeyRecorded: (newHotkey) async {
+            final navigator = Navigator.of(context);
+            final messenger = ScaffoldMessenger.of(context);
+
             // Check for conflicts
             final existingAction = widget.keyboardService.getActionForHotkey(newHotkey);
             if (existingAction != null && existingAction != action) {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
+              navigator.pop();
+              messenger.showSnackBar(
                 SnackBar(
                   content: Text('Shortcut already assigned to ${widget.keyboardService.getActionDisplayName(existingAction)}'),
                 ),
@@ -544,15 +560,13 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
                 _hotkeys[action] = newHotkey;
               });
 
-              if (mounted) {
-                Navigator.pop(context);
+              navigator.pop();
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Shortcut updated for ${widget.keyboardService.getActionDisplayName(action)}'),
-                  ),
-                );
-              }
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text('Shortcut updated for ${widget.keyboardService.getActionDisplayName(action)}'),
+                ),
+              );
             }
           },
           onCancel: () => Navigator.pop(context),
