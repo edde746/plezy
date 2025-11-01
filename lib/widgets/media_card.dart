@@ -5,9 +5,9 @@ import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/video_player_navigation.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
-import '../screens/video_player_screen.dart';
 import '../theme/theme_helper.dart';
 import 'media_context_menu.dart';
 
@@ -44,14 +44,10 @@ class _MediaCardState extends State<MediaCard>
 
     // For episodes, start playback directly
     if (itemType == 'episode') {
-      final result = await Navigator.push<bool>(
+      final result = await navigateToVideoPlayer(
         context,
-        MaterialPageRoute(
-          builder: (context) => VideoPlayerScreen(
-            metadata: widget.item,
-            userProfile: widget.userProfile,
-          ),
-        ),
+        metadata: widget.item,
+        userProfile: widget.userProfile,
       );
       // Refresh parent screen if result indicates it's needed
       if (result == true) {

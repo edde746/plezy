@@ -6,11 +6,11 @@ import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/video_player_navigation.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
-import 'video_player_screen.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
   final PlexMetadata season;
@@ -136,14 +136,10 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
       metadata: episode,
       onRefresh: updateItem,
       onTap: () async {
-        await Navigator.push(
+        await navigateToVideoPlayer(
           context,
-          MaterialPageRoute(
-            builder: (context) => VideoPlayerScreen(
-              metadata: episode,
-              userProfile: widget.userProfile,
-            ),
-          ),
+          metadata: episode,
+          userProfile: widget.userProfile,
         );
         // Refresh episodes when returning from video player
         _loadEpisodes();

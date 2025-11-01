@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/plex_metadata.dart';
@@ -11,6 +10,8 @@ import '../widgets/plex_video_controls.dart';
 import '../utils/language_codes.dart';
 import '../utils/app_logger.dart';
 import '../services/settings_service.dart';
+import '../utils/orientation_helper.dart';
+import '../utils/video_player_navigation.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -83,11 +84,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   void _setLandscapeOrientation() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    OrientationHelper.setLandscapeOrientation();
   }
 
   Future<void> _initializePlayer() async {
@@ -208,13 +205,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     // Send final stopped state
     _sendProgress('stopped');
 
-    // Restore system UI
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    // Restore portrait-only orientation
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
+    // Restore system UI and orientation preferences
+    OrientationHelper.restoreSystemUI();
+    OrientationHelper.restoreDefaultOrientations(context);
 
     player.dispose();
     super.dispose();
@@ -678,19 +671,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     // Navigate to the episode using pushReplacement to destroy current player
     if (mounted) {
       final currentRate = player.state.rate;
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              VideoPlayerScreen(
-                metadata: episodeMetadata,
-                preferredAudioTrack: currentAudioTrack,
-                preferredSubtitleTrack: currentSubtitleTrack,
-                preferredPlaybackRate: currentRate,
-                userProfile: widget.userProfile,
-              ),
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-        ),
+      navigateToVideoPlayer(
+        context,
+        metadata: episodeMetadata,
+        preferredAudioTrack: currentAudioTrack,
+        preferredSubtitleTrack: currentSubtitleTrack,
+        preferredPlaybackRate: currentRate,
+        userProfile: widget.userProfile,
+        usePushReplacement: true,
       );
     }
   }

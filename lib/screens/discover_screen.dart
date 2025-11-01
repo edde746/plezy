@@ -18,7 +18,7 @@ import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
-import 'video_player_screen.dart';
+import '../utils/video_player_navigation.dart';
 import 'auth_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -569,14 +569,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           if (client == null) return;
 
           appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
-          Navigator.push<bool>(
+          navigateToVideoPlayer(
             context,
-            MaterialPageRoute(
-              builder: (context) => VideoPlayerScreen(
-                metadata: heroItem,
-                userProfile: widget.userProfile,
-              ),
-            ),
+            metadata: heroItem,
+            userProfile: widget.userProfile,
           );
         },
         child: Container(
@@ -902,14 +898,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         if (client == null) return;
 
         appLogger.d('Playing: ${heroItem.title}');
-        Navigator.push<bool>(
+        navigateToVideoPlayer(
           context,
-          MaterialPageRoute(
-            builder: (context) => VideoPlayerScreen(
-              metadata: heroItem,
-              userProfile: widget.userProfile,
-            ),
-          ),
+          metadata: heroItem,
+          userProfile: widget.userProfile,
         );
       },
       borderRadius: BorderRadius.circular(24),

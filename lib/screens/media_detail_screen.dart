@@ -9,9 +9,9 @@ import '../widgets/app_bar_back_button.dart';
 import '../widgets/media_context_menu.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/video_player_navigation.dart';
 import '../theme/theme_helper.dart';
 import 'season_detail_screen.dart';
-import 'video_player_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -214,14 +214,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         if (client == null) return;
 
         appLogger.d('Playing first episode: ${firstEpisode.title}');
-        await Navigator.push(
+        await navigateToVideoPlayer(
           context,
-          MaterialPageRoute(
-            builder: (context) => VideoPlayerScreen(
-              metadata: firstEpisode,
-              userProfile: widget.userProfile,
-            ),
-          ),
+          metadata: firstEpisode,
+          userProfile: widget.userProfile,
         );
         appLogger.d('Returned from playback, refreshing metadata');
         // Refresh metadata when returning from video player
@@ -542,14 +538,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   appLogger.d(
                                     'Playing on deck episode: ${_onDeckEpisode!.title}',
                                   );
-                                  await Navigator.push(
+                                  await navigateToVideoPlayer(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (context) => VideoPlayerScreen(
-                                        metadata: _onDeckEpisode!,
-                                        userProfile: widget.userProfile,
-                                      ),
-                                    ),
+                                    metadata: _onDeckEpisode!,
+                                    userProfile: widget.userProfile,
                                   );
                                   appLogger.d(
                                     'Returned from playback, refreshing metadata',
@@ -567,14 +559,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
                                 appLogger.d('Playing: ${metadata.title}');
                                 // For movies or episodes, play directly
-                                await Navigator.push(
+                                await navigateToVideoPlayer(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) => VideoPlayerScreen(
-                                      metadata: metadata,
-                                      userProfile: widget.userProfile,
-                                    ),
-                                  ),
+                                  metadata: metadata,
+                                  userProfile: widget.userProfile,
                                 );
                                 appLogger.d(
                                   'Returned from playback, refreshing metadata',

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:io' show Platform;
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
@@ -17,7 +16,7 @@ import 'providers/theme_provider.dart';
 import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
 import 'utils/provider_extensions.dart';
-import 'utils/platform_detector.dart';
+import 'utils/orientation_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,22 +95,7 @@ class _OrientationAwareSetupState extends State<OrientationAwareSetup> {
   }
 
   void _setOrientationPreferences() {
-    // Only lock orientation to portrait for phones
-    // Allow all orientations for tablets and desktop
-    if (PlatformDetector.isPhone(context)) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-      ]);
-    } else {
-      // For tablets and desktop, allow all orientations
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-    }
+    OrientationHelper.restoreDefaultOrientations(context);
   }
 
   @override
