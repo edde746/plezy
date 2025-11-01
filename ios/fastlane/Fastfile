@@ -1,0 +1,49 @@
+require 'dotenv/load'
+Dotenv.load("../../.env")
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    build_app(workspace: "Runner.xcworkspace", scheme: "Runner")
+    upload_to_testflight
+  end
+
+  desc "Push a new release build to the App Store"
+  lane :release do
+    build_app(workspace: "Runner.xcworkspace", scheme: "Runner")
+    upload_to_app_store
+  end
+
+  desc "Build release IPA"
+  lane :build do
+    # Navigate to Flutter project root and build
+    sh("cd #{ENV['PWD']}/.. && flutter build ipa")
+  end
+
+  desc "Build and deploy to TestFlight"
+  lane :deploy_testflight do
+    # Build the Flutter app
+    sh("cd #{ENV['PWD']}/.. && flutter build ipa")
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Build and deploy to App Store"
+  lane :deploy_appstore do
+    # Build the Flutter app
+    sh("cd #{ENV['PWD']}/.. && flutter build ipa")
+
+    # Upload to App Store
+    upload_to_app_store(
+      ipa: "../build/ios/ipa/Plezy.ipa",
+      force: true,
+      submit_for_review: false,
+      skip_screenshots: true, # https://github.com/fastlane/fastlane/issues/29735
+    )
+  end
+end

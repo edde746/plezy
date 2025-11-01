@@ -269,12 +269,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   icon: Badge(
                     label: Text('${_selectedFilters.length}'),
                     isLabelVisible: _selectedFilters.isNotEmpty,
-                    child: const Icon(Icons.filter_list),
+                    child: const Icon(
+                      Icons.filter_list,
+                      semanticLabel: 'Filters',
+                    ),
                   ),
                   onPressed: _showFiltersBottomSheet,
                 ),
               IconButton(
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh, semanticLabel: 'Refresh'),
                 onPressed: () => _loadLibraryContent(_selectedLibraryIndex),
               ),
             ],

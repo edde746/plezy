@@ -40,10 +40,11 @@ class SettingsService {
 
   ThemeMode getThemeMode() {
     final modeString = _prefs.getString(_keyThemeMode);
-    return ThemeMode.values
-        .firstWhere((mode) => mode.name == modeString, orElse: () => ThemeMode.system);
+    return ThemeMode.values.firstWhere(
+      (mode) => mode.name == modeString,
+      orElse: () => ThemeMode.system,
+    );
   }
-
 
   // Debug Logging
   Future<void> setEnableDebugLogging(bool enabled) async {
@@ -78,7 +79,8 @@ class SettingsService {
   }
 
   bool getEnableHardwareDecoding() {
-    return _prefs.getBool(_keyEnableHardwareDecoding) ?? true; // Default enabled
+    return _prefs.getBool(_keyEnableHardwareDecoding) ??
+        true; // Default enabled
   }
 
   // Preferred Video Codec
@@ -130,13 +132,22 @@ class SettingsService {
       'volume_down': HotKey(key: PhysicalKeyboardKey.arrowDown),
       'seek_forward': HotKey(key: PhysicalKeyboardKey.arrowRight),
       'seek_backward': HotKey(key: PhysicalKeyboardKey.arrowLeft),
-      'seek_forward_large': HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.shift]),
-      'seek_backward_large': HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.shift]),
+      'seek_forward_large': HotKey(
+        key: PhysicalKeyboardKey.arrowRight,
+        modifiers: [HotKeyModifier.shift],
+      ),
+      'seek_backward_large': HotKey(
+        key: PhysicalKeyboardKey.arrowLeft,
+        modifiers: [HotKeyModifier.shift],
+      ),
       'fullscreen_toggle': HotKey(key: PhysicalKeyboardKey.keyF),
       'mute_toggle': HotKey(key: PhysicalKeyboardKey.keyM),
       'subtitle_toggle': HotKey(key: PhysicalKeyboardKey.keyS),
       'audio_track_next': HotKey(key: PhysicalKeyboardKey.keyA),
-      'subtitle_track_next': HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
+      'subtitle_track_next': HotKey(
+        key: PhysicalKeyboardKey.keyS,
+        modifiers: [HotKeyModifier.shift],
+      ),
       'chapter_next': HotKey(key: PhysicalKeyboardKey.keyN),
       'chapter_previous': HotKey(key: PhysicalKeyboardKey.keyP),
       'speed_increase': HotKey(key: PhysicalKeyboardKey.equal),
@@ -156,7 +167,9 @@ class SettingsService {
 
     try {
       final decoded = json.decode(jsonString) as Map<String, dynamic>;
-      final shortcuts = decoded.map((key, value) => MapEntry(key, value.toString()));
+      final shortcuts = decoded.map(
+        (key, value) => MapEntry(key, value.toString()),
+      );
 
       // Merge with defaults to ensure all keys exist
       final defaults = getDefaultKeyboardShortcuts();
@@ -252,28 +265,35 @@ class SettingsService {
       final keyString = data['key'] as String;
       final modifierNames = (data['modifiers'] as List<dynamic>).cast<String>();
 
-      final modifiers = modifierNames.map((name) {
-        switch (name) {
-          case 'alt':
-            return HotKeyModifier.alt;
-          case 'control':
-            return HotKeyModifier.control;
-          case 'shift':
-            return HotKeyModifier.shift;
-          case 'meta':
-            return HotKeyModifier.meta;
-          case 'capsLock':
-            return HotKeyModifier.capsLock;
-          case 'fn':
-            return HotKeyModifier.fn;
-          default:
-            return null;
-        }
-      }).where((m) => m != null).cast<HotKeyModifier>().toList();
+      final modifiers = modifierNames
+          .map((name) {
+            switch (name) {
+              case 'alt':
+                return HotKeyModifier.alt;
+              case 'control':
+                return HotKeyModifier.control;
+              case 'shift':
+                return HotKeyModifier.shift;
+              case 'meta':
+                return HotKeyModifier.meta;
+              case 'capsLock':
+                return HotKeyModifier.capsLock;
+              case 'fn':
+                return HotKeyModifier.fn;
+              default:
+                return null;
+            }
+          })
+          .where((m) => m != null)
+          .cast<HotKeyModifier>()
+          .toList();
 
       final key = _findKeyByString(keyString);
       if (key != null) {
-        return HotKey(key: key, modifiers: modifiers.isNotEmpty ? modifiers : null);
+        return HotKey(
+          key: key,
+          modifiers: modifiers.isNotEmpty ? modifiers : null,
+        );
       }
     } catch (e) {
       // Ignore deserialization errors
@@ -283,7 +303,6 @@ class SettingsService {
 
   // Helper method to find PhysicalKeyboardKey by string representation
   PhysicalKeyboardKey? _findKeyByString(String keyString) {
-
     // Handle exact string matches first for better performance
     const keyMap = {
       'PhysicalKeyboardKey#0002c': PhysicalKeyboardKey.space,
@@ -310,7 +329,9 @@ class SettingsService {
     // Alternative approach: extract USB HID usage code from the toString() output
     // Format: PhysicalKeyboardKey#ec9ed(usbHidUsage: "0x0007002c", debugName: "Space")
     try {
-      final usbHidMatch = RegExp(r'usbHidUsage: "0x([0-9a-fA-F]+)"').firstMatch(keyString);
+      final usbHidMatch = RegExp(
+        r'usbHidUsage: "0x([0-9a-fA-F]+)"',
+      ).firstMatch(keyString);
       if (usbHidMatch != null) {
         final usbHidCode = usbHidMatch.group(1)!.toLowerCase();
 
@@ -434,18 +455,30 @@ class SettingsService {
       for (int i = 1; i <= 12; i++) {
         if (keyString.contains('f$i') || keyString.contains('F$i')) {
           switch (i) {
-            case 1: return PhysicalKeyboardKey.f1;
-            case 2: return PhysicalKeyboardKey.f2;
-            case 3: return PhysicalKeyboardKey.f3;
-            case 4: return PhysicalKeyboardKey.f4;
-            case 5: return PhysicalKeyboardKey.f5;
-            case 6: return PhysicalKeyboardKey.f6;
-            case 7: return PhysicalKeyboardKey.f7;
-            case 8: return PhysicalKeyboardKey.f8;
-            case 9: return PhysicalKeyboardKey.f9;
-            case 10: return PhysicalKeyboardKey.f10;
-            case 11: return PhysicalKeyboardKey.f11;
-            case 12: return PhysicalKeyboardKey.f12;
+            case 1:
+              return PhysicalKeyboardKey.f1;
+            case 2:
+              return PhysicalKeyboardKey.f2;
+            case 3:
+              return PhysicalKeyboardKey.f3;
+            case 4:
+              return PhysicalKeyboardKey.f4;
+            case 5:
+              return PhysicalKeyboardKey.f5;
+            case 6:
+              return PhysicalKeyboardKey.f6;
+            case 7:
+              return PhysicalKeyboardKey.f7;
+            case 8:
+              return PhysicalKeyboardKey.f8;
+            case 9:
+              return PhysicalKeyboardKey.f9;
+            case 10:
+              return PhysicalKeyboardKey.f10;
+            case 11:
+              return PhysicalKeyboardKey.f11;
+            case 12:
+              return PhysicalKeyboardKey.f12;
           }
         }
       }
@@ -454,35 +487,63 @@ class SettingsService {
       for (int i = 0; i <= 9; i++) {
         if (keyString.contains('digit$i') || keyString.contains('Digit$i')) {
           switch (i) {
-            case 0: return PhysicalKeyboardKey.digit0;
-            case 1: return PhysicalKeyboardKey.digit1;
-            case 2: return PhysicalKeyboardKey.digit2;
-            case 3: return PhysicalKeyboardKey.digit3;
-            case 4: return PhysicalKeyboardKey.digit4;
-            case 5: return PhysicalKeyboardKey.digit5;
-            case 6: return PhysicalKeyboardKey.digit6;
-            case 7: return PhysicalKeyboardKey.digit7;
-            case 8: return PhysicalKeyboardKey.digit8;
-            case 9: return PhysicalKeyboardKey.digit9;
+            case 0:
+              return PhysicalKeyboardKey.digit0;
+            case 1:
+              return PhysicalKeyboardKey.digit1;
+            case 2:
+              return PhysicalKeyboardKey.digit2;
+            case 3:
+              return PhysicalKeyboardKey.digit3;
+            case 4:
+              return PhysicalKeyboardKey.digit4;
+            case 5:
+              return PhysicalKeyboardKey.digit5;
+            case 6:
+              return PhysicalKeyboardKey.digit6;
+            case 7:
+              return PhysicalKeyboardKey.digit7;
+            case 8:
+              return PhysicalKeyboardKey.digit8;
+            case 9:
+              return PhysicalKeyboardKey.digit9;
           }
         }
       }
 
       // Try letter keys A-Z (both upper and lower case patterns)
       const letterKeys = {
-        'A': PhysicalKeyboardKey.keyA, 'B': PhysicalKeyboardKey.keyB, 'C': PhysicalKeyboardKey.keyC,
-        'D': PhysicalKeyboardKey.keyD, 'E': PhysicalKeyboardKey.keyE, 'F': PhysicalKeyboardKey.keyF,
-        'G': PhysicalKeyboardKey.keyG, 'H': PhysicalKeyboardKey.keyH, 'I': PhysicalKeyboardKey.keyI,
-        'J': PhysicalKeyboardKey.keyJ, 'K': PhysicalKeyboardKey.keyK, 'L': PhysicalKeyboardKey.keyL,
-        'M': PhysicalKeyboardKey.keyM, 'N': PhysicalKeyboardKey.keyN, 'O': PhysicalKeyboardKey.keyO,
-        'P': PhysicalKeyboardKey.keyP, 'Q': PhysicalKeyboardKey.keyQ, 'R': PhysicalKeyboardKey.keyR,
-        'S': PhysicalKeyboardKey.keyS, 'T': PhysicalKeyboardKey.keyT, 'U': PhysicalKeyboardKey.keyU,
-        'V': PhysicalKeyboardKey.keyV, 'W': PhysicalKeyboardKey.keyW, 'X': PhysicalKeyboardKey.keyX,
-        'Y': PhysicalKeyboardKey.keyY, 'Z': PhysicalKeyboardKey.keyZ,
+        'A': PhysicalKeyboardKey.keyA,
+        'B': PhysicalKeyboardKey.keyB,
+        'C': PhysicalKeyboardKey.keyC,
+        'D': PhysicalKeyboardKey.keyD,
+        'E': PhysicalKeyboardKey.keyE,
+        'F': PhysicalKeyboardKey.keyF,
+        'G': PhysicalKeyboardKey.keyG,
+        'H': PhysicalKeyboardKey.keyH,
+        'I': PhysicalKeyboardKey.keyI,
+        'J': PhysicalKeyboardKey.keyJ,
+        'K': PhysicalKeyboardKey.keyK,
+        'L': PhysicalKeyboardKey.keyL,
+        'M': PhysicalKeyboardKey.keyM,
+        'N': PhysicalKeyboardKey.keyN,
+        'O': PhysicalKeyboardKey.keyO,
+        'P': PhysicalKeyboardKey.keyP,
+        'Q': PhysicalKeyboardKey.keyQ,
+        'R': PhysicalKeyboardKey.keyR,
+        'S': PhysicalKeyboardKey.keyS,
+        'T': PhysicalKeyboardKey.keyT,
+        'U': PhysicalKeyboardKey.keyU,
+        'V': PhysicalKeyboardKey.keyV,
+        'W': PhysicalKeyboardKey.keyW,
+        'X': PhysicalKeyboardKey.keyX,
+        'Y': PhysicalKeyboardKey.keyY,
+        'Z': PhysicalKeyboardKey.keyZ,
       };
 
       for (final entry in letterKeys.entries) {
-        if (keyString.contains('key${entry.key}') || keyString.contains('Key${entry.key}')) {
+        if (keyString.contains('key${entry.key}') ||
+            keyString.contains('Key${entry.key}')) {
           return entry.value;
         }
       }
@@ -490,7 +551,6 @@ class SettingsService {
       return null;
     }
   }
-
 
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
@@ -528,7 +588,9 @@ class SettingsService {
       'preferredVideoCodec': getPreferredVideoCodec(),
       'preferredAudioCodec': getPreferredAudioCodec(),
       'keyboardShortcuts': getKeyboardShortcuts(),
-      'keyboardHotkeys': hotkeys.map((key, value) => MapEntry(key, _serializeHotKey(value))),
+      'keyboardHotkeys': hotkeys.map(
+        (key, value) => MapEntry(key, _serializeHotKey(value)),
+      ),
     };
   }
 }

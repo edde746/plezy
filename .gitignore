@@ -47,5 +47,10 @@ app.*.map.json
 # Code duplication reports
 duplication-report/
 
-# Test credentials (do not commit!)
-.env.test
+.env.*
+.env
+!.env.example
+
+**/fastlane/**/
+**/fastlane/report.xml
+maestro/**/*.png

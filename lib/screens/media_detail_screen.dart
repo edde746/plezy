@@ -772,120 +772,125 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
             _updateWatchState();
           }
         },
-        child: InkWell(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                // Season poster
-                if (season.thumb != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: Consumer<PlexClientProvider>(
-                      builder: (context, clientProvider, child) {
-                        final client = clientProvider.client;
-                        if (client == null) {
-                          return Container(
-                            width: 80,
-                            height: 120,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            child: const Icon(Icons.movie, size: 32),
-                          );
-                        }
-                        return CachedNetworkImage(
-                          imageUrl: client.getThumbnailUrl(season.thumb),
-                          width: 80,
-                          height: 120,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            width: 80,
-                            height: 120,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            width: 80,
-                            height: 120,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            child: const Icon(Icons.movie, size: 32),
-                          ),
-                        );
-                      },
-                    ),
-                  )
-                else
-                  Container(
-                    width: 80,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
+        child: Semantics(
+          label: "media-season-${season.ratingKey}",
+          identifier: "media-season-${season.ratingKey}",
+          button: true,
+          hint: "Tap to view ${season.title}",
+          child: InkWell(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // Season poster
+                  if (season.thumb != null)
+                    ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(Icons.movie, size: 32),
-                  ),
-                const SizedBox(width: 16),
-
-                // Season info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        season.title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                      child: Consumer<PlexClientProvider>(
+                        builder: (context, clientProvider, child) {
+                          final client = clientProvider.client;
+                          if (client == null) {
+                            return Container(
+                              width: 80,
+                              height: 120,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              child: const Icon(Icons.movie, size: 32),
+                            );
+                          }
+                          return CachedNetworkImage(
+                            imageUrl: client.getThumbnailUrl(season.thumb),
+                            width: 80,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              width: 80,
+                              height: 120,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              width: 80,
+                              height: 120,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              child: const Icon(Icons.movie, size: 32),
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 4),
-                      if (season.leafCount != null)
+                    )
+                  else
+                    Container(
+                      width: 80,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(Icons.movie, size: 32),
+                    ),
+                  const SizedBox(width: 16),
+
+                  // Season info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          '${season.leafCount} episodes',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                          season.title,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                      const SizedBox(height: 8),
-                      if (season.viewedLeafCount != null &&
-                          season.leafCount != null)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 200,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value:
-                                      season.viewedLeafCount! /
-                                      season.leafCount!,
-                                  backgroundColor: tokens(context).outline,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Theme.of(context).colorScheme.primary,
+                        const SizedBox(height: 4),
+                        if (season.leafCount != null)
+                          Text(
+                            '${season.leafCount} episodes',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.grey),
+                          ),
+                        const SizedBox(height: 8),
+                        if (season.viewedLeafCount != null &&
+                            season.leafCount != null)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 200,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value:
+                                        season.viewedLeafCount! /
+                                        season.leafCount!,
+                                    backgroundColor: tokens(context).outline,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context).colorScheme.primary,
+                                    ),
+                                    minHeight: 6,
                                   ),
-                                  minHeight: 6,
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${season.viewedLeafCount}/${season.leafCount} watched',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                    ],
+                              const SizedBox(height: 4),
+                              Text(
+                                '${season.viewedLeafCount}/${season.leafCount} watched',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
                   ),
-                ),
 
-                const Icon(Icons.chevron_right),
-              ],
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
             ),
           ),
         ),

@@ -240,10 +240,7 @@ class StorageService {
 
   // Clear all user-related data (for logout)
   Future<void> clearUserData() async {
-    await Future.wait([
-      clearCredentials(),
-      clearLibraryPreferences(),
-    ]);
+    await Future.wait([clearCredentials(), clearLibraryPreferences()]);
   }
 
   // Update current user after switching

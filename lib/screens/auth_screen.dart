@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/plex_auth_service.dart';
@@ -110,6 +112,96 @@ class _AuthScreenState extends State<AuthScreen> {
     Future.delayed(const Duration(milliseconds: 100), _startAuthentication);
   }
 
+  void _handleDebugTap() {
+    if (!kDebugMode) return;
+    _showDebugTokenDialog();
+  }
+
+  void _showDebugTokenDialog() {
+    final tokenController = TextEditingController();
+    String? errorMessage;
+
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Debug: Enter Plex Token'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: tokenController,
+                    decoration: InputDecoration(
+                      labelText: 'Plex Auth Token',
+                      hintText: 'Enter your Plex.tv token',
+                      errorText: errorMessage,
+                      border: const OutlineInputBorder(),
+                    ),
+                    obscureText: true,
+                    maxLines: 1,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final token = tokenController.text.trim();
+                    if (token.isEmpty) {
+                      setDialogState(() {
+                        errorMessage = 'Please enter a token';
+                      });
+                      return;
+                    }
+
+                    final navigator = Navigator.of(context);
+
+                    try {
+                      final isValid = await _authService.verifyToken(token);
+                      if (!isValid) {
+                        setDialogState(() {
+                          errorMessage = 'Invalid token';
+                        });
+                        return;
+                      }
+
+                      // Store the token
+                      final storage = await StorageService.getInstance();
+                      await storage.savePlexToken(token);
+
+                      // Close dialog and navigate
+                      if (mounted) {
+                        navigator.pop();
+                        navigator.pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => ServerSelectionScreen(
+                              authService: _authService,
+                              plexToken: token,
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      setDialogState(() {
+                        errorMessage = 'Failed to verify token: $e';
+                      });
+                    }
+                  },
+                  child: const Text('Authenticate'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,6 +250,24 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   child: const Text('Sign in with Plex'),
                 ),
+                if (kDebugMode) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: _handleDebugTap,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.outline.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: const Text(
+                      'Debug: Enter Token',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 16),
                   Text(

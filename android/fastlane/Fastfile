@@ -1,0 +1,63 @@
+require 'dotenv/load'
+Dotenv.load("../../.env")
+
+default_platform(:android)
+
+platform :android do
+  desc "Deploy a new version to the Google Play"
+  lane :deploy do
+    gradle(task: "clean bundleRelease")
+
+    # Get version code from pubspec.yaml
+    pubspec_path = "#{ENV['PWD']}/../pubspec.yaml"
+    pubspec_content = File.read(pubspec_path)
+    version_match = pubspec_content.match(/version:\s*(.+)\+(\d+)/)
+
+    if version_match
+      version_code = version_match[2].to_i
+      UI.message("Using version code: #{version_code}")
+    else
+      UI.user_error!("Could not extract version code from pubspec.yaml")
+    end
+
+    upload_to_play_store(
+      version_code: version_code,
+      skip_upload_changelogs: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Build release AAB"
+  lane :build do
+    # Navigate to Flutter project root and build
+    sh("cd #{ENV['PWD']}/.. && flutter build appbundle")
+  end
+
+  desc "Build and deploy to Google Play Store"
+  lane :release do
+    # Build the Flutter app
+    sh("cd #{ENV['PWD']}/.. && flutter build appbundle")
+
+    # Get version code from pubspec.yaml
+    pubspec_path = "#{ENV['PWD']}/../pubspec.yaml"
+    pubspec_content = File.read(pubspec_path)
+    version_match = pubspec_content.match(/version:\s*(.+)\+(\d+)/)
+
+    if version_match
+      version_code = version_match[2].to_i
+      UI.message("Using version code: #{version_code}")
+    else
+      UI.user_error!("Could not extract version code from pubspec.yaml")
+    end
+
+    # Upload to Play Store
+    upload_to_play_store(
+      track: "internal",
+      release_status: "draft",
+      version_code: version_code,
+      aab: "../build/app/outputs/bundle/release/app-release.aab"
+    )
+  end
+end

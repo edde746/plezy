@@ -47,9 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -87,9 +85,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               'Appearance',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           Consumer<ThemeProvider>(
@@ -117,9 +115,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               'Video Playback',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           SwitchListTile(
@@ -162,9 +160,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               'Keyboard Shortcuts',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
@@ -179,7 +177,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
   Widget _buildAdvancedSection() {
     return Card(
       child: Column(
@@ -189,9 +186,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               'Advanced',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           SwitchListTile(
@@ -241,7 +238,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-
 
   void _showThemeDialog(ThemeProvider themeProvider) {
     showDialog(
@@ -302,7 +298,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
   void _showBufferSizeDialog(bool isVideo) {
     final currentSize = isVideo ? _videoBufferSize : _audioBufferSize;
     final title = isVideo ? 'Video Buffer Size' : 'Audio Buffer Size';
@@ -353,9 +348,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => _KeyboardShortcutsScreen(
-          keyboardService: _keyboardService,
-        ),
+        builder: (context) =>
+            _KeyboardShortcutsScreen(keyboardService: _keyboardService),
       ),
     );
   }
@@ -417,7 +411,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (mounted) {
                   navigator.pop();
                   messenger.showSnackBar(
-                    const SnackBar(content: Text('Settings reset successfully')),
+                    const SnackBar(
+                      content: Text('Settings reset successfully'),
+                    ),
                   );
                   // Reload settings
                   _loadSettings();
@@ -430,7 +426,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
-
 }
 
 class _KeyboardShortcutsScreen extends StatefulWidget {
@@ -439,7 +434,8 @@ class _KeyboardShortcutsScreen extends StatefulWidget {
   const _KeyboardShortcutsScreen({required this.keyboardService});
 
   @override
-  State<_KeyboardShortcutsScreen> createState() => _KeyboardShortcutsScreenState();
+  State<_KeyboardShortcutsScreen> createState() =>
+      _KeyboardShortcutsScreenState();
 }
 
 class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
@@ -463,9 +459,7 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -482,7 +476,9 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
                   await _loadHotkeys();
                   if (mounted) {
                     messenger.showSnackBar(
-                      const SnackBar(content: Text('Shortcuts reset to defaults')),
+                      const SnackBar(
+                        content: Text('Shortcuts reset to defaults'),
+                      ),
                     );
                   }
                 },
@@ -493,34 +489,38 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final actions = _hotkeys.keys.toList();
-                  final action = actions[index];
-                  final hotkey = _hotkeys[action]!;
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final actions = _hotkeys.keys.toList();
+                final action = actions[index];
+                final hotkey = _hotkeys[action]!;
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      title: Text(widget.keyboardService.getActionDisplayName(action)),
-                      subtitle: Text(action),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).dividerColor),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          widget.keyboardService.formatHotkey(hotkey),
-                          style: const TextStyle(fontFamily: 'monospace'),
-                        ),
-                      ),
-                      onTap: () => _editHotkey(action, hotkey),
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(
+                      widget.keyboardService.getActionDisplayName(action),
                     ),
-                  );
-                },
-                childCount: _hotkeys.length,
-              ),
+                    subtitle: Text(action),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        widget.keyboardService.formatHotkey(hotkey),
+                        style: const TextStyle(fontFamily: 'monospace'),
+                      ),
+                    ),
+                    onTap: () => _editHotkey(action, hotkey),
+                  ),
+                );
+              }, childCount: _hotkeys.length),
             ),
           ),
         ],
@@ -540,12 +540,16 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
             final messenger = ScaffoldMessenger.of(context);
 
             // Check for conflicts
-            final existingAction = widget.keyboardService.getActionForHotkey(newHotkey);
+            final existingAction = widget.keyboardService.getActionForHotkey(
+              newHotkey,
+            );
             if (existingAction != null && existingAction != action) {
               navigator.pop();
               messenger.showSnackBar(
                 SnackBar(
-                  content: Text('Shortcut already assigned to ${widget.keyboardService.getActionDisplayName(existingAction)}'),
+                  content: Text(
+                    'Shortcut already assigned to ${widget.keyboardService.getActionDisplayName(existingAction)}',
+                  ),
                 ),
               );
               return;
@@ -564,7 +568,9 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
 
               messenger.showSnackBar(
                 SnackBar(
-                  content: Text('Shortcut updated for ${widget.keyboardService.getActionDisplayName(action)}'),
+                  content: Text(
+                    'Shortcut updated for ${widget.keyboardService.getActionDisplayName(action)}',
+                  ),
                 ),
               );
             }

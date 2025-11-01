@@ -28,7 +28,6 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
     _recordedHotKey = widget.currentHotKey;
   }
 
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(

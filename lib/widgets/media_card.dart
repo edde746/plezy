@@ -97,72 +97,80 @@ class _MediaCardState extends State<MediaCard>
         metadata: widget.item,
         onRefresh: widget.onRefresh,
         onTap: () => _handleTap(context),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Poster
-                if (widget.height != null)
-                  SizedBox(
-                    width: double.infinity,
-                    height: widget.height,
-                    child: _buildPosterWithOverlay(context),
-                  )
-                else
-                  Expanded(child: _buildPosterWithOverlay(context)),
-                const SizedBox(height: 4),
-                // Text content
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.item.displayTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        height: 1.1,
-                      ),
-                    ),
-                    if (widget.item.displaySubtitle != null)
+        child: Semantics(
+          label: "media-card-${widget.item.ratingKey}",
+          identifier: "media-card-${widget.item.ratingKey}",
+          button: true,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Poster
+                  if (widget.height != null)
+                    SizedBox(
+                      width: double.infinity,
+                      height: widget.height,
+                      child: _buildPosterWithOverlay(context),
+                    )
+                  else
+                    Expanded(child: _buildPosterWithOverlay(context)),
+                  const SizedBox(height: 4),
+                  // Text content
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
                       Text(
-                        widget.item.displaySubtitle!,
+                        widget.item.displayTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(context).textMuted,
-                          fontSize: 11,
-                          height: 1.1,
-                        ),
-                      )
-                    else if (widget.item.parentTitle != null)
-                      Text(
-                        widget.item.parentTitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(context).textMuted,
-                          fontSize: 11,
-                          height: 1.1,
-                        ),
-                      )
-                    else if (widget.item.year != null)
-                      Text(
-                        '${widget.item.year}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(context).textMuted,
-                          fontSize: 11,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
                           height: 1.1,
                         ),
                       ),
-                  ],
-                ),
-              ],
+                      if (widget.item.displaySubtitle != null)
+                        Text(
+                          widget.item.displaySubtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: tokens(context).textMuted,
+                                fontSize: 11,
+                                height: 1.1,
+                              ),
+                        )
+                      else if (widget.item.parentTitle != null)
+                        Text(
+                          widget.item.parentTitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: tokens(context).textMuted,
+                                fontSize: 11,
+                                height: 1.1,
+                              ),
+                        )
+                      else if (widget.item.year != null)
+                        Text(
+                          '${widget.item.year}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: tokens(context).textMuted,
+                                fontSize: 11,
+                                height: 1.1,
+                              ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -188,9 +196,10 @@ class _MediaCardState extends State<MediaCard>
         builder: (context, clientProvider, child) {
           final client = clientProvider.client;
           if (client == null) {
-            return Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: const Center(child: Icon(Icons.movie, size: 40)),
+            return const SkeletonLoader(
+              child: Center(
+                child: Icon(Icons.movie, size: 40, color: Colors.white54),
+              ),
             );
           }
 
@@ -201,9 +210,7 @@ class _MediaCardState extends State<MediaCard>
             height: double.infinity,
             filterQuality: FilterQuality.medium,
             fadeInDuration: const Duration(milliseconds: 300),
-            placeholder: (context, url) => Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            ),
+            placeholder: (context, url) => const SkeletonLoader(),
             errorWidget: (context, url, error) => Container(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: const Center(child: Icon(Icons.broken_image, size: 40)),
@@ -212,9 +219,10 @@ class _MediaCardState extends State<MediaCard>
         },
       );
     } else {
-      return Container(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: const Center(child: Icon(Icons.movie, size: 40)),
+      return const SkeletonLoader(
+        child: Center(
+          child: Icon(Icons.movie, size: 40, color: Colors.white54),
+        ),
       );
     }
   }
@@ -275,6 +283,63 @@ class _PosterOverlay extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Skeleton loader widget with subtle opacity pulse animation
+class SkeletonLoader extends StatefulWidget {
+  final Widget? child;
+  final BorderRadius? borderRadius;
+
+  const SkeletonLoader({super.key, this.child, this.borderRadius});
+
+  @override
+  State<SkeletonLoader> createState() => _SkeletonLoaderState();
+}
+
+class _SkeletonLoaderState extends State<SkeletonLoader>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _animation = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Semantics(
+          label: "skeleton-loader",
+          identifier: "skeleton-loader",
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest
+                  .withValues(alpha: _animation.value),
+              borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
+            ),
+            child: widget.child,
+          ),
+        );
+      },
     );
   }
 }

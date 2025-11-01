@@ -67,9 +67,7 @@ class _LicensesScreenState extends State<LicensesScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -79,30 +77,29 @@ class _LicensesScreenState extends State<LicensesScreen> {
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final mergedLicense = _mergedLicenses[index];
-                  final packageName = mergedLicense.packageName;
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final mergedLicense = _mergedLicenses[index];
+                final packageName = mergedLicense.packageName;
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      title: Text(
-                        packageName,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(
+                      packageName,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      subtitle: mergedLicense.licenseEntries.length > 1
-                          ? Text('${mergedLicense.licenseEntries.length} licenses')
-                          : null,
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _showLicenseDetail(mergedLicense),
                     ),
-                  );
-                },
-                childCount: _mergedLicenses.length,
-              ),
+                    subtitle: mergedLicense.licenseEntries.length > 1
+                        ? Text(
+                            '${mergedLicense.licenseEntries.length} licenses',
+                          )
+                        : null,
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showLicenseDetail(mergedLicense),
+                  ),
+                );
+              }, childCount: _mergedLicenses.length),
             ),
           ),
         ],
@@ -114,9 +111,8 @@ class _LicensesScreenState extends State<LicensesScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => _LicenseDetailScreen(
-          mergedLicense: mergedLicense,
-        ),
+        builder: (context) =>
+            _LicenseDetailScreen(mergedLicense: mergedLicense),
       ),
     );
   }
@@ -125,9 +121,7 @@ class _LicensesScreenState extends State<LicensesScreen> {
 class _LicenseDetailScreen extends StatelessWidget {
   final MergedLicenseEntry mergedLicense;
 
-  const _LicenseDetailScreen({
-    required this.mergedLicense,
-  });
+  const _LicenseDetailScreen({required this.mergedLicense});
 
   @override
   Widget build(BuildContext context) {
@@ -137,10 +131,7 @@ class _LicenseDetailScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          CustomAppBar(
-            title: Text(packageName),
-            pinned: true,
-          ),
+          CustomAppBar(title: Text(packageName), pinned: true),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
@@ -155,9 +146,8 @@ class _LicenseDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Related Packages',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -186,10 +176,11 @@ class _LicenseDetailScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isMultipleLicenses ? 'License ${index + 1}' : 'License',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                isMultipleLicenses
+                                    ? 'License ${index + 1}'
+                                    : 'License',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 16),
                               ...license.paragraphs.map((paragraph) {
@@ -198,7 +189,9 @@ class _LicenseDetailScreen extends StatelessWidget {
                                   child: SelectableText(
                                     paragraph.text,
                                     style: TextStyle(
-                                      fontFamily: paragraph.indent > 0 ? 'monospace' : null,
+                                      fontFamily: paragraph.indent > 0
+                                          ? 'monospace'
+                                          : null,
                                       fontSize: 14,
                                     ),
                                   ),

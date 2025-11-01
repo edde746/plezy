@@ -7,7 +7,8 @@ import 'settings_service.dart';
 class KeyboardShortcutsService {
   static KeyboardShortcutsService? _instance;
   late SettingsService _settingsService;
-  Map<String, String> _shortcuts = {}; // Legacy string shortcuts for backward compatibility
+  Map<String, String> _shortcuts =
+      {}; // Legacy string shortcuts for backward compatibility
   Map<String, HotKey> _hotkeys = {}; // New HotKey objects
 
   KeyboardShortcutsService._();
@@ -24,7 +25,8 @@ class KeyboardShortcutsService {
     _settingsService = await SettingsService.getInstance();
     // Ensure settings service is fully initialized before loading data
     await Future.delayed(Duration.zero); // Allow event loop to complete
-    _shortcuts = _settingsService.getKeyboardShortcuts(); // Keep for legacy compatibility
+    _shortcuts = _settingsService
+        .getKeyboardShortcuts(); // Keep for legacy compatibility
     _hotkeys = await _settingsService.getKeyboardHotkeys(); // Primary method
   }
 
@@ -135,8 +137,6 @@ class KeyboardShortcutsService {
     return modifiers.isEmpty ? keyName : '${modifiers.join(' + ')} + $keyName';
   }
 
-
-
   // Handle keyboard input for video player
   KeyEventResult handleVideoPlayerKeyEvent(
     KeyEvent event,
@@ -207,8 +207,16 @@ class KeyboardShortcutsService {
           continue;
         }
 
-        _executeAction(action, player, onToggleFullscreen, onToggleSubtitles,
-            onNextAudioTrack, onNextSubtitleTrack, onNextChapter, onPreviousChapter);
+        _executeAction(
+          action,
+          player,
+          onToggleFullscreen,
+          onToggleSubtitles,
+          onNextAudioTrack,
+          onNextSubtitleTrack,
+          onNextChapter,
+          onPreviousChapter,
+        );
         return KeyEventResult.handled;
       }
     }
@@ -366,6 +374,6 @@ class KeyboardShortcutsService {
     final bModifiers = Set.from(b.modifiers ?? []);
 
     return aModifiers.length == bModifiers.length &&
-           aModifiers.every((modifier) => bModifiers.contains(modifier));
+        aModifiers.every((modifier) => bModifiers.contains(modifier));
   }
 }

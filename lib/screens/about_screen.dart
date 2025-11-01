@@ -92,7 +92,6 @@ class _AboutScreenState extends State<AboutScreen> {
                   ),
                 ),
 
-
                 const SizedBox(height: 24),
               ]),
             ),
@@ -101,5 +100,4 @@ class _AboutScreenState extends State<AboutScreen> {
       ),
     );
   }
-
 }

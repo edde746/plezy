@@ -17,6 +17,7 @@ import 'providers/theme_provider.dart';
 import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
 import 'utils/provider_extensions.dart';
+import 'utils/platform_detector.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,11 +33,7 @@ void main() async {
   // Initialize MediaKit
   MediaKit.ensureInitialized();
 
-  // Lock orientation to portrait for all screens except video player
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  // Note: Orientation will be set dynamically based on device type in MainApp
 
   await StorageService.getInstance();
 
@@ -76,11 +73,50 @@ class MainApp extends StatelessWidget {
             darkTheme: themeProvider.darkTheme,
             themeMode: themeProvider.materialThemeMode,
             navigatorObservers: [routeObserver],
-            home: const SetupScreen(),
+            home: const OrientationAwareSetup(),
           );
         },
       ),
     );
+  }
+}
+
+class OrientationAwareSetup extends StatefulWidget {
+  const OrientationAwareSetup({super.key});
+
+  @override
+  State<OrientationAwareSetup> createState() => _OrientationAwareSetupState();
+}
+
+class _OrientationAwareSetupState extends State<OrientationAwareSetup> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _setOrientationPreferences();
+  }
+
+  void _setOrientationPreferences() {
+    // Only lock orientation to portrait for phones
+    // Allow all orientations for tablets and desktop
+    if (PlatformDetector.isPhone(context)) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    } else {
+      // For tablets and desktop, allow all orientations
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const SetupScreen();
   }
 }
 

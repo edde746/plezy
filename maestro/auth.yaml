@@ -1,0 +1,7 @@
+appId: com.edde746.plezy
+---
+- tapOn: "Debug: Enter Token"
+- tapOn: "Plex Auth Token"
+- inputText: ${MAESTRO_PLEX_TOKEN}
+- tapOn: "Authenticate"
+- tapOn: ${MAESTRO_PLEX_SERVER_NAME}

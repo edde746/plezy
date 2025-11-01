@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 /// Utility class for platform detection
 class PlatformDetector {
@@ -12,5 +13,25 @@ class PlatformDetector {
   /// Detects if running on a desktop platform (Windows, macOS, or Linux)
   static bool isDesktop(BuildContext context) {
     return !isMobile(context);
+  }
+
+  /// Detects if the device is likely a tablet based on screen size
+  /// Uses diagonal screen size to determine if device is a tablet
+  static bool isTablet(BuildContext context) {
+    final data = MediaQuery.of(context);
+    final size = data.size;
+    final diagonal = sqrt(size.width * size.width + size.height * size.height);
+    final devicePixelRatio = data.devicePixelRatio;
+
+    // Convert diagonal from logical pixels to inches (assuming 160 DPI as baseline)
+    final diagonalInches = diagonal / (devicePixelRatio * 160 / 2.54);
+
+    // Consider devices with diagonal >= 7 inches as tablets
+    return diagonalInches >= 7.0;
+  }
+
+  /// Detects if the device is a phone (mobile but not tablet)
+  static bool isPhone(BuildContext context) {
+    return isMobile(context) && !isTablet(context);
   }
 }

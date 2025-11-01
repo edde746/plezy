@@ -333,7 +333,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final isMobile = PlatformDetector.isMobile(context);
@@ -688,10 +687,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     final isMacOS = Platform.isMacOS;
 
     final topBar = Padding(
-      padding: EdgeInsets.only(
-        left: leftPadding,
-        right: 16,
-      ),
+      padding: EdgeInsets.only(left: leftPadding, right: 16),
       child: Row(
         children: [
           AppBarBackButton(
