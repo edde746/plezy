@@ -1096,7 +1096,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         stream: widget.player.stream.track,
                         initialData: widget.player.state.track,
                         builder: (context, selectedSnapshot) {
-                          final selectedTrack = selectedSnapshot.data?.audio;
+                          // Use snapshot data or fall back to current state
+                          final currentTrack = selectedSnapshot.data ?? widget.player.state.track;
+                          final selectedTrack = currentTrack.audio;
                           final selectedId = selectedTrack?.id;
 
                           return ListView.builder(
@@ -1218,7 +1220,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         stream: widget.player.stream.track,
                         initialData: widget.player.state.track,
                         builder: (context, selectedSnapshot) {
-                          final selectedTrack = selectedSnapshot.data?.subtitle;
+                          // Use snapshot data or fall back to current state
+                          final currentTrack = selectedSnapshot.data ?? widget.player.state.track;
+                          final selectedTrack = currentTrack.subtitle;
                           final selectedId = selectedTrack?.id;
                           final isOffSelected = selectedId == 'no';
 
@@ -1229,9 +1233,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                               // First item is "Off"
                               if (index == 0) {
                                 return ListTile(
-                                  title: const Text(
+                                  title: Text(
                                     'Off',
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(
+                                      color: isOffSelected
+                                          ? Colors.blue
+                                          : Colors.white,
+                                    ),
                                   ),
                                   trailing: isOffSelected
                                       ? const Icon(
