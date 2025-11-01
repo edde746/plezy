@@ -3,7 +3,7 @@ import 'plex_home_user.dart';
 class PlexHome {
   final int id;
   final String name;
-  final int guestUserID;
+  final int? guestUserID;
   final String guestUserUUID;
   final bool guestEnabled;
   final bool subscription;
@@ -28,9 +28,9 @@ class PlexHome {
         .toList();
 
     return PlexHome(
-      id: json['id'] as int,
+      id: (json['id'] as num?)?.toInt() ?? 0,
       name: json['name'] as String,
-      guestUserID: json['guestUserID'] as int,
+      guestUserID: (json['guestUserID'] as num?)?.toInt(),
       guestUserUUID: json['guestUserUUID'] as String,
       guestEnabled: json['guestEnabled'] as bool,
       subscription: json['subscription'] as bool,

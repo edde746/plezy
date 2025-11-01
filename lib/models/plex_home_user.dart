@@ -8,7 +8,7 @@ class PlexHomeUser {
   final String thumb;
   final bool hasPassword;
   final bool restricted;
-  final int updatedAt;
+  final int? updatedAt;
   final bool admin;
   final bool guest;
   final bool protected;
@@ -31,7 +31,7 @@ class PlexHomeUser {
 
   factory PlexHomeUser.fromJson(Map<String, dynamic> json) {
     return PlexHomeUser(
-      id: json['id'] as int,
+      id: (json['id'] as num?)?.toInt() ?? 0,
       uuid: json['uuid'] as String,
       title: json['title'] as String,
       username: json['username'] as String?,
@@ -40,7 +40,7 @@ class PlexHomeUser {
       thumb: json['thumb'] as String,
       hasPassword: json['hasPassword'] as bool,
       restricted: json['restricted'] as bool,
-      updatedAt: json['updatedAt'] as int,
+      updatedAt: (json['updatedAt'] as num?)?.toInt(),
       admin: json['admin'] as bool,
       guest: json['guest'] as bool,
       protected: json['protected'] as bool,
