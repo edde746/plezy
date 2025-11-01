@@ -87,7 +87,7 @@ class ServerConnectionService {
           // Fetch user profile if requested
           PlexUserProfile? userProfile;
           if (fetchUserProfile && plexToken != null) {
-            userProfile = await _fetchAndCacheUserProfile(plexToken);
+            userProfile = await _fetchUserProfile(plexToken);
           }
 
           // Return success result
@@ -123,17 +123,15 @@ class ServerConnectionService {
     }
   }
 
-  /// Fetch user profile from Plex API and cache it locally
-  static Future<PlexUserProfile?> _fetchAndCacheUserProfile(
-    String plexToken,
-  ) async {
+  /// Fetch user profile from Plex API
+  static Future<PlexUserProfile?> _fetchUserProfile(String plexToken) async {
     appLogger.d('Fetching user profile from Plex API');
     try {
       final authService = await PlexAuthService.create();
       final profile = await authService.getUserProfile(plexToken);
 
       appLogger.i(
-        'Successfully fetched user profile',
+        'Successfully fetched user profile from API',
         error: {
           'autoSelectAudio': profile.autoSelectAudio,
           'defaultAudioLanguage': profile.defaultAudioLanguage ?? 'not set',
@@ -144,40 +142,9 @@ class ServerConnectionService {
         },
       );
 
-      // Cache the profile
-      final storage = await StorageService.getInstance();
-      await storage.saveUserProfile(profile.toJson());
-      appLogger.d('User profile cached locally');
-
       return profile;
     } catch (e) {
-      appLogger.w(
-        'Failed to fetch user profile from API, attempting to load from cache',
-        error: e,
-      );
-
-      // Failed to fetch profile, try to load from cache
-      final storage = await StorageService.getInstance();
-      final cachedProfile = storage.getUserProfile();
-      if (cachedProfile != null) {
-        final profile = PlexUserProfile.fromJson(cachedProfile);
-        appLogger.i(
-          'Loaded user profile from cache',
-          error: {
-            'autoSelectAudio': profile.autoSelectAudio,
-            'defaultAudioLanguage': profile.defaultAudioLanguage ?? 'not set',
-            'autoSelectSubtitle': profile.autoSelectSubtitle,
-            'defaultSubtitleLanguage':
-                profile.defaultSubtitleLanguage ?? 'not set',
-            'defaultSubtitleForced': profile.defaultSubtitleForced,
-          },
-        );
-        return profile;
-      }
-
-      appLogger.w(
-        'No cached user profile available, track selection will use defaults',
-      );
+      appLogger.w('Failed to fetch user profile from API', error: e);
       return null;
     }
   }

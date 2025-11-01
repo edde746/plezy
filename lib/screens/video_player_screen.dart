@@ -20,7 +20,6 @@ class VideoPlayerScreen extends StatefulWidget {
   final AudioTrack? preferredAudioTrack;
   final SubtitleTrack? preferredSubtitleTrack;
   final double? preferredPlaybackRate;
-  final PlexUserProfile? userProfile;
 
   const VideoPlayerScreen({
     super.key,
@@ -28,7 +27,6 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
     this.preferredPlaybackRate,
-    this.userProfile,
   });
 
   @override
@@ -52,9 +50,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     super.initState();
 
     appLogger.d('VideoPlayerScreen initialized for: ${widget.metadata.title}');
-    if (widget.userProfile != null) {
-      appLogger.d('Using user profile for track selection');
-    }
     if (widget.preferredAudioTrack != null) {
       appLogger.d(
         'Preferred audio track: ${widget.preferredAudioTrack!.title ?? widget.preferredAudioTrack!.id} (${widget.preferredAudioTrack!.language ?? "unknown"})',
@@ -477,6 +472,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     Future<void> processTracks(Tracks tracks) async {
       appLogger.d('Starting track selection process');
 
+      // Get profile settings for track selection
+      final profileSettings = context.profileSettings;
+
       // Get real tracks (excluding auto and no)
       final realAudioTracks = tracks.audio
           .where((t) => t.id != 'auto' && t.id != 'no')
@@ -523,11 +521,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         }
 
         // Priority 2: If no preferred track matched, try user profile preferences
-        if (trackToSelect == null && widget.userProfile != null) {
+        if (trackToSelect == null && profileSettings != null) {
           appLogger.d('Priority 2: Checking user profile preferences');
           trackToSelect = _findAudioTrackByProfile(
             realAudioTracks,
-            widget.userProfile!,
+            profileSettings,
           );
         } else if (trackToSelect == null) {
           appLogger.d('Priority 2: No user profile available');
@@ -585,12 +583,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       // Priority 2: If no preferred match, apply user profile preferences
       if (subtitleToSelect == null &&
-          widget.userProfile != null &&
+          profileSettings != null &&
           realSubtitleTracks.isNotEmpty) {
         appLogger.d('Priority 2: Checking user profile preferences');
         subtitleToSelect = _findSubtitleTrackByProfile(
           realSubtitleTracks,
-          widget.userProfile!,
+          profileSettings,
         );
       } else if (subtitleToSelect == null && realSubtitleTracks.isNotEmpty) {
         appLogger.d('Priority 2: No user profile available');
@@ -720,7 +718,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         navigateToVideoPlayer(
           context,
           metadata: episodeMetadata,
-          userProfile: widget.userProfile,
           usePushReplacement: true,
         );
       }
@@ -745,7 +742,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         preferredAudioTrack: currentAudioTrack,
         preferredSubtitleTrack: currentSubtitleTrack,
         preferredPlaybackRate: currentRate,
-        userProfile: widget.userProfile,
         usePushReplacement: true,
       );
     }

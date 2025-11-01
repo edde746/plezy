@@ -11,14 +11,4 @@ import 'package:logger/logger.dart';
 /// appLogger.w('Warning message');
 /// appLogger.e('Error message', error: e, stackTrace: stackTrace);
 /// ```
-final appLogger = Logger(
-  printer: PrettyPrinter(
-    methodCount: 2,
-    errorMethodCount: 8,
-    lineLength: 120,
-    colors: true,
-    printEmojis: true,
-    dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-  ),
-  level: Level.debug,
-);
+final appLogger = Logger(printer: SimplePrinter(), level: Level.debug);

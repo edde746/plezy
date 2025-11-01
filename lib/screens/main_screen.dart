@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../client/plex_client.dart';
-import '../models/plex_user_profile.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../main.dart';
@@ -12,9 +11,8 @@ import 'settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final PlexClient client;
-  final PlexUserProfile? userProfile;
 
-  const MainScreen({super.key, required this.client, this.userProfile});
+  const MainScreen({super.key, required this.client});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -36,11 +34,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     _screens = [
       DiscoverScreen(
         key: _discoverKey,
-        userProfile: widget.userProfile,
         onBecameVisible: _onDiscoverBecameVisible,
       ),
-      LibrariesScreen(key: _librariesKey, userProfile: widget.userProfile),
-      SearchScreen(key: _searchKey, userProfile: widget.userProfile),
+      LibrariesScreen(key: _librariesKey),
+      SearchScreen(key: _searchKey),
       SettingsScreen(key: _settingsKey),
     ];
 

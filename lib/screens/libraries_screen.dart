@@ -4,7 +4,6 @@ import '../client/plex_client.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_filter.dart';
-import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/media_card.dart';
@@ -16,9 +15,7 @@ import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
 
 class LibrariesScreen extends StatefulWidget {
-  final PlexUserProfile? userProfile;
-
-  const LibrariesScreen({super.key, this.userProfile});
+  const LibrariesScreen({super.key});
 
   @override
   State<LibrariesScreen> createState() => _LibrariesScreenState();
@@ -436,7 +433,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                       key: Key(item.ratingKey),
                       item: item,
                       onRefresh: updateItem,
-                      userProfile: widget.userProfile,
                     );
                   }, childCount: _items.length),
                 ),

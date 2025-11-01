@@ -32,18 +32,18 @@ class PlexHomeUser {
   factory PlexHomeUser.fromJson(Map<String, dynamic> json) {
     return PlexHomeUser(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      uuid: json['uuid'] as String,
-      title: json['title'] as String,
+      uuid: json['uuid'] as String? ?? '',
+      title: json['title'] as String? ?? 'Unknown',
       username: json['username'] as String?,
       email: json['email'] as String?,
       friendlyName: json['friendlyName'] as String?,
-      thumb: json['thumb'] as String,
-      hasPassword: json['hasPassword'] as bool,
-      restricted: json['restricted'] as bool,
+      thumb: json['thumb'] as String? ?? '',
+      hasPassword: json['hasPassword'] as bool? ?? false,
+      restricted: json['restricted'] as bool? ?? false,
       updatedAt: (json['updatedAt'] as num?)?.toInt(),
-      admin: json['admin'] as bool,
-      guest: json['guest'] as bool,
-      protected: json['protected'] as bool,
+      admin: json['admin'] as bool? ?? false,
+      guest: json['guest'] as bool? ?? false,
+      protected: json['protected'] as bool? ?? false,
     );
   }
 

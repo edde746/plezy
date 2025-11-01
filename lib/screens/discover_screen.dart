@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../services/storage_service.dart';
 import '../services/plex_auth_service.dart';
@@ -22,10 +21,9 @@ import '../utils/video_player_navigation.dart';
 import 'auth_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
-  final PlexUserProfile? userProfile;
   final VoidCallback? onBecameVisible;
 
-  const DiscoverScreen({super.key, this.userProfile, this.onBecameVisible});
+  const DiscoverScreen({super.key, this.onBecameVisible});
 
   @override
   State<DiscoverScreen> createState() => _DiscoverScreenState();
@@ -569,11 +567,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           if (client == null) return;
 
           appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
-          navigateToVideoPlayer(
-            context,
-            metadata: heroItem,
-            userProfile: widget.userProfile,
-          );
+          navigateToVideoPlayer(context, metadata: heroItem);
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -898,11 +892,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         if (client == null) return;
 
         appLogger.d('Playing: ${heroItem.title}');
-        navigateToVideoPlayer(
-          context,
-          metadata: heroItem,
-          userProfile: widget.userProfile,
-        );
+        navigateToVideoPlayer(context, metadata: heroItem);
       },
       borderRadius: BorderRadius.circular(24),
       child: Container(
@@ -999,7 +989,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     width: cardWidth,
                     height: cardHeight,
                     onRefresh: updateItem,
-                    userProfile: widget.userProfile,
                   ),
                 );
               },

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
@@ -16,7 +15,6 @@ class MediaCard extends StatefulWidget {
   final double? width;
   final double? height;
   final void Function(String ratingKey)? onRefresh;
-  final PlexUserProfile? userProfile;
 
   const MediaCard({
     super.key,
@@ -24,7 +22,6 @@ class MediaCard extends StatefulWidget {
     this.width,
     this.height,
     this.onRefresh,
-    this.userProfile,
   });
 
   @override
@@ -47,7 +44,6 @@ class _MediaCardState extends State<MediaCard>
       final result = await navigateToVideoPlayer(
         context,
         metadata: widget.item,
-        userProfile: widget.userProfile,
       );
       // Refresh parent screen if result indicates it's needed
       if (result == true) {
@@ -58,10 +54,7 @@ class _MediaCardState extends State<MediaCard>
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SeasonDetailScreen(
-            season: widget.item,
-            userProfile: widget.userProfile,
-          ),
+          builder: (context) => SeasonDetailScreen(season: widget.item),
         ),
       );
       // Season screen doesn't return a refresh flag, but we can refresh anyway
@@ -71,10 +64,7 @@ class _MediaCardState extends State<MediaCard>
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => MediaDetailScreen(
-            metadata: widget.item,
-            userProfile: widget.userProfile,
-          ),
+          builder: (context) => MediaDetailScreen(metadata: widget.item),
         ),
       );
       // Refresh parent screen if result indicates it's needed

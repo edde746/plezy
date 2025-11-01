@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_user_profile.dart';
 import '../screens/video_player_screen.dart';
 
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
@@ -13,7 +12,6 @@ import '../screens/video_player_screen.dart';
 /// Parameters:
 /// - [context]: The build context for navigation
 /// - [metadata]: The Plex metadata for the content to play
-/// - [userProfile]: Optional user profile for track selection preferences
 /// - [preferredAudioTrack]: Optional audio track to select on playback start
 /// - [preferredSubtitleTrack]: Optional subtitle track to select on playback start
 /// - [preferredPlaybackRate]: Optional playback speed to set on playback start
@@ -25,7 +23,6 @@ import '../screens/video_player_screen.dart';
 Future<bool?> navigateToVideoPlayer(
   BuildContext context, {
   required PlexMetadata metadata,
-  PlexUserProfile? userProfile,
   AudioTrack? preferredAudioTrack,
   SubtitleTrack? preferredSubtitleTrack,
   double? preferredPlaybackRate,
@@ -34,7 +31,6 @@ Future<bool?> navigateToVideoPlayer(
   final route = PageRouteBuilder<bool>(
     pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
       metadata: metadata,
-      userProfile: userProfile,
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredPlaybackRate: preferredPlaybackRate,

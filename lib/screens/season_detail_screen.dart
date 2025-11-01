@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
@@ -14,9 +13,8 @@ import '../theme/theme_helper.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
   final PlexMetadata season;
-  final PlexUserProfile? userProfile;
 
-  const SeasonDetailScreen({super.key, required this.season, this.userProfile});
+  const SeasonDetailScreen({super.key, required this.season});
 
   @override
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
@@ -136,11 +134,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
       metadata: episode,
       onRefresh: updateItem,
       onTap: () async {
-        await navigateToVideoPlayer(
-          context,
-          metadata: episode,
-          userProfile: widget.userProfile,
-        );
+        await navigateToVideoPlayer(context, metadata: episode);
         // Refresh episodes when returning from video player
         _loadEpisodes();
       },

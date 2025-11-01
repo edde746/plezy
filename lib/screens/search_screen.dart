@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_user_profile.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -10,9 +9,7 @@ import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 
 class SearchScreen extends StatefulWidget {
-  final PlexUserProfile? userProfile;
-
-  const SearchScreen({super.key, this.userProfile});
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -228,7 +225,6 @@ class _SearchScreenState extends State<SearchScreen>
                       key: Key(item.ratingKey),
                       item: item,
                       onRefresh: updateItem,
-                      userProfile: widget.userProfile,
                     );
                   }, childCount: _searchResults.length),
                 ),

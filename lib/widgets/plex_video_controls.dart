@@ -1097,7 +1097,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         initialData: widget.player.state.track,
                         builder: (context, selectedSnapshot) {
                           // Use snapshot data or fall back to current state
-                          final currentTrack = selectedSnapshot.data ?? widget.player.state.track;
+                          final currentTrack =
+                              selectedSnapshot.data ??
+                              widget.player.state.track;
                           final selectedTrack = currentTrack.audio;
                           final selectedId = selectedTrack?.id;
 
@@ -1221,7 +1223,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         initialData: widget.player.state.track,
                         builder: (context, selectedSnapshot) {
                           // Use snapshot data or fall back to current state
-                          final currentTrack = selectedSnapshot.data ?? widget.player.state.track;
+                          final currentTrack =
+                              selectedSnapshot.data ??
+                              widget.player.state.track;
                           final selectedTrack = currentTrack.subtitle;
                           final selectedId = selectedTrack?.id;
                           final isOffSelected = selectedId == 'no';

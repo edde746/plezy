@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
@@ -15,13 +14,8 @@ import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
   final PlexMetadata metadata;
-  final PlexUserProfile? userProfile;
 
-  const MediaDetailScreen({
-    super.key,
-    required this.metadata,
-    this.userProfile,
-  });
+  const MediaDetailScreen({super.key, required this.metadata});
 
   @override
   State<MediaDetailScreen> createState() => _MediaDetailScreenState();
@@ -214,11 +208,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         if (client == null) return;
 
         appLogger.d('Playing first episode: ${firstEpisode.title}');
-        await navigateToVideoPlayer(
-          context,
-          metadata: firstEpisode,
-          userProfile: widget.userProfile,
-        );
+        await navigateToVideoPlayer(context, metadata: firstEpisode);
         appLogger.d('Returned from playback, refreshing metadata');
         // Refresh metadata when returning from video player
         _loadFullMetadata();
@@ -541,7 +531,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   await navigateToVideoPlayer(
                                     context,
                                     metadata: _onDeckEpisode!,
-                                    userProfile: widget.userProfile,
                                   );
                                   appLogger.d(
                                     'Returned from playback, refreshing metadata',
@@ -562,7 +551,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                 await navigateToVideoPlayer(
                                   context,
                                   metadata: metadata,
-                                  userProfile: widget.userProfile,
                                 );
                                 appLogger.d(
                                   'Returned from playback, refreshing metadata',

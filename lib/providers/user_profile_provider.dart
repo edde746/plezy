@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/plex_home.dart';
 import '../models/plex_home_user.dart';
+import '../models/plex_user_profile.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
@@ -10,11 +11,13 @@ import 'plex_client_provider.dart';
 class UserProfileProvider extends ChangeNotifier {
   PlexHome? _home;
   PlexHomeUser? _currentUser;
+  PlexUserProfile? _profileSettings;
   bool _isLoading = false;
   String? _error;
 
   PlexHome? get home => _home;
   PlexHomeUser? get currentUser => _currentUser;
+  PlexUserProfile? get profileSettings => _profileSettings;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasMultipleUsers {
@@ -66,6 +69,19 @@ class UserProfileProvider extends ChangeNotifier {
           // Don't set error here as it's not critical for app startup
         }
       }
+
+      // Fetch fresh profile settings from API
+      appLogger.d('UserProfileProvider: Fetching profile settings from API');
+      try {
+        await refreshProfileSettings();
+      } catch (e) {
+        appLogger.w(
+          'UserProfileProvider: Failed to fetch profile settings during initialization',
+          error: e,
+        );
+        // Don't set error here, cached profile (if any) was already loaded
+      }
+
       appLogger.d('UserProfileProvider: Initialization complete');
     } catch (e) {
       appLogger.e(
@@ -98,7 +114,39 @@ class UserProfileProvider extends ChangeNotifier {
       _currentUser = _home!.getUserByUUID(currentUserUUID);
     }
 
+    // Profile settings are NOT cached - they will be fetched fresh from API
+    // in refreshProfileSettings()
+
     notifyListeners();
+  }
+
+  /// Fetch the user's profile settings from the API
+  Future<void> refreshProfileSettings() async {
+    if (_authService == null || _storageService == null) {
+      appLogger.w('refreshProfileSettings: Services not initialized, skipping');
+      return;
+    }
+
+    appLogger.d('Fetching user profile settings from Plex API');
+    try {
+      final currentToken = _storageService!.getPlexToken();
+      if (currentToken == null) {
+        appLogger.w(
+          'refreshProfileSettings: No Plex token available, cannot fetch profile',
+        );
+        return;
+      }
+
+      final profile = await _authService!.getUserProfile(currentToken);
+      _profileSettings = profile;
+
+      appLogger.i('Successfully fetched user profile settings from API');
+
+      notifyListeners();
+    } catch (e) {
+      appLogger.w('Failed to fetch user profile settings from API', error: e);
+      // Don't set error state, profile will remain null or keep existing value
+    }
   }
 
   Future<void> loadHomeUsers({bool forceRefresh = false}) async {
@@ -263,8 +311,17 @@ class UserProfileProvider extends ChangeNotifier {
       // Update current user
       _currentUser = user;
 
-      // Save user profile
-      await _storageService!.saveUserProfile(switchResponse.profile.toJson());
+      // Update user profile settings (fresh from API)
+      _profileSettings = switchResponse.profile;
+      appLogger.d(
+        'Updated profile settings for user: ${user.displayName}',
+        error: {
+          'defaultAudioLanguage':
+              _profileSettings?.defaultAudioLanguage ?? 'not set',
+          'defaultSubtitleLanguage':
+              _profileSettings?.defaultSubtitleLanguage ?? 'not set',
+        },
+      );
 
       // Update PlexClient with proper server access token
       if (clientProvider != null) {
@@ -322,6 +379,7 @@ class UserProfileProvider extends ChangeNotifier {
       // Clear user-specific provider state but keep services for future sign-ins
       _home = null;
       _currentUser = null;
+      _profileSettings = null;
       _onDataInvalidationRequested = null;
 
       _clearError();
@@ -346,6 +404,7 @@ class UserProfileProvider extends ChangeNotifier {
       // Clear cached data from previous server (both memory and storage)
       _home = null;
       _currentUser = null;
+      _profileSettings = null;
       _clearError();
 
       // Re-initialize services with current storage state
@@ -401,6 +460,15 @@ class UserProfileProvider extends ChangeNotifier {
           appLogger.w(
             'UserProfileProvider: Cannot perform complete profile switch - no context provided',
           );
+          // Still try to fetch profile settings even without full switch
+          try {
+            await refreshProfileSettings();
+          } catch (e) {
+            appLogger.w(
+              'UserProfileProvider: Failed to refresh profile settings for new server',
+              error: e,
+            );
+          }
         }
       } catch (e) {
         appLogger.w(

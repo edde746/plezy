@@ -169,15 +169,14 @@ class _SetupScreenState extends State<SetupScreen> {
           if (mounted) {
             context.plexClient.setClient(result.client!);
 
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MainScreen(
-                  client: result.client!,
-                  userProfile: result.userProfile,
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MainScreen(client: result.client!),
                 ),
-              ),
-            );
+              );
+            }
           }
           return;
         } else {
