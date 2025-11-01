@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../models/plex_metadata.dart';
@@ -12,6 +13,7 @@ import '../utils/app_logger.dart';
 import '../services/settings_service.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/platform_detector.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -34,14 +36,16 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  late final Player player;
-  late final VideoController controller;
+  Player? player;
+  VideoController? controller;
+  bool _isPlayerInitialized = false;
   Timer? _progressTimer;
   PlexMetadata? _nextEpisode;
   PlexMetadata? _previousEpisode;
   bool _isLoadingNext = false;
   bool _showPlayNextDialog = false;
   PlexClientProvider? _cachedClientProvider;
+  bool _isPhone = false;
 
   @override
   void initState() {
@@ -79,8 +83,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       _cachedClientProvider = null;
     }
 
-    // Ensure landscape orientation is set even after navigation
-    _setLandscapeOrientation();
+    // Cache device type for safe access in dispose()
+    try {
+      _isPhone = PlatformDetector.isPhone(context);
+    } catch (e) {
+      appLogger.w('Failed to determine device type', error: e);
+      _isPhone = false; // Default to tablet/desktop (all orientations)
+    }
   }
 
   void _setLandscapeOrientation() {
@@ -88,37 +97,60 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Future<void> _initializePlayer() async {
-    // Load buffer size from settings
-    final settingsService = await SettingsService.getInstance();
-    final bufferSizeMB = settingsService.getBufferSize();
-    final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
+    try {
+      // Load buffer size from settings
+      final settingsService = await SettingsService.getInstance();
+      final bufferSizeMB = settingsService.getBufferSize();
+      final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
 
-    // Create player with configuration
-    player = Player(
-      configuration: PlayerConfiguration(
-        libass: true,
-        bufferSize: bufferSizeBytes,
-      ),
-    );
-    controller = VideoController(player);
+      // Create player with configuration
+      player = Player(
+        configuration: PlayerConfiguration(
+          libass: true,
+          bufferSize: bufferSizeBytes,
+        ),
+      );
+      controller = VideoController(player!);
 
-    // Get the video URL and start playback
-    _startPlayback();
+      // Notify that player is ready
+      if (mounted) {
+        setState(() {
+          _isPlayerInitialized = true;
+        });
+      }
 
-    // Set fullscreen mode and landscape orientation
-    _setLandscapeOrientation();
+      // Get the video URL and start playback
+      _startPlayback();
 
-    // Listen to playback state changes
-    player.stream.playing.listen(_onPlayingStateChanged);
+      // Set fullscreen mode and landscape orientation
+      if (mounted) {
+        try {
+          _setLandscapeOrientation();
+        } catch (e) {
+          appLogger.w('Failed to set landscape orientation', error: e);
+          // Don't crash if orientation fails - video can still play
+        }
+      }
 
-    // Listen to completion
-    player.stream.completed.listen(_onVideoCompleted);
+      // Listen to playback state changes
+      player!.stream.playing.listen(_onPlayingStateChanged);
 
-    // Start periodic progress updates
-    _startProgressTracking();
+      // Listen to completion
+      player!.stream.completed.listen(_onVideoCompleted);
 
-    // Load next/previous episodes
-    _loadAdjacentEpisodes();
+      // Start periodic progress updates
+      _startProgressTracking();
+
+      // Load next/previous episodes
+      _loadAdjacentEpisodes();
+    } catch (e) {
+      appLogger.e('Failed to initialize player', error: e);
+      if (mounted) {
+        setState(() {
+          _isPlayerInitialized = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadAdjacentEpisodes() async {
@@ -158,11 +190,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       if (videoUrl != null) {
         // Open video without auto-playing
-        await player.open(Media(videoUrl), play: false);
+        await player!.open(Media(videoUrl), play: false);
 
         // Wait for media to be ready (duration > 0)
         int attempts = 0;
-        while (player.state.duration.inMilliseconds == 0 && attempts < 50) {
+        while (player!.state.duration.inMilliseconds == 0 && attempts < 100) {
           await Future.delayed(const Duration(milliseconds: 100));
           attempts++;
         }
@@ -173,11 +205,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           final resumePosition = Duration(
             milliseconds: widget.metadata.viewOffset!,
           );
-          await player.seek(resumePosition);
+          await player!.seek(resumePosition);
         }
 
         // Start playback after seeking
-        await player.play();
+        await player!.play();
 
         // Wait for tracks to be loaded, then apply preferred tracks
         _waitForTracksAndApply();
@@ -207,16 +239,36 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Restore system UI and orientation preferences
     OrientationHelper.restoreSystemUI();
-    OrientationHelper.restoreDefaultOrientations(context);
 
-    player.dispose();
+    // Restore orientation based on cached device type (no context needed)
+    try {
+      if (_isPhone) {
+        // Phone: portrait only
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ]);
+      } else {
+        // Tablet/Desktop: all orientations
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      }
+    } catch (e) {
+      appLogger.w('Failed to restore orientation in dispose', error: e);
+    }
+
+    player?.dispose();
     super.dispose();
   }
 
   void _startProgressTracking() {
     // Send progress update every 10 seconds
     _progressTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (player.state.playing) {
+      if (player?.state.playing ?? false) {
         _sendProgress('playing');
       }
     });
@@ -497,7 +549,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         appLogger.i(
           'Final audio selection: ${trackToSelect.title ?? "Track ${trackToSelect.id}"} (${trackToSelect.language ?? "unknown"})',
         );
-        player.setAudioTrack(trackToSelect);
+        player!.setAudioTrack(trackToSelect);
       } else {
         appLogger.d('No audio tracks available');
       }
@@ -570,21 +622,21 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           ? 'OFF'
           : '${subtitleToSelect.title ?? "Track ${subtitleToSelect.id}"} (${subtitleToSelect.language ?? "unknown"})';
       appLogger.i('Final subtitle selection: $finalSubtitle');
-      player.setSubtitleTrack(subtitleToSelect);
+      player!.setSubtitleTrack(subtitleToSelect);
 
       // Set playback rate if preferred rate was provided
       if (widget.preferredPlaybackRate != null) {
         appLogger.d(
           'Setting preferred playback rate: ${widget.preferredPlaybackRate}x',
         );
-        player.setRate(widget.preferredPlaybackRate!);
+        player!.setRate(widget.preferredPlaybackRate!);
       }
 
       appLogger.d('Track selection complete');
     }
 
     // Check if tracks are already available in current state
-    final currentTracks = player.state.tracks;
+    final currentTracks = player!.state.tracks;
     if (currentTracks.audio.isNotEmpty || currentTracks.subtitle.isNotEmpty) {
       await processTracks(currentTracks);
       return;
@@ -592,7 +644,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // If not, listen to tracks stream for when they become available
     bool applied = false;
-    final subscription = player.stream.tracks.listen((tracks) async {
+    final subscription = player!.stream.tracks.listen((tracks) async {
       // Check if tracks are loaded (have at least one track) and not yet applied
       if (!applied && (tracks.audio.isNotEmpty || tracks.subtitle.isNotEmpty)) {
         applied = true;
@@ -612,8 +664,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   void _sendProgress(String state) {
-    final position = player.state.position.inMilliseconds;
-    final duration = player.state.duration.inMilliseconds;
+    // Don't send misleading data if player isn't available
+    if (player == null) return;
+
+    final position = player!.state.position.inMilliseconds;
+    final duration = player!.state.duration.inMilliseconds;
 
     if (duration > 0) {
       final clientProvider = _cachedClientProvider;
@@ -659,18 +714,31 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   /// Navigates to a new episode, preserving playback state and track selections
   Future<void> _navigateToEpisode(PlexMetadata episodeMetadata) async {
+    // If player isn't available, navigate without preserving settings
+    if (player == null) {
+      if (mounted) {
+        navigateToVideoPlayer(
+          context,
+          metadata: episodeMetadata,
+          userProfile: widget.userProfile,
+          usePushReplacement: true,
+        );
+      }
+      return;
+    }
+
     // Capture current track selection BEFORE pausing
-    final currentAudioTrack = player.state.track.audio;
-    final currentSubtitleTrack = player.state.track.subtitle;
+    final currentAudioTrack = player!.state.track.audio;
+    final currentSubtitleTrack = player!.state.track.subtitle;
 
     // Pause and stop current playback
-    player.pause();
+    player!.pause();
     _progressTimer?.cancel();
     _sendProgress('stopped');
 
     // Navigate to the episode using pushReplacement to destroy current player
     if (mounted) {
-      final currentRate = player.state.rate;
+      final currentRate = player!.state.rate;
       navigateToVideoPlayer(
         context,
         metadata: episodeMetadata,
@@ -685,8 +753,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Show loading indicator while player initializes
+    if (!_isPlayerInitialized || controller == null || player == null) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
     return PopScope(
-      canPop: false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
+      canPop:
+          false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
       onPopInvokedWithResult: (didPop, result) {
         // Allow programmatic back navigation from UI controls
         if (!didPop) {
@@ -700,9 +777,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             // Video player
             Center(
               child: Video(
-                controller: controller,
+                controller: controller!,
                 controls: (state) => plexVideoControlsBuilder(
-                  player,
+                  player!,
                   widget.metadata,
                   onNext: _nextEpisode != null ? _playNext : null,
                   onPrevious: _previousEpisode != null ? _playPrevious : null,
