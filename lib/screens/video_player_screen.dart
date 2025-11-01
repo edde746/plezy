@@ -10,6 +10,7 @@ import '../utils/provider_extensions.dart';
 import '../widgets/plex_video_controls.dart';
 import '../utils/language_codes.dart';
 import '../utils/app_logger.dart';
+import '../services/settings_service.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -61,27 +62,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       appLogger.d('Preferred subtitle track: $subtitleDesc');
     }
 
-    // Create player and controller
-    player = Player(configuration: PlayerConfiguration(libass: true));
-    controller = VideoController(player);
-
-    // Get the video URL and start playback
-    _startPlayback();
-
-    // Set fullscreen mode and landscape orientation
-    _setLandscapeOrientation();
-
-    // Listen to playback state changes
-    player.stream.playing.listen(_onPlayingStateChanged);
-
-    // Listen to completion
-    player.stream.completed.listen(_onVideoCompleted);
-
-    // Start periodic progress updates
-    _startProgressTracking();
-
-    // Load next/previous episodes
-    _loadAdjacentEpisodes();
+    // Initialize player asynchronously with buffer size from settings
+    _initializePlayer();
   }
 
   @override
@@ -106,6 +88,40 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+  }
+
+  Future<void> _initializePlayer() async {
+    // Load buffer size from settings
+    final settingsService = await SettingsService.getInstance();
+    final bufferSizeMB = settingsService.getBufferSize();
+    final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
+
+    // Create player with configuration
+    player = Player(
+      configuration: PlayerConfiguration(
+        libass: true,
+        bufferSize: bufferSizeBytes,
+      ),
+    );
+    controller = VideoController(player);
+
+    // Get the video URL and start playback
+    _startPlayback();
+
+    // Set fullscreen mode and landscape orientation
+    _setLandscapeOrientation();
+
+    // Listen to playback state changes
+    player.stream.playing.listen(_onPlayingStateChanged);
+
+    // Listen to completion
+    player.stream.completed.listen(_onVideoCompleted);
+
+    // Start periodic progress updates
+    _startProgressTracking();
+
+    // Load next/previous episodes
+    _loadAdjacentEpisodes();
   }
 
   Future<void> _loadAdjacentEpisodes() async {
@@ -682,7 +698,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
+      canPop: false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
+      onPopInvokedWithResult: (didPop, result) {
+        // Allow programmatic back navigation from UI controls
+        if (!didPop) {
+          Navigator.of(context).pop(true);
+        }
+      },
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(

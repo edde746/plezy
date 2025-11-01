@@ -8,8 +8,7 @@ enum ThemeMode { system, light, dark }
 class SettingsService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
-  static const String _keyVideoBufferSize = 'video_buffer_size';
-  static const String _keyAudioBufferSize = 'audio_buffer_size';
+  static const String _keyBufferSize = 'buffer_size';
   static const String _keyKeyboardShortcuts = 'keyboard_shortcuts';
   static const String _keyKeyboardHotkeys = 'keyboard_hotkeys';
   static const String _keyEnableHardwareDecoding = 'enable_hardware_decoding';
@@ -55,22 +54,13 @@ class SettingsService {
     return _prefs.getBool(_keyEnableDebugLogging) ?? false;
   }
 
-  // Video Buffer Size (in MB)
-  Future<void> setVideoBufferSize(int sizeInMB) async {
-    await _prefs.setInt(_keyVideoBufferSize, sizeInMB);
+  // Buffer Size (in MB)
+  Future<void> setBufferSize(int sizeInMB) async {
+    await _prefs.setInt(_keyBufferSize, sizeInMB);
   }
 
-  int getVideoBufferSize() {
-    return _prefs.getInt(_keyVideoBufferSize) ?? 64; // Default 64MB
-  }
-
-  // Audio Buffer Size (in MB)
-  Future<void> setAudioBufferSize(int sizeInMB) async {
-    await _prefs.setInt(_keyAudioBufferSize, sizeInMB);
-  }
-
-  int getAudioBufferSize() {
-    return _prefs.getInt(_keyAudioBufferSize) ?? 8; // Default 8MB
+  int getBufferSize() {
+    return _prefs.getInt(_keyBufferSize) ?? 128; // Default 128MB
   }
 
   // Hardware Decoding
@@ -557,8 +547,7 @@ class SettingsService {
     await Future.wait([
       _prefs.remove(_keyThemeMode),
       _prefs.remove(_keyEnableDebugLogging),
-      _prefs.remove(_keyVideoBufferSize),
-      _prefs.remove(_keyAudioBufferSize),
+      _prefs.remove(_keyBufferSize),
       _prefs.remove(_keyKeyboardShortcuts),
       _prefs.remove(_keyKeyboardHotkeys),
       _prefs.remove(_keyEnableHardwareDecoding),
@@ -582,8 +571,7 @@ class SettingsService {
     return {
       'themeMode': getThemeMode().name,
       'enableDebugLogging': getEnableDebugLogging(),
-      'videoBufferSize': getVideoBufferSize(),
-      'audioBufferSize': getAudioBufferSize(),
+      'bufferSize': getBufferSize(),
       'enableHardwareDecoding': getEnableHardwareDecoding(),
       'preferredVideoCodec': getPreferredVideoCodec(),
       'preferredAudioCodec': getPreferredAudioCodec(),

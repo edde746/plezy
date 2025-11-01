@@ -22,8 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   bool _enableDebugLogging = false;
   bool _enableHardwareDecoding = true;
-  int _videoBufferSize = 64;
-  int _audioBufferSize = 8;
+  int _bufferSize = 128;
 
   @override
   void initState() {
@@ -38,8 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _enableHardwareDecoding = _settingsService.getEnableHardwareDecoding();
-      _videoBufferSize = _settingsService.getVideoBufferSize();
-      _audioBufferSize = _settingsService.getAudioBufferSize();
+      _bufferSize = _settingsService.getBufferSize();
       _isLoading = false;
     });
   }
@@ -134,17 +132,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.memory),
-            title: const Text('Video Buffer Size'),
-            subtitle: Text('${_videoBufferSize}MB'),
+            title: const Text('Buffer Size'),
+            subtitle: Text('${_bufferSize}MB'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showBufferSizeDialog(true),
-          ),
-          ListTile(
-            leading: const Icon(Icons.audiotrack),
-            title: const Text('Audio Buffer Size'),
-            subtitle: Text('${_audioBufferSize}MB'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showBufferSizeDialog(false),
+            onTap: () => _showBufferSizeDialog(),
           ),
         ],
       ),
@@ -298,35 +289,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showBufferSizeDialog(bool isVideo) {
-    final currentSize = isVideo ? _videoBufferSize : _audioBufferSize;
-    final title = isVideo ? 'Video Buffer Size' : 'Audio Buffer Size';
-    final options = isVideo ? [16, 32, 64, 128, 256] : [2, 4, 8, 16, 32];
+  void _showBufferSizeDialog() {
+    final options = [64, 128, 256, 512, 1024];
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(title),
+          title: const Text('Buffer Size'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: options.map((size) {
               return ListTile(
                 leading: Icon(
-                  currentSize == size
+                  _bufferSize == size
                       ? Icons.radio_button_checked
                       : Icons.radio_button_unchecked,
                 ),
                 title: Text('${size}MB'),
                 onTap: () {
                   setState(() {
-                    if (isVideo) {
-                      _videoBufferSize = size;
-                      _settingsService.setVideoBufferSize(size);
-                    } else {
-                      _audioBufferSize = size;
-                      _settingsService.setAudioBufferSize(size);
-                    }
+                    _bufferSize = size;
+                    _settingsService.setBufferSize(size);
                   });
                   Navigator.pop(context);
                 },
