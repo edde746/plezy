@@ -3,6 +3,7 @@ import '../config/plex_config.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
+import '../models/plex_file_info.dart';
 import '../models/plex_filter.dart';
 import '../utils/app_logger.dart';
 
@@ -502,6 +503,74 @@ class PlexClient {
     }
 
     return null;
+  }
+
+  /// Get file information for a media item
+  Future<PlexFileInfo?> getFileInfo(String ratingKey) async {
+    try {
+      final response = await _dio.get('/library/metadata/$ratingKey');
+      final metadataJson = _getFirstMetadataJson(response);
+
+      if (metadataJson != null &&
+          metadataJson['Media'] != null &&
+          (metadataJson['Media'] as List).isNotEmpty) {
+        final media = metadataJson['Media'][0];
+        final part = media['Part'] != null && (media['Part'] as List).isNotEmpty
+            ? media['Part'][0]
+            : null;
+
+        // Extract video stream details
+        final streams = part?['Stream'] as List<dynamic>? ?? [];
+        Map<String, dynamic>? videoStream;
+        Map<String, dynamic>? audioStream;
+
+        for (var stream in streams) {
+          final streamType = stream['streamType'] as int?;
+          if (streamType == 1 && videoStream == null) {
+            videoStream = stream;
+          } else if (streamType == 2 && audioStream == null) {
+            audioStream = stream;
+          }
+        }
+
+        return PlexFileInfo(
+          // Media level properties
+          container: media['container'] as String?,
+          videoCodec: media['videoCodec'] as String?,
+          videoResolution: media['videoResolution'] as String?,
+          videoFrameRate: media['videoFrameRate'] as String?,
+          videoProfile: media['videoProfile'] as String?,
+          width: media['width'] as int?,
+          height: media['height'] as int?,
+          aspectRatio: (media['aspectRatio'] as num?)?.toDouble(),
+          bitrate: media['bitrate'] as int?,
+          duration: media['duration'] as int?,
+          audioCodec: media['audioCodec'] as String?,
+          audioProfile: media['audioProfile'] as String?,
+          audioChannels: media['audioChannels'] as int?,
+          optimizedForStreaming: media['optimizedForStreaming'] as bool?,
+          has64bitOffsets: media['has64bitOffsets'] as bool?,
+          // Part level properties (file)
+          filePath: part?['file'] as String?,
+          fileSize: part?['size'] as int?,
+          // Video stream details
+          colorSpace: videoStream?['colorSpace'] as String?,
+          colorRange: videoStream?['colorRange'] as String?,
+          colorPrimaries: videoStream?['colorPrimaries'] as String?,
+          colorTrc: videoStream?['colorTrc'] as String?,
+          chromaSubsampling: videoStream?['chromaSubsampling'] as String?,
+          frameRate: (videoStream?['frameRate'] as num?)?.toDouble(),
+          bitDepth: videoStream?['bitDepth'] as int?,
+          // Audio stream details
+          audioChannelLayout: audioStream?['audioChannelLayout'] as String?,
+        );
+      }
+
+      return null;
+    } catch (e) {
+      appLogger.e('Failed to get file info: $e');
+      return null;
+    }
   }
 
   /// Mark media as watched

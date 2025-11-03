@@ -4,6 +4,7 @@ import '../models/plex_metadata.dart';
 import '../utils/provider_extensions.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
+import '../widgets/file_info_bottom_sheet.dart';
 
 /// Helper class to store menu action data
 class _MenuAction {
@@ -95,6 +96,17 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           value: 'season',
           icon: Icons.playlist_play,
           label: 'Go to season',
+        ),
+      );
+    }
+
+    // File Info (for episodes and movies)
+    if (itemType == 'episode' || itemType == 'movie') {
+      menuActions.add(
+        _MenuAction(
+          value: 'fileinfo',
+          icon: Icons.info_outline,
+          label: 'File Info',
         ),
       );
     }
@@ -219,6 +231,10 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           'Error loading season',
         );
         break;
+
+      case 'fileinfo':
+        await _showFileInfo(context);
+        break;
     }
   }
 
@@ -272,6 +288,61 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('$errorPrefix: $e')));
+      }
+    }
+  }
+
+  /// Show file info bottom sheet
+  Future<void> _showFileInfo(BuildContext context) async {
+    final client = context.client;
+    if (client == null) return;
+
+    try {
+      // Show loading indicator
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      // Fetch file info
+      final fileInfo = await client.getFileInfo(widget.metadata.ratingKey);
+
+      // Close loading indicator
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      if (fileInfo != null && context.mounted) {
+        // Show file info bottom sheet
+        await showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => FileInfoBottomSheet(
+            fileInfo: fileInfo,
+            title: widget.metadata.title,
+          ),
+        );
+      } else if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('File information not available')),
+        );
+      }
+    } catch (e) {
+      // Close loading indicator if it's still open
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading file info: $e')),
+        );
       }
     }
   }
