@@ -101,6 +101,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final settingsService = await SettingsService.getInstance();
       final bufferSizeMB = settingsService.getBufferSize();
       final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
+      final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
 
       // Create player with configuration
       player = Player(
@@ -111,7 +112,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           bufferSize: bufferSizeBytes,
         ),
       );
-      controller = VideoController(player!);
+      controller = VideoController(
+        player!,
+        configuration: VideoControllerConfiguration(
+          enableHardwareAcceleration: enableHardwareDecoding,
+        ),
+      );
 
       // Notify that player is ready
       if (mounted) {
