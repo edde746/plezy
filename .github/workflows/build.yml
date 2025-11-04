@@ -178,10 +178,58 @@ jobs:
       - name: Build macOS
         run: flutter build macos --release
 
+      - name: Import Code Signing Certificate
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Import certificate to keychain
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          echo "$MACOS_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          security import $CERTIFICATE_PATH -k $KEYCHAIN_PATH -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Add keychain to search list
+          security list-keychains -d user -s $KEYCHAIN_PATH login.keychain
+
+      - name: Sign Application
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Find the identity
+          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | grep -o '".*"' | tr -d '"')
+          echo "Signing with identity: $IDENTITY"
+
+          APP_PATH="build/macos/Build/Products/Release/plezy.app"
+
+          # Sign all frameworks and dylibs first (inside-out signing)
+          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -o -name "*.dylib" | while read framework; do
+            echo "Signing: $framework"
+            codesign --force --sign "$IDENTITY" --timestamp --options runtime "$framework"
+          done
+
+          # Sign the app bundle itself
+          echo "Signing app bundle: $APP_PATH"
+          codesign --force --sign "$IDENTITY" --timestamp --options runtime --entitlements macos/Runner/Release.entitlements "$APP_PATH"
+
+      - name: Verify Signature
+        run: |
+          APP_PATH="build/macos/Build/Products/Release/plezy.app"
+          echo "Verifying signature..."
+          codesign -dvvv "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
       - name: Create ZIP
         run: |
           cd build/macos/Build/Products/Release
-          zip -r $GITHUB_WORKSPACE/plezy-macos.zip plezy.app
+          ditto -c -k --sequesterRsrc --keepParent plezy.app $GITHUB_WORKSPACE/plezy-macos.zip
 
       - name: Attest macOS ZIP
         uses: actions/attest-build-provenance@v2
