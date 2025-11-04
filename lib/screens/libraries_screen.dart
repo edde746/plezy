@@ -4,6 +4,7 @@ import '../client/plex_client.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_filter.dart';
+import '../models/plex_sort.dart';
 import '../providers/plex_client_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
@@ -31,11 +32,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   List<PlexLibrary> _libraries = [];
   List<PlexMetadata> _items = [];
   List<PlexFilter> _filters = [];
+  List<PlexSort> _sortOptions = [];
   bool _isLoadingLibraries = true;
   bool _isLoadingItems = false;
   String? _errorMessage;
   int _selectedLibraryIndex = 0;
   Map<String, String> _selectedFilters = {};
+  PlexSort? _selectedSort;
+  bool _isSortDescending = false;
   bool _isInitialLoad = true;
 
   @override
@@ -134,13 +138,21 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     try {
-      // Load filters for the new library
+      // Load filters and sort options for the new library
       _loadFilters(index);
+      _loadSortOptions(index);
+
+      // Add sort parameter to filters if selected
+      final filtersWithSort = Map<String, String>.from(_selectedFilters);
+      if (_selectedSort != null) {
+        filtersWithSort['sort'] =
+            _selectedSort!.getSortKey(descending: _isSortDescending);
+      }
 
       // Load content
       final items = await client.getLibraryContent(
         _libraries[index].key,
-        filters: _selectedFilters,
+        filters: filtersWithSort,
       );
       setState(() {
         _items = items;
@@ -178,6 +190,57 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
   }
 
+  Future<void> _loadSortOptions(int index) async {
+    if (index < 0 || index >= _libraries.length) return;
+
+    try {
+      final clientProvider = Provider.of<PlexClientProvider>(
+        context,
+        listen: false,
+      );
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final sortOptions = await client.getLibrarySorts(_libraries[index].key);
+
+      // Load saved sort preference for this library
+      final storage = await StorageService.getInstance();
+      final savedSortKey = storage.getLibrarySort(_libraries[index].key);
+
+      // Find the saved sort in the options
+      PlexSort? savedSort;
+      bool descending = false;
+
+      if (savedSortKey.endsWith(':desc')) {
+        descending = true;
+        final baseKey = savedSortKey.replaceAll(':desc', '');
+        savedSort = sortOptions.firstWhere(
+          (s) => s.key == baseKey,
+          orElse: () => sortOptions.first,
+        );
+      } else {
+        savedSort = sortOptions.firstWhere(
+          (s) => s.key == savedSortKey,
+          orElse: () => sortOptions.first,
+        );
+      }
+
+      setState(() {
+        _sortOptions = sortOptions;
+        _selectedSort = savedSort;
+        _isSortDescending = descending;
+      });
+    } catch (e) {
+      setState(() {
+        _sortOptions = [];
+        _selectedSort = null;
+        _isSortDescending = false;
+      });
+    }
+  }
+
   Future<void> _applyFilters() async {
     setState(() {
       _isLoadingItems = true;
@@ -194,9 +257,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         throw Exception('No client available');
       }
 
+      // Add sort parameter to filters if selected
+      final filtersWithSort = Map<String, String>.from(_selectedFilters);
+      if (_selectedSort != null) {
+        filtersWithSort['sort'] =
+            _selectedSort!.getSortKey(descending: _isSortDescending);
+      }
+
       final items = await client.getLibraryContent(
         _libraries[_selectedLibraryIndex].key,
-        filters: _selectedFilters,
+        filters: filtersWithSort,
       );
       setState(() {
         _items = items;
@@ -208,6 +278,21 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         _isLoadingItems = false;
       });
     }
+  }
+
+  Future<void> _applySort(PlexSort sort, bool descending) async {
+    setState(() {
+      _selectedSort = sort;
+      _isSortDescending = descending;
+    });
+
+    // Save sort preference for this library
+    final storage = await StorageService.getInstance();
+    final sortKey = sort.getSortKey(descending: descending);
+    await storage.saveLibrarySort(_libraries[_selectedLibraryIndex].key, sortKey);
+
+    // Reload content with new sort
+    _applyFilters();
   }
 
   @override
@@ -249,6 +334,22 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
+  void _showSortBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _SortBottomSheet(
+        sortOptions: _sortOptions,
+        selectedSort: _selectedSort,
+        isSortDescending: _isSortDescending,
+        onSortChanged: (sort, descending) {
+          Navigator.pop(context);
+          _applySort(sort, descending);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -263,6 +364,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
             actions: [
+              if (_sortOptions.isNotEmpty)
+                IconButton(
+                  icon: const Icon(
+                    Icons.swap_vert,
+                    semanticLabel: 'Sort',
+                  ),
+                  onPressed: _showSortBottomSheet,
+                ),
               if (_filters.isNotEmpty)
                 IconButton(
                   icon: Badge(
@@ -813,6 +922,141 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
                       ],
                     ),
                     onTap: () => _loadFilterValues(filter),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SortBottomSheet extends StatefulWidget {
+  final List<PlexSort> sortOptions;
+  final PlexSort? selectedSort;
+  final bool isSortDescending;
+  final Function(PlexSort, bool) onSortChanged;
+
+  const _SortBottomSheet({
+    required this.sortOptions,
+    required this.selectedSort,
+    required this.isSortDescending,
+    required this.onSortChanged,
+  });
+
+  @override
+  State<_SortBottomSheet> createState() => _SortBottomSheetState();
+}
+
+class _SortBottomSheetState extends State<_SortBottomSheet> {
+  late PlexSort? _tempSelectedSort;
+  late bool _tempDescending;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelectedSort = widget.selectedSort;
+    _tempDescending = widget.isSortDescending;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Sort By',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Sort options list
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: widget.sortOptions.length,
+                itemBuilder: (context, index) {
+                  final sort = widget.sortOptions[index];
+                  final isSelected = _tempSelectedSort?.key == sort.key;
+
+                  return ListTile(
+                    title: Text(sort.title),
+                    trailing: isSelected
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Direction toggle buttons
+                              SegmentedButton<bool>(
+                                showSelectedIcon: false,
+                                segments: const [
+                                  ButtonSegment(
+                                    value: false,
+                                    icon: Icon(Icons.arrow_upward, size: 16),
+                                  ),
+                                  ButtonSegment(
+                                    value: true,
+                                    icon: Icon(Icons.arrow_downward, size: 16),
+                                  ),
+                                ],
+                                selected: {_tempDescending},
+                                onSelectionChanged: (Set<bool> selected) {
+                                  widget.onSortChanged(sort, selected.first);
+                                },
+                              ),
+                            ],
+                          )
+                        : null,
+                    leading: Radio<String>(
+                      value: sort.key,
+                      groupValue: _tempSelectedSort?.key,
+                      onChanged: (value) {
+                        setState(() {
+                          _tempSelectedSort = sort;
+                          // Use default direction for newly selected sort
+                          _tempDescending = sort.isDefaultDescending;
+                        });
+                        // Apply sort immediately with default direction
+                        widget.onSortChanged(sort, sort.isDefaultDescending);
+                      },
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _tempSelectedSort = sort;
+                        // Use default direction for newly selected sort
+                        _tempDescending = sort.isDefaultDescending;
+                      });
+                      // Apply sort immediately with default direction
+                      widget.onSortChanged(sort, sort.isDefaultDescending);
+                    },
                   );
                 },
               ),

@@ -5,6 +5,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_file_info.dart';
 import '../models/plex_filter.dart';
+import '../models/plex_sort.dart';
 import '../utils/app_logger.dart';
 
 /// Result of testing a connection, including success status and latency
@@ -640,6 +641,67 @@ class PlexClient {
   Future<List<PlexFilterValue>> getFilterValues(String filterKey) async {
     final response = await _dio.get(filterKey);
     return _extractDirectoryList(response, PlexFilterValue.fromJson);
+  }
+
+  /// Get available sort options for a library section
+  Future<List<PlexSort>> getLibrarySorts(String sectionId) async {
+    try {
+      // Fetch library content with minimal data to get Sort metadata
+      final response = await _dio.get(
+        '/library/sections/$sectionId/all',
+        queryParameters: {'X-Plex-Container-Size': 0},
+      );
+
+      final container = _getMediaContainer(response);
+      if (container != null && container['Sort'] != null) {
+        return (container['Sort'] as List)
+            .map((json) => PlexSort.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+
+      // Fallback: return common sort options if API doesn't provide them
+      return [
+        PlexSort(
+          key: 'titleSort',
+          title: 'Title',
+          defaultDirection: 'asc',
+        ),
+        PlexSort(
+          key: 'addedAt',
+          descKey: 'addedAt:desc',
+          title: 'Date Added',
+          defaultDirection: 'desc',
+        ),
+        PlexSort(
+          key: 'originallyAvailableAt',
+          descKey: 'originallyAvailableAt:desc',
+          title: 'Release Date',
+          defaultDirection: 'desc',
+        ),
+        PlexSort(
+          key: 'rating',
+          descKey: 'rating:desc',
+          title: 'Rating',
+          defaultDirection: 'desc',
+        ),
+      ];
+    } catch (e) {
+      appLogger.e('Failed to get library sorts: $e');
+      // Return fallback sort options on error
+      return [
+        PlexSort(
+          key: 'titleSort',
+          title: 'Title',
+          defaultDirection: 'asc',
+        ),
+        PlexSort(
+          key: 'addedAt',
+          descKey: 'addedAt:desc',
+          title: 'Date Added',
+          defaultDirection: 'desc',
+        ),
+      ];
+    }
   }
 
   /// Find adjacent episode in a given direction
