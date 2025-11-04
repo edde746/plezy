@@ -702,49 +702,27 @@ class PlexClient {
   /// Get available sort options for a library section
   Future<List<PlexSort>> getLibrarySorts(String sectionId) async {
     try {
-      // Fetch library content with minimal data to get Sort metadata
-      final response = await _dio.get(
-        '/library/sections/$sectionId/all',
-        queryParameters: {'X-Plex-Container-Size': 0},
-      );
+      // Use the dedicated sorts endpoint
+      final response = await _dio.get('/library/sections/$sectionId/sorts');
 
-      final container = _getMediaContainer(response);
-      if (container != null && container['Sort'] != null) {
-        final sorts = (container['Sort'] as List)
-            .map((json) => PlexSort.fromJson(json as Map<String, dynamic>))
-            .toList();
+      // Parse the Directory array (not Sort array) per the API spec
+      final sorts = _extractDirectoryList(response, PlexSort.fromJson);
 
-        // For TV show libraries, add sort by latest episode air date if not already present
-        // Note: Plex uses different field names - we need to check what's actually available
-        final libraryType = container['librarySectionType'] as String?;
-        if (libraryType == 'show') {
-          // Try to find existing sort options that might work
-          final hasEpisodeAirSort = sorts.any(
-            (s) =>
-                s.key == 'episode.originallyAvailableAt' ||
-                s.key == 'lastRatedAt' ||
-                s.title.toLowerCase().contains('episode') &&
-                    s.title.toLowerCase().contains('air'),
-          );
-
-          if (!hasEpisodeAirSort) {
-            // Add custom sort - Plex typically uses 'episode.originallyAvailableAt' or 'lastRatedAt'
-            // for sorting shows by their latest episode's air date
-            sorts.add(
-              PlexSort(
-                key: 'episode.originallyAvailableAt',
-                descKey: 'episode.originallyAvailableAt:desc',
-                title: 'Latest Episode Air Date',
-                defaultDirection: 'desc',
-              ),
-            );
-          }
-        }
-
+      if (sorts.isNotEmpty) {
         return sorts;
       }
 
       // Fallback: return common sort options if API doesn't provide them
+      return _getFallbackSorts(sectionId);
+    } catch (e) {
+      appLogger.e('Failed to get library sorts: $e');
+      // Return fallback sort options on error
+      return _getFallbackSorts(sectionId);
+    }
+  }
+
+  Future<List<PlexSort>> _getFallbackSorts(String sectionId) async {
+    try {
       // Get library type to determine which sorts to include
       final librariesResponse = await _dio.get('/library/sections');
       final libraries = _extractDirectoryList(
@@ -795,8 +773,8 @@ class PlexClient {
 
       return fallbackSorts;
     } catch (e) {
-      appLogger.e('Failed to get library sorts: $e');
-      // Return fallback sort options on error
+      appLogger.e('Failed to get fallback sorts: $e');
+      // Return minimal fallback options
       return [
         PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
         PlexSort(
