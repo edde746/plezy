@@ -620,7 +620,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             // Library selector chips
             SliverToBoxAdapter(
               child: Container(
-                height: 48,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
