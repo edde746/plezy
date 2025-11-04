@@ -35,6 +35,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   int _selectedLibraryIndex = 0;
   Map<String, String> _selectedFilters = {};
   bool _isInitialLoad = true;
+  bool _isReorderMode = false;
 
   @override
   void initState() {
@@ -59,8 +60,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       }
 
       final libraries = await client.getLibraries();
+
+      // Load saved library order and apply it
+      final storage = await StorageService.getInstance();
+      final savedOrder = storage.getLibraryOrder();
+      final orderedLibraries = _applyLibraryOrder(libraries, savedOrder);
+
       setState(() {
-        _libraries = libraries;
+        _libraries = orderedLibraries;
         _isLoadingLibraries = false;
       });
 
@@ -89,6 +96,67 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         _isLoadingLibraries = false;
       });
     }
+  }
+
+  List<PlexLibrary> _applyLibraryOrder(
+    List<PlexLibrary> libraries,
+    List<String>? savedOrder,
+  ) {
+    if (savedOrder == null || savedOrder.isEmpty) {
+      return libraries;
+    }
+
+    // Create a map for quick lookup
+    final libraryMap = {for (var lib in libraries) lib.key: lib};
+
+    // Build ordered list based on saved order
+    final orderedLibraries = <PlexLibrary>[];
+    final addedKeys = <String>{};
+
+    // Add libraries in saved order
+    for (final key in savedOrder) {
+      if (libraryMap.containsKey(key)) {
+        orderedLibraries.add(libraryMap[key]!);
+        addedKeys.add(key);
+      }
+    }
+
+    // Add any new libraries that weren't in the saved order
+    for (final library in libraries) {
+      if (!addedKeys.contains(library.key)) {
+        orderedLibraries.add(library);
+      }
+    }
+
+    return orderedLibraries;
+  }
+
+  Future<void> _saveLibraryOrder() async {
+    final storage = await StorageService.getInstance();
+    final libraryKeys = _libraries.map((lib) => lib.key).toList();
+    await storage.saveLibraryOrder(libraryKeys);
+  }
+
+  void _reorderLibraries(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final library = _libraries.removeAt(oldIndex);
+      _libraries.insert(newIndex, library);
+
+      // Update selected index to follow the moved library if needed
+      if (oldIndex == _selectedLibraryIndex) {
+        _selectedLibraryIndex = newIndex;
+      } else if (oldIndex < _selectedLibraryIndex &&
+          newIndex >= _selectedLibraryIndex) {
+        _selectedLibraryIndex -= 1;
+      } else if (oldIndex > _selectedLibraryIndex &&
+          newIndex <= _selectedLibraryIndex) {
+        _selectedLibraryIndex += 1;
+      }
+    });
+    _saveLibraryOrder();
   }
 
   Future<void> _loadLibraryContent(int index) async {
@@ -261,6 +329,18 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
             actions: [
+              if (_libraries.isNotEmpty)
+                IconButton(
+                  icon: Icon(
+                    _isReorderMode ? Icons.check : Icons.edit,
+                    semanticLabel: _isReorderMode ? 'Done' : 'Reorder',
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isReorderMode = !_isReorderMode;
+                    });
+                  },
+                ),
               if (_filters.isNotEmpty)
                 IconButton(
                   icon: Badge(
@@ -326,53 +406,104 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             // Library selector chips
             SliverToBoxAdapter(
               child: Container(
+                height: 48,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
                 ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: List.generate(_libraries.length, (index) {
-                      final library = _libraries[index];
-                      final isSelected = index == _selectedLibraryIndex;
-                      final t = tokens(context);
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _getLibraryIcon(library.type),
-                                size: 16,
-                                color: isSelected ? t.bg : t.text,
+                child: _isReorderMode
+                    ? ReorderableListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        onReorder: _reorderLibraries,
+                        itemCount: _libraries.length,
+                        proxyDecorator: (child, index, animation) {
+                          return Material(
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(8),
+                            child: child,
+                          );
+                        },
+                        itemBuilder: (context, index) {
+                          final library = _libraries[index];
+                          final isSelected = index == _selectedLibraryIndex;
+                          final t = tokens(context);
+                          return Container(
+                            key: ValueKey(library.key),
+                            margin: const EdgeInsets.only(right: 8),
+                            child: Chip(
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.drag_handle,
+                                    size: 16,
+                                    color: isSelected ? t.bg : t.text,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Icon(
+                                    _getLibraryIcon(library.type),
+                                    size: 16,
+                                    color: isSelected ? t.bg : t.text,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(library.title),
+                                ],
                               ),
-                              const SizedBox(width: 6),
-                              Text(library.title),
-                            ],
-                          ),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) {
-                              _loadLibraryContent(index);
-                            }
-                          },
-                          backgroundColor: t.surface,
-                          selectedColor: t.text,
-                          side: BorderSide(color: t.outline),
-                          labelStyle: TextStyle(
-                            color: isSelected ? t.bg : t.text,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                          showCheckmark: false,
+                              backgroundColor: isSelected ? t.text : t.surface,
+                              side: BorderSide(color: t.outline),
+                              labelStyle: TextStyle(
+                                color: isSelected ? t.bg : t.text,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: List.generate(_libraries.length, (index) {
+                            final library = _libraries[index];
+                            final isSelected = index == _selectedLibraryIndex;
+                            final t = tokens(context);
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _getLibraryIcon(library.type),
+                                      size: 16,
+                                      color: isSelected ? t.bg : t.text,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(library.title),
+                                  ],
+                                ),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  if (selected) {
+                                    _loadLibraryContent(index);
+                                  }
+                                },
+                                backgroundColor: t.surface,
+                                selectedColor: t.text,
+                                side: BorderSide(color: t.outline),
+                                labelStyle: TextStyle(
+                                  color: isSelected ? t.bg : t.text,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                                showCheckmark: false,
+                              ),
+                            );
+                          }),
                         ),
-                      );
-                    }),
-                  ),
-                ),
+                      ),
               ),
             ),
 
