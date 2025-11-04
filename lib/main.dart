@@ -13,6 +13,8 @@ import 'services/fullscreen_state_manager.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/settings_provider.dart';
+import 'providers/hidden_libraries_provider.dart';
 import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
 import 'utils/provider_extensions.dart';
@@ -20,6 +22,10 @@ import 'utils/orientation_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configure image cache for large libraries
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 500 << 20; // 500MB
+  PaintingBinding.instance.imageCache.maximumSize = 500; // 500 images
 
   // Initialize window_manager for desktop platforms
   if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
@@ -62,6 +68,8 @@ class MainApp extends StatelessWidget {
           create: (context) => UserProfileProvider()..initialize(),
         ),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => SettingsProvider()),
+        ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

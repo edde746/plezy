@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import '../providers/theme_provider.dart';
+import '../providers/settings_provider.dart';
+import '../providers/plex_client_provider.dart';
+import '../providers/hidden_libraries_provider.dart';
 import '../services/settings_service.dart' as settings;
 import '../services/keyboard_shortcuts_service.dart';
+import '../models/plex_library.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/hotkey_recorder_widget.dart';
 import 'about_screen.dart';
@@ -42,6 +46,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  Future<void> _unhideLibrary(String libraryKey) async {
+    // Unhide library using provider
+    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
+      context,
+      listen: false,
+    );
+    await hiddenLibrariesProvider.unhideLibrary(libraryKey);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Library shown')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -57,6 +76,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 _buildAppearanceSection(),
+                const SizedBox(height: 24),
+                _buildLibraryManagementSection(),
                 const SizedBox(height: 24),
                 _buildVideoPlaybackSection(),
                 const SizedBox(height: 24),
@@ -99,9 +120,121 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return ListTile(
+                leading: const Icon(Icons.grid_view),
+                title: const Text('Library Density'),
+                subtitle: Text(settingsProvider.libraryDensityDisplayName),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showLibraryDensityDialog(),
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const Icon(Icons.image),
+                title: const Text('Use Season Posters'),
+                subtitle: const Text(
+                  'Show season poster instead of series poster for episodes',
+                ),
+                value: settingsProvider.useSeasonPoster,
+                onChanged: (value) async {
+                  await settingsProvider.setUseSeasonPoster(value);
+                },
+              );
+            },
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildLibraryManagementSection() {
+    // Watch for hidden libraries changes to trigger rebuild
+    final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
+    final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Library Management',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          if (hiddenKeys.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(
+                'No hidden libraries',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            )
+          else
+            // Use FutureBuilder to fetch library details for hidden keys
+            FutureBuilder<List<PlexLibrary>>(
+              future: _fetchHiddenLibraries(hiddenKeys),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Text(
+                      'Error loading hidden libraries',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  );
+                }
+
+                final hiddenLibraries = snapshot.data!;
+                return Column(
+                  children: hiddenLibraries.map((library) {
+                    return ListTile(
+                      leading: const Icon(Icons.visibility_off),
+                      title: Text(library.title),
+                      subtitle: Text('${library.type} library'),
+                      trailing: TextButton(
+                        onPressed: () => _unhideLibrary(library.key),
+                        child: const Text('Show'),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<PlexLibrary>> _fetchHiddenLibraries(Set<String> hiddenKeys) async {
+    final clientProvider = Provider.of<PlexClientProvider>(
+      context,
+      listen: false,
+    );
+    final client = clientProvider.client;
+
+    if (client == null) {
+      return [];
+    }
+
+    final allLibraries = await client.getLibraries();
+    return allLibraries
+        .where((lib) => hiddenKeys.contains(lib.key))
+        .toList();
   }
 
   Widget _buildVideoPlaybackSection() {
@@ -406,6 +539,79 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Reset'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showLibraryDensityDialog() {
+    final settingsProvider = context.read<SettingsProvider>();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Consumer<SettingsProvider>(
+          builder: (context, provider, child) {
+            return AlertDialog(
+              title: const Text('Library Density'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      provider.libraryDensity == settings.LibraryDensity.compact
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Compact'),
+                    subtitle: const Text('Smaller cards, more items visible'),
+                    onTap: () async {
+                      await settingsProvider.setLibraryDensity(
+                        settings.LibraryDensity.compact,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      provider.libraryDensity == settings.LibraryDensity.normal
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Normal'),
+                    subtitle: const Text('Default size'),
+                    onTap: () async {
+                      await settingsProvider.setLibraryDensity(
+                        settings.LibraryDensity.normal,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      provider.libraryDensity ==
+                              settings.LibraryDensity.comfortable
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Comfortable'),
+                    subtitle: const Text('Larger cards, fewer items visible'),
+                    onTap: () async {
+                      await settingsProvider.setLibraryDensity(
+                        settings.LibraryDensity.comfortable,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

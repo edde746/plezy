@@ -797,7 +797,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             [
                               contentTypeLabel,
                               if (heroItem.rating != null)
-                                '★ ${(heroItem.rating! / 10).toStringAsFixed(1)}',
+                                '★ ${heroItem.rating!.toStringAsFixed(1)}',
                               if (heroItem.contentRating != null)
                                 formatContentRating(heroItem.contentRating!),
                               if (heroItem.year != null)

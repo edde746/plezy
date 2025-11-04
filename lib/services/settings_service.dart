@@ -5,6 +5,8 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 
 enum ThemeMode { system, light, dark }
 
+enum LibraryDensity { compact, normal, comfortable }
+
 class SettingsService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
@@ -14,6 +16,8 @@ class SettingsService {
   static const String _keyEnableHardwareDecoding = 'enable_hardware_decoding';
   static const String _keyPreferredVideoCodec = 'preferred_video_codec';
   static const String _keyPreferredAudioCodec = 'preferred_audio_codec';
+  static const String _keyLibraryDensity = 'library_density';
+  static const String _keyUseSeasonPoster = 'use_season_poster';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -89,6 +93,28 @@ class SettingsService {
 
   String getPreferredAudioCodec() {
     return _prefs.getString(_keyPreferredAudioCodec) ?? 'auto';
+  }
+
+  // Library Density
+  Future<void> setLibraryDensity(LibraryDensity density) async {
+    await _prefs.setString(_keyLibraryDensity, density.name);
+  }
+
+  LibraryDensity getLibraryDensity() {
+    final densityString = _prefs.getString(_keyLibraryDensity);
+    return LibraryDensity.values.firstWhere(
+      (density) => density.name == densityString,
+      orElse: () => LibraryDensity.normal,
+    );
+  }
+
+  // Use Season Poster
+  Future<void> setUseSeasonPoster(bool enabled) async {
+    await _prefs.setBool(_keyUseSeasonPoster, enabled);
+  }
+
+  bool getUseSeasonPoster() {
+    return _prefs.getBool(_keyUseSeasonPoster) ?? false; // Default: false (use series poster)
   }
 
   // Keyboard Shortcuts (Legacy String-based)
@@ -553,6 +579,8 @@ class SettingsService {
       _prefs.remove(_keyEnableHardwareDecoding),
       _prefs.remove(_keyPreferredVideoCodec),
       _prefs.remove(_keyPreferredAudioCodec),
+      _prefs.remove(_keyLibraryDensity),
+      _prefs.remove(_keyUseSeasonPoster),
     ]);
   }
 
@@ -575,6 +603,8 @@ class SettingsService {
       'enableHardwareDecoding': getEnableHardwareDecoding(),
       'preferredVideoCodec': getPreferredVideoCodec(),
       'preferredAudioCodec': getPreferredAudioCodec(),
+      'libraryDensity': getLibraryDensity().name,
+      'useSeasonPoster': getUseSeasonPoster(),
       'keyboardShortcuts': getKeyboardShortcuts(),
       'keyboardHotkeys': hotkeys.map(
         (key, value) => MapEntry(key, _serializeHotKey(value)),
