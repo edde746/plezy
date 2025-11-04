@@ -215,6 +215,15 @@ class PlexAuthService {
   }
 }
 
+/// Helper class to track connection candidates during testing
+class _ConnectionCandidate {
+  final PlexConnection connection;
+  final String url;
+  final bool isPlexDirectUri;
+
+  _ConnectionCandidate(this.connection, this.url, this.isPlexDirectUri);
+}
+
 /// Represents a Plex Media Server
 class PlexServer {
   final String name;
@@ -304,102 +313,155 @@ class PlexServer {
     return _selectBest(connections);
   }
 
-  PlexConnection? _findLowestLatency(
-    List<MapEntry<PlexConnection, ConnectionTestResult>> entries,
-  ) {
-    if (entries.isEmpty) return null;
-    final bestEntry = entries.reduce(
-      (a, b) => a.value.latencyMs < b.value.latencyMs ? a : b,
-    );
-    return bestEntry.key;
-  }
-
-  PlexConnection? _selectBestWithLatency(
-    Map<PlexConnection, ConnectionTestResult> results,
-  ) {
-    final localEntries = results.entries
-        .where((e) => e.key.local && !e.key.relay)
-        .toList();
-    final remoteEntries = results.entries
-        .where((e) => !e.key.local && !e.key.relay)
-        .toList();
-    final relayEntries = results.entries.where((e) => e.key.relay).toList();
-
-    return _findLowestLatency(localEntries) ??
-        _findLowestLatency(remoteEntries) ??
-        _findLowestLatency(relayEntries);
-  }
-
   /// Find the best working connection by testing them
   /// Returns a Stream that emits connections progressively:
   /// 1. First emission: The first connection that responds successfully
   /// 2. Second emission (optional): The best connection after latency testing
   /// Priority: local > remote > relay (from successful connections)
+  /// Tests both plex.direct URI and direct IP for each connection
   Stream<PlexConnection> findBestWorkingConnection() async* {
     if (connections.isEmpty) return;
 
+    // Create candidates: test both uri and directUrl for each connection
+    final candidates = <_ConnectionCandidate>[];
+    for (final connection in connections) {
+      candidates.add(_ConnectionCandidate(connection, connection.uri, true));
+      candidates.add(_ConnectionCandidate(connection, connection.directUrl, false));
+    }
+
     // Phase 1: Race to find first working connection
-    final completer = Completer<PlexConnection?>();
-    PlexConnection? firstConnection;
+    final completer = Completer<_ConnectionCandidate?>();
+    _ConnectionCandidate? firstCandidate;
     int completedTests = 0;
 
-    // Start testing all connections simultaneously
-    for (final connection in connections) {
-      PlexClient.testConnectionWithLatency(connection.uri, accessToken).then((
+    // Start testing all candidates simultaneously
+    for (final candidate in candidates) {
+      PlexClient.testConnectionWithLatency(candidate.url, accessToken).then((
         result,
       ) {
         completedTests++;
 
         // If this is the first successful connection, emit it immediately
         if (result.success && !completer.isCompleted) {
-          completer.complete(connection);
+          completer.complete(candidate);
         }
 
         // If all tests complete without success, complete with null
-        if (completedTests == connections.length && !completer.isCompleted) {
+        if (completedTests == candidates.length && !completer.isCompleted) {
           completer.complete(null);
         }
       });
     }
 
     // Wait for and emit the first successful connection
-    firstConnection = await completer.future;
-    if (firstConnection == null) {
+    firstCandidate = await completer.future;
+    if (firstCandidate == null) {
       return; // No working connections found
     }
 
+    // Update the connection object to use the working URL
+    final firstConnection = _updateConnectionUrl(
+      firstCandidate.connection,
+      firstCandidate.url,
+    );
     yield firstConnection;
 
     // Phase 2: Continue testing in background to find best connection
-    // Test each connection 2-3 times and average the latency
-    final connectionResults = <PlexConnection, ConnectionTestResult>{};
+    // Test each candidate 2-3 times and average the latency
+    final candidateResults = <_ConnectionCandidate, ConnectionTestResult>{};
 
     await Future.wait(
-      connections.map((connection) async {
+      candidates.map((candidate) async {
         final result = await PlexClient.testConnectionWithAverageLatency(
-          connection.uri,
+          candidate.url,
           accessToken,
           attempts: 2,
         );
 
         if (result.success) {
-          connectionResults[connection] = result;
+          candidateResults[candidate] = result;
         }
       }),
     );
 
     // If no connections succeeded, we're done
-    if (connectionResults.isEmpty) {
+    if (candidateResults.isEmpty) {
       return;
     }
 
-    // Find the best connection considering both priority and latency
-    final bestConnection = _selectBestWithLatency(connectionResults);
+    // Find the best connection considering priority, latency, and URL type
+    final bestCandidate = _selectBestCandidateWithLatency(candidateResults);
 
     // Emit the best connection if it's different from the first one
-    if (bestConnection != null && bestConnection.uri != firstConnection.uri) {
-      yield bestConnection;
+    if (bestCandidate != null) {
+      final bestConnection = _updateConnectionUrl(
+        bestCandidate.connection,
+        bestCandidate.url,
+      );
+      if (bestConnection.uri != firstConnection.uri) {
+        yield bestConnection;
+      }
     }
+  }
+
+  /// Update a connection's URI to use the specified URL
+  PlexConnection _updateConnectionUrl(PlexConnection connection, String url) {
+    // If the URL matches the original URI, return as-is
+    if (url == connection.uri) {
+      return connection;
+    }
+
+    // Otherwise, create a new connection with the directUrl as the uri
+    return PlexConnection(
+      protocol: connection.protocol,
+      address: connection.address,
+      port: connection.port,
+      uri: url,
+      local: connection.local,
+      relay: connection.relay,
+      ipv6: connection.ipv6,
+    );
+  }
+
+  /// Select the best candidate considering priority, latency, and URL type preference
+  _ConnectionCandidate? _selectBestCandidateWithLatency(
+    Map<_ConnectionCandidate, ConnectionTestResult> results,
+  ) {
+    // Group candidates by connection type (local/remote/relay)
+    final localCandidates = results.entries
+        .where((e) => e.key.connection.local && !e.key.connection.relay)
+        .toList();
+    final remoteCandidates = results.entries
+        .where((e) => !e.key.connection.local && !e.key.connection.relay)
+        .toList();
+    final relayCandidates = results.entries
+        .where((e) => e.key.connection.relay)
+        .toList();
+
+    // Find best in each category
+    return _findLowestLatencyCandidate(localCandidates) ??
+        _findLowestLatencyCandidate(remoteCandidates) ??
+        _findLowestLatencyCandidate(relayCandidates);
+  }
+
+  /// Find the candidate with lowest latency, preferring plex.direct URI on tie
+  _ConnectionCandidate? _findLowestLatencyCandidate(
+    List<MapEntry<_ConnectionCandidate, ConnectionTestResult>> entries,
+  ) {
+    if (entries.isEmpty) return null;
+
+    // Sort by latency first, then by URL type (prefer plex.direct)
+    entries.sort((a, b) {
+      final latencyCompare = a.value.latencyMs.compareTo(b.value.latencyMs);
+      if (latencyCompare != 0) return latencyCompare;
+
+      // If latencies are equal, prefer plex.direct URI (isPlexDirectUri = true)
+      if (a.key.isPlexDirectUri && !b.key.isPlexDirectUri) return -1;
+      if (!a.key.isPlexDirectUri && b.key.isPlexDirectUri) return 1;
+      return 0;
+    });
+
+    return entries.first.key;
   }
 }
 
@@ -446,6 +508,10 @@ class PlexConnection {
       'IPv6': ipv6,
     };
   }
+
+  /// Get the direct URL constructed from address and port
+  /// This bypasses plex.direct DNS and connects directly to the IP
+  String get directUrl => '$protocol://$address:$port';
 
   String get displayType {
     if (relay) return 'Relay';
