@@ -58,7 +58,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         throw Exception('No client available');
       }
 
-      final libraries = await client.getLibraries();
+      final allLibraries = await client.getLibraries();
+      
+      // Filter out music libraries (type: 'artist') since music playback is not yet supported
+      // Only show movie and TV show libraries
+      final libraries = allLibraries
+          .where((lib) => lib.type.toLowerCase() != 'artist')
+          .toList();
+      
       setState(() {
         _libraries = libraries;
         _isLoadingLibraries = false;
