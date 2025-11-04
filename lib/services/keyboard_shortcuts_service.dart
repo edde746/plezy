@@ -224,6 +224,21 @@ class KeyboardShortcutsService {
     return KeyEventResult.ignored;
   }
 
+  /// Seeks by the given offset (can be positive or negative) while clamping
+  /// the result between 0 and the video duration
+  void _seekWithClamping(Player player, Duration offset) {
+    final currentPosition = player.state.position;
+    final duration = player.state.duration;
+    final newPosition = currentPosition + offset;
+
+    // Clamp between 0 and video duration
+    final clampedPosition = newPosition.isNegative
+      ? Duration.zero
+      : (newPosition > duration ? duration : newPosition);
+
+    player.seek(clampedPosition);
+  }
+
   void _executeAction(
     String action,
     Player player,
@@ -247,20 +262,16 @@ class KeyboardShortcutsService {
         player.setVolume(newVolume);
         break;
       case 'seek_forward':
-        final newPosition = player.state.position + const Duration(seconds: 10);
-        player.seek(newPosition);
+        _seekWithClamping(player, const Duration(seconds: 10));
         break;
       case 'seek_backward':
-        final newPosition = player.state.position - const Duration(seconds: 10);
-        player.seek(newPosition.isNegative ? Duration.zero : newPosition);
+        _seekWithClamping(player, const Duration(seconds: -10));
         break;
       case 'seek_forward_large':
-        final newPosition = player.state.position + const Duration(seconds: 30);
-        player.seek(newPosition);
+        _seekWithClamping(player, const Duration(seconds: 30));
         break;
       case 'seek_backward_large':
-        final newPosition = player.state.position - const Duration(seconds: 30);
-        player.seek(newPosition.isNegative ? Duration.zero : newPosition);
+        _seekWithClamping(player, const Duration(seconds: -30));
         break;
       case 'fullscreen_toggle':
         onToggleFullscreen?.call();

@@ -266,8 +266,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _seekToPreviousChapter() {
     if (_chapters.isEmpty) {
       // No chapters - seek backward 10 seconds
-      final currentPosition = widget.player.state.position;
-      widget.player.seek(currentPosition - const Duration(seconds: 10));
+      _seekWithClamping(const Duration(seconds: -10));
       return;
     }
 
@@ -290,8 +289,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _seekToNextChapter() {
     if (_chapters.isEmpty) {
       // No chapters - seek forward 10 seconds
-      final currentPosition = widget.player.state.position;
-      widget.player.seek(currentPosition + const Duration(seconds: 10));
+      _seekWithClamping(const Duration(seconds: 10));
       return;
     }
 
@@ -305,6 +303,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return;
       }
     }
+  }
+
+  /// Seeks by the given offset (can be positive or negative) while clamping
+  /// the result between 0 and the video duration
+  void _seekWithClamping(Duration offset) {
+    final currentPosition = widget.player.state.position;
+    final duration = widget.player.state.duration;
+    final newPosition = currentPosition + offset;
+
+    // Clamp between 0 and video duration
+    final clampedPosition = newPosition.isNegative
+      ? Duration.zero
+      : (newPosition > duration ? duration : newPosition);
+
+    widget.player.seek(clampedPosition);
   }
 
   Future<void> _toggleFullscreen() async {
@@ -554,10 +567,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 ),
                 iconSize: 48,
                 onPressed: () {
-                  final currentPosition = widget.player.state.position;
-                  widget.player.seek(
-                    currentPosition - const Duration(seconds: 10),
-                  );
+                  _seekWithClamping(const Duration(seconds: -10));
                 },
               ),
             ),
@@ -599,10 +609,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 ),
                 iconSize: 48,
                 onPressed: () {
-                  final currentPosition = widget.player.state.position;
-                  widget.player.seek(
-                    currentPosition + const Duration(seconds: 10),
-                  );
+                  _seekWithClamping(const Duration(seconds: 10));
                 },
               ),
             ),
