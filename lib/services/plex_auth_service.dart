@@ -179,8 +179,9 @@ class PlexAuthService {
   /// Switch to a different user in the home
   Future<UserSwitchResponse> switchToUser(
     String userUUID,
-    String currentToken,
-  ) async {
+    String currentToken, {
+    String? pin,
+  }) async {
     final queryParams = {
       'includeSubscriptions': '1',
       'includeProviders': '1',
@@ -193,6 +194,7 @@ class PlexAuthService {
       'X-Plex-Platform-Version': '3.8.1',
       'X-Plex-Token': currentToken,
       'X-Plex-Language': 'en',
+      if (pin != null) 'pin': pin,
     };
 
     final queryString = queryParams.entries

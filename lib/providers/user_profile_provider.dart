@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../models/plex_home.dart';
 import '../models/plex_home_user.dart';
@@ -6,6 +7,7 @@ import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
+import '../widgets/pin_entry_dialog.dart';
 import 'plex_client_provider.dart';
 
 class UserProfileProvider extends ChangeNotifier {
@@ -254,15 +256,41 @@ class UserProfileProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
 
+    return await _attemptUserSwitch(user, context, clientProvider, null);
+  }
+
+  Future<bool> _attemptUserSwitch(
+    PlexHomeUser user,
+    BuildContext? context,
+    PlexClientProvider? clientProvider,
+    String? errorMessage,
+  ) async {
     try {
       final currentToken = _storageService!.getPlexToken();
       if (currentToken == null) {
         throw Exception('No Plex.tv authentication token available');
       }
 
+      // Check if user requires PIN
+      String? pin;
+      if (user.requiresPassword && context != null && context.mounted) {
+        pin = await showPinEntryDialog(
+          context,
+          user.displayName,
+          errorMessage: errorMessage,
+        );
+
+        // User cancelled the PIN dialog
+        if (pin == null) {
+          _setLoading(false);
+          return false;
+        }
+      }
+
       final switchResponse = await _authService!.switchToUser(
         user.uuid,
         currentToken,
+        pin: pin,
       );
 
       // switchResponse.authToken is the new user's Plex.tv token
@@ -348,6 +376,36 @@ class UserProfileProvider extends ChangeNotifier {
       appLogger.i('Successfully switched to user: ${user.displayName}');
       return true;
     } catch (e) {
+      // Check if it's a PIN validation error
+      if (e is DioException && e.response?.statusCode == 403) {
+        final errors = e.response?.data['errors'] as List?;
+        if (errors != null && errors.isNotEmpty) {
+          final errorCode = errors[0]['code'] as int?;
+          final errorMessage = errors[0]['message'] as String?;
+
+          // Error code 1041 means invalid PIN
+          if (errorCode == 1041) {
+            appLogger.w('Invalid PIN for user: ${user.displayName}');
+            _clearError(); // Clear any previous error state
+
+            // Retry with error message if context is still available
+            if (context != null && context.mounted) {
+              return await _attemptUserSwitch(
+                user,
+                context,
+                clientProvider,
+                errorMessage ?? 'Incorrect PIN. Please try again.',
+              );
+            }
+
+            // If context not available, return false without showing error
+            appLogger.d('Cannot retry PIN entry - context not available');
+            return false;
+          }
+        }
+      }
+
+      // Only show error for non-PIN validation errors
       _setError('Failed to switch user: $e');
       appLogger.e('Failed to switch to user: ${user.displayName}', error: e);
       return false;
