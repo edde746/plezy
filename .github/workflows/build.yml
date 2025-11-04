@@ -58,7 +58,7 @@ jobs:
           EOF
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=ENABLE_UPDATE_CHECK=true
 
       - name: Clean up keystore
         if: always()
@@ -118,7 +118,7 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --dart-define=ENABLE_UPDATE_CHECK=true
 
       - name: Create IPA
         run: |
@@ -176,7 +176,7 @@ jobs:
         run: flutter pub get
 
       - name: Build macOS
-        run: flutter build macos --release
+        run: flutter build macos --release --dart-define=ENABLE_UPDATE_CHECK=true
 
       - name: Import Code Signing Certificate
         env:
@@ -298,7 +298,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows
-        run: flutter build windows --release
+        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true
 
       - name: Build Windows Installer
         run: .\windows\build-installer.ps1
@@ -361,7 +361,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Linux
-        run: flutter build linux --release
+        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true
 
       - name: Create Archive
         run: |

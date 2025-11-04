@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
@@ -10,6 +11,7 @@ import 'services/plex_auth_service.dart';
 import 'services/server_connection_service.dart';
 import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
+import 'services/update_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';
 import 'providers/theme_provider.dart';
@@ -126,6 +128,78 @@ class _SetupScreenState extends State<SetupScreen> {
     _loadSavedCredentials();
   }
 
+  void _checkForUpdatesOnStartup() async {
+    // Delay slightly to allow UI to settle
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    try {
+      final updateInfo = await UpdateService.checkForUpdatesOnStartup();
+
+      if (updateInfo != null && updateInfo['hasUpdate'] == true && mounted) {
+        _showUpdateDialog(updateInfo);
+      }
+    } catch (e) {
+      appLogger.e('Error checking for updates', error: e);
+    }
+  }
+
+  void _showUpdateDialog(Map<String, dynamic> updateInfo) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Update Available'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Version ${updateInfo['latestVersion']} is available',
+                style: Theme.of(dialogContext).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Current: ${updateInfo['currentVersion']}',
+                style: Theme.of(dialogContext).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Later'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await UpdateService.skipVersion(updateInfo['latestVersion']);
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+              },
+              child: const Text('Skip This Version'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final url = Uri.parse(updateInfo['releaseUrl']);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                }
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+              },
+              child: const Text('View Release'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _loadSavedCredentials() async {
     final storage = await StorageService.getInstance();
 
@@ -173,10 +247,14 @@ class _SetupScreenState extends State<SetupScreen> {
 
         // Handle result
         if (result.isSuccess) {
-          // Success! Set client in provider and navigate to main screen
+          // Success! Set client in provider
           if (mounted) {
             context.plexClient.setClient(result.client!);
 
+            // Check for updates BEFORE navigation to keep context valid
+            _checkForUpdatesOnStartup();
+
+            // Navigate to main screen after update check is initiated
             if (mounted) {
               Navigator.pushReplacement(
                 context,
