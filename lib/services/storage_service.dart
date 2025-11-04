@@ -10,6 +10,7 @@ class StorageService {
   static const String _keySelectedLibraryIndex = 'selected_library_index';
   static const String _keySelectedLibraryKey = 'selected_library_key';
   static const String _keyLibraryFilters = 'library_filters';
+  static const String _keyLibraryOrder = 'library_order';
   static const String _keyUserProfile = 'user_profile';
   static const String _keyCurrentUserUUID = 'current_user_uuid';
   static const String _keyHomeUsersCache = 'home_users_cache';
@@ -207,6 +208,7 @@ class StorageService {
     await Future.wait([
       _prefs.remove(_keySelectedLibraryIndex),
       _prefs.remove(_keyLibraryFilters),
+      _prefs.remove(_keyLibraryOrder),
       _prefs.remove(_keyHiddenLibraries),
     ]);
 
@@ -214,6 +216,24 @@ class StorageService {
     final keys = _prefs.getKeys();
     final sortKeys = keys.where((key) => key.startsWith('library_sort_'));
     await Future.wait(sortKeys.map((key) => _prefs.remove(key)));
+  }
+
+  // Library Order (stored as JSON list of library keys)
+  Future<void> saveLibraryOrder(List<String> libraryKeys) async {
+    final jsonString = json.encode(libraryKeys);
+    await _prefs.setString(_keyLibraryOrder, jsonString);
+  }
+
+  List<String>? getLibraryOrder() {
+    final jsonString = _prefs.getString(_keyLibraryOrder);
+    if (jsonString == null) return null;
+
+    try {
+      final decoded = json.decode(jsonString) as List<dynamic>;
+      return decoded.map((e) => e.toString()).toList();
+    } catch (e) {
+      return null;
+    }
   }
 
   // User Profile (stored as JSON string)
