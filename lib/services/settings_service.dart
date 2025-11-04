@@ -18,6 +18,8 @@ class SettingsService {
   static const String _keyPreferredAudioCodec = 'preferred_audio_codec';
   static const String _keyLibraryDensity = 'library_density';
   static const String _keyUseSeasonPoster = 'use_season_poster';
+  static const String _keySeekTimeSmall = 'seek_time_small';
+  static const String _keySeekTimeLarge = 'seek_time_large';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -115,6 +117,24 @@ class SettingsService {
 
   bool getUseSeasonPoster() {
     return _prefs.getBool(_keyUseSeasonPoster) ?? false; // Default: false (use series poster)
+  }
+
+  // Seek Time Small (in seconds)
+  Future<void> setSeekTimeSmall(int seconds) async {
+    await _prefs.setInt(_keySeekTimeSmall, seconds);
+  }
+
+  int getSeekTimeSmall() {
+    return _prefs.getInt(_keySeekTimeSmall) ?? 10; // Default: 10 seconds
+  }
+
+  // Seek Time Large (in seconds)
+  Future<void> setSeekTimeLarge(int seconds) async {
+    await _prefs.setInt(_keySeekTimeLarge, seconds);
+  }
+
+  int getSeekTimeLarge() {
+    return _prefs.getInt(_keySeekTimeLarge) ?? 30; // Default: 30 seconds
   }
 
   // Keyboard Shortcuts (Legacy String-based)
@@ -581,6 +601,8 @@ class SettingsService {
       _prefs.remove(_keyPreferredAudioCodec),
       _prefs.remove(_keyLibraryDensity),
       _prefs.remove(_keyUseSeasonPoster),
+      _prefs.remove(_keySeekTimeSmall),
+      _prefs.remove(_keySeekTimeLarge),
     ]);
   }
 
@@ -605,6 +627,8 @@ class SettingsService {
       'preferredAudioCodec': getPreferredAudioCodec(),
       'libraryDensity': getLibraryDensity().name,
       'useSeasonPoster': getUseSeasonPoster(),
+      'seekTimeSmall': getSeekTimeSmall(),
+      'seekTimeLarge': getSeekTimeLarge(),
       'keyboardShortcuts': getKeyboardShortcuts(),
       'keyboardHotkeys': hotkeys.map(
         (key, value) => MapEntry(key, _serializeHotKey(value)),

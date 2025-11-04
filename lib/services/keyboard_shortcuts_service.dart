@@ -10,6 +10,8 @@ class KeyboardShortcutsService {
   Map<String, String> _shortcuts =
       {}; // Legacy string shortcuts for backward compatibility
   Map<String, HotKey> _hotkeys = {}; // New HotKey objects
+  int _seekTimeSmall = 10; // Default, loaded from settings
+  int _seekTimeLarge = 30; // Default, loaded from settings
 
   KeyboardShortcutsService._();
 
@@ -28,6 +30,8 @@ class KeyboardShortcutsService {
     _shortcuts = _settingsService
         .getKeyboardShortcuts(); // Keep for legacy compatibility
     _hotkeys = await _settingsService.getKeyboardHotkeys(); // Primary method
+    _seekTimeSmall = _settingsService.getSeekTimeSmall();
+    _seekTimeLarge = _settingsService.getSeekTimeLarge();
   }
 
   Map<String, String> get shortcuts => Map.from(_shortcuts);
@@ -61,6 +65,8 @@ class KeyboardShortcutsService {
 
   Future<void> refreshFromStorage() async {
     _hotkeys = await _settingsService.getKeyboardHotkeys();
+    _seekTimeSmall = _settingsService.getSeekTimeSmall();
+    _seekTimeLarge = _settingsService.getSeekTimeLarge();
   }
 
   Future<void> resetToDefaults() async {
@@ -262,16 +268,16 @@ class KeyboardShortcutsService {
         player.setVolume(newVolume);
         break;
       case 'seek_forward':
-        _seekWithClamping(player, const Duration(seconds: 10));
+        _seekWithClamping(player, Duration(seconds: _seekTimeSmall));
         break;
       case 'seek_backward':
-        _seekWithClamping(player, const Duration(seconds: -10));
+        _seekWithClamping(player, Duration(seconds: -_seekTimeSmall));
         break;
       case 'seek_forward_large':
-        _seekWithClamping(player, const Duration(seconds: 30));
+        _seekWithClamping(player, Duration(seconds: _seekTimeLarge));
         break;
       case 'seek_backward_large':
-        _seekWithClamping(player, const Duration(seconds: -30));
+        _seekWithClamping(player, Duration(seconds: -_seekTimeLarge));
         break;
       case 'fullscreen_toggle':
         onToggleFullscreen?.call();
@@ -318,13 +324,13 @@ class KeyboardShortcutsService {
       case 'volume_down':
         return 'Volume Down';
       case 'seek_forward':
-        return 'Seek Forward';
+        return 'Seek Forward (${_seekTimeSmall}s)';
       case 'seek_backward':
-        return 'Seek Backward';
+        return 'Seek Backward (${_seekTimeSmall}s)';
       case 'seek_forward_large':
-        return 'Seek Forward (Large)';
+        return 'Seek Forward (${_seekTimeLarge}s)';
       case 'seek_backward_large':
-        return 'Seek Backward (Large)';
+        return 'Seek Backward (${_seekTimeLarge}s)';
       case 'fullscreen_toggle':
         return 'Toggle Fullscreen';
       case 'mute_toggle':

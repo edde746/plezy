@@ -3,11 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import '../providers/theme_provider.dart';
 import '../providers/settings_provider.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/hidden_libraries_provider.dart';
 import '../services/settings_service.dart' as settings;
 import '../services/keyboard_shortcuts_service.dart';
-import '../models/plex_library.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/hotkey_recorder_widget.dart';
 import 'about_screen.dart';
@@ -27,6 +24,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _enableDebugLogging = false;
   bool _enableHardwareDecoding = true;
   int _bufferSize = 128;
+  int _seekTimeSmall = 10;
+  int _seekTimeLarge = 30;
 
   @override
   void initState() {
@@ -42,6 +41,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _enableHardwareDecoding = _settingsService.getEnableHardwareDecoding();
       _bufferSize = _settingsService.getBufferSize();
+      _seekTimeSmall = _settingsService.getSeekTimeSmall();
+      _seekTimeLarge = _settingsService.getSeekTimeLarge();
       _isLoading = false;
     });
   }
@@ -167,6 +168,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text('${_bufferSize}MB'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showBufferSizeDialog(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.replay_10),
+            title: const Text('Small Skip Duration'),
+            subtitle: Text('$_seekTimeSmall seconds'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showSeekTimeSmallDialog(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.replay_30),
+            title: const Text('Large Skip Duration'),
+            subtitle: Text('$_seekTimeLarge seconds'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showSeekTimeLargeDialog(),
           ),
         ],
       ),
@@ -354,6 +369,134 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Cancel'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showSeekTimeSmallDialog() {
+    final controller = TextEditingController(text: _seekTimeSmall.toString());
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Small Skip Duration'),
+              content: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Seconds',
+                  hintText: 'Enter duration (1-120)',
+                  errorText: errorText,
+                  suffixText: 's',
+                ),
+                autofocus: true,
+                onChanged: (value) {
+                  final parsed = int.tryParse(value);
+                  setDialogState(() {
+                    if (parsed == null) {
+                      errorText = 'Please enter a valid number';
+                    } else if (parsed < 1 || parsed > 120) {
+                      errorText = 'Duration must be between 1 and 120 seconds';
+                    } else {
+                      errorText = null;
+                    }
+                  });
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final parsed = int.tryParse(controller.text);
+                    if (parsed != null && parsed >= 1 && parsed <= 120) {
+                      setState(() {
+                        _seekTimeSmall = parsed;
+                        _settingsService.setSeekTimeSmall(parsed);
+                      });
+                      // Reload keyboard shortcuts service to use new settings
+                      await _keyboardService.refreshFromStorage();
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showSeekTimeLargeDialog() {
+    final controller = TextEditingController(text: _seekTimeLarge.toString());
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Large Skip Duration'),
+              content: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Seconds',
+                  hintText: 'Enter duration (1-120)',
+                  errorText: errorText,
+                  suffixText: 's',
+                ),
+                autofocus: true,
+                onChanged: (value) {
+                  final parsed = int.tryParse(value);
+                  setDialogState(() {
+                    if (parsed == null) {
+                      errorText = 'Please enter a valid number';
+                    } else if (parsed < 1 || parsed > 120) {
+                      errorText = 'Duration must be between 1 and 120 seconds';
+                    } else {
+                      errorText = null;
+                    }
+                  });
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final parsed = int.tryParse(controller.text);
+                    if (parsed != null && parsed >= 1 && parsed <= 120) {
+                      setState(() {
+                        _seekTimeLarge = parsed;
+                        _settingsService.setSeekTimeLarge(parsed);
+                      });
+                      // Reload keyboard shortcuts service to use new settings
+                      await _keyboardService.refreshFromStorage();
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

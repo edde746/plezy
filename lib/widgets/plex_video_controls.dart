@@ -10,6 +10,7 @@ import '../models/plex_media_info.dart';
 import '../providers/plex_client_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/keyboard_shortcuts_service.dart';
+import '../services/settings_service.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
@@ -49,7 +50,7 @@ class PlexVideoControls extends StatefulWidget {
 }
 
 class _PlexVideoControlsState extends State<PlexVideoControls>
-    with WindowListener {
+    with WindowListener, WidgetsBindingObserver {
   bool _showControls = true;
   List<PlexChapter> _chapters = [];
   bool _chaptersLoaded = false;
@@ -57,14 +58,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _isFullscreen = false;
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
+  int _seekTimeSmall = 10; // Default, loaded from settings
+  int _seekTimeLarge = 30; // Default, loaded from settings
 
   @override
   void initState() {
     super.initState();
     _focusNode = FocusNode();
     _loadChapters();
+    _loadSeekTimes();
     _startHideTimer();
     _initKeyboardService();
+    // Add lifecycle observer to reload settings when app resumes
+    WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.addListener(this);
@@ -73,6 +79,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   Future<void> _initKeyboardService() async {
     _keyboardService = await KeyboardShortcutsService.getInstance();
+  }
+
+  Future<void> _loadSeekTimes() async {
+    final settingsService = await SettingsService.getInstance();
+    if (mounted) {
+      setState(() {
+        _seekTimeSmall = settingsService.getSeekTimeSmall();
+        _seekTimeLarge = settingsService.getSeekTimeLarge();
+      });
+    }
   }
 
   void _toggleSubtitles() {
@@ -108,11 +124,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void dispose() {
     _hideTimer?.cancel();
     _focusNode.dispose();
+    // Remove lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
     // Remove window listener
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.removeListener(this);
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Reload seek times when app resumes (e.g., returning from settings)
+      _loadSeekTimes();
+    }
   }
 
   @override
@@ -265,8 +291,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   void _seekToPreviousChapter() {
     if (_chapters.isEmpty) {
-      // No chapters - seek backward 10 seconds
-      _seekWithClamping(const Duration(seconds: -10));
+      // No chapters - seek backward by configured amount
+      _seekWithClamping(Duration(seconds: -_seekTimeSmall));
       return;
     }
 
@@ -288,8 +314,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   void _seekToNextChapter() {
     if (_chapters.isEmpty) {
-      // No chapters - seek forward 10 seconds
-      _seekWithClamping(const Duration(seconds: 10));
+      // No chapters - seek forward by configured amount
+      _seekWithClamping(Duration(seconds: _seekTimeSmall));
       return;
     }
 
@@ -318,6 +344,38 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       : (newPosition > duration ? duration : newPosition);
 
     widget.player.seek(clampedPosition);
+  }
+
+  /// Get the replay icon based on the duration
+  /// Returns numbered icons (replay_5, replay_10, replay_30) when available,
+  /// otherwise returns generic replay icon
+  IconData _getReplayIcon(int seconds) {
+    switch (seconds) {
+      case 5:
+        return Icons.replay_5;
+      case 10:
+        return Icons.replay_10;
+      case 30:
+        return Icons.replay_30;
+      default:
+        return Icons.replay; // Generic icon for custom durations
+    }
+  }
+
+  /// Get the forward icon based on the duration
+  /// Returns numbered icons (forward_5, forward_10, forward_30) when available,
+  /// otherwise returns generic forward icon
+  IconData _getForwardIcon(int seconds) {
+    switch (seconds) {
+      case 5:
+        return Icons.forward_5;
+      case 10:
+        return Icons.forward_10;
+      case 30:
+        return Icons.forward_30;
+      default:
+        return Icons.forward; // Generic icon for custom durations
+    }
   }
 
   Future<void> _toggleFullscreen() async {
@@ -560,14 +618,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(
-                  Icons.replay_10,
+                icon: Icon(
+                  _getReplayIcon(_seekTimeSmall),
                   color: Colors.white,
                   size: 48,
                 ),
                 iconSize: 48,
                 onPressed: () {
-                  _seekWithClamping(const Duration(seconds: -10));
+                  _seekWithClamping(Duration(seconds: -_seekTimeSmall));
                 },
               ),
             ),
@@ -602,14 +660,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(
-                  Icons.forward_10,
+                icon: Icon(
+                  _getForwardIcon(_seekTimeSmall),
                   color: Colors.white,
                   size: 48,
                 ),
                 iconSize: 48,
                 onPressed: () {
-                  _seekWithClamping(const Duration(seconds: 10));
+                  _seekWithClamping(Duration(seconds: _seekTimeSmall));
                 },
               ),
             ),
@@ -831,10 +889,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 ),
                 onPressed: widget.onPrevious,
               ),
-              // Previous chapter (or -10s if no chapters)
+              // Previous chapter (or skip backward if no chapters)
               IconButton(
                 icon: Icon(
-                  _chapters.isEmpty ? Icons.replay_10 : Icons.fast_rewind,
+                  _chapters.isEmpty ? _getReplayIcon(_seekTimeSmall) : Icons.fast_rewind,
                   color: Colors.white,
                 ),
                 onPressed: _seekToPreviousChapter,
@@ -863,10 +921,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   );
                 },
               ),
-              // Next chapter (or +10s if no chapters)
+              // Next chapter (or skip forward if no chapters)
               IconButton(
                 icon: Icon(
-                  _chapters.isEmpty ? Icons.forward_10 : Icons.fast_forward,
+                  _chapters.isEmpty ? _getForwardIcon(_seekTimeSmall) : Icons.fast_forward,
                   color: Colors.white,
                 ),
                 onPressed: _seekToNextChapter,
