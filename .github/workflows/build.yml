@@ -69,7 +69,7 @@ jobs:
           path: plezy-android.apk
 
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-26
     permissions:
       id-token: write
       attestations: write
@@ -127,7 +127,7 @@ jobs:
           path: plezy-ios.ipa
 
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-26
     permissions:
       id-token: write
       attestations: write
