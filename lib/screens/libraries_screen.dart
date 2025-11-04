@@ -234,7 +234,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     try {
       // Load filters and sort options for the new library
       _loadFilters(libraryKey);
-      _loadSortOptions(libraryKey);
+      await _loadSortOptions(libraryKey);
 
       // Add sort parameter to filters if selected
       final filtersWithSort = Map<String, String>.from(_selectedFilters);
