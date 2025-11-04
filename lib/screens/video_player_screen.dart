@@ -102,6 +102,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       player = Player(
         configuration: PlayerConfiguration(
           libass: true,
+          libassAndroidFont: 'assets/droid-sans.ttf',
+          libassAndroidFontName: 'Droid Sans Fallback',
           bufferSize: bufferSizeBytes,
         ),
       );
