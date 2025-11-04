@@ -396,6 +396,7 @@ jobs:
           COMMIT_SHA=$(git rev-parse HEAD)
 
           echo "Version: $VERSION"
+          echo "Flutter SDK Version: $FLUTTER_VERSION"
           echo "Date: $DATE"
           echo "Commit SHA: $COMMIT_SHA"
 
@@ -403,8 +404,8 @@ jobs:
           sed -i "s/{{VERSION}}/$VERSION/g" linux/com.edde746.plezy.metainfo.xml
           sed -i "s/{{DATE}}/$DATE/g" linux/com.edde746.plezy.metainfo.xml
 
-          # Replace commit SHA placeholder in manifest
-          sed -i "s/{{COMMIT_SHA}}/$COMMIT_SHA/g" linux/com.edde746.plezy.yml
+          # Replace placeholders in manifest
+          sed -i "s|{{COMMIT_SHA}}|$COMMIT_SHA|g" linux/com.edde746.plezy.yml
 
       - name: Preprocess Flatpak manifest with flatpak-flutter
         run: |
@@ -433,7 +434,15 @@ jobs:
           path: plezy.flatpak
 
   create-release:
-    needs: [build-android, build-ios, build-macos, build-windows, build-linux, build-flatpak]
+    needs:
+      [
+        build-android,
+        build-ios,
+        build-macos,
+        build-windows,
+        build-linux,
+        build-flatpak,
+      ]
     runs-on: ubuntu-latest
     permissions:
       contents: write

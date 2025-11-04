@@ -703,21 +703,39 @@ class PlexClient {
   /// Get available sort options for a library section
   Future<List<PlexSort>> getLibrarySorts(String sectionId) async {
     try {
-      // Fetch library content with minimal data to get Sort metadata
-      final response = await _dio.get(
-        '/library/sections/$sectionId/all',
-        queryParameters: {'X-Plex-Container-Size': 0},
-      );
+      // Use the dedicated sorts endpoint
+      final response = await _dio.get('/library/sections/$sectionId/sorts');
 
-      final container = _getMediaContainer(response);
-      if (container != null && container['Sort'] != null) {
-        return (container['Sort'] as List)
-            .map((json) => PlexSort.fromJson(json as Map<String, dynamic>))
-            .toList();
+      // Parse the Directory array (not Sort array) per the API spec
+      final sorts = _extractDirectoryList(response, PlexSort.fromJson);
+
+      if (sorts.isNotEmpty) {
+        return sorts;
       }
 
       // Fallback: return common sort options if API doesn't provide them
-      return [
+      return _getFallbackSorts(sectionId);
+    } catch (e) {
+      appLogger.e('Failed to get library sorts: $e');
+      // Return fallback sort options on error
+      return _getFallbackSorts(sectionId);
+    }
+  }
+
+  Future<List<PlexSort>> _getFallbackSorts(String sectionId) async {
+    try {
+      // Get library type to determine which sorts to include
+      final librariesResponse = await _dio.get('/library/sections');
+      final libraries = _extractDirectoryList(
+        librariesResponse,
+        PlexLibrary.fromJson,
+      );
+      final library = libraries.firstWhere(
+        (lib) => lib.key == sectionId,
+        orElse: () => libraries.first,
+      );
+
+      final fallbackSorts = <PlexSort>[
         PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
         PlexSort(
           key: 'addedAt',
@@ -725,6 +743,21 @@ class PlexClient {
           title: 'Date Added',
           defaultDirection: 'desc',
         ),
+      ];
+
+      // Add "Latest Episode Air Date" only for TV show libraries
+      if (library.type.toLowerCase() == 'show') {
+        fallbackSorts.add(
+          PlexSort(
+            key: 'episode.originallyAvailableAt',
+            descKey: 'episode.originallyAvailableAt:desc',
+            title: 'Latest Episode Air Date',
+            defaultDirection: 'desc',
+          ),
+        );
+      }
+
+      fallbackSorts.addAll([
         PlexSort(
           key: 'originallyAvailableAt',
           descKey: 'originallyAvailableAt:desc',
@@ -737,10 +770,12 @@ class PlexClient {
           title: 'Rating',
           defaultDirection: 'desc',
         ),
-      ];
+      ]);
+
+      return fallbackSorts;
     } catch (e) {
-      appLogger.e('Failed to get library sorts: $e');
-      // Return fallback sort options on error
+      appLogger.e('Failed to get fallback sorts: $e');
+      // Return minimal fallback options
       return [
         PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
         PlexSort(
