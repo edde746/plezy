@@ -10,6 +10,7 @@ import '../services/plex_auth_service.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/user_avatar_widget.dart';
+import '../widgets/horizontal_scroll_with_arrows.dart';
 import 'profile_switch_screen.dart';
 import 'server_selection_screen.dart';
 import '../providers/user_profile_provider.dart';
@@ -975,23 +976,26 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
           return SizedBox(
             height: containerHeight,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: MediaCard(
-                    key: Key(item.ratingKey),
-                    item: item,
-                    width: cardWidth,
-                    height: cardHeight,
-                    onRefresh: updateItem,
-                  ),
-                );
-              },
+            child: HorizontalScrollWithArrows(
+              builder: (scrollController) => ListView.builder(
+                controller: scrollController,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: MediaCard(
+                      key: Key(item.ratingKey),
+                      item: item,
+                      width: cardWidth,
+                      height: cardHeight,
+                      onRefresh: updateItem,
+                    ),
+                  );
+                },
+              ),
             ),
           );
         },
