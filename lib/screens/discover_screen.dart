@@ -14,6 +14,7 @@ import '../widgets/user_avatar_widget.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
 import 'profile_switch_screen.dart';
 import 'server_selection_screen.dart';
+import 'hub_detail_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
@@ -605,15 +606,34 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Row(
-                      children: [
-                        Icon(_getHubIcon(hub.title)),
-                        const SizedBox(width: 8),
-                        Text(
-                          hub.title,
-                          style: Theme.of(context).textTheme.titleLarge,
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HubDetailScreen(hub: hub),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                      ],
+                        child: Row(
+                          children: [
+                            Icon(_getHubIcon(hub.title)),
+                            const SizedBox(width: 8),
+                            Text(
+                              hub.title,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.chevron_right, size: 20),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),

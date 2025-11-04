@@ -881,6 +881,24 @@ class PlexClient {
     return [];
   }
 
+  /// Get full content from a hub using its hub key
+  /// Returns the complete list of metadata items in the hub
+  Future<List<PlexMetadata>> getHubContent(String hubKey) async {
+    try {
+      final response = await _dio.get(hubKey);
+      final allItems = _extractMetadataList(response);
+      
+      // Filter out non-video content types
+      return allItems.where((item) {
+        final type = item.type.toLowerCase();
+        return type == 'movie' || type == 'show';
+      }).toList();
+    } catch (e) {
+      appLogger.e('Failed to get hub content: $e');
+      return [];
+    }
+  }
+
   /// Get playlist content by playlist ID
   /// Returns the list of metadata items in the playlist
   Future<List<PlexMetadata>> getPlaylist(String playlistId) async {
