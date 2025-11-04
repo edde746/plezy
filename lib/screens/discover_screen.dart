@@ -19,6 +19,7 @@ import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/content_rating_formatter.dart';
 import 'auth_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -798,7 +799,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               if (heroItem.rating != null)
                                 '★ ${heroItem.rating!.toStringAsFixed(1)}',
                               if (heroItem.contentRating != null)
-                                heroItem.contentRating!,
+                                formatContentRating(heroItem.contentRating!),
                               if (heroItem.year != null)
                                 heroItem.year.toString(),
                             ].join(' • '),

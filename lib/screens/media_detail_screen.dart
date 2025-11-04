@@ -9,6 +9,7 @@ import '../widgets/media_context_menu.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/content_rating_formatter.dart';
 import '../theme/theme_helper.dart';
 import 'season_detail_screen.dart';
 
@@ -461,7 +462,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      metadata.contentRating!,
+                                      formatContentRating(metadata.contentRating!),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 13,
@@ -715,7 +716,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     const SizedBox(height: 12),
                   ],
                   if (metadata.contentRating != null) ...[
-                    _buildInfoRow('Rating', metadata.contentRating!),
+                    _buildInfoRow('Rating', formatContentRating(metadata.contentRating!)),
                     const SizedBox(height: 12),
                   ],
                 ],
