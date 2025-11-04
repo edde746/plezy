@@ -2,9 +2,6 @@ name: Build Flutter App
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
 
 jobs:
   build-android:
@@ -50,8 +47,22 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Configure Android signing
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=ENABLE_UPDATE_CHECK=true
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f android/app/upload-keystore.jks android/key.properties
 
       - name: Rename APK
         run: |
@@ -69,7 +80,7 @@ jobs:
           path: plezy-android.apk
 
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-26
     permissions:
       id-token: write
       attestations: write
@@ -107,7 +118,7 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --dart-define=ENABLE_UPDATE_CHECK=true
 
       - name: Create IPA
         run: |
@@ -127,7 +138,7 @@ jobs:
           path: plezy-ios.ipa
 
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-26
     permissions:
       id-token: write
       attestations: write
@@ -165,12 +176,88 @@ jobs:
         run: flutter pub get
 
       - name: Build macOS
-        run: flutter build macos --release
+        run: flutter build macos --release --dart-define=ENABLE_UPDATE_CHECK=true
+
+      - name: Import Code Signing Certificate
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Import certificate to keychain
+          CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
+          echo "$MACOS_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+          security import $CERTIFICATE_PATH -k $KEYCHAIN_PATH -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Add keychain to search list
+          security list-keychains -d user -s $KEYCHAIN_PATH login.keychain
+
+      - name: Sign Application
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Find the identity
+          IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | grep -o '".*"' | tr -d '"')
+          echo "Signing with identity: $IDENTITY"
+
+          APP_PATH="build/macos/Build/Products/Release/plezy.app"
+
+          # Sign all frameworks and dylibs first (inside-out signing)
+          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -o -name "*.dylib" | while read framework; do
+            echo "Signing: $framework"
+            codesign --force --sign "$IDENTITY" --timestamp --options runtime "$framework"
+          done
+
+          # Sign the app bundle itself
+          echo "Signing app bundle: $APP_PATH"
+          codesign --force --sign "$IDENTITY" --timestamp --options runtime --entitlements macos/Runner/Release.entitlements "$APP_PATH"
+
+      - name: Verify Signature
+        run: |
+          APP_PATH="build/macos/Build/Products/Release/plezy.app"
+          echo "Verifying signature..."
+          codesign -dvvv "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+      - name: Notarize Application
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_PATH="build/macos/Build/Products/Release/plezy.app"
+
+          # Create a temporary ZIP for notarization submission
+          echo "Creating ZIP for notarization..."
+          ditto -c -k --keepParent "$APP_PATH" notarization.zip
+
+          # Submit for notarization
+          echo "Submitting to Apple's notary service..."
+          xcrun notarytool submit notarization.zip \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+
+          # Staple the notarization ticket to the app
+          echo "Stapling notarization ticket..."
+          xcrun stapler staple "$APP_PATH"
+
+          # Verify stapling
+          echo "Verifying notarization..."
+          xcrun stapler validate "$APP_PATH"
 
       - name: Create ZIP
         run: |
           cd build/macos/Build/Products/Release
-          zip -r $GITHUB_WORKSPACE/plezy-macos.zip plezy.app
+          ditto -c -k --sequesterRsrc --keepParent plezy.app $GITHUB_WORKSPACE/plezy-macos.zip
 
       - name: Attest macOS ZIP
         uses: actions/attest-build-provenance@v2
@@ -211,7 +298,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Windows
-        run: flutter build windows --release
+        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true
 
       - name: Build Windows Installer
         run: .\windows\build-installer.ps1
@@ -274,7 +361,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Linux
-        run: flutter build linux --release
+        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true
 
       - name: Create Archive
         run: |
@@ -292,8 +379,56 @@ jobs:
           name: linux-app
           path: plezy-linux.tar.gz
 
+  build-flatpak:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Replace version placeholders
+        run: |
+          # Extract version from pubspec.yaml (e.g., "1.3.1+10" -> "1.3.1")
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
+          DATE=$(date -u +%Y-%m-%d)
+
+          echo "Version: $VERSION"
+          echo "Date: $DATE"
+
+          # Replace placeholders in metainfo.xml
+          sed -i "s/{{VERSION}}/$VERSION/g" linux/com.edde746.plezy.metainfo.xml
+          sed -i "s/{{DATE}}/$DATE/g" linux/com.edde746.plezy.metainfo.xml
+
+      - name: Preprocess Flatpak manifest with flatpak-flutter
+        run: |
+          docker run --rm \
+            -v "$PWD":/usr/src/flatpak \
+            -u $(id -u):$(id -g) \
+            theappgineer/flatpak-flutter:latest \
+            linux/com.edde746.plezy.yml
+
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: plezy.flatpak
+          manifest-path: linux/com.edde746.plezy.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+
+      - name: Attest Flatpak
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: plezy.flatpak
+
+      - name: Upload Flatpak
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-flatpak
+          path: plezy.flatpak
+
   create-release:
-    needs: [build-android, build-ios, build-macos, build-windows, build-linux]
+    needs: [build-android, build-ios, build-macos, build-windows, build-linux, build-flatpak]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -316,6 +451,7 @@ jobs:
             artifacts/windows-portable/plezy-windows-portable.zip
             artifacts/windows-installer/plezy-windows-installer.exe
             artifacts/linux-app/plezy-linux.tar.gz
+            artifacts/linux-flatpak/plezy.flatpak
           draft: true
           prerelease: false
           generate_release_notes: true

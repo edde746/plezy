@@ -7,12 +7,15 @@ import 'package:window_manager/window_manager.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
+import '../models/plex_media_version.dart';
 import '../providers/plex_client_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/keyboard_shortcuts_service.dart';
+import '../services/settings_service.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
+import '../screens/video_player_screen.dart';
 import 'app_bar_back_button.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
@@ -21,12 +24,16 @@ Widget plexVideoControlsBuilder(
   PlexMetadata metadata, {
   VoidCallback? onNext,
   VoidCallback? onPrevious,
+  List<PlexMediaVersion>? availableVersions,
+  int? selectedMediaIndex,
 }) {
   return PlexVideoControls(
     player: player,
     metadata: metadata,
     onNext: onNext,
     onPrevious: onPrevious,
+    availableVersions: availableVersions ?? [],
+    selectedMediaIndex: selectedMediaIndex ?? 0,
   );
 }
 
@@ -35,6 +42,8 @@ class PlexVideoControls extends StatefulWidget {
   final PlexMetadata metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+  final List<PlexMediaVersion> availableVersions;
+  final int selectedMediaIndex;
 
   const PlexVideoControls({
     super.key,
@@ -42,6 +51,8 @@ class PlexVideoControls extends StatefulWidget {
     required this.metadata,
     this.onNext,
     this.onPrevious,
+    this.availableVersions = const [],
+    this.selectedMediaIndex = 0,
   });
 
   @override
@@ -49,7 +60,7 @@ class PlexVideoControls extends StatefulWidget {
 }
 
 class _PlexVideoControlsState extends State<PlexVideoControls>
-    with WindowListener {
+    with WindowListener, WidgetsBindingObserver {
   bool _showControls = true;
   List<PlexChapter> _chapters = [];
   bool _chaptersLoaded = false;
@@ -57,14 +68,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _isFullscreen = false;
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
+  int _seekTimeSmall = 10; // Default, loaded from settings
+  int _seekTimeLarge = 30; // Default, loaded from settings
+  // Double-tap feedback state
+  bool _showDoubleTapFeedback = false;
+  double _doubleTapFeedbackOpacity = 0.0;
+  bool _lastDoubleTapWasForward = true;
+  Timer? _feedbackTimer;
 
   @override
   void initState() {
     super.initState();
     _focusNode = FocusNode();
     _loadChapters();
+    _loadSeekTimes();
     _startHideTimer();
     _initKeyboardService();
+    // Add lifecycle observer to reload settings when app resumes
+    WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.addListener(this);
@@ -73,6 +94,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   Future<void> _initKeyboardService() async {
     _keyboardService = await KeyboardShortcutsService.getInstance();
+  }
+
+  Future<void> _loadSeekTimes() async {
+    final settingsService = await SettingsService.getInstance();
+    if (mounted) {
+      setState(() {
+        _seekTimeSmall = settingsService.getSeekTimeSmall();
+        _seekTimeLarge = settingsService.getSeekTimeLarge();
+      });
+    }
   }
 
   void _toggleSubtitles() {
@@ -107,12 +138,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void dispose() {
     _hideTimer?.cancel();
+    _feedbackTimer?.cancel();
     _focusNode.dispose();
+    // Remove lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
     // Remove window listener
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.removeListener(this);
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Reload seek times when app resumes (e.g., returning from settings)
+      _loadSeekTimes();
+    }
   }
 
   @override
@@ -257,6 +299,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 icon: const Icon(Icons.video_library, color: Colors.white),
                 onPressed: _showChapterBottomSheet,
               ),
+            if (widget.availableVersions.length > 1)
+              IconButton(
+                icon: const Icon(Icons.video_file, color: Colors.white),
+                onPressed: _showVersionBottomSheet,
+              ),
           ],
         );
       },
@@ -265,9 +312,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   void _seekToPreviousChapter() {
     if (_chapters.isEmpty) {
-      // No chapters - seek backward 10 seconds
-      final currentPosition = widget.player.state.position;
-      widget.player.seek(currentPosition - const Duration(seconds: 10));
+      // No chapters - seek backward by configured amount
+      _seekWithClamping(Duration(seconds: -_seekTimeSmall));
       return;
     }
 
@@ -289,9 +335,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   void _seekToNextChapter() {
     if (_chapters.isEmpty) {
-      // No chapters - seek forward 10 seconds
-      final currentPosition = widget.player.state.position;
-      widget.player.seek(currentPosition + const Duration(seconds: 10));
+      // No chapters - seek forward by configured amount
+      _seekWithClamping(Duration(seconds: _seekTimeSmall));
       return;
     }
 
@@ -305,6 +350,116 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return;
       }
     }
+  }
+
+  /// Seeks by the given offset (can be positive or negative) while clamping
+  /// the result between 0 and the video duration
+  void _seekWithClamping(Duration offset) {
+    final currentPosition = widget.player.state.position;
+    final duration = widget.player.state.duration;
+    final newPosition = currentPosition + offset;
+
+    // Clamp between 0 and video duration
+    final clampedPosition = newPosition.isNegative
+      ? Duration.zero
+      : (newPosition > duration ? duration : newPosition);
+
+    widget.player.seek(clampedPosition);
+  }
+
+  /// Get the replay icon based on the duration
+  /// Returns numbered icons (replay_5, replay_10, replay_30) when available,
+  /// otherwise returns generic replay icon
+  IconData _getReplayIcon(int seconds) {
+    switch (seconds) {
+      case 5:
+        return Icons.replay_5;
+      case 10:
+        return Icons.replay_10;
+      case 30:
+        return Icons.replay_30;
+      default:
+        return Icons.replay; // Generic icon for custom durations
+    }
+  }
+
+  /// Get the forward icon based on the duration
+  /// Returns numbered icons (forward_5, forward_10, forward_30) when available,
+  /// otherwise returns generic forward icon
+  IconData _getForwardIcon(int seconds) {
+    switch (seconds) {
+      case 5:
+        return Icons.forward_5;
+      case 10:
+        return Icons.forward_10;
+      case 30:
+        return Icons.forward_30;
+      default:
+        return Icons.forward; // Generic icon for custom durations
+    }
+  }
+
+  /// Handle double-tap skip forward or backward
+  void _handleDoubleTapSkip({required bool isForward}) {
+    // Perform the seek
+    _seekWithClamping(
+      Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall),
+    );
+
+    // Show visual feedback
+    _showSkipFeedback(isForward: isForward);
+  }
+
+  /// Show animated visual feedback for skip gesture
+  void _showSkipFeedback({required bool isForward}) {
+    _feedbackTimer?.cancel();
+
+    setState(() {
+      _lastDoubleTapWasForward = isForward;
+      _showDoubleTapFeedback = true;
+      _doubleTapFeedbackOpacity = 1.0;
+    });
+
+    // Fade out after delay
+    _feedbackTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _doubleTapFeedbackOpacity = 0.0;
+        });
+
+        Timer(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() {
+              _showDoubleTapFeedback = false;
+            });
+          }
+        });
+      }
+    });
+  }
+
+  /// Build the visual feedback widget for double-tap skip
+  Widget _buildDoubleTapFeedback() {
+    return Align(
+      alignment: _lastDoubleTapWasForward
+          ? Alignment.centerRight
+          : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 60),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.6),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          _lastDoubleTapWasForward
+              ? _getForwardIcon(_seekTimeSmall)
+              : _getReplayIcon(_seekTimeSmall),
+          color: Colors.white,
+          size: 48,
+        ),
+      ),
+    );
   }
 
   Future<void> _toggleFullscreen() async {
@@ -446,6 +601,63 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   },
                 ),
               ),
+            // Mobile double-tap zones for skip forward/backward
+            if (isMobile)
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final height = constraints.maxHeight;
+                    final width = constraints.maxWidth;
+                    final topExclude = height * 0.15; // Exclude top 15% (top bar)
+                    final bottomExclude = height * 0.15; // Exclude bottom 15% (seek slider)
+                    final leftZoneWidth = width * 0.35; // Left 35%
+
+                    return Stack(
+                      children: [
+                        // Left zone - skip backward
+                        Positioned(
+                          left: 0,
+                          top: topExclude,
+                          bottom: bottomExclude,
+                          width: leftZoneWidth,
+                          child: GestureDetector(
+                            onTap: _toggleControls,
+                            onDoubleTap: () =>
+                                _handleDoubleTapSkip(isForward: false),
+                            behavior: HitTestBehavior.translucent,
+                            child: Container(color: Colors.transparent),
+                          ),
+                        ),
+                        // Right zone - skip forward
+                        Positioned(
+                          right: 0,
+                          top: topExclude,
+                          bottom: bottomExclude,
+                          width: leftZoneWidth,
+                          child: GestureDetector(
+                            onTap: _toggleControls,
+                            onDoubleTap: () =>
+                                _handleDoubleTapSkip(isForward: true),
+                            behavior: HitTestBehavior.translucent,
+                            child: Container(color: Colors.transparent),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            // Visual feedback overlay for double-tap
+            if (isMobile && _showDoubleTapFeedback)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedOpacity(
+                    opacity: _doubleTapFeedbackOpacity,
+                    duration: const Duration(milliseconds: 300),
+                    child: _buildDoubleTapFeedback(),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -547,17 +759,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(
-                  Icons.replay_10,
+                icon: Icon(
+                  _getReplayIcon(_seekTimeSmall),
                   color: Colors.white,
                   size: 48,
                 ),
                 iconSize: 48,
                 onPressed: () {
-                  final currentPosition = widget.player.state.position;
-                  widget.player.seek(
-                    currentPosition - const Duration(seconds: 10),
-                  );
+                  _seekWithClamping(Duration(seconds: -_seekTimeSmall));
                 },
               ),
             ),
@@ -592,17 +801,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(
-                  Icons.forward_10,
+                icon: Icon(
+                  _getForwardIcon(_seekTimeSmall),
                   color: Colors.white,
                   size: 48,
                 ),
                 iconSize: 48,
                 onPressed: () {
-                  final currentPosition = widget.player.state.position;
-                  widget.player.seek(
-                    currentPosition + const Duration(seconds: 10),
-                  );
+                  _seekWithClamping(Duration(seconds: _seekTimeSmall));
                 },
               ),
             ),
@@ -824,10 +1030,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 ),
                 onPressed: widget.onPrevious,
               ),
-              // Previous chapter (or -10s if no chapters)
+              // Previous chapter (or skip backward if no chapters)
               IconButton(
                 icon: Icon(
-                  _chapters.isEmpty ? Icons.replay_10 : Icons.fast_rewind,
+                  _chapters.isEmpty ? _getReplayIcon(_seekTimeSmall) : Icons.fast_rewind,
                   color: Colors.white,
                 ),
                 onPressed: _seekToPreviousChapter,
@@ -856,10 +1062,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   );
                 },
               ),
-              // Next chapter (or +10s if no chapters)
+              // Next chapter (or skip forward if no chapters)
               IconButton(
                 icon: Icon(
-                  _chapters.isEmpty ? Icons.forward_10 : Icons.fast_forward,
+                  _chapters.isEmpty ? _getForwardIcon(_seekTimeSmall) : Icons.fast_forward,
                   color: Colors.white,
                 ),
                 onPressed: _seekToNextChapter,
@@ -1520,7 +1726,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           final currentRate = snapshot.data ?? 1.0;
 
           // Define available playback speeds
-          final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+          final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
 
           return SafeArea(
             child: SizedBox(
@@ -1587,6 +1793,119 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         },
       ),
     );
+  }
+
+  void _showVersionBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      isScrollControlled: true,
+      constraints: _getBottomSheetConstraints(),
+      builder: (context) {
+        final versions = widget.availableVersions;
+        final currentIndex = widget.selectedMediaIndex;
+
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.75,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.video_file, color: Colors.white),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Video Version',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(color: Colors.white24, height: 1),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: versions.length,
+                    itemBuilder: (context, index) {
+                      final version = versions[index];
+                      final isSelected = index == currentIndex;
+
+                      return ListTile(
+                        title: Text(
+                          version.displayLabel,
+                          style: TextStyle(
+                            color: isSelected ? Colors.blue : Colors.white,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check, color: Colors.blue)
+                            : null,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _switchMediaVersion(index);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Switch to a different media version
+  Future<void> _switchMediaVersion(int newMediaIndex) async {
+    if (newMediaIndex == widget.selectedMediaIndex) {
+      return; // Already using this version
+    }
+
+    try {
+      // Save current playback position
+      final currentPosition = widget.player.state.position;
+
+      // Save the preference
+      final settingsService = await SettingsService.getInstance();
+      final seriesKey = widget.metadata.grandparentRatingKey ??
+          widget.metadata.ratingKey;
+      await settingsService.setMediaVersionPreference(seriesKey, newMediaIndex);
+
+      // Navigate to new player screen with the selected version
+      // Use PageRouteBuilder with zero-duration transitions to prevent orientation reset
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder<bool>(
+            pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
+              metadata: widget.metadata.copyWith(
+                viewOffset: currentPosition.inMilliseconds,
+              ),
+              selectedMediaIndex: newMediaIndex,
+            ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error switching version: $e')),
+        );
+      }
+    }
   }
 
   String _formatDuration(Duration duration) {

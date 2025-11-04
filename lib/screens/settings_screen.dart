@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/theme_provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/settings_service.dart' as settings;
 import '../services/keyboard_shortcuts_service.dart';
+import '../services/update_service.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/hotkey_recorder_widget.dart';
 import 'about_screen.dart';
@@ -23,6 +26,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _enableDebugLogging = false;
   bool _enableHardwareDecoding = true;
   int _bufferSize = 128;
+  int _seekTimeSmall = 10;
+  int _seekTimeLarge = 30;
+
+  // Update checking state
+  bool _isCheckingForUpdate = false;
+  Map<String, dynamic>? _updateInfo;
 
   @override
   void initState() {
@@ -38,9 +47,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _enableHardwareDecoding = _settingsService.getEnableHardwareDecoding();
       _bufferSize = _settingsService.getBufferSize();
+      _seekTimeSmall = _settingsService.getSeekTimeSmall();
+      _seekTimeLarge = _settingsService.getSeekTimeLarge();
       _isLoading = false;
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +76,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
                 _buildAdvancedSection(),
                 const SizedBox(height: 24),
+                if (UpdateService.isUpdateCheckEnabled) ...[
+                  _buildUpdateSection(),
+                  const SizedBox(height: 24),
+                ],
                 _buildAboutSection(),
                 const SizedBox(height: 24),
               ]),
@@ -96,6 +112,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: Text(themeProvider.themeModeDisplayName),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showThemeDialog(themeProvider),
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return ListTile(
+                leading: const Icon(Icons.grid_view),
+                title: const Text('Library Density'),
+                subtitle: Text(settingsProvider.libraryDensityDisplayName),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showLibraryDensityDialog(),
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const Icon(Icons.image),
+                title: const Text('Use Season Posters'),
+                subtitle: const Text(
+                  'Show season poster instead of series poster for episodes',
+                ),
+                value: settingsProvider.useSeasonPoster,
+                onChanged: (value) async {
+                  await settingsProvider.setUseSeasonPoster(value);
+                },
               );
             },
           ),
@@ -136,6 +178,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text('${_bufferSize}MB'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showBufferSizeDialog(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.replay_10),
+            title: const Text('Small Skip Duration'),
+            subtitle: Text('$_seekTimeSmall seconds'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showSeekTimeSmallDialog(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.replay_30),
+            title: const Text('Large Skip Duration'),
+            subtitle: Text('$_seekTimeLarge seconds'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showSeekTimeLargeDialog(),
           ),
         ],
       ),
@@ -207,6 +263,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text('Reset all settings to defaults'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showResetSettingsDialog(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpdateSection() {
+    final hasUpdate = _updateInfo != null && _updateInfo!['hasUpdate'] == true;
+
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Updates',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ListTile(
+            leading: Icon(
+              hasUpdate ? Icons.system_update : Icons.check_circle,
+              color: hasUpdate ? Colors.orange : null,
+            ),
+            title: Text(
+              hasUpdate ? 'Update Available' : 'Check for Updates',
+            ),
+            subtitle: hasUpdate
+                ? Text('Version ${_updateInfo!['latestVersion']} is available')
+                : const Text('Check for the latest version on GitHub'),
+            trailing: _isCheckingForUpdate
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.chevron_right),
+            onTap: _isCheckingForUpdate
+                ? null
+                : () {
+                    if (hasUpdate) {
+                      _showUpdateDialog();
+                    } else {
+                      _checkForUpdates();
+                    }
+                  },
           ),
         ],
       ),
@@ -328,6 +434,134 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showSeekTimeSmallDialog() {
+    final controller = TextEditingController(text: _seekTimeSmall.toString());
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Small Skip Duration'),
+              content: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Seconds',
+                  hintText: 'Enter duration (1-120)',
+                  errorText: errorText,
+                  suffixText: 's',
+                ),
+                autofocus: true,
+                onChanged: (value) {
+                  final parsed = int.tryParse(value);
+                  setDialogState(() {
+                    if (parsed == null) {
+                      errorText = 'Please enter a valid number';
+                    } else if (parsed < 1 || parsed > 120) {
+                      errorText = 'Duration must be between 1 and 120 seconds';
+                    } else {
+                      errorText = null;
+                    }
+                  });
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final parsed = int.tryParse(controller.text);
+                    if (parsed != null && parsed >= 1 && parsed <= 120) {
+                      setState(() {
+                        _seekTimeSmall = parsed;
+                        _settingsService.setSeekTimeSmall(parsed);
+                      });
+                      // Reload keyboard shortcuts service to use new settings
+                      await _keyboardService.refreshFromStorage();
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showSeekTimeLargeDialog() {
+    final controller = TextEditingController(text: _seekTimeLarge.toString());
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Large Skip Duration'),
+              content: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Seconds',
+                  hintText: 'Enter duration (1-120)',
+                  errorText: errorText,
+                  suffixText: 's',
+                ),
+                autofocus: true,
+                onChanged: (value) {
+                  final parsed = int.tryParse(value);
+                  setDialogState(() {
+                    if (parsed == null) {
+                      errorText = 'Please enter a valid number';
+                    } else if (parsed < 1 || parsed > 120) {
+                      errorText = 'Duration must be between 1 and 120 seconds';
+                    } else {
+                      errorText = null;
+                    }
+                  });
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final parsed = int.tryParse(controller.text);
+                    if (parsed != null && parsed >= 1 && parsed <= 120) {
+                      setState(() {
+                        _seekTimeLarge = parsed;
+                        _settingsService.setSeekTimeLarge(parsed);
+                      });
+                      // Reload keyboard shortcuts service to use new settings
+                      await _keyboardService.refreshFromStorage();
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showKeyboardShortcutsDialog() {
     Navigator.push(
       context,
@@ -406,6 +640,163 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Reset'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Future<void> _checkForUpdates() async {
+    setState(() {
+      _isCheckingForUpdate = true;
+    });
+
+    try {
+      final updateInfo = await UpdateService.checkForUpdates();
+
+      if (mounted) {
+        setState(() {
+          _updateInfo = updateInfo;
+          _isCheckingForUpdate = false;
+        });
+
+        if (updateInfo == null || updateInfo['hasUpdate'] != true) {
+          // Show "no updates" message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You are on the latest version'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCheckingForUpdate = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to check for updates'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showUpdateDialog() {
+    if (_updateInfo == null) return;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Update Available'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Version ${_updateInfo!['latestVersion']} is available',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Current: ${_updateInfo!['currentVersion']}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final url = Uri.parse(_updateInfo!['releaseUrl']);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                }
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text('View Release'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLibraryDensityDialog() {
+    final settingsProvider = context.read<SettingsProvider>();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Consumer<SettingsProvider>(
+          builder: (context, provider, child) {
+            return AlertDialog(
+              title: const Text('Library Density'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      provider.libraryDensity == settings.LibraryDensity.compact
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Compact'),
+                    subtitle: const Text('Smaller cards, more items visible'),
+                    onTap: () async {
+                      await settingsProvider.setLibraryDensity(
+                        settings.LibraryDensity.compact,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      provider.libraryDensity == settings.LibraryDensity.normal
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Normal'),
+                    subtitle: const Text('Default size'),
+                    onTap: () async {
+                      await settingsProvider.setLibraryDensity(
+                        settings.LibraryDensity.normal,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      provider.libraryDensity ==
+                              settings.LibraryDensity.comfortable
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Comfortable'),
+                    subtitle: const Text('Larger cards, fewer items visible'),
+                    onTap: () async {
+                      await settingsProvider.setLibraryDensity(
+                        settings.LibraryDensity.comfortable,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

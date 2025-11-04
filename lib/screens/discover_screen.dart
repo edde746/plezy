@@ -19,6 +19,7 @@ import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/content_rating_formatter.dart';
 import 'auth_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -76,6 +77,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (_onDeck.isEmpty || !_heroController.hasClients || _isAutoScrollPaused)
         return;
 
+      // Validate current index is within bounds before calculating next page
+      if (_currentHeroIndex >= _onDeck.length) {
+        _currentHeroIndex = 0;
+      }
+
       final nextPage = (_currentHeroIndex + 1) % _onDeck.length;
       _heroController.animateToPage(
         nextPage,
@@ -111,6 +117,41 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _startAutoScroll();
   }
 
+  // Helper method to calculate visible dot range (max 5 dots)
+  ({int start, int end}) _getVisibleDotRange() {
+    final totalDots = _onDeck.length;
+    if (totalDots <= 5) {
+      return (start: 0, end: totalDots - 1);
+    }
+
+    // Center the active dot when possible
+    final center = _currentHeroIndex;
+    int start = (center - 2).clamp(0, totalDots - 5);
+    int end = start + 4; // 5 dots total (0-4 inclusive)
+
+    return (start: start, end: end);
+  }
+
+  // Helper method to determine dot size based on position
+  double _getDotSize(int dotIndex, int start, int end) {
+    final totalDots = _onDeck.length;
+
+    // If we have 5 or fewer dots, all are full size (8px)
+    if (totalDots <= 5) {
+      return 8.0;
+    }
+
+    // First and last visible dots are smaller if there are more items beyond them
+    final isFirstVisible = dotIndex == start && start > 0;
+    final isLastVisible = dotIndex == end && end < totalDots - 1;
+
+    if (isFirstVisible || isLastVisible) {
+      return 5.0; // Smaller edge dots
+    }
+
+    return 8.0; // Normal size
+  }
+
   Future<void> _loadContent() async {
     appLogger.d('Loading discover content');
     setState(() {
@@ -136,7 +177,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _onDeck = onDeck;
         _recentlyAdded = recentlyAdded;
         _isLoading = false;
+
+        // Reset hero index to avoid sync issues
+        _currentHeroIndex = 0;
       });
+
+      // Sync PageController to first page after data loads
+      if (_heroController.hasClients && onDeck.isNotEmpty) {
+        _heroController.jumpToPage(0);
+      }
+
       appLogger.d('Discover content loaded successfully');
     } catch (e) {
       appLogger.e('Failed to load discover content', error: e);
@@ -451,10 +501,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               controller: _heroController,
               itemCount: _onDeck.length,
               onPageChanged: (index) {
-                setState(() {
-                  _currentHeroIndex = index;
-                });
-                _resetAutoScrollTimer();
+                // Validate index is within bounds before updating
+                if (index >= 0 && index < _onDeck.length) {
+                  setState(() {
+                    _currentHeroIndex = index;
+                  });
+                  _resetAutoScrollTimer();
+                }
               },
               itemBuilder: (context, index) {
                 return _buildHeroItem(_onDeck[index]);
@@ -487,57 +540,67 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   ),
                   // Spacer to separate indicators from button
                   const SizedBox(width: 8),
-                  // Page indicators
-                  ...List.generate(_onDeck.length, (index) {
-                    final isActive = _currentHeroIndex == index;
-                    if (isActive) {
-                      // Animated progress indicator for active page
-                      return AnimatedBuilder(
-                        animation: _indicatorAnimationController,
-                        builder: (context, child) {
-                          // Fill width animates from 8px to 24px
-                          final fillWidth =
-                              8.0 +
-                              (16.0 * _indicatorAnimationController.value);
+                  // Page indicators (limited to 5 dots)
+                  ...() {
+                    final range = _getVisibleDotRange();
+                    return List.generate(
+                      range.end - range.start + 1,
+                      (i) {
+                        final index = range.start + i;
+                        final isActive = _currentHeroIndex == index;
+                        final dotSize = _getDotSize(index, range.start, range.end);
+
+                        if (isActive) {
+                          // Animated progress indicator for active page
+                          return AnimatedBuilder(
+                            animation: _indicatorAnimationController,
+                            builder: (context, child) {
+                              // Fill width animates based on dot size
+                              final maxWidth = dotSize * 3; // 24px for normal, 15px for small
+                              final fillWidth =
+                                  dotSize +
+                                  ((maxWidth - dotSize) * _indicatorAnimationController.value);
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                width: maxWidth,
+                                height: dotSize,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  borderRadius: BorderRadius.circular(dotSize / 2),
+                                ),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    width: fillWidth,
+                                    height: dotSize,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(dotSize / 2),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        } else {
+                          // Static indicator for inactive pages
                           return AnimatedContainer(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: 24,
-                            height: 8,
+                            width: dotSize,
+                            height: dotSize,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Container(
-                                width: fillWidth,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
+                              borderRadius: BorderRadius.circular(dotSize / 2),
                             ),
                           );
-                        },
-                      );
-                    } else {
-                      // Static indicator for inactive pages
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      );
-                    }
-                  }),
+                        }
+                      },
+                    );
+                  }(),
                 ],
               ),
             ),
@@ -796,9 +859,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             [
                               contentTypeLabel,
                               if (heroItem.rating != null)
-                                '★ ${(heroItem.rating! / 10).toStringAsFixed(1)}',
+                                '★ ${heroItem.rating!.toStringAsFixed(1)}',
                               if (heroItem.contentRating != null)
-                                heroItem.contentRating!,
+                                formatContentRating(heroItem.contentRating!),
                               if (heroItem.year != null)
                                 heroItem.year.toString(),
                             ].join(' • '),
@@ -961,20 +1024,24 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       child: LayoutBuilder(
         builder: (context, constraints) {
           // Responsive card width based on screen size
+          // Match Libraries screen sizing (190px baseline)
           final screenWidth = constraints.maxWidth;
           final cardWidth = screenWidth > 1600
               ? 220.0
               : screenWidth > 1200
               ? 200.0
               : screenWidth > 800
-              ? 160.0
-              : 130.0;
+              ? 190.0
+              : 160.0;
 
+          // MediaCard has 8px padding on all sides (16px total horizontally)
+          // So actual poster width is cardWidth - 16
+          final posterWidth = cardWidth - 16;
           // 2:3 poster aspect ratio (height is 1.5x width)
-          final cardHeight = cardWidth * 1.5;
+          final posterHeight = posterWidth * 1.5;
           // Container height = poster + padding + spacing + text
-          // 8px top padding + cardHeight + 4px spacing + ~26px text + 8px bottom padding
-          final containerHeight = cardHeight + 46;
+          // 8px top padding + posterHeight + 4px spacing + ~26px text + 8px bottom padding
+          final containerHeight = posterHeight + 46;
 
           return SizedBox(
             height: containerHeight,
@@ -992,7 +1059,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       key: Key(item.ratingKey),
                       item: item,
                       width: cardWidth,
-                      height: cardHeight,
+                      height: posterHeight,
                       onRefresh: updateItem,
                     ),
                   );

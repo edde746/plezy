@@ -10,6 +10,8 @@ class KeyboardShortcutsService {
   Map<String, String> _shortcuts =
       {}; // Legacy string shortcuts for backward compatibility
   Map<String, HotKey> _hotkeys = {}; // New HotKey objects
+  int _seekTimeSmall = 10; // Default, loaded from settings
+  int _seekTimeLarge = 30; // Default, loaded from settings
 
   KeyboardShortcutsService._();
 
@@ -28,6 +30,8 @@ class KeyboardShortcutsService {
     _shortcuts = _settingsService
         .getKeyboardShortcuts(); // Keep for legacy compatibility
     _hotkeys = await _settingsService.getKeyboardHotkeys(); // Primary method
+    _seekTimeSmall = _settingsService.getSeekTimeSmall();
+    _seekTimeLarge = _settingsService.getSeekTimeLarge();
   }
 
   Map<String, String> get shortcuts => Map.from(_shortcuts);
@@ -61,6 +65,8 @@ class KeyboardShortcutsService {
 
   Future<void> refreshFromStorage() async {
     _hotkeys = await _settingsService.getKeyboardHotkeys();
+    _seekTimeSmall = _settingsService.getSeekTimeSmall();
+    _seekTimeLarge = _settingsService.getSeekTimeLarge();
   }
 
   Future<void> resetToDefaults() async {
@@ -224,6 +230,21 @@ class KeyboardShortcutsService {
     return KeyEventResult.ignored;
   }
 
+  /// Seeks by the given offset (can be positive or negative) while clamping
+  /// the result between 0 and the video duration
+  void _seekWithClamping(Player player, Duration offset) {
+    final currentPosition = player.state.position;
+    final duration = player.state.duration;
+    final newPosition = currentPosition + offset;
+
+    // Clamp between 0 and video duration
+    final clampedPosition = newPosition.isNegative
+      ? Duration.zero
+      : (newPosition > duration ? duration : newPosition);
+
+    player.seek(clampedPosition);
+  }
+
   void _executeAction(
     String action,
     Player player,
@@ -247,20 +268,16 @@ class KeyboardShortcutsService {
         player.setVolume(newVolume);
         break;
       case 'seek_forward':
-        final newPosition = player.state.position + const Duration(seconds: 10);
-        player.seek(newPosition);
+        _seekWithClamping(player, Duration(seconds: _seekTimeSmall));
         break;
       case 'seek_backward':
-        final newPosition = player.state.position - const Duration(seconds: 10);
-        player.seek(newPosition.isNegative ? Duration.zero : newPosition);
+        _seekWithClamping(player, Duration(seconds: -_seekTimeSmall));
         break;
       case 'seek_forward_large':
-        final newPosition = player.state.position + const Duration(seconds: 30);
-        player.seek(newPosition);
+        _seekWithClamping(player, Duration(seconds: _seekTimeLarge));
         break;
       case 'seek_backward_large':
-        final newPosition = player.state.position - const Duration(seconds: 30);
-        player.seek(newPosition.isNegative ? Duration.zero : newPosition);
+        _seekWithClamping(player, Duration(seconds: -_seekTimeLarge));
         break;
       case 'fullscreen_toggle':
         onToggleFullscreen?.call();
@@ -307,13 +324,13 @@ class KeyboardShortcutsService {
       case 'volume_down':
         return 'Volume Down';
       case 'seek_forward':
-        return 'Seek Forward';
+        return 'Seek Forward (${_seekTimeSmall}s)';
       case 'seek_backward':
-        return 'Seek Backward';
+        return 'Seek Backward (${_seekTimeSmall}s)';
       case 'seek_forward_large':
-        return 'Seek Forward (Large)';
+        return 'Seek Forward (${_seekTimeLarge}s)';
       case 'seek_backward_large':
-        return 'Seek Backward (Large)';
+        return 'Seek Backward (${_seekTimeLarge}s)';
       case 'fullscreen_toggle':
         return 'Toggle Fullscreen';
       case 'mute_toggle':

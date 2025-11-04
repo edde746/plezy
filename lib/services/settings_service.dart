@@ -5,6 +5,8 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 
 enum ThemeMode { system, light, dark }
 
+enum LibraryDensity { compact, normal, comfortable }
+
 class SettingsService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
@@ -14,6 +16,11 @@ class SettingsService {
   static const String _keyEnableHardwareDecoding = 'enable_hardware_decoding';
   static const String _keyPreferredVideoCodec = 'preferred_video_codec';
   static const String _keyPreferredAudioCodec = 'preferred_audio_codec';
+  static const String _keyLibraryDensity = 'library_density';
+  static const String _keyUseSeasonPoster = 'use_season_poster';
+  static const String _keySeekTimeSmall = 'seek_time_small';
+  static const String _keySeekTimeLarge = 'seek_time_large';
+  static const String _keyMediaVersionPreferences = 'media_version_preferences';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -89,6 +96,46 @@ class SettingsService {
 
   String getPreferredAudioCodec() {
     return _prefs.getString(_keyPreferredAudioCodec) ?? 'auto';
+  }
+
+  // Library Density
+  Future<void> setLibraryDensity(LibraryDensity density) async {
+    await _prefs.setString(_keyLibraryDensity, density.name);
+  }
+
+  LibraryDensity getLibraryDensity() {
+    final densityString = _prefs.getString(_keyLibraryDensity);
+    return LibraryDensity.values.firstWhere(
+      (density) => density.name == densityString,
+      orElse: () => LibraryDensity.normal,
+    );
+  }
+
+  // Use Season Poster
+  Future<void> setUseSeasonPoster(bool enabled) async {
+    await _prefs.setBool(_keyUseSeasonPoster, enabled);
+  }
+
+  bool getUseSeasonPoster() {
+    return _prefs.getBool(_keyUseSeasonPoster) ?? false; // Default: false (use series poster)
+  }
+
+  // Seek Time Small (in seconds)
+  Future<void> setSeekTimeSmall(int seconds) async {
+    await _prefs.setInt(_keySeekTimeSmall, seconds);
+  }
+
+  int getSeekTimeSmall() {
+    return _prefs.getInt(_keySeekTimeSmall) ?? 10; // Default: 10 seconds
+  }
+
+  // Seek Time Large (in seconds)
+  Future<void> setSeekTimeLarge(int seconds) async {
+    await _prefs.setInt(_keySeekTimeLarge, seconds);
+  }
+
+  int getSeekTimeLarge() {
+    return _prefs.getInt(_keySeekTimeLarge) ?? 30; // Default: 30 seconds
   }
 
   // Keyboard Shortcuts (Legacy String-based)
@@ -542,6 +589,47 @@ class SettingsService {
     }
   }
 
+  // Media Version Preferences
+  /// Save media version preference for a series
+  /// [seriesRatingKey] is the grandparentRatingKey for TV series, or ratingKey for movies
+  /// [mediaIndex] is the index of the selected media version
+  Future<void> setMediaVersionPreference(String seriesRatingKey, int mediaIndex) async {
+    final preferences = _getMediaVersionPreferences();
+    preferences[seriesRatingKey] = mediaIndex;
+
+    final jsonString = json.encode(preferences);
+    await _prefs.setString(_keyMediaVersionPreferences, jsonString);
+  }
+
+  /// Get saved media version preference for a series
+  /// Returns null if no preference is saved
+  int? getMediaVersionPreference(String seriesRatingKey) {
+    final preferences = _getMediaVersionPreferences();
+    return preferences[seriesRatingKey];
+  }
+
+  /// Clear media version preference for a series
+  Future<void> clearMediaVersionPreference(String seriesRatingKey) async {
+    final preferences = _getMediaVersionPreferences();
+    preferences.remove(seriesRatingKey);
+
+    final jsonString = json.encode(preferences);
+    await _prefs.setString(_keyMediaVersionPreferences, jsonString);
+  }
+
+  /// Get all media version preferences
+  Map<String, int> _getMediaVersionPreferences() {
+    final jsonString = _prefs.getString(_keyMediaVersionPreferences);
+    if (jsonString == null) return {};
+
+    try {
+      final decoded = json.decode(jsonString) as Map<String, dynamic>;
+      return decoded.map((key, value) => MapEntry(key, value as int));
+    } catch (e) {
+      return {};
+    }
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -553,6 +641,11 @@ class SettingsService {
       _prefs.remove(_keyEnableHardwareDecoding),
       _prefs.remove(_keyPreferredVideoCodec),
       _prefs.remove(_keyPreferredAudioCodec),
+      _prefs.remove(_keyLibraryDensity),
+      _prefs.remove(_keyUseSeasonPoster),
+      _prefs.remove(_keySeekTimeSmall),
+      _prefs.remove(_keySeekTimeLarge),
+      _prefs.remove(_keyMediaVersionPreferences),
     ]);
   }
 
@@ -575,6 +668,10 @@ class SettingsService {
       'enableHardwareDecoding': getEnableHardwareDecoding(),
       'preferredVideoCodec': getPreferredVideoCodec(),
       'preferredAudioCodec': getPreferredAudioCodec(),
+      'libraryDensity': getLibraryDensity().name,
+      'useSeasonPoster': getUseSeasonPoster(),
+      'seekTimeSmall': getSeekTimeSmall(),
+      'seekTimeLarge': getSeekTimeLarge(),
       'keyboardShortcuts': getKeyboardShortcuts(),
       'keyboardHotkeys': hotkeys.map(
         (key, value) => MapEntry(key, _serializeHotKey(value)),

@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 import '../client/plex_client.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_filter.dart';
+import '../models/plex_sort.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/settings_provider.dart';
+import '../providers/hidden_libraries_provider.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/app_logger.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../services/storage_service.dart';
+import '../services/settings_service.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
@@ -26,14 +32,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   PlexClient get client => context.clientSafe;
 
-  List<PlexLibrary> _libraries = [];
+  List<PlexLibrary> _allLibraries = []; // All libraries from API (unfiltered)
   List<PlexMetadata> _items = [];
   List<PlexFilter> _filters = [];
+  List<PlexSort> _sortOptions = [];
   bool _isLoadingLibraries = true;
   bool _isLoadingItems = false;
   String? _errorMessage;
-  int _selectedLibraryIndex = 0;
+  String? _selectedLibraryKey;
   Map<String, String> _selectedFilters = {};
+  PlexSort? _selectedSort;
+  bool _isSortDescending = false;
   bool _isInitialLoad = true;
 
   @override
@@ -42,66 +51,178 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _loadLibraries();
   }
 
+  /// Helper method to get user-friendly error message from exception
+  String _getErrorMessage(dynamic error, String context) {
+    if (error is DioException) {
+      // Other Dio errors
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.receiveTimeout:
+          return 'Connection timeout while loading $context';
+        case DioExceptionType.connectionError:
+          return 'Unable to connect to Plex server';
+        default:
+          appLogger.e('Error loading $context', error: error);
+          return 'Failed to load $context: ${error.message}';
+      }
+    }
+
+    // Generic error
+    appLogger.e('Unexpected error in $context', error: error);
+    return 'Failed to load $context: $error';
+  }
+
   Future<void> _loadLibraries() async {
+    // Extract context dependencies before async gap
+    final clientProvider = Provider.of<PlexClientProvider>(
+      context,
+      listen: false,
+    );
+    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
+      context,
+      listen: false,
+    );
+
     setState(() {
       _isLoadingLibraries = true;
       _errorMessage = null;
     });
 
     try {
-      final clientProvider = Provider.of<PlexClientProvider>(
-        context,
-        listen: false,
-      );
       final client = clientProvider.client;
       if (client == null) {
         throw Exception('No client available');
       }
 
+      final storage = await StorageService.getInstance();
       final allLibraries = await client.getLibraries();
-      
+
       // Filter out music libraries (type: 'artist') since music playback is not yet supported
       // Only show movie and TV show libraries
-      final libraries = allLibraries
+      final filteredLibraries = allLibraries
           .where((lib) => lib.type.toLowerCase() != 'artist')
           .toList();
-      
+
+      // Load saved library order and apply it
+      final savedOrder = storage.getLibraryOrder();
+      final orderedLibraries = _applyLibraryOrder(filteredLibraries, savedOrder);
+
       setState(() {
-        _libraries = libraries;
+        _allLibraries = orderedLibraries; // Store all libraries with ordering applied
         _isLoadingLibraries = false;
       });
 
-      if (libraries.isNotEmpty) {
+      if (allLibraries.isNotEmpty) {
+        // Compute visible libraries for initial load
+        final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+        final visibleLibraries = allLibraries
+            .where((lib) => !hiddenKeys.contains(lib.key))
+            .toList();
+
         // Load saved preferences
-        final storage = await StorageService.getInstance();
-        final savedIndex = storage.getSelectedLibraryIndex();
+        final savedLibraryKey = storage.getSelectedLibraryKey();
         final savedFilters = storage.getLibraryFilters();
 
-        // Use saved index if valid, otherwise default to 0
-        final indexToLoad =
-            (savedIndex != null && savedIndex < libraries.length)
-            ? savedIndex
-            : 0;
+        // Find the library by key in visible libraries
+        String? libraryKeyToLoad;
+        if (savedLibraryKey != null) {
+          // Check if saved library exists and is visible
+          final libraryExists = visibleLibraries
+              .any((lib) => lib.key == savedLibraryKey);
+          if (libraryExists) {
+            libraryKeyToLoad = savedLibraryKey;
+          }
+        }
+
+        // Fallback to first visible library if saved key not found
+        if (libraryKeyToLoad == null && visibleLibraries.isNotEmpty) {
+          libraryKeyToLoad = visibleLibraries.first.key;
+        }
 
         // Restore filters BEFORE loading content
         if (savedFilters.isNotEmpty) {
           _selectedFilters = Map.from(savedFilters);
         }
 
-        _loadLibraryContent(indexToLoad);
+        if (libraryKeyToLoad != null) {
+          _loadLibraryContent(libraryKeyToLoad);
+        }
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load libraries: $e';
+        _errorMessage = _getErrorMessage(e, 'libraries');
         _isLoadingLibraries = false;
       });
     }
   }
 
-  Future<void> _loadLibraryContent(int index) async {
-    if (index < 0 || index >= _libraries.length) return;
+  List<PlexLibrary> _applyLibraryOrder(
+    List<PlexLibrary> libraries,
+    List<String>? savedOrder,
+  ) {
+    if (savedOrder == null || savedOrder.isEmpty) {
+      return libraries;
+    }
 
-    final isChangingLibrary = !_isInitialLoad && _selectedLibraryIndex != index;
+    // Create a map for quick lookup
+    final libraryMap = {for (var lib in libraries) lib.key: lib};
+
+    // Build ordered list based on saved order
+    final orderedLibraries = <PlexLibrary>[];
+    final addedKeys = <String>{};
+
+    // Add libraries in saved order
+    for (final key in savedOrder) {
+      if (libraryMap.containsKey(key)) {
+        orderedLibraries.add(libraryMap[key]!);
+        addedKeys.add(key);
+      }
+    }
+
+    // Add any new libraries that weren't in the saved order
+    for (final library in libraries) {
+      if (!addedKeys.contains(library.key)) {
+        orderedLibraries.add(library);
+      }
+    }
+
+    return orderedLibraries;
+  }
+
+  Future<void> _saveLibraryOrder() async {
+    final storage = await StorageService.getInstance();
+    final libraryKeys = _allLibraries.map((lib) => lib.key).toList();
+    await storage.saveLibraryOrder(libraryKeys);
+  }
+
+  void _reorderLibraries(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final library = _allLibraries.removeAt(oldIndex);
+      _allLibraries.insert(newIndex, library);
+    });
+    _saveLibraryOrder();
+  }
+
+  Future<void> _loadLibraryContent(String libraryKey) async {
+    // Compute visible libraries based on current provider state
+    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
+      context,
+      listen: false,
+    );
+    final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+    final visibleLibraries = _allLibraries
+        .where((lib) => !hiddenKeys.contains(lib.key))
+        .toList();
+
+
+    // Find the library by key
+    final libraryIndex = visibleLibraries.indexWhere((lib) => lib.key == libraryKey);
+    if (libraryIndex == -1) return; // Library not found or hidden
+
+    final isChangingLibrary = !_isInitialLoad && _selectedLibraryKey != libraryKey;
 
     // Extract context dependencies before async operations
     final clientProvider = context.plexClient;
@@ -115,7 +236,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     setState(() {
-      _selectedLibraryIndex = index;
+      _selectedLibraryKey = libraryKey;
       _isLoadingItems = true;
       _errorMessage = null;
       // Only clear filters when explicitly changing library (not on initial load)
@@ -129,9 +250,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       _isInitialLoad = false;
     }
 
-    // Save selected library index
+    // Save selected library key
     final storage = await StorageService.getInstance();
-    await storage.saveSelectedLibraryIndex(index);
+    await storage.saveSelectedLibraryKey(libraryKey);
 
     // Clear filters in storage when changing library
     if (isChangingLibrary) {
@@ -139,13 +260,22 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     try {
-      // Load filters for the new library
-      _loadFilters(index);
+      // Load filters and sort options for the new library
+      _loadFilters(libraryKey);
+      await _loadSortOptions(libraryKey);
+
+      // Add sort parameter to filters if selected
+      final filtersWithSort = Map<String, String>.from(_selectedFilters);
+      if (_selectedSort != null) {
+        filtersWithSort['sort'] = _selectedSort!.getSortKey(
+          descending: _isSortDescending,
+        );
+      }
 
       // Load content
       final items = await client.getLibraryContent(
-        _libraries[index].key,
-        filters: _selectedFilters,
+        libraryKey,
+        filters: filtersWithSort,
       );
       setState(() {
         _items = items;
@@ -153,15 +283,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load library content: $e';
+        _errorMessage = _getErrorMessage(e, 'library content');
         _isLoadingItems = false;
       });
     }
   }
 
-  Future<void> _loadFilters(int index) async {
-    if (index < 0 || index >= _libraries.length) return;
-
+  Future<void> _loadFilters(String libraryKey) async {
     try {
       final clientProvider = Provider.of<PlexClientProvider>(
         context,
@@ -172,13 +300,63 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         throw Exception('No client available');
       }
 
-      final filters = await client.getLibraryFilters(_libraries[index].key);
+      final filters = await client.getLibraryFilters(libraryKey);
       setState(() {
         _filters = filters;
       });
     } catch (e) {
+      appLogger.w('Failed to load filters', error: e);
       setState(() {
         _filters = [];
+      });
+    }
+  }
+
+  Future<void> _loadSortOptions(String libraryKey) async {
+    try {
+      final clientProvider = Provider.of<PlexClientProvider>(
+        context,
+        listen: false,
+      );
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      final sortOptions = await client.getLibrarySorts(libraryKey);
+
+      // Load saved sort preference for this library
+      final storage = await StorageService.getInstance();
+      final savedSortKey = storage.getLibrarySort(libraryKey);
+
+      // Find the saved sort in the options
+      PlexSort? savedSort;
+      bool descending = false;
+
+      if (savedSortKey.endsWith(':desc')) {
+        descending = true;
+        final baseKey = savedSortKey.replaceAll(':desc', '');
+        savedSort = sortOptions.firstWhere(
+          (s) => s.key == baseKey,
+          orElse: () => sortOptions.first,
+        );
+      } else {
+        savedSort = sortOptions.firstWhere(
+          (s) => s.key == savedSortKey,
+          orElse: () => sortOptions.first,
+        );
+      }
+
+      setState(() {
+        _sortOptions = sortOptions;
+        _selectedSort = savedSort;
+        _isSortDescending = descending;
+      });
+    } catch (e) {
+      setState(() {
+        _sortOptions = [];
+        _selectedSort = null;
+        _isSortDescending = false;
       });
     }
   }
@@ -199,9 +377,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         throw Exception('No client available');
       }
 
+      // Add sort parameter to filters if selected
+      final filtersWithSort = Map<String, String>.from(_selectedFilters);
+      if (_selectedSort != null) {
+        filtersWithSort['sort'] = _selectedSort!.getSortKey(
+          descending: _isSortDescending,
+        );
+      }
+
       final items = await client.getLibraryContent(
-        _libraries[_selectedLibraryIndex].key,
-        filters: _selectedFilters,
+        _selectedLibraryKey!,
+        filters: filtersWithSort,
       );
       setState(() {
         _items = items;
@@ -215,6 +401,24 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
   }
 
+  Future<void> _applySort(PlexSort sort, bool descending) async {
+    setState(() {
+      _selectedSort = sort;
+      _isSortDescending = descending;
+    });
+
+    // Save sort preference for this library
+    final storage = await StorageService.getInstance();
+    final sortKey = sort.getSortKey(descending: descending);
+    await storage.saveLibrarySort(
+      _selectedLibraryKey!,
+      sortKey,
+    );
+
+    // Reload content with new sort
+    _applyFilters();
+  }
+
   @override
   void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
     final index = _items.indexWhere((item) => item.ratingKey == ratingKey);
@@ -226,10 +430,40 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   // Public method to refresh content
   @override
   void refresh() {
-    if (_libraries.isNotEmpty) {
+    if (_allLibraries.isNotEmpty) {
       _applyFilters();
     }
   }
+
+  Future<void> _toggleLibraryVisibility(PlexLibrary library) async {
+    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
+      context,
+      listen: false,
+    );
+    final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(library.key);
+
+    if (isHidden) {
+      await hiddenLibrariesProvider.unhideLibrary(library.key);
+    } else {
+      // Check if we're hiding the currently selected library
+      final isCurrentlySelected = _selectedLibraryKey == library.key;
+
+      await hiddenLibrariesProvider.hideLibrary(library.key);
+
+      // If we just hid the selected library, select the first visible one
+      if (isCurrentlySelected) {
+        // Compute visible libraries after hiding
+        final visibleLibraries = _allLibraries
+            .where((lib) => !hiddenLibrariesProvider.hiddenLibraryKeys.contains(lib.key))
+            .toList();
+
+        if (visibleLibraries.isNotEmpty) {
+          _loadLibraryContent(visibleLibraries.first.key);
+        }
+      }
+    }
+  }
+
 
   void _showFiltersBottomSheet() {
     showModalBottomSheet(
@@ -254,8 +488,57 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
+  void _showSortBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _SortBottomSheet(
+        sortOptions: _sortOptions,
+        selectedSort: _selectedSort,
+        isSortDescending: _isSortDescending,
+        onSortChanged: (sort, descending) {
+          Navigator.pop(context);
+          _applySort(sort, descending);
+        },
+      ),
+    );
+  }
+
+  void _showLibraryManagementSheet() {
+    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
+      context,
+      listen: false,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _LibraryManagementSheet(
+        allLibraries: List.from(_allLibraries),
+        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+        onReorder: (reorderedLibraries) {
+          setState(() {
+            _allLibraries = reorderedLibraries;
+          });
+          _saveLibraryOrder();
+        },
+        onToggleVisibility: _toggleLibraryVisibility,
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
+    // Watch for hidden libraries changes to trigger rebuild
+    final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
+    final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+
+    // Compute visible libraries (filtered from all libraries)
+    final visibleLibraries = _allLibraries
+        .where((lib) => !hiddenKeys.contains(lib.key))
+        .toList();
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -268,6 +551,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
             actions: [
+              if (_allLibraries.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.edit, semanticLabel: 'Manage Libraries'),
+                  onPressed: _showLibraryManagementSheet,
+                ),
+              if (_sortOptions.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.swap_vert, semanticLabel: 'Sort'),
+                  onPressed: _showSortBottomSheet,
+                ),
               if (_filters.isNotEmpty)
                 IconButton(
                   icon: Badge(
@@ -282,7 +575,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 ),
               IconButton(
                 icon: const Icon(Icons.refresh, semanticLabel: 'Refresh'),
-                onPressed: () => _loadLibraryContent(_selectedLibraryIndex),
+                onPressed: () => _loadLibraryContent(_selectedLibraryKey!),
               ),
             ],
           ),
@@ -290,7 +583,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (_errorMessage != null && _libraries.isEmpty)
+          else if (_errorMessage != null && visibleLibraries.isEmpty)
             SliverFillRemaining(
               child: Center(
                 child: Column(
@@ -312,7 +605,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 ),
               ),
             )
-          else if (_libraries.isEmpty)
+          else if (visibleLibraries.isEmpty)
             const SliverFillRemaining(
               child: Center(
                 child: Column(
@@ -338,48 +631,48 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   vertical: 8,
                 ),
                 child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: List.generate(_libraries.length, (index) {
-                      final library = _libraries[index];
-                      final isSelected = index == _selectedLibraryIndex;
-                      final t = tokens(context);
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _getLibraryIcon(library.type),
-                                size: 16,
-                                color: isSelected ? t.bg : t.text,
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: List.generate(visibleLibraries.length, (index) {
+                            final library = visibleLibraries[index];
+                            final isSelected = library.key == _selectedLibraryKey;
+                            final t = tokens(context);
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _getLibraryIcon(library.type),
+                                      size: 16,
+                                      color: isSelected ? t.bg : t.text,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(library.title),
+                                  ],
+                                ),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  if (selected) {
+                                    _loadLibraryContent(library.key);
+                                  }
+                                },
+                                backgroundColor: t.surface,
+                                selectedColor: t.text,
+                                side: BorderSide(color: t.outline),
+                                labelStyle: TextStyle(
+                                  color: isSelected ? t.bg : t.text,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                                showCheckmark: false,
                               ),
-                              const SizedBox(width: 6),
-                              Text(library.title),
-                            ],
-                          ),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) {
-                              _loadLibraryContent(index);
-                            }
-                          },
-                          backgroundColor: t.surface,
-                          selectedColor: t.text,
-                          side: BorderSide(color: t.outline),
-                          labelStyle: TextStyle(
-                            color: isSelected ? t.bg : t.text,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                          showCheckmark: false,
+                            );
+                          }),
                         ),
-                      );
-                    }),
-                  ),
-                ),
+                      ),
               ),
             ),
 
@@ -404,7 +697,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () =>
-                            _loadLibraryContent(_selectedLibraryIndex),
+                            _loadLibraryContent(_selectedLibraryKey!),
                         child: const Text('Retry'),
                       ),
                     ],
@@ -428,8 +721,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                 sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 190,
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: _getMaxCrossAxisExtent(
+                      context,
+                      context.watch<SettingsProvider>().libraryDensity,
+                    ),
                     childAspectRatio: 2 / 3.3,
                     crossAxisSpacing: 0,
                     mainAxisSpacing: 0,
@@ -462,6 +758,51 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         return Icons.photo;
       default:
         return Icons.folder;
+    }
+  }
+
+  double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = 16.0; // 8px left + 8px right
+    final availableWidth = screenWidth - padding;
+
+    if (screenWidth >= 900) {
+      // Wide screens (desktop/large tablet landscape): Responsive division
+      double divisor;
+      double maxItemWidth;
+
+      switch (density) {
+        case LibraryDensity.comfortable:
+          divisor = 6.5;
+          maxItemWidth = 280;
+          break;
+        case LibraryDensity.normal:
+          divisor = 8.0;
+          maxItemWidth = 200;
+          break;
+        case LibraryDensity.compact:
+          divisor = 10.0;
+          maxItemWidth = 160;
+          break;
+      }
+
+      return (availableWidth / divisor).clamp(0, maxItemWidth);
+    } else if (screenWidth >= 600) {
+      // Medium screens (tablets): Fixed 4-5-6 items
+      int targetItemCount = switch (density) {
+        LibraryDensity.comfortable => 4,
+        LibraryDensity.normal => 5,
+        LibraryDensity.compact => 6,
+      };
+      return availableWidth / targetItemCount;
+    } else {
+      // Small screens (phones): Fixed 2-3-4 items
+      int targetItemCount = switch (density) {
+        LibraryDensity.comfortable => 2,
+        LibraryDensity.normal => 3,
+        LibraryDensity.compact => 4,
+      };
+      return availableWidth / targetItemCount;
     }
   }
 }
@@ -770,6 +1111,290 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
                       ],
                     ),
                     onTap: () => _loadFilterValues(filter),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SortBottomSheet extends StatefulWidget {
+  final List<PlexSort> sortOptions;
+  final PlexSort? selectedSort;
+  final bool isSortDescending;
+  final Function(PlexSort, bool) onSortChanged;
+
+  const _SortBottomSheet({
+    required this.sortOptions,
+    required this.selectedSort,
+    required this.isSortDescending,
+    required this.onSortChanged,
+  });
+
+  @override
+  State<_SortBottomSheet> createState() => _SortBottomSheetState();
+}
+
+class _SortBottomSheetState extends State<_SortBottomSheet> {
+  late PlexSort? _tempSelectedSort;
+  late bool _tempDescending;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelectedSort = widget.selectedSort;
+    _tempDescending = widget.isSortDescending;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Sort By',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Sort options list
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: widget.sortOptions.length,
+                itemBuilder: (context, index) {
+                  final sort = widget.sortOptions[index];
+                  final isSelected = _tempSelectedSort?.key == sort.key;
+
+                  return ListTile(
+                    title: Text(sort.title),
+                    trailing: isSelected
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Direction toggle buttons
+                              SegmentedButton<bool>(
+                                showSelectedIcon: false,
+                                segments: const [
+                                  ButtonSegment(
+                                    value: false,
+                                    icon: Icon(Icons.arrow_upward, size: 16),
+                                  ),
+                                  ButtonSegment(
+                                    value: true,
+                                    icon: Icon(Icons.arrow_downward, size: 16),
+                                  ),
+                                ],
+                                selected: {_tempDescending},
+                                onSelectionChanged: (Set<bool> selected) {
+                                  widget.onSortChanged(sort, selected.first);
+                                },
+                              ),
+                            ],
+                          )
+                        : null,
+                    leading: Radio<String>(
+                      value: sort.key,
+                      groupValue: _tempSelectedSort?.key,
+                      onChanged: (value) {
+                        setState(() {
+                          _tempSelectedSort = sort;
+                          // Use default direction for newly selected sort
+                          _tempDescending = sort.isDefaultDescending;
+                        });
+                        // Apply sort immediately with default direction
+                        widget.onSortChanged(sort, sort.isDefaultDescending);
+                      },
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _tempSelectedSort = sort;
+                        // Use default direction for newly selected sort
+                        _tempDescending = sort.isDefaultDescending;
+                      });
+                      // Apply sort immediately with default direction
+                      widget.onSortChanged(sort, sort.isDefaultDescending);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _LibraryManagementSheet extends StatefulWidget {
+  final List<PlexLibrary> allLibraries;
+  final Set<String> hiddenLibraryKeys;
+  final Function(List<PlexLibrary>) onReorder;
+  final Function(PlexLibrary) onToggleVisibility;
+
+  const _LibraryManagementSheet({
+    required this.allLibraries,
+    required this.hiddenLibraryKeys,
+    required this.onReorder,
+    required this.onToggleVisibility,
+  });
+
+  @override
+  State<_LibraryManagementSheet> createState() => _LibraryManagementSheetState();
+}
+
+class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
+  late List<PlexLibrary> _tempLibraries;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempLibraries = List.from(widget.allLibraries);
+  }
+
+  void _reorderLibraries(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final library = _tempLibraries.removeAt(oldIndex);
+      _tempLibraries.insert(newIndex, library);
+    });
+    // Apply immediately
+    widget.onReorder(_tempLibraries);
+  }
+
+  IconData _getLibraryIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'movie':
+        return Icons.movie;
+      case 'show':
+        return Icons.tv;
+      case 'artist':
+        return Icons.music_note;
+      case 'photo':
+        return Icons.photo;
+      default:
+        return Icons.folder;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Watch provider to rebuild when hidden libraries change
+    final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
+    final hiddenLibraryKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.edit),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Manage Libraries',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Reorderable library list
+            Expanded(
+              child: ReorderableListView.builder(
+                scrollController: scrollController,
+                onReorder: _reorderLibraries,
+                itemCount: _tempLibraries.length,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                buildDefaultDragHandles: false,
+                itemBuilder: (context, index) {
+                  final library = _tempLibraries[index];
+                  final isHidden = hiddenLibraryKeys.contains(library.key);
+
+                  return Opacity(
+                    key: ValueKey(library.key),
+                    opacity: isHidden ? 0.5 : 1.0,
+                    child: ListTile(
+                      leading: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ReorderableDragStartListener(
+                            index: index,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Icon(
+                                Icons.drag_indicator,
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(_getLibraryIcon(library.type)),
+                        ],
+                      ),
+                      title: Text(library.title),
+                      trailing: IconButton(
+                        icon: Icon(
+                          isHidden ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () => widget.onToggleVisibility(library),
+                        tooltip: isHidden ? 'Show library' : 'Hide library',
+                      ),
+                    ),
                   );
                 },
               ),

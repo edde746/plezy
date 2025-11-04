@@ -8,11 +8,14 @@ class StorageService {
   static const String _keyServerData = 'server_data';
   static const String _keyClientId = 'client_identifier';
   static const String _keySelectedLibraryIndex = 'selected_library_index';
+  static const String _keySelectedLibraryKey = 'selected_library_key';
   static const String _keyLibraryFilters = 'library_filters';
+  static const String _keyLibraryOrder = 'library_order';
   static const String _keyUserProfile = 'user_profile';
   static const String _keyCurrentUserUUID = 'current_user_uuid';
   static const String _keyHomeUsersCache = 'home_users_cache';
   static const String _keyHomeUsersCacheExpiry = 'home_users_cache_expiry';
+  static const String _keyHiddenLibraries = 'hidden_libraries';
 
   static StorageService? _instance;
   late SharedPreferences _prefs;
@@ -135,13 +138,22 @@ class StorageService {
     };
   }
 
-  // Selected Library Index
+  // Selected Library Index (deprecated - use library key instead)
   Future<void> saveSelectedLibraryIndex(int index) async {
     await _prefs.setInt(_keySelectedLibraryIndex, index);
   }
 
   int? getSelectedLibraryIndex() {
     return _prefs.getInt(_keySelectedLibraryIndex);
+  }
+
+  // Selected Library Key (replaces index-based selection)
+  Future<void> saveSelectedLibraryKey(String key) async {
+    await _prefs.setString(_keySelectedLibraryKey, key);
+  }
+
+  String? getSelectedLibraryKey() {
+    return _prefs.getString(_keySelectedLibraryKey);
   }
 
   // Library Filters (stored as JSON string)
@@ -162,12 +174,66 @@ class StorageService {
     }
   }
 
+  // Library Sort (per-library, stored individually)
+  Future<void> saveLibrarySort(String sectionId, String sortKey) async {
+    await _prefs.setString('library_sort_$sectionId', sortKey);
+  }
+
+  String getLibrarySort(String sectionId) {
+    // Return saved sort or default to titleSort (alphabetical)
+    return _prefs.getString('library_sort_$sectionId') ?? 'titleSort';
+  }
+
+  // Hidden Libraries (stored as JSON array of library section IDs)
+  Future<void> saveHiddenLibraries(Set<String> libraryKeys) async {
+    final list = libraryKeys.toList();
+    final jsonString = json.encode(list);
+    await _prefs.setString(_keyHiddenLibraries, jsonString);
+  }
+
+  Set<String> getHiddenLibraries() {
+    final jsonString = _prefs.getString(_keyHiddenLibraries);
+    if (jsonString == null) return {};
+
+    try {
+      final list = json.decode(jsonString) as List<dynamic>;
+      return list.map((e) => e.toString()).toSet();
+    } catch (e) {
+      return {};
+    }
+  }
+
   // Clear library preferences
   Future<void> clearLibraryPreferences() async {
     await Future.wait([
       _prefs.remove(_keySelectedLibraryIndex),
       _prefs.remove(_keyLibraryFilters),
+      _prefs.remove(_keyLibraryOrder),
+      _prefs.remove(_keyHiddenLibraries),
     ]);
+
+    // Also clear all library sort preferences
+    final keys = _prefs.getKeys();
+    final sortKeys = keys.where((key) => key.startsWith('library_sort_'));
+    await Future.wait(sortKeys.map((key) => _prefs.remove(key)));
+  }
+
+  // Library Order (stored as JSON list of library keys)
+  Future<void> saveLibraryOrder(List<String> libraryKeys) async {
+    final jsonString = json.encode(libraryKeys);
+    await _prefs.setString(_keyLibraryOrder, jsonString);
+  }
+
+  List<String>? getLibraryOrder() {
+    final jsonString = _prefs.getString(_keyLibraryOrder);
+    if (jsonString == null) return null;
+
+    try {
+      final decoded = json.decode(jsonString) as List<dynamic>;
+      return decoded.map((e) => e.toString()).toList();
+    } catch (e) {
+      return null;
+    }
   }
 
   // User Profile (stored as JSON string)

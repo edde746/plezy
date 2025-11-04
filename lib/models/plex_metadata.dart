@@ -12,7 +12,7 @@ class PlexMetadata {
   final String title;
   final String? contentRating;
   final String? summary;
-  final int? rating;
+  final double? rating;
   final int? year;
   final String? thumb;
   final String? art;
@@ -24,6 +24,7 @@ class PlexMetadata {
   final String? grandparentArt; // Show art for episodes
   final String? grandparentRatingKey; // Show rating key for episodes
   final String? parentTitle; // Season title for episodes
+  final String? parentThumb; // Season poster for episodes
   final String? parentRatingKey; // Season rating key for episodes
   final int? parentIndex; // Season number
   final int? index; // Episode number
@@ -58,6 +59,7 @@ class PlexMetadata {
     this.grandparentArt,
     this.grandparentRatingKey,
     this.parentTitle,
+    this.parentThumb,
     this.parentRatingKey,
     this.parentIndex,
     this.index,
@@ -67,6 +69,74 @@ class PlexMetadata {
     this.leafCount,
     this.viewedLeafCount,
   });
+
+  /// Create a copy of this metadata with optional field overrides
+  PlexMetadata copyWith({
+    String? ratingKey,
+    String? key,
+    String? guid,
+    String? studio,
+    String? type,
+    String? title,
+    String? contentRating,
+    String? summary,
+    double? rating,
+    int? year,
+    String? thumb,
+    String? art,
+    int? duration,
+    int? addedAt,
+    int? updatedAt,
+    String? grandparentTitle,
+    String? grandparentThumb,
+    String? grandparentArt,
+    String? grandparentRatingKey,
+    String? parentTitle,
+    String? parentThumb,
+    String? parentRatingKey,
+    int? parentIndex,
+    int? index,
+    String? grandparentTheme,
+    int? viewOffset,
+    int? viewCount,
+    int? leafCount,
+    int? viewedLeafCount,
+  }) {
+    final copy = PlexMetadata(
+      ratingKey: ratingKey ?? this.ratingKey,
+      key: key ?? this.key,
+      guid: guid ?? this.guid,
+      studio: studio ?? this.studio,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      contentRating: contentRating ?? this.contentRating,
+      summary: summary ?? this.summary,
+      rating: rating ?? this.rating,
+      year: year ?? this.year,
+      thumb: thumb ?? this.thumb,
+      art: art ?? this.art,
+      duration: duration ?? this.duration,
+      addedAt: addedAt ?? this.addedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      grandparentTitle: grandparentTitle ?? this.grandparentTitle,
+      grandparentThumb: grandparentThumb ?? this.grandparentThumb,
+      grandparentArt: grandparentArt ?? this.grandparentArt,
+      grandparentRatingKey: grandparentRatingKey ?? this.grandparentRatingKey,
+      parentTitle: parentTitle ?? this.parentTitle,
+      parentThumb: parentThumb ?? this.parentThumb,
+      parentRatingKey: parentRatingKey ?? this.parentRatingKey,
+      parentIndex: parentIndex ?? this.parentIndex,
+      index: index ?? this.index,
+      grandparentTheme: grandparentTheme ?? this.grandparentTheme,
+      viewOffset: viewOffset ?? this.viewOffset,
+      viewCount: viewCount ?? this.viewCount,
+      leafCount: leafCount ?? this.leafCount,
+      viewedLeafCount: viewedLeafCount ?? this.viewedLeafCount,
+    );
+    // Preserve clearLogo
+    copy._clearLogo = _clearLogo;
+    return copy;
+  }
 
   // Extract clearLogo from Image array in raw JSON
   void _extractClearLogo(Map<String, dynamic> json) {
@@ -121,12 +191,21 @@ class PlexMetadata {
   }
 
   // Helper to get the poster (show poster for episodes/seasons, thumb otherwise)
-  String? get posterThumb {
+  // If useSeasonPoster is true, episodes will use season poster instead of series poster
+  String? posterThumb({bool useSeasonPoster = false}) {
     final itemType = type.toLowerCase();
 
-    // For episodes and seasons, prefer grandparent thumb (show poster)
-    if ((itemType == 'episode' || itemType == 'season') &&
-        grandparentThumb != null) {
+    if (itemType == 'episode') {
+      // If season poster is enabled and available, use it
+      if (useSeasonPoster && parentThumb != null) {
+        return parentThumb!;
+      }
+      // Otherwise fall back to series poster, then item thumb
+      if (grandparentThumb != null) {
+        return grandparentThumb!;
+      }
+    } else if (itemType == 'season' && grandparentThumb != null) {
+      // For seasons, always use series poster
       return grandparentThumb!;
     }
     return thumb;

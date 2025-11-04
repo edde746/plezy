@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../screens/media_detail_screen.dart';
@@ -185,7 +186,9 @@ class _MediaCardState extends State<MediaCard> {
   }
 
   Widget _buildPosterImage(BuildContext context) {
-    if (widget.item.posterThumb != null) {
+    final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
+    final posterUrl = widget.item.posterThumb(useSeasonPoster: useSeasonPoster);
+    if (posterUrl != null) {
       return Consumer<PlexClientProvider>(
         builder: (context, clientProvider, child) {
           final client = clientProvider.client;
@@ -198,7 +201,7 @@ class _MediaCardState extends State<MediaCard> {
           }
 
           return CachedNetworkImage(
-            imageUrl: client.getThumbnailUrl(widget.item.posterThumb),
+            imageUrl: client.getThumbnailUrl(posterUrl),
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.edde746.plezy</id>
+  <name>Plezy</name>
+  <summary>A beautiful Plex client for Flutter</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <description>
+    <p>
+      Plezy is a beautiful Plex client built with Flutter, offering a modern and intuitive
+      interface for accessing your Plex media library.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Stream your Plex media library</li>
+      <li>Modern, responsive user interface</li>
+      <li>Support for video playback with hardware acceleration</li>
+      <li>Cross-platform compatibility</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">com.edde746.plezy.desktop</launchable>
+
+  <url type="homepage">https://github.com/edde746/plex-flutter</url>
+  <url type="bugtracker">https://github.com/edde746/plex-flutter/issues</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Plezy main interface</caption>
+    </screenshot>
+  </screenshots>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="{{VERSION}}" date="{{DATE}}">
+      <description>
+        <p>Latest release</p>
+      </description>
+    </release>
+  </releases>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>Player</category>
+  </categories>
+
+  <keywords>
+    <keyword>plex</keyword>
+    <keyword>media</keyword>
+    <keyword>video</keyword>
+    <keyword>streaming</keyword>
+  </keywords>
+</component>
