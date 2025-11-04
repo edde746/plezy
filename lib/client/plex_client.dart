@@ -339,23 +339,35 @@ class PlexClient {
     return results;
   }
 
-  /// Get recently added media
+  /// Get recently added media (filtered to video content only)
   Future<List<PlexMetadata>> getRecentlyAdded({int limit = 50}) async {
     final response = await _dio.get(
       '/library/recentlyAdded',
       queryParameters: {'X-Plex-Container-Size': limit, 'includeGuids': 1},
     );
-    return _extractMetadataList(response);
+    final allItems = _extractMetadataList(response);
+    
+    // Filter out music content (artists, albums, tracks)
+    return allItems.where((item) {
+      final type = item.type.toLowerCase();
+      return type != 'artist' && type != 'album' && type != 'track';
+    }).toList();
   }
 
-  /// Get on deck items (continue watching)
+  /// Get on deck items (continue watching, filtered to video content only)
   Future<List<PlexMetadata>> getOnDeck() async {
     final response = await _dio.get('/library/onDeck');
     final container = _getMediaContainer(response);
     if (container != null && container['Metadata'] != null) {
-      return (container['Metadata'] as List)
+      final allItems = (container['Metadata'] as List)
           .map((json) => PlexMetadata.fromJsonWithImages(json))
           .toList();
+      
+      // Filter out music content (artists, albums, tracks)
+      return allItems.where((item) {
+        final type = item.type.toLowerCase();
+        return type != 'artist' && type != 'album' && type != 'track';
+      }).toList();
     }
     return [];
   }

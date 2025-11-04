@@ -97,9 +97,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final storage = await StorageService.getInstance();
       final allLibraries = await client.getLibraries();
 
+      // Filter out music libraries (type: 'artist') since music playback is not yet supported
+      // Only show movie and TV show libraries
+      final filteredLibraries = allLibraries
+          .where((lib) => lib.type.toLowerCase() != 'artist')
+          .toList();
+
       // Load saved library order and apply it
       final savedOrder = storage.getLibraryOrder();
-      final orderedLibraries = _applyLibraryOrder(allLibraries, savedOrder);
+      final orderedLibraries = _applyLibraryOrder(filteredLibraries, savedOrder);
 
       setState(() {
         _allLibraries = orderedLibraries; // Store all libraries with ordering applied
