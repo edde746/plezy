@@ -23,8 +23,8 @@
 
   <launchable type="desktop-id">com.edde746.plezy.desktop</launchable>
 
-  <url type="homepage">https://github.com/edde746/plex-flutter</url>
-  <url type="bugtracker">https://github.com/edde746/plex-flutter/issues</url>
+  <url type="homepage">https://github.com/edde746/plezy</url>
+  <url type="bugtracker">https://github.com/edde746/plezy/issues</url>
 
   <screenshots>
     <screenshot type="default">

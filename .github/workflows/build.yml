@@ -388,18 +388,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Replace version placeholders
+      - name: Replace version and commit placeholders
         run: |
           # Extract version from pubspec.yaml (e.g., "1.3.1+10" -> "1.3.1")
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
           DATE=$(date -u +%Y-%m-%d)
+          COMMIT_SHA=$(git rev-parse HEAD)
 
           echo "Version: $VERSION"
           echo "Date: $DATE"
+          echo "Commit SHA: $COMMIT_SHA"
 
           # Replace placeholders in metainfo.xml
           sed -i "s/{{VERSION}}/$VERSION/g" linux/com.edde746.plezy.metainfo.xml
           sed -i "s/{{DATE}}/$DATE/g" linux/com.edde746.plezy.metainfo.xml
+
+          # Replace commit SHA placeholder in manifest
+          sed -i "s/{{COMMIT_SHA}}/$COMMIT_SHA/g" linux/com.edde746.plezy.yml
 
       - name: Preprocess Flatpak manifest with flatpak-flutter
         run: |
