@@ -1359,31 +1359,34 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                   final library = _tempLibraries[index];
                   final isHidden = hiddenLibraryKeys.contains(library.key);
 
-                  return ReorderableDragStartListener(
+                  return Opacity(
                     key: ValueKey(library.key),
-                    index: index,
-                    child: Opacity(
-                      opacity: isHidden ? 0.5 : 1.0,
-                      child: ListTile(
-                        leading: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.drag_indicator,
-                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                    opacity: isHidden ? 0.5 : 1.0,
+                    child: ListTile(
+                      leading: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ReorderableDragStartListener(
+                            index: index,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Icon(
+                                Icons.drag_indicator,
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            Icon(_getLibraryIcon(library.type)),
-                          ],
-                        ),
-                        title: Text(library.title),
-                        trailing: IconButton(
-                          icon: Icon(
-                            isHidden ? Icons.visibility_off : Icons.visibility,
                           ),
-                          onPressed: () => widget.onToggleVisibility(library),
-                          tooltip: isHidden ? 'Show library' : 'Hide library',
+                          const SizedBox(width: 8),
+                          Icon(_getLibraryIcon(library.type)),
+                        ],
+                      ),
+                      title: Text(library.title),
+                      trailing: IconButton(
+                        icon: Icon(
+                          isHidden ? Icons.visibility_off : Icons.visibility,
                         ),
+                        onPressed: () => widget.onToggleVisibility(library),
+                        tooltip: isHidden ? 'Show library' : 'Hide library',
                       ),
                     ),
                   );
