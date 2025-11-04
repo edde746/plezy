@@ -44,6 +44,7 @@ flutter:
   assets:
     - lib/data/iso_639_codes.json
     - assets/plezy.png
+    - assets/droid-sans.ttf
 
 flutter_launcher_icons:
   android: true
