@@ -7,6 +7,7 @@ import '../models/plex_file_info.dart';
 import '../models/plex_filter.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_media_version.dart';
+import '../models/plex_hub.dart';
 import '../utils/app_logger.dart';
 
 /// Result of testing a connection, including success status and latency
@@ -346,7 +347,7 @@ class PlexClient {
       queryParameters: {'X-Plex-Container-Size': limit, 'includeGuids': 1},
     );
     final allItems = _extractMetadataList(response);
-    
+
     // Filter out music content (artists, albums, tracks)
     return allItems.where((item) {
       final type = item.type.toLowerCase();
@@ -362,7 +363,7 @@ class PlexClient {
       final allItems = (container['Metadata'] as List)
           .map((json) => PlexMetadata.fromJsonWithImages(json))
           .toList();
-      
+
       // Filter out music content (artists, albums, tracks)
       return allItems.where((item) {
         final type = item.type.toLowerCase();
@@ -446,7 +447,10 @@ class PlexClient {
 
   /// Get detailed media info including chapters and tracks
   /// [mediaIndex] specifies which Media item to use (defaults to 0 - first version)
-  Future<PlexMediaInfo?> getMediaInfo(String ratingKey, {int mediaIndex = 0}) async {
+  Future<PlexMediaInfo?> getMediaInfo(
+    String ratingKey, {
+    int mediaIndex = 0,
+  }) async {
     final response = await _dio.get('/library/metadata/$ratingKey');
     final metadataJson = _getFirstMetadataJson(response);
 
@@ -550,7 +554,9 @@ class PlexClient {
         (metadataJson['Media'] as List).isNotEmpty) {
       final mediaList = metadataJson['Media'] as List;
       return mediaList
-          .map((media) => PlexMediaVersion.fromJson(media as Map<String, dynamic>))
+          .map(
+            (media) => PlexMediaVersion.fromJson(media as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -712,11 +718,7 @@ class PlexClient {
 
       // Fallback: return common sort options if API doesn't provide them
       return [
-        PlexSort(
-          key: 'titleSort',
-          title: 'Title',
-          defaultDirection: 'asc',
-        ),
+        PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
         PlexSort(
           key: 'addedAt',
           descKey: 'addedAt:desc',
@@ -740,11 +742,7 @@ class PlexClient {
       appLogger.e('Failed to get library sorts: $e');
       // Return fallback sort options on error
       return [
-        PlexSort(
-          key: 'titleSort',
-          title: 'Title',
-          defaultDirection: 'asc',
-        ),
+        PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
         PlexSort(
           key: 'addedAt',
           descKey: 'addedAt:desc',
@@ -829,5 +827,69 @@ class PlexClient {
     }
 
     return null;
+  }
+
+  /// Get library hubs (recommendations for a specific library section)
+  /// Returns a list of recommendation hubs like "Trending Movies", "Top in Genre", etc.
+  Future<List<PlexHub>> getLibraryHubs(
+    String sectionId, {
+    int limit = 10,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/hubs/sections/$sectionId',
+        queryParameters: {'count': limit, 'includeGuids': 1},
+      );
+
+      final container = _getMediaContainer(response);
+      if (container != null && container['Hub'] != null) {
+        final hubs = <PlexHub>[];
+        for (final hubJson in container['Hub'] as List) {
+          try {
+            final hub = PlexHub.fromJson(hubJson);
+            // Only include hubs that have items and are movie/show content
+            if (hub.items.isNotEmpty) {
+              // Filter out non-video content types
+              final videoItems = hub.items.where((item) {
+                final type = item.type.toLowerCase();
+                return type == 'movie' || type == 'show';
+              }).toList();
+
+              if (videoItems.isNotEmpty) {
+                hubs.add(
+                  PlexHub(
+                    hubKey: hub.hubKey,
+                    title: hub.title,
+                    type: hub.type,
+                    hubIdentifier: hub.hubIdentifier,
+                    size: hub.size,
+                    more: hub.more,
+                    items: videoItems,
+                  ),
+                );
+              }
+            }
+          } catch (e) {
+            appLogger.w('Failed to parse hub', error: e);
+          }
+        }
+        return hubs;
+      }
+    } catch (e) {
+      appLogger.e('Failed to get library hubs: $e');
+    }
+    return [];
+  }
+
+  /// Get playlist content by playlist ID
+  /// Returns the list of metadata items in the playlist
+  Future<List<PlexMetadata>> getPlaylist(String playlistId) async {
+    try {
+      final response = await _dio.get('/playlists/$playlistId/items');
+      return _extractMetadataList(response);
+    } catch (e) {
+      appLogger.e('Failed to get playlist: $e');
+      return [];
+    }
   }
 }
