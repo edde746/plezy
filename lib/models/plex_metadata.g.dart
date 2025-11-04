@@ -15,7 +15,7 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   title: json['title'] as String,
   contentRating: json['contentRating'] as String?,
   summary: json['summary'] as String?,
-  rating: (json['rating'] as num?)?.toInt(),
+  rating: (json['rating'] as num?)?.toDouble(),
   year: (json['year'] as num?)?.toInt(),
   thumb: json['thumb'] as String?,
   art: json['art'] as String?,
