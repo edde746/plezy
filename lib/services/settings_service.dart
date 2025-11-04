@@ -20,6 +20,7 @@ class SettingsService {
   static const String _keyUseSeasonPoster = 'use_season_poster';
   static const String _keySeekTimeSmall = 'seek_time_small';
   static const String _keySeekTimeLarge = 'seek_time_large';
+  static const String _keyMediaVersionPreferences = 'media_version_preferences';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -588,6 +589,47 @@ class SettingsService {
     }
   }
 
+  // Media Version Preferences
+  /// Save media version preference for a series
+  /// [seriesRatingKey] is the grandparentRatingKey for TV series, or ratingKey for movies
+  /// [mediaIndex] is the index of the selected media version
+  Future<void> setMediaVersionPreference(String seriesRatingKey, int mediaIndex) async {
+    final preferences = _getMediaVersionPreferences();
+    preferences[seriesRatingKey] = mediaIndex;
+
+    final jsonString = json.encode(preferences);
+    await _prefs.setString(_keyMediaVersionPreferences, jsonString);
+  }
+
+  /// Get saved media version preference for a series
+  /// Returns null if no preference is saved
+  int? getMediaVersionPreference(String seriesRatingKey) {
+    final preferences = _getMediaVersionPreferences();
+    return preferences[seriesRatingKey];
+  }
+
+  /// Clear media version preference for a series
+  Future<void> clearMediaVersionPreference(String seriesRatingKey) async {
+    final preferences = _getMediaVersionPreferences();
+    preferences.remove(seriesRatingKey);
+
+    final jsonString = json.encode(preferences);
+    await _prefs.setString(_keyMediaVersionPreferences, jsonString);
+  }
+
+  /// Get all media version preferences
+  Map<String, int> _getMediaVersionPreferences() {
+    final jsonString = _prefs.getString(_keyMediaVersionPreferences);
+    if (jsonString == null) return {};
+
+    try {
+      final decoded = json.decode(jsonString) as Map<String, dynamic>;
+      return decoded.map((key, value) => MapEntry(key, value as int));
+    } catch (e) {
+      return {};
+    }
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -603,6 +645,7 @@ class SettingsService {
       _prefs.remove(_keyUseSeasonPoster),
       _prefs.remove(_keySeekTimeSmall),
       _prefs.remove(_keySeekTimeLarge),
+      _prefs.remove(_keyMediaVersionPreferences),
     ]);
   }
 

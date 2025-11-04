@@ -14,12 +14,14 @@ import '../services/settings_service.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/platform_detector.dart';
+import '../models/plex_media_version.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
   final AudioTrack? preferredAudioTrack;
   final SubtitleTrack? preferredSubtitleTrack;
   final double? preferredPlaybackRate;
+  final int selectedMediaIndex;
 
   const VideoPlayerScreen({
     super.key,
@@ -27,6 +29,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
     this.preferredPlaybackRate,
+    this.selectedMediaIndex = 0,
   });
 
   @override
@@ -44,6 +47,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   bool _showPlayNextDialog = false;
   PlexClientProvider? _cachedClientProvider;
   bool _isPhone = false;
+  List<PlexMediaVersion> _availableVersions = [];
 
   @override
   void initState() {
@@ -119,6 +123,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Get the video URL and start playback
       _startPlayback();
 
+      // Load available media versions
+      _loadMediaVersions();
+
       // Set fullscreen mode and landscape orientation
       if (mounted) {
         try {
@@ -182,8 +189,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         throw Exception('No client available');
       }
 
-      // Get the direct file URL from the server
-      final videoUrl = await client.getVideoUrl(widget.metadata.ratingKey);
+      // Get the direct file URL from the server using the selected media index
+      final videoUrl = await client.getVideoUrl(
+        widget.metadata.ratingKey,
+        mediaIndex: widget.selectedMediaIndex,
+      );
 
       if (videoUrl != null) {
         // Open video without auto-playing
@@ -223,6 +233,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
+    }
+  }
+
+  /// Load available media versions for this item
+  Future<void> _loadMediaVersions() async {
+    try {
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) return;
+
+      final versions = await client.getMediaVersions(widget.metadata.ratingKey);
+      if (mounted) {
+        setState(() {
+          _availableVersions = versions;
+        });
+      }
+    } catch (e) {
+      appLogger.e('Error loading media versions: $e');
     }
   }
 
@@ -781,6 +809,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   widget.metadata,
                   onNext: _nextEpisode != null ? _playNext : null,
                   onPrevious: _previousEpisode != null ? _playPrevious : null,
+                  availableVersions: _availableVersions,
+                  selectedMediaIndex: widget.selectedMediaIndex,
                 ),
               ),
             ),

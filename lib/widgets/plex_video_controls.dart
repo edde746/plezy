@@ -7,6 +7,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
+import '../models/plex_media_version.dart';
 import '../providers/plex_client_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/keyboard_shortcuts_service.dart';
@@ -14,6 +15,7 @@ import '../services/settings_service.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
+import '../screens/video_player_screen.dart';
 import 'app_bar_back_button.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
@@ -22,12 +24,16 @@ Widget plexVideoControlsBuilder(
   PlexMetadata metadata, {
   VoidCallback? onNext,
   VoidCallback? onPrevious,
+  List<PlexMediaVersion>? availableVersions,
+  int? selectedMediaIndex,
 }) {
   return PlexVideoControls(
     player: player,
     metadata: metadata,
     onNext: onNext,
     onPrevious: onPrevious,
+    availableVersions: availableVersions ?? [],
+    selectedMediaIndex: selectedMediaIndex ?? 0,
   );
 }
 
@@ -36,6 +42,8 @@ class PlexVideoControls extends StatefulWidget {
   final PlexMetadata metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+  final List<PlexMediaVersion> availableVersions;
+  final int selectedMediaIndex;
 
   const PlexVideoControls({
     super.key,
@@ -43,6 +51,8 @@ class PlexVideoControls extends StatefulWidget {
     required this.metadata,
     this.onNext,
     this.onPrevious,
+    this.availableVersions = const [],
+    this.selectedMediaIndex = 0,
   });
 
   @override
@@ -288,6 +298,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               IconButton(
                 icon: const Icon(Icons.video_library, color: Colors.white),
                 onPressed: _showChapterBottomSheet,
+              ),
+            if (widget.availableVersions.length > 1)
+              IconButton(
+                icon: const Icon(Icons.video_file, color: Colors.white),
+                onPressed: _showVersionBottomSheet,
               ),
           ],
         );
@@ -1778,6 +1793,119 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         },
       ),
     );
+  }
+
+  void _showVersionBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      isScrollControlled: true,
+      constraints: _getBottomSheetConstraints(),
+      builder: (context) {
+        final versions = widget.availableVersions;
+        final currentIndex = widget.selectedMediaIndex;
+
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.75,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.video_file, color: Colors.white),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Video Version',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(color: Colors.white24, height: 1),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: versions.length,
+                    itemBuilder: (context, index) {
+                      final version = versions[index];
+                      final isSelected = index == currentIndex;
+
+                      return ListTile(
+                        title: Text(
+                          version.displayLabel,
+                          style: TextStyle(
+                            color: isSelected ? Colors.blue : Colors.white,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check, color: Colors.blue)
+                            : null,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _switchMediaVersion(index);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Switch to a different media version
+  Future<void> _switchMediaVersion(int newMediaIndex) async {
+    if (newMediaIndex == widget.selectedMediaIndex) {
+      return; // Already using this version
+    }
+
+    try {
+      // Save current playback position
+      final currentPosition = widget.player.state.position;
+
+      // Save the preference
+      final settingsService = await SettingsService.getInstance();
+      final seriesKey = widget.metadata.grandparentRatingKey ??
+          widget.metadata.ratingKey;
+      await settingsService.setMediaVersionPreference(seriesKey, newMediaIndex);
+
+      // Navigate to new player screen with the selected version
+      // Use PageRouteBuilder with zero-duration transitions to prevent orientation reset
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder<bool>(
+            pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
+              metadata: widget.metadata.copyWith(
+                viewOffset: currentPosition.inMilliseconds,
+              ),
+              selectedMediaIndex: newMediaIndex,
+            ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error switching version: $e')),
+        );
+      }
+    }
   }
 
   String _formatDuration(Duration duration) {

@@ -70,6 +70,74 @@ class PlexMetadata {
     this.viewedLeafCount,
   });
 
+  /// Create a copy of this metadata with optional field overrides
+  PlexMetadata copyWith({
+    String? ratingKey,
+    String? key,
+    String? guid,
+    String? studio,
+    String? type,
+    String? title,
+    String? contentRating,
+    String? summary,
+    double? rating,
+    int? year,
+    String? thumb,
+    String? art,
+    int? duration,
+    int? addedAt,
+    int? updatedAt,
+    String? grandparentTitle,
+    String? grandparentThumb,
+    String? grandparentArt,
+    String? grandparentRatingKey,
+    String? parentTitle,
+    String? parentThumb,
+    String? parentRatingKey,
+    int? parentIndex,
+    int? index,
+    String? grandparentTheme,
+    int? viewOffset,
+    int? viewCount,
+    int? leafCount,
+    int? viewedLeafCount,
+  }) {
+    final copy = PlexMetadata(
+      ratingKey: ratingKey ?? this.ratingKey,
+      key: key ?? this.key,
+      guid: guid ?? this.guid,
+      studio: studio ?? this.studio,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      contentRating: contentRating ?? this.contentRating,
+      summary: summary ?? this.summary,
+      rating: rating ?? this.rating,
+      year: year ?? this.year,
+      thumb: thumb ?? this.thumb,
+      art: art ?? this.art,
+      duration: duration ?? this.duration,
+      addedAt: addedAt ?? this.addedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      grandparentTitle: grandparentTitle ?? this.grandparentTitle,
+      grandparentThumb: grandparentThumb ?? this.grandparentThumb,
+      grandparentArt: grandparentArt ?? this.grandparentArt,
+      grandparentRatingKey: grandparentRatingKey ?? this.grandparentRatingKey,
+      parentTitle: parentTitle ?? this.parentTitle,
+      parentThumb: parentThumb ?? this.parentThumb,
+      parentRatingKey: parentRatingKey ?? this.parentRatingKey,
+      parentIndex: parentIndex ?? this.parentIndex,
+      index: index ?? this.index,
+      grandparentTheme: grandparentTheme ?? this.grandparentTheme,
+      viewOffset: viewOffset ?? this.viewOffset,
+      viewCount: viewCount ?? this.viewCount,
+      leafCount: leafCount ?? this.leafCount,
+      viewedLeafCount: viewedLeafCount ?? this.viewedLeafCount,
+    );
+    // Preserve clearLogo
+    copy._clearLogo = _clearLogo;
+    return copy;
+  }
+
   // Extract clearLogo from Image array in raw JSON
   void _extractClearLogo(Map<String, dynamic> json) {
     if (!json.containsKey('Image')) return;

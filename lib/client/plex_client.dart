@@ -6,6 +6,7 @@ import '../models/plex_media_info.dart';
 import '../models/plex_file_info.dart';
 import '../models/plex_filter.dart';
 import '../models/plex_sort.dart';
+import '../models/plex_media_version.dart';
 import '../utils/app_logger.dart';
 
 /// Result of testing a connection, including success status and latency
@@ -372,14 +373,22 @@ class PlexClient {
   }
 
   /// Get video URL for direct playback
-  Future<String?> getVideoUrl(String ratingKey) async {
+  /// [mediaIndex] specifies which Media item to use (defaults to 0 - first version)
+  Future<String?> getVideoUrl(String ratingKey, {int mediaIndex = 0}) async {
     final response = await _dio.get('/library/metadata/$ratingKey');
     final metadataJson = _getFirstMetadataJson(response);
 
     if (metadataJson != null &&
         metadataJson['Media'] != null &&
         (metadataJson['Media'] as List).isNotEmpty) {
-      final media = metadataJson['Media'][0];
+      final mediaList = metadataJson['Media'] as List;
+
+      // Ensure the requested index is valid
+      if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
+        mediaIndex = 0;
+      }
+
+      final media = mediaList[mediaIndex];
       if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
         final part = media['Part'][0];
         final partKey = part['key'] as String?;
@@ -420,14 +429,22 @@ class PlexClient {
   }
 
   /// Get detailed media info including chapters and tracks
-  Future<PlexMediaInfo?> getMediaInfo(String ratingKey) async {
+  /// [mediaIndex] specifies which Media item to use (defaults to 0 - first version)
+  Future<PlexMediaInfo?> getMediaInfo(String ratingKey, {int mediaIndex = 0}) async {
     final response = await _dio.get('/library/metadata/$ratingKey');
     final metadataJson = _getFirstMetadataJson(response);
 
     if (metadataJson != null &&
         metadataJson['Media'] != null &&
         (metadataJson['Media'] as List).isNotEmpty) {
-      final media = metadataJson['Media'][0];
+      final mediaList = metadataJson['Media'] as List;
+
+      // Ensure the requested index is valid
+      if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
+        mediaIndex = 0;
+      }
+
+      final media = mediaList[mediaIndex];
       if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
         final part = media['Part'][0];
         final partKey = part['key'] as String?;
@@ -504,6 +521,24 @@ class PlexClient {
     }
 
     return null;
+  }
+
+  /// Get all available media versions for a media item
+  /// Returns a list of PlexMediaVersion objects representing different quality/format options
+  Future<List<PlexMediaVersion>> getMediaVersions(String ratingKey) async {
+    final response = await _dio.get('/library/metadata/$ratingKey');
+    final metadataJson = _getFirstMetadataJson(response);
+
+    if (metadataJson != null &&
+        metadataJson['Media'] != null &&
+        (metadataJson['Media'] as List).isNotEmpty) {
+      final mediaList = metadataJson['Media'] as List;
+      return mediaList
+          .map((media) => PlexMediaVersion.fromJson(media as Map<String, dynamic>))
+          .toList();
+    }
+
+    return [];
   }
 
   /// Get file information for a media item
