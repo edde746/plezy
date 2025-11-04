@@ -162,12 +162,27 @@ class StorageService {
     }
   }
 
+  // Library Sort (per-library, stored individually)
+  Future<void> saveLibrarySort(String sectionId, String sortKey) async {
+    await _prefs.setString('library_sort_$sectionId', sortKey);
+  }
+
+  String getLibrarySort(String sectionId) {
+    // Return saved sort or default to titleSort (alphabetical)
+    return _prefs.getString('library_sort_$sectionId') ?? 'titleSort';
+  }
+
   // Clear library preferences
   Future<void> clearLibraryPreferences() async {
     await Future.wait([
       _prefs.remove(_keySelectedLibraryIndex),
       _prefs.remove(_keyLibraryFilters),
     ]);
+
+    // Also clear all library sort preferences
+    final keys = _prefs.getKeys();
+    final sortKeys = keys.where((key) => key.startsWith('library_sort_'));
+    await Future.wait(sortKeys.map((key) => _prefs.remove(key)));
   }
 
   // User Profile (stored as JSON string)
