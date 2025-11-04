@@ -796,7 +796,7 @@ class PlexClient {
       return fallbackSorts;
     } catch (e) {
       appLogger.e('Failed to get library sorts: $e');
-      // Return minimal fallback sort options on error
+      // Return fallback sort options on error
       return [
         PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
         PlexSort(
