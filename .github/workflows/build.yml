@@ -2,9 +2,6 @@ name: Build Flutter App
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
 
 jobs:
   build-android:
@@ -50,8 +47,22 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Configure Android signing
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOF
+
       - name: Build APK
         run: flutter build apk --release
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f android/app/upload-keystore.jks android/key.properties
 
       - name: Rename APK
         run: |
