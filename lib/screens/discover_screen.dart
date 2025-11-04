@@ -32,6 +32,8 @@ class DiscoverScreen extends StatefulWidget {
 
 class _DiscoverScreenState extends State<DiscoverScreen>
     with Refreshable, ItemUpdatable, SingleTickerProviderStateMixin {
+  static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
+
   @override
   PlexClient get client => context.clientSafe;
 
@@ -51,7 +53,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     super.initState();
     _indicatorAnimationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 5),
+      duration: _heroAutoScrollDuration,
     );
     _loadContent();
     _startAutoScroll();
@@ -70,7 +72,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (_isAutoScrollPaused) return;
 
     _indicatorAnimationController.forward(from: 0.0);
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    _autoScrollTimer = Timer.periodic(_heroAutoScrollDuration, (timer) {
       if (_onDeck.isEmpty || !_heroController.hasClients || _isAutoScrollPaused)
         return;
 
