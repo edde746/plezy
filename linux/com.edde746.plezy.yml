@@ -81,6 +81,5 @@ modules:
 
       - type: git
         url: https://github.com/flutter/flutter.git
-        # NOTE: This will be replaced with SDK modules by flatpak-flutter preprocessing
-        tag: stable
+        tag: {{FLUTTER_VERSION}}
         dest: flutter

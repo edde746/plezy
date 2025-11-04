@@ -392,10 +392,13 @@ jobs:
         run: |
           # Extract version from pubspec.yaml (e.g., "1.3.1+10" -> "1.3.1")
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
+          # Extract Flutter SDK version from pubspec.yaml (e.g., "^3.8.1" -> "3.8.1")
+          FLUTTER_VERSION=$(grep -A1 '^environment:' pubspec.yaml | grep 'sdk:' | sed 's/.*: *//' | sed 's/\^//' | tr -d ' ')
           DATE=$(date -u +%Y-%m-%d)
           COMMIT_SHA=$(git rev-parse HEAD)
 
           echo "Version: $VERSION"
+          echo "Flutter SDK Version: $FLUTTER_VERSION"
           echo "Date: $DATE"
           echo "Commit SHA: $COMMIT_SHA"
 
@@ -403,8 +406,9 @@ jobs:
           sed -i "s/{{VERSION}}/$VERSION/g" linux/com.edde746.plezy.metainfo.xml
           sed -i "s/{{DATE}}/$DATE/g" linux/com.edde746.plezy.metainfo.xml
 
-          # Replace commit SHA placeholder in manifest
-          sed -i "s/{{COMMIT_SHA}}/$COMMIT_SHA/g" linux/com.edde746.plezy.yml
+          # Replace placeholders in manifest
+          sed -i "s|{{COMMIT_SHA}}|$COMMIT_SHA|g" linux/com.edde746.plezy.yml
+          sed -i "s|{{FLUTTER_VERSION}}|$FLUTTER_VERSION|g" linux/com.edde746.plezy.yml
 
       - name: Preprocess Flatpak manifest with flatpak-flutter
         run: |
