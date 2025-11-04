@@ -28,11 +28,7 @@ class MediaCard extends StatefulWidget {
   State<MediaCard> createState() => _MediaCardState();
 }
 
-class _MediaCardState extends State<MediaCard>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
+class _MediaCardState extends State<MediaCard> {
   void _handleTap(BuildContext context) async {
     final client = context.client;
     if (client == null) return;
@@ -76,7 +72,6 @@ class _MediaCardState extends State<MediaCard>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return SizedBox(
       width: widget.width,
       child: MediaContextMenu(
