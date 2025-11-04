@@ -14,7 +14,6 @@ import '../utils/app_logger.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
-import '../widgets/sort_bottom_sheet.dart';
 import '../services/storage_service.dart';
 import '../services/settings_service.dart';
 import '../mixins/refreshable.dart';
@@ -106,14 +105,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
       // Load saved library order and apply it
       final savedOrder = storage.getLibraryOrder();
-      final orderedLibraries = _applyLibraryOrder(
-        filteredLibraries,
-        savedOrder,
-      );
+      final orderedLibraries = _applyLibraryOrder(filteredLibraries, savedOrder);
 
       setState(() {
-        _allLibraries =
-            orderedLibraries; // Store all libraries with ordering applied
+        _allLibraries = orderedLibraries; // Store all libraries with ordering applied
         _isLoadingLibraries = false;
       });
 
@@ -132,9 +127,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         String? libraryKeyToLoad;
         if (savedLibraryKey != null) {
           // Check if saved library exists and is visible
-          final libraryExists = visibleLibraries.any(
-            (lib) => lib.key == savedLibraryKey,
-          );
+          final libraryExists = visibleLibraries
+              .any((lib) => lib.key == savedLibraryKey);
           if (libraryExists) {
             libraryKeyToLoad = savedLibraryKey;
           }
@@ -223,14 +217,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         .where((lib) => !hiddenKeys.contains(lib.key))
         .toList();
 
+
     // Find the library by key
-    final libraryIndex = visibleLibraries.indexWhere(
-      (lib) => lib.key == libraryKey,
-    );
+    final libraryIndex = visibleLibraries.indexWhere((lib) => lib.key == libraryKey);
     if (libraryIndex == -1) return; // Library not found or hidden
 
-    final isChangingLibrary =
-        !_isInitialLoad && _selectedLibraryKey != libraryKey;
+    final isChangingLibrary = !_isInitialLoad && _selectedLibraryKey != libraryKey;
 
     // Extract context dependencies before async operations
     final clientProvider = context.plexClient;
@@ -418,7 +410,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // Save sort preference for this library
     final storage = await StorageService.getInstance();
     final sortKey = sort.getSortKey(descending: descending);
-    await storage.saveLibrarySort(_selectedLibraryKey!, sortKey);
+    await storage.saveLibrarySort(
+      _selectedLibraryKey!,
+      sortKey,
+    );
 
     // Reload content with new sort
     _applyFilters();
@@ -445,9 +440,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       context,
       listen: false,
     );
-    final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(
-      library.key,
-    );
+    final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(library.key);
 
     if (isHidden) {
       await hiddenLibrariesProvider.unhideLibrary(library.key);
@@ -461,10 +454,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (isCurrentlySelected) {
         // Compute visible libraries after hiding
         final visibleLibraries = _allLibraries
-            .where(
-              (lib) =>
-                  !hiddenLibrariesProvider.hiddenLibraryKeys.contains(lib.key),
-            )
+            .where((lib) => !hiddenLibrariesProvider.hiddenLibraryKeys.contains(lib.key))
             .toList();
 
         if (visibleLibraries.isNotEmpty) {
@@ -473,6 +463,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       }
     }
   }
+
 
   void _showFiltersBottomSheet() {
     showModalBottomSheet(
@@ -501,7 +492,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => SortBottomSheet(
+      builder: (context) => _SortBottomSheet(
         sortOptions: _sortOptions,
         selectedSort: _selectedSort,
         isSortDescending: _isSortDescending,
@@ -536,6 +527,323 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
+  void _showLibraryOptionsMenu(PlexLibrary library) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.refresh),
+                title: const Text('Scan Library Files'),
+                subtitle: const Text('Detect new files added to library'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showConfirmationDialog(
+                    title: 'Scan Library',
+                    message:
+                        'This will scan "${library.title}" for new files. Continue?',
+                    onConfirm: () => _scanLibrary(library),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.analytics_outlined),
+                title: const Text('Analyze'),
+                subtitle: const Text('Analyze library for intro markers'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showConfirmationDialog(
+                    title: 'Analyze Library',
+                    message:
+                        'This will analyze "${library.title}" for intro markers and other metadata. This may take some time. Continue?',
+                    onConfirm: () => _analyzeLibrary(library),
+                  );
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.sync, color: Colors.red),
+                title: const Row(
+                  children: [
+                    Text('Refresh Metadata', style: TextStyle(color: Colors.red)),
+                    SizedBox(width: 8),
+                    Chip(
+                      label: Text(
+                        'DANGER',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      backgroundColor: Colors.red,
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                subtitle: const Text('Update metadata for all items - may take time'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showConfirmationDialog(
+                    title: 'Refresh Metadata',
+                    message:
+                        'This will refresh metadata for all items in "${library.title}". This may take some time. Continue?',
+                    onConfirm: () => _refreshLibraryMetadata(library),
+                    isDestructive: true,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Row(
+                  children: [
+                    Text('Empty Trash', style: TextStyle(color: Colors.red)),
+                    SizedBox(width: 8),
+                    Chip(
+                      label: Text(
+                        'DANGER',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      backgroundColor: Colors.red,
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                subtitle: const Text('Permanently delete trashed items - cannot be undone'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showConfirmationDialog(
+                    title: 'Empty Trash',
+                    message:
+                        'This will permanently delete all trashed items in "${library.title}". This action cannot be undone. Continue?',
+                    onConfirm: () => _emptyLibraryTrash(library),
+                    isDestructive: true,
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showConfirmationDialog({
+    required String title,
+    required String message,
+    required VoidCallback onConfirm,
+    bool isDestructive = false,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+                onConfirm();
+              },
+              style: isDestructive
+                  ? FilledButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    )
+                  : null,
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _scanLibrary(PlexLibrary library) async {
+    try {
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      // Show progress indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Scanning "${library.title}"...'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      await client.scanLibrary(library.key);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Library scan started for "${library.title}"'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      appLogger.e('Failed to scan library', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to scan library: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _refreshLibraryMetadata(PlexLibrary library) async {
+    try {
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      // Show progress indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Refreshing metadata for "${library.title}"...'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      await client.refreshLibraryMetadata(library.key);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Metadata refresh started for "${library.title}"'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      appLogger.e('Failed to refresh library metadata', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to refresh metadata: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _emptyLibraryTrash(PlexLibrary library) async {
+    try {
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      // Show progress indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Emptying trash for "${library.title}"...'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      await client.emptyLibraryTrash(library.key);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Trash emptied for "${library.title}"'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      appLogger.e('Failed to empty library trash', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to empty trash: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _analyzeLibrary(PlexLibrary library) async {
+    try {
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception('No client available');
+      }
+
+      // Show progress indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Analyzing "${library.title}"...'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      await client.analyzeLibrary(library.key);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Analysis started for "${library.title}"'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      appLogger.e('Failed to analyze library', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to analyze library: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     // Watch for hidden libraries changes to trigger rebuild
@@ -561,10 +869,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             actions: [
               if (_allLibraries.isNotEmpty)
                 IconButton(
-                  icon: const Icon(
-                    Icons.edit,
-                    semanticLabel: 'Manage Libraries',
-                  ),
+                  icon: const Icon(Icons.edit, semanticLabel: 'Manage Libraries'),
                   onPressed: _showLibraryManagementSheet,
                 ),
               if (_sortOptions.isNotEmpty)
@@ -642,48 +947,74 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   vertical: 8,
                 ),
                 child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: List.generate(visibleLibraries.length, (index) {
-                      final library = visibleLibraries[index];
-                      final isSelected = library.key == _selectedLibraryKey;
-                      final t = tokens(context);
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _getLibraryIcon(library.type),
-                                size: 16,
-                                color: isSelected ? t.bg : t.text,
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: List.generate(visibleLibraries.length, (index) {
+                            final library = visibleLibraries[index];
+                            final isSelected = library.key == _selectedLibraryKey;
+                            final t = tokens(context);
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  ChoiceChip(
+                                    label: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          _getLibraryIcon(library.type),
+                                          size: 16,
+                                          color: isSelected ? t.bg : t.text,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(library.title),
+                                        if (isSelected) const SizedBox(width: 24), // Space for the menu icon only when selected
+                                      ],
+                                    ),
+                                    selected: isSelected,
+                                    onSelected: (selected) {
+                                      if (selected) {
+                                        _loadLibraryContent(library.key);
+                                      }
+                                    },
+                                    backgroundColor: t.surface,
+                                    selectedColor: t.text,
+                                    side: BorderSide(color: t.outline),
+                                    labelStyle: TextStyle(
+                                      color: isSelected ? t.bg : t.text,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                    ),
+                                    showCheckmark: false,
+                                  ),
+                                  if (isSelected)
+                                    Positioned(
+                                      right: 4,
+                                      top: 0,
+                                      bottom: 0,
+                                      child: Center(
+                                        child: InkWell(
+                                          onTap: () => _showLibraryOptionsMenu(library),
+                                          borderRadius: BorderRadius.circular(20),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(4),
+                                            child: Icon(
+                                              Icons.more_vert,
+                                              size: 18,
+                                              color: t.bg,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                              const SizedBox(width: 6),
-                              Text(library.title),
-                            ],
-                          ),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) {
-                              _loadLibraryContent(library.key);
-                            }
-                          },
-                          backgroundColor: t.surface,
-                          selectedColor: t.text,
-                          side: BorderSide(color: t.outline),
-                          labelStyle: TextStyle(
-                            color: isSelected ? t.bg : t.text,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                          showCheckmark: false,
+                            );
+                          }),
                         ),
-                      );
-                    }),
-                  ),
-                ),
+                      ),
               ),
             ),
 
@@ -1133,6 +1464,141 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
   }
 }
 
+class _SortBottomSheet extends StatefulWidget {
+  final List<PlexSort> sortOptions;
+  final PlexSort? selectedSort;
+  final bool isSortDescending;
+  final Function(PlexSort, bool) onSortChanged;
+
+  const _SortBottomSheet({
+    required this.sortOptions,
+    required this.selectedSort,
+    required this.isSortDescending,
+    required this.onSortChanged,
+  });
+
+  @override
+  State<_SortBottomSheet> createState() => _SortBottomSheetState();
+}
+
+class _SortBottomSheetState extends State<_SortBottomSheet> {
+  late PlexSort? _tempSelectedSort;
+  late bool _tempDescending;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelectedSort = widget.selectedSort;
+    _tempDescending = widget.isSortDescending;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Sort By',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Sort options list
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: widget.sortOptions.length,
+                itemBuilder: (context, index) {
+                  final sort = widget.sortOptions[index];
+                  final isSelected = _tempSelectedSort?.key == sort.key;
+
+                  return ListTile(
+                    title: Text(sort.title),
+                    trailing: isSelected
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Direction toggle buttons
+                              SegmentedButton<bool>(
+                                showSelectedIcon: false,
+                                segments: const [
+                                  ButtonSegment(
+                                    value: false,
+                                    icon: Icon(Icons.arrow_upward, size: 16),
+                                  ),
+                                  ButtonSegment(
+                                    value: true,
+                                    icon: Icon(Icons.arrow_downward, size: 16),
+                                  ),
+                                ],
+                                selected: {_tempDescending},
+                                onSelectionChanged: (Set<bool> selected) {
+                                  widget.onSortChanged(sort, selected.first);
+                                },
+                              ),
+                            ],
+                          )
+                        : null,
+                    leading: Radio<String>(
+                      value: sort.key,
+                      groupValue: _tempSelectedSort?.key,
+                      onChanged: (value) {
+                        setState(() {
+                          _tempSelectedSort = sort;
+                          // Use default direction for newly selected sort
+                          _tempDescending = sort.isDefaultDescending;
+                        });
+                        // Apply sort immediately with default direction
+                        widget.onSortChanged(sort, sort.isDefaultDescending);
+                      },
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _tempSelectedSort = sort;
+                        // Use default direction for newly selected sort
+                        _tempDescending = sort.isDefaultDescending;
+                      });
+                      // Apply sort immediately with default direction
+                      widget.onSortChanged(sort, sort.isDefaultDescending);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _LibraryManagementSheet extends StatefulWidget {
   final List<PlexLibrary> allLibraries;
   final Set<String> hiddenLibraryKeys;
@@ -1147,8 +1613,7 @@ class _LibraryManagementSheet extends StatefulWidget {
   });
 
   @override
-  State<_LibraryManagementSheet> createState() =>
-      _LibraryManagementSheetState();
+  State<_LibraryManagementSheet> createState() => _LibraryManagementSheetState();
 }
 
 class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
@@ -1255,9 +1720,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                               padding: const EdgeInsets.only(right: 12),
                               child: Icon(
                                 Icons.drag_indicator,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
                               ),
                             ),
                           ),

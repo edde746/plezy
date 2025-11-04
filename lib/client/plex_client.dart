@@ -945,4 +945,28 @@ class PlexClient {
       return [];
     }
   }
+
+  // ============================================================================
+  // Library Management Methods
+  // ============================================================================
+
+  /// Scan/refresh a library section to detect new files
+  Future<void> scanLibrary(String sectionId) async {
+    await _dio.get('/library/sections/$sectionId/refresh');
+  }
+
+  /// Refresh metadata for a library section
+  Future<void> refreshLibraryMetadata(String sectionId) async {
+    await _dio.get('/library/sections/$sectionId/refresh?force=1');
+  }
+
+  /// Empty trash for a library section
+  Future<void> emptyLibraryTrash(String sectionId) async {
+    await _dio.put('/library/sections/$sectionId/emptyTrash');
+  }
+
+  /// Analyze library section
+  Future<void> analyzeLibrary(String sectionId) async {
+    await _dio.get('/library/sections/$sectionId/analyze');
+  }
 }
