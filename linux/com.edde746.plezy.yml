@@ -1,0 +1,87 @@
+app-id: com.edde746.plezy
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+command: plezy
+
+finish-args:
+  # Graphics and display
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+
+  # Audio
+  - --socket=pulseaudio
+
+  # Network access (required for Plex)
+  - --share=network
+
+  # Minimal filesystem access (home directory read-only)
+  - --filesystem=home:ro
+
+  # Allow access to config directory
+  - --filesystem=xdg-config/plezy:create
+  - --filesystem=xdg-data/plezy:create
+
+modules:
+  # MPV for video playback
+  - name: mpv
+    buildsystem: simple
+    build-commands:
+      - python3 waf configure --prefix=/app --enable-libmpv-shared --disable-cplayer --disable-build-date
+        --disable-alsa
+      - python3 waf build
+      - python3 waf install
+    sources:
+      - type: archive
+        url: https://github.com/mpv-player/mpv/archive/v0.37.0.tar.gz
+        sha256: 1d2d4adbaf048a2fa6ee134575032c4b2dad9a7efafd5b3e69b88db935afaddf
+      - type: file
+        url: https://waf.io/waf-2.0.25
+        sha256: 21199cd220ccf60434133e1fd2ab8c8e5217c3799199c82722543970dc8e38d5
+        dest-filename: waf
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+      - /share/man
+
+  # Main application
+  - name: plezy
+    buildsystem: simple
+    build-commands:
+      # Set up Flutter PATH
+      - export PATH="$PATH:/usr/src/flatpak/flutter/bin"
+      - export PUB_CACHE=/usr/src/flatpak/.pub-cache
+
+      # Build the app
+      - flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true
+
+      # Install application files
+      - mkdir -p /app/bin
+      - mkdir -p /app/share/applications
+      - mkdir -p /app/share/metainfo
+      - mkdir -p /app/share/icons/hicolor/512x512/apps
+
+      # Copy built application
+      - cp -r build/linux/x64/release/bundle /app/plezy
+      - ln -s /app/plezy/plezy /app/bin/plezy
+
+      # Install desktop file and metadata
+      - install -Dm644 linux/com.edde746.plezy.desktop /app/share/applications/com.edde746.plezy.desktop
+      - install -Dm644 linux/com.edde746.plezy.metainfo.xml /app/share/metainfo/com.edde746.plezy.metainfo.xml
+
+      # Install icon
+      - install -Dm644 android/fastlane/metadata/android/en-GB/images/icon.png /app/share/icons/hicolor/512x512/apps/com.edde746.plezy.png
+
+    sources:
+      - type: git
+        url: https://github.com/edde746/plex-flutter.git
+        # NOTE: This will be replaced with actual commit hash by flatpak-flutter preprocessing
+        commit: HEAD
+
+      - type: git
+        url: https://github.com/flutter/flutter.git
+        # NOTE: This will be replaced with SDK modules by flatpak-flutter preprocessing
+        tag: stable
+        dest: flutter
