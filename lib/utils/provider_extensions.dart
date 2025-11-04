@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/plex_client_provider.dart';
 import '../providers/user_profile_provider.dart';
+import '../providers/hidden_libraries_provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_user_profile.dart';
 
@@ -17,6 +18,12 @@ extension ProviderExtensions on BuildContext {
 
   UserProfileProvider watchUserProfile() =>
       Provider.of<UserProfileProvider>(this, listen: true);
+
+  HiddenLibrariesProvider get hiddenLibraries =>
+      Provider.of<HiddenLibrariesProvider>(this, listen: false);
+
+  HiddenLibrariesProvider watchHiddenLibraries() =>
+      Provider.of<HiddenLibrariesProvider>(this, listen: true);
 
   // Direct client access (nullable)
   PlexClient? get client => plexClient.client;
