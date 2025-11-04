@@ -60,6 +60,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   KeyboardShortcutsService? _keyboardService;
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
+  // Double-tap feedback state
+  bool _showDoubleTapFeedback = false;
+  double _doubleTapFeedbackOpacity = 0.0;
+  bool _lastDoubleTapWasForward = true;
+  Timer? _feedbackTimer;
 
   @override
   void initState() {
@@ -123,6 +128,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void dispose() {
     _hideTimer?.cancel();
+    _feedbackTimer?.cancel();
     _focusNode.dispose();
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
@@ -378,6 +384,69 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
+  /// Handle double-tap skip forward or backward
+  void _handleDoubleTapSkip({required bool isForward}) {
+    // Perform the seek
+    _seekWithClamping(
+      Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall),
+    );
+
+    // Show visual feedback
+    _showSkipFeedback(isForward: isForward);
+  }
+
+  /// Show animated visual feedback for skip gesture
+  void _showSkipFeedback({required bool isForward}) {
+    _feedbackTimer?.cancel();
+
+    setState(() {
+      _lastDoubleTapWasForward = isForward;
+      _showDoubleTapFeedback = true;
+      _doubleTapFeedbackOpacity = 1.0;
+    });
+
+    // Fade out after delay
+    _feedbackTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _doubleTapFeedbackOpacity = 0.0;
+        });
+
+        Timer(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() {
+              _showDoubleTapFeedback = false;
+            });
+          }
+        });
+      }
+    });
+  }
+
+  /// Build the visual feedback widget for double-tap skip
+  Widget _buildDoubleTapFeedback() {
+    return Align(
+      alignment: _lastDoubleTapWasForward
+          ? Alignment.centerRight
+          : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 60),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.6),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          _lastDoubleTapWasForward
+              ? _getForwardIcon(_seekTimeSmall)
+              : _getReplayIcon(_seekTimeSmall),
+          color: Colors.white,
+          size: 48,
+        ),
+      ),
+    );
+  }
+
   Future<void> _toggleFullscreen() async {
     if (!PlatformDetector.isMobile(context)) {
       // Query actual window state to determine what action to take
@@ -515,6 +584,63 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       ],
                     );
                   },
+                ),
+              ),
+            // Mobile double-tap zones for skip forward/backward
+            if (isMobile)
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final height = constraints.maxHeight;
+                    final width = constraints.maxWidth;
+                    final topExclude = height * 0.15; // Exclude top 15% (top bar)
+                    final bottomExclude = height * 0.15; // Exclude bottom 15% (seek slider)
+                    final leftZoneWidth = width * 0.35; // Left 35%
+
+                    return Stack(
+                      children: [
+                        // Left zone - skip backward
+                        Positioned(
+                          left: 0,
+                          top: topExclude,
+                          bottom: bottomExclude,
+                          width: leftZoneWidth,
+                          child: GestureDetector(
+                            onTap: _toggleControls,
+                            onDoubleTap: () =>
+                                _handleDoubleTapSkip(isForward: false),
+                            behavior: HitTestBehavior.translucent,
+                            child: Container(color: Colors.transparent),
+                          ),
+                        ),
+                        // Right zone - skip forward
+                        Positioned(
+                          right: 0,
+                          top: topExclude,
+                          bottom: bottomExclude,
+                          width: leftZoneWidth,
+                          child: GestureDetector(
+                            onTap: _toggleControls,
+                            onDoubleTap: () =>
+                                _handleDoubleTapSkip(isForward: true),
+                            behavior: HitTestBehavior.translucent,
+                            child: Container(color: Colors.transparent),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            // Visual feedback overlay for double-tap
+            if (isMobile && _showDoubleTapFeedback)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedOpacity(
+                    opacity: _doubleTapFeedbackOpacity,
+                    duration: const Duration(milliseconds: 300),
+                    child: _buildDoubleTapFeedback(),
+                  ),
                 ),
               ),
           ],
