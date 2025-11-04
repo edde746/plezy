@@ -81,5 +81,5 @@ modules:
 
       - type: git
         url: https://github.com/flutter/flutter.git
-        tag: {{FLUTTER_VERSION}}
+        tag: 3.35.6
         dest: flutter
