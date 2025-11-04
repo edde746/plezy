@@ -375,7 +375,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   ) {
     appLogger.d('Audio track selection using user profile');
     appLogger.d(
-      'Profile settings - autoSelectAudio: ${profile.autoSelectAudio}, defaultAudioLanguage: ${profile.defaultAudioLanguage}',
+      'Profile settings - autoSelectAudio: ${profile.autoSelectAudio}, defaultAudioLanguage: ${profile.defaultAudioLanguage}, defaultAudioLanguages: ${profile.defaultAudioLanguages}',
     );
 
     if (availableTracks.isEmpty || !profile.autoSelectAudio) {
@@ -385,31 +385,43 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       return null;
     }
 
-    final preferredLanguage = profile.defaultAudioLanguage;
-    if (preferredLanguage == null || preferredLanguage.isEmpty) {
-      appLogger.d('Cannot use profile: No defaultAudioLanguage specified');
+    // Build list of preferred languages
+    final preferredLanguages = <String>[];
+    if (profile.defaultAudioLanguage != null && profile.defaultAudioLanguage!.isNotEmpty) {
+      preferredLanguages.add(profile.defaultAudioLanguage!);
+    }
+    if (profile.defaultAudioLanguages != null) {
+      preferredLanguages.addAll(profile.defaultAudioLanguages!);
+    }
+
+    if (preferredLanguages.isEmpty) {
+      appLogger.d('Cannot use profile: No defaultAudioLanguage(s) specified');
       return null;
     }
 
-    // Get all possible language code variations (e.g., "en" → ["en", "eng"])
-    final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-    appLogger.d(
-      'Checking language variations: ${languageVariations.join(", ")}',
-    );
+    appLogger.d('Preferred languages: ${preferredLanguages.join(", ")}');
 
-    // Try to find track matching any language variation
-    for (var track in availableTracks) {
-      final trackLang = track.language?.toLowerCase();
-      if (trackLang != null && languageVariations.contains(trackLang)) {
-        appLogger.d(
-          'Found audio track matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
-        );
-        return track;
+    // Try to find track matching any preferred language
+    for (final preferredLanguage in preferredLanguages) {
+      // Get all possible language code variations (e.g., "en" → ["en", "eng"])
+      final languageVariations = LanguageCodes.getVariations(preferredLanguage);
+      appLogger.d(
+        'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
+      );
+
+      for (var track in availableTracks) {
+        final trackLang = track.language?.toLowerCase();
+        if (trackLang != null && languageVariations.contains(trackLang)) {
+          appLogger.d(
+            'Found audio track matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
+          );
+          return track;
+        }
       }
     }
 
     appLogger.d(
-      'No audio track found matching profile language "$preferredLanguage" or its variations',
+      'No audio track found matching profile languages or their variations',
     );
     return null;
   }
@@ -434,11 +446,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   SubtitleTrack? _findSubtitleTrackByProfile(
     List<SubtitleTrack> availableTracks,
-    PlexUserProfile profile,
-  ) {
+    PlexUserProfile profile, {
+    AudioTrack? selectedAudioTrack,
+  }) {
     appLogger.d('Subtitle track selection using user profile');
     appLogger.d(
-      'Profile settings - autoSelectSubtitle: ${profile.autoSelectSubtitle}, defaultSubtitleLanguage: ${profile.defaultSubtitleLanguage}, defaultSubtitleForced: ${profile.defaultSubtitleForced}',
+      'Profile settings - autoSelectSubtitle: ${profile.autoSelectSubtitle}, defaultSubtitleLanguage: ${profile.defaultSubtitleLanguage}, defaultSubtitleLanguages: ${profile.defaultSubtitleLanguages}, defaultSubtitleForced: ${profile.defaultSubtitleForced}, defaultSubtitleAccessibility: ${profile.defaultSubtitleAccessibility}',
     );
 
     if (availableTracks.isEmpty) {
@@ -446,61 +459,181 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       return null;
     }
 
-    // If autoSelectSubtitle is 0, don't select any subtitle
-    if (!profile.shouldAutoSelectSubtitle) {
+    // Mode 0: Manually selected - return OFF
+    if (profile.autoSelectSubtitle == 0) {
       appLogger.d(
-        'Profile specifies no auto-select (autoSelectSubtitle=0) - Subtitles OFF',
+        'Profile specifies manual mode (autoSelectSubtitle=0) - Subtitles OFF',
       );
       return SubtitleTrack.no();
     }
 
-    final preferredLanguage = profile.defaultSubtitleLanguage;
-    if (preferredLanguage == null || preferredLanguage.isEmpty) {
-      appLogger.d('Cannot use profile: No defaultSubtitleLanguage specified');
+    // Mode 1: Shown with foreign audio
+    if (profile.autoSelectSubtitle == 1) {
+      appLogger.d('Profile specifies foreign audio mode (autoSelectSubtitle=1)');
+
+      // Check if audio language matches user's preferred subtitle language
+      if (selectedAudioTrack != null && profile.defaultSubtitleLanguage != null) {
+        final audioLang = selectedAudioTrack.language?.toLowerCase();
+        final prefLang = profile.defaultSubtitleLanguage!.toLowerCase();
+        final languageVariations = LanguageCodes.getVariations(prefLang);
+
+        appLogger.d('Checking if audio is foreign - audio: $audioLang, preferred subtitle lang: $prefLang');
+
+        // If audio matches preferred language, no subtitles needed
+        if (audioLang != null && languageVariations.contains(audioLang)) {
+          appLogger.d('Audio matches preferred language - Subtitles OFF');
+          return SubtitleTrack.no();
+        }
+        appLogger.d('Foreign audio detected - enabling subtitles');
+      }
+      // Foreign audio detected or cannot determine, enable subtitles
+    }
+
+    // Mode 2: Always enabled (or continuing from mode 1 with foreign audio)
+    appLogger.d('Selecting subtitle track based on preferences');
+
+    // Build list of preferred languages
+    final preferredLanguages = <String>[];
+    if (profile.defaultSubtitleLanguage != null && profile.defaultSubtitleLanguage!.isNotEmpty) {
+      preferredLanguages.add(profile.defaultSubtitleLanguage!);
+    }
+    if (profile.defaultSubtitleLanguages != null) {
+      preferredLanguages.addAll(profile.defaultSubtitleLanguages!);
+    }
+
+    if (preferredLanguages.isEmpty) {
+      appLogger.d('Cannot use profile: No defaultSubtitleLanguage(s) specified');
       return null;
     }
 
-    // Get all possible language code variations (e.g., "en" → ["en", "eng"])
-    final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-    appLogger.d(
-      'Checking language variations: ${languageVariations.join(", ")}',
-    );
+    appLogger.d('Preferred languages: ${preferredLanguages.join(", ")}');
 
-    // If defaultSubtitleForced is 1, prefer forced subtitles
-    if (profile.preferForcedSubtitles) {
-      appLogger.d('Profile prefers forced subtitles (defaultSubtitleForced=1)');
-      // Try to find forced subtitle in preferred language
-      for (var track in availableTracks) {
+    // Apply filtering based on preferences
+    var candidateTracks = availableTracks;
+
+    // Filter by SDH (defaultSubtitleAccessibility: 0-3)
+    candidateTracks = _filterSubtitlesBySDH(candidateTracks, profile.defaultSubtitleAccessibility);
+
+    // Filter by forced subtitle preference (defaultSubtitleForced: 0-3)
+    candidateTracks = _filterSubtitlesByForced(candidateTracks, profile.defaultSubtitleForced);
+
+    // If no candidates after filtering, relax filters
+    if (candidateTracks.isEmpty) {
+      appLogger.d('No tracks match strict filters, relaxing filters');
+      candidateTracks = availableTracks;
+    }
+
+    // Try to find track matching any preferred language
+    for (final preferredLanguage in preferredLanguages) {
+      final languageVariations = LanguageCodes.getVariations(preferredLanguage);
+      appLogger.d(
+        'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
+      );
+
+      for (var track in candidateTracks) {
         final trackLang = track.language?.toLowerCase();
-        if (trackLang != null &&
-            languageVariations.contains(trackLang) &&
-            track.title?.toLowerCase().contains('forced') == true) {
+        if (trackLang != null && languageVariations.contains(trackLang)) {
           appLogger.d(
-            'Found forced subtitle matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
+            'Found subtitle matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
           );
           return track;
         }
       }
-      appLogger.d(
-        'No forced subtitle found in "$preferredLanguage" or its variations, trying regular subtitles',
-      );
-    }
-
-    // Try to find regular subtitle in preferred language
-    for (var track in availableTracks) {
-      final trackLang = track.language?.toLowerCase();
-      if (trackLang != null && languageVariations.contains(trackLang)) {
-        appLogger.d(
-          'Found subtitle matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
-        );
-        return track;
-      }
     }
 
     appLogger.d(
-      'No subtitle track found matching profile language "$preferredLanguage" or its variations',
+      'No subtitle track found matching profile languages or their variations',
     );
     return null;
+  }
+
+  /// Filters subtitle tracks based on SDH (Subtitles for Deaf or Hard-of-Hearing) preference
+  ///
+  /// Values:
+  /// - 0: Prefer non-SDH subtitles
+  /// - 1: Prefer SDH subtitles
+  /// - 2: Only show SDH subtitles
+  /// - 3: Only show non-SDH subtitles
+  List<SubtitleTrack> _filterSubtitlesBySDH(
+    List<SubtitleTrack> tracks,
+    int preference,
+  ) {
+    if (preference == 0 || preference == 1) {
+      // Prefer but don't require
+      final preferSDH = preference == 1;
+      final preferred = tracks.where((t) => _isSDH(t) == preferSDH).toList();
+      if (preferred.isNotEmpty) {
+        appLogger.d('Applying SDH preference: ${preferSDH ? "prefer SDH" : "prefer non-SDH"} (${preferred.length} tracks)');
+        return preferred;
+      }
+      appLogger.d('No tracks match SDH preference, using all tracks');
+      return tracks;
+    } else if (preference == 2) {
+      // Only SDH
+      final filtered = tracks.where(_isSDH).toList();
+      appLogger.d('Filtering to SDH only (${filtered.length} tracks)');
+      return filtered;
+    } else if (preference == 3) {
+      // Only non-SDH
+      final filtered = tracks.where((t) => !_isSDH(t)).toList();
+      appLogger.d('Filtering to non-SDH only (${filtered.length} tracks)');
+      return filtered;
+    }
+    return tracks;
+  }
+
+  /// Filters subtitle tracks based on forced subtitle preference
+  ///
+  /// Values:
+  /// - 0: Prefer non-forced subtitles
+  /// - 1: Prefer forced subtitles
+  /// - 2: Only show forced subtitles
+  /// - 3: Only show non-forced subtitles
+  List<SubtitleTrack> _filterSubtitlesByForced(
+    List<SubtitleTrack> tracks,
+    int preference,
+  ) {
+    if (preference == 0 || preference == 1) {
+      // Prefer but don't require
+      final preferForced = preference == 1;
+      final preferred = tracks.where((t) => _isForced(t) == preferForced).toList();
+      if (preferred.isNotEmpty) {
+        appLogger.d('Applying forced preference: ${preferForced ? "prefer forced" : "prefer non-forced"} (${preferred.length} tracks)');
+        return preferred;
+      }
+      appLogger.d('No tracks match forced preference, using all tracks');
+      return tracks;
+    } else if (preference == 2) {
+      // Only forced
+      final filtered = tracks.where(_isForced).toList();
+      appLogger.d('Filtering to forced only (${filtered.length} tracks)');
+      return filtered;
+    } else if (preference == 3) {
+      // Only non-forced
+      final filtered = tracks.where((t) => !_isForced(t)).toList();
+      appLogger.d('Filtering to non-forced only (${filtered.length} tracks)');
+      return filtered;
+    }
+    return tracks;
+  }
+
+  /// Checks if a subtitle track is SDH (Subtitles for Deaf or Hard-of-Hearing)
+  ///
+  /// Since media_kit may not expose this directly, we infer from the title
+  bool _isSDH(SubtitleTrack track) {
+    final title = track.title?.toLowerCase() ?? '';
+
+    // Look for common SDH indicators
+    return title.contains('sdh') ||
+           title.contains('cc') ||
+           title.contains('hearing impaired') ||
+           title.contains('deaf');
+  }
+
+  /// Checks if a subtitle track is forced
+  bool _isForced(SubtitleTrack track) {
+    final title = track.title?.toLowerCase() ?? '';
+    return title.contains('forced');
   }
 
   void _waitForTracksAndApply() async {
@@ -622,9 +755,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           profileSettings != null &&
           realSubtitleTracks.isNotEmpty) {
         appLogger.d('Priority 2: Checking user profile preferences');
+        // Get the currently selected audio track
+        final currentAudioTrack = realAudioTracks.firstWhere(
+          (t) => t.id == player!.state.track.audio.id,
+          orElse: () => realAudioTracks.first,
+        );
         subtitleToSelect = _findSubtitleTrackByProfile(
           realSubtitleTracks,
           profileSettings,
+          selectedAudioTrack: currentAudioTrack,
         );
       } else if (subtitleToSelect == null && realSubtitleTracks.isNotEmpty) {
         appLogger.d('Priority 2: No user profile available');
