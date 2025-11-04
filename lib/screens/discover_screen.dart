@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_hub.dart';
 import '../providers/plex_client_provider.dart';
 import '../services/storage_service.dart';
 import '../services/plex_auth_service.dart';
@@ -13,6 +14,7 @@ import '../widgets/user_avatar_widget.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
 import 'profile_switch_screen.dart';
 import 'server_selection_screen.dart';
+import 'hub_detail_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
@@ -40,6 +42,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   List<PlexMetadata> _onDeck = [];
   List<PlexMetadata> _recentlyAdded = [];
+  List<PlexHub> _hubs = [];
   bool _isLoading = true;
   String? _errorMessage;
   final PageController _heroController = PageController();
@@ -74,8 +77,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     _indicatorAnimationController.forward(from: 0.0);
     _autoScrollTimer = Timer.periodic(_heroAutoScrollDuration, (timer) {
-      if (_onDeck.isEmpty || !_heroController.hasClients || _isAutoScrollPaused)
+      if (_onDeck.isEmpty ||
+          !_heroController.hasClients ||
+          _isAutoScrollPaused) {
         return;
+      }
 
       // Validate current index is within bounds before calculating next page
       if (_currentHeroIndex >= _onDeck.length) {
@@ -170,12 +176,47 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final onDeck = await client.getOnDeck();
       final recentlyAdded = await client.getRecentlyAdded(limit: 20);
 
+      // Load hubs from all libraries
+      final libraries = await client.getLibraries();
+      final allHubs = <PlexHub>[];
+
+      for (final library in libraries) {
+        // Only fetch hubs for movie and show libraries
+        if (library.type == 'movie' || library.type == 'show') {
+          try {
+            final libraryHubs = await client.getLibraryHubs(
+              library.key,
+              limit: 12,
+            );
+            // Filter out duplicate hubs that we already fetch separately
+            final filteredHubs = libraryHubs.where((hub) {
+              final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+              final title = hub.title.toLowerCase();
+              // Skip "Continue Watching", "On Deck", and "Recently Added" hubs
+              return !hubId.contains('ondeck') &&
+                  !hubId.contains('continue') &&
+                  !hubId.contains('recentlyadded') &&
+                  !title.contains('continue watching') &&
+                  !title.contains('on deck') &&
+                  !title.contains('recently added');
+            }).toList();
+            allHubs.addAll(filteredHubs);
+          } catch (e) {
+            appLogger.w(
+              'Failed to load hubs for library ${library.title}',
+              error: e,
+            );
+          }
+        }
+      }
+
       appLogger.d(
-        'Received ${onDeck.length} on deck items and ${recentlyAdded.length} recently added items',
+        'Received ${onDeck.length} on deck items, ${recentlyAdded.length} recently added items, and ${allHubs.length} hubs',
       );
       setState(() {
         _onDeck = onDeck;
         _recentlyAdded = recentlyAdded;
+        _hubs = allHubs;
         _isLoading = false;
 
         // Reset hero index to avoid sync issues
@@ -202,6 +243,106 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void refresh() {
     appLogger.d('DiscoverScreen.refresh() called');
     _loadContent();
+  }
+
+  /// Get icon for hub based on its title
+  IconData _getHubIcon(String title) {
+    final lowerTitle = title.toLowerCase();
+
+    // Trending/Popular content
+    if (lowerTitle.contains('trending')) {
+      return Icons.trending_up;
+    }
+    if (lowerTitle.contains('popular') || lowerTitle.contains('imdb')) {
+      return Icons.whatshot;
+    }
+
+    // Seasonal/Time-based
+    if (lowerTitle.contains('seasonal')) {
+      return Icons.calendar_month;
+    }
+    if (lowerTitle.contains('newly') || lowerTitle.contains('new release')) {
+      return Icons.new_releases;
+    }
+    if (lowerTitle.contains('recently released') ||
+        lowerTitle.contains('recent')) {
+      return Icons.schedule;
+    }
+
+    // Top/Rated content
+    if (lowerTitle.contains('top rated') ||
+        lowerTitle.contains('highest rated')) {
+      return Icons.star;
+    }
+    if (lowerTitle.contains('top ')) {
+      return Icons.military_tech;
+    }
+
+    // Genre-specific
+    if (lowerTitle.contains('thriller')) {
+      return Icons.warning_amber_rounded;
+    }
+    if (lowerTitle.contains('comedy') || lowerTitle.contains('comedier')) {
+      return Icons.mood;
+    }
+    if (lowerTitle.contains('action')) {
+      return Icons.flash_on;
+    }
+    if (lowerTitle.contains('drama')) {
+      return Icons.theater_comedy;
+    }
+    if (lowerTitle.contains('fantasy')) {
+      return Icons.auto_fix_high;
+    }
+    if (lowerTitle.contains('science') || lowerTitle.contains('sci-fi')) {
+      return Icons.rocket_launch;
+    }
+    if (lowerTitle.contains('horror') || lowerTitle.contains('skräck')) {
+      return Icons.nights_stay;
+    }
+    if (lowerTitle.contains('romance') || lowerTitle.contains('romantic')) {
+      return Icons.favorite_border;
+    }
+    if (lowerTitle.contains('adventure') || lowerTitle.contains('äventyr')) {
+      return Icons.explore;
+    }
+
+    // Watchlist/Playlists
+    if (lowerTitle.contains('playlist') || lowerTitle.contains('watchlist')) {
+      return Icons.playlist_play;
+    }
+    if (lowerTitle.contains('unwatched') || lowerTitle.contains('unplayed')) {
+      return Icons.visibility_off;
+    }
+    if (lowerTitle.contains('watched') || lowerTitle.contains('played')) {
+      return Icons.visibility;
+    }
+
+    // Network/Studio
+    if (lowerTitle.contains('network') || lowerTitle.contains('more from')) {
+      return Icons.tv;
+    }
+
+    // Actor/Director
+    if (lowerTitle.contains('actor') || lowerTitle.contains('director')) {
+      return Icons.person;
+    }
+
+    // Year-based (80s, 90s, etc.)
+    if (lowerTitle.contains('80') ||
+        lowerTitle.contains('90') ||
+        lowerTitle.contains('00')) {
+      return Icons.history;
+    }
+
+    // Rediscover/Start Watching
+    if (lowerTitle.contains('rediscover') ||
+        lowerTitle.contains('start watching')) {
+      return Icons.play_arrow;
+    }
+
+    // Default icon for other hubs
+    return Icons.auto_awesome;
   }
 
   @override
@@ -460,7 +601,46 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 _buildHorizontalList(_recentlyAdded, isLarge: false),
               ],
 
-              if (_onDeck.isEmpty && _recentlyAdded.isEmpty)
+              // Recommendation Hubs (Trending, Top in Genre, etc.)
+              for (final hub in _hubs) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HubDetailScreen(hub: hub),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(_getHubIcon(hub.title)),
+                            const SizedBox(width: 8),
+                            Text(
+                              hub.title,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.chevron_right, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                _buildHorizontalList(hub.items, isLarge: false),
+              ],
+
+              if (_onDeck.isEmpty && _recentlyAdded.isEmpty && _hubs.isEmpty)
                 const SliverFillRemaining(
                   child: Center(
                     child: Column(
@@ -543,63 +723,70 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   // Page indicators (limited to 5 dots)
                   ...() {
                     final range = _getVisibleDotRange();
-                    return List.generate(
-                      range.end - range.start + 1,
-                      (i) {
-                        final index = range.start + i;
-                        final isActive = _currentHeroIndex == index;
-                        final dotSize = _getDotSize(index, range.start, range.end);
+                    return List.generate(range.end - range.start + 1, (i) {
+                      final index = range.start + i;
+                      final isActive = _currentHeroIndex == index;
+                      final dotSize = _getDotSize(
+                        index,
+                        range.start,
+                        range.end,
+                      );
 
-                        if (isActive) {
-                          // Animated progress indicator for active page
-                          return AnimatedBuilder(
-                            animation: _indicatorAnimationController,
-                            builder: (context, child) {
-                              // Fill width animates based on dot size
-                              final maxWidth = dotSize * 3; // 24px for normal, 15px for small
-                              final fillWidth =
-                                  dotSize +
-                                  ((maxWidth - dotSize) * _indicatorAnimationController.value);
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: maxWidth,
-                                height: dotSize,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  borderRadius: BorderRadius.circular(dotSize / 2),
+                      if (isActive) {
+                        // Animated progress indicator for active page
+                        return AnimatedBuilder(
+                          animation: _indicatorAnimationController,
+                          builder: (context, child) {
+                            // Fill width animates based on dot size
+                            final maxWidth =
+                                dotSize * 3; // 24px for normal, 15px for small
+                            final fillWidth =
+                                dotSize +
+                                ((maxWidth - dotSize) *
+                                    _indicatorAnimationController.value);
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: maxWidth,
+                              height: dotSize,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(
+                                  dotSize / 2,
                                 ),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Container(
-                                    width: fillWidth,
-                                    height: dotSize,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(dotSize / 2),
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  width: fillWidth,
+                                  height: dotSize,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(
+                                      dotSize / 2,
                                     ),
                                   ),
                                 ),
-                              );
-                            },
-                          );
-                        } else {
-                          // Static indicator for inactive pages
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: dotSize,
-                            height: dotSize,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(dotSize / 2),
-                            ),
-                          );
-                        }
-                      },
-                    );
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        // Static indicator for inactive pages
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: dotSize,
+                          height: dotSize,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(dotSize / 2),
+                          ),
+                        );
+                      }
+                    });
                   }(),
                 ],
               ),

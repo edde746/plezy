@@ -7,6 +7,7 @@ import '../models/plex_file_info.dart';
 import '../models/plex_filter.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_media_version.dart';
+import '../models/plex_hub.dart';
 import '../utils/app_logger.dart';
 
 /// Result of testing a connection, including success status and latency
@@ -861,5 +862,87 @@ class PlexClient {
     }
 
     return null;
+  }
+
+  /// Get library hubs (recommendations for a specific library section)
+  /// Returns a list of recommendation hubs like "Trending Movies", "Top in Genre", etc.
+  Future<List<PlexHub>> getLibraryHubs(
+    String sectionId, {
+    int limit = 10,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/hubs/sections/$sectionId',
+        queryParameters: {'count': limit, 'includeGuids': 1},
+      );
+
+      final container = _getMediaContainer(response);
+      if (container != null && container['Hub'] != null) {
+        final hubs = <PlexHub>[];
+        for (final hubJson in container['Hub'] as List) {
+          try {
+            final hub = PlexHub.fromJson(hubJson);
+            // Only include hubs that have items and are movie/show content
+            if (hub.items.isNotEmpty) {
+              // Filter out non-video content types
+              final videoItems = hub.items.where((item) {
+                final type = item.type.toLowerCase();
+                return type == 'movie' || type == 'show';
+              }).toList();
+
+              if (videoItems.isNotEmpty) {
+                hubs.add(
+                  PlexHub(
+                    hubKey: hub.hubKey,
+                    title: hub.title,
+                    type: hub.type,
+                    hubIdentifier: hub.hubIdentifier,
+                    size: hub.size,
+                    more: hub.more,
+                    items: videoItems,
+                  ),
+                );
+              }
+            }
+          } catch (e) {
+            appLogger.w('Failed to parse hub', error: e);
+          }
+        }
+        return hubs;
+      }
+    } catch (e) {
+      appLogger.e('Failed to get library hubs: $e');
+    }
+    return [];
+  }
+
+  /// Get full content from a hub using its hub key
+  /// Returns the complete list of metadata items in the hub
+  Future<List<PlexMetadata>> getHubContent(String hubKey) async {
+    try {
+      final response = await _dio.get(hubKey);
+      final allItems = _extractMetadataList(response);
+
+      // Filter out non-video content types
+      return allItems.where((item) {
+        final type = item.type.toLowerCase();
+        return type == 'movie' || type == 'show';
+      }).toList();
+    } catch (e) {
+      appLogger.e('Failed to get hub content: $e');
+      return [];
+    }
+  }
+
+  /// Get playlist content by playlist ID
+  /// Returns the list of metadata items in the playlist
+  Future<List<PlexMetadata>> getPlaylist(String playlistId) async {
+    try {
+      final response = await _dio.get('/playlists/$playlistId/items');
+      return _extractMetadataList(response);
+    } catch (e) {
+      appLogger.e('Failed to get playlist: $e');
+      return [];
+    }
   }
 }
