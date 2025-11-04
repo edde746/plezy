@@ -76,7 +76,7 @@ modules:
 
     sources:
       - type: git
-        url: https://github.com/edde746/plex-flutter.git
+        url: https://github.com/edde746/plezy.git
         commit: {{COMMIT_SHA}}
 
       - type: git
