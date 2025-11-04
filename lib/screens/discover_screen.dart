@@ -962,20 +962,24 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       child: LayoutBuilder(
         builder: (context, constraints) {
           // Responsive card width based on screen size
+          // Match Libraries screen sizing (190px baseline)
           final screenWidth = constraints.maxWidth;
           final cardWidth = screenWidth > 1600
               ? 220.0
               : screenWidth > 1200
               ? 200.0
               : screenWidth > 800
-              ? 160.0
-              : 130.0;
+              ? 190.0
+              : 160.0;
 
+          // MediaCard has 8px padding on all sides (16px total horizontally)
+          // So actual poster width is cardWidth - 16
+          final posterWidth = cardWidth - 16;
           // 2:3 poster aspect ratio (height is 1.5x width)
-          final cardHeight = cardWidth * 1.5;
+          final posterHeight = posterWidth * 1.5;
           // Container height = poster + padding + spacing + text
-          // 8px top padding + cardHeight + 4px spacing + ~26px text + 8px bottom padding
-          final containerHeight = cardHeight + 46;
+          // 8px top padding + posterHeight + 4px spacing + ~26px text + 8px bottom padding
+          final containerHeight = posterHeight + 46;
 
           return SizedBox(
             height: containerHeight,
@@ -993,7 +997,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       key: Key(item.ratingKey),
                       item: item,
                       width: cardWidth,
-                      height: cardHeight,
+                      height: posterHeight,
                       onRefresh: updateItem,
                     ),
                   );
