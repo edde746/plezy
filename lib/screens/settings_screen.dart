@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import '../providers/theme_provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/settings_service.dart' as settings;
 import '../services/keyboard_shortcuts_service.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -96,6 +97,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: Text(themeProvider.themeModeDisplayName),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showThemeDialog(themeProvider),
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return ListTile(
+                leading: const Icon(Icons.grid_view),
+                title: const Text('Library Density'),
+                subtitle: Text(settingsProvider.libraryDensityDisplayName),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showLibraryDensityDialog(),
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const Icon(Icons.image),
+                title: const Text('Use Season Posters'),
+                subtitle: const Text('Show season poster instead of series poster for episodes'),
+                value: settingsProvider.useSeasonPoster,
+                onChanged: (value) async {
+                  await settingsProvider.setUseSeasonPoster(value);
+                },
               );
             },
           ),
@@ -406,6 +431,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Reset'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showLibraryDensityDialog() {
+    final settingsProvider = context.read<SettingsProvider>();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Consumer<SettingsProvider>(
+          builder: (context, provider, child) {
+            return AlertDialog(
+              title: const Text('Library Density'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      provider.libraryDensity == settings.LibraryDensity.compact
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Compact'),
+                    subtitle: const Text('Smaller cards, more items visible'),
+                    onTap: () async {
+                      await settingsProvider.setLibraryDensity(settings.LibraryDensity.compact);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      provider.libraryDensity == settings.LibraryDensity.normal
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Normal'),
+                    subtitle: const Text('Default size'),
+                    onTap: () async {
+                      await settingsProvider.setLibraryDensity(settings.LibraryDensity.normal);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      provider.libraryDensity == settings.LibraryDensity.comfortable
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Comfortable'),
+                    subtitle: const Text('Larger cards, fewer items visible'),
+                    onTap: () async {
+                      await settingsProvider.setLibraryDensity(settings.LibraryDensity.comfortable);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

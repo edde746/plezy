@@ -24,6 +24,7 @@ class PlexMetadata {
   final String? grandparentArt; // Show art for episodes
   final String? grandparentRatingKey; // Show rating key for episodes
   final String? parentTitle; // Season title for episodes
+  final String? parentThumb; // Season poster for episodes
   final String? parentRatingKey; // Season rating key for episodes
   final int? parentIndex; // Season number
   final int? index; // Episode number
@@ -58,6 +59,7 @@ class PlexMetadata {
     this.grandparentArt,
     this.grandparentRatingKey,
     this.parentTitle,
+    this.parentThumb,
     this.parentRatingKey,
     this.parentIndex,
     this.index,
@@ -121,12 +123,21 @@ class PlexMetadata {
   }
 
   // Helper to get the poster (show poster for episodes/seasons, thumb otherwise)
-  String? get posterThumb {
+  // If useSeasonPoster is true, episodes will use season poster instead of series poster
+  String? posterThumb({bool useSeasonPoster = false}) {
     final itemType = type.toLowerCase();
 
-    // For episodes and seasons, prefer grandparent thumb (show poster)
-    if ((itemType == 'episode' || itemType == 'season') &&
-        grandparentThumb != null) {
+    if (itemType == 'episode') {
+      // If season poster is enabled and available, use it
+      if (useSeasonPoster && parentThumb != null) {
+        return parentThumb!;
+      }
+      // Otherwise fall back to series poster, then item thumb
+      if (grandparentThumb != null) {
+        return grandparentThumb!;
+      }
+    } else if (itemType == 'season' && grandparentThumb != null) {
+      // For seasons, always use series poster
       return grandparentThumb!;
     }
     return thumb;

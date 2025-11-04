@@ -5,11 +5,13 @@ import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_filter.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../services/storage_service.dart';
+import '../services/settings_service.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
@@ -421,8 +423,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                 sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 190,
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: _getMaxCrossAxisExtent(
+                      context,
+                      context.watch<SettingsProvider>().libraryDensity,
+                    ),
                     childAspectRatio: 2 / 3.3,
                     crossAxisSpacing: 0,
                     mainAxisSpacing: 0,
@@ -455,6 +460,51 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         return Icons.photo;
       default:
         return Icons.folder;
+    }
+  }
+
+  double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = 16.0; // 8px left + 8px right
+    final availableWidth = screenWidth - padding;
+
+    if (screenWidth >= 900) {
+      // Wide screens (desktop/large tablet landscape): Responsive division
+      double divisor;
+      double maxItemWidth;
+
+      switch (density) {
+        case LibraryDensity.comfortable:
+          divisor = 6.5;
+          maxItemWidth = 280;
+          break;
+        case LibraryDensity.normal:
+          divisor = 8.0;
+          maxItemWidth = 200;
+          break;
+        case LibraryDensity.compact:
+          divisor = 10.0;
+          maxItemWidth = 160;
+          break;
+      }
+
+      return (availableWidth / divisor).clamp(0, maxItemWidth);
+    } else if (screenWidth >= 600) {
+      // Medium screens (tablets): Fixed 4-5-6 items
+      int targetItemCount = switch (density) {
+        LibraryDensity.comfortable => 4,
+        LibraryDensity.normal => 5,
+        LibraryDensity.compact => 6,
+      };
+      return availableWidth / targetItemCount;
+    } else {
+      // Small screens (phones): Fixed 2-3-4 items
+      int targetItemCount = switch (density) {
+        LibraryDensity.comfortable => 2,
+        LibraryDensity.normal => 3,
+        LibraryDensity.compact => 4,
+      };
+      return availableWidth / targetItemCount;
     }
   }
 }
