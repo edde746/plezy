@@ -922,7 +922,7 @@ class PlexClient {
     try {
       final response = await _dio.get(hubKey);
       final allItems = _extractMetadataList(response);
-      
+
       // Filter out non-video content types
       return allItems.where((item) {
         final type = item.type.toLowerCase();

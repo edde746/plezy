@@ -59,9 +59,9 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       // - /library/sections/1/all?...
       final hubKey = widget.hub.hubKey;
       appLogger.d('Hub key: $hubKey');
-      
+
       RegExpMatch? match;
-      
+
       // Try different patterns
       match = RegExp(r'/hubs/sections/(\d+)').firstMatch(hubKey);
       if (match == null) {
@@ -70,16 +70,16 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       if (match == null) {
         match = RegExp(r'sections/(\d+)').firstMatch(hubKey);
       }
-      
+
       if (match != null) {
         final sectionId = match.group(1)!;
         appLogger.d('Loading sorts for section: $sectionId');
-        
+
         // Load sorts for this library
         final sorts = await client.getLibrarySorts(sectionId);
-        
+
         appLogger.d('Loaded ${sorts.length} sorts');
-        
+
         setState(() {
           _sortOptions = sorts.isNotEmpty ? sorts : _getDefaultSortOptions();
           // Don't set a default sort - let items stay in original order
@@ -104,11 +104,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   List<PlexSort> _getDefaultSortOptions() {
     return [
-      PlexSort(
-        key: 'titleSort',
-        title: 'Title',
-        defaultDirection: 'asc',
-      ),
+      PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
       PlexSort(
         key: 'year',
         descKey: 'year:desc',
@@ -139,7 +135,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
         final sortKey = _selectedSort!.key;
         _filteredItems.sort((a, b) {
           int comparison = 0;
-          
+
           switch (sortKey) {
             case 'titleSort':
             case 'title':
@@ -219,7 +215,9 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       // Apply any existing sort
       _applySort();
 
-      appLogger.d('Loaded ${response.length} items for hub: ${widget.hub.title}');
+      appLogger.d(
+        'Loaded ${response.length} items for hub: ${widget.hub.title}',
+      );
     } catch (e) {
       appLogger.e('Failed to load hub content', error: e);
       setState(() {
@@ -289,9 +287,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
             )
           else if (_filteredItems.isEmpty)
             const SliverFillRemaining(
-              child: Center(
-                child: Text('No items found'),
-              ),
+              child: Center(child: Text('No items found')),
             )
           else
             SliverPadding(
@@ -306,15 +302,12 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
                   crossAxisSpacing: 0,
                   mainAxisSpacing: 0,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return MediaCard(
-                      item: _filteredItems[index],
-                      onRefresh: _handleItemRefresh,
-                    );
-                  },
-                  childCount: _filteredItems.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return MediaCard(
+                    item: _filteredItems[index],
+                    onRefresh: _handleItemRefresh,
+                  );
+                }, childCount: _filteredItems.length),
               ),
             ),
         ],
@@ -503,10 +496,7 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
                       },
                     ),
                     onTap: () {
-                      _handleSortChange(
-                        sort,
-                        sort.defaultDirection == 'desc',
-                      );
+                      _handleSortChange(sort, sort.defaultDirection == 'desc');
                     },
                   );
                 },
