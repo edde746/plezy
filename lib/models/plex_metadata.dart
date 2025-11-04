@@ -12,7 +12,7 @@ class PlexMetadata {
   final String title;
   final String? contentRating;
   final String? summary;
-  final int? rating;
+  final double? rating;
   final int? year;
   final String? thumb;
   final String? art;
