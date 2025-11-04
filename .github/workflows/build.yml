@@ -226,6 +226,34 @@ jobs:
           codesign -dvvv "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
+      - name: Notarize Application
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_PATH="build/macos/Build/Products/Release/plezy.app"
+
+          # Create a temporary ZIP for notarization submission
+          echo "Creating ZIP for notarization..."
+          ditto -c -k --keepParent "$APP_PATH" notarization.zip
+
+          # Submit for notarization
+          echo "Submitting to Apple's notary service..."
+          xcrun notarytool submit notarization.zip \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+
+          # Staple the notarization ticket to the app
+          echo "Stapling notarization ticket..."
+          xcrun stapler staple "$APP_PATH"
+
+          # Verify stapling
+          echo "Verifying notarization..."
+          xcrun stapler validate "$APP_PATH"
+
       - name: Create ZIP
         run: |
           cd build/macos/Build/Products/Release
