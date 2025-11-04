@@ -29,6 +29,8 @@ class PlexClient {
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 30),
         validateStatus: (status) => status != null && status < 500,
+        responseType: ResponseType.json,
+        contentType: 'application/json; charset=utf-8',
       ),
     );
 
@@ -77,6 +79,8 @@ class PlexClient {
           connectTimeout: timeout,
           receiveTimeout: timeout,
           validateStatus: (status) => status != null && status < 500,
+          responseType: ResponseType.json,
+          contentType: 'application/json; charset=utf-8',
         ),
       );
 

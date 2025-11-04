@@ -51,6 +51,7 @@ class PlexConfig {
       'X-Plex-Platform': platform,
       if (device != null) 'X-Plex-Device': device!,
       if (acceptJson) 'Accept': 'application/json',
+      'Accept-Charset': 'utf-8',
     };
 
     if (token != null) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 import '../client/plex_client.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
@@ -9,10 +10,10 @@ import '../providers/plex_client_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/app_logger.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
-import '../widgets/context_menu_wrapper.dart';
 import '../services/storage_service.dart';
 import '../services/settings_service.dart';
 import '../mixins/refreshable.dart';
@@ -48,6 +49,27 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void initState() {
     super.initState();
     _loadLibraries();
+  }
+
+  /// Helper method to get user-friendly error message from exception
+  String _getErrorMessage(dynamic error, String context) {
+    if (error is DioException) {
+      // Other Dio errors
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.receiveTimeout:
+          return 'Connection timeout while loading $context';
+        case DioExceptionType.connectionError:
+          return 'Unable to connect to Plex server';
+        default:
+          appLogger.e('Error loading $context', error: error);
+          return 'Failed to load $context: ${error.message}';
+      }
+    }
+
+    // Generic error
+    appLogger.e('Unexpected error in $context', error: error);
+    return 'Failed to load $context: $error';
   }
 
   Future<void> _loadLibraries() async {
@@ -122,7 +144,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load libraries: $e';
+        _errorMessage = _getErrorMessage(e, 'libraries');
         _isLoadingLibraries = false;
       });
     }
@@ -255,7 +277,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load library content: $e';
+        _errorMessage = _getErrorMessage(e, 'library content');
         _isLoadingItems = false;
       });
     }
@@ -277,6 +299,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         _filters = filters;
       });
     } catch (e) {
+      appLogger.w('Failed to load filters', error: e);
       setState(() {
         _filters = [];
       });
