@@ -425,9 +425,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   // Public method to refresh content
   @override
   void refresh() {
-    if (_allLibraries.isNotEmpty) {
-      _applyFilters();
-    }
+    _loadLibraries();
   }
 
   Future<void> _toggleLibraryVisibility(PlexLibrary library) async {
