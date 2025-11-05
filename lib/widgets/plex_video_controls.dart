@@ -1913,49 +1913,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
                           return ListTile(
                             leading: Icon(
-                              isDefault ? Icons.star : Icons.timer,
-                              color: isDefault ? Colors.amber : Colors.white70,
+                              Icons.timer,
+                              color: Colors.white70,
                             ),
-                            title: Row(
-                              children: [
-                                Text(
-                                  label,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: isDefault
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                                if (isDefault) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.amber.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'DEFAULT',
-                                      style: TextStyle(
-                                        color: Colors.amber,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
+                            title: Text(
+                              label,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.normal,
+                              ),
                             ),
                             onTap: () {
                               sleepTimer.startTimer(
