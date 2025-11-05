@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
+import '../../../utils/platform_detector.dart';
 import '../widgets/sync_offset_control.dart';
 
-enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync }
+enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice }
 
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
@@ -89,6 +90,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return 'Audio Sync';
       case _SettingsView.subtitleSync:
         return 'Subtitle Sync';
+      case _SettingsView.audioDevice:
+        return 'Audio Output';
     }
   }
 
@@ -104,6 +107,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Icons.sync;
       case _SettingsView.subtitleSync:
         return Icons.subtitles;
+      case _SettingsView.audioDevice:
+        return Icons.speaker;
     }
   }
 
@@ -188,6 +193,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   Widget _buildMenuView() {
     final sleepTimer = SleepTimerService();
+    final isDesktop = PlatformDetector.isDesktop(context);
 
     return ListView(
       children: [
@@ -307,6 +313,42 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),
+
+        // Audio Output Device (Desktop only)
+        if (isDesktop)
+          StreamBuilder<AudioDevice>(
+            stream: widget.player.stream.audioDevice,
+            initialData: widget.player.state.audioDevice,
+            builder: (context, snapshot) {
+              final currentDevice = snapshot.data ?? widget.player.state.audioDevice;
+              final deviceLabel = currentDevice.description.isEmpty
+                  ? currentDevice.name
+                  : currentDevice.description;
+
+              return ListTile(
+                leading: const Icon(Icons.speaker, color: Colors.white70),
+                title: const Text(
+                  'Audio Output',
+                  style: TextStyle(color: Colors.white),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        deviceLabel,
+                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.chevron_right, color: Colors.white70),
+                  ],
+                ),
+                onTap: () => _navigateTo(_SettingsView.audioDevice),
+              );
+            },
+          ),
       ],
     );
   }
@@ -498,6 +540,51 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     );
   }
 
+  Widget _buildAudioDeviceView() {
+    return StreamBuilder<List<AudioDevice>>(
+      stream: widget.player.stream.audioDevices,
+      initialData: widget.player.state.audioDevices,
+      builder: (context, snapshot) {
+        final devices = snapshot.data ?? [];
+
+        return StreamBuilder<AudioDevice>(
+          stream: widget.player.stream.audioDevice,
+          initialData: widget.player.state.audioDevice,
+          builder: (context, selectedSnapshot) {
+            final currentDevice = selectedSnapshot.data ?? widget.player.state.audioDevice;
+
+            return ListView.builder(
+              itemCount: devices.length,
+              itemBuilder: (context, index) {
+                final device = devices[index];
+                final isSelected = device.name == currentDevice.name;
+                final label = device.description.isEmpty
+                    ? device.name
+                    : device.description;
+
+                return ListTile(
+                  title: Text(
+                    label,
+                    style: TextStyle(
+                      color: isSelected ? Colors.blue : Colors.white,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(Icons.check, color: Colors.blue)
+                      : null,
+                  onTap: () {
+                    widget.player.setAudioDevice(device);
+                    Navigator.pop(context); // Close sheet after selection
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -520,6 +607,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                     return _buildAudioSyncView();
                   case _SettingsView.subtitleSync:
                     return _buildSubtitleSyncView();
+                  case _SettingsView.audioDevice:
+                    return _buildAudioDeviceView();
                 }
               }(),
             ),
