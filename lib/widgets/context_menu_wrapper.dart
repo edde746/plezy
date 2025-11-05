@@ -6,11 +6,19 @@ class ContextMenuItem {
   final String value;
   final IconData icon;
   final String label;
+  final bool requiresConfirmation;
+  final String? confirmationTitle;
+  final String? confirmationMessage;
+  final bool isDestructive;
 
   const ContextMenuItem({
     required this.value,
     required this.icon,
     required this.label,
+    this.requiresConfirmation = false,
+    this.confirmationTitle,
+    this.confirmationMessage,
+    this.isDestructive = false,
   });
 }
 
@@ -23,6 +31,7 @@ class ContextMenuWrapper extends StatefulWidget {
   final Function(String)? onMenuItemSelected;
   final VoidCallback? onTap;
   final String? title;
+  final bool forceBottomSheet;
 
   const ContextMenuWrapper({
     super.key,
@@ -31,6 +40,7 @@ class ContextMenuWrapper extends StatefulWidget {
     this.onMenuItemSelected,
     this.onTap,
     this.title,
+    this.forceBottomSheet = false,
   });
 
   @override
@@ -44,8 +54,37 @@ class _ContextMenuWrapperState extends State<ContextMenuWrapper> {
     _tapPosition = details.globalPosition;
   }
 
+  Future<bool> _showConfirmationDialog({
+    required String title,
+    required String message,
+    required bool isDestructive,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: isDestructive
+                ? TextButton.styleFrom(foregroundColor: Colors.red)
+                : null,
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   Future<void> _showContextMenu(BuildContext context) async {
-    final useBottomSheet = PlatformDetector.isMobile(context);
+    final useBottomSheet =
+        widget.forceBottomSheet || PlatformDetector.isMobile(context);
     String? selected;
 
     if (useBottomSheet) {
@@ -119,6 +158,23 @@ class _ContextMenuWrapperState extends State<ContextMenuWrapper> {
     }
 
     if (selected != null && widget.onMenuItemSelected != null) {
+      // Find the selected item to check if confirmation is needed
+      final selectedItem = widget.menuItems.firstWhere(
+        (item) => item.value == selected,
+      );
+
+      if (selectedItem.requiresConfirmation) {
+        final confirmed = await _showConfirmationDialog(
+          title: selectedItem.confirmationTitle ?? 'Confirm Action',
+          message:
+              selectedItem.confirmationMessage ??
+              'Are you sure you want to perform this action?',
+          isDestructive: selectedItem.isDestructive,
+        );
+
+        if (!confirmed) return;
+      }
+
       widget.onMenuItemSelected!(selected);
     }
   }
