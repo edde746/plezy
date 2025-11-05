@@ -90,57 +90,60 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: widget.sortOptions.length,
-                itemBuilder: (context, index) {
-                  final sort = widget.sortOptions[index];
-                  final isSelected = _currentSort?.key == sort.key;
-
-                  return ListTile(
-                    title: Text(sort.title),
-                    trailing: isSelected
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SegmentedButton<bool>(
-                                showSelectedIcon: false,
-                                segments: const [
-                                  ButtonSegment(
-                                    value: false,
-                                    icon: Icon(Icons.arrow_upward, size: 16),
-                                  ),
-                                  ButtonSegment(
-                                    value: true,
-                                    icon: Icon(Icons.arrow_downward, size: 16),
-                                  ),
-                                ],
-                                selected: {_currentDescending},
-                                onSelectionChanged: (Set<bool> newSelection) {
-                                  _handleSortChange(sort, newSelection.first);
-                                },
-                              ),
-                            ],
-                          )
-                        : null,
-                    leading: Radio<PlexSort>(
-                      value: sort,
-                      groupValue: _currentSort,
-                      onChanged: (PlexSort? value) {
-                        if (value != null) {
-                          _handleSortChange(
-                            value,
-                            value.defaultDirection == 'desc',
-                          );
-                        }
-                      },
-                    ),
-                    onTap: () {
-                      _handleSortChange(sort, sort.defaultDirection == 'desc');
-                    },
-                  );
+              child: RadioGroup<PlexSort>(
+                groupValue: _currentSort,
+                onChanged: (PlexSort? value) {
+                  if (value != null) {
+                    _handleSortChange(
+                      value,
+                      value.defaultDirection == 'desc',
+                    );
+                  }
                 },
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: widget.sortOptions.length,
+                  itemBuilder: (context, index) {
+                    final sort = widget.sortOptions[index];
+                    final isSelected = _currentSort?.key == sort.key;
+
+                    return ListTile(
+                      title: Text(sort.title),
+                      trailing: isSelected
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SegmentedButton<bool>(
+                                  showSelectedIcon: false,
+                                  segments: const [
+                                    ButtonSegment(
+                                      value: false,
+                                      icon: Icon(Icons.arrow_upward, size: 16),
+                                    ),
+                                    ButtonSegment(
+                                      value: true,
+                                      icon: Icon(Icons.arrow_downward, size: 16),
+                                    ),
+                                  ],
+                                  selected: {_currentDescending},
+                                  onSelectionChanged: (Set<bool> newSelection) {
+                                    _handleSortChange(sort, newSelection.first);
+                                  },
+                                ),
+                              ],
+                            )
+                          : null,
+                      leading: Radio<PlexSort>(
+                        value: sort,
+                        toggleable: false,
+                      ),
+                      onTap: () {
+                        _handleSortChange(sort, sort.defaultDirection == 'desc');
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ],

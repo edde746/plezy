@@ -32,6 +32,9 @@ Future<bool?> navigateToVideoPlayer(
   int? selectedMediaIndex,
   bool usePushReplacement = false,
 }) async {
+  // Extract navigator before any async operations
+  final navigator = Navigator.of(context);
+
   // Load saved media version preference if not explicitly provided
   int mediaIndex = selectedMediaIndex ?? 0;
   if (selectedMediaIndex == null) {
@@ -60,8 +63,8 @@ Future<bool?> navigateToVideoPlayer(
   );
 
   if (usePushReplacement) {
-    return Navigator.of(context).pushReplacement<bool, bool>(route);
+    return navigator.pushReplacement<bool, bool>(route);
   } else {
-    return Navigator.push<bool>(context, route);
+    return navigator.push<bool>(route);
   }
 }

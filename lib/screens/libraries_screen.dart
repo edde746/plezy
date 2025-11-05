@@ -201,16 +201,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     await storage.saveLibraryOrder(libraryKeys);
   }
 
-  void _reorderLibraries(int oldIndex, int newIndex) {
-    setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
-      final library = _allLibraries.removeAt(oldIndex);
-      _allLibraries.insert(newIndex, library);
-    });
-    _saveLibraryOrder();
-  }
 
   Future<void> _loadLibraryContent(String libraryKey) async {
     // Compute visible libraries based on current provider state
@@ -1436,45 +1426,58 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
 
             // Sort options list
             Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: widget.sortOptions.length,
-                itemBuilder: (context, index) {
-                  final sort = widget.sortOptions[index];
-                  final isSelected = _tempSelectedSort?.key == sort.key;
+              child: RadioGroup<String>(
+                groupValue: _tempSelectedSort?.key,
+                onChanged: (value) {
+                  final sort = widget.sortOptions.firstWhere((s) => s.key == value);
+                  setState(() {
+                    _tempSelectedSort = sort;
+                    // Use default direction for newly selected sort
+                    _tempDescending = sort.isDefaultDescending;
+                  });
+                  // Apply sort immediately with default direction
+                  widget.onSortChanged(sort, sort.isDefaultDescending);
+                },
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: widget.sortOptions.length,
+                  itemBuilder: (context, index) {
+                    final sort = widget.sortOptions[index];
+                    final isSelected = _tempSelectedSort?.key == sort.key;
 
-                  return ListTile(
-                    title: Text(sort.title),
-                    trailing: isSelected
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Direction toggle buttons
-                              SegmentedButton<bool>(
-                                showSelectedIcon: false,
-                                segments: const [
-                                  ButtonSegment(
-                                    value: false,
-                                    icon: Icon(Icons.arrow_upward, size: 16),
-                                  ),
-                                  ButtonSegment(
-                                    value: true,
-                                    icon: Icon(Icons.arrow_downward, size: 16),
-                                  ),
-                                ],
-                                selected: {_tempDescending},
-                                onSelectionChanged: (Set<bool> selected) {
-                                  widget.onSortChanged(sort, selected.first);
-                                },
-                              ),
-                            ],
-                          )
-                        : null,
-                    leading: Radio<String>(
-                      value: sort.key,
-                      groupValue: _tempSelectedSort?.key,
-                      onChanged: (value) {
+                    return ListTile(
+                      title: Text(sort.title),
+                      trailing: isSelected
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Direction toggle buttons
+                                SegmentedButton<bool>(
+                                  showSelectedIcon: false,
+                                  segments: const [
+                                    ButtonSegment(
+                                      value: false,
+                                      icon: Icon(Icons.arrow_upward, size: 16),
+                                    ),
+                                    ButtonSegment(
+                                      value: true,
+                                      icon: Icon(Icons.arrow_downward, size: 16),
+                                    ),
+                                  ],
+                                  selected: {_tempDescending},
+                                  onSelectionChanged: (Set<bool> selected) {
+                                    widget.onSortChanged(sort, selected.first);
+                                  },
+                                ),
+                              ],
+                            )
+                          : null,
+                      leading: Radio<String>(
+                        value: sort.key,
+                        toggleable: false,
+                      ),
+                      onTap: () {
                         setState(() {
                           _tempSelectedSort = sort;
                           // Use default direction for newly selected sort
@@ -1483,18 +1486,9 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
                         // Apply sort immediately with default direction
                         widget.onSortChanged(sort, sort.isDefaultDescending);
                       },
-                    ),
-                    onTap: () {
-                      setState(() {
-                        _tempSelectedSort = sort;
-                        // Use default direction for newly selected sort
-                        _tempDescending = sort.isDefaultDescending;
-                      });
-                      // Apply sort immediately with default direction
-                      widget.onSortChanged(sort, sort.isDefaultDescending);
-                    },
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -1587,6 +1581,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       );
 
       if (selectedItem.requiresConfirmation) {
+        if (!mounted || !context.mounted) return;
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -1703,7 +1698,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                                 Icons.drag_indicator,
                                 color: Theme.of(
                                   context,
-                                ).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                               ),
                             ),
                           ),

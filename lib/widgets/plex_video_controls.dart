@@ -77,7 +77,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
   int _seekTimeSmall = 10; // Default, loaded from settings
-  int _seekTimeLarge = 30; // Default, loaded from settings
   // Double-tap feedback state
   bool _showDoubleTapFeedback = false;
   double _doubleTapFeedbackOpacity = 0.0;
@@ -109,7 +108,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     if (mounted) {
       setState(() {
         _seekTimeSmall = settingsService.getSeekTimeSmall();
-        _seekTimeLarge = settingsService.getSeekTimeLarge();
       });
     }
   }
@@ -1351,7 +1349,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                               selectedSnapshot.data ??
                               widget.player.state.track;
                           final selectedTrack = currentTrack.audio;
-                          final selectedId = selectedTrack?.id;
+                          final selectedId = selectedTrack.id;
 
                           return ListView.builder(
                             itemCount: audioTracks.length,
@@ -1477,7 +1475,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                               selectedSnapshot.data ??
                               widget.player.state.track;
                           final selectedTrack = currentTrack.subtitle;
-                          final selectedId = selectedTrack?.id;
+                          final selectedId = selectedTrack.id;
                           final isOffSelected = selectedId == 'no';
 
                           return ListView.builder(

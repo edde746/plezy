@@ -61,16 +61,10 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       final hubKey = widget.hub.hubKey;
       appLogger.d('Hub key: $hubKey');
 
-      RegExpMatch? match;
-
       // Try different patterns
-      match = RegExp(r'/hubs/sections/(\d+)').firstMatch(hubKey);
-      if (match == null) {
-        match = RegExp(r'/library/sections/(\d+)').firstMatch(hubKey);
-      }
-      if (match == null) {
-        match = RegExp(r'sections/(\d+)').firstMatch(hubKey);
-      }
+      RegExpMatch? match = RegExp(r'/hubs/sections/(\d+)').firstMatch(hubKey);
+      match ??= RegExp(r'/library/sections/(\d+)').firstMatch(hubKey);
+      match ??= RegExp(r'sections/(\d+)').firstMatch(hubKey);
 
       if (match != null) {
         final sectionId = match.group(1)!;
