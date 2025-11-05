@@ -239,11 +239,46 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
+  /// Refresh only the Continue Watching section in the background
+  /// This is called when returning to the home screen to avoid blocking UI
+  Future<void> _refreshContinueWatching() async {
+    appLogger.d('Refreshing Continue Watching in background');
+    
+    try {
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) {
+        appLogger.w('No client available for background refresh');
+        return;
+      }
+
+      final onDeck = await client.getOnDeck();
+      
+      if (mounted) {
+        setState(() {
+          _onDeck = onDeck;
+          // Reset hero index if needed
+          if (_currentHeroIndex >= onDeck.length) {
+            _currentHeroIndex = 0;
+            if (_heroController.hasClients && onDeck.isNotEmpty) {
+              _heroController.jumpToPage(0);
+            }
+          }
+        });
+        appLogger.d('Continue Watching refreshed successfully');
+      }
+    } catch (e) {
+      appLogger.w('Failed to refresh Continue Watching', error: e);
+      // Silently fail - don't show error to user for background refresh
+    }
+  }
+
   // Public method to refresh content
   @override
   void refresh() {
     appLogger.d('DiscoverScreen.refresh() called');
-    _loadContent();
+    // Only refresh Continue Watching in background, not full screen reload
+    _refreshContinueWatching();
   }
 
   /// Get icon for hub based on its title
