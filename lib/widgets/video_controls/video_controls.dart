@@ -2,22 +2,27 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
-import '../models/plex_metadata.dart';
-import '../models/plex_media_info.dart';
-import '../models/plex_media_version.dart';
-import '../providers/plex_client_provider.dart';
-import '../services/fullscreen_state_manager.dart';
-import '../services/keyboard_shortcuts_service.dart';
-import '../services/settings_service.dart';
-import '../services/sleep_timer_service.dart';
-import '../utils/desktop_window_padding.dart';
-import '../utils/platform_detector.dart';
-import '../utils/provider_extensions.dart';
-import '../screens/video_player_screen.dart';
-import 'app_bar_back_button.dart';
+import '../../models/plex_metadata.dart';
+import '../../models/plex_media_info.dart';
+import '../../models/plex_media_version.dart';
+import '../../services/fullscreen_state_manager.dart';
+import '../../services/keyboard_shortcuts_service.dart';
+import '../../services/settings_service.dart';
+import '../../services/sleep_timer_service.dart';
+import '../../utils/desktop_window_padding.dart';
+import '../../utils/platform_detector.dart';
+import '../../utils/provider_extensions.dart';
+import '../../screens/video_player_screen.dart';
+import '../app_bar_back_button.dart';
+import 'painters/chapter_marker_painter.dart';
+import 'sheets/audio_track_sheet.dart';
+import 'sheets/chapter_sheet.dart';
+import 'sheets/playback_speed_sheet.dart';
+import 'sheets/sleep_timer_sheet.dart';
+import 'sheets/subtitle_track_sheet.dart';
+import 'sheets/version_sheet.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
@@ -325,33 +330,44 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         : Icons.bedtime_outlined,
                     color: sleepTimer.isActive ? Colors.amber : Colors.white,
                   ),
-                  onPressed: _showSleepTimerBottomSheet,
+                  onPressed: () => SleepTimerSheet.show(context, widget.player),
                 );
               },
             ),
             IconButton(
               icon: const Icon(Icons.speed, color: Colors.white),
-              onPressed: _showPlaybackSpeedBottomSheet,
+              onPressed: () => PlaybackSpeedSheet.show(context, widget.player),
             ),
             if (_hasMultipleAudioTracks(tracks))
               IconButton(
                 icon: const Icon(Icons.audiotrack, color: Colors.white),
-                onPressed: _showAudioBottomSheet,
+                onPressed: () => AudioTrackSheet.show(context, widget.player),
               ),
             if (_hasSubtitles(tracks))
               IconButton(
                 icon: const Icon(Icons.subtitles, color: Colors.white),
-                onPressed: _showSubtitleBottomSheet,
+                onPressed: () =>
+                    SubtitleTrackSheet.show(context, widget.player),
               ),
             if (_chapters.isNotEmpty)
               IconButton(
                 icon: const Icon(Icons.video_library, color: Colors.white),
-                onPressed: _showChapterBottomSheet,
+                onPressed: () => ChapterSheet.show(
+                  context,
+                  widget.player,
+                  _chapters,
+                  _chaptersLoaded,
+                ),
               ),
             if (widget.availableVersions.length > 1)
               IconButton(
                 icon: const Icon(Icons.video_file, color: Colors.white),
-                onPressed: _showVersionBottomSheet,
+                onPressed: () => VersionSheet.show(
+                  context,
+                  widget.availableVersions,
+                  widget.selectedMediaIndex,
+                  _switchMediaVersion,
+                ),
               ),
             // BoxFit mode cycle button
             if (widget.onCycleBoxFitMode != null)
@@ -949,10 +965,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   Widget _buildDesktopTopBarContent(double leftPadding) {
-    // On macOS, use single-line layout to align with traffic lights
-    // On other platforms, use two-line layout with series and episode info
-    final isMacOS = Platform.isMacOS;
-
     final topBar = Padding(
       padding: EdgeInsets.only(left: leftPadding, right: 16),
       child: Row(
@@ -963,7 +975,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: isMacOS
+            child: Platform.isMacOS
                 ? _buildMacOSSingleLineTitle()
                 : _buildMultiLineTitle(),
           ),
@@ -1298,842 +1310,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     );
   }
 
-  BoxConstraints _getBottomSheetConstraints() {
-    final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 600;
-
-    return BoxConstraints(
-      maxWidth: isDesktop ? 700 : double.infinity,
-      maxHeight: isDesktop ? 400 : size.height * 0.75,
-      minHeight: isDesktop ? 300 : size.height * 0.5,
-    );
-  }
-
-  void _showAudioBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: _getBottomSheetConstraints(),
-      builder: (context) => StreamBuilder<Tracks>(
-        stream: widget.player.stream.tracks,
-        initialData: widget.player.state.tracks,
-        builder: (context, snapshot) {
-          final tracks = snapshot.data;
-          final audioTracks = (tracks?.audio ?? [])
-              .where((track) => track.id != 'auto' && track.id != 'no')
-              .toList();
-
-          return SafeArea(
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.75,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.audiotrack, color: Colors.white),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Audio Tracks',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(color: Colors.white24, height: 1),
-                  if (audioTracks.isEmpty)
-                    const Expanded(
-                      child: Center(
-                        child: Text(
-                          'No audio tracks available',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: StreamBuilder<Track>(
-                        stream: widget.player.stream.track,
-                        initialData: widget.player.state.track,
-                        builder: (context, selectedSnapshot) {
-                          // Use snapshot data or fall back to current state
-                          final currentTrack =
-                              selectedSnapshot.data ??
-                              widget.player.state.track;
-                          final selectedTrack = currentTrack.audio;
-                          final selectedId = selectedTrack.id;
-
-                          return ListView.builder(
-                            itemCount: audioTracks.length,
-                            itemBuilder: (context, index) {
-                              final audioTrack = audioTracks[index];
-                              final isSelected = audioTrack.id == selectedId;
-
-                              final parts = <String>[];
-                              if (audioTrack.title != null &&
-                                  audioTrack.title!.isNotEmpty) {
-                                parts.add(audioTrack.title!);
-                              }
-                              if (audioTrack.language != null &&
-                                  audioTrack.language!.isNotEmpty) {
-                                parts.add(audioTrack.language!.toUpperCase());
-                              }
-                              if (audioTrack.codec != null &&
-                                  audioTrack.codec!.isNotEmpty) {
-                                parts.add(audioTrack.codec!.toUpperCase());
-                              }
-                              if (audioTrack.channelscount != null) {
-                                parts.add('${audioTrack.channelscount}ch');
-                              }
-
-                              final label = parts.isEmpty
-                                  ? 'Audio Track ${index + 1}'
-                                  : parts.join(' · ');
-
-                              return ListTile(
-                                title: Text(
-                                  label,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.blue
-                                        : Colors.white,
-                                  ),
-                                ),
-                                trailing: isSelected
-                                    ? const Icon(
-                                        Icons.check,
-                                        color: Colors.blue,
-                                      )
-                                    : null,
-                                onTap: () {
-                                  widget.player.setAudioTrack(audioTrack);
-                                  Navigator.pop(context);
-                                },
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showSubtitleBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: _getBottomSheetConstraints(),
-      builder: (context) => StreamBuilder<Tracks>(
-        stream: widget.player.stream.tracks,
-        initialData: widget.player.state.tracks,
-        builder: (context, snapshot) {
-          final tracks = snapshot.data;
-          final subtitles = (tracks?.subtitle ?? [])
-              .where((track) => track.id != 'auto' && track.id != 'no')
-              .toList();
-
-          return SafeArea(
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.75,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.subtitles, color: Colors.white),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Subtitles',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(color: Colors.white24, height: 1),
-                  if (subtitles.isEmpty)
-                    const Expanded(
-                      child: Center(
-                        child: Text(
-                          'No subtitles available',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: StreamBuilder<Track>(
-                        stream: widget.player.stream.track,
-                        initialData: widget.player.state.track,
-                        builder: (context, selectedSnapshot) {
-                          // Use snapshot data or fall back to current state
-                          final currentTrack =
-                              selectedSnapshot.data ??
-                              widget.player.state.track;
-                          final selectedTrack = currentTrack.subtitle;
-                          final selectedId = selectedTrack.id;
-                          final isOffSelected = selectedId == 'no';
-
-                          return ListView.builder(
-                            itemCount:
-                                subtitles.length + 1, // +1 for "Off" option
-                            itemBuilder: (context, index) {
-                              // First item is "Off"
-                              if (index == 0) {
-                                return ListTile(
-                                  title: Text(
-                                    'Off',
-                                    style: TextStyle(
-                                      color: isOffSelected
-                                          ? Colors.blue
-                                          : Colors.white,
-                                    ),
-                                  ),
-                                  trailing: isOffSelected
-                                      ? const Icon(
-                                          Icons.check,
-                                          color: Colors.blue,
-                                        )
-                                      : null,
-                                  onTap: () {
-                                    widget.player.setSubtitleTrack(
-                                      SubtitleTrack.no(),
-                                    );
-                                    Navigator.pop(context);
-                                  },
-                                );
-                              }
-
-                              // Subsequent items are subtitle tracks
-                              final subtitle = subtitles[index - 1];
-                              final isSelected = subtitle.id == selectedId;
-
-                              // Build label with available info
-                              final parts = <String>[];
-                              if (subtitle.title != null &&
-                                  subtitle.title!.isNotEmpty) {
-                                parts.add(subtitle.title!);
-                              }
-                              if (subtitle.language != null &&
-                                  subtitle.language!.isNotEmpty) {
-                                parts.add(subtitle.language!.toUpperCase());
-                              }
-                              if (subtitle.codec != null &&
-                                  subtitle.codec!.isNotEmpty) {
-                                // Format codec names nicely
-                                String codecName = subtitle.codec!
-                                    .toUpperCase();
-                                if (codecName == 'SUBRIP') {
-                                  codecName = 'SRT';
-                                } else if (codecName == 'DVD_SUBTITLE') {
-                                  codecName = 'DVD';
-                                } else if (codecName == 'ASS' ||
-                                    codecName == 'SSA') {
-                                  codecName = codecName; // Keep as-is
-                                } else if (codecName == 'WEBVTT') {
-                                  codecName = 'VTT';
-                                }
-                                parts.add(codecName);
-                              }
-
-                              final label = parts.isEmpty
-                                  ? 'Track $index'
-                                  : parts.join(' · ');
-
-                              return ListTile(
-                                title: Text(
-                                  label,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.blue
-                                        : Colors.white,
-                                  ),
-                                ),
-                                trailing: isSelected
-                                    ? const Icon(
-                                        Icons.check,
-                                        color: Colors.blue,
-                                      )
-                                    : null,
-                                onTap: () {
-                                  widget.player.setSubtitleTrack(subtitle);
-                                  Navigator.pop(context);
-                                },
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showChapterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: _getBottomSheetConstraints(),
-      builder: (context) => StreamBuilder<Duration>(
-        stream: widget.player.stream.position,
-        initialData: widget.player.state.position,
-        builder: (context, positionSnapshot) {
-          final currentPosition = positionSnapshot.data ?? Duration.zero;
-          final currentPositionMs = currentPosition.inMilliseconds;
-
-          // Find the current chapter based on position
-          int? currentChapterIndex;
-          for (int i = 0; i < _chapters.length; i++) {
-            final chapter = _chapters[i];
-            final startMs = chapter.startTimeOffset ?? 0;
-            final endMs =
-                chapter.endTimeOffset ??
-                (i < _chapters.length - 1
-                    ? _chapters[i + 1].startTimeOffset ?? 0
-                    : double.maxFinite.toInt());
-
-            if (currentPositionMs >= startMs && currentPositionMs < endMs) {
-              currentChapterIndex = i;
-              break;
-            }
-          }
-
-          return SafeArea(
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.75,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.video_library, color: Colors.white),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Chapters',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(color: Colors.white24, height: 1),
-                  if (!_chaptersLoaded)
-                    const Expanded(
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_chapters.isEmpty)
-                    const Expanded(
-                      child: Center(
-                        child: Text(
-                          'No chapters available',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: _chapters.length,
-                        itemBuilder: (context, index) {
-                          final chapter = _chapters[index];
-                          final isCurrentChapter = currentChapterIndex == index;
-
-                          return ListTile(
-                            leading: chapter.thumb != null
-                                ? Stack(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: Consumer<PlexClientProvider>(
-                                          builder:
-                                              (context, clientProvider, child) {
-                                                final client =
-                                                    clientProvider.client;
-                                                if (client == null) {
-                                                  return const Icon(
-                                                    Icons.image,
-                                                    color: Colors.white54,
-                                                    size: 34,
-                                                  );
-                                                }
-                                                return Image.network(
-                                                  client.getThumbnailUrl(
-                                                    chapter.thumb,
-                                                  ),
-                                                  width: 60,
-                                                  height: 34,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder:
-                                                      (
-                                                        context,
-                                                        error,
-                                                        stackTrace,
-                                                      ) => const Icon(
-                                                        Icons.image,
-                                                        color: Colors.white54,
-                                                        size: 34,
-                                                      ),
-                                                );
-                                              },
-                                        ),
-                                      ),
-                                      if (isCurrentChapter)
-                                        Positioned.fill(
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                              border: Border.all(
-                                                color: Colors.blue,
-                                                width: 2,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  )
-                                : null,
-                            title: Text(
-                              chapter.label,
-                              style: TextStyle(
-                                color: isCurrentChapter
-                                    ? Colors.blue
-                                    : Colors.white,
-                                fontWeight: isCurrentChapter
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                            subtitle: Text(
-                              _formatDuration(chapter.startTime),
-                              style: TextStyle(
-                                color: isCurrentChapter
-                                    ? Colors.blue.withValues(alpha: 0.7)
-                                    : Colors.white70,
-                                fontSize: 12,
-                              ),
-                            ),
-                            trailing: isCurrentChapter
-                                ? const Icon(
-                                    Icons.play_circle_filled,
-                                    color: Colors.blue,
-                                  )
-                                : null,
-                            onTap: () {
-                              widget.player.seek(chapter.startTime);
-                              Navigator.pop(context);
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showSleepTimerBottomSheet() async {
-    final sleepTimer = SleepTimerService();
-    final settingsService = await SettingsService.getInstance();
-    final defaultDuration = settingsService.getSleepTimerDuration();
-
-    if (!mounted) return;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: _getBottomSheetConstraints(),
-      builder: (context) {
-        return ListenableBuilder(
-          listenable: sleepTimer,
-          builder: (context, _) {
-            final durations = [5, 10, 15, 30, 45, 60, 90, 120];
-            // Add default duration if not in list
-            if (!durations.contains(defaultDuration)) {
-              durations.add(defaultDuration);
-              durations.sort();
-            }
-            final remainingTime = sleepTimer.remainingTime;
-
-            return SafeArea(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.75,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Icon(
-                            sleepTimer.isActive
-                                ? Icons.bedtime
-                                : Icons.bedtime_outlined,
-                            color: sleepTimer.isActive
-                                ? Colors.amber
-                                : Colors.white,
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Sleep Timer',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(color: Colors.white24, height: 1),
-
-                    // Show current timer status if active
-                    if (sleepTimer.isActive && remainingTime != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        color: Colors.amber.withValues(alpha: 0.1),
-                        child: Column(
-                          children: [
-                            const Text(
-                              'Timer Active',
-                              style: TextStyle(
-                                color: Colors.amber,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Playback will pause in ${_formatSleepTimerDuration(remainingTime)}',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                OutlinedButton.icon(
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('+15 min'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    side: const BorderSide(
-                                      color: Colors.white54,
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    sleepTimer.extendTimer(
-                                      const Duration(minutes: 15),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton.icon(
-                                  icon: const Icon(Icons.cancel),
-                                  label: const Text('Cancel'),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                  ),
-                                  onPressed: () {
-                                    sleepTimer.cancelTimer();
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(color: Colors.white24, height: 1),
-                    ],
-
-                    // Duration selection list
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: durations.length,
-                        itemBuilder: (context, index) {
-                          final minutes = durations[index];
-                          final isDefault = minutes == defaultDuration;
-                          final label = minutes < 60
-                              ? '$minutes minutes'
-                              : '${(minutes / 60).toStringAsFixed(minutes % 60 == 0 ? 0 : 1)} ${minutes == 60 ? 'hour' : 'hours'}';
-
-                          return ListTile(
-                            leading: Icon(
-                              Icons.timer,
-                              color: Colors.white70,
-                            ),
-                            title: Text(
-                              label,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                            onTap: () {
-                              sleepTimer.startTimer(
-                                Duration(minutes: minutes),
-                                () {
-                                  // Pause playback when timer completes
-                                  widget.player.pause();
-
-                                  // Show a snackbar notification
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Sleep timer completed - playback paused',
-                                        ),
-                                        duration: Duration(seconds: 3),
-                                      ),
-                                    );
-                                  }
-                                },
-                              );
-                              Navigator.pop(context);
-
-                              // Show confirmation snackbar
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Sleep timer set for $label'),
-                                  duration: const Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  String _formatSleepTimerDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    } else {
-      return '${seconds}s';
-    }
-  }
-
-  void _showPlaybackSpeedBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: _getBottomSheetConstraints(),
-      builder: (context) => StreamBuilder<double>(
-        stream: widget.player.stream.rate,
-        initialData: widget.player.state.rate,
-        builder: (context, snapshot) {
-          final currentRate = snapshot.data ?? 1.0;
-
-          // Define available playback speeds
-          final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
-
-          return SafeArea(
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height * 0.75,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.speed, color: Colors.white),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Playback Speed',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(color: Colors.white24, height: 1),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: speeds.length,
-                      itemBuilder: (context, index) {
-                        final speed = speeds[index];
-                        final isSelected = (currentRate - speed).abs() < 0.01;
-
-                        // Format speed label
-                        final label = speed == 1.0
-                            ? 'Normal'
-                            : '${speed.toStringAsFixed(2)}x';
-
-                        return ListTile(
-                          title: Text(
-                            label,
-                            style: TextStyle(
-                              color: isSelected ? Colors.blue : Colors.white,
-                            ),
-                          ),
-                          trailing: isSelected
-                              ? const Icon(Icons.check, color: Colors.blue)
-                              : null,
-                          onTap: () {
-                            widget.player.setRate(speed);
-                            Navigator.pop(context);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showVersionBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: _getBottomSheetConstraints(),
-      builder: (context) {
-        final versions = widget.availableVersions;
-        final currentIndex = widget.selectedMediaIndex;
-
-        return SafeArea(
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.75,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.video_file, color: Colors.white),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Video Version',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(color: Colors.white24, height: 1),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: versions.length,
-                    itemBuilder: (context, index) {
-                      final version = versions[index];
-                      final isSelected = index == currentIndex;
-
-                      return ListTile(
-                        title: Text(
-                          version.displayLabel,
-                          style: TextStyle(
-                            color: isSelected ? Colors.blue : Colors.white,
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? const Icon(Icons.check, color: Colors.blue)
-                            : null,
-                        onTap: () {
-                          Navigator.pop(context);
-                          _switchMediaVersion(index);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   /// Switch to a different media version
   Future<void> _switchMediaVersion(int newMediaIndex) async {
     if (newMediaIndex == widget.selectedMediaIndex) {
@@ -2187,42 +1363,5 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     } else {
       return '$minutes:${seconds.toString().padLeft(2, '0')}';
     }
-  }
-}
-
-/// Custom painter for drawing chapter markers on the timeline
-class ChapterMarkerPainter extends CustomPainter {
-  final List<PlexChapter> chapters;
-  final Duration duration;
-
-  ChapterMarkerPainter({required this.chapters, required this.duration});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (duration.inMilliseconds == 0) return;
-
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.7)
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
-
-    for (final chapter in chapters) {
-      final startMs = chapter.startTimeOffset ?? 0;
-      if (startMs == 0) continue; // Skip first chapter marker at 0:00
-
-      final position = (startMs / duration.inMilliseconds) * size.width;
-
-      // Draw short vertical line for chapter marker (centered on slider track)
-      canvas.drawLine(
-        Offset(position, size.height * 0.45),
-        Offset(position, size.height * 0.55),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(ChapterMarkerPainter oldDelegate) {
-    return oldDelegate.chapters != chapters || oldDelegate.duration != duration;
   }
 }

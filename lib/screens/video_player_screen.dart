@@ -9,7 +9,7 @@ import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/provider_extensions.dart';
-import '../widgets/plex_video_controls.dart';
+import '../widgets/video_controls/video_controls.dart';
 import '../utils/language_codes.dart';
 import '../utils/app_logger.dart';
 import '../services/settings_service.dart';
