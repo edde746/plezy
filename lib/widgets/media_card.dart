@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/content_rating_formatter.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../theme/theme_helper.dart';
@@ -16,6 +18,7 @@ class MediaCard extends StatefulWidget {
   final double? width;
   final double? height;
   final void Function(String ratingKey)? onRefresh;
+  final bool forceGridMode;
 
   const MediaCard({
     super.key,
@@ -23,6 +26,7 @@ class MediaCard extends StatefulWidget {
     this.width,
     this.height,
     this.onRefresh,
+    this.forceGridMode = false,
   });
 
   @override
@@ -86,86 +90,122 @@ class _MediaCardState extends State<MediaCard> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
+    final viewMode = widget.forceGridMode
+        ? ViewMode.grid
+        : settingsProvider.viewMode;
+
+    return MediaContextMenu(
+      metadata: widget.item,
+      onRefresh: widget.onRefresh,
+      onTap: () => _handleTap(context),
+      child: viewMode == ViewMode.grid
+          ? _MediaCardGrid(
+              item: widget.item,
+              width: widget.width,
+              height: widget.height,
+              onTap: () => _handleTap(context),
+            )
+          : _MediaCardList(
+              item: widget.item,
+              onTap: () => _handleTap(context),
+              density: settingsProvider.libraryDensity,
+            ),
+    );
+  }
+}
+
+/// Grid layout for media cards
+class _MediaCardGrid extends StatelessWidget {
+  final PlexMetadata item;
+  final double? width;
+  final double? height;
+  final VoidCallback onTap;
+
+  const _MediaCardGrid({
+    required this.item,
+    this.width,
+    this.height,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return SizedBox(
-      width: widget.width,
-      child: MediaContextMenu(
-        metadata: widget.item,
-        onRefresh: widget.onRefresh,
-        onTap: () => _handleTap(context),
-        child: Semantics(
-          label: "media-card-${widget.item.ratingKey}",
-          identifier: "media-card-${widget.item.ratingKey}",
-          button: true,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Poster
-                  if (widget.height != null)
-                    SizedBox(
-                      width: double.infinity,
-                      height: widget.height,
-                      child: _buildPosterWithOverlay(context),
-                    )
-                  else
-                    Expanded(child: _buildPosterWithOverlay(context)),
-                  const SizedBox(height: 4),
-                  // Text content
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
+      width: width,
+      child: Semantics(
+        label: "media-card-${item.ratingKey}",
+        identifier: "media-card-${item.ratingKey}",
+        button: true,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Poster
+                if (height != null)
+                  SizedBox(
+                    width: double.infinity,
+                    height: height,
+                    child: _buildPosterWithOverlay(context),
+                  )
+                else
+                  Expanded(child: _buildPosterWithOverlay(context)),
+                const SizedBox(height: 4),
+                // Text content
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.displayTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        height: 1.1,
+                      ),
+                    ),
+                    if (item.displaySubtitle != null)
                       Text(
-                        widget.item.displayTitle,
+                        item.displaySubtitle!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                          height: 1.1,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(
+                              color: tokens(context).textMuted,
+                              fontSize: 11,
+                              height: 1.1,
+                            ),
+                      )
+                    else if (item.parentTitle != null)
+                      Text(
+                        item.parentTitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(
+                              color: tokens(context).textMuted,
+                              fontSize: 11,
+                              height: 1.1,
+                            ),
+                      )
+                    else if (item.year != null)
+                      Text(
+                        '${item.year}',
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(
+                              color: tokens(context).textMuted,
+                              fontSize: 11,
+                              height: 1.1,
+                            ),
                       ),
-                      if (widget.item.displaySubtitle != null)
-                        Text(
-                          widget.item.displaySubtitle!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: tokens(context).textMuted,
-                                fontSize: 11,
-                                height: 1.1,
-                              ),
-                        )
-                      else if (widget.item.parentTitle != null)
-                        Text(
-                          widget.item.parentTitle!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: tokens(context).textMuted,
-                                fontSize: 11,
-                                height: 1.1,
-                              ),
-                        )
-                      else if (widget.item.year != null)
-                        Text(
-                          '${widget.item.year}',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: tokens(context).textMuted,
-                                fontSize: 11,
-                                height: 1.1,
-                              ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -180,14 +220,298 @@ class _MediaCardState extends State<MediaCard> {
           borderRadius: BorderRadius.circular(8),
           child: _buildPosterImage(context),
         ),
-        _PosterOverlay(item: widget.item),
+        _PosterOverlay(item: item),
       ],
     );
   }
 
   Widget _buildPosterImage(BuildContext context) {
     final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
-    final posterUrl = widget.item.posterThumb(useSeasonPoster: useSeasonPoster);
+    final posterUrl = item.posterThumb(useSeasonPoster: useSeasonPoster);
+    if (posterUrl != null) {
+      return Consumer<PlexClientProvider>(
+        builder: (context, clientProvider, child) {
+          final client = clientProvider.client;
+          if (client == null) {
+            return const SkeletonLoader(
+              child: Center(
+                child: Icon(Icons.movie, size: 40, color: Colors.white54),
+              ),
+            );
+          }
+
+          return CachedNetworkImage(
+            imageUrl: client.getThumbnailUrl(posterUrl),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            filterQuality: FilterQuality.medium,
+            fadeInDuration: const Duration(milliseconds: 300),
+            placeholder: (context, url) => const SkeletonLoader(),
+            errorWidget: (context, url, error) => Container(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: const Center(child: Icon(Icons.broken_image, size: 40)),
+            ),
+          );
+        },
+      );
+    } else {
+      return const SkeletonLoader(
+        child: Center(
+          child: Icon(Icons.movie, size: 40, color: Colors.white54),
+        ),
+      );
+    }
+  }
+}
+
+/// List layout for media cards
+class _MediaCardList extends StatelessWidget {
+  final PlexMetadata item;
+  final VoidCallback onTap;
+  final LibraryDensity density;
+
+  const _MediaCardList({
+    required this.item,
+    required this.onTap,
+    required this.density,
+  });
+
+  double get _posterWidth {
+    switch (density) {
+      case LibraryDensity.compact:
+        return 80;
+      case LibraryDensity.normal:
+        return 100;
+      case LibraryDensity.comfortable:
+        return 120;
+    }
+  }
+
+  double get _posterHeight {
+    return _posterWidth * 1.5; // Maintain 2:3 aspect ratio
+  }
+
+  double get _titleFontSize {
+    switch (density) {
+      case LibraryDensity.compact:
+        return 14;
+      case LibraryDensity.normal:
+        return 15;
+      case LibraryDensity.comfortable:
+        return 16;
+    }
+  }
+
+  double get _metadataFontSize {
+    switch (density) {
+      case LibraryDensity.compact:
+        return 11;
+      case LibraryDensity.normal:
+        return 12;
+      case LibraryDensity.comfortable:
+        return 13;
+    }
+  }
+
+  double get _subtitleFontSize {
+    switch (density) {
+      case LibraryDensity.compact:
+        return 12;
+      case LibraryDensity.normal:
+        return 13;
+      case LibraryDensity.comfortable:
+        return 14;
+    }
+  }
+
+  double get _summaryFontSize {
+    switch (density) {
+      case LibraryDensity.compact:
+        return 11;
+      case LibraryDensity.normal:
+        return 12;
+      case LibraryDensity.comfortable:
+        return 13;
+    }
+  }
+
+  int get _summaryMaxLines {
+    switch (density) {
+      case LibraryDensity.compact:
+        return 2;
+      case LibraryDensity.normal:
+        return 3;
+      case LibraryDensity.comfortable:
+        return 4;
+    }
+  }
+
+  String _formatDuration(int milliseconds) {
+    final duration = Duration(milliseconds: milliseconds);
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    } else {
+      return '${minutes}m';
+    }
+  }
+
+  String _buildMetadataLine() {
+    final parts = <String>[];
+
+    // Add content rating
+    if (item.contentRating != null && item.contentRating!.isNotEmpty) {
+      final rating = formatContentRating(item.contentRating);
+      if (rating.isNotEmpty) {
+        parts.add(rating);
+      }
+    }
+
+    // Add year
+    if (item.year != null) {
+      parts.add('${item.year}');
+    }
+
+    // Add duration
+    if (item.duration != null) {
+      parts.add(_formatDuration(item.duration!));
+    }
+
+    // Add user rating
+    if (item.rating != null) {
+      parts.add('${item.rating!.toStringAsFixed(1)}★');
+    }
+
+    // Add studio
+    if (item.studio != null && item.studio!.isNotEmpty) {
+      parts.add(item.studio!);
+    }
+
+    return parts.join(' • ');
+  }
+
+  String? _buildSubtitleText() {
+    // For TV episodes, show S#E# format
+    if (item.parentIndex != null && item.index != null) {
+      return 'S${item.parentIndex} E${item.index}';
+    }
+
+    // Otherwise use existing subtitle logic
+    if (item.displaySubtitle != null) {
+      return item.displaySubtitle;
+    } else if (item.parentTitle != null) {
+      return item.parentTitle;
+    }
+
+    // Year is now shown in metadata line, so don't show it here
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final metadataLine = _buildMetadataLine();
+    final subtitle = _buildSubtitleText();
+
+    return Semantics(
+      label: "media-card-${item.ratingKey}",
+      identifier: "media-card-${item.ratingKey}",
+      button: true,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Poster (responsive size based on density)
+              SizedBox(
+                width: _posterWidth,
+                height: _posterHeight,
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: _buildPosterImage(context),
+                    ),
+                    _PosterOverlay(item: item),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Metadata
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      item.displayTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: _titleFontSize,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Metadata info line (rating, duration, score, studio)
+                    if (metadataLine.isNotEmpty) ...[
+                      Text(
+                        metadataLine,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: tokens(context).textMuted.withValues(alpha: 0.9),
+                              fontSize: _metadataFontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                    ],
+                    // Subtitle (S#E# or year/parent title)
+                    if (subtitle != null) ...[
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: tokens(context).textMuted.withValues(alpha: 0.85),
+                              fontSize: _subtitleFontSize,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    // Summary
+                    if (item.summary != null) ...[
+                      Text(
+                        item.summary!,
+                        maxLines: _summaryMaxLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: tokens(context).textMuted.withValues(alpha: 0.7),
+                              fontSize: _summaryFontSize,
+                              height: 1.3,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPosterImage(BuildContext context) {
+    final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
+    final posterUrl = item.posterThumb(useSeasonPoster: useSeasonPoster);
     if (posterUrl != null) {
       return Consumer<PlexClientProvider>(
         builder: (context, clientProvider, child) {

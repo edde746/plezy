@@ -4,6 +4,7 @@ import '../services/settings_service.dart';
 class SettingsProvider extends ChangeNotifier {
   late SettingsService _settingsService;
   LibraryDensity _libraryDensity = LibraryDensity.normal;
+  ViewMode _viewMode = ViewMode.grid;
   bool _useSeasonPoster = false;
   bool _showHeroSection = true;
 
@@ -14,12 +15,14 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> _initializeSettings() async {
     _settingsService = await SettingsService.getInstance();
     _libraryDensity = _settingsService.getLibraryDensity();
+    _viewMode = _settingsService.getViewMode();
     _useSeasonPoster = _settingsService.getUseSeasonPoster();
     _showHeroSection = _settingsService.getShowHeroSection();
     notifyListeners();
   }
 
   LibraryDensity get libraryDensity => _libraryDensity;
+  ViewMode get viewMode => _viewMode;
   bool get useSeasonPoster => _useSeasonPoster;
   bool get showHeroSection => _showHeroSection;
 
@@ -27,6 +30,14 @@ class SettingsProvider extends ChangeNotifier {
     if (_libraryDensity != density) {
       _libraryDensity = density;
       await _settingsService.setLibraryDensity(density);
+      notifyListeners();
+    }
+  }
+
+  Future<void> setViewMode(ViewMode mode) async {
+    if (_viewMode != mode) {
+      _viewMode = mode;
+      await _settingsService.setViewMode(mode);
       notifyListeners();
     }
   }

@@ -128,6 +128,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
+              return ListTile(
+                leading: const Icon(Icons.view_list),
+                title: const Text('View Mode'),
+                subtitle: Text(settingsProvider.viewMode == settings.ViewMode.grid ? 'Grid' : 'List'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showViewModeDialog(),
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
               return SwitchListTile(
                 secondary: const Icon(Icons.image),
                 title: const Text('Use Season Posters'),
@@ -809,6 +820,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: () async {
                       await settingsProvider.setLibraryDensity(
                         settings.LibraryDensity.comfortable,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showViewModeDialog() {
+    final settingsProvider = context.read<SettingsProvider>();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Consumer<SettingsProvider>(
+          builder: (context, provider, child) {
+            return AlertDialog(
+              title: const Text('View Mode'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: Icon(
+                      provider.viewMode == settings.ViewMode.grid
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('Grid'),
+                    subtitle: const Text('Display items in a grid layout'),
+                    onTap: () async {
+                      await settingsProvider.setViewMode(
+                        settings.ViewMode.grid,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: Icon(
+                      provider.viewMode == settings.ViewMode.list
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                    ),
+                    title: const Text('List'),
+                    subtitle: const Text('Display items in a list layout'),
+                    onTap: () async {
+                      await settingsProvider.setViewMode(
+                        settings.ViewMode.list,
                       );
                       if (context.mounted) Navigator.pop(context);
                     },

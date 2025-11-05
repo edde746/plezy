@@ -8,6 +8,8 @@ enum ThemeMode { system, light, dark }
 
 enum LibraryDensity { compact, normal, comfortable }
 
+enum ViewMode { grid, list }
+
 class SettingsService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
@@ -18,6 +20,7 @@ class SettingsService {
   static const String _keyPreferredVideoCodec = 'preferred_video_codec';
   static const String _keyPreferredAudioCodec = 'preferred_audio_codec';
   static const String _keyLibraryDensity = 'library_density';
+  static const String _keyViewMode = 'view_mode';
   static const String _keyUseSeasonPoster = 'use_season_poster';
   static const String _keySeekTimeSmall = 'seek_time_small';
   static const String _keySeekTimeLarge = 'seek_time_large';
@@ -112,6 +115,19 @@ class SettingsService {
     return LibraryDensity.values.firstWhere(
       (density) => density.name == densityString,
       orElse: () => LibraryDensity.normal,
+    );
+  }
+
+  // View Mode
+  Future<void> setViewMode(ViewMode mode) async {
+    await _prefs.setString(_keyViewMode, mode.name);
+  }
+
+  ViewMode getViewMode() {
+    final modeString = _prefs.getString(_keyViewMode);
+    return ViewMode.values.firstWhere(
+      (mode) => mode.name == modeString,
+      orElse: () => ViewMode.grid,
     );
   }
 
@@ -660,6 +676,7 @@ class SettingsService {
       _prefs.remove(_keyPreferredVideoCodec),
       _prefs.remove(_keyPreferredAudioCodec),
       _prefs.remove(_keyLibraryDensity),
+      _prefs.remove(_keyViewMode),
       _prefs.remove(_keyUseSeasonPoster),
       _prefs.remove(_keyShowHeroSection),
       _prefs.remove(_keySeekTimeSmall),
@@ -688,6 +705,7 @@ class SettingsService {
       'preferredVideoCodec': getPreferredVideoCodec(),
       'preferredAudioCodec': getPreferredAudioCodec(),
       'libraryDensity': getLibraryDensity().name,
+      'viewMode': getViewMode().name,
       'useSeasonPoster': getUseSeasonPoster(),
       'seekTimeSmall': getSeekTimeSmall(),
       'seekTimeLarge': getSeekTimeLarge(),

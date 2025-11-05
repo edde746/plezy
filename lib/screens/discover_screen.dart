@@ -1291,6 +1291,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       width: cardWidth,
                       height: posterHeight,
                       onRefresh: updateItem,
+                      forceGridMode: true,
                     ),
                   );
                 },

@@ -213,27 +213,50 @@ class _SearchScreenState extends State<SearchScreen>
                 ),
               )
             else
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: _getMaxCrossAxisExtent(
-                      context,
-                      context.watch<SettingsProvider>().libraryDensity,
-                    ),
-                    childAspectRatio: 2 / 3.3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final item = _searchResults[index];
-                    return MediaCard(
-                      key: Key(item.ratingKey),
-                      item: item,
-                      onRefresh: updateItem,
+              Consumer<SettingsProvider>(
+                builder: (context, settingsProvider, child) {
+                  if (settingsProvider.viewMode == ViewMode.list) {
+                    return SliverPadding(
+                      padding: const EdgeInsets.all(16),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final item = _searchResults[index];
+                            return MediaCard(
+                              key: Key(item.ratingKey),
+                              item: item,
+                              onRefresh: updateItem,
+                            );
+                          },
+                          childCount: _searchResults.length,
+                        ),
+                      ),
                     );
-                  }, childCount: _searchResults.length),
-                ),
+                  } else {
+                    return SliverPadding(
+                      padding: const EdgeInsets.all(16),
+                      sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: _getMaxCrossAxisExtent(
+                            context,
+                            settingsProvider.libraryDensity,
+                          ),
+                          childAspectRatio: 2 / 3.3,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = _searchResults[index];
+                          return MediaCard(
+                            key: Key(item.ratingKey),
+                            item: item,
+                            onRefresh: updateItem,
+                          );
+                        }, childCount: _searchResults.length),
+                      ),
+                    );
+                  }
+                },
               ),
           ],
         ),

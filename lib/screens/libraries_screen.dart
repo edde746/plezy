@@ -953,27 +953,50 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 ),
               )
             else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: _getMaxCrossAxisExtent(
-                      context,
-                      context.watch<SettingsProvider>().libraryDensity,
-                    ),
-                    childAspectRatio: 2 / 3.3,
-                    crossAxisSpacing: 0,
-                    mainAxisSpacing: 0,
-                  ),
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final item = _items[index];
-                    return MediaCard(
-                      key: Key(item.ratingKey),
-                      item: item,
-                      onRefresh: updateItem,
+              Consumer<SettingsProvider>(
+                builder: (context, settingsProvider, child) {
+                  if (settingsProvider.viewMode == ViewMode.list) {
+                    return SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final item = _items[index];
+                            return MediaCard(
+                              key: Key(item.ratingKey),
+                              item: item,
+                              onRefresh: updateItem,
+                            );
+                          },
+                          childCount: _items.length,
+                        ),
+                      ),
                     );
-                  }, childCount: _items.length),
-                ),
+                  } else {
+                    return SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: _getMaxCrossAxisExtent(
+                            context,
+                            settingsProvider.libraryDensity,
+                          ),
+                          childAspectRatio: 2 / 3.3,
+                          crossAxisSpacing: 0,
+                          mainAxisSpacing: 0,
+                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = _items[index];
+                          return MediaCard(
+                            key: Key(item.ratingKey),
+                            item: item,
+                            onRefresh: updateItem,
+                          );
+                        }, childCount: _items.length),
+                      ),
+                    );
+                  }
+                },
               ),
           ],
         ],
