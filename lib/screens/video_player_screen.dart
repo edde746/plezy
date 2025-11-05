@@ -50,6 +50,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   PlexClientProvider? _cachedClientProvider;
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
+  StreamSubscription<PlayerLog>? _logSubscription;
+  StreamSubscription<String>? _errorSubscription;
 
   @override
   void initState() {
@@ -105,6 +107,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
       final enableHardwareDecoding = settingsService
           .getEnableHardwareDecoding();
+      final debugLoggingEnabled = settingsService.getEnableDebugLogging();
 
       // Create player with configuration
       player = Player(
@@ -113,6 +116,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           libassAndroidFont: 'assets/droid-sans.ttf',
           libassAndroidFontName: 'Droid Sans Fallback',
           bufferSize: bufferSizeBytes,
+          logLevel: debugLoggingEnabled ? MPVLogLevel.debug : MPVLogLevel.error,
         ),
       );
       controller = VideoController(
@@ -150,6 +154,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       // Listen to completion
       player!.stream.completed.listen(_onVideoCompleted);
+
+      // Listen to MPV logs
+      _logSubscription = player!.stream.log.listen(_onPlayerLog);
+
+      // Listen to MPV errors
+      _errorSubscription = player!.stream.error.listen(_onPlayerError);
 
       // Start periodic progress updates
       _startProgressTracking();
@@ -281,6 +291,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void dispose() {
     // Stop progress tracking
     _progressTimer?.cancel();
+
+    // Cancel stream subscriptions
+    _logSubscription?.cancel();
+    _errorSubscription?.cancel();
 
     // Send final stopped state
     _sendProgress('stopped');
@@ -905,6 +919,33 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         _showPlayNextDialog = true;
       });
     }
+  }
+
+  void _onPlayerLog(PlayerLog log) {
+    // Map MPV log levels to app logger levels
+    switch (log.level.toLowerCase()) {
+      case 'fatal':
+      case 'error':
+        appLogger.e('[MPV:${log.prefix}] ${log.text}');
+        break;
+      case 'warn':
+        appLogger.w('[MPV:${log.prefix}] ${log.text}');
+        break;
+      case 'info':
+        appLogger.i('[MPV:${log.prefix}] ${log.text}');
+        break;
+      case 'debug':
+      case 'trace':
+      case 'v':
+        appLogger.d('[MPV:${log.prefix}] ${log.text}');
+        break;
+      default:
+        appLogger.d('[MPV:${log.prefix}:${log.level}] ${log.text}');
+    }
+  }
+
+  void _onPlayerError(String error) {
+    appLogger.e('[MPV ERROR] $error');
   }
 
   Future<void> _playNext() async {

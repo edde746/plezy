@@ -12,6 +12,7 @@ import 'services/server_connection_service.dart';
 import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/update_service.dart';
+import 'services/settings_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';
 import 'providers/theme_provider.dart';
@@ -47,6 +48,11 @@ void main() async {
 
   // Initialize language codes for track selection
   await LanguageCodes.initialize();
+
+  // Initialize logger level based on debug setting
+  final settings = await SettingsService.getInstance();
+  final debugEnabled = settings.getEnableDebugLogging();
+  setLoggerLevel(debugEnabled);
 
   // Start global fullscreen state monitoring
   FullscreenStateManager().startMonitoring();

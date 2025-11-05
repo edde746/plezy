@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:plezy/utils/app_logger.dart';
 
 enum ThemeMode { system, light, dark }
 
@@ -56,6 +57,8 @@ class SettingsService {
   // Debug Logging
   Future<void> setEnableDebugLogging(bool enabled) async {
     await _prefs.setBool(_keyEnableDebugLogging, enabled);
+    // Update logger level immediately when setting changes
+    setLoggerLevel(enabled);
   }
 
   bool getEnableDebugLogging() {
