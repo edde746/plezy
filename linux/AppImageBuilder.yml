@@ -1,0 +1,69 @@
+version: 1
+
+script:
+  # Remove previous build
+  - rm -rf AppDir || true
+  # Copy Flutter bundle
+  - cp -r build/linux/x64/release/bundle AppDir
+  # Create icon directories
+  - mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps/
+  - mkdir -p AppDir/usr/share/applications/
+  - mkdir -p AppDir/usr/share/metainfo/
+  # Copy desktop integration files
+  - install -Dm644 linux/com.edde746.plezy.desktop AppDir/usr/share/applications/com.edde746.plezy.desktop
+  - install -Dm644 linux/com.edde746.plezy.metainfo.xml AppDir/usr/share/metainfo/com.edde746.plezy.metainfo.xml
+  - install -Dm644 android/fastlane/metadata/android/en-GB/images/icon.png AppDir/usr/share/icons/hicolor/512x512/apps/com.edde746.plezy.png
+  # Move libraries to standard location
+  - mkdir -p AppDir/usr/lib
+  - mv AppDir/lib/* AppDir/usr/lib/ || true
+  - rmdir AppDir/lib || true
+
+AppDir:
+  path: ./AppDir
+
+  app_info:
+    id: com.edde746.plezy
+    name: Plezy
+    icon: com.edde746.plezy
+    version: latest
+    exec: bin/plezy
+    exec_args: $@
+
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse'
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse'
+
+    include:
+      - libgtk-3-0
+      - libmpv2
+      - mpv
+      - libasound2
+
+    exclude:
+      - adwaita-icon-theme
+      - humanity-icon-theme
+
+  runtime:
+    env:
+      GIO_MODULE_DIR: '${APPDIR}/usr/lib/x86_64-linux-gnu/gio/modules'
+      APPDIR_LIBRARY_PATH: '${APPDIR}/usr/lib/x86_64-linux-gnu:${APPDIR}/usr/lib'
+
+  test:
+    fedora-30:
+      image: appimagecrafters/tests-env:fedora-30
+      command: ./AppRun
+    debian-stable:
+      image: appimagecrafters/tests-env:debian-stable
+      command: ./AppRun
+    archlinux-latest:
+      image: appimagecrafters/tests-env:archlinux-latest
+      command: ./AppRun
+    ubuntu-xenial:
+      image: appimagecrafters/tests-env:ubuntu-xenial
+      command: ./AppRun
+
+AppImage:
+  arch: x86_64
+  update-information: guess
