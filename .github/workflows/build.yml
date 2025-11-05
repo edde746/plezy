@@ -44,6 +44,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Clean dependency cache
+        run: rm -rf .dart_tool
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -114,6 +117,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pods-
 
+      - name: Clean dependency cache
+        run: rm -rf .dart_tool
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -171,6 +177,9 @@ jobs:
           key: ${{ runner.os }}-macos-pods-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-macos-pods-
+
+      - name: Clean dependency cache
+        run: rm -rf .dart_tool
 
       - name: Install dependencies
         run: flutter pub get
@@ -294,6 +303,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pub-
 
+      - name: Clean dependency cache
+        run: rm -rf .dart_tool
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -356,6 +368,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv keybinder-3.0
+
+      - name: Clean dependency cache
+        run: rm -rf .dart_tool
 
       - name: Install dependencies
         run: flutter pub get
