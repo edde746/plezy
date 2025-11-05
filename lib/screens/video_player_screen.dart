@@ -130,6 +130,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         ),
       );
 
+      // Apply audio sync offset
+      final audioSyncOffset = settingsService.getAudioSyncOffset();
+      if (audioSyncOffset != 0) {
+        final offsetSeconds = audioSyncOffset / 1000.0;
+        await (player!.platform as dynamic).setProperty(
+          'audio-delay',
+          offsetSeconds.toString(),
+        );
+      }
+
       // Notify that player is ready
       if (mounted) {
         setState(() {
@@ -296,7 +306,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     setState(() {
       _boxFitMode = (_boxFitMode + 1) % 3;
     });
-    final modes = ['contain (letterbox)', 'cover (fill screen)', 'fill (stretch)'];
+    final modes = [
+      'contain (letterbox)',
+      'cover (fill screen)',
+      'fill (stretch)',
+    ];
     appLogger.d('BoxFit mode: ${modes[_boxFitMode]}');
   }
 
@@ -1059,7 +1073,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       child: Scaffold(
         backgroundColor: Colors.black,
         body: GestureDetector(
-          behavior: HitTestBehavior.translucent, // Allow taps to pass through to controls
+          behavior: HitTestBehavior
+              .translucent, // Allow taps to pass through to controls
           onScaleStart: (details) {
             // Initialize pinch gesture tracking (mobile only)
             if (!PlatformDetector.isMobile(context)) return;
@@ -1099,117 +1114,117 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   ),
                 ),
               ),
-            // Play Next Dialog
-            if (_showPlayNextDialog && _nextEpisode != null)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.8),
-                  child: Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 32),
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.play_circle_outline,
-                            size: 64,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(height: 24),
-                          Consumer<PlaybackStateProvider>(
-                            builder: (context, playbackState, child) {
-                              final isShuffleActive =
-                                  playbackState.isShuffleActive;
-                              return Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text(
-                                    'Up Next',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  if (isShuffleActive) ...[
-                                    const SizedBox(width: 8),
-                                    const Icon(
-                                      Icons.shuffle,
-                                      size: 20,
-                                      color: Colors.white70,
-                                    ),
-                                  ],
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _nextEpisode!.grandparentTitle ??
-                                _nextEpisode!.title,
-                            style: const TextStyle(
+              // Play Next Dialog
+              if (_showPlayNextDialog && _nextEpisode != null)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.8),
+                    child: Center(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 32),
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.play_circle_outline,
+                              size: 64,
                               color: Colors.white,
-                              fontSize: 18,
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          if (_nextEpisode!.parentIndex != null &&
-                              _nextEpisode!.index != null)
+                            const SizedBox(height: 24),
+                            Consumer<PlaybackStateProvider>(
+                              builder: (context, playbackState, child) {
+                                final isShuffleActive =
+                                    playbackState.isShuffleActive;
+                                return Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'Up Next',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    if (isShuffleActive) ...[
+                                      const SizedBox(width: 8),
+                                      const Icon(
+                                        Icons.shuffle,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
+                                    ],
+                                  ],
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
                             Text(
-                              'S${_nextEpisode!.parentIndex} · E${_nextEpisode!.index} · ${_nextEpisode!.title}',
+                              _nextEpisode!.grandparentTitle ??
+                                  _nextEpisode!.title,
                               style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 16,
+                                color: Colors.white,
+                                fontSize: 18,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                          const SizedBox(height: 32),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              OutlinedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _showPlayNextDialog = false;
-                                  });
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  side: const BorderSide(color: Colors.white),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 16,
-                                  ),
+                            const SizedBox(height: 8),
+                            if (_nextEpisode!.parentIndex != null &&
+                                _nextEpisode!.index != null)
+                              Text(
+                                'S${_nextEpisode!.parentIndex} · E${_nextEpisode!.index} · ${_nextEpisode!.title}',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
                                 ),
-                                child: const Text('Cancel'),
+                                textAlign: TextAlign.center,
                               ),
-                              const SizedBox(width: 16),
-                              FilledButton(
-                                onPressed: _playNext,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 16,
+                            const SizedBox(height: 32),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showPlayNextDialog = false;
+                                    });
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: const BorderSide(color: Colors.white),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                      vertical: 16,
+                                    ),
                                   ),
+                                  child: const Text('Cancel'),
                                 ),
-                                child: const Text('Play Now'),
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 16),
+                                FilledButton(
+                                  onPressed: _playNext,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                      vertical: 16,
+                                    ),
+                                  ),
+                                  child: const Text('Play Now'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),

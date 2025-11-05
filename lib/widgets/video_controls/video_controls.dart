@@ -17,6 +17,7 @@ import '../../utils/provider_extensions.dart';
 import '../../screens/video_player_screen.dart';
 import '../app_bar_back_button.dart';
 import 'painters/chapter_marker_painter.dart';
+import 'sheets/audio_sync_sheet.dart';
 import 'sheets/audio_track_sheet.dart';
 import 'sheets/chapter_sheet.dart';
 import 'sheets/playback_speed_sheet.dart';
@@ -83,6 +84,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
   int _seekTimeSmall = 10; // Default, loaded from settings
+  int _audioSyncOffset = 0; // Default, loaded from settings
   // Double-tap feedback state
   bool _showDoubleTapFeedback = false;
   double _doubleTapFeedbackOpacity = 0.0;
@@ -114,6 +116,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     if (mounted) {
       setState(() {
         _seekTimeSmall = settingsService.getSeekTimeSmall();
+        _audioSyncOffset = settingsService.getAudioSyncOffset();
       });
     }
   }
@@ -343,6 +346,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 icon: const Icon(Icons.audiotrack, color: Colors.white),
                 onPressed: () => AudioTrackSheet.show(context, widget.player),
               ),
+            // Audio sync offset button
+            IconButton(
+              icon: Icon(
+                Icons.sync,
+                color: _audioSyncOffset != 0 ? Colors.amber : Colors.white,
+              ),
+              onPressed: () async {
+                AudioSyncSheet.show(context, widget.player, _audioSyncOffset);
+                // Reload offset after sheet closes (in case it changed)
+                await Future.delayed(const Duration(milliseconds: 300));
+                if (mounted) {
+                  _loadSeekTimes();
+                }
+              },
+            ),
             if (_hasSubtitles(tracks))
               IconButton(
                 icon: const Icon(Icons.subtitles, color: Colors.white),
