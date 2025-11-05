@@ -286,13 +286,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   IconData _getBoxFitIcon(int mode) {
     switch (mode) {
       case 0:
-        return Icons.crop_free; // contain (letterbox)
+        return Icons.fit_screen; // contain (letterbox)
       case 1:
-        return Icons.crop; // cover (fill screen)
+        return Icons.aspect_ratio; // cover (fill screen)
       case 2:
-        return Icons.fit_screen; // fill (stretch)
+        return Icons.settings_overscan; // fill (stretch)
       default:
-        return Icons.crop_free;
+        return Icons.fit_screen;
     }
   }
 
@@ -378,6 +378,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 ),
                 tooltip: _getBoxFitTooltip(widget.boxFitMode),
                 onPressed: widget.onCycleBoxFitMode,
+              ),
+            // Fullscreen toggle (desktop only)
+            if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
+              IconButton(
+                icon: Icon(
+                  _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                  color: Colors.white,
+                ),
+                onPressed: _toggleFullscreen,
               ),
           ],
         );
@@ -1161,14 +1170,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               const SizedBox(width: 16),
               // Audio track, subtitle, and chapter controls
               _buildTrackAndChapterControls(),
-              // Fullscreen
-              IconButton(
-                icon: Icon(
-                  _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                  color: Colors.white,
-                ),
-                onPressed: _toggleFullscreen,
-              ),
             ],
           ),
         ],
