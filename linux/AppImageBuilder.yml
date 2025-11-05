@@ -12,7 +12,7 @@ script:
   # Copy desktop integration files
   - install -Dm644 linux/com.edde746.plezy.desktop AppDir/usr/share/applications/com.edde746.plezy.desktop
   - install -Dm644 linux/com.edde746.plezy.metainfo.xml AppDir/usr/share/metainfo/com.edde746.plezy.metainfo.xml
-  - install -Dm644 android/fastlane/metadata/android/en-GB/images/icon.png AppDir/usr/share/icons/hicolor/512x512/apps/com.edde746.plezy.png
+  - install -Dm644 assets/plezy.png AppDir/usr/share/icons/hicolor/512x512/apps/com.edde746.plezy.png
   # Move libraries to standard location
   - mkdir -p AppDir/usr/lib
   - mv AppDir/lib/* AppDir/usr/lib/ || true
