@@ -150,6 +150,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         );
       }
 
+      // Apply saved volume
+      final savedVolume = settingsService.getVolume();
+      player!.setVolume(savedVolume);
+
       // Notify that player is ready
       if (mounted) {
         setState(() {

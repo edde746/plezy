@@ -29,6 +29,7 @@ class SettingsService {
   static const String _keySleepTimerDuration = 'sleep_timer_duration';
   static const String _keyAudioSyncOffset = 'audio_sync_offset';
   static const String _keySubtitleSyncOffset = 'subtitle_sync_offset';
+  static const String _keyVolume = 'volume';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -198,6 +199,15 @@ class SettingsService {
   int getSubtitleSyncOffset() {
     return _prefs.getInt(_keySubtitleSyncOffset) ??
         0; // Default: 0ms (no offset)
+  }
+
+  // Volume (0.0 to 100.0)
+  Future<void> setVolume(double volume) async {
+    await _prefs.setDouble(_keyVolume, volume);
+  }
+
+  double getVolume() {
+    return _prefs.getDouble(_keyVolume) ?? 100.0; // Default: full volume
   }
 
   // Keyboard Shortcuts (Legacy String-based)
@@ -716,6 +726,7 @@ class SettingsService {
       _prefs.remove(_keySleepTimerDuration),
       _prefs.remove(_keyAudioSyncOffset),
       _prefs.remove(_keySubtitleSyncOffset),
+      _prefs.remove(_keyVolume),
     ]);
   }
 

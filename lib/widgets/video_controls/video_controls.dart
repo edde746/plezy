@@ -1282,12 +1282,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 isMuted ? Icons.volume_off : Icons.volume_up,
                 color: Colors.white,
               ),
-              onPressed: () {
-                if (isMuted) {
-                  widget.player.setVolume(100.0);
-                } else {
-                  widget.player.setVolume(0.0);
-                }
+              onPressed: () async {
+                final newVolume = isMuted ? 100.0 : 0.0;
+                widget.player.setVolume(newVolume);
+                final settings = await SettingsService.getInstance();
+                await settings.setVolume(newVolume);
               },
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -1311,6 +1310,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   max: 100.0,
                   onChanged: (value) {
                     widget.player.setVolume(value);
+                  },
+                  onChangeEnd: (value) async {
+                    final settings = await SettingsService.getInstance();
+                    await settings.setVolume(value);
                   },
                   activeColor: Colors.white,
                   inactiveColor: Colors.white.withValues(alpha: 0.3),

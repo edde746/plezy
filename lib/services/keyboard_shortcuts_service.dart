@@ -262,10 +262,12 @@ class KeyboardShortcutsService {
       case 'volume_up':
         final newVolume = (player.state.volume + 10).clamp(0.0, 100.0);
         player.setVolume(newVolume);
+        _settingsService.setVolume(newVolume);
         break;
       case 'volume_down':
         final newVolume = (player.state.volume - 10).clamp(0.0, 100.0);
         player.setVolume(newVolume);
+        _settingsService.setVolume(newVolume);
         break;
       case 'seek_forward':
         _seekWithClamping(player, Duration(seconds: _seekTimeSmall));
@@ -283,7 +285,9 @@ class KeyboardShortcutsService {
         onToggleFullscreen?.call();
         break;
       case 'mute_toggle':
-        player.setVolume(player.state.volume > 0 ? 0.0 : 100.0);
+        final newVolume = player.state.volume > 0 ? 0.0 : 100.0;
+        player.setVolume(newVolume);
+        _settingsService.setVolume(newVolume);
         break;
       case 'subtitle_toggle':
         onToggleSubtitles?.call();
