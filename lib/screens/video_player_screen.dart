@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/playback_state_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/plex_video_controls.dart';
 import '../utils/language_codes.dart';
@@ -101,7 +103,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final settingsService = await SettingsService.getInstance();
       final bufferSizeMB = settingsService.getBufferSize();
       final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
-      final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
+      final enableHardwareDecoding = settingsService
+          .getEnableHardwareDecoding();
 
       // Create player with configuration
       player = Player(
@@ -173,8 +176,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final client = clientProvider.client;
       if (client == null) return;
 
-      final next = await client.findAdjacentEpisode(widget.metadata, 1);
-      final previous = await client.findAdjacentEpisode(widget.metadata, -1);
+      final playbackState = context.read<PlaybackStateProvider>();
+
+      PlexMetadata? next;
+      PlexMetadata? previous;
+
+      // Check if shuffle mode is active
+      if (playbackState.isShuffleActive) {
+        // Get next episode from shuffle queue
+        next = playbackState.getNextEpisode(widget.metadata.ratingKey);
+        // No previous episode in shuffle mode
+        previous = null;
+      } else {
+        // Use normal sequential episode loading
+        next = await client.findAdjacentEpisode(widget.metadata, 1);
+        previous = await client.findAdjacentEpisode(widget.metadata, -1);
+      }
 
       if (mounted) {
         setState(() {
@@ -387,7 +404,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Build list of preferred languages
     final preferredLanguages = <String>[];
-    if (profile.defaultAudioLanguage != null && profile.defaultAudioLanguage!.isNotEmpty) {
+    if (profile.defaultAudioLanguage != null &&
+        profile.defaultAudioLanguage!.isNotEmpty) {
       preferredLanguages.add(profile.defaultAudioLanguage!);
     }
     if (profile.defaultAudioLanguages != null) {
@@ -469,15 +487,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Mode 1: Shown with foreign audio
     if (profile.autoSelectSubtitle == 1) {
-      appLogger.d('Profile specifies foreign audio mode (autoSelectSubtitle=1)');
+      appLogger.d(
+        'Profile specifies foreign audio mode (autoSelectSubtitle=1)',
+      );
 
       // Check if audio language matches user's preferred subtitle language
-      if (selectedAudioTrack != null && profile.defaultSubtitleLanguage != null) {
+      if (selectedAudioTrack != null &&
+          profile.defaultSubtitleLanguage != null) {
         final audioLang = selectedAudioTrack.language?.toLowerCase();
         final prefLang = profile.defaultSubtitleLanguage!.toLowerCase();
         final languageVariations = LanguageCodes.getVariations(prefLang);
 
-        appLogger.d('Checking if audio is foreign - audio: $audioLang, preferred subtitle lang: $prefLang');
+        appLogger.d(
+          'Checking if audio is foreign - audio: $audioLang, preferred subtitle lang: $prefLang',
+        );
 
         // If audio matches preferred language, no subtitles needed
         if (audioLang != null && languageVariations.contains(audioLang)) {
@@ -494,7 +517,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Build list of preferred languages
     final preferredLanguages = <String>[];
-    if (profile.defaultSubtitleLanguage != null && profile.defaultSubtitleLanguage!.isNotEmpty) {
+    if (profile.defaultSubtitleLanguage != null &&
+        profile.defaultSubtitleLanguage!.isNotEmpty) {
       preferredLanguages.add(profile.defaultSubtitleLanguage!);
     }
     if (profile.defaultSubtitleLanguages != null) {
@@ -502,7 +526,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
 
     if (preferredLanguages.isEmpty) {
-      appLogger.d('Cannot use profile: No defaultSubtitleLanguage(s) specified');
+      appLogger.d(
+        'Cannot use profile: No defaultSubtitleLanguage(s) specified',
+      );
       return null;
     }
 
@@ -512,10 +538,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     var candidateTracks = availableTracks;
 
     // Filter by SDH (defaultSubtitleAccessibility: 0-3)
-    candidateTracks = _filterSubtitlesBySDH(candidateTracks, profile.defaultSubtitleAccessibility);
+    candidateTracks = _filterSubtitlesBySDH(
+      candidateTracks,
+      profile.defaultSubtitleAccessibility,
+    );
 
     // Filter by forced subtitle preference (defaultSubtitleForced: 0-3)
-    candidateTracks = _filterSubtitlesByForced(candidateTracks, profile.defaultSubtitleForced);
+    candidateTracks = _filterSubtitlesByForced(
+      candidateTracks,
+      profile.defaultSubtitleForced,
+    );
 
     // If no candidates after filtering, relax filters
     if (candidateTracks.isEmpty) {
@@ -563,7 +595,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final preferSDH = preference == 1;
       final preferred = tracks.where((t) => _isSDH(t) == preferSDH).toList();
       if (preferred.isNotEmpty) {
-        appLogger.d('Applying SDH preference: ${preferSDH ? "prefer SDH" : "prefer non-SDH"} (${preferred.length} tracks)');
+        appLogger.d(
+          'Applying SDH preference: ${preferSDH ? "prefer SDH" : "prefer non-SDH"} (${preferred.length} tracks)',
+        );
         return preferred;
       }
       appLogger.d('No tracks match SDH preference, using all tracks');
@@ -596,9 +630,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     if (preference == 0 || preference == 1) {
       // Prefer but don't require
       final preferForced = preference == 1;
-      final preferred = tracks.where((t) => _isForced(t) == preferForced).toList();
+      final preferred = tracks
+          .where((t) => _isForced(t) == preferForced)
+          .toList();
       if (preferred.isNotEmpty) {
-        appLogger.d('Applying forced preference: ${preferForced ? "prefer forced" : "prefer non-forced"} (${preferred.length} tracks)');
+        appLogger.d(
+          'Applying forced preference: ${preferForced ? "prefer forced" : "prefer non-forced"} (${preferred.length} tracks)',
+        );
         return preferred;
       }
       appLogger.d('No tracks match forced preference, using all tracks');
@@ -625,9 +663,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Look for common SDH indicators
     return title.contains('sdh') ||
-           title.contains('cc') ||
-           title.contains('hearing impaired') ||
-           title.contains('deaf');
+        title.contains('cc') ||
+        title.contains('hearing impaired') ||
+        title.contains('deaf');
   }
 
   /// Checks if a subtitle track is forced
@@ -981,13 +1019,32 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                             color: Colors.white,
                           ),
                           const SizedBox(height: 24),
-                          const Text(
-                            'Up Next',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Consumer<PlaybackStateProvider>(
+                            builder: (context, playbackState, child) {
+                              final isShuffleActive =
+                                  playbackState.isShuffleActive;
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text(
+                                    'Up Next',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (isShuffleActive) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.shuffle,
+                                      size: 20,
+                                      color: Colors.white70,
+                                    ),
+                                  ],
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(height: 16),
                           Text(

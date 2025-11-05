@@ -379,6 +379,44 @@ class PlexClient {
     return _extractMetadataList(response);
   }
 
+  /// Get all unwatched episodes for a TV show across all seasons
+  Future<List<PlexMetadata>> getAllUnwatchedEpisodes(
+    String showRatingKey,
+  ) async {
+    final allEpisodes = <PlexMetadata>[];
+
+    // Get all seasons for the show
+    final seasons = await getChildren(showRatingKey);
+
+    // Get episodes from each season
+    for (final season in seasons) {
+      if (season.type == 'season') {
+        final episodes = await getChildren(season.ratingKey);
+
+        // Filter for unwatched episodes
+        final unwatchedEpisodes = episodes
+            .where((ep) => ep.type == 'episode' && (ep.viewCount ?? 0) == 0)
+            .toList();
+
+        allEpisodes.addAll(unwatchedEpisodes);
+      }
+    }
+
+    return allEpisodes;
+  }
+
+  /// Get all unwatched episodes in a specific season
+  Future<List<PlexMetadata>> getUnwatchedEpisodesInSeason(
+    String seasonRatingKey,
+  ) async {
+    final episodes = await getChildren(seasonRatingKey);
+
+    // Filter for unwatched episodes
+    return episodes
+        .where((ep) => ep.type == 'episode' && (ep.viewCount ?? 0) == 0)
+        .toList();
+  }
+
   /// Get thumbnail URL
   String getThumbnailUrl(String? thumbPath) {
     if (thumbPath == null || thumbPath.isEmpty) return '';
