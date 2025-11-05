@@ -12,6 +12,7 @@ import '../providers/plex_client_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/keyboard_shortcuts_service.dart';
 import '../services/settings_service.dart';
+import '../services/sleep_timer_service.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
@@ -312,6 +313,22 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Sleep Timer button
+            ListenableBuilder(
+              listenable: SleepTimerService(),
+              builder: (context, _) {
+                final sleepTimer = SleepTimerService();
+                return IconButton(
+                  icon: Icon(
+                    sleepTimer.isActive
+                        ? Icons.bedtime
+                        : Icons.bedtime_outlined,
+                    color: sleepTimer.isActive ? Colors.amber : Colors.white,
+                  ),
+                  onPressed: _showSleepTimerBottomSheet,
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.speed, color: Colors.white),
               onPressed: _showPlaybackSpeedBottomSheet,
@@ -403,8 +420,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
     // Clamp between 0 and video duration
     final clampedPosition = newPosition.isNegative
-      ? Duration.zero
-      : (newPosition > duration ? duration : newPosition);
+        ? Duration.zero
+        : (newPosition > duration ? duration : newPosition);
 
     widget.player.seek(clampedPosition);
   }
@@ -650,8 +667,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   builder: (context, constraints) {
                     final height = constraints.maxHeight;
                     final width = constraints.maxWidth;
-                    final topExclude = height * 0.15; // Exclude top 15% (top bar)
-                    final bottomExclude = height * 0.15; // Exclude bottom 15% (seek slider)
+                    final topExclude =
+                        height * 0.15; // Exclude top 15% (top bar)
+                    final bottomExclude =
+                        height * 0.15; // Exclude bottom 15% (seek slider)
                     final leftZoneWidth = width * 0.35; // Left 35%
 
                     return Stack(
@@ -1075,7 +1094,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               // Previous chapter (or skip backward if no chapters)
               IconButton(
                 icon: Icon(
-                  _chapters.isEmpty ? _getReplayIcon(_seekTimeSmall) : Icons.fast_rewind,
+                  _chapters.isEmpty
+                      ? _getReplayIcon(_seekTimeSmall)
+                      : Icons.fast_rewind,
                   color: Colors.white,
                 ),
                 onPressed: _seekToPreviousChapter,
@@ -1107,7 +1128,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               // Next chapter (or skip forward if no chapters)
               IconButton(
                 icon: Icon(
-                  _chapters.isEmpty ? _getForwardIcon(_seekTimeSmall) : Icons.fast_forward,
+                  _chapters.isEmpty
+                      ? _getForwardIcon(_seekTimeSmall)
+                      : Icons.fast_forward,
                   color: Colors.white,
                 ),
                 onPressed: _seekToNextChapter,
@@ -1755,6 +1778,243 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     );
   }
 
+  void _showSleepTimerBottomSheet() async {
+    final sleepTimer = SleepTimerService();
+    final settingsService = await SettingsService.getInstance();
+    final defaultDuration = settingsService.getSleepTimerDuration();
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      isScrollControlled: true,
+      constraints: _getBottomSheetConstraints(),
+      builder: (context) {
+        return ListenableBuilder(
+          listenable: sleepTimer,
+          builder: (context, _) {
+            final durations = [5, 10, 15, 30, 45, 60, 90, 120];
+            // Add default duration if not in list
+            if (!durations.contains(defaultDuration)) {
+              durations.add(defaultDuration);
+              durations.sort();
+            }
+            final remainingTime = sleepTimer.remainingTime;
+
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.75,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            sleepTimer.isActive
+                                ? Icons.bedtime
+                                : Icons.bedtime_outlined,
+                            color: sleepTimer.isActive
+                                ? Colors.amber
+                                : Colors.white,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Sleep Timer',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(color: Colors.white24, height: 1),
+
+                    // Show current timer status if active
+                    if (sleepTimer.isActive && remainingTime != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        color: Colors.amber.withValues(alpha: 0.1),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Timer Active',
+                              style: TextStyle(
+                                color: Colors.amber,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Playback will pause in ${_formatSleepTimerDuration(remainingTime)}',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('+15 min'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: const BorderSide(
+                                      color: Colors.white54,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    sleepTimer.extendTimer(
+                                      const Duration(minutes: 15),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                FilledButton.icon(
+                                  icon: const Icon(Icons.cancel),
+                                  label: const Text('Cancel'),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                  ),
+                                  onPressed: () {
+                                    sleepTimer.cancelTimer();
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(color: Colors.white24, height: 1),
+                    ],
+
+                    // Duration selection list
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: durations.length,
+                        itemBuilder: (context, index) {
+                          final minutes = durations[index];
+                          final isDefault = minutes == defaultDuration;
+                          final label = minutes < 60
+                              ? '$minutes minutes'
+                              : '${(minutes / 60).toStringAsFixed(minutes % 60 == 0 ? 0 : 1)} ${minutes == 60 ? 'hour' : 'hours'}';
+
+                          return ListTile(
+                            leading: Icon(
+                              isDefault ? Icons.star : Icons.timer,
+                              color: isDefault ? Colors.amber : Colors.white70,
+                            ),
+                            title: Row(
+                              children: [
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: isDefault
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                                if (isDefault) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.amber.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'DEFAULT',
+                                      style: TextStyle(
+                                        color: Colors.amber,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            onTap: () {
+                              sleepTimer.startTimer(
+                                Duration(minutes: minutes),
+                                () {
+                                  // Pause playback when timer completes
+                                  widget.player.pause();
+
+                                  // Show a snackbar notification
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Sleep timer completed - playback paused',
+                                        ),
+                                        duration: Duration(seconds: 3),
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
+                              Navigator.pop(context);
+
+                              // Show confirmation snackbar
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Sleep timer set for $label'),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _formatSleepTimerDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+
+    if (hours > 0) {
+      return '${hours}h ${minutes}m ${seconds}s';
+    } else if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    } else {
+      return '${seconds}s';
+    }
+  }
+
   void _showPlaybackSpeedBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -1920,8 +2180,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
       // Save the preference
       final settingsService = await SettingsService.getInstance();
-      final seriesKey = widget.metadata.grandparentRatingKey ??
-          widget.metadata.ratingKey;
+      final seriesKey =
+          widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey;
       await settingsService.setMediaVersionPreference(seriesKey, newMediaIndex);
 
       // Navigate to new player screen with the selected version
@@ -1930,12 +2190,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         Navigator.pushReplacement(
           context,
           PageRouteBuilder<bool>(
-            pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
-              metadata: widget.metadata.copyWith(
-                viewOffset: currentPosition.inMilliseconds,
-              ),
-              selectedMediaIndex: newMediaIndex,
-            ),
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                VideoPlayerScreen(
+                  metadata: widget.metadata.copyWith(
+                    viewOffset: currentPosition.inMilliseconds,
+                  ),
+                  selectedMediaIndex: newMediaIndex,
+                ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
           ),
@@ -1943,9 +2204,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error switching version: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error switching version: $e')));
       }
     }
   }
