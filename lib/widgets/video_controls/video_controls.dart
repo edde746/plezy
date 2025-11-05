@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
@@ -84,6 +85,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _audioSyncOffset = 0; // Default, loaded from settings
   int _subtitleSyncOffset = 0; // Default, loaded from settings
+  bool _isRotationLocked = true; // Default locked (landscape only)
   // Double-tap feedback state
   bool _showDoubleTapFeedback = false;
   double _doubleTapFeedbackOpacity = 0.0;
@@ -117,7 +119,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _seekTimeSmall = settingsService.getSeekTimeSmall();
         _audioSyncOffset = settingsService.getAudioSyncOffset();
         _subtitleSyncOffset = settingsService.getSubtitleSyncOffset();
+        _isRotationLocked = settingsService.getRotationLocked();
       });
+
+      // Apply rotation lock setting
+      if (_isRotationLocked) {
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      } else {
+        SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+      }
     }
   }
 
@@ -242,6 +255,27 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
+  void _toggleRotationLock() async {
+    setState(() {
+      _isRotationLocked = !_isRotationLocked;
+    });
+
+    // Save to settings
+    final settingsService = await SettingsService.getInstance();
+    await settingsService.setRotationLocked(_isRotationLocked);
+
+    if (_isRotationLocked) {
+      // Locked: Allow landscape orientations only
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      // Unlocked: Allow all orientations including portrait
+      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    }
+  }
+
   void _updateTrafficLightVisibility() async {
     if (Platform.isMacOS) {
       if (_showControls) {
@@ -310,6 +344,28 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       default:
         return 'Letterbox';
     }
+  }
+
+  /// Conditionally wraps child with SafeArea only in portrait mode
+  Widget _conditionalSafeArea({
+    required Widget child,
+    bool top = true,
+    bool bottom = true,
+  }) {
+    final orientation = MediaQuery.of(context).orientation;
+    final isPortrait = orientation == Orientation.portrait;
+
+    // Only apply SafeArea in portrait mode
+    if (isPortrait) {
+      return SafeArea(
+        top: top,
+        bottom: bottom,
+        child: child,
+      );
+    }
+
+    // In landscape, return child without SafeArea
+    return child;
   }
 
   Widget _buildTrackAndChapterControls() {
@@ -390,6 +446,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 ),
                 tooltip: _getBoxFitTooltip(widget.boxFitMode),
                 onPressed: widget.onCycleBoxFitMode,
+              ),
+            // Rotation lock toggle (mobile only)
+            if (PlatformDetector.isMobile(context))
+              IconButton(
+                icon: Icon(
+                  _isRotationLocked ? Icons.screen_lock_rotation : Icons.screen_rotation,
+                  color: Colors.white,
+                ),
+                tooltip: _isRotationLocked ? 'Unlock rotation' : 'Lock rotation',
+                onPressed: _toggleRotationLock,
               ),
             // Fullscreen toggle (desktop only)
             if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
@@ -791,43 +857,46 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   // Mobile layout components
   Widget _buildMobileTopBar() {
-    final topBar = Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          AppBarBackButton(
-            style: BackButtonStyle.video,
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.metadata.grandparentTitle ?? widget.metadata.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (widget.metadata.parentIndex != null &&
-                    widget.metadata.index != null)
+    final topBar = _conditionalSafeArea(
+      bottom: false, // Only respect top safe area when in portrait
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            AppBarBackButton(
+              style: BackButtonStyle.video,
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'S${widget.metadata.parentIndex} · E${widget.metadata.index} · ${widget.metadata.title}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    widget.metadata.grandparentTitle ?? widget.metadata.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  if (widget.metadata.parentIndex != null &&
+                      widget.metadata.index != null)
+                    Text(
+                      'S${widget.metadata.parentIndex} · E${widget.metadata.index} · ${widget.metadata.title}',
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
             ),
-          ),
-          // Track and chapter controls in top right
-          _buildTrackAndChapterControls(),
-        ],
+            // Track and chapter controls in top right
+            _buildTrackAndChapterControls(),
+          ],
+        ),
       ),
     );
 
@@ -846,6 +915,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   Widget _buildMobilePlaybackControls() {
     return StreamBuilder<bool>(
       stream: widget.player.stream.playing,
+      initialData: widget.player.state.playing,
       builder: (context, snapshot) {
         final isPlaying = snapshot.data ?? false;
         return Row(
@@ -917,50 +987,55 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   Widget _buildMobileBottomBar() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: StreamBuilder<Duration>(
-        stream: widget.player.stream.position,
-        builder: (context, positionSnapshot) {
-          return StreamBuilder<Duration>(
-            stream: widget.player.stream.duration,
-            builder: (context, durationSnapshot) {
-              final position = positionSnapshot.data ?? Duration.zero;
-              final duration = durationSnapshot.data ?? Duration.zero;
+    return _conditionalSafeArea(
+      top: false, // Only respect bottom safe area when in portrait
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: StreamBuilder<Duration>(
+          stream: widget.player.stream.position,
+          initialData: widget.player.state.position,
+          builder: (context, positionSnapshot) {
+            return StreamBuilder<Duration>(
+              stream: widget.player.stream.duration,
+              initialData: widget.player.state.duration,
+              builder: (context, durationSnapshot) {
+                final position = positionSnapshot.data ?? Duration.zero;
+                final duration = durationSnapshot.data ?? Duration.zero;
 
-              return Column(
-                children: [
-                  _buildTimelineWithChapters(
-                    position: position,
-                    duration: duration,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _formatDuration(position),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          _formatDuration(duration),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                return Column(
+                  children: [
+                    _buildTimelineWithChapters(
+                      position: position,
+                      duration: duration,
                     ),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _formatDuration(position),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            _formatDuration(duration),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -1073,9 +1148,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           // Row 1: Timeline with time indicators
           StreamBuilder<Duration>(
             stream: widget.player.stream.position,
+            initialData: widget.player.state.position,
             builder: (context, positionSnapshot) {
               return StreamBuilder<Duration>(
                 stream: widget.player.stream.duration,
+                initialData: widget.player.state.duration,
                 builder: (context, durationSnapshot) {
                   final position = positionSnapshot.data ?? Duration.zero;
                   final duration = durationSnapshot.data ?? Duration.zero;
@@ -1137,6 +1214,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               // Play/Pause
               StreamBuilder<bool>(
                 stream: widget.player.stream.playing,
+                initialData: widget.player.state.playing,
                 builder: (context, snapshot) {
                   final isPlaying = snapshot.data ?? false;
                   return IconButton(
@@ -1336,11 +1414,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       // Save current playback position
       final currentPosition = widget.player.state.position;
 
+      // Get state reference before async operations
+      final videoPlayerState = context.findAncestorStateOfType<VideoPlayerScreenState>();
+
       // Save the preference
       final settingsService = await SettingsService.getInstance();
       final seriesKey =
           widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey;
       await settingsService.setMediaVersionPreference(seriesKey, newMediaIndex);
+
+      // Set flag on parent VideoPlayerScreen to skip orientation restoration
+      videoPlayerState?.setReplacingWithVideo();
 
       // Navigate to new player screen with the selected version
       // Use PageRouteBuilder with zero-duration transitions to prevent orientation reset

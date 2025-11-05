@@ -35,10 +35,10 @@ class VideoPlayerScreen extends StatefulWidget {
   });
 
   @override
-  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
+  State<VideoPlayerScreen> createState() => VideoPlayerScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Player? player;
   VideoController? controller;
   bool _isPlayerInitialized = false;
@@ -52,6 +52,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   List<PlexMediaVersion> _availableVersions = [];
   StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<String>? _errorSubscription;
+  StreamSubscription<bool>? _playingSubscription;
+  StreamSubscription<bool>? _completedSubscription;
+  bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
 
   // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode = 0;
@@ -97,10 +100,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       appLogger.w('Failed to determine device type', error: e);
       _isPhone = false; // Default to tablet/desktop (all orientations)
     }
-  }
-
-  void _setLandscapeOrientation() {
-    OrientationHelper.setLandscapeOrientation();
   }
 
   Future<void> _initializePlayer() async {
@@ -167,21 +166,31 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Load available media versions
       _loadMediaVersions();
 
-      // Set fullscreen mode and landscape orientation
+      // Set fullscreen mode and orientation based on rotation lock setting
       if (mounted) {
         try {
-          _setLandscapeOrientation();
+          // Check rotation lock setting before applying orientation
+          final isRotationLocked = settingsService.getRotationLocked();
+
+          if (isRotationLocked) {
+            // Locked: Apply landscape orientation only
+            OrientationHelper.setLandscapeOrientation();
+          } else {
+            // Unlocked: Allow all orientations immediately
+            SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+          }
         } catch (e) {
-          appLogger.w('Failed to set landscape orientation', error: e);
+          appLogger.w('Failed to set orientation', error: e);
           // Don't crash if orientation fails - video can still play
         }
       }
 
       // Listen to playback state changes
-      player!.stream.playing.listen(_onPlayingStateChanged);
+      _playingSubscription = player!.stream.playing.listen(_onPlayingStateChanged);
 
       // Listen to completion
-      player!.stream.completed.listen(_onVideoCompleted);
+      _completedSubscription = player!.stream.completed.listen(_onVideoCompleted);
 
       // Listen to MPV logs
       _logSubscription = player!.stream.log.listen(_onPlayerLog);
@@ -357,34 +366,38 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _progressTimer?.cancel();
 
     // Cancel stream subscriptions
+    _playingSubscription?.cancel();
+    _completedSubscription?.cancel();
     _logSubscription?.cancel();
     _errorSubscription?.cancel();
 
     // Send final stopped state
     _sendProgress('stopped');
 
-    // Restore system UI and orientation preferences
-    OrientationHelper.restoreSystemUI();
+    // Restore system UI and orientation preferences (skip if navigating to another video)
+    if (!_isReplacingWithVideo) {
+      OrientationHelper.restoreSystemUI();
 
-    // Restore orientation based on cached device type (no context needed)
-    try {
-      if (_isPhone) {
-        // Phone: portrait only
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ]);
-      } else {
-        // Tablet/Desktop: all orientations
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
+      // Restore orientation based on cached device type (no context needed)
+      try {
+        if (_isPhone) {
+          // Phone: portrait only
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+        } else {
+          // Tablet/Desktop: all orientations
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]);
+        }
+      } catch (e) {
+        appLogger.w('Failed to restore orientation in dispose', error: e);
       }
-    } catch (e) {
-      appLogger.w('Failed to restore orientation in dispose', error: e);
     }
 
     player?.dispose();
@@ -1028,8 +1041,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     await _navigateToEpisode(_previousEpisode!);
   }
 
+  /// Set flag to skip orientation restoration when replacing with another video
+  void setReplacingWithVideo() {
+    _isReplacingWithVideo = true;
+  }
+
   /// Navigates to a new episode, preserving playback state and track selections
   Future<void> _navigateToEpisode(PlexMetadata episodeMetadata) async {
+    // Set flag to skip orientation restoration in dispose()
+    _isReplacingWithVideo = true;
+
     // If player isn't available, navigate without preserving settings
     if (player == null) {
       if (mounted) {

@@ -30,6 +30,7 @@ class SettingsService {
   static const String _keyAudioSyncOffset = 'audio_sync_offset';
   static const String _keySubtitleSyncOffset = 'subtitle_sync_offset';
   static const String _keyVolume = 'volume';
+  static const String _keyRotationLocked = 'rotation_locked';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -208,6 +209,15 @@ class SettingsService {
 
   double getVolume() {
     return _prefs.getDouble(_keyVolume) ?? 100.0; // Default: full volume
+  }
+
+  // Rotation Lock (mobile only)
+  Future<void> setRotationLocked(bool locked) async {
+    await _prefs.setBool(_keyRotationLocked, locked);
+  }
+
+  bool getRotationLocked() {
+    return _prefs.getBool(_keyRotationLocked) ?? true; // Default: locked (landscape only)
   }
 
   // Keyboard Shortcuts (Legacy String-based)
