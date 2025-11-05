@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../config/plex_config.dart';
 import '../models/plex_library.dart';
@@ -22,6 +23,15 @@ class PlexClient {
   PlexConfig config;
   late final Dio _dio;
 
+  /// Custom response decoder that handles malformed UTF-8 gracefully
+  static String _lenientUtf8Decoder(
+    List<int> responseBytes,
+    RequestOptions options,
+    ResponseBody responseBody,
+  ) {
+    return utf8.decode(responseBytes, allowMalformed: true);
+  }
+
   PlexClient(this.config) {
     _dio = Dio(
       BaseOptions(
@@ -32,6 +42,7 @@ class PlexClient {
         validateStatus: (status) => status != null && status < 500,
         responseType: ResponseType.json,
         contentType: 'application/json; charset=utf-8',
+        responseDecoder: _lenientUtf8Decoder,
       ),
     );
 
