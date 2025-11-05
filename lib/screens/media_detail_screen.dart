@@ -10,6 +10,7 @@ import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
+import '../utils/shuffle_play_helper.dart';
 import '../theme/theme_helper.dart';
 import 'season_detail_screen.dart';
 
@@ -574,6 +575,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
+                      // Shuffle button (only for shows and seasons)
+                      if (metadata.type.toLowerCase() == 'show' ||
+                          metadata.type.toLowerCase() == 'season') ...[
+                        IconButton.filledTonal(
+                          onPressed: () async {
+                            await handleShufflePlay(context, metadata);
+                          },
+                          icon: const Icon(Icons.shuffle),
+                          tooltip: 'Shuffle play',
+                          iconSize: 20,
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(48, 48),
+                            maximumSize: const Size(48, 48),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
                       IconButton.filledTonal(
                         onPressed: () async {
                           try {

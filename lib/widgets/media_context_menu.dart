@@ -1,13 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
 import '../utils/provider_extensions.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../widgets/file_info_bottom_sheet.dart';
-import '../providers/playback_state_provider.dart';
-import '../utils/video_player_navigation.dart';
+import '../utils/shuffle_play_helper.dart';
 
 /// Helper class to store menu action data
 class _MenuAction {
@@ -251,7 +249,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         break;
 
       case 'shuffle_play':
-        await _handleShufflePlay(context);
+        await handleShufflePlay(context, widget.metadata);
         break;
     }
   }
@@ -364,75 +362,6 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Handle shuffle play action
-  Future<void> _handleShufflePlay(BuildContext context) async {
-    final client = context.client;
-    if (client == null) return;
-
-    final playbackState = context.read<PlaybackStateProvider>();
-    final itemType = widget.metadata.type.toLowerCase();
-
-    try {
-      // Show loading indicator
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) =>
-              const Center(child: CircularProgressIndicator()),
-        );
-      }
-
-      // Get unwatched episodes based on type
-      List<PlexMetadata> episodes;
-      if (itemType == 'show') {
-        episodes = await client.getAllUnwatchedEpisodes(
-          widget.metadata.ratingKey,
-        );
-      } else {
-        // season
-        episodes = await client.getUnwatchedEpisodesInSeason(
-          widget.metadata.ratingKey,
-        );
-      }
-
-      // Close loading indicator
-      if (context.mounted) {
-        Navigator.pop(context);
-      }
-
-      if (episodes.isEmpty) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No unwatched episodes found')),
-          );
-        }
-        return;
-      }
-
-      // Shuffle the episodes
-      episodes.shuffle();
-
-      // Store shuffle queue in provider
-      playbackState.setShuffleQueue(episodes, widget.metadata.ratingKey);
-
-      // Navigate to first episode
-      if (context.mounted) {
-        await navigateToVideoPlayer(context, metadata: episodes.first);
-      }
-    } catch (e) {
-      // Close loading indicator if it's still open
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error starting shuffle play: $e')),
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
