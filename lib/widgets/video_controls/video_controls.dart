@@ -17,13 +17,11 @@ import '../../utils/provider_extensions.dart';
 import '../../screens/video_player_screen.dart';
 import '../app_bar_back_button.dart';
 import 'painters/chapter_marker_painter.dart';
-import 'sheets/audio_sync_sheet.dart';
 import 'sheets/audio_track_sheet.dart';
 import 'sheets/chapter_sheet.dart';
-import 'sheets/playback_speed_sheet.dart';
-import 'sheets/sleep_timer_sheet.dart';
 import 'sheets/subtitle_track_sheet.dart';
 import 'sheets/version_sheet.dart';
+import 'sheets/video_settings_sheet.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
@@ -321,46 +319,37 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Sleep Timer button
+            // Unified settings button (speed, sleep timer, audio sync)
             ListenableBuilder(
               listenable: SleepTimerService(),
               builder: (context, _) {
                 final sleepTimer = SleepTimerService();
+                final isActive = sleepTimer.isActive || _audioSyncOffset != 0;
                 return IconButton(
                   icon: Icon(
-                    sleepTimer.isActive
-                        ? Icons.bedtime
-                        : Icons.bedtime_outlined,
-                    color: sleepTimer.isActive ? Colors.amber : Colors.white,
+                    Icons.tune,
+                    color: isActive ? Colors.amber : Colors.white,
                   ),
-                  onPressed: () => SleepTimerSheet.show(context, widget.player),
+                  onPressed: () async {
+                    VideoSettingsSheet.show(
+                      context,
+                      widget.player,
+                      _audioSyncOffset,
+                    );
+                    // Reload offset after sheet closes (in case it changed)
+                    await Future.delayed(const Duration(milliseconds: 300));
+                    if (mounted) {
+                      _loadSeekTimes();
+                    }
+                  },
                 );
               },
-            ),
-            IconButton(
-              icon: const Icon(Icons.speed, color: Colors.white),
-              onPressed: () => PlaybackSpeedSheet.show(context, widget.player),
             ),
             if (_hasMultipleAudioTracks(tracks))
               IconButton(
                 icon: const Icon(Icons.audiotrack, color: Colors.white),
                 onPressed: () => AudioTrackSheet.show(context, widget.player),
               ),
-            // Audio sync offset button
-            IconButton(
-              icon: Icon(
-                Icons.sync,
-                color: _audioSyncOffset != 0 ? Colors.amber : Colors.white,
-              ),
-              onPressed: () async {
-                AudioSyncSheet.show(context, widget.player, _audioSyncOffset);
-                // Reload offset after sheet closes (in case it changed)
-                await Future.delayed(const Duration(milliseconds: 300));
-                if (mounted) {
-                  _loadSeekTimes();
-                }
-              },
-            ),
             if (_hasSubtitles(tracks))
               IconButton(
                 icon: const Icon(Icons.subtitles, color: Colors.white),
