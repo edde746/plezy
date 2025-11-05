@@ -5,6 +5,7 @@ class SettingsProvider extends ChangeNotifier {
   late SettingsService _settingsService;
   LibraryDensity _libraryDensity = LibraryDensity.normal;
   bool _useSeasonPoster = false;
+  bool _showHeroSection = true;
 
   SettingsProvider() {
     _initializeSettings();
@@ -14,11 +15,13 @@ class SettingsProvider extends ChangeNotifier {
     _settingsService = await SettingsService.getInstance();
     _libraryDensity = _settingsService.getLibraryDensity();
     _useSeasonPoster = _settingsService.getUseSeasonPoster();
+    _showHeroSection = _settingsService.getShowHeroSection();
     notifyListeners();
   }
 
   LibraryDensity get libraryDensity => _libraryDensity;
   bool get useSeasonPoster => _useSeasonPoster;
+  bool get showHeroSection => _showHeroSection;
 
   Future<void> setLibraryDensity(LibraryDensity density) async {
     if (_libraryDensity != density) {
@@ -32,6 +35,14 @@ class SettingsProvider extends ChangeNotifier {
     if (_useSeasonPoster != value) {
       _useSeasonPoster = value;
       await _settingsService.setUseSeasonPoster(value);
+      notifyListeners();
+    }
+  }
+
+  Future<void> setShowHeroSection(bool value) async {
+    if (_showHeroSection != value) {
+      _showHeroSection = value;
+      await _settingsService.setShowHeroSection(value);
       notifyListeners();
     }
   }

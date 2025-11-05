@@ -21,6 +21,7 @@ class SettingsService {
   static const String _keySeekTimeSmall = 'seek_time_small';
   static const String _keySeekTimeLarge = 'seek_time_large';
   static const String _keyMediaVersionPreferences = 'media_version_preferences';
+  static const String _keyShowHeroSection = 'show_hero_section';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -117,7 +118,18 @@ class SettingsService {
   }
 
   bool getUseSeasonPoster() {
-    return _prefs.getBool(_keyUseSeasonPoster) ?? false; // Default: false (use series poster)
+    return _prefs.getBool(_keyUseSeasonPoster) ??
+        false; // Default: false (use series poster)
+  }
+
+  // Show Hero Section
+  Future<void> setShowHeroSection(bool enabled) async {
+    await _prefs.setBool(_keyShowHeroSection, enabled);
+  }
+
+  bool getShowHeroSection() {
+    return _prefs.getBool(_keyShowHeroSection) ??
+        true; // Default: true (show hero section)
   }
 
   // Seek Time Small (in seconds)
@@ -593,7 +605,10 @@ class SettingsService {
   /// Save media version preference for a series
   /// [seriesRatingKey] is the grandparentRatingKey for TV series, or ratingKey for movies
   /// [mediaIndex] is the index of the selected media version
-  Future<void> setMediaVersionPreference(String seriesRatingKey, int mediaIndex) async {
+  Future<void> setMediaVersionPreference(
+    String seriesRatingKey,
+    int mediaIndex,
+  ) async {
     final preferences = _getMediaVersionPreferences();
     preferences[seriesRatingKey] = mediaIndex;
 
@@ -643,6 +658,7 @@ class SettingsService {
       _prefs.remove(_keyPreferredAudioCodec),
       _prefs.remove(_keyLibraryDensity),
       _prefs.remove(_keyUseSeasonPoster),
+      _prefs.remove(_keyShowHeroSection),
       _prefs.remove(_keySeekTimeSmall),
       _prefs.remove(_keySeekTimeLarge),
       _prefs.remove(_keyMediaVersionPreferences),

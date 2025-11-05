@@ -16,6 +16,7 @@ import 'profile_switch_screen.dart';
 import 'server_selection_screen.dart';
 import 'hub_detail_screen.dart';
 import '../providers/user_profile_provider.dart';
+import '../providers/settings_provider.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
@@ -559,7 +560,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
             if (!_isLoading && _errorMessage == null) ...[
               // Hero Section (Continue Watching)
-              if (_onDeck.isNotEmpty) _buildHeroSection(),
+              Consumer<SettingsProvider>(
+                builder: (context, settingsProvider, child) {
+                  if (_onDeck.isNotEmpty && settingsProvider.showHeroSection) {
+                    return _buildHeroSection();
+                  }
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                },
+              ),
 
               // On Deck / Continue Watching
               if (_onDeck.isNotEmpty) ...[

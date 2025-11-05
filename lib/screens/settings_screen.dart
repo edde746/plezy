@@ -53,7 +53,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -137,6 +136,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: settingsProvider.useSeasonPoster,
                 onChanged: (value) async {
                   await settingsProvider.setUseSeasonPoster(value);
+                },
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const Icon(Icons.featured_play_list),
+                title: const Text('Show Hero Section'),
+                subtitle: const Text(
+                  'Display featured content carousel on home screen',
+                ),
+                value: settingsProvider.showHeroSection,
+                onChanged: (value) async {
+                  await settingsProvider.setShowHeroSection(value);
                 },
               );
             },
@@ -280,10 +294,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               'Updates',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
@@ -291,9 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               hasUpdate ? Icons.system_update : Icons.check_circle,
               color: hasUpdate ? Colors.orange : null,
             ),
-            title: Text(
-              hasUpdate ? 'Update Available' : 'Check for Updates',
-            ),
+            title: Text(hasUpdate ? 'Update Available' : 'Check for Updates'),
             subtitle: hasUpdate
                 ? Text('Version ${_updateInfo!['latestVersion']} is available')
                 : const Text('Check for the latest version on GitHub'),
