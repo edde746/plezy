@@ -29,6 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _bufferSize = 128;
   int _seekTimeSmall = 10;
   int _seekTimeLarge = 30;
+  int _sleepTimerDuration = 30;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -50,6 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _bufferSize = _settingsService.getBufferSize();
       _seekTimeSmall = _settingsService.getSeekTimeSmall();
       _seekTimeLarge = _settingsService.getSeekTimeLarge();
+      _sleepTimerDuration = _settingsService.getSleepTimerDuration();
       _isLoading = false;
     });
   }
@@ -219,6 +221,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showSeekTimeLargeDialog(),
           ),
+          ListTile(
+            leading: const Icon(Icons.bedtime),
+            title: const Text('Default Sleep Timer'),
+            subtitle: Text('$_sleepTimerDuration minutes'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showSleepTimerDurationDialog(),
+          ),
         ],
       ),
     );
@@ -284,9 +293,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const LogsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const LogsScreen()),
               );
             },
           ),
@@ -584,6 +591,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       });
                       // Reload keyboard shortcuts service to use new settings
                       await _keyboardService.refreshFromStorage();
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showSleepTimerDurationDialog() {
+    final controller = TextEditingController(
+      text: _sleepTimerDuration.toString(),
+    );
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Default Sleep Timer'),
+              content: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Minutes',
+                  hintText: 'Enter duration (5-180)',
+                  errorText: errorText,
+                  suffixText: 'min',
+                ),
+                autofocus: true,
+                onChanged: (value) {
+                  final parsed = int.tryParse(value);
+                  setDialogState(() {
+                    if (parsed == null) {
+                      errorText = 'Please enter a valid number';
+                    } else if (parsed < 5 || parsed > 180) {
+                      errorText = 'Duration must be between 5 and 180 minutes';
+                    } else {
+                      errorText = null;
+                    }
+                  });
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final parsed = int.tryParse(controller.text);
+                    if (parsed != null && parsed >= 5 && parsed <= 180) {
+                      setState(() {
+                        _sleepTimerDuration = parsed;
+                        _settingsService.setSleepTimerDuration(parsed);
+                      });
                       if (dialogContext.mounted) {
                         Navigator.pop(dialogContext);
                       }

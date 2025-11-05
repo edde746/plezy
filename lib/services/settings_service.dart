@@ -26,6 +26,7 @@ class SettingsService {
   static const String _keySeekTimeLarge = 'seek_time_large';
   static const String _keyMediaVersionPreferences = 'media_version_preferences';
   static const String _keyShowHeroSection = 'show_hero_section';
+  static const String _keySleepTimerDuration = 'sleep_timer_duration';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -167,6 +168,15 @@ class SettingsService {
 
   int getSeekTimeLarge() {
     return _prefs.getInt(_keySeekTimeLarge) ?? 30; // Default: 30 seconds
+  }
+
+  // Sleep Timer Duration (in minutes)
+  Future<void> setSleepTimerDuration(int minutes) async {
+    await _prefs.setInt(_keySleepTimerDuration, minutes);
+  }
+
+  int getSleepTimerDuration() {
+    return _prefs.getInt(_keySleepTimerDuration) ?? 30; // Default: 30 minutes
   }
 
   // Keyboard Shortcuts (Legacy String-based)
@@ -682,6 +692,7 @@ class SettingsService {
       _prefs.remove(_keySeekTimeSmall),
       _prefs.remove(_keySeekTimeLarge),
       _prefs.remove(_keyMediaVersionPreferences),
+      _prefs.remove(_keySleepTimerDuration),
     ]);
   }
 
