@@ -26,6 +26,8 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onPrevious,
   List<PlexMediaVersion>? availableVersions,
   int? selectedMediaIndex,
+  int boxFitMode = 0,
+  VoidCallback? onCycleBoxFitMode,
 }) {
   return PlexVideoControls(
     player: player,
@@ -34,6 +36,8 @@ Widget plexVideoControlsBuilder(
     onPrevious: onPrevious,
     availableVersions: availableVersions ?? [],
     selectedMediaIndex: selectedMediaIndex ?? 0,
+    boxFitMode: boxFitMode,
+    onCycleBoxFitMode: onCycleBoxFitMode,
   );
 }
 
@@ -44,6 +48,8 @@ class PlexVideoControls extends StatefulWidget {
   final VoidCallback? onPrevious;
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
+  final int boxFitMode;
+  final VoidCallback? onCycleBoxFitMode;
 
   const PlexVideoControls({
     super.key,
@@ -53,6 +59,8 @@ class PlexVideoControls extends StatefulWidget {
     this.onPrevious,
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
+    this.boxFitMode = 0,
+    this.onCycleBoxFitMode,
   });
 
   @override
@@ -271,6 +279,32 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     return subtitles.isNotEmpty;
   }
 
+  IconData _getBoxFitIcon(int mode) {
+    switch (mode) {
+      case 0:
+        return Icons.crop_free; // contain (letterbox)
+      case 1:
+        return Icons.crop; // cover (fill screen)
+      case 2:
+        return Icons.fit_screen; // fill (stretch)
+      default:
+        return Icons.crop_free;
+    }
+  }
+
+  String _getBoxFitTooltip(int mode) {
+    switch (mode) {
+      case 0:
+        return 'Letterbox';
+      case 1:
+        return 'Fill screen';
+      case 2:
+        return 'Stretch';
+      default:
+        return 'Letterbox';
+    }
+  }
+
   Widget _buildTrackAndChapterControls() {
     return StreamBuilder<Tracks>(
       stream: widget.player.stream.tracks,
@@ -303,6 +337,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               IconButton(
                 icon: const Icon(Icons.video_file, color: Colors.white),
                 onPressed: _showVersionBottomSheet,
+              ),
+            // BoxFit mode cycle button
+            if (widget.onCycleBoxFitMode != null)
+              IconButton(
+                icon: Icon(
+                  _getBoxFitIcon(widget.boxFitMode),
+                  color: Colors.white,
+                ),
+                tooltip: _getBoxFitTooltip(widget.boxFitMode),
+                onPressed: widget.onCycleBoxFitMode,
               ),
           ],
         );

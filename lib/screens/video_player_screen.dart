@@ -53,6 +53,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<String>? _errorSubscription;
 
+  // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
+  int _boxFitMode = 0;
+  bool _isPinching = false; // Track if a pinch gesture is occurring
+
   @override
   void initState() {
     super.initState();
@@ -284,6 +288,38 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       }
     } catch (e) {
       appLogger.e('Error loading media versions: $e');
+    }
+  }
+
+  /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
+  void _cycleBoxFitMode() {
+    setState(() {
+      _boxFitMode = (_boxFitMode + 1) % 3;
+    });
+    final modes = ['contain (letterbox)', 'cover (fill screen)', 'fill (stretch)'];
+    appLogger.d('BoxFit mode: ${modes[_boxFitMode]}');
+  }
+
+  /// Toggle between contain and cover modes only (for pinch gesture)
+  void _toggleContainCover() {
+    setState(() {
+      _boxFitMode = _boxFitMode == 0 ? 1 : 0; // Toggle between 0 and 1
+    });
+    final modes = ['contain (letterbox)', 'cover (fill screen)'];
+    appLogger.d('BoxFit mode toggled: ${modes[_boxFitMode]}');
+  }
+
+  /// Get current BoxFit based on mode
+  BoxFit get _getCurrentBoxFit {
+    switch (_boxFitMode) {
+      case 0:
+        return BoxFit.contain;
+      case 1:
+        return BoxFit.cover;
+      case 2:
+        return BoxFit.fill;
+      default:
+        return BoxFit.contain;
     }
   }
 
@@ -1022,22 +1058,47 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            // Video player
-            Center(
-              child: Video(
-                controller: controller!,
-                controls: (state) => plexVideoControlsBuilder(
-                  player!,
-                  widget.metadata,
-                  onNext: _nextEpisode != null ? _playNext : null,
-                  onPrevious: _previousEpisode != null ? _playPrevious : null,
-                  availableVersions: _availableVersions,
-                  selectedMediaIndex: widget.selectedMediaIndex,
+        body: GestureDetector(
+          behavior: HitTestBehavior.translucent, // Allow taps to pass through to controls
+          onScaleStart: (details) {
+            // Initialize pinch gesture tracking (mobile only)
+            if (!PlatformDetector.isMobile(context)) return;
+            _isPinching = false;
+          },
+          onScaleUpdate: (details) {
+            // Track if this is a pinch gesture (2+ fingers) on mobile
+            if (!PlatformDetector.isMobile(context)) return;
+            if (details.pointerCount >= 2) {
+              _isPinching = true;
+            }
+          },
+          onScaleEnd: (details) {
+            // Only toggle if we detected a pinch gesture on mobile
+            if (!PlatformDetector.isMobile(context)) return;
+            if (_isPinching) {
+              _toggleContainCover();
+              _isPinching = false;
+            }
+          },
+          child: Stack(
+            children: [
+              // Video player
+              Center(
+                child: Video(
+                  controller: controller!,
+                  fit: _getCurrentBoxFit,
+                  controls: (state) => plexVideoControlsBuilder(
+                    player!,
+                    widget.metadata,
+                    onNext: _nextEpisode != null ? _playNext : null,
+                    onPrevious: _previousEpisode != null ? _playPrevious : null,
+                    availableVersions: _availableVersions,
+                    selectedMediaIndex: widget.selectedMediaIndex,
+                    boxFitMode: _boxFitMode,
+                    onCycleBoxFitMode: _cycleBoxFitMode,
+                  ),
                 ),
               ),
-            ),
             // Play Next Dialog
             if (_showPlayNextDialog && _nextEpisode != null)
               Positioned.fill(
@@ -1149,7 +1210,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   ),
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
