@@ -11,6 +11,7 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/hotkey_recorder_widget.dart';
 import 'about_screen.dart';
 import 'logs_screen.dart';
+import 'subtitle_styling_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -206,6 +207,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text('${_bufferSize}MB'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showBufferSizeDialog(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.subtitles),
+            title: const Text('Subtitle Styling'),
+            subtitle: const Text('Customize subtitle appearance'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SubtitleStylingScreen(),
+                ),
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.replay_10),

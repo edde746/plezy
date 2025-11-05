@@ -31,6 +31,12 @@ class SettingsService {
   static const String _keySubtitleSyncOffset = 'subtitle_sync_offset';
   static const String _keyVolume = 'volume';
   static const String _keyRotationLocked = 'rotation_locked';
+  static const String _keySubtitleFontSize = 'subtitle_font_size';
+  static const String _keySubtitleTextColor = 'subtitle_text_color';
+  static const String _keySubtitleBorderSize = 'subtitle_border_size';
+  static const String _keySubtitleBorderColor = 'subtitle_border_color';
+  static const String _keySubtitleBackgroundColor = 'subtitle_background_color';
+  static const String _keySubtitleBackgroundOpacity = 'subtitle_background_opacity';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -218,6 +224,62 @@ class SettingsService {
 
   bool getRotationLocked() {
     return _prefs.getBool(_keyRotationLocked) ?? true; // Default: locked (landscape only)
+  }
+
+  // Subtitle Styling Settings
+
+  // Font Size (30-80, default 55)
+  Future<void> setSubtitleFontSize(int size) async {
+    await _prefs.setInt(_keySubtitleFontSize, size);
+  }
+
+  int getSubtitleFontSize() {
+    return _prefs.getInt(_keySubtitleFontSize) ?? 55;
+  }
+
+  // Text Color (hex format #RRGGBB, default white)
+  Future<void> setSubtitleTextColor(String color) async {
+    await _prefs.setString(_keySubtitleTextColor, color);
+  }
+
+  String getSubtitleTextColor() {
+    return _prefs.getString(_keySubtitleTextColor) ?? '#FFFFFF';
+  }
+
+  // Border Size (0-5, default 3)
+  Future<void> setSubtitleBorderSize(int size) async {
+    await _prefs.setInt(_keySubtitleBorderSize, size);
+  }
+
+  int getSubtitleBorderSize() {
+    return _prefs.getInt(_keySubtitleBorderSize) ?? 3;
+  }
+
+  // Border Color (hex format #RRGGBB, default black)
+  Future<void> setSubtitleBorderColor(String color) async {
+    await _prefs.setString(_keySubtitleBorderColor, color);
+  }
+
+  String getSubtitleBorderColor() {
+    return _prefs.getString(_keySubtitleBorderColor) ?? '#000000';
+  }
+
+  // Background Color (hex format #RRGGBB, default black)
+  Future<void> setSubtitleBackgroundColor(String color) async {
+    await _prefs.setString(_keySubtitleBackgroundColor, color);
+  }
+
+  String getSubtitleBackgroundColor() {
+    return _prefs.getString(_keySubtitleBackgroundColor) ?? '#000000';
+  }
+
+  // Background Opacity (0-100, default 0 for transparent)
+  Future<void> setSubtitleBackgroundOpacity(int opacity) async {
+    await _prefs.setInt(_keySubtitleBackgroundOpacity, opacity);
+  }
+
+  int getSubtitleBackgroundOpacity() {
+    return _prefs.getInt(_keySubtitleBackgroundOpacity) ?? 0;
   }
 
   // Keyboard Shortcuts (Legacy String-based)
@@ -737,6 +799,12 @@ class SettingsService {
       _prefs.remove(_keyAudioSyncOffset),
       _prefs.remove(_keySubtitleSyncOffset),
       _prefs.remove(_keyVolume),
+      _prefs.remove(_keySubtitleFontSize),
+      _prefs.remove(_keySubtitleTextColor),
+      _prefs.remove(_keySubtitleBorderSize),
+      _prefs.remove(_keySubtitleBorderColor),
+      _prefs.remove(_keySubtitleBackgroundColor),
+      _prefs.remove(_keySubtitleBackgroundOpacity),
     ]);
   }
 
