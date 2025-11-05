@@ -379,38 +379,6 @@ jobs:
           name: linux-app
           path: plezy-linux.tar.gz
 
-      - name: Replace version placeholders
-        run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//' | tr -d ' ')
-          DATE=$(date -u +%Y-%m-%d)
-          sed -i "s/{{VERSION}}/$VERSION/g" linux/com.edde746.plezy.metainfo.xml
-          sed -i "s/{{DATE}}/$DATE/g" linux/com.edde746.plezy.metainfo.xml
-
-      - name: Build AppImage
-        uses: AppImageCrafters/build-appimage-action@master
-        with:
-          recipe: linux/AppImageBuilder.yml
-        env:
-          UPDATE_INFO: gh-releases-zsync|edde746|plezy|latest|Plezy-*x86_64.AppImage.zsync
-
-      - name: Rename AppImage
-        run: |
-          APPIMAGE=$(find . -name "*.AppImage" -type f | head -1)
-          if [ -f "$APPIMAGE" ]; then
-            mv "$APPIMAGE" plezy-linux.AppImage
-          fi
-
-      - name: Attest AppImage
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: plezy-linux.AppImage
-
-      - name: Upload AppImage
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-appimage
-          path: plezy-linux.AppImage
-
   create-release:
     needs:
       [
@@ -442,7 +410,6 @@ jobs:
             artifacts/windows-portable/plezy-windows-portable.zip
             artifacts/windows-installer/plezy-windows-installer.exe
             artifacts/linux-app/plezy-linux.tar.gz
-            artifacts/linux-appimage/plezy-linux.AppImage
           draft: true
           prerelease: false
           generate_release_notes: true
