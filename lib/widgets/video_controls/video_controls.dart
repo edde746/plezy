@@ -23,6 +23,7 @@ import 'sheets/chapter_sheet.dart';
 import 'sheets/subtitle_track_sheet.dart';
 import 'sheets/version_sheet.dart';
 import 'sheets/video_settings_sheet.dart';
+import 'video_control_button.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
@@ -374,9 +375,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       initialData: widget.player.state.tracks,
       builder: (context, snapshot) {
         final tracks = snapshot.data;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        return IntrinsicHeight(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // Unified settings button (speed, sleep timer, audio sync, subtitle sync)
             ListenableBuilder(
               listenable: SleepTimerService(),
@@ -386,11 +389,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     sleepTimer.isActive ||
                     _audioSyncOffset != 0 ||
                     _subtitleSyncOffset != 0;
-                return IconButton(
-                  icon: Icon(
-                    Icons.tune,
-                    color: isActive ? Colors.amber : Colors.white,
-                  ),
+                return VideoControlButton(
+                  icon: Icons.tune,
+                  isActive: isActive,
                   onPressed: () async {
                     await VideoSettingsSheet.show(
                       context,
@@ -407,19 +408,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               },
             ),
             if (_hasMultipleAudioTracks(tracks))
-              IconButton(
-                icon: const Icon(Icons.audiotrack, color: Colors.white),
+              VideoControlButton(
+                icon: Icons.audiotrack,
                 onPressed: () => AudioTrackSheet.show(context, widget.player),
               ),
             if (_hasSubtitles(tracks))
-              IconButton(
-                icon: const Icon(Icons.subtitles, color: Colors.white),
-                onPressed: () =>
-                    SubtitleTrackSheet.show(context, widget.player),
+              VideoControlButton(
+                icon: Icons.subtitles,
+                onPressed: () => SubtitleTrackSheet.show(context, widget.player),
               ),
             if (_chapters.isNotEmpty)
-              IconButton(
-                icon: const Icon(Icons.video_library, color: Colors.white),
+              VideoControlButton(
+                icon: Icons.video_library,
                 onPressed: () => ChapterSheet.show(
                   context,
                   widget.player,
@@ -428,8 +428,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 ),
               ),
             if (widget.availableVersions.length > 1)
-              IconButton(
-                icon: const Icon(Icons.video_file, color: Colors.white),
+              VideoControlButton(
+                icon: Icons.video_file,
                 onPressed: () => VersionSheet.show(
                   context,
                   widget.availableVersions,
@@ -439,34 +439,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               ),
             // BoxFit mode cycle button
             if (widget.onCycleBoxFitMode != null)
-              IconButton(
-                icon: Icon(
-                  _getBoxFitIcon(widget.boxFitMode),
-                  color: Colors.white,
-                ),
+              VideoControlButton(
+                icon: _getBoxFitIcon(widget.boxFitMode),
                 tooltip: _getBoxFitTooltip(widget.boxFitMode),
                 onPressed: widget.onCycleBoxFitMode,
               ),
             // Rotation lock toggle (mobile only)
             if (PlatformDetector.isMobile(context))
-              IconButton(
-                icon: Icon(
-                  _isRotationLocked ? Icons.screen_lock_rotation : Icons.screen_rotation,
-                  color: Colors.white,
-                ),
+              VideoControlButton(
+                icon: _isRotationLocked ? Icons.screen_lock_rotation : Icons.screen_rotation,
                 tooltip: _isRotationLocked ? 'Unlock rotation' : 'Lock rotation',
                 onPressed: _toggleRotationLock,
               ),
             // Fullscreen toggle (desktop only)
             if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-              IconButton(
-                icon: Icon(
-                  _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                  color: Colors.white,
-                ),
+              VideoControlButton(
+                icon: _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
                 onPressed: _toggleFullscreen,
               ),
-          ],
+            ],
+          ),
         );
       },
     );
