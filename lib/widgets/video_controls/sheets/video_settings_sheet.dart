@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
+import '../widgets/sync_offset_control.dart';
 
-enum _SettingsView { menu, speed, sleep, audioSync }
+enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync }
 
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
   final Player player;
   final int audioSyncOffset;
+  final int subtitleSyncOffset;
 
   const VideoSettingsSheet({
     super.key,
     required this.player,
     required this.audioSyncOffset,
+    required this.subtitleSyncOffset,
   });
 
   static BoxConstraints getBottomSheetConstraints(BuildContext context) {
@@ -27,14 +30,22 @@ class VideoSettingsSheet extends StatefulWidget {
     );
   }
 
-  static void show(BuildContext context, Player player, int audioSyncOffset) {
-    showModalBottomSheet(
+  static Future<void> show(
+    BuildContext context,
+    Player player,
+    int audioSyncOffset,
+    int subtitleSyncOffset,
+  ) {
+    return showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
       isScrollControlled: true,
       constraints: getBottomSheetConstraints(context),
-      builder: (context) =>
-          VideoSettingsSheet(player: player, audioSyncOffset: audioSyncOffset),
+      builder: (context) => VideoSettingsSheet(
+        player: player,
+        audioSyncOffset: audioSyncOffset,
+        subtitleSyncOffset: subtitleSyncOffset,
+      ),
     );
   }
 
@@ -45,13 +56,13 @@ class VideoSettingsSheet extends StatefulWidget {
 class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   _SettingsView _currentView = _SettingsView.menu;
   late int _audioSyncOffset;
-  late double _currentAudioOffset;
+  late int _subtitleSyncOffset;
 
   @override
   void initState() {
     super.initState();
     _audioSyncOffset = widget.audioSyncOffset;
-    _currentAudioOffset = widget.audioSyncOffset.toDouble();
+    _subtitleSyncOffset = widget.subtitleSyncOffset;
   }
 
   void _navigateTo(_SettingsView view) {
@@ -76,6 +87,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return 'Sleep Timer';
       case _SettingsView.audioSync:
         return 'Audio Sync';
+      case _SettingsView.subtitleSync:
+        return 'Subtitle Sync';
     }
   }
 
@@ -89,6 +102,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Icons.bedtime;
       case _SettingsView.audioSync:
         return Icons.sync;
+      case _SettingsView.subtitleSync:
+        return Icons.subtitles;
     }
   }
 
@@ -136,7 +151,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final sleepTimer = SleepTimerService();
     final isIconActive =
         _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive || _audioSyncOffset != 0);
+        (sleepTimer.isActive ||
+            _audioSyncOffset != 0 ||
+            _subtitleSyncOffset != 0);
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -260,6 +277,35 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             ],
           ),
           onTap: () => _navigateTo(_SettingsView.audioSync),
+        ),
+
+        // Subtitle Sync
+        ListTile(
+          leading: Icon(
+            Icons.subtitles,
+            color: _subtitleSyncOffset != 0 ? Colors.amber : Colors.white70,
+          ),
+          title: const Text(
+            'Subtitle Sync',
+            style: TextStyle(color: Colors.white),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _formatAudioSync(_subtitleSyncOffset),
+                style: TextStyle(
+                  color: _subtitleSyncOffset != 0
+                      ? Colors.amber
+                      : Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right, color: Colors.white70),
+            ],
+          ),
+          onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),
       ],
     );
@@ -421,98 +467,34 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildAudioSyncView() {
-    void applyOffset(double offsetMs) async {
-      final offsetSeconds = offsetMs / 1000.0;
-      await (widget.player.platform as dynamic).setProperty(
-        'audio-delay',
-        offsetSeconds.toString(),
-      );
+    return SyncOffsetControl(
+      player: widget.player,
+      propertyName: 'audio-delay',
+      initialOffset: _audioSyncOffset,
+      labelText: 'Audio',
+      onOffsetChanged: (offset) async {
+        final settings = await SettingsService.getInstance();
+        await settings.setAudioSyncOffset(offset);
+        setState(() {
+          _audioSyncOffset = offset;
+        });
+      },
+    );
+  }
 
-      final settings = await SettingsService.getInstance();
-      await settings.setAudioSyncOffset(offsetMs.round());
-
-      setState(() {
-        _audioSyncOffset = offsetMs.round();
-      });
-    }
-
-    void resetOffset() {
-      setState(() {
-        _currentAudioOffset = 0;
-      });
-      applyOffset(0);
-    }
-
-    String formatOffset(double offsetMs) {
-      final sign = offsetMs >= 0 ? '+' : '';
-      return '$sign${offsetMs.round()}ms';
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Current offset display
-          Text(
-            formatOffset(_currentAudioOffset),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _currentAudioOffset > 0
-                ? 'Audio plays later'
-                : _currentAudioOffset < 0
-                ? 'Audio plays earlier'
-                : 'No offset',
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          const SizedBox(height: 48),
-          // Slider
-          Row(
-            children: [
-              const Text('-2s', style: TextStyle(color: Colors.white70)),
-              Expanded(
-                child: Slider(
-                  value: _currentAudioOffset,
-                  min: -2000,
-                  max: 2000,
-                  divisions: 80,
-                  activeColor: Colors.blue,
-                  inactiveColor: Colors.white24,
-                  onChanged: (value) {
-                    setState(() {
-                      _currentAudioOffset = value;
-                    });
-                  },
-                  onChangeEnd: (value) {
-                    applyOffset(value);
-                  },
-                ),
-              ),
-              const Text('+2s', style: TextStyle(color: Colors.white70)),
-            ],
-          ),
-          const SizedBox(height: 24),
-          // Reset button
-          ElevatedButton.icon(
-            onPressed: _currentAudioOffset != 0 ? resetOffset : null,
-            icon: const Icon(Icons.restart_alt),
-            label: const Text('Reset to 0ms'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[800],
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey[850],
-              disabledForegroundColor: Colors.white38,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildSubtitleSyncView() {
+    return SyncOffsetControl(
+      player: widget.player,
+      propertyName: 'sub-delay',
+      initialOffset: _subtitleSyncOffset,
+      labelText: 'Subtitles',
+      onOffsetChanged: (offset) async {
+        final settings = await SettingsService.getInstance();
+        await settings.setSubtitleSyncOffset(offset);
+        setState(() {
+          _subtitleSyncOffset = offset;
+        });
+      },
     );
   }
 
@@ -536,6 +518,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                     return _buildSleepView();
                   case _SettingsView.audioSync:
                     return _buildAudioSyncView();
+                  case _SettingsView.subtitleSync:
+                    return _buildSubtitleSyncView();
                 }
               }(),
             ),

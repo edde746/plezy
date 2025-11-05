@@ -140,6 +140,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         );
       }
 
+      // Apply subtitle sync offset
+      final subtitleSyncOffset = settingsService.getSubtitleSyncOffset();
+      if (subtitleSyncOffset != 0) {
+        final offsetSeconds = subtitleSyncOffset / 1000.0;
+        await (player!.platform as dynamic).setProperty(
+          'sub-delay',
+          offsetSeconds.toString(),
+        );
+      }
+
       // Notify that player is ready
       if (mounted) {
         setState(() {

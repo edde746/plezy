@@ -28,6 +28,7 @@ class SettingsService {
   static const String _keyShowHeroSection = 'show_hero_section';
   static const String _keySleepTimerDuration = 'sleep_timer_duration';
   static const String _keyAudioSyncOffset = 'audio_sync_offset';
+  static const String _keySubtitleSyncOffset = 'subtitle_sync_offset';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -187,6 +188,16 @@ class SettingsService {
 
   int getAudioSyncOffset() {
     return _prefs.getInt(_keyAudioSyncOffset) ?? 0; // Default: 0ms (no offset)
+  }
+
+  // Subtitle Sync Offset (in milliseconds)
+  Future<void> setSubtitleSyncOffset(int milliseconds) async {
+    await _prefs.setInt(_keySubtitleSyncOffset, milliseconds);
+  }
+
+  int getSubtitleSyncOffset() {
+    return _prefs.getInt(_keySubtitleSyncOffset) ??
+        0; // Default: 0ms (no offset)
   }
 
   // Keyboard Shortcuts (Legacy String-based)
@@ -704,6 +715,7 @@ class SettingsService {
       _prefs.remove(_keyMediaVersionPreferences),
       _prefs.remove(_keySleepTimerDuration),
       _prefs.remove(_keyAudioSyncOffset),
+      _prefs.remove(_keySubtitleSyncOffset),
     ]);
   }
 

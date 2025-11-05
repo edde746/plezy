@@ -83,6 +83,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   KeyboardShortcutsService? _keyboardService;
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _audioSyncOffset = 0; // Default, loaded from settings
+  int _subtitleSyncOffset = 0; // Default, loaded from settings
   // Double-tap feedback state
   bool _showDoubleTapFeedback = false;
   double _doubleTapFeedbackOpacity = 0.0;
@@ -115,6 +116,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       setState(() {
         _seekTimeSmall = settingsService.getSeekTimeSmall();
         _audioSyncOffset = settingsService.getAudioSyncOffset();
+        _subtitleSyncOffset = settingsService.getSubtitleSyncOffset();
       });
     }
   }
@@ -319,27 +321,30 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Unified settings button (speed, sleep timer, audio sync)
+            // Unified settings button (speed, sleep timer, audio sync, subtitle sync)
             ListenableBuilder(
               listenable: SleepTimerService(),
               builder: (context, _) {
                 final sleepTimer = SleepTimerService();
-                final isActive = sleepTimer.isActive || _audioSyncOffset != 0;
+                final isActive =
+                    sleepTimer.isActive ||
+                    _audioSyncOffset != 0 ||
+                    _subtitleSyncOffset != 0;
                 return IconButton(
                   icon: Icon(
                     Icons.tune,
                     color: isActive ? Colors.amber : Colors.white,
                   ),
                   onPressed: () async {
-                    VideoSettingsSheet.show(
+                    await VideoSettingsSheet.show(
                       context,
                       widget.player,
                       _audioSyncOffset,
+                      _subtitleSyncOffset,
                     );
-                    // Reload offset after sheet closes (in case it changed)
-                    await Future.delayed(const Duration(milliseconds: 300));
+                    // Sheet is now closed, reload immediately
                     if (mounted) {
-                      _loadSeekTimes();
+                      await _loadSeekTimes();
                     }
                   },
                 );
