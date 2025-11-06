@@ -77,6 +77,50 @@ class PlexSubtitleTrack {
     if (forced) parts.add('Forced');
     return parts.isEmpty ? 'Track ${index ?? id}' : parts.join(' · ');
   }
+
+  /// Returns true if this subtitle track is an external file (sidecar subtitle)
+  /// External subtitles have a key property that points to /library/streams/{id}
+  bool get isExternal => key != null && key!.isNotEmpty;
+
+  /// Constructs the full URL for fetching external subtitle files
+  /// Returns null if this is not an external subtitle
+  String? getSubtitleUrl(String baseUrl, String token) {
+    if (!isExternal) return null;
+
+    // Determine file extension based on codec
+    final ext = _getExtensionFromCodec(codec);
+
+    // Construct URL with authentication token
+    return '$baseUrl$key.$ext?X-Plex-Token=$token';
+  }
+
+  /// Maps Plex subtitle codec names to file extensions
+  String _getExtensionFromCodec(String? codec) {
+    if (codec == null) return 'srt';
+
+    switch (codec.toLowerCase()) {
+      case 'subrip':
+      case 'srt':
+        return 'srt';
+      case 'ass':
+        return 'ass';
+      case 'ssa':
+        return 'ssa';
+      case 'webvtt':
+      case 'vtt':
+        return 'vtt';
+      case 'mov_text':
+        return 'srt';
+      case 'pgs':
+      case 'hdmv_pgs_subtitle':
+        return 'sup';
+      case 'dvd_subtitle':
+      case 'dvdsub':
+        return 'sub';
+      default:
+        return 'srt'; // Default to SRT for unknown codecs
+    }
+  }
 }
 
 class PlexChapter {

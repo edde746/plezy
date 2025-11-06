@@ -40,7 +40,7 @@ class VideoControlButton extends StatelessWidget {
       icon: Icon(icon, color: effectiveColor),
       onPressed: onPressed,
       tooltip: tooltip,
-      constraints: const BoxConstraints(minWidth: 40, minHeight: 56),
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
     );
   }
 }

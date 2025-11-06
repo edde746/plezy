@@ -54,7 +54,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   StreamSubscription<String>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
-  bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
+  bool _isReplacingWithVideo =
+      false; // Flag to skip orientation restoration during video-to-video navigation
 
   // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode = 0;
@@ -123,10 +124,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           mpvConfiguration: {
             'sub-font-size': settingsService.getSubtitleFontSize().toString(),
             'sub-color': settingsService.getSubtitleTextColor(),
-            'sub-border-size': settingsService.getSubtitleBorderSize().toString(),
+            'sub-border-size': settingsService
+                .getSubtitleBorderSize()
+                .toString(),
             'sub-border-color': settingsService.getSubtitleBorderColor(),
-            'sub-back-color': '#${(settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt().toRadixString(16).padLeft(2, '0').toUpperCase()}${settingsService.getSubtitleBackgroundColor().replaceFirst('#', '')}',
-          }
+            'sub-back-color':
+                '#${(settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt().toRadixString(16).padLeft(2, '0').toUpperCase()}${settingsService.getSubtitleBackgroundColor().replaceFirst('#', '')}',
+          },
         ),
       );
       controller = VideoController(
@@ -194,10 +198,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       }
 
       // Listen to playback state changes
-      _playingSubscription = player!.stream.playing.listen(_onPlayingStateChanged);
+      _playingSubscription = player!.stream.playing.listen(
+        _onPlayingStateChanged,
+      );
 
       // Listen to completion
-      _completedSubscription = player!.stream.completed.listen(_onVideoCompleted);
+      _completedSubscription = player!.stream.completed.listen(
+        _onVideoCompleted,
+      );
 
       // Listen to MPV logs
       _logSubscription = player!.stream.log.listen(_onPlayerLog);
@@ -273,7 +281,63 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       );
 
       if (videoUrl != null) {
-        // Open video without auto-playing
+        // Fetch media info to check for external subtitle tracks
+        final mediaInfo = await client.getMediaInfo(
+          widget.metadata.ratingKey,
+          mediaIndex: widget.selectedMediaIndex,
+        );
+
+        // Build list of external subtitle tracks for media_kit
+        final externalSubtitles = <SubtitleTrack>[];
+        if (mediaInfo != null) {
+          final externalTracks = mediaInfo.subtitleTracks
+              .where((track) => track.isExternal)
+              .toList();
+
+          if (externalTracks.isNotEmpty) {
+            appLogger.d(
+              'Found ${externalTracks.length} external subtitle track(s)',
+            );
+          }
+
+          for (final plexTrack in externalTracks) {
+            try {
+              // Skip if no auth token is available
+              final token = client.config.token;
+              if (token == null) {
+                appLogger.w('No auth token available for external subtitles');
+                continue;
+              }
+
+              final url = plexTrack.getSubtitleUrl(
+                client.config.baseUrl,
+                token,
+              );
+
+              // Skip if URL couldn't be constructed
+              if (url == null) continue;
+
+              externalSubtitles.add(
+                SubtitleTrack.uri(
+                  url,
+                  title:
+                      plexTrack.displayTitle ??
+                      plexTrack.language ??
+                      'Track ${plexTrack.id}',
+                  language: plexTrack.languageCode,
+                ),
+              );
+            } catch (e) {
+              // Silent fallback - log error but continue with other subtitles
+              appLogger.w(
+                'Failed to add external subtitle track ${plexTrack.id}',
+                error: e,
+              );
+            }
+          }
+        }
+
+        // Open video (without external subtitles in Media constructor)
         await player!.open(Media(videoUrl), play: false);
 
         // Wait for media to be ready (duration > 0)
@@ -281,6 +345,33 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         while (player!.state.duration.inMilliseconds == 0 && attempts < 100) {
           await Future.delayed(const Duration(milliseconds: 100));
           attempts++;
+        }
+
+        // Add external subtitle tracks without auto-selecting them
+        if (externalSubtitles.isNotEmpty) {
+          appLogger.d(
+            'Adding ${externalSubtitles.length} external subtitle(s) to player',
+          );
+
+          final nativePlayer = player!.platform as dynamic;
+
+          for (final subtitleTrack in externalSubtitles) {
+            try {
+              // Use mpv's sub-add with 'auto' flag to avoid auto-selection
+              await nativePlayer.command([
+                'sub-add',
+                subtitleTrack.id,
+                'auto',
+                subtitleTrack.title ?? 'external',
+                subtitleTrack.language ?? 'auto',
+              ]);
+            } catch (e) {
+              appLogger.w(
+                'Failed to add external subtitle: ${subtitleTrack.title}',
+                error: e,
+              );
+            }
+          }
         }
 
         // Set up playback position if resuming
