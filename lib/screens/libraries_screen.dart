@@ -46,6 +46,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   bool _isSortDescending = false;
   bool _isInitialLoad = true;
 
+  // Pagination state
+  int _currentPage = 0;
+  bool _hasMoreItems = true;
+  CancelToken? _cancelToken;
+  int _requestId = 0;
+  static const int _pageSize = 1000;
+
   @override
   void initState() {
     super.initState();
@@ -201,7 +208,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     await storage.saveLibraryOrder(libraryKeys);
   }
 
-
   Future<void> _loadLibraryContent(String libraryKey) async {
     // Compute visible libraries based on current provider state
     final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
@@ -257,6 +263,18 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       await storage.saveLibraryFilters({});
     }
 
+    // Cancel any existing requests
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
+    final currentRequestId = ++_requestId;
+
+    // Reset pagination state
+    setState(() {
+      _currentPage = 0;
+      _hasMoreItems = true;
+      _items = [];
+    });
+
     try {
       // Load filters and sort options for the new library
       _loadFilters(libraryKey);
@@ -270,20 +288,71 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         );
       }
 
-      // Load content
-      final items = await client.getLibraryContent(
+      // Load pages sequentially
+      await _loadAllPagesSequentially(
         libraryKey,
-        filters: filtersWithSort,
+        filtersWithSort,
+        currentRequestId,
+        client,
       );
-      setState(() {
-        _items = items;
-        _isLoadingItems = false;
-      });
     } catch (e) {
+      // Ignore cancellation errors
+      if (e is DioException && e.type == DioExceptionType.cancel) {
+        return;
+      }
+
       setState(() {
         _errorMessage = _getErrorMessage(e, 'library content');
         _isLoadingItems = false;
       });
+    }
+  }
+
+  /// Load all pages sequentially until all items are fetched
+  Future<void> _loadAllPagesSequentially(
+    String libraryKey,
+    Map<String, String> filtersWithSort,
+    int requestId,
+    PlexClient client,
+  ) async {
+    while (_hasMoreItems && requestId == _requestId) {
+      try {
+        final items = await client.getLibraryContent(
+          libraryKey,
+          start: _currentPage * _pageSize,
+          size: _pageSize,
+          filters: filtersWithSort,
+          cancelToken: _cancelToken,
+        );
+
+        // Check if request is still valid
+        if (requestId != _requestId) {
+          return; // Request was superseded
+        }
+
+        setState(() {
+          _items.addAll(items);
+          _currentPage++;
+          _hasMoreItems = items.length >= _pageSize;
+
+          // Mark as not loading if this is the last page
+          if (!_hasMoreItems) {
+            _isLoadingItems = false;
+          }
+        });
+      } catch (e) {
+        // Check if it's a cancellation
+        if (e is DioException && e.type == DioExceptionType.cancel) {
+          return;
+        }
+
+        // For other errors, update state and rethrow
+        setState(() {
+          _isLoadingItems = false;
+          _hasMoreItems = false;
+        });
+        rethrow;
+      }
     }
   }
 
@@ -360,9 +429,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Future<void> _applyFilters() async {
+    // Cancel any existing requests
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
+    final currentRequestId = ++_requestId;
+
     setState(() {
       _isLoadingItems = true;
       _errorMessage = null;
+      _currentPage = 0;
+      _hasMoreItems = true;
+      _items = [];
     });
 
     try {
@@ -383,15 +460,19 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         );
       }
 
-      final items = await client.getLibraryContent(
+      // Load pages sequentially
+      await _loadAllPagesSequentially(
         _selectedLibraryKey!,
-        filters: filtersWithSort,
+        filtersWithSort,
+        currentRequestId,
+        client,
       );
-      setState(() {
-        _items = items;
-        _isLoadingItems = false;
-      });
     } catch (e) {
+      // Ignore cancellation errors
+      if (e is DioException && e.type == DioExceptionType.cancel) {
+        return;
+      }
+
       setState(() {
         _errorMessage = 'Failed to load library content: $e';
         _isLoadingItems = false;
@@ -912,7 +993,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             ),
 
             // Content grid
-            if (_isLoadingItems)
+            if (_isLoadingItems && _items.isEmpty)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
               )
@@ -952,24 +1033,21 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   ),
                 ),
               )
-            else
+            else ...[
               Consumer<SettingsProvider>(
                 builder: (context, settingsProvider, child) {
                   if (settingsProvider.viewMode == ViewMode.list) {
                     return SliverPadding(
                       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                       sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final item = _items[index];
-                            return MediaCard(
-                              key: Key(item.ratingKey),
-                              item: item,
-                              onRefresh: updateItem,
-                            );
-                          },
-                          childCount: _items.length,
-                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = _items[index];
+                          return MediaCard(
+                            key: Key(item.ratingKey),
+                            item: item,
+                            onRefresh: updateItem,
+                          );
+                        }, childCount: _items.length),
                       ),
                     );
                   } else {
@@ -998,6 +1076,24 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   }
                 },
               ),
+              // Show loading indicator if there are more items to load
+              if (_hasMoreItems && _isLoadingItems)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Loading library... (${_items.length} items loaded)',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ],
         ],
       ),
@@ -1450,7 +1546,9 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
               child: RadioGroup<String>(
                 groupValue: _tempSelectedSort?.key,
                 onChanged: (value) {
-                  final sort = widget.sortOptions.firstWhere((s) => s.key == value);
+                  final sort = widget.sortOptions.firstWhere(
+                    (s) => s.key == value,
+                  );
                   setState(() {
                     _tempSelectedSort = sort;
                     // Use default direction for newly selected sort
@@ -1483,7 +1581,10 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
                                     ),
                                     ButtonSegment(
                                       value: true,
-                                      icon: Icon(Icons.arrow_downward, size: 16),
+                                      icon: Icon(
+                                        Icons.arrow_downward,
+                                        size: 16,
+                                      ),
                                     ),
                                   ],
                                   selected: {_tempDescending},
@@ -1717,9 +1818,11 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                               padding: const EdgeInsets.only(right: 12),
                               child: Icon(
                                 Icons.drag_indicator,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.color
+                                    ?.withValues(alpha: 0.5),
                               ),
                             ),
                           ),

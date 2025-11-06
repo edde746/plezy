@@ -38,7 +38,7 @@ class PlexClient {
         baseUrl: config.baseUrl,
         headers: config.headers,
         connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 120),
         validateStatus: (status) => status != null && status < 500,
         responseType: ResponseType.json,
         contentType: 'application/json; charset=utf-8',
@@ -228,6 +228,7 @@ class PlexClient {
     int? start,
     int? size,
     Map<String, String>? filters,
+    CancelToken? cancelToken,
   }) async {
     final queryParams = <String, dynamic>{};
     if (start != null) queryParams['X-Plex-Container-Start'] = start;
@@ -241,6 +242,7 @@ class PlexClient {
     final response = await _dio.get(
       '/library/sections/$sectionId/all',
       queryParameters: queryParams,
+      cancelToken: cancelToken,
     );
 
     return _extractMetadataList(response);
