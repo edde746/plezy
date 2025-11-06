@@ -250,9 +250,18 @@ class PlexServer {
 
   factory PlexServer.fromJson(Map<String, dynamic> json) {
     final List<dynamic> connectionsJson = json['connections'] as List<dynamic>;
-    final connections = connectionsJson
-        .map((c) => PlexConnection.fromJson(c as Map<String, dynamic>))
-        .toList();
+    final connections = <PlexConnection>[];
+
+    // Parse connections and generate HTTP fallbacks for HTTPS connections
+    for (final c in connectionsJson) {
+      final connection = PlexConnection.fromJson(c as Map<String, dynamic>);
+      connections.add(connection);
+
+      // Generate HTTP fallback for HTTPS connections
+      if (connection.protocol == 'https') {
+        connections.add(connection.toHttpFallback());
+      }
+    }
 
     DateTime? lastSeenAt;
     if (json['lastSeenAt'] != null) {
@@ -317,17 +326,32 @@ class PlexServer {
   /// Returns a Stream that emits connections progressively:
   /// 1. First emission: The first connection that responds successfully
   /// 2. Second emission (optional): The best connection after latency testing
-  /// Priority: local > remote > relay (from successful connections)
+  /// Priority: local > remote > relay, then HTTPS > HTTP, then lowest latency
   /// Tests both plex.direct URI and direct IP for each connection
+  /// HTTPS connections are tested first, with HTTP as fallback
   Stream<PlexConnection> findBestWorkingConnection() async* {
     if (connections.isEmpty) return;
 
     // Create candidates: test both uri and directUrl for each connection
-    final candidates = <_ConnectionCandidate>[];
+    // Separate HTTPS and HTTP candidates to prioritize HTTPS first
+    final httpsCandidates = <_ConnectionCandidate>[];
+    final httpCandidates = <_ConnectionCandidate>[];
+
     for (final connection in connections) {
-      candidates.add(_ConnectionCandidate(connection, connection.uri, true));
-      candidates.add(_ConnectionCandidate(connection, connection.directUrl, false));
+      final uriCandidate = _ConnectionCandidate(connection, connection.uri, true);
+      final directCandidate = _ConnectionCandidate(connection, connection.directUrl, false);
+
+      if (connection.protocol == 'https') {
+        httpsCandidates.add(uriCandidate);
+        httpsCandidates.add(directCandidate);
+      } else {
+        httpCandidates.add(uriCandidate);
+        httpCandidates.add(directCandidate);
+      }
     }
+
+    // Combine candidates with HTTPS first, then HTTP
+    final candidates = [...httpsCandidates, ...httpCandidates];
 
     // Phase 1: Race to find first working connection
     final completer = Completer<_ConnectionCandidate?>();
@@ -444,18 +468,24 @@ class PlexServer {
         _findLowestLatencyCandidate(relayCandidates);
   }
 
-  /// Find the candidate with lowest latency, preferring plex.direct URI on tie
+  /// Find the candidate with lowest latency, preferring HTTPS and plex.direct URI on tie
   _ConnectionCandidate? _findLowestLatencyCandidate(
     List<MapEntry<_ConnectionCandidate, ConnectionTestResult>> entries,
   ) {
     if (entries.isEmpty) return null;
 
-    // Sort by latency first, then by URL type (prefer plex.direct)
+    // Sort by latency first, then by protocol (HTTPS > HTTP), then by URL type (prefer plex.direct)
     entries.sort((a, b) {
       final latencyCompare = a.value.latencyMs.compareTo(b.value.latencyMs);
       if (latencyCompare != 0) return latencyCompare;
 
-      // If latencies are equal, prefer plex.direct URI (isPlexDirectUri = true)
+      // If latencies are equal, prefer HTTPS over HTTP
+      final aIsHttps = a.key.connection.protocol == 'https';
+      final bIsHttps = b.key.connection.protocol == 'https';
+      if (aIsHttps && !bIsHttps) return -1;
+      if (!aIsHttps && bIsHttps) return 1;
+
+      // If latencies and protocols are equal, prefer plex.direct URI (isPlexDirectUri = true)
       if (a.key.isPlexDirectUri && !b.key.isPlexDirectUri) return -1;
       if (!a.key.isPlexDirectUri && b.key.isPlexDirectUri) return 1;
       return 0;
@@ -517,5 +547,21 @@ class PlexConnection {
     if (relay) return 'Relay';
     if (local) return 'Local';
     return 'Remote';
+  }
+
+  /// Create an HTTP fallback version of this HTTPS connection
+  /// This allows testing HTTP when HTTPS is unavailable (e.g., certificate issues)
+  PlexConnection toHttpFallback() {
+    assert(protocol == 'https', 'Can only create HTTP fallback for HTTPS connections');
+
+    return PlexConnection(
+      protocol: 'http',
+      address: address,
+      port: port,
+      uri: uri.replaceFirst('https://', 'http://'),
+      local: local,
+      relay: relay,
+      ipv6: ipv6,
+    );
   }
 }
