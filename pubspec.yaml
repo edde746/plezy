@@ -25,6 +25,8 @@ dependencies:
   provider: ^6.1.2
   hotkey_manager: ^0.2.3
   flex_color_picker: ^3.6.0
+  audio_service: ^0.18.18
+  audio_session: ^0.2.1
 
 dependency_overrides:
   media_kit:

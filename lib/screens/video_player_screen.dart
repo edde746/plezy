@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
+import 'package:audio_session/audio_session.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
@@ -13,6 +14,7 @@ import '../widgets/video_controls/video_controls.dart';
 import '../utils/language_codes.dart';
 import '../utils/app_logger.dart';
 import '../services/settings_service.dart';
+import '../services/media_service_manager.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/platform_detector.dart';
@@ -164,6 +166,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final savedVolume = settingsService.getVolume();
       player!.setVolume(savedVolume);
 
+      // Initialize audio session for proper OS integration
+      await _initializeAudioSession();
+
+      // Update media service manager with new player
+      await _updateMediaService();
+
       // Notify that player is ready
       if (mounted) {
         setState(() {
@@ -228,6 +236,82 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
+  Future<void> _initializeAudioSession() async {
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration(
+        avAudioSessionCategory: AVAudioSessionCategory.playback,
+        avAudioSessionMode: AVAudioSessionMode.moviePlayback,
+        androidAudioAttributes: AndroidAudioAttributes(
+          contentType: AndroidAudioContentType.movie,
+          usage: AndroidAudioUsage.media,
+        ),
+        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+      ));
+
+      // Handle interruptions (phone calls, other apps, etc.)
+      session.interruptionEventStream.listen((event) {
+        if (event.begin) {
+          // Pause on interruption
+          player?.pause();
+          appLogger.i('Playback paused due to interruption');
+        } else {
+          // Resume after interruption if needed (user can manually play)
+          switch (event.type) {
+            case AudioInterruptionType.pause:
+            case AudioInterruptionType.duck:
+              // Don't auto-resume for these types
+              break;
+            case AudioInterruptionType.unknown:
+              break;
+          }
+        }
+      });
+
+      // Handle audio becoming noisy (headphones unplugged)
+      session.becomingNoisyEventStream.listen((_) {
+        player?.pause();
+        appLogger.i('Playback paused due to audio becoming noisy (headphones unplugged?)');
+      });
+    } catch (e) {
+      appLogger.w('Failed to configure audio session', error: e);
+    }
+  }
+
+  Future<void> _updateMediaService() async {
+    if (!mounted) return;
+
+    try {
+      final mediaService = MediaServiceManager.instance;
+
+      // Build thumbnail URL if available
+      String? thumbnailUrl;
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (widget.metadata.thumb != null && client != null) {
+        final baseUrl = client.config.baseUrl;
+        final token = client.config.token;
+        if (token != null) {
+          thumbnailUrl = '$baseUrl${widget.metadata.thumb}?X-Plex-Token=$token';
+        }
+      }
+
+      // CRITICAL: Set mediaItem FIRST before updating player
+      // Android requires mediaItem to exist before playbackState broadcasts
+      mediaService.updateMediaItem(widget.metadata, thumbnailUrl);
+
+      if (!mounted) return;
+
+      await mediaService.updatePlayer(
+        player: player,
+        onNext: _playNext,
+        onPrevious: _playPrevious,
+      );
+    } catch (e) {
+      appLogger.w('Failed to update media service', error: e);
+    }
+  }
+
   Future<void> _loadAdjacentEpisodes() async {
     if (widget.metadata.type.toLowerCase() != 'episode') {
       return;
@@ -260,6 +344,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           _nextEpisode = next;
           _previousEpisode = previous;
         });
+
+        // Update media service navigation controls
+        MediaServiceManager.instance.updateNavigationActions(
+          hasNext: _nextEpisode != null,
+          hasPrevious: _previousEpisode != null,
+        );
       }
     } catch (e) {
       // Silently handle errors
@@ -386,6 +476,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         // Start playback after seeking
         await player!.play();
 
+        // Force media service state update to trigger Android notification
+        // This ensures the notification appears even if streams don't fire reliably
+        MediaServiceManager.instance.forceStateUpdate();
+
         // Wait for tracks to be loaded, then apply preferred tracks
         _waitForTracksAndApply();
       } else {
@@ -427,21 +521,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     setState(() {
       _boxFitMode = (_boxFitMode + 1) % 3;
     });
-    final modes = [
-      'contain (letterbox)',
-      'cover (fill screen)',
-      'fill (stretch)',
-    ];
-    appLogger.d('BoxFit mode: ${modes[_boxFitMode]}');
   }
 
   /// Toggle between contain and cover modes only (for pinch gesture)
   void _toggleContainCover() {
     setState(() {
-      _boxFitMode = _boxFitMode == 0 ? 1 : 0; // Toggle between 0 and 1
+      _boxFitMode = _boxFitMode == 0 ? 1 : 0;
     });
-    final modes = ['contain (letterbox)', 'cover (fill screen)'];
-    appLogger.d('BoxFit mode toggled: ${modes[_boxFitMode]}');
   }
 
   /// Get current BoxFit based on mode
@@ -468,6 +554,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _completedSubscription?.cancel();
     _logSubscription?.cancel();
     _errorSubscription?.cancel();
+
+    // Stop media service and clear OS controls
+    MediaServiceManager.instance.stop();
 
     // Send final stopped state
     _sendProgress('stopped');
