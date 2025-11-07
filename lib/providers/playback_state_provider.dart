@@ -25,7 +25,8 @@ class PlaybackStateProvider with ChangeNotifier {
 
   /// Gets the next episode in the shuffle queue.
   /// Returns null if queue is exhausted or current episode is not in queue.
-  PlexMetadata? getNextEpisode(String currentEpisodeKey) {
+  /// [loopQueue] - If true, restart from beginning when queue is exhausted
+  PlexMetadata? getNextEpisode(String currentEpisodeKey, {bool loopQueue = false}) {
     if (_shuffleQueue.isEmpty) return null;
 
     // Find current episode in queue
@@ -42,10 +43,40 @@ class PlaybackStateProvider with ChangeNotifier {
     // Check if there's a next episode
     if (currentIndex + 1 >= _shuffleQueue.length) {
       // Queue exhausted
+      if (loopQueue && _shuffleQueue.isNotEmpty) {
+        // Loop back to beginning
+        _currentIndex = 0;
+        return _shuffleQueue[_currentIndex];
+      }
       return null;
     }
 
     _currentIndex = currentIndex + 1;
+    return _shuffleQueue[_currentIndex];
+  }
+
+  /// Gets the previous episode in the shuffle queue.
+  /// Returns null if at the beginning of the queue or current episode is not in queue.
+  PlexMetadata? getPreviousEpisode(String currentEpisodeKey) {
+    if (_shuffleQueue.isEmpty) return null;
+
+    // Find current episode in queue
+    final currentIndex = _shuffleQueue.indexWhere(
+      (ep) => ep.ratingKey == currentEpisodeKey,
+    );
+
+    if (currentIndex == -1) {
+      // Current episode not in queue
+      return null;
+    }
+
+    // Check if there's a previous episode
+    if (currentIndex <= 0) {
+      // At the beginning of queue
+      return null;
+    }
+
+    _currentIndex = currentIndex - 1;
     return _shuffleQueue[_currentIndex];
   }
 

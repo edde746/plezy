@@ -75,6 +75,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
                 _buildVideoPlaybackSection(),
                 const SizedBox(height: 24),
+                _buildShufflePlaySection(),
+                const SizedBox(height: 24),
                 _buildKeyboardShortcutsSection(),
                 const SizedBox(height: 24),
                 _buildAdvancedSection(),
@@ -242,6 +244,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text('$_sleepTimerDuration minutes'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showSleepTimerDurationDialog(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShufflePlaySection() {
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Shuffle Play',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const Icon(Icons.visibility_off),
+                title: const Text('Unwatched Only'),
+                subtitle: const Text(
+                  'Only include unwatched episodes in shuffle queue',
+                ),
+                value: settingsProvider.shuffleUnwatchedOnly,
+                onChanged: (value) async {
+                  await settingsProvider.setShuffleUnwatchedOnly(value);
+                },
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const Icon(Icons.shuffle),
+                title: const Text('Shuffle Order Navigation'),
+                subtitle: const Text(
+                  'Next/previous buttons follow shuffled order',
+                ),
+                value: settingsProvider.shuffleOrderNavigation,
+                onChanged: (value) async {
+                  await settingsProvider.setShuffleOrderNavigation(value);
+                },
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const Icon(Icons.loop),
+                title: const Text('Loop Shuffle Queue'),
+                subtitle: const Text(
+                  'Restart queue when reaching the end',
+                ),
+                value: settingsProvider.shuffleLoopQueue,
+                onChanged: (value) async {
+                  await settingsProvider.setShuffleLoopQueue(value);
+                },
+              );
+            },
           ),
         ],
       ),

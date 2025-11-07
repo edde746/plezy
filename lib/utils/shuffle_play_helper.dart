@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
 import '../providers/playback_state_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 
 /// Handle shuffle play action for shows and seasons
 ///
-/// Fetches all unwatched episodes, shuffles them, and starts playback
-/// from the first shuffled episode. The shuffle queue is stored in the
-/// PlaybackStateProvider for continuous shuffle playback.
+/// Fetches episodes based on user settings (unwatched only or including watched),
+/// shuffles them, and starts playback from the first shuffled episode.
+/// The shuffle queue is stored in the PlaybackStateProvider for continuous shuffle playback.
 Future<void> handleShufflePlay(
   BuildContext context,
   PlexMetadata metadata,
@@ -18,7 +19,11 @@ Future<void> handleShufflePlay(
   if (client == null) return;
 
   final playbackState = context.read<PlaybackStateProvider>();
+  final settingsProvider = context.read<SettingsProvider>();
   final itemType = metadata.type.toLowerCase();
+
+  // Get shuffle setting
+  final unwatchedOnly = settingsProvider.shuffleUnwatchedOnly;
 
   try {
     // Show loading indicator
@@ -31,17 +36,44 @@ Future<void> handleShufflePlay(
       );
     }
 
-    // Get unwatched episodes based on type
+    // Get episodes based on type and settings
     List<PlexMetadata> episodes;
     if (itemType == 'show') {
-      episodes = await client.getAllUnwatchedEpisodes(
-        metadata.ratingKey,
-      );
+      if (unwatchedOnly) {
+        // Get only unwatched episodes
+        episodes = await client.getAllUnwatchedEpisodes(
+          metadata.ratingKey,
+        );
+      } else {
+        // Get all episodes from all seasons
+        final allEpisodes = <PlexMetadata>[];
+        final seasons = await client.getChildren(metadata.ratingKey);
+
+        for (final season in seasons) {
+          if (season.type == 'season') {
+            final seasonEpisodes = await client.getChildren(season.ratingKey);
+            final episodesOnly = seasonEpisodes
+                .where((ep) => ep.type == 'episode')
+                .toList();
+            allEpisodes.addAll(episodesOnly);
+          }
+        }
+        episodes = allEpisodes;
+      }
     } else {
       // season
-      episodes = await client.getUnwatchedEpisodesInSeason(
-        metadata.ratingKey,
-      );
+      if (unwatchedOnly) {
+        // Get only unwatched episodes
+        episodes = await client.getUnwatchedEpisodesInSeason(
+          metadata.ratingKey,
+        );
+      } else {
+        // Get all episodes in season
+        final seasonEpisodes = await client.getChildren(metadata.ratingKey);
+        episodes = seasonEpisodes
+            .where((ep) => ep.type == 'episode')
+            .toList();
+      }
     }
 
     // Close loading indicator
@@ -52,7 +84,7 @@ Future<void> handleShufflePlay(
     if (episodes.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No unwatched episodes found')),
+          const SnackBar(content: Text('No episodes found')),
         );
       }
       return;
