@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import 'server_selection_screen.dart';
@@ -18,6 +19,8 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _errorMessage;
   late PlexAuthService _authService;
   bool _shouldCancelPolling = false;
+  bool _useQrFlow = false; // whether current auth attempt is QR based
+  String? _qrAuthUrl; // auth URL rendered as QR
 
   @override
   void initState() {
@@ -34,6 +37,10 @@ class _AuthScreenState extends State<AuthScreen> {
       _isAuthenticating = true;
       _errorMessage = null;
       _shouldCancelPolling = false;
+      // preserve _useQrFlow as chosen prior to calling
+      if (!_useQrFlow) {
+        _qrAuthUrl = null; // ensure stale QR cleared for browser flow
+      }
     });
 
     try {
@@ -45,12 +52,19 @@ class _AuthScreenState extends State<AuthScreen> {
       // Construct auth URL
       final authUrl = _authService.getAuthUrl(pinCode);
 
-      // Open browser (in-app for mobile, external for desktop)
-      final uri = Uri.parse(authUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      if (_useQrFlow) {
+        // Display QR instead of launching browser
+        setState(() {
+          _qrAuthUrl = authUrl;
+        });
       } else {
-        throw Exception('Could not launch auth URL');
+        // Open browser (in-app for mobile, external for desktop)
+        final uri = Uri.parse(authUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+        } else {
+          throw Exception('Could not launch auth URL');
+        }
       }
 
       // Poll for authentication with cancellation support
@@ -73,10 +87,12 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       // Auto-close the in-app browser on mobile (no-op on desktop)
-      try {
-        await closeInAppWebView();
-      } catch (e) {
-        // Ignore errors - browser might already be closed or on desktop
+      if (!_useQrFlow) {
+        try {
+          await closeInAppWebView();
+        } catch (e) {
+          // Ignore errors - browser might already be closed or on desktop
+        }
       }
 
       // Store the token
@@ -95,6 +111,11 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         );
       }
+      // Clear QR URL after successful auth
+      setState(() {
+        _qrAuthUrl = null;
+        _useQrFlow = false;
+      });
     } catch (e) {
       setState(() {
         _isAuthenticating = false;
@@ -107,6 +128,7 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() {
       _shouldCancelPolling = true;
       _isAuthenticating = false;
+      _qrAuthUrl = null;
     });
     // Start new authentication after a brief delay to ensure cleanup
     Future.delayed(const Duration(milliseconds: 100), _startAuthentication);
@@ -226,11 +248,30 @@ class _AuthScreenState extends State<AuthScreen> {
               if (_isAuthenticating) ...[
                 const Center(child: CircularProgressIndicator()),
                 const SizedBox(height: 16),
-                const Text(
-                  'Waiting for authentication...\nPlease complete sign-in in your browser.',
+                Text(
+                  _useQrFlow
+                      ? 'Scan this QR code with a device logged into Plex to authenticate.'
+                      : 'Waiting for authentication...\nPlease complete sign-in in your browser.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                  style: const TextStyle(color: Colors.grey),
                 ),
+                if (_useQrFlow && _qrAuthUrl != null) ...[
+                  const SizedBox(height: 24),
+                  Center(
+                    child: QrImageView(
+                      data: _qrAuthUrl!,
+                      size: 200,
+                      version: QrVersions.auto,
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SelectableText(
+                    _qrAuthUrl!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 OutlinedButton(
                   onPressed: _retryAuthentication,
@@ -242,13 +283,26 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   child: const Text('Retry'),
                 ),
-              ] else ...[
+              ] else ...[ // add QR button here
                 ElevatedButton(
                   onPressed: _startAuthentication,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: const Text('Sign in with Plex'),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () {
+                    setState(() {
+                      _useQrFlow = true;
+                    });
+                    _startAuthentication();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Show QR Code'),
                 ),
                 if (kDebugMode) ...[
                   const SizedBox(height: 12),

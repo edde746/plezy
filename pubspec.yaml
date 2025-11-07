@@ -27,6 +27,7 @@ dependencies:
   flex_color_picker: ^3.6.0
   audio_service: ^0.18.18
   audio_session: ^0.2.1
+  qr_flutter: ^4.1.0
 
 dependency_overrides:
   media_kit:
