@@ -25,8 +25,14 @@ dependencies:
   provider: ^6.1.2
   hotkey_manager: ^0.2.3
   flex_color_picker: ^3.6.0
-  audio_service: ^0.18.18
   qr_flutter: ^4.1.0
+  audio_session: ^0.1.25
+  rxdart: ^0.27.2
+  audio_service:
+    git:
+      url: https://github.com/marckornberger/audio_service.git
+      ref: 4ca42f391183854095188a5a10fa6b59cd641e68
+      path: audio_service
 
 dependency_overrides:
   media_kit:
@@ -39,11 +45,6 @@ dependency_overrides:
       url: https://github.com/edde746/media-kit
       ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
       path: libs/universal/media_kit_libs_video
-  audio_service:
-    git:
-      url: https://github.com/marckornberger/audio_service.git
-      ref: 4ca42f391183854095188a5a10fa6b59cd641e68
-      path: audio_service
 
 dev_dependencies:
   flutter_test:

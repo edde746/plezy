@@ -3,10 +3,10 @@
     <!-- Internet access permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <!-- Permissions for audio_service (OS media controls) -->
+    <!-- Audio service permissions -->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <!-- Explicitly remove media permissions that media_kit may add -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
@@ -46,22 +46,18 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- Audio service for OS media controls -->
-        <service
-            android:name="com.ryanheise.audioservice.AudioService"
+        <!-- Audio service -->
+        <service android:name="com.ryanheise.audioservice.AudioService"
             android:foregroundServiceType="mediaPlayback"
-            android:exported="true"
-            tools:ignore="Instantiatable">
+            android:exported="true" tools:ignore="Instantiatable">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
 
-        <!-- Media button receiver for headset controls -->
-        <receiver
-            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
-            android:exported="true"
-            tools:ignore="Instantiatable">
+        <!-- Media button receiver -->
+        <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:exported="true" tools:ignore="Instantiatable">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>

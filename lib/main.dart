@@ -13,7 +13,6 @@ import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/update_service.dart';
 import 'services/settings_service.dart';
-import 'services/media_service_manager.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';
 import 'providers/theme_provider.dart';
@@ -42,9 +41,6 @@ void main() async {
 
   // Initialize MediaKit
   MediaKit.ensureInitialized();
-
-  // Initialize OS media controls
-  await MediaServiceManager.instance.initialize();
 
   // Note: Orientation will be set dynamically based on device type in MainApp
 

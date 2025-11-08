@@ -14,7 +14,7 @@ import '../widgets/video_controls/video_controls.dart';
 import '../utils/language_codes.dart';
 import '../utils/app_logger.dart';
 import '../services/settings_service.dart';
-import '../services/media_service_manager.dart';
+import '../services/audio_service_manager.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/platform_detector.dart';
@@ -166,9 +166,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final savedVolume = settingsService.getVolume();
       player!.setVolume(savedVolume);
 
-      // Update media service manager with new player
-      await _updateMediaService();
-
       // Notify that player is ready
       if (mounted) {
         setState(() {
@@ -223,6 +220,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       // Load next/previous episodes
       _loadAdjacentEpisodes();
+
+      // Initialize audio service for OS media controls
+      _initializeAudioService();
     } catch (e) {
       appLogger.e('Failed to initialize player', error: e);
       if (mounted) {
@@ -233,39 +233,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-  Future<void> _updateMediaService() async {
-    if (!mounted) return;
-
-    try {
-      final mediaService = MediaServiceManager.instance;
-
-      // Build thumbnail URL if available
-      String? thumbnailUrl;
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (widget.metadata.thumb != null && client != null) {
-        final baseUrl = client.config.baseUrl;
-        final token = client.config.token;
-        if (token != null) {
-          thumbnailUrl = '$baseUrl${widget.metadata.thumb}?X-Plex-Token=$token';
-        }
-      }
-
-      // CRITICAL: Set mediaItem FIRST before updating player
-      // Android requires mediaItem to exist before playbackState broadcasts
-      mediaService.updateMediaItem(widget.metadata, thumbnailUrl);
-
-      if (!mounted) return;
-
-      await mediaService.updatePlayer(
-        player: player,
-        onNext: _playNext,
-        onPrevious: _playPrevious,
-      );
-    } catch (e) {
-      appLogger.w('Failed to update media service', error: e);
-    }
-  }
 
   Future<void> _loadAdjacentEpisodes() async {
     if (widget.metadata.type.toLowerCase() != 'episode') {
@@ -295,9 +262,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
             widget.metadata.ratingKey,
             loopQueue: loopQueue,
           );
-          previous = playbackState.getPreviousEpisode(
-            widget.metadata.ratingKey,
-          );
+          previous = playbackState.getPreviousEpisode(widget.metadata.ratingKey);
         } else {
           // Use chronological order even in shuffle mode
           next = await client.findAdjacentEpisode(widget.metadata, 1);
@@ -315,15 +280,49 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           _previousEpisode = previous;
         });
 
-        // Update media service navigation controls
-        MediaServiceManager.instance.updateNavigationActions(
-          hasNext: _nextEpisode != null,
-          hasPrevious: _previousEpisode != null,
-        );
+        // Update audio handler navigation availability
+        _updateAudioHandlerNavigation();
       }
     } catch (e) {
       // Silently handle errors
     }
+  }
+
+  Future<void> _initializeAudioService() async {
+    try {
+      if (player == null) return;
+
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) return;
+
+      final audioManager = AudioServiceManager.instance;
+
+      // Initialize audio service (will only happen once)
+      await audioManager.initialize(
+        player: player!,
+        plexServerUrl: client.config.baseUrl,
+        authToken: client.config.token ?? '',
+        onSkipToNext: _nextEpisode != null ? _playNext : null,
+        onSkipToPrevious: _previousEpisode != null ? _playPrevious : null,
+      );
+
+      // Update media item with current content
+      audioManager.updateMediaItem(widget.metadata);
+
+      appLogger.d('Audio service initialized/updated successfully');
+    } catch (e) {
+      appLogger.e('Failed to initialize audio service', error: e);
+      // Continue playback even if audio service fails
+    }
+  }
+
+  void _updateAudioHandlerNavigation() {
+    final audioManager = AudioServiceManager.instance;
+    audioManager.updateNavigation(
+      onNext: _nextEpisode != null ? _playNext : null,
+      onPrevious: _previousEpisode != null ? _playPrevious : null,
+    );
   }
 
   Future<void> _startPlayback() async {
@@ -446,10 +445,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         // Start playback after seeking
         await player!.play();
 
-        // Force media service state update to trigger Android notification
-        // This ensures the notification appears even if streams don't fire reliably
-        MediaServiceManager.instance.forceStateUpdate();
-
         // Wait for tracks to be loaded, then apply preferred tracks
         _waitForTracksAndApply();
       } else {
@@ -525,8 +520,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _logSubscription?.cancel();
     _errorSubscription?.cancel();
 
-    // Stop media service and clear OS controls
-    MediaServiceManager.instance.stop();
+    // Handle audio service based on navigation intent
+    if (_isReplacingWithVideo) {
+      // Switching to another episode: pause but keep notification visible
+      // The new VideoPlayerScreen will update the notification
+      AudioServiceManager.instance.pause();
+    } else {
+      // Truly exiting player: clear notification but keep singleton alive
+      // This allows controls to reappear when playing again
+      AudioServiceManager.instance.clearNotification();
+    }
 
     // Send final stopped state
     _sendProgress('stopped');

@@ -1,116 +1,194 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:rxdart/rxdart.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 
-/// AudioHandler that bridges media_kit Player with OS media controls
+/// Audio handler that bridges media_kit player with OS media controls
 class MediaKitAudioHandler extends BaseAudioHandler with SeekHandler {
-  Player? _player;
-  VoidCallback? _onNext;
-  VoidCallback? _onPrevious;
+  Player _player;
+  final String plexServerUrl;
+  final String authToken;
 
+  // Getter for player
+  Player get player => _player;
+
+  // Callback functions for episode navigation
+  Future<void> Function()? onSkipToNext;
+  Future<void> Function()? onSkipToPrevious;
+
+  // Stream subscriptions
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<Duration>? _positionSubscription;
-  StreamSubscription<bool>? _completedSubscription;
+  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<Duration>? _bufferSubscription;
+
+  // Queue management
+  final BehaviorSubject<List<MediaItem>> _queueSubject = BehaviorSubject.seeded([]);
 
   MediaKitAudioHandler({
-    required Player? player,
-    VoidCallback? onNext,
-    VoidCallback? onPrevious,
-  })  : _player = player,
-        _onNext = onNext,
-        _onPrevious = onPrevious {
-    if (_player != null) {
-      _initializeListeners();
+    required Player player,
+    required this.plexServerUrl,
+    required this.authToken,
+    this.onSkipToNext,
+    this.onSkipToPrevious,
+  }) : _player = player {
+    _init();
+  }
+
+  void _init() {
+    // Map player state to playback state
+    _playingSubscription = _player.stream.playing.listen((isPlaying) {
+      _updatePlaybackState();
+    });
+
+    _positionSubscription = _player.stream.position.listen((_) {
+      _updatePlaybackState();
+    });
+
+    _durationSubscription = _player.stream.duration.listen((_) {
+      _updatePlaybackState();
+    });
+
+    _bufferSubscription = _player.stream.buffer.listen((_) {
+      _updatePlaybackState();
+    });
+
+    // Set initial state
+    _updatePlaybackState();
+  }
+
+  /// Update media item with current playing content
+  void updateCurrentMediaItem(PlexMetadata metadata) {
+    final artworkUrl = _getArtworkUrl(metadata);
+
+    final newMediaItem = MediaItem(
+      id: metadata.ratingKey,
+      title: metadata.title,
+      album: _getAlbumName(metadata),
+      artist: _getArtistName(metadata),
+      duration: metadata.duration != null
+          ? Duration(milliseconds: metadata.duration!)
+          : null,
+      artUri: artworkUrl != null ? Uri.parse(artworkUrl) : null,
+      extras: {
+        'ratingKey': metadata.ratingKey,
+        'type': metadata.type,
+      },
+    );
+
+    mediaItem.add(newMediaItem);
+    appLogger.d('Updated media item: ${metadata.title}');
+  }
+
+  /// Update navigation callbacks
+  void updateNavigationCallbacks({
+    Future<void> Function()? onNext,
+    Future<void> Function()? onPrevious,
+  }) {
+    onSkipToNext = onNext;
+    onSkipToPrevious = onPrevious;
+    _updatePlaybackState();
+  }
+
+  /// Update the queue with episodes
+  void updateEpisodeQueue(List<PlexMetadata> episodes, int currentIndex) {
+    final items = episodes.map((episode) {
+      final artworkUrl = _getArtworkUrl(episode);
+      return MediaItem(
+        id: episode.ratingKey,
+        title: episode.title,
+        album: _getAlbumName(episode),
+        artist: _getArtistName(episode),
+        duration: episode.duration != null
+            ? Duration(milliseconds: episode.duration!)
+            : null,
+        artUri: artworkUrl != null ? Uri.parse(artworkUrl) : null,
+        extras: {
+          'ratingKey': episode.ratingKey,
+          'type': episode.type,
+        },
+      );
+    }).toList();
+
+    _queueSubject.add(items);
+    queue.add(items);
+
+    if (currentIndex >= 0 && currentIndex < items.length) {
+      mediaItem.add(items[currentIndex]);
     }
+
+    appLogger.d('Updated queue with ${items.length} episodes, current index: $currentIndex');
   }
 
-  void _initializeListeners() {
-    if (_player == null) return;
+  String? _getArtworkUrl(PlexMetadata metadata) {
+    String? thumbPath;
 
-    _playingSubscription = _player!.stream.playing.listen((_) {
-      _broadcastState();
-    });
-
-    _positionSubscription = _player!.stream.position.listen((_) {
-      _broadcastState();
-    });
-
-    _completedSubscription = _player!.stream.completed.listen((completed) {
-      if (completed) {
-        _broadcastState();
-      }
-    });
-
-    _broadcastState();
-  }
-
-  /// Update the player reference and callbacks (for video changes)
-  Future<void> updatePlayer({
-    required Player? player,
-    VoidCallback? onNext,
-    VoidCallback? onPrevious,
-  }) async {
-    await _cleanupSubscriptions();
-
-    // Update player and callbacks
-    _player = player;
-    _onNext = onNext;
-    _onPrevious = onPrevious;
-
-    // Set up new subscriptions if player is not null
-    if (_player != null) {
-      _initializeListeners();
+    // For episodes, prefer show poster over episode thumbnail
+    if (metadata.type.toLowerCase() == 'episode') {
+      thumbPath = metadata.grandparentThumb ?? metadata.thumb;
     } else {
-      // No player, broadcast idle state
-      _broadcastIdleState();
+      thumbPath = metadata.thumb;
     }
+
+    if (thumbPath == null) return null;
+
+    // Build full URL with authentication
+    return '$plexServerUrl$thumbPath?X-Plex-Token=$authToken';
   }
 
-  /// Clean up current subscriptions
-  Future<void> _cleanupSubscriptions() async {
-    await _playingSubscription?.cancel();
-    await _positionSubscription?.cancel();
-    await _completedSubscription?.cancel();
-    _playingSubscription = null;
-    _positionSubscription = null;
-    _completedSubscription = null;
-  }
-
-  void _broadcastState() {
-    if (_player == null || mediaItem.value == null) {
-      if (_player == null) {
-        _broadcastIdleState();
+  String _getAlbumName(PlexMetadata metadata) {
+    // For episodes: "Show Name - Season X"
+    if (metadata.type.toLowerCase() == 'episode') {
+      final showName = metadata.grandparentTitle ?? '';
+      final seasonNum = metadata.parentIndex;
+      if (seasonNum != null) {
+        return '$showName - Season $seasonNum';
       }
-      return;
+      return showName;
     }
 
-    final playing = _player!.state.playing;
-    final position = _player!.state.position;
-    final duration = _player!.state.duration;
-    final rate = _player!.state.rate;
+    // For movies: studio or year
+    return metadata.studio ?? metadata.year?.toString() ?? '';
+  }
+
+  String _getArtistName(PlexMetadata metadata) {
+    // For episodes: show episode info
+    if (metadata.type.toLowerCase() == 'episode') {
+      final seasonNum = metadata.parentIndex;
+      final episodeNum = metadata.index;
+      if (seasonNum != null && episodeNum != null) {
+        return 'S${seasonNum.toString().padLeft(2, '0')}E${episodeNum.toString().padLeft(2, '0')}';
+      }
+    }
+
+    return '';
+  }
+
+  void _updatePlaybackState() {
+    final isPlaying = _player.state.playing;
+    final position = _player.state.position;
+    final bufferedPosition = _player.state.buffer;
 
     // Determine processing state
     AudioProcessingState processingState;
-    if (_player!.state.completed) {
+    if (_player.state.buffering) {
+      processingState = AudioProcessingState.buffering;
+    } else if (_player.state.completed) {
       processingState = AudioProcessingState.completed;
-    } else if (duration.inMilliseconds > 0) {
-      processingState = AudioProcessingState.ready;
     } else {
-      processingState = AudioProcessingState.loading;
+      processingState = AudioProcessingState.ready;
     }
 
-    // Build control list
+    // Build controls based on state and available navigation
     final controls = <MediaControl>[
-      if (_onPrevious != null) MediaControl.skipToPrevious,
-      playing ? MediaControl.pause : MediaControl.play,
-      MediaControl.stop,
-      if (_onNext != null) MediaControl.skipToNext,
+      if (onSkipToPrevious != null) MediaControl.skipToPrevious,
+      MediaControl.rewind,
+      if (isPlaying) MediaControl.pause else MediaControl.play,
+      MediaControl.fastForward,
+      if (onSkipToNext != null) MediaControl.skipToNext,
     ];
-
-    final compactIndices = _calculateCompactActionIndices(controls);
 
     playbackState.add(PlaybackState(
       controls: controls,
@@ -119,164 +197,118 @@ class MediaKitAudioHandler extends BaseAudioHandler with SeekHandler {
         MediaAction.seekForward,
         MediaAction.seekBackward,
       },
-      androidCompactActionIndices: compactIndices,
-      playing: playing,
-      updatePosition: position,
-      speed: rate,
+      androidCompactActionIndices: [
+        if (onSkipToPrevious != null) 0,
+        onSkipToPrevious != null ? 2 : 1, // Play/Pause button
+        if (onSkipToNext != null)
+          onSkipToPrevious != null ? 4 : 3,
+      ].where((i) => i < controls.length).toList(),
       processingState: processingState,
+      playing: isPlaying,
+      updatePosition: position,
+      bufferedPosition: bufferedPosition,
+      speed: 1.0,
+      queueIndex: 0, // TODO: Update based on actual queue position
     ));
   }
 
-  void _broadcastIdleState() {
-    playbackState.add(PlaybackState(
-      controls: [],
-      systemActions: const {},
-      playing: false,
-      processingState: AudioProcessingState.idle,
-    ));
-  }
-
-  /// Calculate compact action indices for Android notification
-  /// Returns indices for the most important controls to show in compact view
-  List<int> _calculateCompactActionIndices(List<MediaControl> controls) {
-    final indices = <int>[];
-
-    // Find indices of key controls
-    int? previousIndex;
-    int? playPauseIndex;
-    int? nextIndex;
-
-    for (int i = 0; i < controls.length; i++) {
-      if (controls[i] == MediaControl.skipToPrevious) {
-        previousIndex = i;
-      } else if (controls[i] == MediaControl.play ||
-                 controls[i] == MediaControl.pause) {
-        playPauseIndex = i;
-      } else if (controls[i] == MediaControl.skipToNext) {
-        nextIndex = i;
-      }
-    }
-
-    // Build compact indices: Previous (if exists), Play/Pause, Next (if exists)
-    if (previousIndex != null) indices.add(previousIndex);
-    if (playPauseIndex != null) indices.add(playPauseIndex);
-    if (nextIndex != null) indices.add(nextIndex);
-
-    // Ensure we have at least the play/pause button
-    if (indices.isEmpty && playPauseIndex != null) {
-      indices.add(playPauseIndex);
-    }
-
-    return indices;
-  }
-
-  /// Update the media item shown in OS controls
-  void setMediaItemFromMetadata(PlexMetadata metadata, String? thumbnailUrl) {
-    final title = metadata.type.toLowerCase() == 'episode'
-        ? metadata.title
-        : metadata.title;
-
-    final artist = metadata.type.toLowerCase() == 'episode'
-        ? metadata.grandparentTitle ?? metadata.year?.toString()
-        : metadata.year?.toString();
-
-    final album = metadata.type.toLowerCase() == 'episode'
-        ? 'S${metadata.parentIndex} · E${metadata.index} · ${metadata.parentTitle ?? ""}'
-        : metadata.studio;
-
-    final duration = metadata.duration != null
-        ? Duration(milliseconds: metadata.duration!)
-        : Duration.zero;
-
-    mediaItem.add(MediaItem(
-      id: metadata.ratingKey,
-      title: title,
-      artist: artist,
-      album: album,
-      duration: duration,
-      artUri: thumbnailUrl != null ? Uri.parse(thumbnailUrl) : null,
-      extras: {
-        'ratingKey': metadata.ratingKey,
-        'type': metadata.type,
-      },
-    ));
-
-    appLogger.i('Media item updated: $title${artist != null ? " - $artist" : ""}');
-  }
-
-  /// Update whether next/previous actions are available
-  void updateNavigationActions({bool? hasNext, bool? hasPrevious}) {
-    _broadcastState();
-  }
-
-  /// Force an immediate state update
-  /// Use this after playback starts to ensure notification appears
-  void forceStateUpdate() {
-    _broadcastState();
-  }
-
-  // BaseAudioHandler implementations
   @override
   Future<void> play() async {
-    if (_player == null) return;
-    await _player!.play();
+    appLogger.d('Audio handler: play');
+    await _player.play();
   }
 
   @override
   Future<void> pause() async {
-    if (_player == null) return;
-    await _player!.pause();
-  }
-
-  @override
-  Future<void> stop() async {
-    if (_player != null) {
-      await _player!.pause();
-    }
-
-    playbackState.add(PlaybackState(
-      controls: [],
-      systemActions: const {},
-      playing: false,
-      processingState: AudioProcessingState.idle,
-    ));
-
-    await super.stop();
+    appLogger.d('Audio handler: pause');
+    await _player.pause();
   }
 
   @override
   Future<void> seek(Duration position) async {
-    if (_player == null) return;
-    await _player!.seek(position);
+    appLogger.d('Audio handler: seek to ${position.inSeconds}s');
+    await _player.seek(position);
   }
 
   @override
-  Future<void> skipToNext() async {
-    _onNext?.call();
-  }
-
-  @override
-  Future<void> skipToPrevious() async {
-    _onPrevious?.call();
+  Future<void> stop() async {
+    appLogger.d('Audio handler: stop');
+    await _player.stop();
   }
 
   @override
   Future<void> fastForward() async {
-    if (_player == null) return;
-    final newPosition = _player!.state.position + const Duration(seconds: 15);
-    await _player!.seek(newPosition);
+    appLogger.d('Audio handler: fast forward');
+    final newPosition = _player.state.position + const Duration(seconds: 10);
+    await _player.seek(newPosition);
   }
 
   @override
   Future<void> rewind() async {
-    if (_player == null) return;
-    final newPosition = _player!.state.position - const Duration(seconds: 15);
-    await _player!.seek(newPosition > Duration.zero ? newPosition : Duration.zero);
+    appLogger.d('Audio handler: rewind');
+    final newPosition = _player.state.position - const Duration(seconds: 10);
+    await _player.seek(newPosition > Duration.zero ? newPosition : Duration.zero);
+  }
+
+  @override
+  Future<void> skipToNext() async {
+    appLogger.d('Audio handler: skip to next');
+    if (onSkipToNext != null) {
+      await onSkipToNext!();
+    }
+  }
+
+  @override
+  Future<void> skipToPrevious() async {
+    appLogger.d('Audio handler: skip to previous');
+    if (onSkipToPrevious != null) {
+      await onSkipToPrevious!();
+    }
+  }
+
+  /// Update the player reference when switching episodes
+  /// This ensures the handler stays in sync with the current player instance
+  Future<void> updatePlayer(Player newPlayer) async {
+    appLogger.d('Audio handler: updating player reference');
+
+    // Cancel old subscriptions
+    await _playingSubscription?.cancel();
+    await _positionSubscription?.cancel();
+    await _durationSubscription?.cancel();
+    await _bufferSubscription?.cancel();
+
+    // Update player reference
+    _player = newPlayer;
+
+    // Create new subscriptions with the new player
+    _playingSubscription = _player.stream.playing.listen((isPlaying) {
+      _updatePlaybackState();
+    });
+
+    _positionSubscription = _player.stream.position.listen((_) {
+      _updatePlaybackState();
+    });
+
+    _durationSubscription = _player.stream.duration.listen((_) {
+      _updatePlaybackState();
+    });
+
+    _bufferSubscription = _player.stream.buffer.listen((_) {
+      _updatePlaybackState();
+    });
+
+    // Update playback state immediately
+    _updatePlaybackState();
+
+    appLogger.d('Audio handler: player reference updated successfully');
   }
 
   Future<void> dispose() async {
-    appLogger.d('Disposing MediaKitAudioHandler');
-    await _cleanupSubscriptions();
-    await stop();
+    // Cancel subscriptions
+    await _playingSubscription?.cancel();
+    await _positionSubscription?.cancel();
+    await _durationSubscription?.cancel();
+    await _bufferSubscription?.cancel();
+    await _queueSubject.close();
   }
 }

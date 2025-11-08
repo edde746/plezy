@@ -1,5 +1,5 @@
 package com.edde746.plezy
 
-import com.ryanheise.audioservice.AudioServiceFragmentActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : AudioServiceFragmentActivity()
+class MainActivity : AudioServiceActivity()
