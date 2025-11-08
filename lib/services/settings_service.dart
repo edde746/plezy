@@ -37,6 +37,9 @@ class SettingsService {
   static const String _keySubtitleBorderColor = 'subtitle_border_color';
   static const String _keySubtitleBackgroundColor = 'subtitle_background_color';
   static const String _keySubtitleBackgroundOpacity = 'subtitle_background_opacity';
+  static const String _keyShuffleUnwatchedOnly = 'shuffle_unwatched_only';
+  static const String _keyShuffleOrderNavigation = 'shuffle_order_navigation';
+  static const String _keyShuffleLoopQueue = 'shuffle_loop_queue';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -777,6 +780,35 @@ class SettingsService {
     }
   }
 
+  // Shuffle Play Settings
+
+  /// Shuffle Unwatched Only - Filter shuffle queue to unwatched episodes only
+  Future<void> setShuffleUnwatchedOnly(bool enabled) async {
+    await _prefs.setBool(_keyShuffleUnwatchedOnly, enabled);
+  }
+
+  bool getShuffleUnwatchedOnly() {
+    return _prefs.getBool(_keyShuffleUnwatchedOnly) ?? true; // Default: true
+  }
+
+  /// Shuffle Order Navigation - Next/previous buttons follow shuffled order
+  Future<void> setShuffleOrderNavigation(bool enabled) async {
+    await _prefs.setBool(_keyShuffleOrderNavigation, enabled);
+  }
+
+  bool getShuffleOrderNavigation() {
+    return _prefs.getBool(_keyShuffleOrderNavigation) ?? true; // Default: true
+  }
+
+  /// Shuffle Loop Queue - Restart queue when reaching the end
+  Future<void> setShuffleLoopQueue(bool enabled) async {
+    await _prefs.setBool(_keyShuffleLoopQueue, enabled);
+  }
+
+  bool getShuffleLoopQueue() {
+    return _prefs.getBool(_keyShuffleLoopQueue) ?? false; // Default: false
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -805,6 +837,9 @@ class SettingsService {
       _prefs.remove(_keySubtitleBorderColor),
       _prefs.remove(_keySubtitleBackgroundColor),
       _prefs.remove(_keySubtitleBackgroundOpacity),
+      _prefs.remove(_keyShuffleUnwatchedOnly),
+      _prefs.remove(_keyShuffleOrderNavigation),
+      _prefs.remove(_keyShuffleLoopQueue),
     ]);
   }
 

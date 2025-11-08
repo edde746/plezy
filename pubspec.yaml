@@ -33,8 +33,13 @@ dependency_overrides:
   media_kit:
     git:
       url: https://github.com/edde746/media-kit
-      ref: custom-mpv-config
+      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
       path: media_kit
+  media_kit_libs_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      path: libs/universal/media_kit_libs_video
 
 dev_dependencies:
   flutter_test:

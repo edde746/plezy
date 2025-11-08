@@ -9,6 +9,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../utils/language_codes.dart';
@@ -323,16 +324,29 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       if (client == null) return;
 
       final playbackState = context.read<PlaybackStateProvider>();
+      final settingsProvider = context.read<SettingsProvider>();
 
       PlexMetadata? next;
       PlexMetadata? previous;
 
       // Check if shuffle mode is active
       if (playbackState.isShuffleActive) {
-        // Get next episode from shuffle queue
-        next = playbackState.getNextEpisode(widget.metadata.ratingKey);
-        // No previous episode in shuffle mode
-        previous = null;
+        // Get settings
+        final shuffleOrderNavigation = settingsProvider.shuffleOrderNavigation;
+        final loopQueue = settingsProvider.shuffleLoopQueue;
+
+        if (shuffleOrderNavigation) {
+          // Use shuffled order for next/previous
+          next = playbackState.getNextEpisode(
+            widget.metadata.ratingKey,
+            loopQueue: loopQueue,
+          );
+          previous = playbackState.getPreviousEpisode(widget.metadata.ratingKey);
+        } else {
+          // Use chronological order even in shuffle mode
+          next = await client.findAdjacentEpisode(widget.metadata, 1);
+          previous = await client.findAdjacentEpisode(widget.metadata, -1);
+        }
       } else {
         // Use normal sequential episode loading
         next = await client.findAdjacentEpisode(widget.metadata, 1);
