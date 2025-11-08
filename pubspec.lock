@@ -44,10 +44,11 @@ packages:
   audio_service:
     dependency: "direct main"
     description:
-      name: audio_service
-      sha256: cb122c7c2639d2a992421ef96b67948ad88c5221da3365ccef1031393a76e044
-      url: "https://pub.dev"
-    source: hosted
+      path: audio_service
+      ref: "4ca42f391183854095188a5a10fa6b59cd641e68"
+      resolved-ref: "4ca42f391183854095188a5a10fa6b59cd641e68"
+      url: "https://github.com/marckornberger/audio_service.git"
+    source: git
     version: "0.18.18"
   audio_service_platform_interface:
     dependency: transitive
@@ -66,7 +67,7 @@ packages:
     source: hosted
     version: "0.1.4"
   audio_session:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: audio_session
       sha256: "8f96a7fecbb718cb093070f868b4cdcb8a9b1053dce342ff8ab2fde10eb9afb7"

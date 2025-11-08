@@ -40,6 +40,8 @@ class MediaServiceManager {
           androidNotificationOngoing: false,
           androidStopForegroundOnPause: true,
           androidNotificationIcon: 'drawable/ic_stat_notification',
+          // Configure audio session for proper media playback
+          preloadArtwork: true,
         ),
       );
 

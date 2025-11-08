@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
-import 'package:audio_session/audio_session.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
@@ -167,9 +166,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final savedVolume = settingsService.getVolume();
       player!.setVolume(savedVolume);
 
-      // Initialize audio session for proper OS integration
-      await _initializeAudioSession();
-
       // Update media service manager with new player
       await _updateMediaService();
 
@@ -237,48 +233,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-  Future<void> _initializeAudioSession() async {
-    try {
-      final session = await AudioSession.instance;
-      await session.configure(const AudioSessionConfiguration(
-        avAudioSessionCategory: AVAudioSessionCategory.playback,
-        avAudioSessionMode: AVAudioSessionMode.moviePlayback,
-        androidAudioAttributes: AndroidAudioAttributes(
-          contentType: AndroidAudioContentType.movie,
-          usage: AndroidAudioUsage.media,
-        ),
-        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-      ));
-
-      // Handle interruptions (phone calls, other apps, etc.)
-      session.interruptionEventStream.listen((event) {
-        if (event.begin) {
-          // Pause on interruption
-          player?.pause();
-          appLogger.i('Playback paused due to interruption');
-        } else {
-          // Resume after interruption if needed (user can manually play)
-          switch (event.type) {
-            case AudioInterruptionType.pause:
-            case AudioInterruptionType.duck:
-              // Don't auto-resume for these types
-              break;
-            case AudioInterruptionType.unknown:
-              break;
-          }
-        }
-      });
-
-      // Handle audio becoming noisy (headphones unplugged)
-      session.becomingNoisyEventStream.listen((_) {
-        player?.pause();
-        appLogger.i('Playback paused due to audio becoming noisy (headphones unplugged?)');
-      });
-    } catch (e) {
-      appLogger.w('Failed to configure audio session', error: e);
-    }
-  }
-
   Future<void> _updateMediaService() async {
     if (!mounted) return;
 
@@ -341,7 +295,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
             widget.metadata.ratingKey,
             loopQueue: loopQueue,
           );
-          previous = playbackState.getPreviousEpisode(widget.metadata.ratingKey);
+          previous = playbackState.getPreviousEpisode(
+            widget.metadata.ratingKey,
+          );
         } else {
           // Use chronological order even in shuffle mode
           next = await client.findAdjacentEpisode(widget.metadata, 1);
