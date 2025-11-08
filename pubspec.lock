@@ -595,8 +595,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "3c34651163f7d45e2af6d86e883309d17e954d42"
-      resolved-ref: "3c34651163f7d45e2af6d86e883309d17e954d42"
+      ref: "53d803e1c228eb7eab9ca642119d404c21f4a52f"
+      resolved-ref: "53d803e1c228eb7eab9ca642119d404c21f4a52f"
       url: "https://github.com/edde746/os-media-controls"
     source: git
     version: "0.0.2"
