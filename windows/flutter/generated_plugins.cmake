@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   hotkey_manager_windows
   media_kit_libs_windows_video
   media_kit_video
+  os_media_controls
   screen_retriever_windows
   url_launcher_windows
   volume_controller

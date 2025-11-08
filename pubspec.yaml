@@ -26,13 +26,10 @@ dependencies:
   hotkey_manager: ^0.2.3
   flex_color_picker: ^3.6.0
   qr_flutter: ^4.1.0
-  audio_session: ^0.1.25
-  rxdart: ^0.27.2
-  audio_service:
+  os_media_controls:
     git:
-      url: https://github.com/marckornberger/audio_service.git
-      ref: 4ca42f391183854095188a5a10fa6b59cd641e68
-      path: audio_service
+      url: https://github.com/edde746/os-media-controls
+      ref: main
 
 dependency_overrides:
   media_kit:

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:provider/provider.dart';
+import 'package:os_media_controls/os_media_controls.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/plex_client_provider.dart';
@@ -14,7 +15,6 @@ import '../widgets/video_controls/video_controls.dart';
 import '../utils/language_codes.dart';
 import '../utils/app_logger.dart';
 import '../services/settings_service.dart';
-import '../services/audio_service_manager.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/platform_detector.dart';
@@ -56,6 +56,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   StreamSubscription<String>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<dynamic>? _mediaControlSubscription;
   bool _isReplacingWithVideo =
       false; // Flag to skip orientation restoration during video-to-video navigation
 
@@ -215,14 +217,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Listen to MPV errors
       _errorSubscription = player!.stream.error.listen(_onPlayerError);
 
+      // Listen to position updates for media controls
+      _positionSubscription = player!.stream.position.listen((_) {
+        _updateMediaControlsPosition();
+      });
+
+      // Initialize OS media controls
+      _initializeMediaControls();
+
       // Start periodic progress updates
       _startProgressTracking();
 
       // Load next/previous episodes
       _loadAdjacentEpisodes();
-
-      // Initialize audio service for OS media controls
-      _initializeAudioService();
     } catch (e) {
       appLogger.e('Failed to initialize player', error: e);
       if (mounted) {
@@ -279,50 +286,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           _nextEpisode = next;
           _previousEpisode = previous;
         });
-
-        // Update audio handler navigation availability
-        _updateAudioHandlerNavigation();
       }
     } catch (e) {
       // Silently handle errors
     }
-  }
-
-  Future<void> _initializeAudioService() async {
-    try {
-      if (player == null) return;
-
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) return;
-
-      final audioManager = AudioServiceManager.instance;
-
-      // Initialize audio service (will only happen once)
-      await audioManager.initialize(
-        player: player!,
-        plexServerUrl: client.config.baseUrl,
-        authToken: client.config.token ?? '',
-        onSkipToNext: _nextEpisode != null ? _playNext : null,
-        onSkipToPrevious: _previousEpisode != null ? _playPrevious : null,
-      );
-
-      // Update media item with current content
-      audioManager.updateMediaItem(widget.metadata);
-
-      appLogger.d('Audio service initialized/updated successfully');
-    } catch (e) {
-      appLogger.e('Failed to initialize audio service', error: e);
-      // Continue playback even if audio service fails
-    }
-  }
-
-  void _updateAudioHandlerNavigation() {
-    final audioManager = AudioServiceManager.instance;
-    audioManager.updateNavigation(
-      onNext: _nextEpisode != null ? _playNext : null,
-      onPrevious: _previousEpisode != null ? _playPrevious : null,
-    );
   }
 
   Future<void> _startPlayback() async {
@@ -519,17 +486,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _completedSubscription?.cancel();
     _logSubscription?.cancel();
     _errorSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _mediaControlSubscription?.cancel();
 
-    // Handle audio service based on navigation intent
-    if (_isReplacingWithVideo) {
-      // Switching to another episode: pause but keep notification visible
-      // The new VideoPlayerScreen will update the notification
-      AudioServiceManager.instance.pause();
-    } else {
-      // Truly exiting player: clear notification but keep singleton alive
-      // This allows controls to reappear when playing again
-      AudioServiceManager.instance.clearNotification();
-    }
+    // Clear OS media controls completely
+    OsMediaControls.clear();
 
     // Send final stopped state
     _sendProgress('stopped');
@@ -1123,6 +1084,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _onPlayingStateChanged(bool isPlaying) {
     // Send timeline update when playback state changes
     _sendProgress(isPlaying ? 'playing' : 'paused');
+
+    // Update OS media controls playback state
+    _updateMediaControlsPlaybackState();
   }
 
   void _sendProgress(String state) {
@@ -1183,6 +1147,129 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   void _onPlayerError(String error) {
     appLogger.e('[MPV ERROR] $error');
+  }
+
+  // OS Media Controls Integration
+
+  void _initializeMediaControls() async {
+    // Listen to media control events
+    _mediaControlSubscription = OsMediaControls.controlEvents.listen((event) {
+      if (event is PlayEvent) {
+        player?.play();
+      } else if (event is PauseEvent) {
+        player?.pause();
+      } else if (event is SeekEvent) {
+        player?.seek(event.position);
+      } else if (event is NextTrackEvent) {
+        if (_nextEpisode != null) {
+          _playNext();
+        }
+      } else if (event is PreviousTrackEvent) {
+        if (_previousEpisode != null) {
+          _playPrevious();
+        }
+      }
+    });
+
+    // Enable/disable next/previous track controls based on content type
+    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    if (isEpisode) {
+      // Enable next/previous track controls for episodes
+      await OsMediaControls.enableControls([
+        MediaControl.next,
+        MediaControl.previous,
+      ]);
+    } else {
+      // Disable next/previous track controls for movies
+      await OsMediaControls.disableControls([
+        MediaControl.next,
+        MediaControl.previous,
+      ]);
+    }
+
+    // Set initial metadata
+    await _updateMediaMetadata();
+  }
+
+  Future<void> _updateMediaMetadata() async {
+    if (!mounted) {
+      appLogger.w('Cannot update media metadata: widget not mounted');
+      return;
+    }
+
+    final metadata = widget.metadata;
+    final clientProvider = context.plexClient;
+    final client = clientProvider.client;
+
+    // Get artwork URL
+    String? artworkUrl;
+    if (client == null) {
+      appLogger.w('Cannot get artwork URL for media controls: Plex client is null');
+    } else {
+      final thumbUrl = metadata.type.toLowerCase() == 'episode'
+          ? metadata.grandparentThumb ?? metadata.thumb
+          : metadata.thumb;
+
+      if (thumbUrl != null) {
+        try {
+          artworkUrl = client.getThumbnailUrl(thumbUrl);
+          appLogger.d('Artwork URL for media controls: $artworkUrl');
+        } catch (e) {
+          appLogger.w('Failed to get artwork URL for media controls', error: e);
+        }
+      } else {
+        appLogger.d('No thumbnail URL available for media controls');
+      }
+    }
+
+    // Build title/artist based on content type
+    String title = metadata.title;
+    String? artist;
+    String? album;
+
+    if (metadata.type.toLowerCase() == 'episode') {
+      title = metadata.title;
+      artist = metadata.grandparentTitle; // Show name
+      if (metadata.parentIndex != null) {
+        album = 'Season ${metadata.parentIndex}';
+      }
+    }
+
+    await OsMediaControls.setMetadata(MediaMetadata(
+      title: title,
+      artist: artist,
+      album: album,
+      duration: metadata.duration != null
+          ? Duration(milliseconds: metadata.duration!)
+          : null,
+      artworkUrl: artworkUrl,
+    ));
+
+    // Set initial playback state
+    _updateMediaControlsPlaybackState();
+  }
+
+  void _updateMediaControlsPlaybackState() {
+    if (player == null) return;
+
+    OsMediaControls.setPlaybackState(MediaPlaybackState(
+      state: player!.state.playing ? PlaybackState.playing : PlaybackState.paused,
+      position: player!.state.position,
+      speed: player!.state.rate,
+    ));
+  }
+
+  void _updateMediaControlsPosition() {
+    if (player == null) return;
+
+    // Only update if playing to avoid excessive updates
+    if (player!.state.playing) {
+      OsMediaControls.setPlaybackState(MediaPlaybackState(
+        state: PlaybackState.playing,
+        position: player!.state.position,
+        speed: player!.state.rate,
+      ));
+    }
   }
 
   Future<void> _playNext() async {

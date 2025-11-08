@@ -1,9 +1,4 @@
 PODS:
-  - audio_service (0.0.1):
-    - Flutter
-    - FlutterMacOS
-  - audio_session (0.0.1):
-    - FlutterMacOS
   - FlutterMacOS (1.0.0)
   - HotKey (0.2.1)
   - hotkey_manager_macos (0.0.1):
@@ -14,6 +9,8 @@ PODS:
   - media_kit_libs_macos_video (1.0.4):
     - FlutterMacOS
   - media_kit_video (0.0.1):
+    - FlutterMacOS
+  - os_media_controls (0.0.1):
     - FlutterMacOS
   - package_info_plus (0.0.1):
     - FlutterMacOS
@@ -38,13 +35,12 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
-  - audio_service (from `Flutter/ephemeral/.symlinks/plugins/audio_service/darwin`)
-  - audio_session (from `Flutter/ephemeral/.symlinks/plugins/audio_session/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - hotkey_manager_macos (from `Flutter/ephemeral/.symlinks/plugins/hotkey_manager_macos/macos`)
   - macos_window_utils (from `Flutter/ephemeral/.symlinks/plugins/macos_window_utils/macos`)
   - media_kit_libs_macos_video (from `Flutter/ephemeral/.symlinks/plugins/media_kit_libs_macos_video/macos`)
   - media_kit_video (from `Flutter/ephemeral/.symlinks/plugins/media_kit_video/macos`)
+  - os_media_controls (from `Flutter/ephemeral/.symlinks/plugins/os_media_controls/macos`)
   - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
   - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
   - screen_retriever_macos (from `Flutter/ephemeral/.symlinks/plugins/screen_retriever_macos/macos`)
@@ -60,10 +56,6 @@ SPEC REPOS:
     - HotKey
 
 EXTERNAL SOURCES:
-  audio_service:
-    :path: Flutter/ephemeral/.symlinks/plugins/audio_service/darwin
-  audio_session:
-    :path: Flutter/ephemeral/.symlinks/plugins/audio_session/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
   hotkey_manager_macos:
@@ -74,6 +66,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/media_kit_libs_macos_video/macos
   media_kit_video:
     :path: Flutter/ephemeral/.symlinks/plugins/media_kit_video/macos
+  os_media_controls:
+    :path: Flutter/ephemeral/.symlinks/plugins/os_media_controls/macos
   package_info_plus:
     :path: Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos
   path_provider_foundation:
@@ -94,14 +88,13 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/window_manager/macos
 
 SPEC CHECKSUMS:
-  audio_service: aa99a6ba2ae7565996015322b0bb024e1d25c6fd
-  audio_session: eaca2512cf2b39212d724f35d11f46180ad3a33e
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   HotKey: 400beb7caa29054ea8d864c96f5ba7e5b4852277
   hotkey_manager_macos: a4317849af96d2430fa89944d3c58977ca089fbe
   macos_window_utils: 23f54331a0fd51eea9e0ed347253bf48fd379d1d
   media_kit_libs_macos_video: 85a23e549b5f480e72cae3e5634b5514bc692f65
   media_kit_video: fa6564e3799a0a28bff39442334817088b7ca758
+  os_media_controls: c07c04c4afdf59dda0a3f398457a46823c4ce0ed
   package_info_plus: f0052d280d17aa382b932f399edf32507174e870
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
   screen_retriever_macos: 452e51764a9e1cdb74b3c541238795849f21557f
