@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../client/plex_client.dart';
+import '../constants/plex_constants.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_filter.dart';
@@ -45,6 +46,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   PlexSort? _selectedSort;
   bool _isSortDescending = false;
   bool _isInitialLoad = true;
+  bool _showArtistView = false;  // false = albums (books), true = artists (authors)
 
   // Pagination state
   int _currentPage = 0;
@@ -105,11 +107,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final storage = await StorageService.getInstance();
       final allLibraries = await client.getLibraries();
 
-      // Filter out music libraries (type: 'artist') since music playback is not yet supported
-      // Only show movie and TV show libraries
-      final filteredLibraries = allLibraries
-          .where((lib) => lib.type.toLowerCase() != 'artist')
-          .toList();
+      // Filter out music libraries but keep audiobook libraries
+      // Audiobooks are detected by their metadata agent (audnexus, audiobooks, etc.)
+      final filteredLibraries = allLibraries.where((lib) {
+        final type = lib.type.toLowerCase();
+        // Exclude regular music (artist type), but include audiobooks
+        if (type == 'artist') {
+          return lib.isAudiobookLibrary;  // Only keep if audiobook
+        }
+        return true;  // Keep all other library types (movie, show, photo)
+      }).toList();
 
       // Load saved library order and apply it
       final savedOrder = storage.getLibraryOrder();
@@ -246,6 +253,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       // Only clear filters when explicitly changing library (not on initial load)
       if (isChangingLibrary) {
         _selectedFilters.clear();
+        _showArtistView = false;  // Reset to album view when changing libraries
       }
     });
 
@@ -286,6 +294,19 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         filtersWithSort['sort'] = _selectedSort!.getSortKey(
           descending: _isSortDescending,
         );
+      }
+
+      // For audiobook libraries, explicitly request albums (books) or artists (authors)
+      final selectedLibrary = _allLibraries.firstWhere(
+        (lib) => lib.key == libraryKey,
+        orElse: () => _allLibraries.first,
+      );
+      if (selectedLibrary.isAudiobookLibrary) {
+        if (!_showArtistView) {
+          // Type 9 = albums (books) in Plex
+          filtersWithSort['type'] = PlexConstants.plexTypeAlbum.toString();
+        }
+        // If _showArtistView is true, don't add type filter (defaults to artists)
       }
 
       // Load pages sequentially
@@ -866,6 +887,30 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   ),
                   onPressed: _showLibraryManagementSheet,
                 ),
+              // View toggle button for audiobook libraries (albums vs artists)
+              if (_selectedLibraryKey != null && _allLibraries.isNotEmpty)
+                () {
+                  final selectedLibrary = _allLibraries.firstWhere(
+                    (lib) => lib.key == _selectedLibraryKey,
+                    orElse: () => _allLibraries.first,
+                  );
+                  if (selectedLibrary.isAudiobookLibrary) {
+                    return IconButton(
+                      icon: Icon(
+                        _showArtistView ? Icons.library_books : Icons.person,
+                        semanticLabel: _showArtistView ? 'Show Books' : 'Show Authors',
+                      ),
+                      tooltip: _showArtistView ? 'Show Books' : 'Show Authors',
+                      onPressed: () {
+                        setState(() {
+                          _showArtistView = !_showArtistView;
+                        });
+                        _loadLibraryContent(_selectedLibraryKey!);
+                      },
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }(),
               if (_sortOptions.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.swap_vert, semanticLabel: 'Sort'),
@@ -953,13 +998,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                           menuItems: _getLibraryMenuItems(library),
                           onMenuItemSelected: (value) =>
                               _handleLibraryMenuAction(value, library),
-                          onTap: () => _loadLibraryContent(library.key),
+                          onTap: () {
+                            // Load all library types in-place (including audiobooks)
+                            _loadLibraryContent(library.key);
+                          },
                           child: ChoiceChip(
                             label: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  _getLibraryIcon(library.type),
+                                  library.libraryIcon,
                                   size: 16,
                                   color: isSelected ? t.bg : t.text,
                                 ),
@@ -970,6 +1018,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                             selected: isSelected,
                             onSelected: (selected) {
                               if (selected) {
+                                // Load all library types in-place (including audiobooks)
                                 _loadLibraryContent(library.key);
                               }
                             },
@@ -1059,7 +1108,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                             context,
                             settingsProvider.libraryDensity,
                           ),
-                          childAspectRatio: 2 / 3.3,
+                          childAspectRatio: _getAspectRatio(),
                           crossAxisSpacing: 0,
                           mainAxisSpacing: 0,
                         ),
@@ -1098,21 +1147,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         ],
       ),
     );
-  }
-
-  IconData _getLibraryIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'movie':
-        return Icons.movie;
-      case 'show':
-        return Icons.tv;
-      case 'artist':
-        return Icons.music_note;
-      case 'photo':
-        return Icons.photo;
-      default:
-        return Icons.folder;
-    }
   }
 
   double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
@@ -1158,6 +1192,26 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       };
       return availableWidth / targetItemCount;
     }
+  }
+
+  /// Get aspect ratio based on library type
+  /// Audiobooks use 1:1 (square) for album covers
+  /// Movies/TV use 2:3.3 (portrait) for posters
+  double _getAspectRatio() {
+    if (_selectedLibraryKey == null) return 2 / 3.3;
+
+    final selectedLibrary = _allLibraries.firstWhere(
+      (lib) => lib.key == _selectedLibraryKey,
+      orElse: () => _allLibraries.first,
+    );
+
+    // Use square aspect ratio (1:1) for audiobook covers
+    if (selectedLibrary.isAudiobookLibrary) {
+      return 1.0;
+    }
+
+    // Use portrait aspect ratio (2:3.3) for movie/TV posters
+    return 2 / 3.3;
   }
 }
 
@@ -1735,21 +1789,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     }
   }
 
-  IconData _getLibraryIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'movie':
-        return Icons.movie;
-      case 'show':
-        return Icons.tv;
-      case 'artist':
-        return Icons.music_note;
-      case 'photo':
-        return Icons.photo;
-      default:
-        return Icons.folder;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Watch provider to rebuild when hidden libraries change
@@ -1827,7 +1866,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Icon(_getLibraryIcon(library.type)),
+                          Icon(library.libraryIcon),
                         ],
                       ),
                       title: Text(library.title),
