@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex client for Flutter"
 publish_to: "none"
-version: 1.6.0+14
+version: 1.6.1+15
 
 environment:
   sdk: ^3.8.1
@@ -29,7 +29,7 @@ dependencies:
   os_media_controls:
     git:
       url: https://github.com/edde746/os-media-controls
-      ref: main
+      ref: ae75b6f514c6ca81499c6b25db2164d99d7473b1
 
 dependency_overrides:
   media_kit:
