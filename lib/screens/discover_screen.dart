@@ -273,12 +273,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
-  // Public method to refresh content
+  // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
     appLogger.d('DiscoverScreen.refresh() called');
     // Only refresh Continue Watching in background, not full screen reload
     _refreshContinueWatching();
+  }
+
+  // Public method to fully reload all content (for profile switches)
+  void fullRefresh() {
+    appLogger.d('DiscoverScreen.fullRefresh() called - reloading all content');
+    // Reload all content including Recently Added and content hubs
+    _loadContent();
   }
 
   /// Get icon for hub based on its title

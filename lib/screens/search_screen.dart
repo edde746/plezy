@@ -6,6 +6,7 @@ import '../models/plex_metadata.dart';
 import '../services/settings_service.dart';
 import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/app_logger.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../mixins/refreshable.dart';
@@ -118,6 +119,19 @@ class _SearchScreenState extends State<SearchScreen>
     if (_searchController.text.isNotEmpty) {
       _performSearch(_searchController.text);
     }
+  }
+
+  // Public method to fully reload all content (for profile switches)
+  void fullRefresh() {
+    appLogger.d('SearchScreen.fullRefresh() called - clearing search and reloading');
+    // Clear search results and search text for new profile
+    _searchController.clear();
+    setState(() {
+      _searchResults.clear();
+      _isSearching = false;
+      _hasSearched = false;
+      _lastSearchedQuery = '';
+    });
   }
 
   @override

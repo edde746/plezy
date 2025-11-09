@@ -93,22 +93,22 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   void _invalidateAllScreens() {
     appLogger.d('Invalidating all screen data due to profile switch');
 
-    // Refresh discover screen
+    // Full refresh discover screen (reload all content for new profile)
     final discoverState = _discoverKey.currentState;
-    if (discoverState != null && discoverState is Refreshable) {
-      (discoverState as Refreshable).refresh();
+    if (discoverState != null) {
+      (discoverState as dynamic).fullRefresh();
     }
 
-    // Refresh libraries screen
+    // Full refresh libraries screen (clear filters and reload for new profile)
     final librariesState = _librariesKey.currentState;
-    if (librariesState != null && librariesState is Refreshable) {
-      (librariesState as Refreshable).refresh();
+    if (librariesState != null) {
+      (librariesState as dynamic).fullRefresh();
     }
 
-    // Refresh search screen
+    // Full refresh search screen (clear search for new profile)
     final searchState = _searchKey.currentState;
-    if (searchState != null && searchState is Refreshable) {
-      (searchState as Refreshable).refresh();
+    if (searchState != null) {
+      (searchState as dynamic).fullRefresh();
     }
   }
 

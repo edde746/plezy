@@ -503,9 +503,19 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
   }
 
-  // Public method to refresh content
+  // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
+    _loadLibraries();
+  }
+
+  // Public method to fully reload all content (for profile switches)
+  void fullRefresh() {
+    appLogger.d('LibrariesScreen.fullRefresh() called - reloading all content');
+    // Reload libraries and clear any selected library/filters
+    _selectedLibraryKey = null;
+    _selectedFilters.clear();
+    _items.clear();
     _loadLibraries();
   }
 
