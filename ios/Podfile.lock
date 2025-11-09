@@ -1,4 +1,6 @@
 PODS:
+  - adaptive_platform_ui (0.1.0):
+    - Flutter
   - Flutter (1.0.0)
   - media_kit_libs_ios_video (1.0.4):
     - Flutter
@@ -25,6 +27,7 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
+  - adaptive_platform_ui (from `.symlinks/plugins/adaptive_platform_ui/ios`)
   - Flutter (from `Flutter`)
   - media_kit_libs_ios_video (from `.symlinks/plugins/media_kit_libs_ios_video/ios`)
   - media_kit_video (from `.symlinks/plugins/media_kit_video/ios`)
@@ -38,6 +41,8 @@ DEPENDENCIES:
   - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
 
 EXTERNAL SOURCES:
+  adaptive_platform_ui:
+    :path: ".symlinks/plugins/adaptive_platform_ui/ios"
   Flutter:
     :path: Flutter
   media_kit_libs_ios_video:
@@ -62,6 +67,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/wakelock_plus/ios"
 
 SPEC CHECKSUMS:
+  adaptive_platform_ui: f54f620666d1797636f9ef06f49137ef2cc13611
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   media_kit_libs_ios_video: 5a18affdb97d1f5d466dc79988b13eff6c5e2854
   media_kit_video: 1746e198cb697d1ffb734b1d05ec429d1fcd1474

@@ -30,6 +30,7 @@ dependencies:
     git:
       url: https://github.com/edde746/os-media-controls
       ref: 53d803e1c228eb7eab9ca642119d404c21f4a52f
+  adaptive_platform_ui: ^0.1.100
 
 dependency_overrides:
   media_kit:

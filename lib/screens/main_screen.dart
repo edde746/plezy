@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:adaptive_platform_ui/adaptive_platform_ui.dart';
+import 'dart:io' show Platform;
 import '../client/plex_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
@@ -114,11 +117,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AdaptiveScaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: AdaptiveBottomNavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
+        onTap: (index) {
           setState(() {
             _currentIndex = index;
           });
@@ -127,25 +130,26 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
             _onDiscoverBecameVisible();
           }
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+        items: [
+          AdaptiveNavigationDestination(
+            icon: Platform.isIOS ? 'house.fill' : Icons.home_outlined,
+            selectedIcon: Platform.isIOS ? 'house.fill' : Icons.home,
             label: 'Home',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.video_library_outlined),
-            selectedIcon: Icon(Icons.video_library),
+          AdaptiveNavigationDestination(
+            icon: Platform.isIOS ? 'video.fill' : Icons.video_library_outlined,
+            selectedIcon: Platform.isIOS ? 'video.fill' : Icons.video_library,
             label: 'Libraries',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.search),
-            selectedIcon: Icon(Icons.search),
+          AdaptiveNavigationDestination(
+            icon: Platform.isIOS ? 'magnifyingglass' : Icons.search,
+            selectedIcon: Platform.isIOS ? 'magnifyingglass' : Icons.search,
             label: 'Search',
+            isSearch: true,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
+          AdaptiveNavigationDestination(
+            icon: Platform.isIOS ? 'gearshape.fill' : Icons.settings_outlined,
+            selectedIcon: Platform.isIOS ? 'gearshape.fill' : Icons.settings,
             label: 'Settings',
           ),
         ],
