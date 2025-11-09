@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/server_connection_service.dart';
@@ -27,6 +29,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   String? _currentServerUrl;
+  List<Map<String, dynamic>>? _debugServerData;
 
   @override
   void initState() {
@@ -52,12 +55,58 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
       setState(() {
         _servers = servers;
         _isLoading = false;
+        _debugServerData = null; // Clear any previous debug data
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load servers: $e';
+        _errorMessage = _getErrorMessage(e);
         _isLoading = false;
+        // Store debug data if it's a parsing exception
+        if (e is ServerParsingException) {
+          _debugServerData = e.invalidServerData;
+        } else {
+          _debugServerData = null;
+        }
       });
+      appLogger.e('Failed to load servers', error: e);
+    }
+  }
+
+  String _getErrorMessage(dynamic error) {
+    if (error is ServerParsingException) {
+      return 'Found ${error.invalidServerData.length} server(s) with malformed data. No valid servers available.';
+    } else if (error is FormatException) {
+      // Handle JSON parsing errors with more user-friendly messages
+      if (error.message.contains('Invalid server data')) {
+        return 'Some servers have incomplete information and were skipped. Please check your Plex.tv account.';
+      } else if (error.message.contains('Invalid connection data')) {
+        return 'Server connection information is incomplete. Please try again.';
+      }
+      return 'Server information is malformed: ${error.message}';
+    } else if (error.toString().contains('SocketException') ||
+               error.toString().contains('TimeoutException')) {
+      return 'Network connection failed. Please check your internet connection and try again.';
+    } else if (error.toString().contains('401') ||
+               error.toString().contains('Unauthorized')) {
+      return 'Authentication failed. Please sign in again.';
+    } else if (error.toString().contains('404') ||
+               error.toString().contains('Not Found')) {
+      return 'Plex service unavailable. Please try again later.';
+    }
+
+    return 'Failed to load servers: ${error.toString()}';
+  }
+
+  Future<void> _copyDebugDataToClipboard() async {
+    if (_debugServerData == null) return;
+
+    final jsonString = const JsonEncoder.withIndent('  ').convert(_debugServerData);
+    await Clipboard.setData(ClipboardData(text: jsonString));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Server debug data copied to clipboard')),
+      );
     }
   }
 
@@ -199,18 +248,41 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadServers,
-                          child: const Text('Retry'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: _loadServers,
+                              child: const Text('Retry'),
+                            ),
+                            if (_debugServerData != null) ...[
+                              const SizedBox(width: 16),
+                              OutlinedButton.icon(
+                                onPressed: _copyDebugDataToClipboard,
+                                icon: const Icon(Icons.copy),
+                                label: const Text('Copy Debug Data'),
+                              ),
+                            ],
+                          ],
                         ),
+                        if (_debugServerData != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Debug data available for ${_debugServerData!.length} server(s)',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
                       ],
                     ),
                   )
