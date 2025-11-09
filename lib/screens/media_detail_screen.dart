@@ -751,6 +751,116 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     const SizedBox(height: 24),
                   ],
 
+                  // Cast
+                  if (metadata.role != null && metadata.role!.isNotEmpty) ...[
+                    Text(
+                      'Cast',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 200,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: metadata.role!.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final actor = metadata.role![index];
+                          return SizedBox(
+                            width: 120,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: actor.thumb != null
+                                      ? CachedNetworkImage(
+                                          imageUrl: actor.thumb!,
+                                          width: 120,
+                                          height: 120,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Container(
+                                                width: 120,
+                                                height: 120,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .surfaceContainerHighest,
+                                                child: const Center(
+                                                  child: Icon(Icons.person),
+                                                ),
+                                              ),
+                                          errorWidget: (context, url, error) =>
+                                              Container(
+                                                width: 120,
+                                                height: 120,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .surfaceContainerHighest,
+                                                child: const Center(
+                                                  child: Icon(Icons.person),
+                                                ),
+                                              ),
+                                        )
+                                      : Container(
+                                          width: 120,
+                                          height: 120,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                          child: const Center(
+                                            child: Icon(Icons.person),
+                                          ),
+                                        ),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        actor.tag,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (actor.role != null) ...[
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          actor.role!,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Seasons (for TV shows)
                   if (isShow) ...[
                     Text(

@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'plex_role.dart';
+
 part 'plex_metadata.g.dart';
 
 @JsonSerializable()
@@ -34,6 +36,8 @@ class PlexMetadata {
   final int? viewCount;
   final int? leafCount; // Total number of episodes in a series/season
   final int? viewedLeafCount; // Number of watched episodes in a series/season
+  @JsonKey(name: 'Role')
+  final List<PlexRole>? role; // Cast members
 
   // Transient field for clear logo (extracted from Image array)
   String? _clearLogo;
@@ -70,6 +74,7 @@ class PlexMetadata {
     this.viewCount,
     this.leafCount,
     this.viewedLeafCount,
+    this.role,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -104,6 +109,7 @@ class PlexMetadata {
     int? viewCount,
     int? leafCount,
     int? viewedLeafCount,
+    List<PlexRole>? role,
   }) {
     final copy = PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -136,6 +142,7 @@ class PlexMetadata {
       viewCount: viewCount ?? this.viewCount,
       leafCount: leafCount ?? this.leafCount,
       viewedLeafCount: viewedLeafCount ?? this.viewedLeafCount,
+      role: role ?? this.role,
     );
     // Preserve clearLogo
     copy._clearLogo = _clearLogo;
