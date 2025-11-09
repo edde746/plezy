@@ -501,18 +501,17 @@ class PlexClient {
   Future<List<PlexMarker>> getMarkers(String ratingKey) async {
     final response = await _dio.get(
       '/library/metadata/$ratingKey',
-      queryParameters: {'includeChapters': 1},
+      queryParameters: {'includeMarkers': 1},
     );
 
     final metadataJson = _getFirstMetadataJson(response);
 
-    if (metadataJson != null && metadataJson['Chapter'] != null) {
-      final chapterList = metadataJson['Chapter'] as List;
-      final markerList = [chapterList.first, chapterList.last];
+    if (metadataJson != null && metadataJson['Marker'] != null) {
+      final markerList = metadataJson['Marker'] as List;
       return markerList.map((marker) {
         return PlexMarker(
           id: marker['id'] as int,
-          type: marker == metadataJson['Chapter'].first ? "intro" : "credits",
+          type: marker['type'] as String,
           startTimeOffset: marker['startTimeOffset'] as int,
           endTimeOffset: marker['endTimeOffset'] as int,
         );
