@@ -1,14 +1,16 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
+
 import '../config/plex_config.dart';
-import '../models/plex_library.dart';
-import '../models/plex_metadata.dart';
-import '../models/plex_media_info.dart';
 import '../models/plex_file_info.dart';
 import '../models/plex_filter.dart';
-import '../models/plex_sort.dart';
-import '../models/plex_media_version.dart';
 import '../models/plex_hub.dart';
+import '../models/plex_library.dart';
+import '../models/plex_media_info.dart';
+import '../models/plex_media_version.dart';
+import '../models/plex_metadata.dart';
+import '../models/plex_sort.dart';
 import '../utils/app_logger.dart';
 
 /// Result of testing a connection, including success status and latency
@@ -489,6 +491,33 @@ class PlexClient {
           endTimeOffset: chapter['endTimeOffset'] as int?,
           title: chapter['tag'] as String?,
           thumb: chapter['thumb'] as String?,
+        );
+      }).toList();
+    }
+
+    return [];
+  }
+
+  Future<List<PlexMarker>> getMarkers(String ratingKey) async {
+    final response = await _dio.get(
+      '/library/metadata/$ratingKey',
+      queryParameters: {'includeChapters': 1},
+    );
+
+    final metadataJson = _getFirstMetadataJson(response);
+
+    if (metadataJson != null && metadataJson['Chapter'] != null) {
+      final chapterList = metadataJson['Chapter'] as List;
+      final markerList = [
+        chapterList.first,
+        chapterList[chapterList.length - 2],
+      ];
+      return markerList.map((marker) {
+        return PlexMarker(
+          id: marker['id'] as int,
+          type: marker == metadataJson['Chapter'].first ? "intro" : "credits",
+          startTimeOffset: marker['startTimeOffset'] as int,
+          endTimeOffset: marker['endTimeOffset'] as int,
         );
       }).toList();
     }
