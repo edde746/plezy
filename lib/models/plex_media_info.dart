@@ -146,3 +146,28 @@ class PlexChapter {
   Duration? get endTime =>
       endTimeOffset != null ? Duration(milliseconds: endTimeOffset!) : null;
 }
+
+class PlexMarker {
+  final int id;
+  final String type;
+  final int startTimeOffset;
+  final int endTimeOffset;
+
+  PlexMarker({
+    required this.id,
+    required this.type,
+    required this.startTimeOffset,
+    required this.endTimeOffset,
+  });
+
+  Duration get startTime => Duration(milliseconds: startTimeOffset);
+  Duration get endTime => Duration(milliseconds: endTimeOffset);
+
+  bool get isIntro => type == 'intro';
+  bool get isCredits => type == 'credits';
+
+  bool containsPosition(Duration position) {
+    final posMs = position.inMilliseconds;
+    return posMs >= startTimeOffset && posMs <= endTimeOffset;
+  }
+}

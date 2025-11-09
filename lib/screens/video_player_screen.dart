@@ -1,24 +1,26 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:provider/provider.dart';
 import 'package:os_media_controls/os_media_controls.dart';
+import 'package:provider/provider.dart';
+
+import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
-import '../providers/plex_client_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../providers/plex_client_provider.dart';
 import '../providers/settings_provider.dart';
-import '../utils/provider_extensions.dart';
-import '../widgets/video_controls/video_controls.dart';
-import '../utils/language_codes.dart';
-import '../utils/app_logger.dart';
 import '../services/settings_service.dart';
+import '../utils/app_logger.dart';
+import '../utils/language_codes.dart';
 import '../utils/orientation_helper.dart';
-import '../utils/video_player_navigation.dart';
 import '../utils/platform_detector.dart';
-import '../models/plex_media_version.dart';
+import '../utils/provider_extensions.dart';
+import '../utils/video_player_navigation.dart';
+import '../widgets/video_controls/video_controls.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -240,7 +242,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-
   Future<void> _loadAdjacentEpisodes() async {
     if (widget.metadata.type.toLowerCase() != 'episode') {
       return;
@@ -269,7 +270,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
             widget.metadata.ratingKey,
             loopQueue: loopQueue,
           );
-          previous = playbackState.getPreviousEpisode(widget.metadata.ratingKey);
+          previous = playbackState.getPreviousEpisode(
+            widget.metadata.ratingKey,
+          );
         } else {
           // Use chronological order even in shuffle mode
           next = await client.findAdjacentEpisode(widget.metadata, 1);
@@ -1204,7 +1207,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     // Get artwork URL
     String? artworkUrl;
     if (client == null) {
-      appLogger.w('Cannot get artwork URL for media controls: Plex client is null');
+      appLogger.w(
+        'Cannot get artwork URL for media controls: Plex client is null',
+      );
     } else {
       final thumbUrl = metadata.type.toLowerCase() == 'episode'
           ? metadata.grandparentThumb ?? metadata.thumb
@@ -1235,15 +1240,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       }
     }
 
-    await OsMediaControls.setMetadata(MediaMetadata(
-      title: title,
-      artist: artist,
-      album: album,
-      duration: metadata.duration != null
-          ? Duration(milliseconds: metadata.duration!)
-          : null,
-      artworkUrl: artworkUrl,
-    ));
+    await OsMediaControls.setMetadata(
+      MediaMetadata(
+        title: title,
+        artist: artist,
+        album: album,
+        duration: metadata.duration != null
+            ? Duration(milliseconds: metadata.duration!)
+            : null,
+        artworkUrl: artworkUrl,
+      ),
+    );
 
     // Set initial playback state
     _updateMediaControlsPlaybackState();
@@ -1252,11 +1259,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _updateMediaControlsPlaybackState() {
     if (player == null) return;
 
-    OsMediaControls.setPlaybackState(MediaPlaybackState(
-      state: player!.state.playing ? PlaybackState.playing : PlaybackState.paused,
-      position: player!.state.position,
-      speed: player!.state.rate,
-    ));
+    OsMediaControls.setPlaybackState(
+      MediaPlaybackState(
+        state: player!.state.playing
+            ? PlaybackState.playing
+            : PlaybackState.paused,
+        position: player!.state.position,
+        speed: player!.state.rate,
+      ),
+    );
   }
 
   void _updateMediaControlsPosition() {
@@ -1264,11 +1275,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Only update if playing to avoid excessive updates
     if (player!.state.playing) {
-      OsMediaControls.setPlaybackState(MediaPlaybackState(
-        state: PlaybackState.playing,
-        position: player!.state.position,
-        speed: player!.state.rate,
-      ));
+      OsMediaControls.setPlaybackState(
+        MediaPlaybackState(
+          state: PlaybackState.playing,
+          position: player!.state.position,
+          speed: player!.state.rate,
+        ),
+      );
     }
   }
 

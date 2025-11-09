@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
+import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:macos_window_utils/macos_window_utils.dart';
-import '../../models/plex_metadata.dart';
+
 import '../../models/plex_media_info.dart';
 import '../../models/plex_media_version.dart';
+import '../../models/plex_metadata.dart';
+import '../../screens/video_player_screen.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
@@ -15,7 +18,6 @@ import '../../services/sleep_timer_service.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
-import '../../screens/video_player_screen.dart';
 import '../app_bar_back_button.dart';
 import 'painters/chapter_marker_painter.dart';
 import 'sheets/audio_track_sheet.dart';
@@ -95,15 +97,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Seek throttle state
   Timer? _seekThrottleTimer;
   Duration? _pendingSeekPosition;
+  // Current marker state
+  PlexMarker? _currentMarker;
+  List<PlexMarker> _markers = [];
+  bool _markersLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _focusNode = FocusNode();
     _loadChapters();
+    _loadMarkers();
     _loadSeekTimes();
     _startHideTimer();
     _initKeyboardService();
+    _listenToPosition();
     // Add lifecycle observer to reload settings when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
@@ -114,6 +122,36 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   Future<void> _initKeyboardService() async {
     _keyboardService = await KeyboardShortcutsService.getInstance();
+  }
+
+  void _listenToPosition() {
+    widget.player.stream.position.listen((position) {
+      if (_markers.isEmpty || !_markersLoaded) {
+        return;
+      }
+
+      PlexMarker? foundMarker;
+      for (final marker in _markers) {
+        if (marker.containsPosition(position)) {
+          foundMarker = marker;
+          break;
+        }
+      }
+
+      if (foundMarker != _currentMarker) {
+        if (mounted) {
+          setState(() {
+            _currentMarker = foundMarker;
+          });
+        }
+      }
+    });
+  }
+
+  void _skipMarker() {
+    if (_currentMarker != null) {
+      widget.player.seek(_currentMarker!.endTime);
+    }
   }
 
   Future<void> _loadSeekTimes() async {
@@ -305,6 +343,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       setState(() {
         _chapters = chapters;
         _chaptersLoaded = true;
+      });
+    }
+  }
+
+  Future<void> _loadMarkers() async {
+    final clientProvider = context.plexClient;
+    final client = clientProvider.client;
+    if (client == null) return;
+
+    final markers = await client.getMarkers(widget.metadata.ratingKey);
+
+    if (mounted) {
+      setState(() {
+        _markers = markers;
+        _markersLoaded = true;
       });
     }
   }
@@ -855,7 +908,69 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   ),
                 ),
               ),
+            // Skip intro/credits button
+            if (_currentMarker != null)
+              Positioned(
+                right: 24,
+                bottom: isMobile ? 80 : 115,
+                child: AnimatedOpacity(
+                  opacity: 1.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: _buildSkipMarkerButton(),
+                ),
+              ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkipMarkerButton() {
+    final isCredits = _currentMarker!.isCredits;
+    final hasNextEpisode = widget.onNext != null;
+
+    // Show "Next Episode" for credits when next episode is available
+    final bool showNextEpisode = isCredits && hasNextEpisode;
+    final String buttonText = showNextEpisode
+        ? 'Next Episode'
+        : (isCredits ? 'Skip Credits' : 'Skip Intro');
+    final IconData buttonIcon = showNextEpisode
+        ? Icons.skip_next
+        : Icons.fast_forward;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: showNextEpisode ? widget.onNext : _skipMarker,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                buttonText,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(buttonIcon, color: Colors.black, size: 20),
+            ],
+          ),
         ),
       ),
     );
