@@ -7,6 +7,7 @@ import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/audiobook_navigation_handler.dart';
 import '../utils/content_rating_formatter.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
@@ -40,18 +41,14 @@ class _MediaCardState extends State<MediaCard> {
 
     final itemType = widget.item.type.toLowerCase();
 
-    // Music content is not yet supported
-    if (itemType == 'artist' || itemType == 'album' || itemType == 'track') {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Music playback is not yet supported'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-      return;
-    }
+    // Handle audiobook/music types using the navigation handler
+    final wasAudiobook = await AudiobookNavigationHandler.handleAudiobookNavigation(
+      context: context,
+      item: widget.item,
+      client: client,
+      onRefresh: widget.onRefresh,
+    );
+    if (wasAudiobook) return;
 
     // For episodes, start playback directly
     if (itemType == 'episode') {
