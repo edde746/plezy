@@ -13,6 +13,7 @@ class PlexMetadata {
   final String? contentRating;
   final String? summary;
   final double? rating;
+  final double? audienceRating;
   final int? year;
   final String? thumb;
   final String? art;
@@ -48,6 +49,7 @@ class PlexMetadata {
     this.contentRating,
     this.summary,
     this.rating,
+    this.audienceRating,
     this.year,
     this.thumb,
     this.art,
@@ -81,6 +83,7 @@ class PlexMetadata {
     String? contentRating,
     String? summary,
     double? rating,
+    double? audienceRating,
     int? year,
     String? thumb,
     String? art,
@@ -112,6 +115,7 @@ class PlexMetadata {
       contentRating: contentRating ?? this.contentRating,
       summary: summary ?? this.summary,
       rating: rating ?? this.rating,
+      audienceRating: audienceRating ?? this.audienceRating,
       year: year ?? this.year,
       thumb: thumb ?? this.thumb,
       art: art ?? this.art,

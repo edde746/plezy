@@ -1,17 +1,18 @@
-import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
-import '../widgets/desktop_app_bar.dart';
-import '../widgets/app_bar_back_button.dart';
-import '../widgets/media_context_menu.dart';
-import '../utils/app_logger.dart';
-import '../utils/provider_extensions.dart';
-import '../utils/video_player_navigation.dart';
-import '../utils/content_rating_formatter.dart';
-import '../utils/shuffle_play_helper.dart';
 import '../theme/theme_helper.dart';
+import '../utils/app_logger.dart';
+import '../utils/content_rating_formatter.dart';
+import '../utils/provider_extensions.dart';
+import '../utils/shuffle_play_helper.dart';
+import '../utils/video_player_navigation.dart';
+import '../widgets/app_bar_back_button.dart';
+import '../widgets/desktop_app_bar.dart';
+import '../widgets/media_context_menu.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -463,7 +464,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      formatContentRating(metadata.contentRating!),
+                                      formatContentRating(
+                                        metadata.contentRating!,
+                                      ),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 13,
@@ -490,6 +493,70 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                       ),
+                                    ),
+                                  ),
+                                if (metadata.rating != null)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.star,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${(metadata.rating! * 10).toStringAsFixed(0)}%',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (metadata.audienceRating != null)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.people,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${(metadata.audienceRating! * 10).toStringAsFixed(0)}%',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                               ],
@@ -734,7 +801,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     const SizedBox(height: 12),
                   ],
                   if (metadata.contentRating != null) ...[
-                    _buildInfoRow('Rating', formatContentRating(metadata.contentRating!)),
+                    _buildInfoRow(
+                      'Rating',
+                      formatContentRating(metadata.contentRating!),
+                    ),
                     const SizedBox(height: 12),
                   ],
                 ],
