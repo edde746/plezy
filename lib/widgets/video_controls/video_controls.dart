@@ -926,12 +926,22 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   Widget _buildSkipMarkerButton() {
-    final markerType = _currentMarker!.isIntro ? 'Intro' : 'Credits';
+    final isCredits = _currentMarker!.isCredits;
+    final hasNextEpisode = widget.onNext != null;
+
+    // Show "Next Episode" for credits when next episode is available
+    final bool showNextEpisode = isCredits && hasNextEpisode;
+    final String buttonText = showNextEpisode
+        ? 'Next Episode'
+        : (isCredits ? 'Skip Credits' : 'Skip Intro');
+    final IconData buttonIcon = showNextEpisode
+        ? Icons.skip_next
+        : Icons.fast_forward;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: _skipMarker,
+        onTap: showNextEpisode ? widget.onNext : _skipMarker,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -950,7 +960,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Skip $markerType',
+                buttonText,
                 style: const TextStyle(
                   color: Colors.black,
                   fontSize: 16,
@@ -958,7 +968,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.fast_forward, color: Colors.black, size: 20),
+              Icon(buttonIcon, color: Colors.black, size: 20),
             ],
           ),
         ),

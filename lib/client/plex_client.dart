@@ -508,10 +508,7 @@ class PlexClient {
 
     if (metadataJson != null && metadataJson['Chapter'] != null) {
       final chapterList = metadataJson['Chapter'] as List;
-      final markerList = [
-        chapterList.first,
-        chapterList[chapterList.length - 2],
-      ];
+      final markerList = [chapterList.first, chapterList.last];
       return markerList.map((marker) {
         return PlexMarker(
           id: marker['id'] as int,
