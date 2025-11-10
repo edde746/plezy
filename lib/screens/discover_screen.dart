@@ -43,7 +43,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   PlexClient get client => context.clientSafe;
 
   List<PlexMetadata> _onDeck = [];
-  List<PlexMetadata> _recentlyAdded = [];
   List<PlexHub> _hubs = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -168,7 +167,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     });
 
     try {
-      appLogger.d('Fetching onDeck and recentlyAdded from Plex');
+      appLogger.d('Fetching onDeck and hubs from Plex');
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
@@ -176,48 +175,45 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
 
       final onDeck = await client.getOnDeck();
-      final recentlyAdded = await client.getRecentlyAdded(limit: 20);
 
       // Load hubs from all libraries
       final libraries = await client.getLibraries();
       final allHubs = <PlexHub>[];
 
       for (final library in libraries) {
-        // Only fetch hubs for movie and show libraries
-        if (library.type == 'movie' || library.type == 'show') {
-          try {
-            final libraryHubs = await client.getLibraryHubs(
-              library.key,
-              limit: 12,
-            );
-            // Filter out duplicate hubs that we already fetch separately
-            final filteredHubs = libraryHubs.where((hub) {
-              final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
-              final title = hub.title.toLowerCase();
-              // Skip "Continue Watching", "On Deck", and "Recently Added" hubs
-              return !hubId.contains('ondeck') &&
-                  !hubId.contains('continue') &&
-                  !hubId.contains('recentlyadded') &&
-                  !title.contains('continue watching') &&
-                  !title.contains('on deck') &&
-                  !title.contains('recently added');
-            }).toList();
-            allHubs.addAll(filteredHubs);
-          } catch (e) {
-            appLogger.w(
-              'Failed to load hubs for library ${library.title}',
-              error: e,
-            );
-          }
+        // Skip libraries that are not movie/show or are hidden
+        if (library.type != 'movie' && library.type != 'show') continue;
+        if (library.hidden != 0) continue;
+
+        try {
+          final libraryHubs = await client.getLibraryHubs(
+            library.key,
+            limit: 12,
+          );
+          // Filter out duplicate hubs that we already fetch separately
+          final filteredHubs = libraryHubs.where((hub) {
+            final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+            final title = hub.title.toLowerCase();
+            // Skip "Continue Watching" and "On Deck" hubs (we handle these separately)
+            return !hubId.contains('ondeck') &&
+                !hubId.contains('continue') &&
+                !title.contains('continue watching') &&
+                !title.contains('on deck');
+          }).toList();
+          allHubs.addAll(filteredHubs);
+        } catch (e) {
+          appLogger.w(
+            'Failed to load hubs for library ${library.title}',
+            error: e,
+          );
         }
       }
 
       appLogger.d(
-        'Received ${onDeck.length} on deck items, ${recentlyAdded.length} recently added items, and ${allHubs.length} hubs',
+        'Received ${onDeck.length} on deck items and ${allHubs.length} hubs',
       );
       setState(() {
         _onDeck = onDeck;
-        _recentlyAdded = recentlyAdded;
         _hubs = allHubs;
         _isLoading = false;
 
@@ -285,7 +281,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Public method to fully reload all content (for profile switches)
   void fullRefresh() {
     appLogger.d('DiscoverScreen.fullRefresh() called - reloading all content');
-    // Reload all content including Recently Added and content hubs
+    // Reload all content including On Deck and content hubs
     _loadContent();
   }
 
@@ -399,12 +395,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _onDeck[onDeckIndex] = updatedMetadata;
     }
 
-    // Check and update in _recentlyAdded list
-    final recentlyAddedIndex = _recentlyAdded.indexWhere(
-      (item) => item.ratingKey == ratingKey,
-    );
-    if (recentlyAddedIndex != -1) {
-      _recentlyAdded[recentlyAddedIndex] = updatedMetadata;
+    // Check and update in hub items
+    for (final hub in _hubs) {
+      final itemIndex = hub.items.indexWhere(
+        (item) => item.ratingKey == ratingKey,
+      );
+      if (itemIndex != -1) {
+        hub.items[itemIndex] = updatedMetadata;
+      }
     }
   }
 
@@ -632,25 +630,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 _buildHorizontalList(_onDeck, isLarge: false),
               ],
 
-              // Recently Added
-              if (_recentlyAdded.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.fiber_new),
-                        const SizedBox(width: 8),
-                        Text(
-                          t.discover.recentlyAdded,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                _buildHorizontalList(_recentlyAdded, isLarge: false),
-              ],
 
               // Recommendation Hubs (Trending, Top in Genre, etc.)
               for (final hub in _hubs) ...[
@@ -691,7 +670,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 _buildHorizontalList(hub.items, isLarge: false),
               ],
 
-              if (_onDeck.isEmpty && _recentlyAdded.isEmpty && _hubs.isEmpty)
+              if (_onDeck.isEmpty && _hubs.isEmpty)
                 SliverFillRemaining(
                   child: Center(
                     child: Column(
