@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/plex_sort.dart';
+import '../i18n/strings.g.dart';
 
 class SortBottomSheet extends StatefulWidget {
   final List<PlexSort> sortOptions;
@@ -80,7 +81,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                   if (widget.onClear != null)
                     TextButton(
                       onPressed: _handleClear,
-                      child: const Text('Clear'),
+                      child: Text(t.common.clear),
                     ),
                   IconButton(
                     icon: const Icon(Icons.close),

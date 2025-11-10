@@ -23,9 +23,17 @@ import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
 import 'utils/provider_extensions.dart';
 import 'utils/orientation_helper.dart';
+import 'i18n/strings.g.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize settings first to get saved locale
+  final settings = await SettingsService.getInstance();
+  final savedLocale = settings.getAppLocale();
+
+  // Initialize localization with saved locale
+  LocaleSettings.setLocale(savedLocale);
 
   // Configure image cache for large libraries
   PaintingBinding.instance.imageCache.maximumSizeBytes = 500 << 20; // 500MB
@@ -50,7 +58,6 @@ void main() async {
   await LanguageCodes.initialize();
 
   // Initialize logger level based on debug setting
-  final settings = await SettingsService.getInstance();
   final debugEnabled = settings.getEnableDebugLogging();
   setLoggerLevel(debugEnabled);
 
@@ -83,14 +90,16 @@ class MainApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
-          return MaterialApp(
-            title: 'Plezy',
-            debugShowCheckedModeBanner: false,
-            theme: themeProvider.lightTheme,
-            darkTheme: themeProvider.darkTheme,
-            themeMode: themeProvider.materialThemeMode,
-            navigatorObservers: [routeObserver],
-            home: const OrientationAwareSetup(),
+          return TranslationProvider(
+            child: MaterialApp(
+              title: t.app.title,
+              debugShowCheckedModeBanner: false,
+              theme: themeProvider.lightTheme,
+              darkTheme: themeProvider.darkTheme,
+              themeMode: themeProvider.materialThemeMode,
+              navigatorObservers: [routeObserver],
+              home: const OrientationAwareSetup(),
+            ),
           );
         },
       ),
@@ -158,18 +167,18 @@ class _SetupScreenState extends State<SetupScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Update Available'),
+          title: Text(t.update.available),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Version ${updateInfo['latestVersion']} is available',
+                t.update.versionAvailable(version: updateInfo['latestVersion']),
                 style: Theme.of(dialogContext).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(
-                'Current: ${updateInfo['currentVersion']}',
+                t.update.currentVersion(version: updateInfo['currentVersion']),
                 style: Theme.of(dialogContext).textTheme.bodySmall,
               ),
             ],
@@ -179,7 +188,7 @@ class _SetupScreenState extends State<SetupScreen> {
               onPressed: () {
                 Navigator.pop(dialogContext);
               },
-              child: const Text('Later'),
+              child: Text(t.common.later),
             ),
             TextButton(
               onPressed: () async {
@@ -188,7 +197,7 @@ class _SetupScreenState extends State<SetupScreen> {
                   Navigator.pop(dialogContext);
                 }
               },
-              child: const Text('Skip This Version'),
+              child: Text(t.update.skipVersion),
             ),
             FilledButton(
               onPressed: () async {
@@ -200,7 +209,7 @@ class _SetupScreenState extends State<SetupScreen> {
                   Navigator.pop(dialogContext);
                 }
               },
-              child: const Text('View Release'),
+              child: Text(t.update.viewRelease),
             ),
           ],
         );
@@ -295,14 +304,14 @@ class _SetupScreenState extends State<SetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading...'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(t.app.loading),
           ],
         ),
       ),

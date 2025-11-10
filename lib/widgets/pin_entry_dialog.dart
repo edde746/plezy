@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../i18n/strings.g.dart';
 
 /// Dialog for entering a PIN to access a protected profile
 class PinEntryDialog extends StatefulWidget {
@@ -110,7 +111,7 @@ class _PinEntryDialogState extends State<PinEntryDialog>
                 LengthLimitingTextInputFormatter(10),
               ],
               decoration: InputDecoration(
-                hintText: 'Enter PIN',
+                hintText: t.pinEntry.enterPin,
                 border: const OutlineInputBorder(),
                 errorText: widget.errorMessage,
                 errorMaxLines: 2,
@@ -124,7 +125,7 @@ class _PinEntryDialogState extends State<PinEntryDialog>
                       _obscureText = !_obscureText;
                     });
                   },
-                  tooltip: _obscureText ? 'Show PIN' : 'Hide PIN',
+                  tooltip: _obscureText ? t.pinEntry.showPin : t.pinEntry.hidePin,
                 ),
               ),
               onSubmitted: (_) => _submit(),
@@ -134,9 +135,9 @@ class _PinEntryDialogState extends State<PinEntryDialog>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(null),
-            child: const Text('Cancel'),
+            child: Text(t.common.cancel),
           ),
-          FilledButton(onPressed: _submit, child: const Text('Submit')),
+          FilledButton(onPressed: _submit, child: Text(t.common.submit)),
         ],
       ),
     );

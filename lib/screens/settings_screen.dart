@@ -9,6 +9,7 @@ import '../services/keyboard_shortcuts_service.dart';
 import '../services/update_service.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/hotkey_recorder_widget.dart';
+import '../i18n/strings.g.dart';
 import 'about_screen.dart';
 import 'logs_screen.dart';
 import 'subtitle_styling_screen.dart';
@@ -66,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const CustomAppBar(title: Text('Settings'), pinned: true),
+          CustomAppBar(title: Text(t.settings.title), pinned: true),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
@@ -103,7 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Appearance',
+              t.settings.appearance,
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -113,18 +114,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, themeProvider, child) {
               return ListTile(
                 leading: Icon(themeProvider.themeModeIcon),
-                title: const Text('Theme'),
+                title: Text(t.settings.theme),
                 subtitle: Text(themeProvider.themeModeDisplayName),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showThemeDialog(themeProvider),
               );
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(t.settings.language),
+            subtitle: Text(
+              _getLanguageDisplayName(LocaleSettings.currentLocale),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showLanguageDialog(),
+          ),
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return ListTile(
                 leading: const Icon(Icons.grid_view),
-                title: const Text('Library Density'),
+                title: Text(t.settings.libraryDensity),
                 subtitle: Text(settingsProvider.libraryDensityDisplayName),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showLibraryDensityDialog(),
@@ -135,8 +145,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, settingsProvider, child) {
               return ListTile(
                 leading: const Icon(Icons.view_list),
-                title: const Text('View Mode'),
-                subtitle: Text(settingsProvider.viewMode == settings.ViewMode.grid ? 'Grid' : 'List'),
+                title: Text(t.settings.viewMode),
+                subtitle: Text(
+                  settingsProvider.viewMode == settings.ViewMode.grid
+                      ? t.settings.gridView
+                      : t.settings.listView,
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => _showViewModeDialog(),
               );
@@ -146,10 +160,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
                 secondary: const Icon(Icons.image),
-                title: const Text('Use Season Posters'),
-                subtitle: const Text(
-                  'Show season poster instead of series poster for episodes',
-                ),
+                title: Text(t.settings.useSeasonPosters),
+                subtitle: Text(t.settings.useSeasonPostersDescription),
                 value: settingsProvider.useSeasonPoster,
                 onChanged: (value) async {
                   await settingsProvider.setUseSeasonPoster(value);
@@ -161,10 +173,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
                 secondary: const Icon(Icons.featured_play_list),
-                title: const Text('Show Hero Section'),
-                subtitle: const Text(
-                  'Display featured content carousel on home screen',
-                ),
+                title: Text(t.settings.showHeroSection),
+                subtitle: Text(t.settings.showHeroSectionDescription),
                 value: settingsProvider.showHeroSection,
                 onChanged: (value) async {
                   await settingsProvider.setShowHeroSection(value);
@@ -185,7 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Video Playback',
+              t.settings.videoPlayback,
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -193,8 +203,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SwitchListTile(
             secondary: const Icon(Icons.hardware),
-            title: const Text('Hardware Decoding'),
-            subtitle: const Text('Use hardware acceleration when available'),
+            title: Text(t.settings.hardwareDecoding),
+            subtitle: Text(t.settings.hardwareDecodingDescription),
             value: _enableHardwareDecoding,
             onChanged: (value) async {
               setState(() {
@@ -205,15 +215,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.memory),
-            title: const Text('Buffer Size'),
-            subtitle: Text('${_bufferSize}MB'),
+            title: Text(t.settings.bufferSize),
+            subtitle: Text(
+              t.settings.bufferSizeMB(size: _bufferSize.toString()),
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showBufferSizeDialog(),
           ),
           ListTile(
             leading: const Icon(Icons.subtitles),
-            title: const Text('Subtitle Styling'),
-            subtitle: const Text('Customize subtitle appearance'),
+            title: Text(t.settings.subtitleStyling),
+            subtitle: Text(t.settings.subtitleStylingDescription),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
@@ -226,22 +238,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.replay_10),
-            title: const Text('Small Skip Duration'),
-            subtitle: Text('$_seekTimeSmall seconds'),
+            title: Text(t.settings.smallSkipDuration),
+            subtitle: Text(
+              t.settings.secondsUnit(seconds: _seekTimeSmall.toString()),
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showSeekTimeSmallDialog(),
           ),
           ListTile(
             leading: const Icon(Icons.replay_30),
-            title: const Text('Large Skip Duration'),
-            subtitle: Text('$_seekTimeLarge seconds'),
+            title: Text(t.settings.largeSkipDuration),
+            subtitle: Text(
+              t.settings.secondsUnit(seconds: _seekTimeLarge.toString()),
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showSeekTimeLargeDialog(),
           ),
           ListTile(
             leading: const Icon(Icons.bedtime),
-            title: const Text('Default Sleep Timer'),
-            subtitle: Text('$_sleepTimerDuration minutes'),
+            title: Text(t.settings.defaultSleepTimer),
+            subtitle: Text(
+              t.settings.minutesUnit(minutes: _sleepTimerDuration.toString()),
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showSleepTimerDurationDialog(),
           ),
@@ -258,7 +276,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Shuffle Play',
+              t.settings.shufflePlay,
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -268,10 +286,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
                 secondary: const Icon(Icons.visibility_off),
-                title: const Text('Unwatched Only'),
-                subtitle: const Text(
-                  'Only include unwatched episodes in shuffle queue',
-                ),
+                title: Text(t.settings.unwatchedOnly),
+                subtitle: Text(t.settings.unwatchedOnlyDescription),
                 value: settingsProvider.shuffleUnwatchedOnly,
                 onChanged: (value) async {
                   await settingsProvider.setShuffleUnwatchedOnly(value);
@@ -283,10 +299,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
                 secondary: const Icon(Icons.shuffle),
-                title: const Text('Shuffle Order Navigation'),
-                subtitle: const Text(
-                  'Next/previous buttons follow shuffled order',
-                ),
+                title: Text(t.settings.shuffleOrderNavigation),
+                subtitle: Text(t.settings.shuffleOrderNavigationDescription),
                 value: settingsProvider.shuffleOrderNavigation,
                 onChanged: (value) async {
                   await settingsProvider.setShuffleOrderNavigation(value);
@@ -298,10 +312,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
                 secondary: const Icon(Icons.loop),
-                title: const Text('Loop Shuffle Queue'),
-                subtitle: const Text(
-                  'Restart queue when reaching the end',
-                ),
+                title: Text(t.settings.loopShuffleQueue),
+                subtitle: Text(t.settings.loopShuffleQueueDescription),
                 value: settingsProvider.shuffleLoopQueue,
                 onChanged: (value) async {
                   await settingsProvider.setShuffleLoopQueue(value);
@@ -322,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Keyboard Shortcuts',
+              t.settings.keyboardShortcuts,
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -330,8 +342,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.keyboard),
-            title: const Text('Video Player Controls'),
-            subtitle: const Text('Customize keyboard shortcuts'),
+            title: Text(t.settings.videoPlayerControls),
+            subtitle: Text(t.settings.keyboardShortcutsDescription),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showKeyboardShortcutsDialog(),
           ),
@@ -348,7 +360,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Advanced',
+              t.settings.advanced,
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -356,8 +368,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SwitchListTile(
             secondary: const Icon(Icons.bug_report),
-            title: const Text('Debug Logging'),
-            subtitle: const Text('Enable detailed logging for troubleshooting'),
+            title: Text(t.settings.debugLogging),
+            subtitle: Text(t.settings.debugLoggingDescription),
             value: _enableDebugLogging,
             onChanged: (value) async {
               setState(() {
@@ -368,8 +380,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.article),
-            title: const Text('View Logs'),
-            subtitle: const Text('View application logs'),
+            title: Text(t.settings.viewLogs),
+            subtitle: Text(t.settings.viewLogsDescription),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Navigator.push(
@@ -380,15 +392,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.cleaning_services),
-            title: const Text('Clear Cache'),
-            subtitle: const Text('Free up storage space'),
+            title: Text(t.settings.clearCache),
+            subtitle: Text(t.settings.clearCacheDescription),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showClearCacheDialog(),
           ),
           ListTile(
             leading: const Icon(Icons.restore),
-            title: const Text('Reset Settings'),
-            subtitle: const Text('Reset all settings to defaults'),
+            title: Text(t.settings.resetSettings),
+            subtitle: Text(t.settings.resetSettingsDescription),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showResetSettingsDialog(),
           ),
@@ -407,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Updates',
+              t.settings.updates,
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -418,10 +430,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               hasUpdate ? Icons.system_update : Icons.check_circle,
               color: hasUpdate ? Colors.orange : null,
             ),
-            title: Text(hasUpdate ? 'Update Available' : 'Check for Updates'),
+            title: Text(
+              hasUpdate
+                  ? t.settings.updateAvailable
+                  : t.settings.checkForUpdates,
+            ),
             subtitle: hasUpdate
-                ? Text('Version ${_updateInfo!['latestVersion']} is available')
-                : const Text('Check for the latest version on GitHub'),
+                ? Text(
+                    t.update.versionAvailable(
+                      version: _updateInfo!['latestVersion'],
+                    ),
+                  )
+                : Text(t.update.checkFailed),
             trailing: _isCheckingForUpdate
                 ? const SizedBox(
                     width: 24,
@@ -448,8 +468,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Card(
       child: ListTile(
         leading: const Icon(Icons.info),
-        title: const Text('About'),
-        subtitle: const Text('App information and licenses'),
+        title: Text(t.settings.about),
+        subtitle: Text(t.settings.aboutDescription),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
           Navigator.push(
@@ -466,7 +486,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Theme'),
+          title: Text(t.settings.theme),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -476,8 +496,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? Icons.radio_button_checked
                       : Icons.radio_button_unchecked,
                 ),
-                title: const Text('System'),
-                subtitle: const Text('Follow system settings'),
+                title: Text(t.settings.systemTheme),
+                subtitle: Text(t.settings.systemThemeDescription),
                 onTap: () {
                   themeProvider.setThemeMode(settings.ThemeMode.system);
                   Navigator.pop(context);
@@ -489,7 +509,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? Icons.radio_button_checked
                       : Icons.radio_button_unchecked,
                 ),
-                title: const Text('Light'),
+                title: Text(t.settings.lightTheme),
                 onTap: () {
                   themeProvider.setThemeMode(settings.ThemeMode.light);
                   Navigator.pop(context);
@@ -501,7 +521,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? Icons.radio_button_checked
                       : Icons.radio_button_unchecked,
                 ),
-                title: const Text('Dark'),
+                title: Text(t.settings.darkTheme),
                 onTap: () {
                   themeProvider.setThemeMode(settings.ThemeMode.dark);
                   Navigator.pop(context);
@@ -512,7 +532,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(t.common.cancel),
             ),
           ],
         );
@@ -527,7 +547,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Buffer Size'),
+          title: Text(t.settings.bufferSize),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: options.map((size) {
@@ -551,7 +571,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(t.common.cancel),
             ),
           ],
         );
@@ -569,24 +589,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Small Skip Duration'),
+              title: Text(t.settings.smallSkipDuration),
               content: TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Seconds',
-                  hintText: 'Enter duration (1-120)',
+                  labelText: t.settings.secondsLabel,
+                  hintText: t.settings.durationHint(min: 1, max: 120),
                   errorText: errorText,
-                  suffixText: 's',
+                  suffixText: t.settings.secondsShort,
                 ),
                 autofocus: true,
                 onChanged: (value) {
                   final parsed = int.tryParse(value);
                   setDialogState(() {
                     if (parsed == null) {
-                      errorText = 'Please enter a valid number';
+                      errorText = t.settings.validationErrorEnterNumber;
                     } else if (parsed < 1 || parsed > 120) {
-                      errorText = 'Duration must be between 1 and 120 seconds';
+                      errorText = t.settings.validationErrorDuration(
+                        min: 1,
+                        max: 120,
+                        unit: t.settings.secondsLabel.toLowerCase(),
+                      );
                     } else {
                       errorText = null;
                     }
@@ -596,7 +620,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
+                  child: Text(t.common.cancel),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -613,7 +637,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }
                     }
                   },
-                  child: const Text('Save'),
+                  child: Text(t.common.save),
                 ),
               ],
             );
@@ -633,24 +657,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Large Skip Duration'),
+              title: Text(t.settings.largeSkipDuration),
               content: TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Seconds',
-                  hintText: 'Enter duration (1-120)',
+                  labelText: t.settings.secondsLabel,
+                  hintText: t.settings.durationHint(min: 1, max: 120),
                   errorText: errorText,
-                  suffixText: 's',
+                  suffixText: t.settings.secondsShort,
                 ),
                 autofocus: true,
                 onChanged: (value) {
                   final parsed = int.tryParse(value);
                   setDialogState(() {
                     if (parsed == null) {
-                      errorText = 'Please enter a valid number';
+                      errorText = t.settings.validationErrorEnterNumber;
                     } else if (parsed < 1 || parsed > 120) {
-                      errorText = 'Duration must be between 1 and 120 seconds';
+                      errorText = t.settings.validationErrorDuration(
+                        min: 1,
+                        max: 120,
+                        unit: t.settings.secondsLabel.toLowerCase(),
+                      );
                     } else {
                       errorText = null;
                     }
@@ -660,7 +688,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
+                  child: Text(t.common.cancel),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -677,7 +705,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }
                     }
                   },
-                  child: const Text('Save'),
+                  child: Text(t.common.save),
                 ),
               ],
             );
@@ -699,24 +727,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Default Sleep Timer'),
+              title: Text(t.settings.defaultSleepTimer),
               content: TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Minutes',
-                  hintText: 'Enter duration (5-180)',
+                  labelText: t.settings.minutesLabel,
+                  hintText: t.settings.durationHint(min: 5, max: 180),
                   errorText: errorText,
-                  suffixText: 'min',
+                  suffixText: t.settings.minutesShort,
                 ),
                 autofocus: true,
                 onChanged: (value) {
                   final parsed = int.tryParse(value);
                   setDialogState(() {
                     if (parsed == null) {
-                      errorText = 'Please enter a valid number';
+                      errorText = t.settings.validationErrorEnterNumber;
                     } else if (parsed < 5 || parsed > 180) {
-                      errorText = 'Duration must be between 5 and 180 minutes';
+                      errorText = t.settings.validationErrorDuration(
+                        min: 5,
+                        max: 180,
+                        unit: t.settings.minutesLabel.toLowerCase(),
+                      );
                     } else {
                       errorText = null;
                     }
@@ -726,7 +758,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
+                  child: Text(t.common.cancel),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -741,7 +773,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }
                     }
                   },
-                  child: const Text('Save'),
+                  child: Text(t.common.save),
                 ),
               ],
             );
@@ -766,14 +798,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Clear Cache'),
-          content: const Text(
-            'This will clear all cached images and data. The app may take longer to load content after clearing the cache.',
-          ),
+          title: Text(t.settings.clearCache),
+          content: Text(t.settings.clearCacheDescription),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(t.common.cancel),
             ),
             TextButton(
               onPressed: () async {
@@ -783,11 +813,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (mounted) {
                   navigator.pop();
                   messenger.showSnackBar(
-                    const SnackBar(content: Text('Cache cleared successfully')),
+                    SnackBar(content: Text(t.settings.clearCacheSuccess)),
                   );
                 }
               },
-              child: const Text('Clear'),
+              child: Text(t.common.clear),
             ),
           ],
         );
@@ -800,14 +830,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Reset Settings'),
-          content: const Text(
-            'This will reset all settings to their default values. This action cannot be undone.',
-          ),
+          title: Text(t.settings.resetSettings),
+          content: Text(t.settings.resetSettingsDescription),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(t.common.cancel),
             ),
             TextButton(
               onPressed: () async {
@@ -818,19 +846,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (mounted) {
                   navigator.pop();
                   messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Settings reset successfully'),
-                    ),
+                    SnackBar(content: Text(t.settings.resetSettingsSuccess)),
                   );
                   // Reload settings
                   _loadSettings();
                 }
               },
-              child: const Text('Reset'),
+              child: Text(t.common.reset),
             ),
           ],
         );
       },
+    );
+  }
+
+  String _getLanguageDisplayName(AppLocale locale) {
+    switch (locale) {
+      case AppLocale.en:
+        return 'English';
+      case AppLocale.sv:
+        return 'Svenska';
+    }
+  }
+
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(t.settings.language),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: AppLocale.values.map((locale) {
+              final isSelected = LocaleSettings.currentLocale == locale;
+              return ListTile(
+                title: Text(_getLanguageDisplayName(locale)),
+                leading: Icon(
+                  isSelected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                ),
+                tileColor: isSelected
+                    ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
+                    : null,
+                onTap: () async {
+                  // Save the locale to settings
+                  await _settingsService.setAppLocale(locale);
+
+                  // Set the locale immediately
+                  LocaleSettings.setLocale(locale);
+
+                  // Close dialog
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
+
+                  // Trigger app-wide rebuild by restarting the app
+                  if (context.mounted) {
+                    _restartApp();
+                  }
+                },
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(t.common.cancel),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _restartApp() {
+    // Navigate to the root and remove all previous routes
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/',
+      (route) => false,
     );
   }
 
@@ -851,8 +947,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (updateInfo == null || updateInfo['hasUpdate'] != true) {
           // Show "no updates" message
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You are on the latest version'),
+            SnackBar(
+              content: Text(t.update.latestVersion),
               duration: Duration(seconds: 2),
             ),
           );
@@ -865,8 +961,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to check for updates'),
+          SnackBar(
+            content: Text(t.update.checkFailed),
             duration: Duration(seconds: 2),
           ),
         );
@@ -881,18 +977,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Update Available'),
+          title: Text(t.settings.updateAvailable),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Version ${_updateInfo!['latestVersion']} is available',
+                t.update.versionAvailable(
+                  version: _updateInfo!['latestVersion'],
+                ),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(
-                'Current: ${_updateInfo!['currentVersion']}',
+                t.update.currentVersion(
+                  version: _updateInfo!['currentVersion'],
+                ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -900,7 +1000,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(t.common.close),
             ),
             FilledButton(
               onPressed: () async {
@@ -910,7 +1010,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
                 if (context.mounted) Navigator.pop(context);
               },
-              child: const Text('View Release'),
+              child: Text(t.update.viewRelease),
             ),
           ],
         );
@@ -926,7 +1026,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Consumer<SettingsProvider>(
           builder: (context, provider, child) {
             return AlertDialog(
-              title: const Text('Library Density'),
+              title: Text(t.settings.libraryDensity),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -936,8 +1036,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
                     ),
-                    title: const Text('Compact'),
-                    subtitle: const Text('Smaller cards, more items visible'),
+                    title: Text(t.settings.compact),
+                    subtitle: Text(t.settings.compactDescription),
                     onTap: () async {
                       await settingsProvider.setLibraryDensity(
                         settings.LibraryDensity.compact,
@@ -951,8 +1051,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
                     ),
-                    title: const Text('Normal'),
-                    subtitle: const Text('Default size'),
+                    title: Text(t.settings.normal),
+                    subtitle: Text(t.settings.normalDescription),
                     onTap: () async {
                       await settingsProvider.setLibraryDensity(
                         settings.LibraryDensity.normal,
@@ -967,8 +1067,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
                     ),
-                    title: const Text('Comfortable'),
-                    subtitle: const Text('Larger cards, fewer items visible'),
+                    title: Text(t.settings.comfortable),
+                    subtitle: Text(t.settings.comfortableDescription),
                     onTap: () async {
                       await settingsProvider.setLibraryDensity(
                         settings.LibraryDensity.comfortable,
@@ -981,7 +1081,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(t.common.cancel),
                 ),
               ],
             );
@@ -999,7 +1099,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Consumer<SettingsProvider>(
           builder: (context, provider, child) {
             return AlertDialog(
-              title: const Text('View Mode'),
+              title: Text(t.settings.viewMode),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1009,8 +1109,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
                     ),
-                    title: const Text('Grid'),
-                    subtitle: const Text('Display items in a grid layout'),
+                    title: Text(t.settings.gridView),
+                    subtitle: Text(t.settings.gridViewDescription),
                     onTap: () async {
                       await settingsProvider.setViewMode(
                         settings.ViewMode.grid,
@@ -1024,8 +1124,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
                     ),
-                    title: const Text('List'),
-                    subtitle: const Text('Display items in a list layout'),
+                    title: Text(t.settings.listView),
+                    subtitle: Text(t.settings.listViewDescription),
                     onTap: () async {
                       await settingsProvider.setViewMode(
                         settings.ViewMode.list,
@@ -1038,7 +1138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(t.common.cancel),
                 ),
               ],
             );
@@ -1087,7 +1187,7 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
       body: CustomScrollView(
         slivers: [
           CustomAppBar(
-            title: const Text('Keyboard Shortcuts'),
+            title: Text(t.settings.keyboardShortcuts),
             pinned: true,
             actions: [
               TextButton(
@@ -1097,13 +1197,11 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
                   await _loadHotkeys();
                   if (mounted) {
                     messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Shortcuts reset to defaults'),
-                      ),
+                      SnackBar(content: Text(t.settings.shortcutsReset)),
                     );
                   }
                 },
-                child: const Text('Reset'),
+                child: Text(t.common.reset),
               ),
             ],
           ),
@@ -1169,7 +1267,11 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
               messenger.showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Shortcut already assigned to ${widget.keyboardService.getActionDisplayName(existingAction)}',
+                    t.settings.shortcutAlreadyAssigned(
+                      action: widget.keyboardService.getActionDisplayName(
+                        existingAction,
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -1190,7 +1292,11 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
               messenger.showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Shortcut updated for ${widget.keyboardService.getActionDisplayName(action)}',
+                    t.settings.shortcutUpdated(
+                      action: widget.keyboardService.getActionDisplayName(
+                        action,
+                      ),
+                    ),
                   ),
                 ),
               );

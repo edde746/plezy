@@ -18,6 +18,7 @@ import 'hub_detail_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/settings_provider.dart';
 import '../mixins/refreshable.dart';
+import '../i18n/strings.g.dart';
 import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
@@ -414,8 +415,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (plexToken == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No Plex token found. Please login again.'),
+          SnackBar(
+            content: Text(t.messages.noPlexToken),
           ),
         );
       }
@@ -440,7 +441,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to initialize server selection: $e')),
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
         );
       }
     }
@@ -450,16 +451,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: Text(t.common.logout),
+        content: Text(t.messages.logoutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(t.common.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
+            child: Text(t.common.logout),
           ),
         ],
       ),
@@ -504,7 +505,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           controller: _scrollController,
           slivers: [
             DesktopSliverAppBar(
-              title: const Text('Discover'),
+              title: Text(t.discover.title),
               floating: true,
               pinned: true,
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -538,33 +539,33 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       itemBuilder: (context) => [
                         // Only show Switch Profile if multiple users available
                         if (userProvider.hasMultipleUsers)
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'switch_profile',
                             child: Row(
                               children: [
                                 Icon(Icons.people),
                                 SizedBox(width: 8),
-                                Text('Switch Profile'),
+                                Text(t.discover.switchProfile),
                               ],
                             ),
                           ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'switch_server',
                           child: Row(
                             children: [
                               Icon(Icons.swap_horiz),
                               SizedBox(width: 8),
-                              Text('Switch Server'),
+                              Text(t.discover.switchServer),
                             ],
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'logout',
                           child: Row(
                             children: [
                               Icon(Icons.logout),
                               SizedBox(width: 8),
-                              Text('Logout'),
+                              Text(t.discover.logout),
                             ],
                           ),
                         ),
@@ -594,7 +595,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadContent,
-                        child: const Text('Retry'),
+                        child: Text(t.common.retry),
                       ),
                     ],
                   ),
@@ -621,7 +622,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         const Icon(Icons.play_circle_outline),
                         const SizedBox(width: 8),
                         Text(
-                          'Continue Watching',
+                          t.discover.continueWatching,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ],
@@ -641,7 +642,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         const Icon(Icons.fiber_new),
                         const SizedBox(width: 8),
                         Text(
-                          'Recently Added',
+                          t.discover.recentlyAdded,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ],
@@ -691,7 +692,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ],
 
               if (_onDeck.isEmpty && _recentlyAdded.isEmpty && _hubs.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -702,10 +703,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           color: Colors.grey,
                         ),
                         SizedBox(height: 16),
-                        Text('No content available'),
+                        Text(t.discover.noContentAvailable),
                         SizedBox(height: 8),
                         Text(
-                          'Add some media to your libraries',
+                          t.discover.addMediaToLibraries,
                           style: TextStyle(color: Colors.grey),
                         ),
                       ],
@@ -765,7 +766,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       color: Colors.white,
                       size: 18,
                       semanticLabel:
-                          '${_isAutoScrollPaused ? 'Play' : 'Pause'} auto-scroll',
+                          '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
                     ),
                   ),
                   // Spacer to separate indicators from button
@@ -855,8 +856,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.type.toLowerCase() == 'movie'
-        ? 'Movie'
-        : 'TV Show';
+        ? t.discover.movie
+        : t.discover.tvShow;
 
     return Semantics(
       label: "media-hero-${heroItem.ratingKey}",
@@ -1231,7 +1232,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                '$minutesLeft min left',
+                t.discover.minutesLeft(minutes: minutesLeft),
                 style: const TextStyle(
                   color: Colors.black,
                   fontSize: 14,
@@ -1239,8 +1240,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ),
               ),
             ] else
-              const Text(
-                'Play',
+              Text(
+                t.discover.play,
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 14,

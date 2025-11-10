@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../client/plex_client.dart';
+import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../main.dart';
@@ -127,26 +128,26 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
             _onDiscoverBecameVisible();
           }
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: t.navigation.home,
           ),
           NavigationDestination(
-            icon: Icon(Icons.video_library_outlined),
-            selectedIcon: Icon(Icons.video_library),
-            label: 'Libraries',
+            icon: const Icon(Icons.video_library_outlined),
+            selectedIcon: const Icon(Icons.video_library),
+            label: t.navigation.libraries,
           ),
           NavigationDestination(
-            icon: Icon(Icons.search),
-            selectedIcon: Icon(Icons.search),
-            label: 'Search',
+            icon: const Icon(Icons.search),
+            selectedIcon: const Icon(Icons.search),
+            label: t.navigation.search,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: t.navigation.settings,
           ),
         ],
       ),

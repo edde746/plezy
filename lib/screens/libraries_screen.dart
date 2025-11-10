@@ -20,6 +20,7 @@ import '../services/settings_service.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
+import '../i18n/strings.g.dart';
 
 class LibrariesScreen extends StatefulWidget {
   const LibrariesScreen({super.key});
@@ -66,18 +67,18 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       switch (error.type) {
         case DioExceptionType.connectionTimeout:
         case DioExceptionType.receiveTimeout:
-          return 'Connection timeout while loading $context';
+          return t.errors.connectionTimeout(context: context);
         case DioExceptionType.connectionError:
-          return 'Unable to connect to Plex server';
+          return t.errors.connectionFailed;
         default:
           appLogger.e('Error loading $context', error: error);
-          return 'Failed to load $context: ${error.message}';
+          return t.errors.failedToLoad(context: context, error: error.message ?? 'Unknown error');
       }
     }
 
     // Generic error
     appLogger.e('Unexpected error in $context', error: error);
-    return 'Failed to load $context: $error';
+    return t.errors.failedToLoad(context: context, error: error.toString());
   }
 
   Future<void> _loadLibraries() async {
@@ -99,7 +100,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     try {
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       final storage = await StorageService.getInstance();
@@ -233,7 +234,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final client = clientProvider.client;
     if (client == null) {
       setState(() {
-        _errorMessage = 'No client available';
+        _errorMessage = t.errors.noClientAvailable;
         _isLoadingItems = false;
       });
       return;
@@ -364,7 +365,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       );
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       final filters = await client.getLibraryFilters(libraryKey);
@@ -387,7 +388,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       );
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       final sortOptions = await client.getLibrarySorts(libraryKey);
@@ -449,7 +450,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       );
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       // Add sort parameter to filters if selected
@@ -474,7 +475,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       }
 
       setState(() {
-        _errorMessage = 'Failed to load library content: $e';
+        _errorMessage = t.messages.errorLoading(error: e.toString());
         _isLoadingItems = false;
       });
     }
@@ -597,39 +598,39 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       ContextMenuItem(
         value: 'scan',
         icon: Icons.refresh,
-        label: 'Scan Library Files',
+        label: t.libraries.scanLibraryFiles,
         requiresConfirmation: true,
-        confirmationTitle: 'Scan Library',
+        confirmationTitle: t.libraries.scanLibrary,
         confirmationMessage:
-            'This will scan "${library.title}" for new files. Continue?',
+            t.libraries.scanLibraryConfirm(title: library.title),
       ),
       ContextMenuItem(
         value: 'analyze',
         icon: Icons.analytics_outlined,
-        label: 'Analyze',
+        label: t.libraries.analyze,
         requiresConfirmation: true,
-        confirmationTitle: 'Analyze Library',
+        confirmationTitle: t.libraries.analyzeLibrary,
         confirmationMessage:
-            'This will analyze "${library.title}" for intro markers and other metadata. This may take some time. Continue?',
+            t.libraries.analyzeLibraryConfirm(title: library.title),
       ),
       ContextMenuItem(
         value: 'refresh',
         icon: Icons.sync,
-        label: 'Refresh Metadata',
+        label: t.libraries.refreshMetadata,
         requiresConfirmation: true,
-        confirmationTitle: 'Refresh Metadata',
+        confirmationTitle: t.libraries.refreshMetadata,
         confirmationMessage:
-            'This will refresh metadata for all items in "${library.title}". This may take some time. Continue?',
+            t.libraries.refreshMetadataConfirm(title: library.title),
         isDestructive: true,
       ),
       ContextMenuItem(
         value: 'empty_trash',
         icon: Icons.delete_outline,
-        label: 'Empty Trash',
+        label: t.libraries.emptyTrash,
         requiresConfirmation: true,
-        confirmationTitle: 'Empty Trash',
+        confirmationTitle: t.libraries.emptyTrash,
         confirmationMessage:
-            'This will permanently delete all trashed items in "${library.title}". This action cannot be undone. Continue?',
+            t.libraries.emptyTrashConfirm(title: library.title),
         isDestructive: true,
       ),
     ];
@@ -682,14 +683,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       // Show progress indicator
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Scanning "${library.title}"...'),
+            content: Text(t.messages.libraryScanning(title: library.title)),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -700,7 +701,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Library scan started for "${library.title}"'),
+            content: Text(t.messages.libraryScanStarted(title: library.title)),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -710,7 +711,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to scan library: $e'),
+            content: Text(t.messages.libraryScanFailed(error: e.toString())),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -724,14 +725,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       // Show progress indicator
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Refreshing metadata for "${library.title}"...'),
+            content: Text(t.messages.metadataRefreshing(title: library.title)),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -742,7 +743,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Metadata refresh started for "${library.title}"'),
+            content: Text(t.messages.metadataRefreshStarted(title: library.title)),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -752,7 +753,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to refresh metadata: $e'),
+            content: Text(t.messages.metadataRefreshFailed(error: e.toString())),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -766,14 +767,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       // Show progress indicator
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Emptying trash for "${library.title}"...'),
+            content: Text(t.libraries.emptyingTrash(title: library.title)),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -784,7 +785,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Trash emptied for "${library.title}"'),
+            content: Text(t.libraries.trashEmptied(title: library.title)),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -794,7 +795,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to empty trash: $e'),
+            content: Text(t.libraries.failedToEmptyTrash(error: e)),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -808,14 +809,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       // Show progress indicator
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Analyzing "${library.title}"...'),
+            content: Text(t.libraries.analyzing(title: library.title)),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -826,7 +827,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Analysis started for "${library.title}"'),
+            content: Text(t.libraries.analysisStarted(title: library.title)),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -836,7 +837,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to analyze library: $e'),
+            content: Text(t.libraries.failedToAnalyze(error: e)),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -860,7 +861,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       body: CustomScrollView(
         slivers: [
           DesktopSliverAppBar(
-            title: const Text('Libraries'),
+            title: Text(t.libraries.title),
             floating: true,
             pinned: true,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -870,15 +871,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             actions: [
               if (_allLibraries.isNotEmpty)
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.edit,
-                    semanticLabel: 'Manage Libraries',
+                    semanticLabel: t.libraries.manageLibraries,
                   ),
                   onPressed: _showLibraryManagementSheet,
                 ),
               if (_sortOptions.isNotEmpty)
                 IconButton(
-                  icon: const Icon(Icons.swap_vert, semanticLabel: 'Sort'),
+                  icon: Icon(Icons.swap_vert, semanticLabel: t.libraries.sort),
                   onPressed: _showSortBottomSheet,
                 ),
               if (_filters.isNotEmpty)
@@ -886,15 +887,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   icon: Badge(
                     label: Text('${_selectedFilters.length}'),
                     isLabelVisible: _selectedFilters.isNotEmpty,
-                    child: const Icon(
+                    child: Icon(
                       Icons.filter_list,
-                      semanticLabel: 'Filters',
+                      semanticLabel: t.libraries.filters,
                     ),
                   ),
                   onPressed: _showFiltersBottomSheet,
                 ),
               IconButton(
-                icon: const Icon(Icons.refresh, semanticLabel: 'Refresh'),
+                icon: Icon(Icons.refresh, semanticLabel: t.common.refresh),
                 onPressed: () => _loadLibraryContent(_selectedLibraryKey!),
               ),
             ],
@@ -919,25 +920,25 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _loadLibraries,
-                      child: const Text('Retry'),
+                      child: Text(t.common.retry),
                     ),
                   ],
                 ),
               ),
             )
           else if (visibleLibraries.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.video_library_outlined,
                       size: 64,
                       color: Colors.grey,
                     ),
-                    SizedBox(height: 16),
-                    Text('No libraries found'),
+                    const SizedBox(height: 16),
+                    Text(t.libraries.noLibrariesFound),
                   ],
                 ),
               ),
@@ -1024,21 +1025,21 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                       ElevatedButton(
                         onPressed: () =>
                             _loadLibraryContent(_selectedLibraryKey!),
-                        child: const Text('Retry'),
+                        child: Text(t.common.retry),
                       ),
                     ],
                   ),
                 ),
               )
             else if (_items.isEmpty)
-              const SliverFillRemaining(
+              SliverFillRemaining(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.folder_open, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('This library is empty'),
+                      const Icon(Icons.folder_open, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(t.libraries.thisLibraryIsEmpty),
                     ],
                   ),
                 ),
@@ -1096,7 +1097,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                         const CircularProgressIndicator(),
                         const SizedBox(height: 8),
                         Text(
-                          'Loading library... (${_items.length} items loaded)',
+                          t.libraries.loadingLibraryWithCount(count: _items.length),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -1231,7 +1232,7 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
       );
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       final values = await client.getFilterValues(filter.key);
@@ -1332,7 +1333,7 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
                           _currentFilter!.filter,
                         );
                         return ListTile(
-                          title: const Text('All'),
+                          title: Text(t.libraries.all),
                           selected: isSelected,
                           onTap: () {
                             setState(() {
@@ -1390,9 +1391,9 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
                 children: [
                   const Icon(Icons.filter_list),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Filters',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Text(
+                    t.libraries.filters,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   if (_tempSelectedFilters.isNotEmpty)
@@ -1404,7 +1405,7 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
                         _applyFilters();
                       },
                       icon: const Icon(Icons.clear_all),
-                      label: const Text('Clear All'),
+                      label: Text(t.libraries.clearAll),
                     ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -1534,10 +1535,10 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
               ),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Sort By',
-                      style: TextStyle(
+                      t.libraries.sortBy,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1717,22 +1718,22 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(selectedItem.confirmationTitle ?? 'Confirm Action'),
+            title: Text(selectedItem.confirmationTitle ?? t.dialog.confirmAction),
             content: Text(
               selectedItem.confirmationMessage ??
-                  'Are you sure you want to perform this action?',
+                  t.libraries.confirmActionMessage,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                child: Text(t.common.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: selectedItem.isDestructive
                     ? TextButton.styleFrom(foregroundColor: Colors.red)
                     : null,
-                child: const Text('Confirm'),
+                child: Text(t.common.confirm),
               ),
             ],
           ),
@@ -1786,10 +1787,10 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                 children: [
                   const Icon(Icons.edit),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Manage Libraries',
-                      style: TextStyle(
+                      t.libraries.manageLibraries,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1851,13 +1852,13 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                                   : Icons.visibility,
                             ),
                             onPressed: () => widget.onToggleVisibility(library),
-                            tooltip: isHidden ? 'Show library' : 'Hide library',
+                            tooltip: isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,
                           ),
                           IconButton(
                             icon: const Icon(Icons.more_vert),
                             onPressed: () =>
                                 _showLibraryMenuBottomSheet(context, library),
-                            tooltip: 'Library options',
+                            tooltip: t.libraries.libraryOptions,
                           ),
                         ],
                       ),

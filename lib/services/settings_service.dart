@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:plezy/utils/app_logger.dart';
+import '../i18n/strings.g.dart';
 
 enum ThemeMode { system, light, dark }
 
@@ -40,6 +41,7 @@ class SettingsService {
   static const String _keyShuffleUnwatchedOnly = 'shuffle_unwatched_only';
   static const String _keyShuffleOrderNavigation = 'shuffle_order_navigation';
   static const String _keyShuffleLoopQueue = 'shuffle_loop_queue';
+  static const String _keyAppLocale = 'app_locale';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -780,6 +782,21 @@ class SettingsService {
     }
   }
 
+  // App Locale
+  Future<void> setAppLocale(AppLocale locale) async {
+    await _prefs.setString(_keyAppLocale, locale.languageCode);
+  }
+
+  AppLocale getAppLocale() {
+    final localeString = _prefs.getString(_keyAppLocale);
+    if (localeString == null) return AppLocale.en; // Default to English
+
+    return AppLocale.values.firstWhere(
+      (locale) => locale.languageCode == localeString,
+      orElse: () => AppLocale.en,
+    );
+  }
+
   // Shuffle Play Settings
 
   /// Shuffle Unwatched Only - Filter shuffle queue to unwatched episodes only
@@ -840,6 +857,7 @@ class SettingsService {
       _prefs.remove(_keyShuffleUnwatchedOnly),
       _prefs.remove(_keyShuffleOrderNavigation),
       _prefs.remove(_keyShuffleLoopQueue),
+      _prefs.remove(_keyAppLocale),
     ]);
   }
 

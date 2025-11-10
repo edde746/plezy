@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../i18n/strings.g.dart';
 
 class MergedLicenseEntry {
   final String packageName;
@@ -73,7 +74,7 @@ class _LicensesScreenState extends State<LicensesScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const CustomAppBar(title: Text('Licenses'), pinned: true),
+          CustomAppBar(title: Text(t.screens.licenses), pinned: true),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
@@ -92,7 +93,7 @@ class _LicensesScreenState extends State<LicensesScreen> {
                     ),
                     subtitle: mergedLicense.licenseEntries.length > 1
                         ? Text(
-                            '${mergedLicense.licenseEntries.length} licenses',
+                            t.licenses.licensesCount(count: mergedLicense.licenseEntries.length),
                           )
                         : null,
                     trailing: const Icon(Icons.chevron_right),
@@ -145,7 +146,7 @@ class _LicenseDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Related Packages',
+                            t.licenses.relatedPackages,
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
@@ -177,8 +178,8 @@ class _LicenseDetailScreen extends StatelessWidget {
                             children: [
                               Text(
                                 isMultipleLicenses
-                                    ? 'License ${index + 1}'
-                                    : 'License',
+                                    ? t.licenses.licenseNumber(number: index + 1)
+                                    : t.licenses.license,
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),

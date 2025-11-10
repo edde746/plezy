@@ -21,6 +21,7 @@ import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
+import '../i18n/strings.g.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -420,7 +421,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not find video file')),
+            SnackBar(content: Text(t.messages.fileInfoNotAvailable)),
           );
         }
       }
@@ -428,7 +429,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
       }
     }
   }
@@ -1497,7 +1498,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                       vertical: 16,
                                     ),
                                   ),
-                                  child: const Text('Cancel'),
+                                  child: Text(t.dialog.cancel),
                                 ),
                                 const SizedBox(width: 16),
                                 FilledButton(
@@ -1510,7 +1511,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                       vertical: 16,
                                     ),
                                   ),
-                                  child: const Text('Play Now'),
+                                  child: Text(t.dialog.playNow),
                                 ),
                               ],
                             ),

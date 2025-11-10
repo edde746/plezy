@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/plex_home_user.dart';
+import '../i18n/strings.g.dart';
 
 class UserAvatarWidget extends StatelessWidget {
   final PlexHomeUser user;
@@ -48,7 +49,7 @@ class UserAvatarWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            'Admin',
+            t.userStatus.admin,
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onPrimary,
               fontWeight: FontWeight.bold,
@@ -67,7 +68,7 @@ class UserAvatarWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            'Restricted',
+            t.userStatus.restricted,
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onPrimary,
               fontWeight: FontWeight.bold,
@@ -86,7 +87,7 @@ class UserAvatarWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            'Protected',
+            t.userStatus.protected,
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSecondary,
               fontWeight: FontWeight.bold,

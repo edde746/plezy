@@ -5,6 +5,7 @@ import '../providers/playback_state_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
+import '../i18n/strings.g.dart';
 
 /// Handle shuffle play action for shows and seasons
 ///
@@ -84,7 +85,7 @@ Future<void> handleShufflePlay(
     if (episodes.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No episodes found')),
+          SnackBar(content: Text(t.messages.noEpisodesFound)),
         );
       }
       return;
@@ -108,7 +109,7 @@ Future<void> handleShufflePlay(
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error starting shuffle play: $e')),
+        SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
       );
     }
   }

@@ -4,6 +4,7 @@ import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/platform_detector.dart';
 import '../widgets/sync_offset_control.dart';
+import '../../../i18n/strings.g.dart';
 
 enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice }
 
@@ -431,7 +432,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                       children: [
                         OutlinedButton.icon(
                           icon: const Icon(Icons.add),
-                          label: const Text('+15 min'),
+                          label: Text(t.videoControls.addTime(amount: "15", unit: " min")),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: const BorderSide(color: Colors.white54),
@@ -443,7 +444,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                         const SizedBox(width: 12),
                         FilledButton.icon(
                           icon: const Icon(Icons.cancel),
-                          label: const Text('Cancel'),
+                          label: Text(t.common.cancel),
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.red,
                           ),
@@ -493,7 +494,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                       Navigator.pop(context); // Close after selection
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Sleep timer set for $label'),
+                          content: Text(t.messages.sleepTimerSet(label: label)),
                           duration: const Duration(seconds: 2),
                         ),
                       );
@@ -513,7 +514,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       player: widget.player,
       propertyName: 'audio-delay',
       initialOffset: _audioSyncOffset,
-      labelText: 'Audio',
+      labelText: t.videoControls.audioLabel,
       onOffsetChanged: (offset) async {
         final settings = await SettingsService.getInstance();
         await settings.setAudioSyncOffset(offset);
@@ -529,7 +530,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       player: widget.player,
       propertyName: 'sub-delay',
       initialOffset: _subtitleSyncOffset,
-      labelText: 'Subtitles',
+      labelText: t.videoControls.subtitlesLabel,
       onOffsetChanged: (offset) async {
         final settings = await SettingsService.getInstance();
         await settings.setSubtitleSyncOffset(offset);

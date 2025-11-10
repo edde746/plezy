@@ -12,6 +12,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/shuffle_play_helper.dart';
 import '../theme/theme_helper.dart';
+import '../i18n/strings.g.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -182,7 +183,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('No seasons found')));
+          ).showSnackBar(SnackBar(content: Text(t.messages.noSeasonsFound)));
         }
         return;
       }
@@ -196,7 +197,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       if (episodes.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No episodes found in first season')),
+            SnackBar(content: Text(t.messages.noEpisodesFound)),
           );
         }
         return;
@@ -218,7 +219,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading first episode: $e')),
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
         );
       }
     }
@@ -583,7 +584,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                             await handleShufflePlay(context, metadata);
                           },
                           icon: const Icon(Icons.shuffle),
-                          tooltip: 'Shuffle play',
+                          tooltip: t.tooltips.shufflePlay,
                           iconSize: 20,
                           style: IconButton.styleFrom(
                             minimumSize: const Size(48, 48),
@@ -603,8 +604,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                             if (context.mounted) {
                               _watchStateChanged = true;
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Marked as watched'),
+                                SnackBar(
+                                  content: Text(t.messages.markedAsWatched),
                                 ),
                               );
                               // Update watch state without full rebuild
@@ -613,13 +614,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           } catch (e) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error: $e')),
+                                SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
                               );
                             }
                           }
                         },
                         icon: const Icon(Icons.check),
-                        tooltip: 'Mark as watched',
+                        tooltip: t.tooltips.markAsWatched,
                         iconSize: 20,
                         style: IconButton.styleFrom(
                           minimumSize: const Size(48, 48),
@@ -638,8 +639,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                             if (context.mounted) {
                               _watchStateChanged = true;
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Marked as unwatched'),
+                                SnackBar(
+                                  content: Text(t.messages.markedAsUnwatched),
                                 ),
                               );
                               // Update watch state without full rebuild
@@ -648,13 +649,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           } catch (e) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error: $e')),
+                                SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
                               );
                             }
                           }
                         },
                         icon: const Icon(Icons.remove_done),
-                        tooltip: 'Mark as unwatched',
+                        tooltip: t.tooltips.markAsUnwatched,
                         iconSize: 20,
                         style: IconButton.styleFrom(
                           minimumSize: const Size(48, 48),
@@ -669,7 +670,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                   // Summary
                   if (metadata.summary != null) ...[
                     Text(
-                      'Overview',
+                      t.discover.overview,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -705,7 +706,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         padding: const EdgeInsets.all(32),
                         child: Center(
                           child: Text(
-                            'No seasons found',
+                            t.messages.noSeasonsFound,
                             style: Theme.of(
                               context,
                             ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
@@ -845,7 +846,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         const SizedBox(height: 4),
                         if (season.leafCount != null)
                           Text(
-                            '${season.leafCount} episodes',
+                            t.discover.episodeCount(count: season.leafCount.toString()),
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: Colors.grey),
                           ),
@@ -873,7 +874,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${season.viewedLeafCount}/${season.leafCount} watched',
+                                t.discover.watchedProgress(
+                                  watched: season.viewedLeafCount.toString(),
+                                  total: season.leafCount.toString(),
+                                ),
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(color: Colors.grey),
                               ),
@@ -936,21 +940,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
         // Check if episode has been partially watched (viewOffset > 0)
         if (episode.viewOffset != null && episode.viewOffset! > 0) {
-          return 'Resume S$seasonNum, E$episodeNum';
+          return t.discover.resumeEpisode(season: seasonNum.toString(), episode: episodeNum.toString());
         } else {
-          return 'Play S$seasonNum, E$episodeNum';
+          return t.discover.playEpisode(season: seasonNum.toString(), episode: episodeNum.toString());
         }
       } else {
         // No on deck episode, will play first episode
-        return 'Play S1, E1';
+        return t.discover.playEpisode(season: '1', episode: '1');
       }
     }
 
     // For movies or episodes, check if partially watched
     if (metadata.viewOffset != null && metadata.viewOffset! > 0) {
-      return 'Resume';
+      return t.discover.resume;
     }
 
-    return 'Play';
+    return t.discover.play;
   }
 }

@@ -5,6 +5,7 @@ import '../providers/user_profile_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/profile_list_tile.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../i18n/strings.g.dart';
 
 class ProfileSwitchScreen extends StatelessWidget {
   const ProfileSwitchScreen({super.key});
@@ -16,7 +17,7 @@ class ProfileSwitchScreen extends StatelessWidget {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const CustomAppBar(title: Text('Switch Profile')),
+          CustomAppBar(title: Text(t.screens.switchProfile)),
           SliverFillRemaining(
             child: Consumer<UserProfileProvider>(
               builder: (context, userProvider, child) {
@@ -41,7 +42,7 @@ class ProfileSwitchScreen extends StatelessWidget {
                           onPressed: () {
                             userProvider.refreshCurrentUser();
                           },
-                          child: const Text('Retry'),
+                          child: Text(t.common.retry),
                         ),
                       ],
                     ),
@@ -115,7 +116,7 @@ class ProfileSwitchScreen extends StatelessWidget {
     } else if (!success && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to switch to ${user.displayName}'),
+          content: Text(t.errors.failedToSwitchProfile(displayName: user.displayName)),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

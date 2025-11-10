@@ -11,6 +11,7 @@ import '../utils/content_rating_formatter.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../theme/theme_helper.dart';
+import '../i18n/strings.g.dart';
 import 'media_context_menu.dart';
 
 class MediaCard extends StatefulWidget {
@@ -44,9 +45,9 @@ class _MediaCardState extends State<MediaCard> {
     if (itemType == 'artist' || itemType == 'album' || itemType == 'track') {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Music playback is not yet supported'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(t.messages.musicNotSupported),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
