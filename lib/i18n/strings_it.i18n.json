@@ -48,12 +48,12 @@
     "logs": "Logs"
   },
   "update": {
-    "available": "Update Available",
+    "available": "Aggiornamento disponibile",
     "versionAvailable": "Versione ${version} disponibile",
     "currentVersion": "Corrente: ${version}",
     "skipVersion": "Salta questa versione",
     "viewRelease": "Visualizza dettagli release",
-    "latestVersion": "La versione insallata è l'ultima disponibile",
+    "latestVersion": "La versione installata è l'ultima disponibile",
     "checkFailed": "Impossibile controllare gli aggiornamenti"
   },
   "settings": {
@@ -79,16 +79,16 @@
     "compact": "Compatta",
     "compactDescription": "Schede più piccole, più elementi visibili",
     "normal": "Normale",
-    "normalDescription": "Default size",
+    "normalDescription": "Dimensione predefinita",
     "comfortable": "Comoda",
     "comfortableDescription": "Schede più grandi, meno elementi visibili",
-    "viewMode": "View Mode",
+    "viewMode": "Modalità di visualizzazione",
     "gridView": "Griglia",
     "gridViewDescription": "Visualizza gli elementi in un layout a griglia",
     "listView": "Elenco",
     "listViewDescription": "Visualizza gli elementi in un layout a elenco",
     "useSeasonPosters": "Usa poster delle stagioni",
-    "showHeroSection": "Mostra sezione Hero",
+    "showHeroSection": "Mostra sezione principale",
     "hardwareDecoding": "Decodifica Hardware",
     "hardwareDecodingDescription": "Utilizza l'accelerazione hardware quando disponibile",
     "bufferSize": "Dimensione buffer",
@@ -321,7 +321,7 @@
     "viewLicensesDescription": "Visualizza le licenze delle librerie di terze parti"
   },
   "serverSelection": {
-    "connectingToServer": "Connesione al server...",
+    "connectingToServer": "Connessione al server...",
     "serverDebugCopied": "Dati di debug del server copiati negli appunti",
     "copyDebugData": "Copia dati di debug",
     "noServersFound": "Nessun server trovato",
