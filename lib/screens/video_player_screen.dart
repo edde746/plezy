@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
+import '../models/plex_video_playback_data.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/plex_client_provider.dart';
 import '../providers/settings_provider.dart';
@@ -181,9 +182,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Get the video URL and start playback
       _startPlayback();
 
-      // Load available media versions
-      _loadMediaVersions();
-
       // Set fullscreen mode and orientation based on rotation lock setting
       if (mounted) {
         try {
@@ -304,18 +302,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         throw Exception('No client available');
       }
 
-      // Get the direct file URL from the server using the selected media index
-      final videoUrl = await client.getVideoUrl(
+      // Get consolidated playback data (URL, media info, and versions) in a single API call
+      final playbackData = await client.getVideoPlaybackData(
         widget.metadata.ratingKey,
         mediaIndex: widget.selectedMediaIndex,
       );
 
-      if (videoUrl != null) {
-        // Fetch media info to check for external subtitle tracks
-        final mediaInfo = await client.getMediaInfo(
-          widget.metadata.ratingKey,
-          mediaIndex: widget.selectedMediaIndex,
-        );
+      if (playbackData.hasValidVideoUrl) {
+        final videoUrl = playbackData.videoUrl!;
+        final mediaInfo = playbackData.mediaInfo;
+
+        // Update available versions from the playback data
+        if (mounted) {
+          setState(() {
+            _availableVersions = playbackData.availableVersions;
+          });
+        }
 
         // Build list of external subtitle tracks for media_kit
         final externalSubtitles = <SubtitleTrack>[];
@@ -431,24 +433,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
       }
-    }
-  }
-
-  /// Load available media versions for this item
-  Future<void> _loadMediaVersions() async {
-    try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) return;
-
-      final versions = await client.getMediaVersions(widget.metadata.ratingKey);
-      if (mounted) {
-        setState(() {
-          _availableVersions = versions;
-        });
-      }
-    } catch (e) {
-      appLogger.e('Error loading media versions: $e');
     }
   }
 
