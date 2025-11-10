@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
-import '../models/plex_video_playback_data.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/plex_client_provider.dart';
 import '../providers/settings_provider.dart';

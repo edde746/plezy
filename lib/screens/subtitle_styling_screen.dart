@@ -52,13 +52,13 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   }
 
   String _colorToHex(Color color) {
-    return '#${color.red.toRadixString(16).padLeft(2, '0')}${color.green.toRadixString(16).padLeft(2, '0')}${color.blue.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+    return '#${((color.r * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.g * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.b * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}'.toUpperCase();
   }
 
   Future<void> _showColorPicker(String title, String currentColor, Function(String) onColorSelected) async {
     Color initialColor = _hexToColor(currentColor);
 
-    final Color? selectedColor = await showColorPickerDialog(
+    final Color selectedColor = await showColorPickerDialog(
       context,
       initialColor,
       title: Text(title),
@@ -86,10 +86,8 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
       ),
     );
 
-    if (selectedColor != null) {
-      final hexColor = _colorToHex(selectedColor);
-      onColorSelected(hexColor);
-    }
+    final hexColor = _colorToHex(selectedColor);
+    onColorSelected(hexColor);
   }
 
   @override
