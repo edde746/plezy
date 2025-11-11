@@ -12,6 +12,7 @@ import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/sort_bottom_sheet.dart';
 import '../mixins/refreshable.dart';
+import '../i18n/strings.g.dart';
 
 /// Screen to display full content of a recommendation hub
 class HubDetailScreen extends StatefulWidget {
@@ -99,23 +100,23 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   List<PlexSort> _getDefaultSortOptions() {
     return [
-      PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
+      PlexSort(key: 'titleSort', title: t.hubDetail.title, defaultDirection: 'asc'),
       PlexSort(
         key: 'year',
         descKey: 'year:desc',
-        title: 'Release Year',
+        title: t.hubDetail.releaseYear,
         defaultDirection: 'desc',
       ),
       PlexSort(
         key: 'addedAt',
         descKey: 'addedAt:desc',
-        title: 'Date Added',
+        title: t.hubDetail.dateAdded,
         defaultDirection: 'desc',
       ),
       PlexSort(
         key: 'rating',
         descKey: 'rating:desc',
-        title: 'Rating',
+        title: t.hubDetail.rating,
         defaultDirection: 'desc',
       ),
     ];
@@ -216,7 +217,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
     } catch (e) {
       appLogger.e('Failed to load hub content', error: e);
       setState(() {
-        _errorMessage = 'Failed to load content: $e';
+        _errorMessage = t.messages.errorLoading(error: e.toString());
         _isLoading = false;
       });
     }
@@ -248,7 +249,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
             pinned: true,
             actions: [
               IconButton(
-                icon: const Icon(Icons.swap_vert, semanticLabel: 'Sort'),
+                icon: Icon(Icons.swap_vert, semanticLabel: t.libraries.sort),
                 onPressed: _showSortBottomSheet,
               ),
             ],
@@ -269,7 +270,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _loadMoreItems,
-                      child: const Text('Retry'),
+                      child: Text(t.common.retry),
                     ),
                   ],
                 ),
@@ -280,8 +281,8 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (_filteredItems.isEmpty)
-            const SliverFillRemaining(
-              child: Center(child: Text('No items found')),
+            SliverFillRemaining(
+              child: Center(child: Text(t.hubDetail.noItemsFound)),
             )
           else
             SliverPadding(

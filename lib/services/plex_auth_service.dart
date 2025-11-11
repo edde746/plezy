@@ -143,10 +143,30 @@ class PlexAuthService {
     final List<dynamic> resources = response.data as List<dynamic>;
 
     // Filter for server resources and map to PlexServer objects
-    return resources
-        .where((r) => r['provides'] == 'server')
-        .map((r) => PlexServer.fromJson(r as Map<String, dynamic>))
-        .toList();
+    final servers = <PlexServer>[];
+    final invalidServers = <Map<String, dynamic>>[];
+
+    for (final resource in resources.where((r) => r['provides'] == 'server')) {
+      try {
+        final server = PlexServer.fromJson(resource as Map<String, dynamic>);
+        servers.add(server);
+      } catch (e) {
+        // Collect invalid servers for debugging
+        invalidServers.add(resource as Map<String, dynamic>);
+        continue;
+      }
+    }
+
+    // If we have invalid servers but some valid ones, that's okay
+    // If we have no valid servers but some invalid ones, throw with debug info
+    if (servers.isEmpty && invalidServers.isNotEmpty) {
+      throw ServerParsingException(
+        'No valid servers found. All ${invalidServers.length} server(s) have malformed data.',
+        invalidServers,
+      );
+    }
+
+    return servers;
   }
 
   /// Get user information
@@ -249,18 +269,33 @@ class PlexServer {
   });
 
   factory PlexServer.fromJson(Map<String, dynamic> json) {
+    // Validate required fields first
+    if (!_isValidServerJson(json)) {
+      throw FormatException('Invalid server data: missing required fields (name, clientIdentifier, accessToken, or connections)');
+    }
+
     final List<dynamic> connectionsJson = json['connections'] as List<dynamic>;
     final connections = <PlexConnection>[];
 
     // Parse connections and generate HTTP fallbacks for HTTPS connections
     for (final c in connectionsJson) {
-      final connection = PlexConnection.fromJson(c as Map<String, dynamic>);
-      connections.add(connection);
+      try {
+        final connection = PlexConnection.fromJson(c as Map<String, dynamic>);
+        connections.add(connection);
 
-      // Generate HTTP fallback for HTTPS connections
-      if (connection.protocol == 'https') {
-        connections.add(connection.toHttpFallback());
+        // Generate HTTP fallback for HTTPS connections
+        if (connection.protocol == 'https') {
+          connections.add(connection.toHttpFallback());
+        }
+      } catch (e) {
+        // Skip invalid connections rather than failing the entire server
+        continue;
       }
+    }
+
+    // If no valid connections were parsed, this server is unusable
+    if (connections.isEmpty) {
+      throw FormatException('Server has no valid connections');
     }
 
     DateTime? lastSeenAt;
@@ -273,9 +308,9 @@ class PlexServer {
     }
 
     return PlexServer(
-      name: json['name'] as String,
-      clientIdentifier: json['clientIdentifier'] as String,
-      accessToken: json['accessToken'] as String,
+      name: json['name'] as String, // Safe because validated above
+      clientIdentifier: json['clientIdentifier'] as String, // Safe because validated above
+      accessToken: json['accessToken'] as String, // Safe because validated above
       connections: connections,
       owned: json['owned'] as bool? ?? false,
       product: json['product'] as String?,
@@ -283,6 +318,27 @@ class PlexServer {
       lastSeenAt: lastSeenAt,
       presence: json['presence'] as bool? ?? false,
     );
+  }
+
+  /// Validates that server JSON contains all required fields with correct types
+  static bool _isValidServerJson(Map<String, dynamic> json) {
+    // Check for required string fields
+    if (json['name'] is! String || (json['name'] as String).isEmpty) {
+      return false;
+    }
+    if (json['clientIdentifier'] is! String || (json['clientIdentifier'] as String).isEmpty) {
+      return false;
+    }
+    if (json['accessToken'] is! String || (json['accessToken'] as String).isEmpty) {
+      return false;
+    }
+
+    // Check for connections array
+    if (json['connections'] is! List || (json['connections'] as List).isEmpty) {
+      return false;
+    }
+
+    return true;
   }
 
   Map<String, dynamic> toJson() {
@@ -516,15 +572,41 @@ class PlexConnection {
   });
 
   factory PlexConnection.fromJson(Map<String, dynamic> json) {
+    // Validate required fields
+    if (!_isValidConnectionJson(json)) {
+      throw FormatException('Invalid connection data: missing required fields (protocol, address, port, or uri)');
+    }
+
     return PlexConnection(
-      protocol: json['protocol'] as String,
-      address: json['address'] as String,
-      port: json['port'] as int,
-      uri: json['uri'] as String,
+      protocol: json['protocol'] as String, // Safe because validated above
+      address: json['address'] as String, // Safe because validated above
+      port: json['port'] as int, // Safe because validated above
+      uri: json['uri'] as String, // Safe because validated above
       local: json['local'] as bool? ?? false,
       relay: json['relay'] as bool? ?? false,
       ipv6: json['IPv6'] as bool? ?? false,
     );
+  }
+
+  /// Validates that connection JSON contains all required fields with correct types
+  static bool _isValidConnectionJson(Map<String, dynamic> json) {
+    // Check for required string fields
+    if (json['protocol'] is! String || (json['protocol'] as String).isEmpty) {
+      return false;
+    }
+    if (json['address'] is! String || (json['address'] as String).isEmpty) {
+      return false;
+    }
+    if (json['uri'] is! String || (json['uri'] as String).isEmpty) {
+      return false;
+    }
+
+    // Check for required port (integer)
+    if (json['port'] is! int) {
+      return false;
+    }
+
+    return true;
   }
 
   Map<String, dynamic> toJson() {
@@ -564,4 +646,15 @@ class PlexConnection {
       ipv6: ipv6,
     );
   }
+}
+
+/// Custom exception for server parsing errors that includes debug data
+class ServerParsingException implements Exception {
+  final String message;
+  final List<Map<String, dynamic>> invalidServerData;
+
+  ServerParsingException(this.message, this.invalidServerData);
+
+  @override
+  String toString() => message;
 }

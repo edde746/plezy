@@ -16,6 +16,7 @@ PlexLibrary _$PlexLibraryFromJson(Map<String, dynamic> json) => PlexLibrary(
   uuid: json['uuid'] as String?,
   updatedAt: (json['updatedAt'] as num?)?.toInt(),
   createdAt: (json['createdAt'] as num?)?.toInt(),
+  hidden: (json['hidden'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$PlexLibraryToJson(PlexLibrary instance) =>
@@ -29,4 +30,5 @@ Map<String, dynamic> _$PlexLibraryToJson(PlexLibrary instance) =>
       'uuid': instance.uuid,
       'updatedAt': instance.updatedAt,
       'createdAt': instance.createdAt,
+      'hidden': instance.hidden,
     };

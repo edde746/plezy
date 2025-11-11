@@ -1,5 +1,5 @@
 package com.edde746.plezy
 
-import com.ryanheise.audioservice.AudioServiceFragmentActivity
+import io.flutter.embedding.android.FlutterActivity
 
-class MainActivity : AudioServiceFragmentActivity()
+class MainActivity : FlutterActivity()

@@ -4,6 +4,7 @@ import '../models/plex_home_user.dart';
 import '../providers/user_profile_provider.dart';
 import '../utils/user_switching_utils.dart';
 import 'profile_list_tile.dart';
+import '../i18n/strings.g.dart';
 
 class ProfileSwitchDialog extends StatelessWidget {
   const ProfileSwitchDialog({super.key});
@@ -28,8 +29,8 @@ class ProfileSwitchDialog extends StatelessWidget {
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else if (users.isEmpty)
-                  const Expanded(
-                    child: Center(child: Text('No users available')),
+                  Expanded(
+                    child: Center(child: Text(t.profile.noUsersAvailable)),
                   )
                 else
                   Expanded(
@@ -73,7 +74,7 @@ class ProfileSwitchDialog extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(t.common.cancel),
             ),
           ],
         );

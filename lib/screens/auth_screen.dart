@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
+import '../i18n/strings.g.dart';
 import 'server_selection_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -63,7 +64,7 @@ class _AuthScreenState extends State<AuthScreen> {
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
         } else {
-          throw Exception('Could not launch auth URL');
+          throw Exception(t.errors.couldNotLaunchUrl);
         }
       }
 
@@ -81,7 +82,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (token == null) {
         setState(() {
           _isAuthenticating = false;
-          _errorMessage = 'Authentication timed out. Please try again.';
+          _errorMessage = t.auth.authenticationTimeout;
         });
         return;
       }
@@ -119,7 +120,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } catch (e) {
       setState(() {
         _isAuthenticating = false;
-        _errorMessage = 'Authentication failed: $e';
+        _errorMessage = t.errors.authenticationFailed(error: e);
       });
     }
   }
@@ -149,15 +150,15 @@ class _AuthScreenState extends State<AuthScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Debug: Enter Plex Token'),
+              title: Text(t.auth.debugEnterToken),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
                     controller: tokenController,
                     decoration: InputDecoration(
-                      labelText: 'Plex Auth Token',
-                      hintText: 'Enter your Plex.tv token',
+                      labelText: t.auth.plexTokenLabel,
+                      hintText: t.auth.plexTokenHint,
                       errorText: errorMessage,
                       border: const OutlineInputBorder(),
                     ),
@@ -169,14 +170,14 @@ class _AuthScreenState extends State<AuthScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(t.auth.cancel),
                 ),
                 ElevatedButton(
                   onPressed: () async {
                     final token = tokenController.text.trim();
                     if (token.isEmpty) {
                       setDialogState(() {
-                        errorMessage = 'Please enter a token';
+                        errorMessage = t.errors.pleaseEnterToken;
                       });
                       return;
                     }
@@ -187,7 +188,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       final isValid = await _authService.verifyToken(token);
                       if (!isValid) {
                         setDialogState(() {
-                          errorMessage = 'Invalid token';
+                          errorMessage = t.errors.invalidToken;
                         });
                         return;
                       }
@@ -210,11 +211,11 @@ class _AuthScreenState extends State<AuthScreen> {
                       }
                     } catch (e) {
                       setDialogState(() {
-                        errorMessage = 'Failed to verify token: $e';
+                        errorMessage = t.errors.failedToVerifyToken(error: e);
                       });
                     }
                   },
-                  child: const Text('Authenticate'),
+                  child: Text(t.auth.authenticate),
                 ),
               ],
             );
@@ -238,7 +239,7 @@ class _AuthScreenState extends State<AuthScreen> {
               Image.asset('assets/plezy.png', width: 120, height: 120),
               const SizedBox(height: 24),
               Text(
-                'Plezy',
+                t.app.title,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -250,8 +251,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 const SizedBox(height: 16),
                 Text(
                   _useQrFlow
-                      ? 'Scan this QR code with a device logged into Plex to authenticate.'
-                      : 'Waiting for authentication...\nPlease complete sign-in in your browser.',
+                      ? t.auth.scanQRCodeInstruction
+                      : t.auth.waitingForAuth,
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.grey),
                 ),
@@ -281,7 +282,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       horizontal: 24,
                     ),
                   ),
-                  child: const Text('Retry'),
+                  child: Text(t.auth.retry),
                 ),
               ] else ...[ // add QR button here
                 ElevatedButton(
@@ -289,7 +290,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Sign in with Plex'),
+                  child: Text(t.auth.signInWithPlex),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
@@ -302,7 +303,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Show QR Code'),
+                  child: Text(t.auth.showQRCode),
                 ),
                 if (kDebugMode) ...[
                   const SizedBox(height: 12),
@@ -316,8 +317,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         ).colorScheme.outline.withValues(alpha: 0.5),
                       ),
                     ),
-                    child: const Text(
-                      'Debug: Enter Token',
+                    child: Text(
+                      t.auth.debugEnterToken,
                       style: TextStyle(fontSize: 12),
                     ),
                   ),

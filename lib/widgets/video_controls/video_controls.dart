@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
+import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:macos_window_utils/macos_window_utils.dart';
-import '../../models/plex_metadata.dart';
+
 import '../../models/plex_media_info.dart';
 import '../../models/plex_media_version.dart';
+import '../../models/plex_metadata.dart';
+import '../../screens/video_player_screen.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
@@ -15,7 +18,7 @@ import '../../services/sleep_timer_service.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
-import '../../screens/video_player_screen.dart';
+import '../../i18n/strings.g.dart';
 import '../app_bar_back_button.dart';
 import 'painters/chapter_marker_painter.dart';
 import 'sheets/audio_track_sheet.dart';
@@ -92,15 +95,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   double _doubleTapFeedbackOpacity = 0.0;
   bool _lastDoubleTapWasForward = true;
   Timer? _feedbackTimer;
+  // Seek throttle state
+  Timer? _seekThrottleTimer;
+  Duration? _pendingSeekPosition;
+  // Current marker state
+  PlexMarker? _currentMarker;
+  List<PlexMarker> _markers = [];
+  bool _markersLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _focusNode = FocusNode();
     _loadChapters();
+    _loadMarkers();
     _loadSeekTimes();
     _startHideTimer();
     _initKeyboardService();
+    _listenToPosition();
     // Add lifecycle observer to reload settings when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
@@ -111,6 +123,36 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   Future<void> _initKeyboardService() async {
     _keyboardService = await KeyboardShortcutsService.getInstance();
+  }
+
+  void _listenToPosition() {
+    widget.player.stream.position.listen((position) {
+      if (_markers.isEmpty || !_markersLoaded) {
+        return;
+      }
+
+      PlexMarker? foundMarker;
+      for (final marker in _markers) {
+        if (marker.containsPosition(position)) {
+          foundMarker = marker;
+          break;
+        }
+      }
+
+      if (foundMarker != _currentMarker) {
+        if (mounted) {
+          setState(() {
+            _currentMarker = foundMarker;
+          });
+        }
+      }
+    });
+  }
+
+  void _skipMarker() {
+    if (_currentMarker != null) {
+      widget.player.seek(_currentMarker!.endTime);
+    }
   }
 
   Future<void> _loadSeekTimes() async {
@@ -168,6 +210,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void dispose() {
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
+    _seekThrottleTimer?.cancel();
     _focusNode.dispose();
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
@@ -305,6 +348,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
+  Future<void> _loadMarkers() async {
+    final clientProvider = context.plexClient;
+    final client = clientProvider.client;
+    if (client == null) return;
+
+    final markers = await client.getMarkers(widget.metadata.ratingKey);
+
+    if (mounted) {
+      setState(() {
+        _markers = markers;
+        _markersLoaded = true;
+      });
+    }
+  }
+
   bool _hasMultipleAudioTracks(Tracks? tracks) {
     if (tracks == null) return false;
     final audioTracks = tracks.audio
@@ -337,13 +395,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   String _getBoxFitTooltip(int mode) {
     switch (mode) {
       case 0:
-        return 'Letterbox';
+        return t.videoControls.letterbox;
       case 1:
-        return 'Fill screen';
+        return t.videoControls.fillScreen;
       case 2:
-        return 'Stretch';
+        return t.videoControls.stretch;
       default:
-        return 'Letterbox';
+        return t.videoControls.letterbox;
     }
   }
 
@@ -358,11 +416,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
     // Only apply SafeArea in portrait mode
     if (isPortrait) {
-      return SafeArea(
-        top: top,
-        bottom: bottom,
-        child: child,
-      );
+      return SafeArea(top: top, bottom: bottom, child: child);
     }
 
     // In landscape, return child without SafeArea
@@ -380,83 +434,90 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            // Unified settings button (speed, sleep timer, audio sync, subtitle sync)
-            ListenableBuilder(
-              listenable: SleepTimerService(),
-              builder: (context, _) {
-                final sleepTimer = SleepTimerService();
-                final isActive =
-                    sleepTimer.isActive ||
-                    _audioSyncOffset != 0 ||
-                    _subtitleSyncOffset != 0;
-                return VideoControlButton(
-                  icon: Icons.tune,
-                  isActive: isActive,
-                  onPressed: () async {
-                    await VideoSettingsSheet.show(
-                      context,
-                      widget.player,
-                      _audioSyncOffset,
-                      _subtitleSyncOffset,
-                    );
-                    // Sheet is now closed, reload immediately
-                    if (mounted) {
-                      await _loadSeekTimes();
-                    }
-                  },
-                );
-              },
-            ),
-            if (_hasMultipleAudioTracks(tracks))
-              VideoControlButton(
-                icon: Icons.audiotrack,
-                onPressed: () => AudioTrackSheet.show(context, widget.player),
+              // Unified settings button (speed, sleep timer, audio sync, subtitle sync)
+              ListenableBuilder(
+                listenable: SleepTimerService(),
+                builder: (context, _) {
+                  final sleepTimer = SleepTimerService();
+                  final isActive =
+                      sleepTimer.isActive ||
+                      _audioSyncOffset != 0 ||
+                      _subtitleSyncOffset != 0;
+                  return VideoControlButton(
+                    icon: Icons.tune,
+                    isActive: isActive,
+                    onPressed: () async {
+                      await VideoSettingsSheet.show(
+                        context,
+                        widget.player,
+                        _audioSyncOffset,
+                        _subtitleSyncOffset,
+                      );
+                      // Sheet is now closed, reload immediately
+                      if (mounted) {
+                        await _loadSeekTimes();
+                      }
+                    },
+                  );
+                },
               ),
-            if (_hasSubtitles(tracks))
-              VideoControlButton(
-                icon: Icons.subtitles,
-                onPressed: () => SubtitleTrackSheet.show(context, widget.player),
-              ),
-            if (_chapters.isNotEmpty)
-              VideoControlButton(
-                icon: Icons.video_library,
-                onPressed: () => ChapterSheet.show(
-                  context,
-                  widget.player,
-                  _chapters,
-                  _chaptersLoaded,
+              if (_hasMultipleAudioTracks(tracks))
+                VideoControlButton(
+                  icon: Icons.audiotrack,
+                  onPressed: () => AudioTrackSheet.show(context, widget.player),
                 ),
-              ),
-            if (widget.availableVersions.length > 1)
-              VideoControlButton(
-                icon: Icons.video_file,
-                onPressed: () => VersionSheet.show(
-                  context,
-                  widget.availableVersions,
-                  widget.selectedMediaIndex,
-                  _switchMediaVersion,
+              if (_hasSubtitles(tracks))
+                VideoControlButton(
+                  icon: Icons.subtitles,
+                  onPressed: () =>
+                      SubtitleTrackSheet.show(context, widget.player),
                 ),
-              ),
-            // BoxFit mode cycle button
-            if (widget.onCycleBoxFitMode != null)
-              VideoControlButton(
-                icon: _getBoxFitIcon(widget.boxFitMode),
-                tooltip: _getBoxFitTooltip(widget.boxFitMode),
-                onPressed: widget.onCycleBoxFitMode,
-              ),
-            // Rotation lock toggle (mobile only)
-            if (PlatformDetector.isMobile(context))
-              VideoControlButton(
-                icon: _isRotationLocked ? Icons.screen_lock_rotation : Icons.screen_rotation,
-                tooltip: _isRotationLocked ? 'Unlock rotation' : 'Lock rotation',
-                onPressed: _toggleRotationLock,
-              ),
-            // Fullscreen toggle (desktop only)
-            if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-              VideoControlButton(
-                icon: _isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                onPressed: _toggleFullscreen,
-              ),
+              if (_chapters.isNotEmpty)
+                VideoControlButton(
+                  icon: Icons.video_library,
+                  onPressed: () => ChapterSheet.show(
+                    context,
+                    widget.player,
+                    _chapters,
+                    _chaptersLoaded,
+                  ),
+                ),
+              if (widget.availableVersions.length > 1)
+                VideoControlButton(
+                  icon: Icons.video_file,
+                  onPressed: () => VersionSheet.show(
+                    context,
+                    widget.availableVersions,
+                    widget.selectedMediaIndex,
+                    _switchMediaVersion,
+                  ),
+                ),
+              // BoxFit mode cycle button
+              if (widget.onCycleBoxFitMode != null)
+                VideoControlButton(
+                  icon: _getBoxFitIcon(widget.boxFitMode),
+                  tooltip: _getBoxFitTooltip(widget.boxFitMode),
+                  onPressed: widget.onCycleBoxFitMode,
+                ),
+              // Rotation lock toggle (mobile only)
+              if (PlatformDetector.isMobile(context))
+                VideoControlButton(
+                  icon: _isRotationLocked
+                      ? Icons.screen_lock_rotation
+                      : Icons.screen_rotation,
+                  tooltip: _isRotationLocked
+                      ? t.videoControls.unlockRotation
+                      : t.videoControls.lockRotation,
+                  onPressed: _toggleRotationLock,
+                ),
+              // Fullscreen toggle (desktop only)
+              if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
+                VideoControlButton(
+                  icon: _isFullscreen
+                      ? Icons.fullscreen_exit
+                      : Icons.fullscreen,
+                  onPressed: _toggleFullscreen,
+                ),
             ],
           ),
         );
@@ -519,6 +580,40 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         : (newPosition > duration ? duration : newPosition);
 
     widget.player.seek(clampedPosition);
+  }
+
+  /// Throttled seek for timeline slider - only sends seek events at most every 100ms
+  void _throttledSeek(Duration position) {
+    // Store the pending position
+    _pendingSeekPosition = position;
+
+    // If timer is already active, just update the pending position
+    if (_seekThrottleTimer?.isActive ?? false) {
+      return;
+    }
+
+    // Execute the seek immediately for the first call
+    widget.player.seek(position);
+
+    // Start a timer to throttle subsequent seeks
+    _seekThrottleTimer = Timer(const Duration(milliseconds: 200), () {
+      // If there's a pending position that's different, execute it
+      if (_pendingSeekPosition != null && _pendingSeekPosition != position) {
+        widget.player.seek(_pendingSeekPosition!);
+      }
+      _pendingSeekPosition = null;
+    });
+  }
+
+  /// Finalizes the seek when user stops scrubbing the timeline
+  void _finalizeSeek(Duration position) {
+    // Cancel any pending throttled seek
+    _seekThrottleTimer?.cancel();
+    _seekThrottleTimer = null;
+
+    // Execute the final position immediately to ensure accuracy
+    widget.player.seek(position);
+    _pendingSeekPosition = null;
   }
 
   /// Get the replay icon based on the duration
@@ -814,7 +909,69 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   ),
                 ),
               ),
+            // Skip intro/credits button
+            if (_currentMarker != null)
+              Positioned(
+                right: 24,
+                bottom: isMobile ? 80 : 115,
+                child: AnimatedOpacity(
+                  opacity: 1.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: _buildSkipMarkerButton(),
+                ),
+              ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSkipMarkerButton() {
+    final isCredits = _currentMarker!.isCredits;
+    final hasNextEpisode = widget.onNext != null;
+
+    // Show "Next Episode" for credits when next episode is available
+    final bool showNextEpisode = isCredits && hasNextEpisode;
+    final String buttonText = showNextEpisode
+        ? 'Next Episode'
+        : (isCredits ? 'Skip Credits' : 'Skip Intro');
+    final IconData buttonIcon = showNextEpisode
+        ? Icons.skip_next
+        : Icons.fast_forward;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: showNextEpisode ? widget.onNext : _skipMarker,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                buttonText,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(buttonIcon, color: Colors.black, size: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -878,7 +1035,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       widget.metadata.index != null)
                     Text(
                       'S${widget.metadata.parentIndex} · E${widget.metadata.index} · ${widget.metadata.title}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1310,7 +1470,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           min: 0.0,
           max: duration.inMilliseconds.toDouble(),
           onChanged: (value) {
-            widget.player.seek(Duration(milliseconds: value.toInt()));
+            _throttledSeek(Duration(milliseconds: value.toInt()));
+          },
+          onChangeEnd: (value) {
+            _finalizeSeek(Duration(milliseconds: value.toInt()));
           },
           activeColor: Colors.white,
           inactiveColor: Colors.white.withValues(alpha: 0.3),
@@ -1407,7 +1570,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       final currentPosition = widget.player.state.position;
 
       // Get state reference before async operations
-      final videoPlayerState = context.findAncestorStateOfType<VideoPlayerScreenState>();
+      final videoPlayerState = context
+          .findAncestorStateOfType<VideoPlayerScreenState>();
 
       // Save the preference
       final settingsService = await SettingsService.getInstance();
@@ -1440,7 +1604,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error switching version: $e')));
+        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
       }
     }
   }

@@ -13,6 +13,7 @@ class PlexLibrary {
   final String? uuid;
   final int? updatedAt;
   final int? createdAt;
+  final int? hidden;
 
   PlexLibrary({
     required this.key,
@@ -24,6 +25,7 @@ class PlexLibrary {
     this.uuid,
     this.updatedAt,
     this.createdAt,
+    this.hidden,
   });
 
   factory PlexLibrary.fromJson(Map<String, dynamic> json) =>

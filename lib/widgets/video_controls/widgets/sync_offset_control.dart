@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
+import '../../../i18n/strings.g.dart';
 
 /// Reusable widget for adjusting sync offsets (audio or subtitle)
 class SyncOffsetControl extends StatefulWidget {
@@ -69,11 +70,11 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
 
   String _getDescriptionText() {
     if (_currentOffset > 0) {
-      return '${widget.labelText} plays later';
+      return t.videoControls.playsLater(label: widget.labelText);
     } else if (_currentOffset < 0) {
-      return '${widget.labelText} plays earlier';
+      return t.videoControls.playsEarlier(label: widget.labelText);
     } else {
-      return 'No offset';
+      return t.videoControls.noOffset;
     }
   }
 
@@ -102,7 +103,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // Slider
           Row(
             children: [
-              const Text('-2s', style: TextStyle(color: Colors.white70)),
+              Text(t.videoControls.minusTime(amount: "2", unit: "s"), style: const TextStyle(color: Colors.white70)),
               Expanded(
                 child: Slider(
                   value: _currentOffset,
@@ -121,7 +122,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                   },
                 ),
               ),
-              const Text('+2s', style: TextStyle(color: Colors.white70)),
+              Text(t.videoControls.addTime(amount: "2", unit: "s"), style: const TextStyle(color: Colors.white70)),
             ],
           ),
           const SizedBox(height: 24),
@@ -129,7 +130,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           ElevatedButton.icon(
             onPressed: _currentOffset != 0 ? _resetOffset : null,
             icon: const Icon(Icons.restart_alt),
-            label: const Text('Reset to 0ms'),
+            label: Text(t.videoControls.resetToZero),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey[800],
               foregroundColor: Colors.white,

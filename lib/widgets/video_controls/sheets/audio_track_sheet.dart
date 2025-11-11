@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
+import '../../../i18n/strings.g.dart';
 
 /// Bottom sheet for selecting audio tracks
 class AudioTrackSheet extends StatelessWidget {
@@ -53,9 +54,9 @@ class AudioTrackSheet extends StatelessWidget {
                     children: [
                       const Icon(Icons.audiotrack, color: Colors.white),
                       const SizedBox(width: 12),
-                      const Text(
-                        'Audio Tracks',
-                        style: TextStyle(
+                      Text(
+                        t.videoControls.audioLabel,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

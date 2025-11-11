@@ -1,24 +1,27 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
-import 'package:audio_session/audio_session.dart';
+
+import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
-import '../providers/plex_client_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../utils/provider_extensions.dart';
-import '../widgets/video_controls/video_controls.dart';
-import '../utils/language_codes.dart';
-import '../utils/app_logger.dart';
+import '../providers/plex_client_provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
-import '../services/media_service_manager.dart';
+import '../utils/app_logger.dart';
+import '../utils/language_codes.dart';
 import '../utils/orientation_helper.dart';
-import '../utils/video_player_navigation.dart';
 import '../utils/platform_detector.dart';
-import '../models/plex_media_version.dart';
+import '../utils/provider_extensions.dart';
+import '../utils/video_player_navigation.dart';
+import '../widgets/video_controls/video_controls.dart';
+import '../i18n/strings.g.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -56,6 +59,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   StreamSubscription<String>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<dynamic>? _mediaControlSubscription;
   bool _isReplacingWithVideo =
       false; // Flag to skip orientation restoration during video-to-video navigation
 
@@ -166,12 +171,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final savedVolume = settingsService.getVolume();
       player!.setVolume(savedVolume);
 
-      // Initialize audio session for proper OS integration
-      await _initializeAudioSession();
-
-      // Update media service manager with new player
-      await _updateMediaService();
-
       // Notify that player is ready
       if (mounted) {
         setState(() {
@@ -181,9 +180,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       // Get the video URL and start playback
       _startPlayback();
-
-      // Load available media versions
-      _loadMediaVersions();
 
       // Set fullscreen mode and orientation based on rotation lock setting
       if (mounted) {
@@ -221,6 +217,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Listen to MPV errors
       _errorSubscription = player!.stream.error.listen(_onPlayerError);
 
+      // Listen to position updates for media controls
+      _positionSubscription = player!.stream.position.listen((_) {
+        _updateMediaControlsPosition();
+      });
+
+      // Initialize OS media controls
+      _initializeMediaControls();
+
       // Start periodic progress updates
       _startProgressTracking();
 
@@ -236,82 +240,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-  Future<void> _initializeAudioSession() async {
-    try {
-      final session = await AudioSession.instance;
-      await session.configure(const AudioSessionConfiguration(
-        avAudioSessionCategory: AVAudioSessionCategory.playback,
-        avAudioSessionMode: AVAudioSessionMode.moviePlayback,
-        androidAudioAttributes: AndroidAudioAttributes(
-          contentType: AndroidAudioContentType.movie,
-          usage: AndroidAudioUsage.media,
-        ),
-        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-      ));
-
-      // Handle interruptions (phone calls, other apps, etc.)
-      session.interruptionEventStream.listen((event) {
-        if (event.begin) {
-          // Pause on interruption
-          player?.pause();
-          appLogger.i('Playback paused due to interruption');
-        } else {
-          // Resume after interruption if needed (user can manually play)
-          switch (event.type) {
-            case AudioInterruptionType.pause:
-            case AudioInterruptionType.duck:
-              // Don't auto-resume for these types
-              break;
-            case AudioInterruptionType.unknown:
-              break;
-          }
-        }
-      });
-
-      // Handle audio becoming noisy (headphones unplugged)
-      session.becomingNoisyEventStream.listen((_) {
-        player?.pause();
-        appLogger.i('Playback paused due to audio becoming noisy (headphones unplugged?)');
-      });
-    } catch (e) {
-      appLogger.w('Failed to configure audio session', error: e);
-    }
-  }
-
-  Future<void> _updateMediaService() async {
-    if (!mounted) return;
-
-    try {
-      final mediaService = MediaServiceManager.instance;
-
-      // Build thumbnail URL if available
-      String? thumbnailUrl;
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (widget.metadata.thumb != null && client != null) {
-        final baseUrl = client.config.baseUrl;
-        final token = client.config.token;
-        if (token != null) {
-          thumbnailUrl = '$baseUrl${widget.metadata.thumb}?X-Plex-Token=$token';
-        }
-      }
-
-      // CRITICAL: Set mediaItem FIRST before updating player
-      // Android requires mediaItem to exist before playbackState broadcasts
-      mediaService.updateMediaItem(widget.metadata, thumbnailUrl);
-
-      if (!mounted) return;
-
-      await mediaService.updatePlayer(
-        player: player,
-        onNext: _playNext,
-        onPrevious: _playPrevious,
-      );
-    } catch (e) {
-      appLogger.w('Failed to update media service', error: e);
-    }
-  }
-
   Future<void> _loadAdjacentEpisodes() async {
     if (widget.metadata.type.toLowerCase() != 'episode') {
       return;
@@ -323,16 +251,31 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       if (client == null) return;
 
       final playbackState = context.read<PlaybackStateProvider>();
+      final settingsProvider = context.read<SettingsProvider>();
 
       PlexMetadata? next;
       PlexMetadata? previous;
 
       // Check if shuffle mode is active
       if (playbackState.isShuffleActive) {
-        // Get next episode from shuffle queue
-        next = playbackState.getNextEpisode(widget.metadata.ratingKey);
-        // No previous episode in shuffle mode
-        previous = null;
+        // Get settings
+        final shuffleOrderNavigation = settingsProvider.shuffleOrderNavigation;
+        final loopQueue = settingsProvider.shuffleLoopQueue;
+
+        if (shuffleOrderNavigation) {
+          // Use shuffled order for next/previous
+          next = playbackState.getNextEpisode(
+            widget.metadata.ratingKey,
+            loopQueue: loopQueue,
+          );
+          previous = playbackState.getPreviousEpisode(
+            widget.metadata.ratingKey,
+          );
+        } else {
+          // Use chronological order even in shuffle mode
+          next = await client.findAdjacentEpisode(widget.metadata, 1);
+          previous = await client.findAdjacentEpisode(widget.metadata, -1);
+        }
       } else {
         // Use normal sequential episode loading
         next = await client.findAdjacentEpisode(widget.metadata, 1);
@@ -344,12 +287,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           _nextEpisode = next;
           _previousEpisode = previous;
         });
-
-        // Update media service navigation controls
-        MediaServiceManager.instance.updateNavigationActions(
-          hasNext: _nextEpisode != null,
-          hasPrevious: _previousEpisode != null,
-        );
       }
     } catch (e) {
       // Silently handle errors
@@ -364,18 +301,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         throw Exception('No client available');
       }
 
-      // Get the direct file URL from the server using the selected media index
-      final videoUrl = await client.getVideoUrl(
+      // Get consolidated playback data (URL, media info, and versions) in a single API call
+      final playbackData = await client.getVideoPlaybackData(
         widget.metadata.ratingKey,
         mediaIndex: widget.selectedMediaIndex,
       );
 
-      if (videoUrl != null) {
-        // Fetch media info to check for external subtitle tracks
-        final mediaInfo = await client.getMediaInfo(
-          widget.metadata.ratingKey,
-          mediaIndex: widget.selectedMediaIndex,
-        );
+      if (playbackData.hasValidVideoUrl) {
+        final videoUrl = playbackData.videoUrl!;
+        final mediaInfo = playbackData.mediaInfo;
+
+        // Update available versions from the playback data
+        if (mounted) {
+          setState(() {
+            _availableVersions = playbackData.availableVersions;
+          });
+        }
 
         // Build list of external subtitle tracks for media_kit
         final externalSubtitles = <SubtitleTrack>[];
@@ -476,16 +417,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         // Start playback after seeking
         await player!.play();
 
-        // Force media service state update to trigger Android notification
-        // This ensures the notification appears even if streams don't fire reliably
-        MediaServiceManager.instance.forceStateUpdate();
-
         // Wait for tracks to be loaded, then apply preferred tracks
         _waitForTracksAndApply();
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not find video file')),
+            SnackBar(content: Text(t.messages.fileInfoNotAvailable)),
           );
         }
       }
@@ -493,26 +430,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
       }
-    }
-  }
-
-  /// Load available media versions for this item
-  Future<void> _loadMediaVersions() async {
-    try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) return;
-
-      final versions = await client.getMediaVersions(widget.metadata.ratingKey);
-      if (mounted) {
-        setState(() {
-          _availableVersions = versions;
-        });
-      }
-    } catch (e) {
-      appLogger.e('Error loading media versions: $e');
     }
   }
 
@@ -554,9 +473,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _completedSubscription?.cancel();
     _logSubscription?.cancel();
     _errorSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _mediaControlSubscription?.cancel();
 
-    // Stop media service and clear OS controls
-    MediaServiceManager.instance.stop();
+    // Clear OS media controls completely
+    OsMediaControls.clear();
 
     // Send final stopped state
     _sendProgress('stopped');
@@ -1150,6 +1071,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void _onPlayingStateChanged(bool isPlaying) {
     // Send timeline update when playback state changes
     _sendProgress(isPlaying ? 'playing' : 'paused');
+
+    // Update OS media controls playback state
+    _updateMediaControlsPlaybackState();
   }
 
   void _sendProgress(String state) {
@@ -1210,6 +1134,139 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   void _onPlayerError(String error) {
     appLogger.e('[MPV ERROR] $error');
+  }
+
+  // OS Media Controls Integration
+
+  void _initializeMediaControls() async {
+    // Listen to media control events
+    _mediaControlSubscription = OsMediaControls.controlEvents.listen((event) {
+      if (event is PlayEvent) {
+        player?.play();
+      } else if (event is PauseEvent) {
+        player?.pause();
+      } else if (event is SeekEvent) {
+        player?.seek(event.position);
+      } else if (event is NextTrackEvent) {
+        if (_nextEpisode != null) {
+          _playNext();
+        }
+      } else if (event is PreviousTrackEvent) {
+        if (_previousEpisode != null) {
+          _playPrevious();
+        }
+      }
+    });
+
+    // Enable/disable next/previous track controls based on content type
+    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    if (isEpisode) {
+      // Enable next/previous track controls for episodes
+      await OsMediaControls.enableControls([
+        MediaControl.next,
+        MediaControl.previous,
+      ]);
+    } else {
+      // Disable next/previous track controls for movies
+      await OsMediaControls.disableControls([
+        MediaControl.next,
+        MediaControl.previous,
+      ]);
+    }
+
+    // Set initial metadata
+    await _updateMediaMetadata();
+  }
+
+  Future<void> _updateMediaMetadata() async {
+    if (!mounted) {
+      appLogger.w('Cannot update media metadata: widget not mounted');
+      return;
+    }
+
+    final metadata = widget.metadata;
+    final clientProvider = context.plexClient;
+    final client = clientProvider.client;
+
+    // Get artwork URL
+    String? artworkUrl;
+    if (client == null) {
+      appLogger.w(
+        'Cannot get artwork URL for media controls: Plex client is null',
+      );
+    } else {
+      final thumbUrl = metadata.type.toLowerCase() == 'episode'
+          ? metadata.grandparentThumb ?? metadata.thumb
+          : metadata.thumb;
+
+      if (thumbUrl != null) {
+        try {
+          artworkUrl = client.getThumbnailUrl(thumbUrl);
+          appLogger.d('Artwork URL for media controls: $artworkUrl');
+        } catch (e) {
+          appLogger.w('Failed to get artwork URL for media controls', error: e);
+        }
+      } else {
+        appLogger.d('No thumbnail URL available for media controls');
+      }
+    }
+
+    // Build title/artist based on content type
+    String title = metadata.title;
+    String? artist;
+    String? album;
+
+    if (metadata.type.toLowerCase() == 'episode') {
+      title = metadata.title;
+      artist = metadata.grandparentTitle; // Show name
+      if (metadata.parentIndex != null) {
+        album = 'Season ${metadata.parentIndex}';
+      }
+    }
+
+    await OsMediaControls.setMetadata(
+      MediaMetadata(
+        title: title,
+        artist: artist,
+        album: album,
+        duration: metadata.duration != null
+            ? Duration(milliseconds: metadata.duration!)
+            : null,
+        artworkUrl: artworkUrl,
+      ),
+    );
+
+    // Set initial playback state
+    _updateMediaControlsPlaybackState();
+  }
+
+  void _updateMediaControlsPlaybackState() {
+    if (player == null) return;
+
+    OsMediaControls.setPlaybackState(
+      MediaPlaybackState(
+        state: player!.state.playing
+            ? PlaybackState.playing
+            : PlaybackState.paused,
+        position: player!.state.position,
+        speed: player!.state.rate,
+      ),
+    );
+  }
+
+  void _updateMediaControlsPosition() {
+    if (player == null) return;
+
+    // Only update if playing to avoid excessive updates
+    if (player!.state.playing) {
+      OsMediaControls.setPlaybackState(
+        MediaPlaybackState(
+          state: PlaybackState.playing,
+          position: player!.state.position,
+          speed: player!.state.rate,
+        ),
+      );
+    }
   }
 
   Future<void> _playNext() async {
@@ -1424,7 +1481,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                       vertical: 16,
                                     ),
                                   ),
-                                  child: const Text('Cancel'),
+                                  child: Text(t.dialog.cancel),
                                 ),
                                 const SizedBox(width: 16),
                                 FilledButton(
@@ -1437,7 +1494,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                       vertical: 16,
                                     ),
                                   ),
-                                  child: const Text('Play Now'),
+                                  child: Text(t.dialog.playNow),
                                 ),
                               ],
                             ),

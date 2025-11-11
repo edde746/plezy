@@ -6,6 +6,7 @@ import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../utils/shuffle_play_helper.dart';
+import '../i18n/strings.g.dart';
 
 /// Helper class to store menu action data
 class _MenuAction {
@@ -66,7 +67,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(
           value: 'watch',
           icon: Icons.check_circle_outline,
-          label: 'Mark as Watched',
+          label: t.mediaMenu.markAsWatched,
         ),
       );
     }
@@ -77,7 +78,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(
           value: 'unwatch',
           icon: Icons.remove_circle_outline,
-          label: 'Mark as Unwatched',
+          label: t.mediaMenu.markAsUnwatched,
         ),
       );
     }
@@ -86,7 +87,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     if ((itemType == 'episode' || itemType == 'season') &&
         widget.metadata.grandparentTitle != null) {
       menuActions.add(
-        _MenuAction(value: 'series', icon: Icons.tv, label: 'Go to series'),
+        _MenuAction(value: 'series', icon: Icons.tv, label: t.mediaMenu.goToSeries),
       );
     }
 
@@ -96,7 +97,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(
           value: 'season',
           icon: Icons.playlist_play,
-          label: 'Go to season',
+          label: t.mediaMenu.goToSeason,
         ),
       );
     }
@@ -107,7 +108,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(
           value: 'shuffle_play',
           icon: Icons.shuffle,
-          label: 'Shuffle Play',
+          label: t.mediaMenu.shufflePlay,
         ),
       );
     }
@@ -118,7 +119,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(
           value: 'fileinfo',
           icon: Icons.info_outline,
-          label: 'File Info',
+          label: t.mediaMenu.fileInfo,
         ),
       );
     }
@@ -214,7 +215,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         await _executeAction(
           context,
           () => client.markAsWatched(widget.metadata.ratingKey),
-          'Marked as watched',
+          t.messages.markedAsWatched,
         );
         break;
 
@@ -222,7 +223,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         await _executeAction(
           context,
           () => client.markAsUnwatched(widget.metadata.ratingKey),
-          'Marked as unwatched',
+          t.messages.markedAsUnwatched,
         );
         break;
 
@@ -231,7 +232,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           context,
           widget.metadata.grandparentRatingKey,
           (metadata) => MediaDetailScreen(metadata: metadata),
-          'Error loading series',
+          t.messages.errorLoadingSeries,
         );
         break;
 
@@ -240,7 +241,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           context,
           widget.metadata.parentRatingKey,
           (metadata) => SeasonDetailScreen(season: metadata),
-          'Error loading season',
+          t.messages.errorLoadingSeason,
         );
         break;
 
@@ -272,7 +273,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
       }
     }
   }
@@ -345,7 +346,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         );
       } else if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('File information not available')),
+          SnackBar(content: Text(t.messages.fileInfoNotAvailable)),
         );
       }
     } catch (e) {
@@ -357,7 +358,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error loading file info: $e')));
+        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoadingFileInfo(error: e.toString()))));
       }
     }
   }

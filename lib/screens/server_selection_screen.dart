@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../i18n/strings.g.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/server_connection_service.dart';
@@ -27,6 +30,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   String? _currentServerUrl;
+  List<Map<String, dynamic>>? _debugServerData;
 
   @override
   void initState() {
@@ -52,12 +56,58 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
       setState(() {
         _servers = servers;
         _isLoading = false;
+        _debugServerData = null; // Clear any previous debug data
       });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Failed to load servers: $e';
+        _errorMessage = _getErrorMessage(e);
         _isLoading = false;
+        // Store debug data if it's a parsing exception
+        if (e is ServerParsingException) {
+          _debugServerData = e.invalidServerData;
+        } else {
+          _debugServerData = null;
+        }
       });
+      appLogger.e('Failed to load servers', error: e);
+    }
+  }
+
+  String _getErrorMessage(dynamic error) {
+    if (error is ServerParsingException) {
+      return t.serverSelection.malformedServerData(count: error.invalidServerData.length);
+    } else if (error is FormatException) {
+      // Handle JSON parsing errors with more user-friendly messages
+      if (error.message.contains('Invalid server data')) {
+        return t.serverSelection.incompleteServerInfo;
+      } else if (error.message.contains('Invalid connection data')) {
+        return t.serverSelection.incompleteConnectionInfo;
+      }
+      return t.serverSelection.malformedServerInfo(message: error.message);
+    } else if (error.toString().contains('SocketException') ||
+               error.toString().contains('TimeoutException')) {
+      return t.serverSelection.networkConnectionFailed;
+    } else if (error.toString().contains('401') ||
+               error.toString().contains('Unauthorized')) {
+      return t.serverSelection.authenticationFailed;
+    } else if (error.toString().contains('404') ||
+               error.toString().contains('Not Found')) {
+      return t.serverSelection.plexServiceUnavailable;
+    }
+
+    return t.serverSelection.failedToLoadServers(error: error.toString());
+  }
+
+  Future<void> _copyDebugDataToClipboard() async {
+    if (_debugServerData == null) return;
+
+    final jsonString = const JsonEncoder.withIndent('  ').convert(_debugServerData);
+    await Clipboard.setData(ClipboardData(text: jsonString));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t.serverSelection.serverDebugCopied)),
+      );
     }
   }
 
@@ -67,13 +117,13 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const AlertDialog(
+        builder: (context) => AlertDialog(
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Connecting to server...'),
+              Text(t.serverSelection.connectingToServer),
             ],
           ),
         ),
@@ -157,7 +207,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
         // Show error
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.error ?? 'Connection failed')),
+            SnackBar(content: Text(result.error ?? t.errors.connectionFailedGeneric)),
           );
         }
       }
@@ -166,7 +216,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to connect to server: $e')),
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
         );
       }
       appLogger.e('Server selection failed', error: e);
@@ -190,7 +240,7 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const CustomAppBar(title: Text('Select Server')),
+          CustomAppBar(title: Text(t.screens.selectServer)),
           SliverFillRemaining(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -199,23 +249,46 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadServers,
-                          child: const Text('Retry'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: _loadServers,
+                              child: Text(t.common.retry),
+                            ),
+                            if (_debugServerData != null) ...[
+                              const SizedBox(width: 16),
+                              OutlinedButton.icon(
+                                onPressed: _copyDebugDataToClipboard,
+                                icon: const Icon(Icons.copy),
+                                label: Text(t.serverSelection.copyDebugData),
+                              ),
+                            ],
+                          ],
                         ),
+                        if (_debugServerData != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Debug data available for ${_debugServerData!.length} server(s)',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
                       ],
                     ),
                   )
                 : _servers == null || _servers!.isEmpty
-                ? const Center(child: Text('No servers found'))
+                ? Center(child: Text(t.serverSelection.noServersFound))
                 : ListView.builder(
                     itemCount: _servers!.length,
                     padding: const EdgeInsets.all(16),

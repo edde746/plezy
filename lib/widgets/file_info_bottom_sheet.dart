@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/plex_file_info.dart';
+import '../i18n/strings.g.dart';
 
 class FileInfoBottomSheet extends StatelessWidget {
   final PlexFileInfo fileInfo;
@@ -39,7 +40,7 @@ class FileInfoBottomSheet extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'File Info',
+                        t.fileInfo.title,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -74,56 +75,56 @@ class FileInfoBottomSheet extends StatelessWidget {
                     ],
 
                     // Video Section
-                    _buildSectionHeader('Video'),
+                    _buildSectionHeader(t.fileInfo.video),
                     const SizedBox(height: 8),
-                    _buildInfoRow('Codec', fileInfo.videoCodec ?? 'Unknown'),
-                    _buildInfoRow('Resolution', fileInfo.resolutionFormatted),
-                    _buildInfoRow('Bitrate', fileInfo.bitrateFormatted),
-                    _buildInfoRow('Frame Rate', fileInfo.frameRateFormatted),
-                    _buildInfoRow('Aspect Ratio', fileInfo.aspectRatioFormatted),
+                    _buildInfoRow(t.fileInfo.codec, fileInfo.videoCodec ?? t.common.unknown),
+                    _buildInfoRow(t.fileInfo.resolution, fileInfo.resolutionFormatted),
+                    _buildInfoRow(t.fileInfo.bitrate, fileInfo.bitrateFormatted),
+                    _buildInfoRow(t.fileInfo.frameRate, fileInfo.frameRateFormatted),
+                    _buildInfoRow(t.fileInfo.aspectRatio, fileInfo.aspectRatioFormatted),
                     if (fileInfo.videoProfile != null)
-                      _buildInfoRow('Profile', fileInfo.videoProfile!),
+                      _buildInfoRow(t.fileInfo.profile, fileInfo.videoProfile!),
                     if (fileInfo.bitDepth != null)
-                      _buildInfoRow('Bit Depth', '${fileInfo.bitDepth} bit'),
+                      _buildInfoRow(t.fileInfo.bitDepth, '${fileInfo.bitDepth} bit'),
                     if (fileInfo.colorSpace != null)
-                      _buildInfoRow('Color Space', fileInfo.colorSpace!),
+                      _buildInfoRow(t.fileInfo.colorSpace, fileInfo.colorSpace!),
                     if (fileInfo.colorRange != null)
-                      _buildInfoRow('Color Range', fileInfo.colorRange!),
+                      _buildInfoRow(t.fileInfo.colorRange, fileInfo.colorRange!),
                     if (fileInfo.colorPrimaries != null)
-                      _buildInfoRow('Color Primaries', fileInfo.colorPrimaries!),
+                      _buildInfoRow(t.fileInfo.colorPrimaries, fileInfo.colorPrimaries!),
                     if (fileInfo.chromaSubsampling != null)
-                      _buildInfoRow('Chroma Subsampling', fileInfo.chromaSubsampling!),
+                      _buildInfoRow(t.fileInfo.chromaSubsampling, fileInfo.chromaSubsampling!),
                     const SizedBox(height: 20),
 
                     // Audio Section
-                    _buildSectionHeader('Audio'),
+                    _buildSectionHeader(t.fileInfo.audio),
                     const SizedBox(height: 8),
-                    _buildInfoRow('Codec', fileInfo.audioCodec ?? 'Unknown'),
-                    _buildInfoRow('Channels', fileInfo.audioChannelsFormatted),
+                    _buildInfoRow(t.fileInfo.codec, fileInfo.audioCodec ?? t.common.unknown),
+                    _buildInfoRow(t.fileInfo.channels, fileInfo.audioChannelsFormatted),
                     if (fileInfo.audioProfile != null)
-                      _buildInfoRow('Profile', fileInfo.audioProfile!),
+                      _buildInfoRow(t.fileInfo.profile, fileInfo.audioProfile!),
                     const SizedBox(height: 20),
 
                     // File Section
-                    _buildSectionHeader('File'),
+                    _buildSectionHeader(t.fileInfo.file),
                     const SizedBox(height: 8),
                     if (fileInfo.filePath != null)
-                      _buildInfoRow('Path', fileInfo.filePath!, isMonospace: true),
-                    _buildInfoRow('Size', fileInfo.fileSizeFormatted),
-                    _buildInfoRow('Container', fileInfo.container ?? 'Unknown'),
-                    _buildInfoRow('Duration', fileInfo.durationFormatted),
+                      _buildInfoRow(t.fileInfo.path, fileInfo.filePath!, isMonospace: true),
+                    _buildInfoRow(t.fileInfo.size, fileInfo.fileSizeFormatted),
+                    _buildInfoRow(t.fileInfo.container, fileInfo.container ?? t.common.unknown),
+                    _buildInfoRow(t.fileInfo.duration, fileInfo.durationFormatted),
                     const SizedBox(height: 20),
 
                     // Advanced Section
-                    _buildSectionHeader('Advanced'),
+                    _buildSectionHeader(t.fileInfo.advanced),
                     const SizedBox(height: 8),
                     _buildInfoRow(
-                      'Optimized for Streaming',
-                      fileInfo.optimizedForStreaming == true ? 'Yes' : 'No',
+                      t.fileInfo.optimizedForStreaming,
+                      fileInfo.optimizedForStreaming == true ? t.common.yes : t.common.no,
                     ),
                     _buildInfoRow(
-                      '64-bit Offsets',
-                      fileInfo.has64bitOffsets == true ? 'Yes' : 'No',
+                      t.fileInfo.has64bitOffsets,
+                      fileInfo.has64bitOffsets == true ? t.common.yes : t.common.no,
                     ),
                   ],
                 ),

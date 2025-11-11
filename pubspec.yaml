@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex client for Flutter"
 publish_to: "none"
-version: 1.5.1+13
+version: 1.6.1+15
 
 environment:
   sdk: ^3.8.1
@@ -25,16 +25,25 @@ dependencies:
   provider: ^6.1.2
   hotkey_manager: ^0.2.3
   flex_color_picker: ^3.6.0
-  audio_service: ^0.18.18
-  audio_session: ^0.2.1
   qr_flutter: ^4.1.0
+  slang: ^3.31.2
+  slang_flutter: ^3.31.0
+  os_media_controls:
+    git:
+      url: https://github.com/edde746/os-media-controls
+      ref: 53d803e1c228eb7eab9ca642119d404c21f4a52f
 
 dependency_overrides:
   media_kit:
     git:
       url: https://github.com/edde746/media-kit
-      ref: custom-mpv-config
+      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
       path: media_kit
+  media_kit_libs_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
+      path: libs/universal/media_kit_libs_video
 
 dev_dependencies:
   flutter_test:
@@ -43,6 +52,7 @@ dev_dependencies:
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
   flutter_launcher_icons: ^0.14.4
+  slang_build_runner: ^3.31.0
 
 flutter:
   uses-material-design: true
