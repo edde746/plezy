@@ -10,8 +10,8 @@ import '../models/plex_library.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_video_playback_data.dart';
 import '../models/plex_sort.dart';
+import '../models/plex_video_playback_data.dart';
 import '../utils/app_logger.dart';
 
 /// Result of testing a connection, including success status and latency
@@ -266,10 +266,22 @@ class PlexClient {
       queryParameters: {'includeOnDeck': 1},
     );
 
+    // Log raw API response to see all available fields
+    appLogger.d('=== RAW API RESPONSE ===');
+    appLogger.d('Full response data: ${response.data}');
+    appLogger.d('=== END RAW API RESPONSE ===');
+
     PlexMetadata? metadata;
     PlexMetadata? onDeckEpisode;
 
     final metadataJson = _getFirstMetadataJson(response);
+
+    // Log the parsed metadata JSON
+    if (metadataJson != null) {
+      appLogger.d('=== PARSED METADATA JSON ===');
+      appLogger.d('Metadata JSON: $metadataJson');
+      appLogger.d('=== END PARSED METADATA JSON ===');
+    }
     if (metadataJson != null) {
       metadata = PlexMetadata.fromJsonWithImages(metadataJson);
 

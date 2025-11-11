@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../i18n/strings.g.dart';
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
 import '../theme/theme_helper.dart';
@@ -13,7 +14,6 @@ import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
-import '../i18n/strings.g.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -197,9 +197,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
       if (episodes.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.messages.noEpisodesFound)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.messages.noEpisodesFound)));
         }
         return;
       }
@@ -681,7 +681,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           } catch (e) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+                                SnackBar(
+                                  content: Text(
+                                    t.messages.errorLoading(
+                                      error: e.toString(),
+                                    ),
+                                  ),
+                                ),
                               );
                             }
                           }
@@ -716,7 +722,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           } catch (e) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+                                SnackBar(
+                                  content: Text(
+                                    t.messages.errorLoading(
+                                      error: e.toString(),
+                                    ),
+                                  ),
+                                ),
                               );
                             }
                           }
@@ -762,7 +774,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 200,
+                      height: 220,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: metadata.role!.length,
@@ -818,7 +830,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                         ),
                                 ),
                                 const SizedBox(height: 8),
-                                Expanded(
+                                SizedBox(
+                                  height: 84,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -1026,7 +1039,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         const SizedBox(height: 4),
                         if (season.leafCount != null)
                           Text(
-                            t.discover.episodeCount(count: season.leafCount.toString()),
+                            t.discover.episodeCount(
+                              count: season.leafCount.toString(),
+                            ),
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: Colors.grey),
                           ),
@@ -1120,9 +1135,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
         // Check if episode has been partially watched (viewOffset > 0)
         if (episode.viewOffset != null && episode.viewOffset! > 0) {
-          return t.discover.resumeEpisode(season: seasonNum.toString(), episode: episodeNum.toString());
+          return t.discover.resumeEpisode(
+            season: seasonNum.toString(),
+            episode: episodeNum.toString(),
+          );
         } else {
-          return t.discover.playEpisode(season: seasonNum.toString(), episode: episodeNum.toString());
+          return t.discover.playEpisode(
+            season: seasonNum.toString(),
+            episode: episodeNum.toString(),
+          );
         }
       } else {
         // No on deck episode, will play first episode
