@@ -4,7 +4,7 @@ part 'plex_role.g.dart';
 
 @JsonSerializable()
 class PlexRole {
-  final int id;
+  final int? id;
   final String? filter;
   final String tag;
   final String? tagKey;
@@ -13,7 +13,7 @@ class PlexRole {
   final int? count;
 
   PlexRole({
-    required this.id,
+    this.id,
     this.filter,
     required this.tag,
     this.tagKey,
