@@ -1620,15 +1620,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   left: 0,
                   right: 0,
                   bottom: _controlsVisible
-                      ? 150
-                      : 50, // Lower when controls hidden
+                      ? (PlatformDetector.isMobile(context) ? 80 : 150)
+                      : (PlatformDetector.isMobile(context) ? 10 : 50),
                   child: Container(
                     alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                        horizontal: 8,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.8),
