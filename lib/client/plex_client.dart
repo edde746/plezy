@@ -869,6 +869,15 @@ class PlexClient {
     );
   }
 
+  /// Remove item from Continue Watching (On Deck) without affecting watch status or progress
+  /// This uses the same endpoint Plex Web uses to hide items from Continue Watching
+  Future<void> removeFromOnDeck(String ratingKey) async {
+    await _dio.put(
+      '/actions/removeFromContinueWatching',
+      queryParameters: {'ratingKey': ratingKey},
+    );
+  }
+
   /// Get server preferences
   Future<Map<String, dynamic>> getServerPreferences() async {
     final response = await _dio.get('/:/prefs');

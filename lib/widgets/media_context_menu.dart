@@ -22,15 +22,19 @@ class _MenuAction {
 class MediaContextMenu extends StatefulWidget {
   final PlexMetadata metadata;
   final void Function(String ratingKey)? onRefresh;
+  final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onTap;
   final Widget child;
+  final bool isInContinueWatching;
 
   const MediaContextMenu({
     super.key,
     required this.metadata,
     this.onRefresh,
+    this.onRemoveFromContinueWatching,
     this.onTap,
     required this.child,
+    this.isInContinueWatching = false,
   });
 
   @override
@@ -79,6 +83,17 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           value: 'unwatch',
           icon: Icons.remove_circle_outline,
           label: t.mediaMenu.markAsUnwatched,
+        ),
+      );
+    }
+
+    // Remove from Continue Watching (only in continue watching section)
+    if (widget.isInContinueWatching) {
+      menuActions.add(
+        _MenuAction(
+          value: 'remove_from_continue_watching',
+          icon: Icons.close,
+          label: t.mediaMenu.removeFromContinueWatching,
         ),
       );
     }
@@ -225,6 +240,32 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           () => client.markAsUnwatched(widget.metadata.ratingKey),
           t.messages.markedAsUnwatched,
         );
+        break;
+
+      case 'remove_from_continue_watching':
+        // Remove from Continue Watching without affecting watch status or progress
+        // This preserves the progression for partially watched items
+        // and doesn't mark unwatched next episodes as watched
+        try {
+          await client.removeFromOnDeck(widget.metadata.ratingKey);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(t.messages.removedFromContinueWatching)),
+            );
+            // Use specific callback if provided, otherwise fallback to onRefresh
+            if (widget.onRemoveFromContinueWatching != null) {
+              widget.onRemoveFromContinueWatching!();
+            } else {
+              widget.onRefresh?.call(widget.metadata.ratingKey);
+            }
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+            );
+          }
+        }
         break;
 
       case 'series':

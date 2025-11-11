@@ -171,6 +171,7 @@
   "mediaMenu": {
     "markAsWatched": "Mark as Watched",
     "markAsUnwatched": "Mark as Unwatched",
+    "removeFromContinueWatching": "Remove from Continue Watching",
     "goToSeries": "Go to series",
     "goToSeason": "Go to season",
     "shufflePlay": "Shuffle Play",
@@ -204,6 +205,7 @@
   "messages": {
     "markedAsWatched": "Marked as watched",
     "markedAsUnwatched": "Marked as unwatched",
+    "removedFromContinueWatching": "Removed from Continue Watching",
     "errorLoading": "Error: ${error}",
     "fileInfoNotAvailable": "File information not available",
     "errorLoadingFileInfo": "Error loading file info: ${error}",

@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 3
-/// Strings: 930 (310 per locale)
+/// Strings: 936 (312 per locale)
 ///
-/// Built on 2025-11-12 at 17:03 UTC
+/// Built on 2025-11-13 at 18:06 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -426,6 +426,7 @@ class _StringsMediaMenuEn {
 	// Translations
 	String get markAsWatched => 'Mark as Watched';
 	String get markAsUnwatched => 'Mark as Unwatched';
+	String get removeFromContinueWatching => 'Remove from Continue Watching';
 	String get goToSeries => 'Go to series';
 	String get goToSeason => 'Go to season';
 	String get shufflePlay => 'Shuffle Play';
@@ -487,6 +488,7 @@ class _StringsMessagesEn {
 	// Translations
 	String get markedAsWatched => 'Marked as watched';
 	String get markedAsUnwatched => 'Marked as unwatched';
+	String get removedFromContinueWatching => 'Removed from Continue Watching';
 	String errorLoading({required Object error}) => 'Error: ${error}';
 	String get fileInfoNotAvailable => 'File information not available';
 	String errorLoadingFileInfo({required Object error}) => 'Error loading file info: ${error}';
@@ -1032,6 +1034,7 @@ class _StringsMediaMenuIt implements _StringsMediaMenuEn {
 	// Translations
 	@override String get markAsWatched => 'Segna come visto';
 	@override String get markAsUnwatched => 'Segna come non visto';
+	@override String get removeFromContinueWatching => 'Rimuovi da Continua a guardare';
 	@override String get goToSeries => 'Vai alle serie';
 	@override String get goToSeason => 'Vai alla stagione';
 	@override String get shufflePlay => 'Riproduzione casuale';
@@ -1093,6 +1096,7 @@ class _StringsMessagesIt implements _StringsMessagesEn {
 	// Translations
 	@override String get markedAsWatched => 'Segna come visto';
 	@override String get markedAsUnwatched => 'Segna come non visto';
+	@override String get removedFromContinueWatching => 'Rimosso da Continua a guardare';
 	@override String errorLoading({required Object error}) => 'Errore: ${error}';
 	@override String get fileInfoNotAvailable => 'Informazioni sul file non disponibili';
 	@override String errorLoadingFileInfo({required Object error}) => 'Errore caricamento informazioni sul file: ${error}';
@@ -1638,6 +1642,7 @@ class _StringsMediaMenuSv implements _StringsMediaMenuEn {
 	// Translations
 	@override String get markAsWatched => 'Markera som sedd';
 	@override String get markAsUnwatched => 'Markera som osedd';
+	@override String get removeFromContinueWatching => 'Ta bort från Fortsätt titta';
 	@override String get goToSeries => 'Gå till serie';
 	@override String get goToSeason => 'Gå till säsong';
 	@override String get shufflePlay => 'Blanda uppspelning';
@@ -1699,6 +1704,7 @@ class _StringsMessagesSv implements _StringsMessagesEn {
 	// Translations
 	@override String get markedAsWatched => 'Markerad som sedd';
 	@override String get markedAsUnwatched => 'Markerad som osedd';
+	@override String get removedFromContinueWatching => 'Borttagen från Fortsätt titta';
 	@override String errorLoading({required Object error}) => 'Fel: ${error}';
 	@override String get fileInfoNotAvailable => 'Filinformation inte tillgänglig';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fel vid laddning av filinformation: ${error}';
@@ -2100,6 +2106,7 @@ extension on Translations {
 			case 'fileInfo.has64bitOffsets': return '64-bit Offsets';
 			case 'mediaMenu.markAsWatched': return 'Mark as Watched';
 			case 'mediaMenu.markAsUnwatched': return 'Mark as Unwatched';
+			case 'mediaMenu.removeFromContinueWatching': return 'Remove from Continue Watching';
 			case 'mediaMenu.goToSeries': return 'Go to series';
 			case 'mediaMenu.goToSeason': return 'Go to season';
 			case 'mediaMenu.shufflePlay': return 'Shuffle Play';
@@ -2125,6 +2132,7 @@ extension on Translations {
 			case 'userStatus.protected': return 'Protected';
 			case 'messages.markedAsWatched': return 'Marked as watched';
 			case 'messages.markedAsUnwatched': return 'Marked as unwatched';
+			case 'messages.removedFromContinueWatching': return 'Removed from Continue Watching';
 			case 'messages.errorLoading': return ({required Object error}) => 'Error: ${error}';
 			case 'messages.fileInfoNotAvailable': return 'File information not available';
 			case 'messages.errorLoadingFileInfo': return ({required Object error}) => 'Error loading file info: ${error}';
@@ -2418,6 +2426,7 @@ extension on _StringsIt {
 			case 'fileInfo.has64bitOffsets': return 'Offset a 64-bit';
 			case 'mediaMenu.markAsWatched': return 'Segna come visto';
 			case 'mediaMenu.markAsUnwatched': return 'Segna come non visto';
+			case 'mediaMenu.removeFromContinueWatching': return 'Rimuovi da Continua a guardare';
 			case 'mediaMenu.goToSeries': return 'Vai alle serie';
 			case 'mediaMenu.goToSeason': return 'Vai alla stagione';
 			case 'mediaMenu.shufflePlay': return 'Riproduzione casuale';
@@ -2443,6 +2452,7 @@ extension on _StringsIt {
 			case 'userStatus.protected': return 'Protetto';
 			case 'messages.markedAsWatched': return 'Segna come visto';
 			case 'messages.markedAsUnwatched': return 'Segna come non visto';
+			case 'messages.removedFromContinueWatching': return 'Rimosso da Continua a guardare';
 			case 'messages.errorLoading': return ({required Object error}) => 'Errore: ${error}';
 			case 'messages.fileInfoNotAvailable': return 'Informazioni sul file non disponibili';
 			case 'messages.errorLoadingFileInfo': return ({required Object error}) => 'Errore caricamento informazioni sul file: ${error}';
@@ -2736,6 +2746,7 @@ extension on _StringsSv {
 			case 'fileInfo.has64bitOffsets': return '64-bit offset';
 			case 'mediaMenu.markAsWatched': return 'Markera som sedd';
 			case 'mediaMenu.markAsUnwatched': return 'Markera som osedd';
+			case 'mediaMenu.removeFromContinueWatching': return 'Ta bort från Fortsätt titta';
 			case 'mediaMenu.goToSeries': return 'Gå till serie';
 			case 'mediaMenu.goToSeason': return 'Gå till säsong';
 			case 'mediaMenu.shufflePlay': return 'Blanda uppspelning';
@@ -2761,6 +2772,7 @@ extension on _StringsSv {
 			case 'userStatus.protected': return 'Skyddad';
 			case 'messages.markedAsWatched': return 'Markerad som sedd';
 			case 'messages.markedAsUnwatched': return 'Markerad som osedd';
+			case 'messages.removedFromContinueWatching': return 'Borttagen från Fortsätt titta';
 			case 'messages.errorLoading': return ({required Object error}) => 'Fel: ${error}';
 			case 'messages.fileInfoNotAvailable': return 'Filinformation inte tillgänglig';
 			case 'messages.errorLoadingFileInfo': return ({required Object error}) => 'Fel vid laddning av filinformation: ${error}';
