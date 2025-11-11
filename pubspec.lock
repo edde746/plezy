@@ -540,8 +540,8 @@ packages:
     dependency: "direct main"
     description:
       path: media_kit
-      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
-      resolved-ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.2.1"
@@ -549,8 +549,8 @@ packages:
     dependency: transitive
     description:
       path: "libs/android/media_kit_libs_android_video"
-      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
-      resolved-ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.3.9"
@@ -558,8 +558,8 @@ packages:
     dependency: transitive
     description:
       path: "libs/ios/media_kit_libs_ios_video"
-      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
-      resolved-ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.1.4"
@@ -567,8 +567,8 @@ packages:
     dependency: transitive
     description:
       path: "libs/linux/media_kit_libs_linux"
-      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
-      resolved-ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.2.1"
@@ -576,8 +576,8 @@ packages:
     dependency: transitive
     description:
       path: "libs/macos/media_kit_libs_macos_video"
-      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
-      resolved-ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.1.5"
@@ -585,8 +585,8 @@ packages:
     dependency: "direct main"
     description:
       path: "libs/universal/media_kit_libs_video"
-      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
-      resolved-ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.0.7"
@@ -594,8 +594,8 @@ packages:
     dependency: transitive
     description:
       path: "libs/windows/media_kit_libs_windows_video"
-      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
-      resolved-ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.0.12"

@@ -37,12 +37,12 @@ dependency_overrides:
   media_kit:
     git:
       url: https://github.com/edde746/media-kit
-      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
       path: media_kit
   media_kit_libs_video:
     git:
       url: https://github.com/edde746/media-kit
-      ref: b6de7e44148043bd26f2569e8062dc8bce4f11b9
+      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
       path: libs/universal/media_kit_libs_video
 
 dev_dependencies:
