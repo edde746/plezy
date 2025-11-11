@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import '../i18n/strings.g.dart';
 
 class HotKeyRecorderWidget extends StatefulWidget {
   final String actionName;
@@ -31,7 +32,7 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Set Shortcut for ${widget.actionName}'),
+      title: Text(t.hotkeys.setShortcutFor(actionName: widget.actionName)),
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
@@ -81,7 +82,7 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
                           minWidth: 24,
                           minHeight: 24,
                         ),
-                        tooltip: 'Clear shortcut',
+                        tooltip: t.hotkeys.clearShortcut,
                       ),
                   ],
                 ),
@@ -101,12 +102,12 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
         ),
       ),
       actions: [
-        TextButton(onPressed: widget.onCancel, child: const Text('Cancel')),
+        TextButton(onPressed: widget.onCancel, child: Text(t.common.cancel)),
         TextButton(
           onPressed: _recordedHotKey != null
               ? () => widget.onHotKeyRecorded(_recordedHotKey!)
               : null,
-          child: const Text('Save'),
+          child: Text(t.common.save),
         ),
       ],
     );

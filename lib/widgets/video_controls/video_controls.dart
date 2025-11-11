@@ -18,6 +18,7 @@ import '../../services/sleep_timer_service.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
+import '../../i18n/strings.g.dart';
 import '../app_bar_back_button.dart';
 import 'painters/chapter_marker_painter.dart';
 import 'sheets/audio_track_sheet.dart';
@@ -394,13 +395,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   String _getBoxFitTooltip(int mode) {
     switch (mode) {
       case 0:
-        return 'Letterbox';
+        return t.videoControls.letterbox;
       case 1:
-        return 'Fill screen';
+        return t.videoControls.fillScreen;
       case 2:
-        return 'Stretch';
+        return t.videoControls.stretch;
       default:
-        return 'Letterbox';
+        return t.videoControls.letterbox;
     }
   }
 
@@ -505,8 +506,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       ? Icons.screen_lock_rotation
                       : Icons.screen_rotation,
                   tooltip: _isRotationLocked
-                      ? 'Unlock rotation'
-                      : 'Lock rotation',
+                      ? t.videoControls.unlockRotation
+                      : t.videoControls.lockRotation,
                   onPressed: _toggleRotationLock,
                 ),
               // Fullscreen toggle (desktop only)
@@ -1603,7 +1604,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error switching version: $e')));
+        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
       }
     }
   }

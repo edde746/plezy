@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/platform_detector.dart';
+import '../i18n/strings.g.dart';
 
 /// A menu action item for context menus
 class ContextMenuItem {
@@ -67,14 +68,14 @@ class _ContextMenuWrapperState extends State<ContextMenuWrapper> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(t.common.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: isDestructive
                 ? TextButton.styleFrom(foregroundColor: Colors.red)
                 : null,
-            child: const Text('Confirm'),
+            child: Text(t.common.confirm),
           ),
         ],
       ),
@@ -165,10 +166,10 @@ class _ContextMenuWrapperState extends State<ContextMenuWrapper> {
 
       if (selectedItem.requiresConfirmation) {
         final confirmed = await _showConfirmationDialog(
-          title: selectedItem.confirmationTitle ?? 'Confirm Action',
+          title: selectedItem.confirmationTitle ?? t.dialog.confirmAction,
           message:
               selectedItem.confirmationMessage ??
-              'Are you sure you want to perform this action?',
+              t.dialog.areYouSure,
           isDestructive: selectedItem.isDestructive,
         );
 

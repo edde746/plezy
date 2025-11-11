@@ -26,6 +26,8 @@ dependencies:
   hotkey_manager: ^0.2.3
   flex_color_picker: ^3.6.0
   qr_flutter: ^4.1.0
+  slang: ^3.31.2
+  slang_flutter: ^3.31.0
   os_media_controls:
     git:
       url: https://github.com/edde746/os-media-controls
@@ -50,6 +52,7 @@ dev_dependencies:
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
   flutter_launcher_icons: ^0.14.4
+  slang_build_runner: ^3.31.0
 
 flutter:
   uses-material-design: true

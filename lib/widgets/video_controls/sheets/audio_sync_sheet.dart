@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:plezy/services/settings_service.dart';
+import '../../../i18n/strings.g.dart';
 
 /// Bottom sheet for adjusting audio sync offset
 class AudioSyncSheet extends StatefulWidget {
@@ -136,9 +137,9 @@ class _AudioSyncSheetState extends State<AudioSyncSheet> {
                     // Slider
                     Row(
                       children: [
-                        const Text(
-                          '-2s',
-                          style: TextStyle(color: Colors.white70),
+                        Text(
+                          t.videoControls.minusTime(amount: "2", unit: "s"),
+                          style: const TextStyle(color: Colors.white70),
                         ),
                         Expanded(
                           child: Slider(
@@ -158,9 +159,9 @@ class _AudioSyncSheetState extends State<AudioSyncSheet> {
                             },
                           ),
                         ),
-                        const Text(
-                          '+2s',
-                          style: TextStyle(color: Colors.white70),
+                        Text(
+                          t.videoControls.addTime(amount: "2", unit: "s"),
+                          style: const TextStyle(color: Colors.white70),
                         ),
                       ],
                     ),
@@ -169,7 +170,7 @@ class _AudioSyncSheetState extends State<AudioSyncSheet> {
                     ElevatedButton.icon(
                       onPressed: _currentOffset != 0 ? _resetOffset : null,
                       icon: const Icon(Icons.restart_alt),
-                      label: const Text('Reset to 0ms'),
+                      label: Text(t.videoControls.resetToZero),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.grey[800],
                         foregroundColor: Colors.white,

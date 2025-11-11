@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
+import '../../../i18n/strings.g.dart';
 
 /// Bottom sheet for sleep timer configuration
 class SleepTimerSheet extends StatelessWidget {
@@ -135,7 +136,7 @@ class SleepTimerSheet extends StatelessWidget {
                           children: [
                             OutlinedButton.icon(
                               icon: const Icon(Icons.add),
-                              label: const Text('+15 min'),
+                              label: Text(t.videoControls.addTime(amount: "15", unit: " min")),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white,
                                 side: const BorderSide(
@@ -151,7 +152,7 @@ class SleepTimerSheet extends StatelessWidget {
                             const SizedBox(width: 12),
                             FilledButton.icon(
                               icon: const Icon(Icons.cancel),
-                              label: const Text('Cancel'),
+                              label: Text(t.common.cancel),
                               style: FilledButton.styleFrom(
                                 backgroundColor: Colors.red,
                               ),
@@ -215,7 +216,7 @@ class SleepTimerSheet extends StatelessWidget {
                           // Show confirmation snackbar
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Sleep timer set for $label'),
+                              content: Text(t.messages.sleepTimerSet(label: label)),
                               duration: const Duration(seconds: 2),
                             ),
                           );

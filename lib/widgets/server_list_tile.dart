@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/plex_auth_service.dart';
+import '../i18n/strings.g.dart';
 
 class ServerListTile extends StatelessWidget {
   final PlexServer server;
@@ -30,12 +31,12 @@ class ServerListTile extends StatelessWidget {
           color: isOnline
               ? Theme.of(context).colorScheme.primary
               : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-          semanticLabel: 'Server',
+          semanticLabel: t.common.server,
         ),
         title: Text(server.name),
         subtitle: Semantics(
           label:
-              '${isOnline ? 'Online' : 'Offline'}, ${server.owned ? 'Owned' : 'Shared'}',
+              '${isOnline ? t.common.online : t.common.offline}, ${server.owned ? t.common.owned : t.common.shared}',
           excludeSemantics: true,
           child: Row(
             children: [
@@ -49,7 +50,7 @@ class ServerListTile extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                isOnline ? 'Online' : 'Offline',
+                isOnline ? t.common.online : t.common.offline,
                 style: TextStyle(
                   fontSize: 12,
                   color: isOnline ? Colors.green : Colors.grey,
@@ -70,7 +71,7 @@ class ServerListTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                server.owned ? 'Owned' : 'Shared',
+                server.owned ? t.common.owned : t.common.shared,
                 style: const TextStyle(fontSize: 12),
               ),
             ],
@@ -84,7 +85,7 @@ class ServerListTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'CURRENT',
+                  t.common.current,
                   style: TextStyle(
                     fontSize: 10,
                     color: Theme.of(context).colorScheme.onPrimary,

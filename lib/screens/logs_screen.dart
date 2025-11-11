@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../widgets/desktop_app_bar.dart';
 
@@ -40,7 +41,7 @@ class _LogsScreenState extends State<LogsScreen> {
       _logs = [];
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Logs cleared')),
+      SnackBar(content: Text(t.messages.logsCleared)),
     );
   }
 
@@ -64,7 +65,7 @@ class _LogsScreenState extends State<LogsScreen> {
     }
     Clipboard.setData(ClipboardData(text: buffer.toString()));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Logs copied to clipboard')),
+      SnackBar(content: Text(t.messages.logsCopied)),
     );
   }
 
@@ -108,30 +109,30 @@ class _LogsScreenState extends State<LogsScreen> {
       body: CustomScrollView(
         slivers: [
           CustomAppBar(
-            title: const Text('Logs'),
+            title: Text(t.screens.logs),
             pinned: true,
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: _loadLogs,
-                tooltip: 'Refresh',
+                tooltip: t.common.refresh,
               ),
               IconButton(
                 icon: const Icon(Icons.copy),
                 onPressed: _logs.isNotEmpty ? _copyAllLogs : null,
-                tooltip: 'Copy All',
+                tooltip: t.logs.copyLogs,
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 onPressed: _logs.isNotEmpty ? _clearLogs : null,
-                tooltip: 'Clear Logs',
+                tooltip: t.logs.clearLogs,
               ),
             ],
           ),
           if (_logs.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               child: Center(
-                child: Text('No logs available'),
+                child: Text(t.messages.noLogsAvailable),
               ),
             )
           else
@@ -259,7 +260,7 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                 const SizedBox(height: 8),
                 if (widget.log.error != null) ...[
                   Text(
-                    'Error:',
+                    t.logs.error,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: widget.levelColor,
                           fontWeight: FontWeight.bold,
@@ -285,7 +286,7 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                 if (widget.log.stackTrace != null) ...[
                   const SizedBox(height: 12),
                   Text(
-                    'Stack Trace:',
+                    t.logs.stackTrace,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: widget.levelColor,
                           fontWeight: FontWeight.bold,

@@ -10,6 +10,7 @@ import '../models/plex_library.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_video_playback_data.dart';
 import '../models/plex_sort.dart';
 import '../utils/app_logger.dart';
 
@@ -637,6 +638,124 @@ class PlexClient {
     }
 
     return [];
+  }
+
+  /// Get consolidated video playback data (URL, media info, and versions) in a single API call
+  /// This method combines the functionality of getVideoUrl(), getMediaInfo(), and getMediaVersions()
+  /// to reduce redundant API calls during video playback initialization.
+  Future<PlexVideoPlaybackData> getVideoPlaybackData(
+    String ratingKey, {
+    int mediaIndex = 0,
+  }) async {
+    final response = await _dio.get('/library/metadata/$ratingKey');
+    final metadataJson = _getFirstMetadataJson(response);
+
+    String? videoUrl;
+    PlexMediaInfo? mediaInfo;
+    List<PlexMediaVersion> availableVersions = [];
+
+    if (metadataJson != null &&
+        metadataJson['Media'] != null &&
+        (metadataJson['Media'] as List).isNotEmpty) {
+      final mediaList = metadataJson['Media'] as List;
+
+      // Parse available media versions first
+      availableVersions = mediaList
+          .map(
+            (media) => PlexMediaVersion.fromJson(media as Map<String, dynamic>),
+          )
+          .toList();
+
+      // Ensure the requested index is valid
+      if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
+        mediaIndex = 0;
+      }
+
+      final media = mediaList[mediaIndex];
+      if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
+        final part = media['Part'][0];
+        final partKey = part['key'] as String?;
+
+        if (partKey != null) {
+          // Get video URL
+          videoUrl = '${config.baseUrl}$partKey?X-Plex-Token=${config.token}';
+
+          // Parse streams (audio and subtitle tracks) for media info
+          final streams = part['Stream'] as List<dynamic>? ?? [];
+          final audioTracks = <PlexAudioTrack>[];
+          final subtitleTracks = <PlexSubtitleTrack>[];
+
+          for (var stream in streams) {
+            final streamType = stream['streamType'] as int?;
+
+            if (streamType == 2) {
+              // Audio track
+              audioTracks.add(
+                PlexAudioTrack(
+                  id: stream['id'] as int,
+                  index: stream['index'] as int?,
+                  codec: stream['codec'] as String?,
+                  language: stream['language'] as String?,
+                  languageCode: stream['languageCode'] as String?,
+                  title: stream['title'] as String?,
+                  displayTitle: stream['displayTitle'] as String?,
+                  channels: stream['channels'] as int?,
+                  selected: stream['selected'] == 1,
+                ),
+              );
+            } else if (streamType == 3) {
+              // Subtitle track
+              subtitleTracks.add(
+                PlexSubtitleTrack(
+                  id: stream['id'] as int,
+                  index: stream['index'] as int?,
+                  codec: stream['codec'] as String?,
+                  language: stream['language'] as String?,
+                  languageCode: stream['languageCode'] as String?,
+                  title: stream['title'] as String?,
+                  displayTitle: stream['displayTitle'] as String?,
+                  selected: stream['selected'] == 1,
+                  forced: stream['forced'] == 1,
+                  key: stream['key'] as String?,
+                ),
+              );
+            }
+          }
+
+          // Parse chapters
+          final chapters = <PlexChapter>[];
+          if (metadataJson['Chapter'] != null) {
+            final chapterList = metadataJson['Chapter'] as List<dynamic>;
+            for (var chapter in chapterList) {
+              chapters.add(
+                PlexChapter(
+                  id: chapter['id'] as int,
+                  index: chapter['index'] as int?,
+                  startTimeOffset: chapter['startTimeOffset'] as int?,
+                  endTimeOffset: chapter['endTimeOffset'] as int?,
+                  title: chapter['title'] as String?,
+                  thumb: chapter['thumb'] as String?,
+                ),
+              );
+            }
+          }
+
+          // Create media info
+          mediaInfo = PlexMediaInfo(
+            videoUrl: videoUrl,
+            audioTracks: audioTracks,
+            subtitleTracks: subtitleTracks,
+            chapters: chapters,
+          );
+        }
+      }
+    }
+
+    return PlexVideoPlaybackData(
+      videoUrl: videoUrl,
+      mediaInfo: mediaInfo,
+      availableVersions: availableVersions,
+    );
   }
 
   /// Get file information for a media item

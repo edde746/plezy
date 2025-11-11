@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../client/plex_client.dart';
+import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../main.dart';
@@ -93,22 +94,22 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   void _invalidateAllScreens() {
     appLogger.d('Invalidating all screen data due to profile switch');
 
-    // Refresh discover screen
+    // Full refresh discover screen (reload all content for new profile)
     final discoverState = _discoverKey.currentState;
-    if (discoverState != null && discoverState is Refreshable) {
-      (discoverState as Refreshable).refresh();
+    if (discoverState != null) {
+      (discoverState as dynamic).fullRefresh();
     }
 
-    // Refresh libraries screen
+    // Full refresh libraries screen (clear filters and reload for new profile)
     final librariesState = _librariesKey.currentState;
-    if (librariesState != null && librariesState is Refreshable) {
-      (librariesState as Refreshable).refresh();
+    if (librariesState != null) {
+      (librariesState as dynamic).fullRefresh();
     }
 
-    // Refresh search screen
+    // Full refresh search screen (clear search for new profile)
     final searchState = _searchKey.currentState;
-    if (searchState != null && searchState is Refreshable) {
-      (searchState as Refreshable).refresh();
+    if (searchState != null) {
+      (searchState as dynamic).fullRefresh();
     }
   }
 
@@ -127,26 +128,26 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
             _onDiscoverBecameVisible();
           }
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: t.navigation.home,
           ),
           NavigationDestination(
-            icon: Icon(Icons.video_library_outlined),
-            selectedIcon: Icon(Icons.video_library),
-            label: 'Libraries',
+            icon: const Icon(Icons.video_library_outlined),
+            selectedIcon: const Icon(Icons.video_library),
+            label: t.navigation.libraries,
           ),
           NavigationDestination(
-            icon: Icon(Icons.search),
-            selectedIcon: Icon(Icons.search),
-            label: 'Search',
+            icon: const Icon(Icons.search),
+            selectedIcon: const Icon(Icons.search),
+            label: t.navigation.search,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: t.navigation.settings,
           ),
         ],
       ),

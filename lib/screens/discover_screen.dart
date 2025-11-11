@@ -18,6 +18,7 @@ import 'hub_detail_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/settings_provider.dart';
 import '../mixins/refreshable.dart';
+import '../i18n/strings.g.dart';
 import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
@@ -42,7 +43,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   PlexClient get client => context.clientSafe;
 
   List<PlexMetadata> _onDeck = [];
-  List<PlexMetadata> _recentlyAdded = [];
   List<PlexHub> _hubs = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -167,7 +167,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     });
 
     try {
-      appLogger.d('Fetching onDeck and recentlyAdded from Plex');
+      appLogger.d('Fetching onDeck and hubs from Plex');
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
@@ -175,48 +175,45 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
 
       final onDeck = await client.getOnDeck();
-      final recentlyAdded = await client.getRecentlyAdded(limit: 20);
 
       // Load hubs from all libraries
       final libraries = await client.getLibraries();
       final allHubs = <PlexHub>[];
 
       for (final library in libraries) {
-        // Only fetch hubs for movie and show libraries
-        if (library.type == 'movie' || library.type == 'show') {
-          try {
-            final libraryHubs = await client.getLibraryHubs(
-              library.key,
-              limit: 12,
-            );
-            // Filter out duplicate hubs that we already fetch separately
-            final filteredHubs = libraryHubs.where((hub) {
-              final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
-              final title = hub.title.toLowerCase();
-              // Skip "Continue Watching", "On Deck", and "Recently Added" hubs
-              return !hubId.contains('ondeck') &&
-                  !hubId.contains('continue') &&
-                  !hubId.contains('recentlyadded') &&
-                  !title.contains('continue watching') &&
-                  !title.contains('on deck') &&
-                  !title.contains('recently added');
-            }).toList();
-            allHubs.addAll(filteredHubs);
-          } catch (e) {
-            appLogger.w(
-              'Failed to load hubs for library ${library.title}',
-              error: e,
-            );
-          }
+        // Skip libraries that are not movie/show or are hidden
+        if (library.type != 'movie' && library.type != 'show') continue;
+        if (library.hidden != 0) continue;
+
+        try {
+          final libraryHubs = await client.getLibraryHubs(
+            library.key,
+            limit: 12,
+          );
+          // Filter out duplicate hubs that we already fetch separately
+          final filteredHubs = libraryHubs.where((hub) {
+            final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+            final title = hub.title.toLowerCase();
+            // Skip "Continue Watching" and "On Deck" hubs (we handle these separately)
+            return !hubId.contains('ondeck') &&
+                !hubId.contains('continue') &&
+                !title.contains('continue watching') &&
+                !title.contains('on deck');
+          }).toList();
+          allHubs.addAll(filteredHubs);
+        } catch (e) {
+          appLogger.w(
+            'Failed to load hubs for library ${library.title}',
+            error: e,
+          );
         }
       }
 
       appLogger.d(
-        'Received ${onDeck.length} on deck items, ${recentlyAdded.length} recently added items, and ${allHubs.length} hubs',
+        'Received ${onDeck.length} on deck items and ${allHubs.length} hubs',
       );
       setState(() {
         _onDeck = onDeck;
-        _recentlyAdded = recentlyAdded;
         _hubs = allHubs;
         _isLoading = false;
 
@@ -273,12 +270,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
-  // Public method to refresh content
+  // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
     appLogger.d('DiscoverScreen.refresh() called');
     // Only refresh Continue Watching in background, not full screen reload
     _refreshContinueWatching();
+  }
+
+  // Public method to fully reload all content (for profile switches)
+  void fullRefresh() {
+    appLogger.d('DiscoverScreen.fullRefresh() called - reloading all content');
+    // Reload all content including On Deck and content hubs
+    _loadContent();
   }
 
   /// Get icon for hub based on its title
@@ -391,12 +395,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _onDeck[onDeckIndex] = updatedMetadata;
     }
 
-    // Check and update in _recentlyAdded list
-    final recentlyAddedIndex = _recentlyAdded.indexWhere(
-      (item) => item.ratingKey == ratingKey,
-    );
-    if (recentlyAddedIndex != -1) {
-      _recentlyAdded[recentlyAddedIndex] = updatedMetadata;
+    // Check and update in hub items
+    for (final hub in _hubs) {
+      final itemIndex = hub.items.indexWhere(
+        (item) => item.ratingKey == ratingKey,
+      );
+      if (itemIndex != -1) {
+        hub.items[itemIndex] = updatedMetadata;
+      }
     }
   }
 
@@ -407,8 +413,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (plexToken == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No Plex token found. Please login again.'),
+          SnackBar(
+            content: Text(t.messages.noPlexToken),
           ),
         );
       }
@@ -433,7 +439,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to initialize server selection: $e')),
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
         );
       }
     }
@@ -443,16 +449,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: Text(t.common.logout),
+        content: Text(t.messages.logoutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(t.common.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
+            child: Text(t.common.logout),
           ),
         ],
       ),
@@ -497,7 +503,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           controller: _scrollController,
           slivers: [
             DesktopSliverAppBar(
-              title: const Text('Discover'),
+              title: Text(t.discover.title),
               floating: true,
               pinned: true,
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -531,33 +537,33 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       itemBuilder: (context) => [
                         // Only show Switch Profile if multiple users available
                         if (userProvider.hasMultipleUsers)
-                          const PopupMenuItem(
+                          PopupMenuItem(
                             value: 'switch_profile',
                             child: Row(
                               children: [
                                 Icon(Icons.people),
                                 SizedBox(width: 8),
-                                Text('Switch Profile'),
+                                Text(t.discover.switchProfile),
                               ],
                             ),
                           ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'switch_server',
                           child: Row(
                             children: [
                               Icon(Icons.swap_horiz),
                               SizedBox(width: 8),
-                              Text('Switch Server'),
+                              Text(t.discover.switchServer),
                             ],
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'logout',
                           child: Row(
                             children: [
                               Icon(Icons.logout),
                               SizedBox(width: 8),
-                              Text('Logout'),
+                              Text(t.discover.logout),
                             ],
                           ),
                         ),
@@ -587,7 +593,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadContent,
-                        child: const Text('Retry'),
+                        child: Text(t.common.retry),
                       ),
                     ],
                   ),
@@ -614,7 +620,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         const Icon(Icons.play_circle_outline),
                         const SizedBox(width: 8),
                         Text(
-                          'Continue Watching',
+                          t.discover.continueWatching,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ],
@@ -624,25 +630,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 _buildHorizontalList(_onDeck, isLarge: false),
               ],
 
-              // Recently Added
-              if (_recentlyAdded.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.fiber_new),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Recently Added',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                _buildHorizontalList(_recentlyAdded, isLarge: false),
-              ],
 
               // Recommendation Hubs (Trending, Top in Genre, etc.)
               for (final hub in _hubs) ...[
@@ -683,8 +670,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 _buildHorizontalList(hub.items, isLarge: false),
               ],
 
-              if (_onDeck.isEmpty && _recentlyAdded.isEmpty && _hubs.isEmpty)
-                const SliverFillRemaining(
+              if (_onDeck.isEmpty && _hubs.isEmpty)
+                SliverFillRemaining(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -695,10 +682,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           color: Colors.grey,
                         ),
                         SizedBox(height: 16),
-                        Text('No content available'),
+                        Text(t.discover.noContentAvailable),
                         SizedBox(height: 8),
                         Text(
-                          'Add some media to your libraries',
+                          t.discover.addMediaToLibraries,
                           style: TextStyle(color: Colors.grey),
                         ),
                       ],
@@ -758,7 +745,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       color: Colors.white,
                       size: 18,
                       semanticLabel:
-                          '${_isAutoScrollPaused ? 'Play' : 'Pause'} auto-scroll',
+                          '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
                     ),
                   ),
                   // Spacer to separate indicators from button
@@ -848,8 +835,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.type.toLowerCase() == 'movie'
-        ? 'Movie'
-        : 'TV Show';
+        ? t.discover.movie
+        : t.discover.tvShow;
 
     return Semantics(
       label: "media-hero-${heroItem.ratingKey}",
@@ -1224,7 +1211,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                '$minutesLeft min left',
+                t.discover.minutesLeft(minutes: minutesLeft),
                 style: const TextStyle(
                   color: Colors.black,
                   fontSize: 14,
@@ -1232,8 +1219,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ),
               ),
             ] else
-              const Text(
-                'Play',
+              Text(
+                t.discover.play,
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 14,

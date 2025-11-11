@@ -10,6 +10,7 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
+import '../i18n/strings.g.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
   final PlexMetadata season;
@@ -100,7 +101,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No episodes found',
+                      t.messages.noEpisodesFoundGeneral,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: tokens(context).textMuted,
                       ),

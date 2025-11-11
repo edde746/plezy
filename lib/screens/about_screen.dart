@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../i18n/strings.g.dart';
 import 'licenses_screen.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class _AboutScreenState extends State<AboutScreen> {
   Future<void> _loadPackageInfo() async {
     final packageInfo = await PackageInfo.fromPlatform();
     setState(() {
-      _appName = 'Plezy';
+      _appName = t.app.title;
       _appVersion = packageInfo.version;
     });
   }
@@ -36,7 +37,7 @@ class _AboutScreenState extends State<AboutScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          CustomAppBar(title: const Text('About'), pinned: true),
+          CustomAppBar(title: Text(t.about.title), pinned: true),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
@@ -55,14 +56,14 @@ class _AboutScreenState extends State<AboutScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Version $appVersion',
+                        t.about.versionLabel(version: appVersion),
                         style: Theme.of(
                           context,
                         ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'A beautiful Plex client for Flutter',
+                        t.about.appDescription,
                         style: Theme.of(context).textTheme.bodyLarge,
                         textAlign: TextAlign.center,
                       ),
@@ -76,9 +77,9 @@ class _AboutScreenState extends State<AboutScreen> {
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.description),
-                    title: const Text('Open Source Licenses'),
-                    subtitle: const Text(
-                      'View licenses of third-party libraries',
+                    title: Text(t.about.openSourceLicenses),
+                    subtitle: Text(
+                      t.about.viewLicensesDescription,
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {

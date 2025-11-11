@@ -6,10 +6,12 @@ import '../models/plex_metadata.dart';
 import '../services/settings_service.dart';
 import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/app_logger.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
+import '../i18n/strings.g.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -107,7 +109,7 @@ class _SearchScreenState extends State<SearchScreen>
         });
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Search failed: $e')));
+        ).showSnackBar(SnackBar(content: Text(t.errors.searchFailed(error: e))));
       }
     }
   }
@@ -118,6 +120,19 @@ class _SearchScreenState extends State<SearchScreen>
     if (_searchController.text.isNotEmpty) {
       _performSearch(_searchController.text);
     }
+  }
+
+  // Public method to fully reload all content (for profile switches)
+  void fullRefresh() {
+    appLogger.d('SearchScreen.fullRefresh() called - clearing search and reloading');
+    // Clear search results and search text for new profile
+    _searchController.clear();
+    setState(() {
+      _searchResults.clear();
+      _isSearching = false;
+      _hasSearched = false;
+      _lastSearchedQuery = '';
+    });
   }
 
   @override
@@ -136,13 +151,13 @@ class _SearchScreenState extends State<SearchScreen>
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            DesktopSliverAppBar(title: const Text('Search'), floating: true),
+            DesktopSliverAppBar(title: Text(t.screens.search), floating: true),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: SearchBar(
                   controller: _searchController,
-                  hintText: 'Search movies, shows, music...',
+                  hintText: t.search.hint,
                   leading: const Icon(Icons.search),
                   trailing: [
                     if (_searchController.text.isNotEmpty)
@@ -198,14 +213,14 @@ class _SearchScreenState extends State<SearchScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No results found',
+                        t.messages.noResultsFound,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Colors.grey.shade600,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Try a different search term',
+                        t.search.tryDifferentTerm,
                         style: TextStyle(color: Colors.grey.shade600),
                       ),
                     ],

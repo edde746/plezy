@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
+import '../i18n/strings.g.dart';
 import '../services/settings_service.dart';
 import '../widgets/desktop_app_bar.dart';
 
@@ -51,13 +52,13 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   }
 
   String _colorToHex(Color color) {
-    return '#${color.red.toRadixString(16).padLeft(2, '0')}${color.green.toRadixString(16).padLeft(2, '0')}${color.blue.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+    return '#${((color.r * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.g * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.b * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}'.toUpperCase();
   }
 
   Future<void> _showColorPicker(String title, String currentColor, Function(String) onColorSelected) async {
     Color initialColor = _hexToColor(currentColor);
 
-    final Color? selectedColor = await showColorPickerDialog(
+    final Color selectedColor = await showColorPickerDialog(
       context,
       initialColor,
       title: Text(title),
@@ -85,10 +86,8 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
       ),
     );
 
-    if (selectedColor != null) {
-      final hexColor = _colorToHex(selectedColor);
-      onColorSelected(hexColor);
-    }
+    final hexColor = _colorToHex(selectedColor);
+    onColorSelected(hexColor);
   }
 
   @override
@@ -100,7 +99,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          const CustomAppBar(title: Text('Subtitle Styling'), pinned: true),
+          CustomAppBar(title: Text(t.screens.subtitleStyling), pinned: true),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
@@ -123,7 +122,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Styling Options',
+              t.subtitlingStyling.stylingOptions,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
@@ -136,7 +135,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Font Size'),
+                    Text(t.subtitlingStyling.fontSize),
                     Text('$_fontSize'),
                   ],
                 ),
@@ -179,11 +178,11 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            title: const Text('Text Color'),
+            title: Text(t.subtitlingStyling.textColor),
             subtitle: Text(_textColor),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              _showColorPicker('Text Color', _textColor, (color) {
+              _showColorPicker(t.subtitlingStyling.textColor, _textColor, (color) {
                 setState(() {
                   _textColor = color;
                 });
@@ -201,7 +200,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Border Size'),
+                    Text(t.subtitlingStyling.borderSize),
                     Text('$_borderSize'),
                   ],
                 ),
@@ -244,11 +243,11 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            title: const Text('Border Color'),
+            title: Text(t.subtitlingStyling.borderColor),
             subtitle: Text(_borderColor),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              _showColorPicker('Border Color', _borderColor, (color) {
+              _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, (color) {
                 setState(() {
                   _borderColor = color;
                 });
@@ -266,7 +265,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Background Opacity'),
+                    Text(t.subtitlingStyling.backgroundOpacity),
                     Text('$_backgroundOpacity%'),
                   ],
                 ),
@@ -309,11 +308,11 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            title: const Text('Background Color'),
+            title: Text(t.subtitlingStyling.backgroundColor),
             subtitle: Text(_backgroundColor),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              _showColorPicker('Background Color', _backgroundColor, (color) {
+              _showColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, (color) {
                 setState(() {
                   _backgroundColor = color;
                 });
