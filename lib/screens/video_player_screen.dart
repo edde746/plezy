@@ -7,6 +7,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
 
+import '../i18n/strings.g.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
@@ -21,7 +22,6 @@ import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
-import '../i18n/strings.g.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -67,6 +67,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode = 0;
   bool _isPinching = false; // Track if a pinch gesture is occurring
+
+  // Subtitle overlay state
+  bool _showSubtitleOverlay = false;
+  String _currentSubtitleText = '';
+  Timer? _subtitleTimer;
+  bool _controlsVisible = true;
 
   @override
   void initState() {
@@ -170,6 +176,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Apply saved volume
       final savedVolume = settingsService.getVolume();
       player!.setVolume(savedVolume);
+
+      // Setup subtitle text extraction
+      await _setupSubtitleExtraction();
 
       // Notify that player is ready
       if (mounted) {
@@ -428,9 +437,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        );
       }
     }
   }
@@ -463,8 +472,104 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
+  /// Setup subtitle text extraction with overlay
+  Future<void> _setupSubtitleExtraction() async {
+    if (player == null) return;
+
+    try {
+      final nativePlayer = player!.platform as dynamic;
+
+      // Hide native subtitle rendering completely since we use our own overlay
+      await nativePlayer.setProperty('sub-visibility', 'no');
+
+      // Monitor subtitle track changes
+      player!.stream.tracks.listen((tracks) {
+        final activeSubtitle = tracks.subtitle.firstWhere(
+          (track) => track.id != 'no' && track.id != 'auto',
+          orElse: () => tracks.subtitle.first,
+        );
+
+        final hasActiveSubtitle =
+            activeSubtitle.id != 'no' && activeSubtitle.id != 'auto';
+
+        if (hasActiveSubtitle) {
+          _startSubtitleTextPolling();
+        } else {
+          _stopSubtitleTextPolling();
+        }
+      });
+
+      appLogger.d('Setup subtitle text extraction');
+    } catch (e) {
+      appLogger.w('Failed to setup subtitle extraction: $e');
+    }
+  }
+
+  /// Start polling for subtitle text from mpv
+  void _startSubtitleTextPolling() {
+    _stopSubtitleTextPolling(); // Stop any existing timer
+
+    _subtitleTimer = Timer.periodic(const Duration(milliseconds: 200), (
+      timer,
+    ) async {
+      if (player == null || !mounted) {
+        timer.cancel();
+        return;
+      }
+
+      try {
+        final nativePlayer = player!.platform as dynamic;
+        // Try different mpv properties that might contain subtitle text
+        String? subtitleText;
+
+        try {
+          subtitleText = await nativePlayer.getProperty('sub-text');
+        } catch (e) {
+          try {
+            subtitleText = await nativePlayer.getProperty('osd-sub-text');
+          } catch (e2) {
+            try {
+              // Try to get track information as fallback
+              await nativePlayer.getProperty('track-list');
+            } catch (e3) {
+              // Last resort - just show track is active
+            }
+          }
+        }
+
+        if (mounted && subtitleText != null && subtitleText.isNotEmpty) {
+          final trimmedText = subtitleText.trim();
+          setState(() {
+            _currentSubtitleText = trimmedText;
+            _showSubtitleOverlay = true;
+          });
+        } else if (mounted && _showSubtitleOverlay) {
+          setState(() {
+            _showSubtitleOverlay = false;
+            _currentSubtitleText = '';
+          });
+        }
+      } catch (e) {
+        // Keep current text if polling fails
+      }
+    });
+  }
+
+  /// Stop polling for subtitle text
+  void _stopSubtitleTextPolling() {
+    _subtitleTimer?.cancel();
+    _subtitleTimer = null;
+    if (mounted) {
+      setState(() {
+        _currentSubtitleText = '';
+        _showSubtitleOverlay = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _stopSubtitleTextPolling();
     // Stop progress tracking
     _progressTimer?.cancel();
 
@@ -1390,6 +1495,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     selectedMediaIndex: widget.selectedMediaIndex,
                     boxFitMode: _boxFitMode,
                     onCycleBoxFitMode: _cycleBoxFitMode,
+                    onControlsVisibilityChanged: (visible) {
+                      setState(() {
+                        _controlsVisible = visible;
+                      });
+                    },
                   ),
                 ),
               ),
@@ -1500,6 +1610,47 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                  ),
+                ),
+              // Subtitle overlay - always visible at bottom when subtitles are active
+              if (_showSubtitleOverlay)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: _controlsVisible
+                      ? 150
+                      : 50, // Lower when controls hidden
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _currentSubtitleText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          shadows: [
+                            Shadow(
+                              offset: Offset(1, 1),
+                              blurRadius: 3,
+                              color: Colors.black,
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),

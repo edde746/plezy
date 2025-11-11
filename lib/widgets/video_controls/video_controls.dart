@@ -7,6 +7,7 @@ import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../i18n/strings.g.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
@@ -18,7 +19,6 @@ import '../../services/sleep_timer_service.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
-import '../../i18n/strings.g.dart';
 import '../app_bar_back_button.dart';
 import 'painters/chapter_marker_painter.dart';
 import 'sheets/audio_track_sheet.dart';
@@ -38,6 +38,7 @@ Widget plexVideoControlsBuilder(
   int? selectedMediaIndex,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
+  ValueChanged<bool>? onControlsVisibilityChanged,
 }) {
   return PlexVideoControls(
     player: player,
@@ -48,6 +49,7 @@ Widget plexVideoControlsBuilder(
     selectedMediaIndex: selectedMediaIndex ?? 0,
     boxFitMode: boxFitMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
+    onControlsVisibilityChanged: onControlsVisibilityChanged,
   );
 }
 
@@ -60,6 +62,7 @@ class PlexVideoControls extends StatefulWidget {
   final int selectedMediaIndex;
   final int boxFitMode;
   final VoidCallback? onCycleBoxFitMode;
+  final ValueChanged<bool>? onControlsVisibilityChanged;
 
   const PlexVideoControls({
     super.key,
@@ -71,6 +74,7 @@ class PlexVideoControls extends StatefulWidget {
     this.selectedMediaIndex = 0,
     this.boxFitMode = 0,
     this.onCycleBoxFitMode,
+    this.onControlsVisibilityChanged,
   });
 
   @override
@@ -276,6 +280,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           setState(() {
             _showControls = false;
           });
+          // Notify parent of controls visibility change
+          widget.onControlsVisibilityChanged?.call(_showControls);
           // Hide traffic lights on macOS when controls auto-hide
           if (Platform.isMacOS) {
             _updateTrafficLightVisibility();
@@ -292,6 +298,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     if (_showControls) {
       _startHideTimer();
     }
+
+    // Notify parent of controls visibility change
+    widget.onControlsVisibilityChanged?.call(_showControls);
 
     // On macOS, hide/show traffic lights with controls
     if (Platform.isMacOS) {
@@ -768,6 +777,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             setState(() {
               _showControls = true;
             });
+            // Notify parent of controls visibility change
+            widget.onControlsVisibilityChanged?.call(_showControls);
             _startHideTimer();
             // On macOS, show traffic lights when controls appear
             if (Platform.isMacOS) {
@@ -1602,9 +1613,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        );
       }
     }
   }
