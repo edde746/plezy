@@ -227,115 +227,165 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Use two-column layout when showing QR code, single column otherwise
+    final showTwoColumns = _isAuthenticating && _useQrFlow && _qrAuthUrl != null;
+
     return Scaffold(
       body: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
+          constraints: BoxConstraints(maxWidth: showTwoColumns ? 800 : 400),
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Image.asset('assets/plezy.png', width: 120, height: 120),
-              const SizedBox(height: 24),
-              Text(
-                t.app.title,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              if (_isAuthenticating) ...[
-                const Center(child: CircularProgressIndicator()),
-                const SizedBox(height: 16),
-                Text(
-                  _useQrFlow
-                      ? t.auth.scanQRCodeInstruction
-                      : t.auth.waitingForAuth,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                if (_useQrFlow && _qrAuthUrl != null) ...[
-                  const SizedBox(height: 24),
-                  Center(
-                    child: QrImageView(
-                      data: _qrAuthUrl!,
-                      size: 200,
-                      version: QrVersions.auto,
-                      backgroundColor: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SelectableText(
-                    _qrAuthUrl!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                OutlinedButton(
-                  onPressed: _retryAuthentication,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 24,
-                    ),
-                  ),
-                  child: Text(t.auth.retry),
-                ),
-              ] else ...[ // add QR button here
-                ElevatedButton(
-                  onPressed: _startAuthentication,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: Text(t.auth.signInWithPlex),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      _useQrFlow = true;
-                    });
-                    _startAuthentication();
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: Text(t.auth.showQRCode),
-                ),
-                if (kDebugMode) ...[
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: _handleDebugTap,
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.outline.withValues(alpha: 0.5),
+          child: showTwoColumns
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // First column - Auth instructions
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Image.asset('assets/plezy.png', width: 120, height: 120),
+                          const SizedBox(height: 24),
+                          Text(
+                            t.app.title,
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 48),
+                          const Center(child: CircularProgressIndicator()),
+                          const SizedBox(height: 16),
+                          Text(
+                            t.auth.scanQRCodeInstruction,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 24),
+                          OutlinedButton(
+                            onPressed: _retryAuthentication,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 24,
+                              ),
+                            ),
+                            child: Text(t.auth.retry),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Text(
-                      t.auth.debugEnterToken,
-                      style: TextStyle(fontSize: 12),
+                    const SizedBox(width: 48),
+                    // Second column - QR code
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Center(
+                            child: QrImageView(
+                              data: _qrAuthUrl!,
+                              size: 300,
+                              version: QrVersions.auto,
+                              backgroundColor: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SelectableText(
+                            _qrAuthUrl!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 10, color: Colors.grey),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Image.asset('assets/plezy.png', width: 120, height: 120),
+                    const SizedBox(height: 24),
+                    Text(
+                      t.app.title,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ],
-            ],
-          ),
+                    const SizedBox(height: 48),
+                    if (_isAuthenticating) ...[
+                      const Center(child: CircularProgressIndicator()),
+                      const SizedBox(height: 16),
+                      Text(
+                        t.auth.waitingForAuth,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 24),
+                      OutlinedButton(
+                        onPressed: _retryAuthentication,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 24,
+                          ),
+                        ),
+                        child: Text(t.auth.retry),
+                      ),
+                    ] else ...[ // add QR button here
+                      ElevatedButton(
+                        onPressed: _startAuthentication,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: Text(t.auth.signInWithPlex),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            _useQrFlow = true;
+                          });
+                          _startAuthentication();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: Text(t.auth.showQRCode),
+                      ),
+                      if (kDebugMode) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: _handleDebugTap,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outline.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Text(
+                            t.auth.debugEnterToken,
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ],
+                ),
         ),
       ),
     );
