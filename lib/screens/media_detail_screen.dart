@@ -13,6 +13,7 @@ import '../utils/shuffle_play_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/desktop_app_bar.dart';
+import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/media_context_menu.dart';
 import 'season_detail_screen.dart';
 
@@ -811,7 +812,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                   // Cast
                   if (metadata.role != null && metadata.role!.isNotEmpty) ...[
                     Text(
-                      'Cast',
+                      t.discover.cast,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -819,101 +820,109 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     const SizedBox(height: 12),
                     SizedBox(
                       height: 220,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: metadata.role!.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          final actor = metadata.role![index];
-                          return SizedBox(
-                            width: 120,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: actor.thumb != null
-                                      ? CachedNetworkImage(
-                                          imageUrl: actor.thumb!,
-                                          width: 120,
-                                          height: 120,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) =>
-                                              Container(
-                                                width: 120,
-                                                height: 120,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .surfaceContainerHighest,
-                                                child: const Center(
-                                                  child: Icon(Icons.person),
+                      child: HorizontalScrollWithArrows(
+                        builder: (scrollController) => ListView.separated(
+                          controller: scrollController,
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: metadata.role!.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final actor = metadata.role![index];
+                            return SizedBox(
+                              width: 120,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: actor.thumb != null
+                                        ? CachedNetworkImage(
+                                            imageUrl: actor.thumb!,
+                                            width: 120,
+                                            height: 120,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) =>
+                                                Container(
+                                                  width: 120,
+                                                  height: 120,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: const Center(
+                                                    child: Icon(Icons.person),
+                                                  ),
                                                 ),
-                                              ),
-                                          errorWidget: (context, url, error) =>
-                                              Container(
-                                                width: 120,
-                                                height: 120,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .surfaceContainerHighest,
-                                                child: const Center(
-                                                  child: Icon(Icons.person),
+                                            errorWidget:
+                                                (
+                                                  context,
+                                                  url,
+                                                  error,
+                                                ) => Container(
+                                                  width: 120,
+                                                  height: 120,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: const Center(
+                                                    child: Icon(Icons.person),
+                                                  ),
                                                 ),
-                                              ),
-                                        )
-                                      : Container(
-                                          width: 120,
-                                          height: 120,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.surfaceContainerHighest,
-                                          child: const Center(
-                                            child: Icon(Icons.person),
-                                          ),
-                                        ),
-                                ),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  height: 84,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        actor.tag,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
+                                          )
+                                        : Container(
+                                            width: 120,
+                                            height: 120,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            child: const Center(
+                                              child: Icon(Icons.person),
                                             ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (actor.role != null) ...[
-                                        const SizedBox(height: 2),
+                                          ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    height: 84,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                         Text(
-                                          actor.role!,
+                                          actor.tag,
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodySmall
+                                              .bodyMedium
                                               ?.copyWith(
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurfaceVariant,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
+                                        if (actor.role != null) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            actor.role!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
                                       ],
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
