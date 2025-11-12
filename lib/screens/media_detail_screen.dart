@@ -764,6 +764,50 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     const SizedBox(height: 24),
                   ],
 
+                  // Seasons (for TV shows)
+                  if (isShow) ...[
+                    Text(
+                      'Seasons',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_isLoadingSeasons)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (_seasons.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Center(
+                          child: Text(
+                            t.messages.noSeasonsFound,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    else
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        itemCount: _seasons.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final season = _seasons[index];
+                          return _buildSeasonCard(season);
+                        },
+                      ),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Cast
                   if (metadata.role != null && metadata.role!.isNotEmpty) ...[
                     Text(
@@ -872,50 +916,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Seasons (for TV shows)
-                  if (isShow) ...[
-                    Text(
-                      'Seasons',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (_isLoadingSeasons)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (_seasons.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Center(
-                          child: Text(
-                            t.messages.noSeasonsFound,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
-                          ),
-                        ),
-                      )
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.zero,
-                        itemCount: _seasons.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final season = _seasons[index];
-                          return _buildSeasonCard(season);
-                        },
-                      ),
                     const SizedBox(height: 24),
                   ],
 

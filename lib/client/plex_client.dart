@@ -266,22 +266,12 @@ class PlexClient {
       queryParameters: {'includeOnDeck': 1},
     );
 
-    // Log raw API response to see all available fields
-    appLogger.d('=== RAW API RESPONSE ===');
-    appLogger.d('Full response data: ${response.data}');
-    appLogger.d('=== END RAW API RESPONSE ===');
-
     PlexMetadata? metadata;
     PlexMetadata? onDeckEpisode;
 
     final metadataJson = _getFirstMetadataJson(response);
 
     // Log the parsed metadata JSON
-    if (metadataJson != null) {
-      appLogger.d('=== PARSED METADATA JSON ===');
-      appLogger.d('Metadata JSON: $metadataJson');
-      appLogger.d('=== END PARSED METADATA JSON ===');
-    }
     if (metadataJson != null) {
       metadata = PlexMetadata.fromJsonWithImages(metadataJson);
 
