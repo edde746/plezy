@@ -68,7 +68,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   int _boxFitMode = 0;
   bool _isPinching = false; // Track if a pinch gesture is occurring
 
-  // Controls visibility state for subtitle positioning
+  // Subtitle overlay state
+  bool _showSubtitleOverlay = false;
+  String _currentSubtitleText = '';
+  Timer? _subtitleTimer;
   bool _controlsVisible = true;
 
   @override
@@ -174,11 +177,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       final savedVolume = settingsService.getVolume();
       player!.setVolume(savedVolume);
 
-      // Configure smart subtitle positioning that preserves ASS formatting
-      await _configureSmartSubtitlePositioning();
-
-      // Listen for video dimension changes to re-calculate margins
-      _setupVideoChangeListener();
+      // Setup subtitle text extraction
+      await _setupSubtitleExtraction();
 
       // Notify that player is ready
       if (mounted) {
@@ -449,8 +449,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     setState(() {
       _boxFitMode = (_boxFitMode + 1) % 3;
     });
-    // Update subtitle positioning for new BoxFit mode
-    _configureSmartSubtitlePositioning();
   }
 
   /// Toggle between contain and cover modes only (for pinch gesture)
@@ -458,8 +456,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     setState(() {
       _boxFitMode = _boxFitMode == 0 ? 1 : 0;
     });
-    // Update subtitle positioning for new BoxFit mode
-    _configureSmartSubtitlePositioning();
   }
 
   /// Get current BoxFit based on mode
@@ -476,73 +472,104 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-  /// Configure subtitle positioning based on platform and controls visibility
-  Future<void> _configureSmartSubtitlePositioning() async {
-    if (player == null || controller == null) return;
+  /// Setup subtitle text extraction with overlay
+  Future<void> _setupSubtitleExtraction() async {
+    if (player == null) return;
 
     try {
       final nativePlayer = player!.platform as dynamic;
-      final isMobile = PlatformDetector.isMobile(context);
 
-      if (isMobile) {
-        // Mobile: Use sub-pos positioning based on BoxFit mode
-        int position;
-        switch (_boxFitMode) {
-          case 0: // BoxFit.contain (letterbox)
-            position = _controlsVisible ? 85 : 110;
-            break;
-          case 1: // BoxFit.cover (fill screen)
-            position = _controlsVisible ? 75 : 85;
-            break;
-          case 2: // BoxFit.fill (stretch)
-            position = _controlsVisible ? 85 : 100;
-            break;
-          default:
-            position = _controlsVisible ? 80 : 90;
-        }
-        await nativePlayer.setProperty('sub-pos', position.toString());
-      } else {
-        // Desktop: Use margins based on BoxFit mode
-        await nativePlayer.setProperty('sub-use-margins', 'yes');
-        int margin;
-        switch (_boxFitMode) {
-          case 0: // BoxFit.contain (letterbox)
-            margin = _controlsVisible ? 80 : 40;
-            break;
-          case 1: // BoxFit.cover (fill screen)
-            margin = _controlsVisible ? 120 : 80;
-            break;
-          case 2: // BoxFit.fill (stretch)
-            margin = _controlsVisible ? 100 : 60;
-            break;
-          default:
-            margin = _controlsVisible ? 80 : 40;
-        }
-        await nativePlayer.setProperty('sub-margin-y', margin.toString());
-      }
+      // Hide native subtitle rendering completely since we use our own overlay
+      await nativePlayer.setProperty('sub-visibility', 'no');
 
-      // Scale down subtitles on large screens
-      final scale = isMobile ? 1.0 : 0.8;
-      await nativePlayer.setProperty('sub-scale', scale.toString());
+      // Monitor subtitle track changes
+      player!.stream.tracks.listen((tracks) {
+        final activeSubtitle = tracks.subtitle.firstWhere(
+          (track) => track.id != 'no' && track.id != 'auto',
+          orElse: () => tracks.subtitle.first,
+        );
+
+        final hasActiveSubtitle =
+            activeSubtitle.id != 'no' && activeSubtitle.id != 'auto';
+
+        if (hasActiveSubtitle) {
+          _startSubtitleTextPolling();
+        } else {
+          _stopSubtitleTextPolling();
+        }
+      });
+
+      appLogger.d('Setup subtitle text extraction');
     } catch (e) {
-      appLogger.w('Failed to configure subtitle positioning: $e');
+      appLogger.w('Failed to setup subtitle extraction: $e');
     }
   }
 
-  /// Setup listener for video property changes
-  void _setupVideoChangeListener() {
-    if (player == null) return;
+  /// Start polling for subtitle text from mpv
+  void _startSubtitleTextPolling() {
+    _stopSubtitleTextPolling(); // Stop any existing timer
 
-    // Simple listener - just reconfigure on any video change
-    player!.stream.width.listen((width) {
-      if (width != null && _isPlayerInitialized) {
-        _configureSmartSubtitlePositioning();
+    _subtitleTimer = Timer.periodic(const Duration(milliseconds: 200), (
+      timer,
+    ) async {
+      if (player == null || !mounted) {
+        timer.cancel();
+        return;
+      }
+
+      try {
+        final nativePlayer = player!.platform as dynamic;
+        // Try different mpv properties that might contain subtitle text
+        String? subtitleText;
+
+        try {
+          subtitleText = await nativePlayer.getProperty('sub-text');
+        } catch (e) {
+          try {
+            subtitleText = await nativePlayer.getProperty('osd-sub-text');
+          } catch (e2) {
+            try {
+              // Try to get track information as fallback
+              await nativePlayer.getProperty('track-list');
+            } catch (e3) {
+              // Last resort - just show track is active
+            }
+          }
+        }
+
+        if (mounted && subtitleText != null && subtitleText.isNotEmpty) {
+          final trimmedText = subtitleText.trim();
+          setState(() {
+            _currentSubtitleText = trimmedText;
+            _showSubtitleOverlay = true;
+          });
+        } else if (mounted && _showSubtitleOverlay) {
+          setState(() {
+            _showSubtitleOverlay = false;
+            _currentSubtitleText = '';
+          });
+        }
+      } catch (e) {
+        // Keep current text if polling fails
       }
     });
   }
 
+  /// Stop polling for subtitle text
+  void _stopSubtitleTextPolling() {
+    _subtitleTimer?.cancel();
+    _subtitleTimer = null;
+    if (mounted) {
+      setState(() {
+        _currentSubtitleText = '';
+        _showSubtitleOverlay = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _stopSubtitleTextPolling();
     // Stop progress tracking
     _progressTimer?.cancel();
 
@@ -1472,8 +1499,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       setState(() {
                         _controlsVisible = visible;
                       });
-                      // Update subtitle positioning when controls visibility changes
-                      _configureSmartSubtitlePositioning();
                     },
                   ),
                 ),
@@ -1585,6 +1610,47 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                  ),
+                ),
+              // Subtitle overlay - always visible at bottom when subtitles are active
+              if (_showSubtitleOverlay)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: _controlsVisible
+                      ? (PlatformDetector.isMobile(context) ? 80 : 150)
+                      : (PlatformDetector.isMobile(context) ? 10 : 50),
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _currentSubtitleText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          shadows: [
+                            Shadow(
+                              offset: Offset(1, 1),
+                              blurRadius: 3,
+                              color: Colors.black,
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
