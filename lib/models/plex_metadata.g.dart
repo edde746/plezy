@@ -16,6 +16,7 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   contentRating: json['contentRating'] as String?,
   summary: json['summary'] as String?,
   rating: (json['rating'] as num?)?.toDouble(),
+  audienceRating: (json['audienceRating'] as num?)?.toDouble(),
   year: (json['year'] as num?)?.toInt(),
   thumb: json['thumb'] as String?,
   art: json['art'] as String?,
@@ -36,6 +37,9 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   viewCount: (json['viewCount'] as num?)?.toInt(),
   leafCount: (json['leafCount'] as num?)?.toInt(),
   viewedLeafCount: (json['viewedLeafCount'] as num?)?.toInt(),
+  role: (json['Role'] as List<dynamic>?)
+      ?.map((e) => PlexRole.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
@@ -49,6 +53,7 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
       'contentRating': instance.contentRating,
       'summary': instance.summary,
       'rating': instance.rating,
+      'audienceRating': instance.audienceRating,
       'year': instance.year,
       'thumb': instance.thumb,
       'art': instance.art,
@@ -69,4 +74,5 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
       'viewCount': instance.viewCount,
       'leafCount': instance.leafCount,
       'viewedLeafCount': instance.viewedLeafCount,
+      'Role': instance.role,
     };

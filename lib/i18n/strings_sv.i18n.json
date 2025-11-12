@@ -261,6 +261,7 @@
     "resumeEpisode": "Återuppta S${season}, E${episode}",
     "pause": "Pausa",
     "overview": "Översikt",
+    "cast": "Rollbesättning",
     "episodeCount": "${count} avsnitt",
     "watchedProgress": "${watched}/${total} sedda",
     "movie": "Film",

@@ -261,6 +261,7 @@
     "resumeEpisode": "Resume S${season}, E${episode}",
     "pause": "Pause",
     "overview": "Overview",
+    "cast": "Cast",
     "episodeCount": "${count} episodes",
     "watchedProgress": "${watched}/${total} watched",
     "movie": "Movie",

@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'plex_role.dart';
+
 part 'plex_metadata.g.dart';
 
 @JsonSerializable()
@@ -13,6 +15,7 @@ class PlexMetadata {
   final String? contentRating;
   final String? summary;
   final double? rating;
+  final double? audienceRating;
   final int? year;
   final String? thumb;
   final String? art;
@@ -33,6 +36,8 @@ class PlexMetadata {
   final int? viewCount;
   final int? leafCount; // Total number of episodes in a series/season
   final int? viewedLeafCount; // Number of watched episodes in a series/season
+  @JsonKey(name: 'Role')
+  final List<PlexRole>? role; // Cast members
 
   // Transient field for clear logo (extracted from Image array)
   String? _clearLogo;
@@ -48,6 +53,7 @@ class PlexMetadata {
     this.contentRating,
     this.summary,
     this.rating,
+    this.audienceRating,
     this.year,
     this.thumb,
     this.art,
@@ -68,6 +74,7 @@ class PlexMetadata {
     this.viewCount,
     this.leafCount,
     this.viewedLeafCount,
+    this.role,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -81,6 +88,7 @@ class PlexMetadata {
     String? contentRating,
     String? summary,
     double? rating,
+    double? audienceRating,
     int? year,
     String? thumb,
     String? art,
@@ -101,6 +109,7 @@ class PlexMetadata {
     int? viewCount,
     int? leafCount,
     int? viewedLeafCount,
+    List<PlexRole>? role,
   }) {
     final copy = PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -112,6 +121,7 @@ class PlexMetadata {
       contentRating: contentRating ?? this.contentRating,
       summary: summary ?? this.summary,
       rating: rating ?? this.rating,
+      audienceRating: audienceRating ?? this.audienceRating,
       year: year ?? this.year,
       thumb: thumb ?? this.thumb,
       art: art ?? this.art,
@@ -132,6 +142,7 @@ class PlexMetadata {
       viewCount: viewCount ?? this.viewCount,
       leafCount: leafCount ?? this.leafCount,
       viewedLeafCount: viewedLeafCount ?? this.viewedLeafCount,
+      role: role ?? this.role,
     );
     // Preserve clearLogo
     copy._clearLogo = _clearLogo;

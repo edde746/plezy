@@ -261,6 +261,7 @@
     "resumeEpisode": "Riprendi S${season}, E${episode}",
     "pause": "Pausa",
     "overview": "Panoramica",
+    "cast": "Cast",
     "episodeCount": "${count} episodi",
     "watchedProgress": "${watched}/${total} guardati",
     "movie": "Film",

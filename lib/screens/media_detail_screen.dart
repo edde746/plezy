@@ -1,18 +1,20 @@
-import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../i18n/strings.g.dart';
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
-import '../widgets/desktop_app_bar.dart';
-import '../widgets/app_bar_back_button.dart';
-import '../widgets/media_context_menu.dart';
-import '../utils/app_logger.dart';
-import '../utils/provider_extensions.dart';
-import '../utils/video_player_navigation.dart';
-import '../utils/content_rating_formatter.dart';
-import '../utils/shuffle_play_helper.dart';
 import '../theme/theme_helper.dart';
-import '../i18n/strings.g.dart';
+import '../utils/app_logger.dart';
+import '../utils/content_rating_formatter.dart';
+import '../utils/provider_extensions.dart';
+import '../utils/shuffle_play_helper.dart';
+import '../utils/video_player_navigation.dart';
+import '../widgets/app_bar_back_button.dart';
+import '../widgets/desktop_app_bar.dart';
+import '../widgets/horizontal_scroll_with_arrows.dart';
+import '../widgets/media_context_menu.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -196,9 +198,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
       if (episodes.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.messages.noEpisodesFound)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.messages.noEpisodesFound)));
         }
         return;
       }
@@ -464,7 +466,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      formatContentRating(metadata.contentRating!),
+                                      formatContentRating(
+                                        metadata.contentRating!,
+                                      ),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 13,
@@ -491,6 +495,70 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                       ),
+                                    ),
+                                  ),
+                                if (metadata.rating != null)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.star,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${(metadata.rating! * 10).toStringAsFixed(0)}%',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (metadata.audienceRating != null)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.people,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${(metadata.audienceRating! * 10).toStringAsFixed(0)}%',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                               ],
@@ -614,7 +682,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           } catch (e) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+                                SnackBar(
+                                  content: Text(
+                                    t.messages.errorLoading(
+                                      error: e.toString(),
+                                    ),
+                                  ),
+                                ),
                               );
                             }
                           }
@@ -649,7 +723,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           } catch (e) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+                                SnackBar(
+                                  content: Text(
+                                    t.messages.errorLoading(
+                                      error: e.toString(),
+                                    ),
+                                  ),
+                                ),
                               );
                             }
                           }
@@ -729,13 +809,135 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     const SizedBox(height: 24),
                   ],
 
+                  // Cast
+                  if (metadata.role != null && metadata.role!.isNotEmpty) ...[
+                    Text(
+                      t.discover.cast,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 220,
+                      child: HorizontalScrollWithArrows(
+                        builder: (scrollController) => ListView.separated(
+                          controller: scrollController,
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          itemCount: metadata.role!.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final actor = metadata.role![index];
+                            return SizedBox(
+                              width: 120,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: actor.thumb != null
+                                        ? CachedNetworkImage(
+                                            imageUrl: actor.thumb!,
+                                            width: 120,
+                                            height: 120,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) =>
+                                                Container(
+                                                  width: 120,
+                                                  height: 120,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: const Center(
+                                                    child: Icon(Icons.person),
+                                                  ),
+                                                ),
+                                            errorWidget:
+                                                (
+                                                  context,
+                                                  url,
+                                                  error,
+                                                ) => Container(
+                                                  width: 120,
+                                                  height: 120,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: const Center(
+                                                    child: Icon(Icons.person),
+                                                  ),
+                                                ),
+                                          )
+                                        : Container(
+                                            width: 120,
+                                            height: 120,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            child: const Center(
+                                              child: Icon(Icons.person),
+                                            ),
+                                          ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    height: 84,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          actor.tag,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (actor.role != null) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            actor.role!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
                   // Additional info
                   if (metadata.studio != null) ...[
                     _buildInfoRow('Studio', metadata.studio!),
                     const SizedBox(height: 12),
                   ],
                   if (metadata.contentRating != null) ...[
-                    _buildInfoRow('Rating', formatContentRating(metadata.contentRating!)),
+                    _buildInfoRow(
+                      'Rating',
+                      formatContentRating(metadata.contentRating!),
+                    ),
                     const SizedBox(height: 12),
                   ],
                 ],
@@ -846,7 +1048,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         const SizedBox(height: 4),
                         if (season.leafCount != null)
                           Text(
-                            t.discover.episodeCount(count: season.leafCount.toString()),
+                            t.discover.episodeCount(
+                              count: season.leafCount.toString(),
+                            ),
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: Colors.grey),
                           ),
@@ -940,9 +1144,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
         // Check if episode has been partially watched (viewOffset > 0)
         if (episode.viewOffset != null && episode.viewOffset! > 0) {
-          return t.discover.resumeEpisode(season: seasonNum.toString(), episode: episodeNum.toString());
+          return t.discover.resumeEpisode(
+            season: seasonNum.toString(),
+            episode: episodeNum.toString(),
+          );
         } else {
-          return t.discover.playEpisode(season: seasonNum.toString(), episode: episodeNum.toString());
+          return t.discover.playEpisode(
+            season: seasonNum.toString(),
+            episode: episodeNum.toString(),
+          );
         }
       } else {
         // No on deck episode, will play first episode
