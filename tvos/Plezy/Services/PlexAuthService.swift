@@ -199,7 +199,6 @@ class PlexAuthService: ObservableObject {
         // Test each connection
         for connection in sortedConnections {
             if await testConnection(connection, token: server.accessToken ?? plexToken) {
-                print("✅ Connected via \(connection.uri) (\(connection.connectionType))")
                 return connection
             }
         }
@@ -211,8 +210,28 @@ class PlexAuthService: ObservableObject {
         guard let url = connection.url else { return false }
 
         do {
-            let client = PlexAPIClient(baseURL: url, accessToken: token)
-            _ = try await client.getLibraries()
+            // Create a client with shorter timeout for connection testing
+            let configuration = URLSessionConfiguration.default
+            configuration.timeoutIntervalForRequest = 5  // 5 second timeout for testing
+            configuration.timeoutIntervalForResource = 10
+
+            let session = URLSession(configuration: configuration)
+            var request = URLRequest(url: url.appendingPathComponent("/library/sections"))
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            if let token = token {
+                request.setValue(token, forHTTPHeaderField: "X-Plex-Token")
+            }
+
+            let (_, response) = try await session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                print("❌ Connection failed: \(connection.uri) - Invalid response")
+                return false
+            }
+
+            print("✅ Connected via \(connection.uri) (\(connection.connectionType))")
             return true
         } catch {
             print("❌ Connection failed: \(connection.uri) - \(error)")

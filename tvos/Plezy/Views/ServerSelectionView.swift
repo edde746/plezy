@@ -26,7 +26,7 @@ struct ServerSelectionView: View {
                         .scaleEffect(1.5)
                         .tint(.white)
 
-                    Text("Finding servers...")
+                    Text(authService.availableServers.isEmpty ? "Finding servers..." : "Connecting to server...")
                         .font(.title3)
                         .foregroundColor(.gray)
                 } else if authService.availableServers.isEmpty {
@@ -55,7 +55,10 @@ struct ServerSelectionView: View {
                                 ServerCard(server: server) {
                                     Task {
                                         await authService.selectServer(server)
-                                        dismiss()
+                                        // Only dismiss if server was successfully selected
+                                        if authService.selectedServer != nil {
+                                            dismiss()
+                                        }
                                     }
                                 }
                             }
