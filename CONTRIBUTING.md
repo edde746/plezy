@@ -10,7 +10,7 @@
 ## Development
 
 - Follow Dart/Flutter conventions
-- Run `dart format .` to format your code
+- Run `dart format .` to format your code (note: generated files like `*.g.dart` are excluded from CI checks)
 - Run `flutter analyze` before submitting to check for issues
 - Run `flutter test` if tests are available
 - Test your changes thoroughly
@@ -20,11 +20,13 @@
 The project includes automated CI checks that run on all pull requests:
 
 1. **Code Formatting**: Ensures code follows Dart formatting standards
-   - Run locally: `dart format .`
-   - CI check excludes generated files (`.g.dart`, `.freezed.dart`)
+   - Run locally: `dart format .` to format all files
+   - Note: CI only checks non-generated files (excludes `.g.dart`, `.freezed.dart`)
+   - Generated files are reformatted automatically by build tools
 
 2. **Static Analysis**: Checks for code issues and potential bugs
    - Run locally: `flutter analyze`
+   - Note: CI excludes generated files from analysis (configured in `analysis_options.yaml`)
 
 3. **Tests**: Runs unit and widget tests (when available)
    - Run locally: `flutter test`
