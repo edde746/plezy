@@ -13,6 +13,8 @@ struct HomeView: View {
     @State private var hubs: [PlexHub] = []
     @State private var isLoading = true
     @State private var selectedMedia: PlexMetadata?
+    @State private var showServerSelection = false
+    @State private var noServerSelected = false
 
     var body: some View {
         ZStack {
@@ -50,6 +52,36 @@ struct HomeView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.top, 100)
+                    } else if noServerSelected {
+                        VStack(spacing: 30) {
+                            Image(systemName: "server.rack")
+                                .font(.system(size: 80))
+                                .foregroundColor(.gray)
+
+                            Text("No Server Selected")
+                                .font(.title)
+                                .foregroundColor(.white)
+
+                            Text("Please select a Plex server to start watching")
+                                .font(.title3)
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.center)
+
+                            Button {
+                                showServerSelection = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "server.rack")
+                                    Text("Select Server")
+                                }
+                                .font(.title2)
+                                .padding(.horizontal, 60)
+                                .padding(.vertical, 20)
+                            }
+                            .buttonStyle(CardButtonStyle())
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 100)
                     } else {
                         // Continue Watching
                         if !onDeck.isEmpty {
@@ -77,14 +109,27 @@ struct HomeView: View {
         .sheet(item: $selectedMedia) { media in
             MediaDetailView(media: media)
         }
+        .sheet(isPresented: $showServerSelection) {
+            ServerSelectionView()
+        }
+        .onChange(of: authService.currentClient) { _, newClient in
+            if newClient != nil {
+                Task {
+                    await loadContent()
+                }
+            }
+        }
     }
 
     private func loadContent() async {
         guard let client = authService.currentClient else {
+            isLoading = false
+            noServerSelected = true
             return
         }
 
         isLoading = true
+        noServerSelected = false
 
         async let onDeckTask = client.getOnDeck()
         async let hubsTask = client.getHubs()
