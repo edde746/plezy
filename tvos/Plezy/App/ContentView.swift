@@ -47,12 +47,16 @@ struct ContentView: View {
                 await authService.loadServers()
                 print("📺 [ContentView] Servers loaded: \(authService.availableServers.count)")
 
-                // Auto-select last used server
+                // Auto-select last used server OR the only available server
                 if let serverData = storageService.selectedServer {
                     print("📺 [ContentView] Auto-selecting saved server...")
                     authService.selectServer(from: serverData)
+                } else if authService.availableServers.count == 1, let server = authService.availableServers.first {
+                    // If only one server and no saved server, auto-select it
+                    print("📺 [ContentView] Only one server found, auto-selecting: \(server.name)")
+                    await authService.selectServer(server)
                 } else {
-                    print("📺 [ContentView] No saved server to auto-select")
+                    print("📺 [ContentView] No saved server and \(authService.availableServers.count) servers available")
                 }
             } else {
                 print("📺 [ContentView] Token validation failed")
