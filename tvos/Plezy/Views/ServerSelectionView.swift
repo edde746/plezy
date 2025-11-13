@@ -53,11 +53,17 @@ struct ServerSelectionView: View {
                         ], spacing: 30) {
                             ForEach(authService.availableServers) { server in
                                 ServerCard(server: server) {
+                                    print("🔵 [ServerSelection] Button clicked for server: \(server.name)")
                                     Task {
+                                        print("🔵 [ServerSelection] Starting selectServer for: \(server.name)")
                                         await authService.selectServer(server)
+                                        print("🔵 [ServerSelection] Finished selectServer. Selected server: \(authService.selectedServer?.name ?? "nil")")
                                         // Only dismiss if server was successfully selected
                                         if authService.selectedServer != nil {
+                                            print("🔵 [ServerSelection] Server selected successfully, dismissing sheet")
                                             dismiss()
+                                        } else {
+                                            print("🔴 [ServerSelection] Server selection failed, staying on sheet")
                                         }
                                     }
                                 }
