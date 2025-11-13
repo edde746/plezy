@@ -6,6 +6,7 @@ import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/keyboard_utils.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/platform_detector.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
 import '../providers/multi_server_provider.dart';
@@ -254,6 +255,51 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    final isTV = PlatformDetector.isTV(context);
+
+    // Use NavigationRail for TV, NavigationBar for other devices
+    if (isTV) {
+      return Scaffold(
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: _selectTab,
+              labelType: NavigationRailLabelType.all,
+              minWidth: 80,
+              destinations: [
+                NavigationRailDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(Icons.home),
+                  label: Text(t.navigation.home),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.video_library_outlined),
+                  selectedIcon: const Icon(Icons.video_library),
+                  label: Text(t.navigation.libraries),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.search),
+                  selectedIcon: const Icon(Icons.search),
+                  label: Text(t.navigation.search),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(Icons.settings),
+                  label: Text(t.navigation.settings),
+                ),
+              ],
+            ),
+            const VerticalDivider(thickness: 1, width: 1),
+            Expanded(
+              child: IndexedStack(index: _currentIndex, children: _screens),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Default mobile/tablet layout with bottom navigation and keyboard shortcuts
     return Shortcuts(
       shortcuts: {
         // Number keys 1-4 for quick tab switching
