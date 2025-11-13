@@ -44,21 +44,6 @@ class PlatformDetector {
   /// Detects if running on Android TV
   /// Uses Android's UiModeManager to check for UI_MODE_TYPE_TELEVISION
   /// This is the proper, reliable way to detect TV devices on Android
-  static bool isTV(BuildContext context) {
-    // Return cached result if available
-    if (_isTVCached != null) return _isTVCached!;
-
-    // Only check on Android platform
-    if (!Platform.isAndroid) {
-      _isTVCached = false;
-      return false;
-    }
-
-    // We need to use async detection but cache the result
-    // For now, return false and let async initialization handle it
-    // This will be called again after initialization
-    return false;
-  }
 
   /// Initialize TV detection asynchronously
   /// Should be called early in app initialization
