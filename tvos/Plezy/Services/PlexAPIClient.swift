@@ -67,6 +67,8 @@ class PlexAPIClient {
             throw PlexAPIError.invalidURL
         }
 
+        print("🌐 [API] \(method) \(url)")
+
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.httpBody = body
@@ -80,6 +82,8 @@ class PlexAPIClient {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw PlexAPIError.invalidResponse
         }
+
+        print("🌐 [API] Response: \(httpResponse.statusCode) - \(data.count) bytes")
 
         guard (200...299).contains(httpResponse.statusCode) else {
             throw PlexAPIError.httpError(statusCode: httpResponse.statusCode)
@@ -131,7 +135,9 @@ class PlexAPIClient {
     }
 
     func getOnDeck() async throws -> [PlexMetadata] {
+        print("📚 [API] Requesting OnDeck from /library/onDeck")
         let container: PlexMediaContainer<PlexMetadata> = try await request(path: "/library/onDeck")
+        print("📚 [API] OnDeck response - size: \(container.size), items: \(container.items.count)")
         return container.items
     }
 
@@ -145,7 +151,9 @@ class PlexAPIClient {
 
     func getHubs(sectionKey: String? = nil) async throws -> [PlexHub] {
         let path = sectionKey != nil ? "/hubs/sections/\(sectionKey!)" : "/hubs"
+        print("📚 [API] Requesting Hubs from \(path)")
         let container: PlexMediaContainer<PlexMetadata> = try await request(path: path)
+        print("📚 [API] Hubs response - size: \(container.size), hubs: \(container.hub?.count ?? 0)")
         return container.hub ?? []
     }
 
