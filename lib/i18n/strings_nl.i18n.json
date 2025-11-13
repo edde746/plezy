@@ -173,6 +173,7 @@
   "mediaMenu": {
     "markAsWatched": "Markeer als gekeken",
     "markAsUnwatched": "Markeer als ongekeken",
+    "removeFromContinueWatching": "Verwijder uit Doorgaan met kijken",
     "goToSeries": "Ga naar serie",
     "goToSeason": "Ga naar seizoen",
     "shufflePlay": "Willekeurig afspelen",
@@ -206,6 +207,7 @@
   "messages": {
     "markedAsWatched": "Gemarkeerd als gekeken",
     "markedAsUnwatched": "Gemarkeerd als ongekeken",
+    "removedFromContinueWatching": "Verwijderd uit Doorgaan met kijken",
     "errorLoading": "Fout: ${error}",
     "fileInfoNotAvailable": "Bestand informatie niet beschikbaar",
     "errorLoadingFileInfo": "Fout bij laden bestand info: ${error}",
