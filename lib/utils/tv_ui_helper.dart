@@ -7,7 +7,7 @@ class TVUIHelper {
   /// Get font size adjusted for TV viewing distance
   /// TV: Increases base size by 30% for better readability from distance
   /// Mobile/Desktop: Returns base size unchanged
-  static double getFontSize(BuildContext context, double baseSize) {
+  static double getFontSize(double baseSize) {
     if (PlatformDetector.isTVSync()) {
       return baseSize * 1.3;
     }
@@ -17,7 +17,7 @@ class TVUIHelper {
   /// Get spacing adjusted for TV
   /// TV: Increases spacing by 50% for better touch target separation
   /// Mobile/Desktop: Returns base spacing unchanged
-  static double getSpacing(BuildContext context, double baseSpacing) {
+  static double getSpacing(double baseSpacing) {
     if (PlatformDetector.isTVSync()) {
       return baseSpacing * 1.5;
     }
@@ -27,7 +27,7 @@ class TVUIHelper {
   /// Get minimum touch target size for TV
   /// TV: Returns 80dp (recommended for D-pad navigation)
   /// Mobile: Returns 48dp (Material Design standard)
-  static double getMinTouchTarget(BuildContext context) {
+  static double getMinTouchTarget() {
     if (PlatformDetector.isTVSync()) {
       return 80.0;
     }
@@ -35,7 +35,7 @@ class TVUIHelper {
   }
 
   /// Get card padding adjusted for TV
-  static EdgeInsets getCardPadding(BuildContext context) {
+  static EdgeInsets getCardPadding() {
     if (PlatformDetector.isTVSync()) {
       return const EdgeInsets.all(12.0);
     }
