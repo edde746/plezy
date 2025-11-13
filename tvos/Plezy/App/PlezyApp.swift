@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 @main
 struct PlezyApp: App {
@@ -30,8 +31,6 @@ struct PlezyApp: App {
 
     private func configureAudioSession() {
         #if os(tvOS)
-        import AVFoundation
-
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .moviePlayback, options: [
