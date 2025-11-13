@@ -112,8 +112,8 @@ struct HomeView: View {
         .sheet(isPresented: $showServerSelection) {
             ServerSelectionView()
         }
-        .onChange(of: authService.currentClient) { _, newClient in
-            if newClient != nil {
+        .onChange(of: authService.selectedServer) { _, newServer in
+            if newServer != nil {
                 Task {
                     await loadContent()
                 }
