@@ -113,8 +113,8 @@ class PlexAPIClient {
     // MARK: - Library Methods
 
     func getLibraries() async throws -> [PlexLibrary] {
-        let container: PlexMediaContainer<PlexLibrary> = try await request(path: "/library/sections")
-        return container.items
+        let response: PlexResponse<PlexLibrary> = try await request(path: "/library/sections")
+        return response.MediaContainer.items
     }
 
     func getLibraryContent(sectionKey: String, start: Int = 0, size: Int = 50) async throws -> [PlexMetadata] {
@@ -122,37 +122,38 @@ class PlexAPIClient {
             URLQueryItem(name: "X-Plex-Container-Start", value: "\(start)"),
             URLQueryItem(name: "X-Plex-Container-Size", value: "\(size)")
         ]
-        let container: PlexMediaContainer<PlexMetadata> = try await request(
+        let response: PlexResponse<PlexMetadata> = try await request(
             path: "/library/sections/\(sectionKey)/all",
             queryItems: queryItems
         )
-        return container.items
+        return response.MediaContainer.items
     }
 
     func getMetadata(ratingKey: String) async throws -> PlexMetadata {
-        let container: PlexMediaContainer<PlexMetadata> = try await request(path: "/library/metadata/\(ratingKey)")
-        guard let metadata = container.items.first else {
+        let response: PlexResponse<PlexMetadata> = try await request(path: "/library/metadata/\(ratingKey)")
+        guard let metadata = response.MediaContainer.items.first else {
             throw PlexAPIError.noData
         }
         return metadata
     }
 
     func getChildren(ratingKey: String) async throws -> [PlexMetadata] {
-        let container: PlexMediaContainer<PlexMetadata> = try await request(path: "/library/metadata/\(ratingKey)/children")
-        return container.items
+        let response: PlexResponse<PlexMetadata> = try await request(path: "/library/metadata/\(ratingKey)/children")
+        return response.MediaContainer.items
     }
 
     func getOnDeck() async throws -> [PlexMetadata] {
         print("📚 [API] Requesting OnDeck from /library/onDeck")
-        let container: PlexMediaContainer<PlexMetadata> = try await request(path: "/library/onDeck")
+        let response: PlexResponse<PlexMetadata> = try await request(path: "/library/onDeck")
+        let container = response.MediaContainer
         print("📚 [API] OnDeck response - size: \(container.size), items: \(container.items.count)")
         return container.items
     }
 
     func getRecentlyAdded(sectionKey: String? = nil) async throws -> [PlexMetadata] {
         let path = sectionKey != nil ? "/library/sections/\(sectionKey!)/recentlyAdded" : "/library/recentlyAdded"
-        let container: PlexMediaContainer<PlexMetadata> = try await request(path: path)
-        return container.items
+        let response: PlexResponse<PlexMetadata> = try await request(path: path)
+        return response.MediaContainer.items
     }
 
     // MARK: - Hub Methods (Content Discovery)
@@ -160,14 +161,15 @@ class PlexAPIClient {
     func getHubs(sectionKey: String? = nil) async throws -> [PlexHub] {
         let path = sectionKey != nil ? "/hubs/sections/\(sectionKey!)" : "/hubs"
         print("📚 [API] Requesting Hubs from \(path)")
-        let container: PlexMediaContainer<PlexMetadata> = try await request(path: path)
+        let response: PlexResponse<PlexMetadata> = try await request(path: path)
+        let container = response.MediaContainer
         print("📚 [API] Hubs response - size: \(container.size), hubs: \(container.hub?.count ?? 0)")
         return container.hub ?? []
     }
 
     func getHubContent(hubKey: String) async throws -> [PlexMetadata] {
-        let container: PlexMediaContainer<PlexMetadata> = try await request(path: hubKey)
-        return container.items
+        let response: PlexResponse<PlexMetadata> = try await request(path: hubKey)
+        return response.MediaContainer.items
     }
 
     // MARK: - Search
@@ -179,11 +181,11 @@ class PlexAPIClient {
         if let sectionKey = sectionKey {
             queryItems.append(URLQueryItem(name: "sectionId", value: sectionKey))
         }
-        let container: PlexMediaContainer<PlexMetadata> = try await request(
+        let response: PlexResponse<PlexMetadata> = try await request(
             path: "/hubs/search",
             queryItems: queryItems
         )
-        return container.items
+        return response.MediaContainer.items
     }
 
     // MARK: - Playback & Progress

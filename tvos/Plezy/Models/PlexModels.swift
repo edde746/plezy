@@ -353,6 +353,10 @@ struct PlexChapter: Codable, Identifiable {
 
 // MARK: - API Response Wrappers
 
+struct PlexResponse<T: Codable>: Codable {
+    let MediaContainer: PlexMediaContainer<T>
+}
+
 struct PlexMediaContainer<T: Codable>: Codable {
     let size: Int?
     let allowSync: Bool?
