@@ -76,19 +76,46 @@ struct SettingsView: View {
                             isOn: $settingsService.autoSelectSubtitles
                         )
 
-                        HStack {
+                        HStack(spacing: 20) {
                             Image(systemName: "textformat.size")
                                 .font(.title2)
                                 .foregroundColor(.orange)
                                 .frame(width: 40)
 
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("Subtitle size")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
+                            Text("Subtitle size")
+                                .font(.headline)
+                                .foregroundColor(.white)
 
-                                Slider(value: $settingsService.subtitleSize, in: 0.5...2.0, step: 0.1)
-                                    .frame(width: 400)
+                            Spacer()
+
+                            // tvOS-compatible size selector with buttons
+                            HStack(spacing: 15) {
+                                Button {
+                                    if settingsService.subtitleSize > 0.5 {
+                                        settingsService.subtitleSize -= 0.1
+                                    }
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(.title)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(settingsService.subtitleSize <= 0.5)
+
+                                Text(String(format: "%.1fx", settingsService.subtitleSize))
+                                    .font(.title3)
+                                    .foregroundColor(.white)
+                                    .frame(width: 80)
+
+                                Button {
+                                    if settingsService.subtitleSize < 2.0 {
+                                        settingsService.subtitleSize += 0.1
+                                    }
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.title)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(settingsService.subtitleSize >= 2.0)
                             }
                         }
                     }
