@@ -33,7 +33,7 @@ struct PlexUser: Codable {
 
 // MARK: - Server & Connections
 
-struct PlexServer: Codable, Identifiable {
+struct PlexServer: Codable, Identifiable, Equatable {
     let name: String
     let product: String
     let productVersion: String
@@ -71,7 +71,7 @@ struct PlexServer: Codable, Identifiable {
     }
 }
 
-struct PlexConnection: Codable, Identifiable {
+struct PlexConnection: Codable, Identifiable, Equatable {
     let `protocol`: String
     let address: String
     let port: Int
