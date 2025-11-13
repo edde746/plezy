@@ -112,9 +112,17 @@ extension URLRequest {
         setValue(PlexAPIClient.plexVersion, forHTTPHeaderField: "X-Plex-Version")
         setValue(PlexAPIClient.plexClientIdentifier, forHTTPHeaderField: "X-Plex-Client-Identifier")
         setValue(PlexAPIClient.plexPlatform, forHTTPHeaderField: "X-Plex-Platform")
-        setValue(UIDevice.current.systemVersion, forHTTPHeaderField: "X-Plex-Platform-Version")
+
+        // Get system version for tvOS
+        #if os(tvOS)
+        setValue(ProcessInfo.processInfo.operatingSystemVersionString, forHTTPHeaderField: "X-Plex-Platform-Version")
+        setValue("Apple TV", forHTTPHeaderField: "X-Plex-Device-Name")
+        #else
+        setValue("Unknown", forHTTPHeaderField: "X-Plex-Platform-Version")
+        setValue("Unknown Device", forHTTPHeaderField: "X-Plex-Device-Name")
+        #endif
+
         setValue(PlexAPIClient.plexDevice, forHTTPHeaderField: "X-Plex-Device")
-        setValue(UIDevice.current.name, forHTTPHeaderField: "X-Plex-Device-Name")
 
         if let token = token {
             setValue(token, forHTTPHeaderField: "X-Plex-Token")

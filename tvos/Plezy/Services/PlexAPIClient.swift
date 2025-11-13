@@ -29,9 +29,9 @@ class PlexAPIClient {
             "X-Plex-Version": Self.plexVersion,
             "X-Plex-Client-Identifier": Self.plexClientIdentifier,
             "X-Plex-Platform": Self.plexPlatform,
-            "X-Plex-Platform-Version": UIDevice.current.systemVersion,
+            "X-Plex-Platform-Version": self.getSystemVersion(),
             "X-Plex-Device": Self.plexDevice,
-            "X-Plex-Device-Name": UIDevice.current.name
+            "X-Plex-Device-Name": self.getDeviceName()
         ]
 
         if let token = accessToken {
@@ -345,6 +345,25 @@ extension PlexAPIClient {
         )
 
         return response.authToken
+    }
+
+    // MARK: - Device Information Helpers
+
+    private func getSystemVersion() -> String {
+        #if os(tvOS)
+        return ProcessInfo.processInfo.operatingSystemVersionString
+        #else
+        return "Unknown"
+        #endif
+    }
+
+    private func getDeviceName() -> String {
+        #if os(tvOS)
+        // tvOS doesn't have UIDevice.current.name
+        return "Apple TV"
+        #else
+        return "Unknown Device"
+        #endif
     }
 }
 

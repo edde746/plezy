@@ -147,7 +147,7 @@ struct SettingsView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)
                     }
-                    .buttonStyle(.card)
+                    .buttonStyle(CardButtonStyle())
                     .padding(.top, 20)
                 }
                 .padding(.horizontal, 80)
