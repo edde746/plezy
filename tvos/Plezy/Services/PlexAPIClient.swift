@@ -86,7 +86,7 @@ class PlexAPIClient {
         }
 
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .secondsSince1970
+        decoder.dateDecodingStrategy = .iso8601
         decoder.keyDecodingStrategy = .useDefaultKeys
 
         do {
