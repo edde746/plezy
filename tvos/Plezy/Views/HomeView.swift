@@ -199,11 +199,10 @@ struct MediaCard: View {
                     AsyncImage(url: posterURL) { image in
                         image
                             .resizable()
-                            .aspectRatio(2/3, contentMode: .fill)
+                            .aspectRatio(contentMode: .fit)
                     } placeholder: {
                         Rectangle()
                             .fill(Color.gray.opacity(0.3))
-                            .aspectRatio(2/3, contentMode: .fill)
                             .overlay(
                                 Image(systemName: "photo")
                                     .font(.largeTitle)

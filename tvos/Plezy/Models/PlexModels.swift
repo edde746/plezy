@@ -319,17 +319,20 @@ struct PlexTag: Codable {
 // MARK: - Hubs (Content Discovery)
 
 struct PlexHub: Codable, Identifiable {
-    let hubKey: String
+    let hubKey: String?
+    let key: String?
     let title: String
     let type: String
-    let hubIdentifier: String
-    let size: Int
-    let more: Bool
+    let hubIdentifier: String?
+    let size: Int?
+    let more: Bool?
     let style: String?
     let promoted: Bool?
     let metadata: [PlexMetadata]?
 
-    var id: String { hubKey }
+    var id: String {
+        hubKey ?? key ?? UUID().uuidString
+    }
 }
 
 // MARK: - Chapters
