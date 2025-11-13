@@ -132,7 +132,9 @@
   },
   "search": {
     "hint": "Zoek films, series, muziek...",
-    "tryDifferentTerm": "Probeer een andere zoekterm"
+    "tryDifferentTerm": "Probeer een andere zoekterm",
+    "searchYourMedia": "Zoek in je media",
+    "enterTitleActorOrKeyword": "Voer een titel, acteur of trefwoord in"
   },
   "hotkeys": {
     "setShortcutFor": "Stel sneltoets in voor ${actionName}",

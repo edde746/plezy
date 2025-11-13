@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 4
-/// Strings: 1240 (310 per locale)
+/// Strings: 1248 (312 per locale)
 ///
-/// Built on 2025-11-12 at 20:36 UTC
+/// Built on 2025-11-13 at 08:01 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -361,6 +361,8 @@ class _StringsSearchEn {
 	// Translations
 	String get hint => 'Search movies, shows, music...';
 	String get tryDifferentTerm => 'Try a different search term';
+	String get searchYourMedia => 'Search your media';
+	String get enterTitleActorOrKeyword => 'Enter a title, actor, or keyword';
 }
 
 // Path: hotkeys
@@ -967,6 +969,8 @@ class _StringsSearchIt implements _StringsSearchEn {
 	// Translations
 	@override String get hint => 'Cerca film. spettacoli, musica...';
 	@override String get tryDifferentTerm => 'Prova altri termini di ricerca';
+	@override String get searchYourMedia => 'Cerca nei tuoi media';
+	@override String get enterTitleActorOrKeyword => 'Inserisci un titolo, attore o parola chiave';
 }
 
 // Path: hotkeys
@@ -1573,6 +1577,8 @@ class _StringsSearchNl implements _StringsSearchEn {
 	// Translations
 	@override String get hint => 'Zoek films, series, muziek...';
 	@override String get tryDifferentTerm => 'Probeer een andere zoekterm';
+	@override String get searchYourMedia => 'Zoek in je media';
+	@override String get enterTitleActorOrKeyword => 'Voer een titel, acteur of trefwoord in';
 }
 
 // Path: hotkeys
@@ -2179,6 +2185,8 @@ class _StringsSearchSv implements _StringsSearchEn {
 	// Translations
 	@override String get hint => 'Sök filmer, serier, musik...';
 	@override String get tryDifferentTerm => 'Prova en annan sökterm';
+	@override String get searchYourMedia => 'Sök i dina media';
+	@override String get enterTitleActorOrKeyword => 'Ange en titel, skådespelare eller nyckelord';
 }
 
 // Path: hotkeys
@@ -2677,6 +2685,8 @@ extension on Translations {
 			case 'settings.shortcutUpdated': return ({required Object action}) => 'Shortcut updated for ${action}';
 			case 'search.hint': return 'Search movies, shows, music...';
 			case 'search.tryDifferentTerm': return 'Try a different search term';
+			case 'search.searchYourMedia': return 'Search your media';
+			case 'search.enterTitleActorOrKeyword': return 'Enter a title, actor, or keyword';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Set Shortcut for ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Clear shortcut';
 			case 'pinEntry.enterPin': return 'Enter PIN';
@@ -2995,6 +3005,8 @@ extension on _StringsIt {
 			case 'settings.shortcutUpdated': return ({required Object action}) => 'Scorciatoia aggiornata per ${action}';
 			case 'search.hint': return 'Cerca film. spettacoli, musica...';
 			case 'search.tryDifferentTerm': return 'Prova altri termini di ricerca';
+			case 'search.searchYourMedia': return 'Cerca nei tuoi media';
+			case 'search.enterTitleActorOrKeyword': return 'Inserisci un titolo, attore o parola chiave';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Imposta scorciatoia per ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Elimina scorciatoia';
 			case 'pinEntry.enterPin': return 'Inserisci PIN';
@@ -3313,6 +3325,8 @@ extension on _StringsNl {
 			case 'settings.shortcutUpdated': return ({required Object action}) => 'Sneltoets bijgewerkt voor ${action}';
 			case 'search.hint': return 'Zoek films, series, muziek...';
 			case 'search.tryDifferentTerm': return 'Probeer een andere zoekterm';
+			case 'search.searchYourMedia': return 'Zoek in je media';
+			case 'search.enterTitleActorOrKeyword': return 'Voer een titel, acteur of trefwoord in';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Stel sneltoets in voor ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Wis sneltoets';
 			case 'pinEntry.enterPin': return 'Voer PIN in';
@@ -3631,6 +3645,8 @@ extension on _StringsSv {
 			case 'settings.shortcutUpdated': return ({required Object action}) => 'Genväg uppdaterad för ${action}';
 			case 'search.hint': return 'Sök filmer, serier, musik...';
 			case 'search.tryDifferentTerm': return 'Prova en annan sökterm';
+			case 'search.searchYourMedia': return 'Sök i dina media';
+			case 'search.enterTitleActorOrKeyword': return 'Ange en titel, skådespelare eller nyckelord';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Sätt genväg för ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Rensa genväg';
 			case 'pinEntry.enterPin': return 'Ange PIN';
