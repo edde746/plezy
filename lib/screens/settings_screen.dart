@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../providers/theme_provider.dart';
+
+import '../i18n/strings.g.dart';
 import '../providers/settings_provider.dart';
-import '../services/settings_service.dart' as settings;
+import '../providers/theme_provider.dart';
 import '../services/keyboard_shortcuts_service.dart';
+import '../services/settings_service.dart' as settings;
 import '../services/update_service.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/hotkey_recorder_widget.dart';
-import '../i18n/strings.g.dart';
 import 'about_screen.dart';
 import 'logs_screen.dart';
 import 'subtitle_styling_screen.dart';
@@ -868,6 +869,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return 'Svenska';
       case AppLocale.it:
         return 'Italiano';
+      case AppLocale.nl:
+        return 'Nederlands';
     }
   }
 
@@ -887,10 +890,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   isSelected
                       ? Icons.radio_button_checked
                       : Icons.radio_button_unchecked,
-                  color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
                 ),
                 tileColor: isSelected
-                    ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer.withValues(alpha: 0.3)
                     : null,
                 onTap: () async {
                   // Save the locale to settings
@@ -925,11 +932,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _restartApp() {
     // Navigate to the root and remove all previous routes
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/',
-      (route) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
   }
 
   Future<void> _checkForUpdates() async {
