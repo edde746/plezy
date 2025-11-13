@@ -16,8 +16,10 @@ struct PlezyApp: App {
     @StateObject private var storageService = StorageService()
 
     init() {
+        print("🚀🚀🚀 [APP] Plezy app is starting up! 🚀🚀🚀")
         // Configure audio session for media playback
         configureAudioSession()
+        print("🚀🚀🚀 [APP] Audio session configured 🚀🚀🚀")
     }
 
     var body: some Scene {

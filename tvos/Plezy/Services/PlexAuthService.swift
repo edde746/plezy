@@ -80,34 +80,40 @@ class PlexAuthService: ObservableObject {
     }
 
     func startPinPolling(pinId: Int, completion: @escaping (Bool) -> Void) {
+        print("🔑 [PIN] Starting PIN polling for ID: \(pinId)")
         pinCheckTask?.cancel()
 
         pinCheckTask = Task {
             while !Task.isCancelled {
                 do {
                     try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+                    print("🔑 [PIN] Checking PIN status...")
 
                     let client = PlexAPIClient.createPlexTVClient()
                     let pin = try await client.checkPin(id: pinId)
 
                     if let token = pin.authToken, !token.isEmpty {
+                        print("🔑 [PIN] ✅ PIN authenticated! Token received")
                         self.plexToken = token
                         self.isAuthenticated = true
+                        print("🔑 [PIN] Set isAuthenticated = true")
 
                         // Load user info
                         let authedClient = PlexAPIClient.createPlexTVClient(token: token)
                         let user = try await authedClient.getUser()
                         self.currentUser = user
+                        print("🔑 [PIN] User info loaded: \(user.username)")
 
                         // Save token
                         await StorageService().savePlexToken(token)
+                        print("🔑 [PIN] Token saved to storage")
 
                         completion(true)
                         return
                     }
                 } catch {
                     if !Task.isCancelled {
-                        print("Pin polling error: \(error)")
+                        print("🔴 [PIN] Pin polling error: \(error)")
                     }
                 }
             }

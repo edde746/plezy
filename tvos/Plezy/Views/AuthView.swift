@@ -80,8 +80,10 @@ struct AuthView: View {
         .sheet(isPresented: $showServerSelection) {
             ServerSelectionView()
         }
-        .onChange(of: authService.isAuthenticated) { _, isAuth in
+        .onChange(of: authService.isAuthenticated) { oldValue, isAuth in
+            print("⚡️ [AuthView] onChange FIRED! oldValue: \(oldValue), newValue: \(isAuth), pin: \(pin != nil ? "exists" : "nil")")
             if isAuth && pin != nil {
+                print("🟢 [AuthView] Conditions met, starting server load...")
                 // User authenticated, load servers
                 authService.cancelPinPolling()
                 Task {
