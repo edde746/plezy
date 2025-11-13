@@ -568,6 +568,8 @@ class _MediaCardGridState extends State<_MediaCardGrid>
                             },
                           ),
                         ],
+                      ],
+                    ),
                   ],
                 ),
               ),

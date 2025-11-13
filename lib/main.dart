@@ -23,6 +23,8 @@ import 'services/data_aggregation_service.dart';
 import 'services/server_registry.dart';
 import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
+import 'utils/platform_detector.dart';
+import 'utils/language_codes.dart';
 import 'i18n/strings.g.dart';
 
 void main() async {
@@ -54,6 +56,14 @@ void main() async {
 
   // Wait for all parallel services to complete
   await Future.wait(futures);
+
+  // Initialize TV detection early for Android devices
+  await PlatformDetector.initializeTVDetection();
+
+  // Note: Orientation will be set dynamically based on device type in MainApp
+
+  // Initialize language codes for track selection
+  await LanguageCodes.initialize();
 
   // Initialize logger level based on debug setting
   final debugEnabled = settings.getEnableDebugLogging();

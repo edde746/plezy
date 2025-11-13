@@ -255,7 +255,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    final isTV = PlatformDetector.isTV(context);
+    final isTV = PlatformDetector.isTVSync();
 
     // Use NavigationRail for TV, NavigationBar for other devices
     if (isTV) {
