@@ -78,9 +78,7 @@ class _AboutScreenState extends State<AboutScreen> {
                   child: ListTile(
                     leading: const Icon(Icons.description),
                     title: Text(t.about.openSourceLicenses),
-                    subtitle: Text(
-                      t.about.viewLicensesDescription,
-                    ),
+                    subtitle: Text(t.about.viewLicensesDescription),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       Navigator.push(

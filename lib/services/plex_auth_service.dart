@@ -271,7 +271,9 @@ class PlexServer {
   factory PlexServer.fromJson(Map<String, dynamic> json) {
     // Validate required fields first
     if (!_isValidServerJson(json)) {
-      throw FormatException('Invalid server data: missing required fields (name, clientIdentifier, accessToken, or connections)');
+      throw FormatException(
+        'Invalid server data: missing required fields (name, clientIdentifier, accessToken, or connections)',
+      );
     }
 
     final List<dynamic> connectionsJson = json['connections'] as List<dynamic>;
@@ -309,8 +311,10 @@ class PlexServer {
 
     return PlexServer(
       name: json['name'] as String, // Safe because validated above
-      clientIdentifier: json['clientIdentifier'] as String, // Safe because validated above
-      accessToken: json['accessToken'] as String, // Safe because validated above
+      clientIdentifier:
+          json['clientIdentifier'] as String, // Safe because validated above
+      accessToken:
+          json['accessToken'] as String, // Safe because validated above
       connections: connections,
       owned: json['owned'] as bool? ?? false,
       product: json['product'] as String?,
@@ -326,10 +330,12 @@ class PlexServer {
     if (json['name'] is! String || (json['name'] as String).isEmpty) {
       return false;
     }
-    if (json['clientIdentifier'] is! String || (json['clientIdentifier'] as String).isEmpty) {
+    if (json['clientIdentifier'] is! String ||
+        (json['clientIdentifier'] as String).isEmpty) {
       return false;
     }
-    if (json['accessToken'] is! String || (json['accessToken'] as String).isEmpty) {
+    if (json['accessToken'] is! String ||
+        (json['accessToken'] as String).isEmpty) {
       return false;
     }
 
@@ -394,8 +400,16 @@ class PlexServer {
     final httpCandidates = <_ConnectionCandidate>[];
 
     for (final connection in connections) {
-      final uriCandidate = _ConnectionCandidate(connection, connection.uri, true);
-      final directCandidate = _ConnectionCandidate(connection, connection.directUrl, false);
+      final uriCandidate = _ConnectionCandidate(
+        connection,
+        connection.uri,
+        true,
+      );
+      final directCandidate = _ConnectionCandidate(
+        connection,
+        connection.directUrl,
+        false,
+      );
 
       if (connection.protocol == 'https') {
         httpsCandidates.add(uriCandidate);
@@ -574,7 +588,9 @@ class PlexConnection {
   factory PlexConnection.fromJson(Map<String, dynamic> json) {
     // Validate required fields
     if (!_isValidConnectionJson(json)) {
-      throw FormatException('Invalid connection data: missing required fields (protocol, address, port, or uri)');
+      throw FormatException(
+        'Invalid connection data: missing required fields (protocol, address, port, or uri)',
+      );
     }
 
     return PlexConnection(
@@ -634,7 +650,10 @@ class PlexConnection {
   /// Create an HTTP fallback version of this HTTPS connection
   /// This allows testing HTTP when HTTPS is unavailable (e.g., certificate issues)
   PlexConnection toHttpFallback() {
-    assert(protocol == 'https', 'Can only create HTTP fallback for HTTPS connections');
+    assert(
+      protocol == 'https',
+      'Can only create HTTP fallback for HTTPS connections',
+    );
 
     return PlexConnection(
       protocol: 'http',

@@ -5,10 +5,7 @@ import 'package:media_kit/media_kit.dart';
 class PlaybackSpeedSheet extends StatelessWidget {
   final Player player;
 
-  const PlaybackSpeedSheet({
-    super.key,
-    required this.player,
-  });
+  const PlaybackSpeedSheet({super.key, required this.player});
 
   static BoxConstraints getBottomSheetConstraints(BuildContext context) {
     final size = MediaQuery.of(context).size;

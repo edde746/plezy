@@ -125,7 +125,9 @@ class _PinEntryDialogState extends State<PinEntryDialog>
                       _obscureText = !_obscureText;
                     });
                   },
-                  tooltip: _obscureText ? t.pinEntry.showPin : t.pinEntry.hidePin,
+                  tooltip: _obscureText
+                      ? t.pinEntry.showPin
+                      : t.pinEntry.hidePin,
                 ),
               ),
               onSubmitted: (_) => _submit(),
