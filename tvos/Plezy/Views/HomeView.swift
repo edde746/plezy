@@ -198,7 +198,7 @@ struct MediaCard: View {
             }
         }
         .buttonStyle(.plain)
-        .focusable(true) { focused in
+        .onFocusChange(true) { focused in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isFocused = focused
             }

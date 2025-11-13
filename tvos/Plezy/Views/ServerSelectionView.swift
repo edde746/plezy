@@ -44,7 +44,7 @@ struct ServerSelectionView: View {
                                 await authService.loadServers()
                             }
                         }
-                        .buttonStyle(.card)
+                        .buttonStyle(CardButtonStyle())
                     }
                 } else {
                     ScrollView {
@@ -147,7 +147,7 @@ struct ServerCard: View {
             )
         }
         .buttonStyle(.plain)
-        .focusable(true) { focused in
+        .onFocusChange(true) { focused in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isFocused = focused
             }

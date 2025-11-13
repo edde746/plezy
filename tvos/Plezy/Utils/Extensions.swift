@@ -10,9 +10,9 @@ import SwiftUI
 // MARK: - View Extensions
 
 extension View {
-    /// Makes a view focusable with a callback
-    func focusable(_ isFocusable: Bool = true, onFocusChange: @escaping (Bool) -> Void) -> some View {
-        self.modifier(FocusableModifier(isFocusable: isFocusable, onFocusChange: onFocusChange))
+    /// Makes a view focusable with a focus change callback
+    func onFocusChange(_ isFocusable: Bool = true, perform action: @escaping (Bool) -> Void) -> some View {
+        self.modifier(FocusableModifier(isFocusable: isFocusable, onFocusChange: action))
     }
 }
 

@@ -64,7 +64,7 @@ struct AuthView: View {
                         .padding(.horizontal, 60)
                         .padding(.vertical, 20)
                     }
-                    .buttonStyle(.card)
+                    .buttonStyle(CardButtonStyle())
                 }
 
                 if let error = authService.error {

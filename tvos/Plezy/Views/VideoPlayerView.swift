@@ -65,7 +65,7 @@ struct VideoPlayerView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .buttonStyle(.card)
+                    .buttonStyle(CardButtonStyle())
                 }
             }
         }

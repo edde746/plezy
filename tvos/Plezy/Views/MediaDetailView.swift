@@ -155,7 +155,7 @@ struct MediaDetailView: View {
                                     .padding(.horizontal, 40)
                                     .padding(.vertical, 15)
                                 }
-                                .buttonStyle(.card)
+                                .buttonStyle(CardButtonStyle())
                                 .background(Color.orange)
                                 .cornerRadius(10)
 
@@ -372,7 +372,7 @@ struct SeasonCard: View {
             .scaleEffect(isFocused ? 1.05 : 1.0)
         }
         .buttonStyle(.plain)
-        .focusable(true) { focused in
+        .onFocusChange(true) { focused in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isFocused = focused
             }
