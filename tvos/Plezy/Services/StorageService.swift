@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 
-@MainActor
 class StorageService: ObservableObject {
     private let defaults = UserDefaults.standard
 
@@ -34,6 +33,7 @@ class StorageService: ObservableObject {
 
     // MARK: - Initialization
 
+    @MainActor
     func loadStoredData() async {
         plexToken = defaults.string(forKey: Keys.plexToken)
         selectedServer = defaults.data(forKey: Keys.selectedServer)
@@ -43,11 +43,13 @@ class StorageService: ObservableObject {
 
     // MARK: - Authentication
 
+    @MainActor
     func savePlexToken(_ token: String) async {
         defaults.set(token, forKey: Keys.plexToken)
         plexToken = token
     }
 
+    @MainActor
     func saveSelectedServer(_ server: PlexServer) async {
         if let data = try? JSONEncoder().encode(server) {
             defaults.set(data, forKey: Keys.selectedServer)
@@ -55,6 +57,7 @@ class StorageService: ObservableObject {
         }
     }
 
+    @MainActor
     func saveCurrentUserUUID(_ uuid: String) async {
         defaults.set(uuid, forKey: Keys.currentUserUUID)
         currentUserUUID = uuid
@@ -62,6 +65,7 @@ class StorageService: ObservableObject {
 
     // MARK: - Library
 
+    @MainActor
     func saveSelectedLibrary(_ libraryKey: String) async {
         defaults.set(libraryKey, forKey: Keys.selectedLibrary)
         selectedLibrary = libraryKey
@@ -69,6 +73,7 @@ class StorageService: ObservableObject {
 
     // MARK: - Clear Data
 
+    @MainActor
     func clearAll() async {
         defaults.removeObject(forKey: Keys.plexToken)
         defaults.removeObject(forKey: Keys.selectedServer)

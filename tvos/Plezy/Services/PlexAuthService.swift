@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 
-@MainActor
 class PlexAuthService: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: PlexUser?
@@ -28,6 +27,7 @@ class PlexAuthService: ObservableObject {
         self.isAuthenticated = true
     }
 
+    @MainActor
     func validateToken() async -> Bool {
         guard let token = plexToken else { return false }
 
@@ -61,6 +61,7 @@ class PlexAuthService: ObservableObject {
 
     // MARK: - PIN Authentication
 
+    @MainActor
     func startPinAuth() async -> PlexPin? {
         isLoading = true
         error = nil
@@ -119,6 +120,7 @@ class PlexAuthService: ObservableObject {
 
     // MARK: - Server Discovery
 
+    @MainActor
     func loadServers() async {
         guard let token = plexToken else { return }
 
@@ -145,6 +147,7 @@ class PlexAuthService: ObservableObject {
 
     // MARK: - Server Connection
 
+    @MainActor
     func selectServer(_ server: PlexServer) async {
         isLoading = true
         error = nil
@@ -230,6 +233,7 @@ class PlexAuthService: ObservableObject {
         }
     }
 
+    @MainActor
     func switchUser(to user: PlexHomeUser, pin: String?) async -> Bool {
         guard let token = plexToken else { return false }
 

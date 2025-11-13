@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 
-@MainActor
 class SettingsService: ObservableObject {
     private let defaults = UserDefaults.standard
 
