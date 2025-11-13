@@ -10,8 +10,26 @@
 ## Development
 
 - Follow Dart/Flutter conventions
-- Run `flutter analyze` before submitting
+- Run `dart format .` to format your code
+- Run `flutter analyze` before submitting to check for issues
+- Run `flutter test` if tests are available
 - Test your changes thoroughly
+
+### Code Quality Checks
+
+The project includes automated CI checks that run on all pull requests:
+
+1. **Code Formatting**: Ensures code follows Dart formatting standards
+   - Run locally: `dart format .`
+   - CI check excludes generated files (`.g.dart`, `.freezed.dart`)
+
+2. **Static Analysis**: Checks for code issues and potential bugs
+   - Run locally: `flutter analyze`
+
+3. **Tests**: Runs unit and widget tests (when available)
+   - Run locally: `flutter test`
+
+All these checks must pass before your changes can be merged.
 
 ## Internationalization (i18n)
 

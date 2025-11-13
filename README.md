@@ -77,6 +77,23 @@ flutter run
 
 ## Development
 
+### Code Quality
+
+Before submitting changes, ensure your code passes all quality checks:
+
+```bash
+# Format code
+dart format .
+
+# Analyze code for issues
+flutter analyze
+
+# Run tests (if available)
+flutter test
+```
+
+These checks are automatically run in CI for all pull requests.
+
 ### Code Generation
 
 The project uses code generation for JSON serialization. After modifying model classes, run:
