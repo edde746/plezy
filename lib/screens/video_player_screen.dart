@@ -61,12 +61,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   StreamSubscription<bool>? _completedSubscription;
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<dynamic>? _mediaControlSubscription;
+  StreamSubscription<bool>? _bufferingSubscription;
   bool _isReplacingWithVideo =
       false; // Flag to skip orientation restoration during video-to-video navigation
 
   // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode = 0;
   bool _isPinching = false; // Track if a pinch gesture is occurring
+  bool _isBuffering = false; // Track if video is currently buffering
 
   @override
   void initState() {
@@ -220,6 +222,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Listen to position updates for media controls
       _positionSubscription = player!.stream.position.listen((_) {
         _updateMediaControlsPosition();
+      });
+
+      // Listen to buffering state
+      _bufferingSubscription = player!.stream.buffering.listen((isBuffering) {
+        if (mounted) {
+          setState(() {
+            _isBuffering = isBuffering;
+          });
+        }
       });
 
       // Initialize OS media controls
@@ -475,6 +486,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _errorSubscription?.cancel();
     _positionSubscription?.cancel();
     _mediaControlSubscription?.cancel();
+    _bufferingSubscription?.cancel();
 
     // Clear OS media controls completely
     OsMediaControls.clear();
@@ -1500,6 +1512,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                  ),
+                ),
+              // Buffering indicator
+              if (_isBuffering)
+                Positioned.fill(
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
                       ),
                     ),
                   ),
