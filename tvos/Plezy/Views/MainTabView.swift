@@ -18,6 +18,9 @@ struct MainTabView: View {
                     Label("Home", systemImage: "house.fill")
                 }
                 .tag(0)
+                .onAppear {
+                    print("📱 [MainTabView] Home tab appeared")
+                }
 
             LibrariesView()
                 .tabItem {
@@ -36,6 +39,9 @@ struct MainTabView: View {
                     Label("Settings", systemImage: "gear")
                 }
                 .tag(3)
+        }
+        .onAppear {
+            print("📱 [MainTabView] MainTabView appeared")
         }
     }
 }

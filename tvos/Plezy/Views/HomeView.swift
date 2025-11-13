@@ -103,7 +103,11 @@ struct HomeView: View {
                 .padding(.bottom, 40)
             }
         }
+        .onAppear {
+            print("🏠 [HomeView] View appeared")
+        }
         .task {
+            print("🏠 [HomeView] .task modifier triggered")
             await loadContent()
         }
         .sheet(item: $selectedMedia) { media in
@@ -122,12 +126,17 @@ struct HomeView: View {
     }
 
     private func loadContent() async {
+        print("🏠 [HomeView] loadContent called")
+        print("🏠 [HomeView] currentClient exists: \(authService.currentClient != nil)")
+
         guard let client = authService.currentClient else {
+            print("🏠 [HomeView] No client available, showing no server selected")
             isLoading = false
             noServerSelected = true
             return
         }
 
+        print("🏠 [HomeView] Client available, starting content load...")
         isLoading = true
         noServerSelected = false
 
@@ -135,13 +144,17 @@ struct HomeView: View {
         async let hubsTask = client.getHubs()
 
         do {
+            print("🏠 [HomeView] Fetching on deck and hubs...")
             self.onDeck = try await onDeckTask
             self.hubs = try await hubsTask
+            print("🏠 [HomeView] Content loaded successfully. OnDeck: \(self.onDeck.count), Hubs: \(self.hubs.count)")
         } catch {
-            print("Error loading content: \(error)")
+            print("🔴 [HomeView] Error loading content: \(error)")
+            print("🔴 [HomeView] Error details: \(error.localizedDescription)")
         }
 
         isLoading = false
+        print("🏠 [HomeView] loadContent complete")
     }
 }
 
