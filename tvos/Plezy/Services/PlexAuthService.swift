@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 class PlexAuthService: ObservableObject {
     @Published var isAuthenticated = false
