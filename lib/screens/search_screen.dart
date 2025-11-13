@@ -1,17 +1,19 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../client/plex_client.dart';
-import '../models/plex_metadata.dart';
-import '../services/settings_service.dart';
-import '../providers/settings_provider.dart';
-import '../utils/provider_extensions.dart';
-import '../utils/app_logger.dart';
-import '../widgets/media_card.dart';
-import '../widgets/desktop_app_bar.dart';
-import '../mixins/refreshable.dart';
-import '../mixins/item_updatable.dart';
 import '../i18n/strings.g.dart';
+import '../mixins/item_updatable.dart';
+import '../mixins/refreshable.dart';
+import '../models/plex_metadata.dart';
+import '../providers/settings_provider.dart';
+import '../services/settings_service.dart';
+import '../utils/app_logger.dart';
+import '../utils/provider_extensions.dart';
+import '../widgets/desktop_app_bar.dart';
+import '../widgets/media_card.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -107,9 +109,9 @@ class _SearchScreenState extends State<SearchScreen>
         setState(() {
           _isSearching = false;
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.errors.searchFailed(error: e))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.errors.searchFailed(error: e))),
+        );
       }
     }
   }
@@ -124,7 +126,9 @@ class _SearchScreenState extends State<SearchScreen>
 
   // Public method to fully reload all content (for profile switches)
   void fullRefresh() {
-    appLogger.d('SearchScreen.fullRefresh() called - clearing search and reloading');
+    appLogger.d(
+      'SearchScreen.fullRefresh() called - clearing search and reloading',
+    );
     // Clear search results and search text for new profile
     _searchController.clear();
     setState(() {
@@ -186,14 +190,14 @@ class _SearchScreenState extends State<SearchScreen>
                       Icon(Icons.search, size: 80, color: Colors.grey.shade400),
                       const SizedBox(height: 16),
                       Text(
-                        'Search your media',
+                        t.search.searchYourMedia,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Colors.grey.shade600,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Enter a title, actor, or keyword',
+                        t.search.enterTitleActorOrKeyword,
                         style: TextStyle(color: Colors.grey.shade600),
                       ),
                     ],
@@ -234,17 +238,14 @@ class _SearchScreenState extends State<SearchScreen>
                     return SliverPadding(
                       padding: const EdgeInsets.all(16),
                       sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final item = _searchResults[index];
-                            return MediaCard(
-                              key: Key(item.ratingKey),
-                              item: item,
-                              onRefresh: updateItem,
-                            );
-                          },
-                          childCount: _searchResults.length,
-                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = _searchResults[index];
+                          return MediaCard(
+                            key: Key(item.ratingKey),
+                            item: item,
+                            onRefresh: updateItem,
+                          );
+                        }, childCount: _searchResults.length),
                       ),
                     );
                   } else {

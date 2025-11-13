@@ -132,7 +132,9 @@
   },
   "search": {
     "hint": "Search movies, shows, music...",
-    "tryDifferentTerm": "Try a different search term"
+    "tryDifferentTerm": "Try a different search term",
+    "searchYourMedia": "Search your media",
+    "enterTitleActorOrKeyword": "Enter a title, actor, or keyword"
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",

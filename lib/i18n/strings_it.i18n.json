@@ -132,7 +132,9 @@
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",
-    "tryDifferentTerm": "Prova altri termini di ricerca"
+    "tryDifferentTerm": "Prova altri termini di ricerca",
+    "searchYourMedia": "Cerca nei tuoi media",
+    "enterTitleActorOrKeyword": "Inserisci un titolo, attore o parola chiave"
   },
   "hotkeys": {
     "setShortcutFor": "Imposta scorciatoia per ${actionName}",

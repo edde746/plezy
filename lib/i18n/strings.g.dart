@@ -27,6 +27,7 @@ const AppLocale _baseLocale = AppLocale.en;
 enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	en(languageCode: 'en', build: Translations.build),
 	it(languageCode: 'it', build: _StringsIt.build),
+	nl(languageCode: 'nl', build: _StringsNl.build),
 	sv(languageCode: 'sv', build: _StringsSv.build);
 
 	const AppLocale({required this.languageCode, this.scriptCode, this.countryCode, required this.build}); // ignore: unused_element
@@ -360,6 +361,8 @@ class _StringsSearchEn {
 	// Translations
 	String get hint => 'Search movies, shows, music...';
 	String get tryDifferentTerm => 'Try a different search term';
+	String get searchYourMedia => 'Search your media';
+	String get enterTitleActorOrKeyword => 'Enter a title, actor, or keyword';
 }
 
 // Path: hotkeys
@@ -968,6 +971,8 @@ class _StringsSearchIt implements _StringsSearchEn {
 	// Translations
 	@override String get hint => 'Cerca film. spettacoli, musica...';
 	@override String get tryDifferentTerm => 'Prova altri termini di ricerca';
+	@override String get searchYourMedia => 'Cerca nei tuoi media';
+	@override String get enterTitleActorOrKeyword => 'Inserisci un titolo, attore o parola chiave';
 }
 
 // Path: hotkeys
@@ -1342,6 +1347,614 @@ class _StringsNavigationIt implements _StringsNavigationEn {
 }
 
 // Path: <root>
+class _StringsNl implements Translations {
+	/// You can call this constructor and build your own translation instance of this locale.
+	/// Constructing via the enum [AppLocale.build] is preferred.
+	_StringsNl.build({Map<String, Node>? overrides, PluralResolver? cardinalResolver, PluralResolver? ordinalResolver})
+		: assert(overrides == null, 'Set "translation_overrides: true" in order to enable this feature.'),
+		  $meta = TranslationMetadata(
+		    locale: AppLocale.nl,
+		    overrides: overrides ?? {},
+		    cardinalResolver: cardinalResolver,
+		    ordinalResolver: ordinalResolver,
+		  ) {
+		$meta.setFlatMapFunction(_flatMapFunction);
+	}
+
+	/// Metadata for the translations of <nl>.
+	@override final TranslationMetadata<AppLocale, Translations> $meta;
+
+	/// Access flat map
+	@override dynamic operator[](String key) => $meta.getTranslation(key);
+
+	@override late final _StringsNl _root = this; // ignore: unused_field
+
+	// Translations
+	@override late final _StringsAppNl app = _StringsAppNl._(_root);
+	@override late final _StringsAuthNl auth = _StringsAuthNl._(_root);
+	@override late final _StringsCommonNl common = _StringsCommonNl._(_root);
+	@override late final _StringsScreensNl screens = _StringsScreensNl._(_root);
+	@override late final _StringsUpdateNl update = _StringsUpdateNl._(_root);
+	@override late final _StringsSettingsNl settings = _StringsSettingsNl._(_root);
+	@override late final _StringsSearchNl search = _StringsSearchNl._(_root);
+	@override late final _StringsHotkeysNl hotkeys = _StringsHotkeysNl._(_root);
+	@override late final _StringsPinEntryNl pinEntry = _StringsPinEntryNl._(_root);
+	@override late final _StringsFileInfoNl fileInfo = _StringsFileInfoNl._(_root);
+	@override late final _StringsMediaMenuNl mediaMenu = _StringsMediaMenuNl._(_root);
+	@override late final _StringsTooltipsNl tooltips = _StringsTooltipsNl._(_root);
+	@override late final _StringsVideoControlsNl videoControls = _StringsVideoControlsNl._(_root);
+	@override late final _StringsUserStatusNl userStatus = _StringsUserStatusNl._(_root);
+	@override late final _StringsMessagesNl messages = _StringsMessagesNl._(_root);
+	@override late final _StringsProfileNl profile = _StringsProfileNl._(_root);
+	@override late final _StringsSubtitlingStylingNl subtitlingStyling = _StringsSubtitlingStylingNl._(_root);
+	@override late final _StringsDialogNl dialog = _StringsDialogNl._(_root);
+	@override late final _StringsDiscoverNl discover = _StringsDiscoverNl._(_root);
+	@override late final _StringsErrorsNl errors = _StringsErrorsNl._(_root);
+	@override late final _StringsLibrariesNl libraries = _StringsLibrariesNl._(_root);
+	@override late final _StringsAboutNl about = _StringsAboutNl._(_root);
+	@override late final _StringsServerSelectionNl serverSelection = _StringsServerSelectionNl._(_root);
+	@override late final _StringsHubDetailNl hubDetail = _StringsHubDetailNl._(_root);
+	@override late final _StringsLogsNl logs = _StringsLogsNl._(_root);
+	@override late final _StringsLicensesNl licenses = _StringsLicensesNl._(_root);
+	@override late final _StringsNavigationNl navigation = _StringsNavigationNl._(_root);
+}
+
+// Path: app
+class _StringsAppNl implements _StringsAppEn {
+	_StringsAppNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Plezy';
+	@override String get loading => 'Laden...';
+}
+
+// Path: auth
+class _StringsAuthNl implements _StringsAuthEn {
+	_StringsAuthNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get signInWithPlex => 'Inloggen met Plex';
+	@override String get showQRCode => 'Toon QR-code';
+	@override String get cancel => 'Annuleren';
+	@override String get authenticate => 'Authenticeren';
+	@override String get retry => 'Opnieuw proberen';
+	@override String get debugEnterToken => 'Debug: Voer Plex Token in';
+	@override String get plexTokenLabel => 'Plex Auth Token';
+	@override String get plexTokenHint => 'Voer je Plex.tv token in';
+	@override String get authenticationTimeout => 'Authenticatie verlopen. Probeer opnieuw.';
+	@override String get scanQRCodeInstruction => 'Scan deze QR-code met een apparaat dat is ingelogd op Plex om te authenticeren.';
+	@override String get waitingForAuth => 'Wachten op authenticatie...\nVoltooi het inloggen in je browser.';
+}
+
+// Path: common
+class _StringsCommonNl implements _StringsCommonEn {
+	_StringsCommonNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get cancel => 'Annuleren';
+	@override String get save => 'Opslaan';
+	@override String get close => 'Sluiten';
+	@override String get clear => 'Wissen';
+	@override String get reset => 'Resetten';
+	@override String get later => 'Later';
+	@override String get submit => 'Verzenden';
+	@override String get confirm => 'Bevestigen';
+	@override String get retry => 'Opnieuw proberen';
+	@override String get playNow => 'Nu afspelen';
+	@override String get logout => 'Uitloggen';
+	@override String get online => 'Online';
+	@override String get offline => 'Offline';
+	@override String get owned => 'Eigendom';
+	@override String get shared => 'Gedeeld';
+	@override String get current => 'HUIDIG';
+	@override String get unknown => 'Onbekend';
+	@override String get refresh => 'Vernieuwen';
+	@override String get yes => 'Ja';
+	@override String get no => 'Nee';
+	@override String get server => 'Server';
+}
+
+// Path: screens
+class _StringsScreensNl implements _StringsScreensEn {
+	_StringsScreensNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get licenses => 'Licenties';
+	@override String get selectServer => 'Selecteer server';
+	@override String get switchProfile => 'Wissel van profiel';
+	@override String get subtitleStyling => 'Ondertitel opmaak';
+	@override String get search => 'Zoeken';
+	@override String get logs => 'Logs';
+}
+
+// Path: update
+class _StringsUpdateNl implements _StringsUpdateEn {
+	_StringsUpdateNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get available => 'Update beschikbaar';
+	@override String versionAvailable({required Object version}) => 'Versie ${version} is beschikbaar';
+	@override String currentVersion({required Object version}) => 'Huidig: ${version}';
+	@override String get skipVersion => 'Deze versie overslaan';
+	@override String get viewRelease => 'Bekijk release';
+	@override String get latestVersion => 'Je hebt de nieuwste versie';
+	@override String get checkFailed => 'Kon niet controleren op updates';
+}
+
+// Path: settings
+class _StringsSettingsNl implements _StringsSettingsEn {
+	_StringsSettingsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Instellingen';
+	@override String get language => 'Taal';
+	@override String get theme => 'Thema';
+	@override String get appearance => 'Uiterlijk';
+	@override String get videoPlayback => 'Video afspelen';
+	@override String get shufflePlay => 'Willekeurig afspelen';
+	@override String get advanced => 'Geavanceerd';
+	@override String get useSeasonPostersDescription => 'Toon seizoenposter in plaats van serieposter voor afleveringen';
+	@override String get showHeroSectionDescription => 'Toon uitgelichte inhoud carrousel op startscherm';
+	@override String get secondsLabel => 'Seconden';
+	@override String get minutesLabel => 'Minuten';
+	@override String get secondsShort => 's';
+	@override String get minutesShort => 'm';
+	@override String durationHint({required Object min, required Object max}) => 'Voer duur in (${min}-${max})';
+	@override String get systemTheme => 'Systeem';
+	@override String get systemThemeDescription => 'Volg systeeminstellingen';
+	@override String get lightTheme => 'Licht';
+	@override String get darkTheme => 'Donker';
+	@override String get libraryDensity => 'Bibliotheek dichtheid';
+	@override String get compact => 'Compact';
+	@override String get compactDescription => 'Kleinere kaarten, meer items zichtbaar';
+	@override String get normal => 'Normaal';
+	@override String get normalDescription => 'Standaard grootte';
+	@override String get comfortable => 'Comfortabel';
+	@override String get comfortableDescription => 'Grotere kaarten, minder items zichtbaar';
+	@override String get viewMode => 'Weergavemodus';
+	@override String get gridView => 'Raster';
+	@override String get gridViewDescription => 'Items weergeven in een rasterindeling';
+	@override String get listView => 'Lijst';
+	@override String get listViewDescription => 'Items weergeven in een lijstindeling';
+	@override String get useSeasonPosters => 'Gebruik seizoenposters';
+	@override String get showHeroSection => 'Toon hoofdsectie';
+	@override String get hardwareDecoding => 'Hardware decodering';
+	@override String get hardwareDecodingDescription => 'Gebruik hardware versnelling indien beschikbaar';
+	@override String get bufferSize => 'Buffer grootte';
+	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get subtitleStyling => 'Ondertitel opmaak';
+	@override String get subtitleStylingDescription => 'Pas ondertitel uiterlijk aan';
+	@override String get smallSkipDuration => 'Korte skip duur';
+	@override String get largeSkipDuration => 'Lange skip duur';
+	@override String secondsUnit({required Object seconds}) => '${seconds} seconden';
+	@override String get defaultSleepTimer => 'Standaard slaap timer';
+	@override String minutesUnit({required Object minutes}) => 'bij ${minutes} minuten';
+	@override String get unwatchedOnly => 'Alleen ongekeken';
+	@override String get unwatchedOnlyDescription => 'Alleen ongekeken afleveringen opnemen in willekeurige wachtrij';
+	@override String get shuffleOrderNavigation => 'Willekeurige volgorde navigatie';
+	@override String get shuffleOrderNavigationDescription => 'Volgende/vorige knoppen volgen willekeurige volgorde';
+	@override String get loopShuffleQueue => 'Herhaal willekeurige wachtrij';
+	@override String get loopShuffleQueueDescription => 'Start wachtrij opnieuw bij het einde';
+	@override String get videoPlayerControls => 'Videospeler bediening';
+	@override String get keyboardShortcuts => 'Toetsenbord sneltoetsen';
+	@override String get keyboardShortcutsDescription => 'Pas toetsenbord sneltoetsen aan';
+	@override String get debugLogging => 'Debug logging';
+	@override String get debugLoggingDescription => 'Schakel gedetailleerde logging in voor probleemoplossing';
+	@override String get viewLogs => 'Bekijk logs';
+	@override String get viewLogsDescription => 'Bekijk applicatie logs';
+	@override String get clearCache => 'Cache wissen';
+	@override String get clearCacheDescription => 'Dit wist alle gecachte afbeeldingen en gegevens. De app kan langer duren om inhoud te laden na het wissen van de cache.';
+	@override String get clearCacheSuccess => 'Cache succesvol gewist';
+	@override String get resetSettings => 'Instellingen resetten';
+	@override String get resetSettingsDescription => 'Dit reset alle instellingen naar hun standaard waarden. Deze actie kan niet ongedaan gemaakt worden.';
+	@override String get resetSettingsSuccess => 'Instellingen succesvol gereset';
+	@override String get shortcutsReset => 'Sneltoetsen gereset naar standaard';
+	@override String get about => 'Over';
+	@override String get aboutDescription => 'App informatie en licenties';
+	@override String get updates => 'Updates';
+	@override String get updateAvailable => 'Update beschikbaar';
+	@override String get checkForUpdates => 'Controleer op updates';
+	@override String get validationErrorEnterNumber => 'Voer een geldig nummer in';
+	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Duur moet tussen ${min} en ${max} ${unit} zijn';
+	@override String shortcutAlreadyAssigned({required Object action}) => 'Sneltoets al toegewezen aan ${action}';
+	@override String shortcutUpdated({required Object action}) => 'Sneltoets bijgewerkt voor ${action}';
+}
+
+// Path: search
+class _StringsSearchNl implements _StringsSearchEn {
+	_StringsSearchNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get hint => 'Zoek films, series, muziek...';
+	@override String get tryDifferentTerm => 'Probeer een andere zoekterm';
+	@override String get searchYourMedia => 'Zoek in je media';
+	@override String get enterTitleActorOrKeyword => 'Voer een titel, acteur of trefwoord in';
+}
+
+// Path: hotkeys
+class _StringsHotkeysNl implements _StringsHotkeysEn {
+	_StringsHotkeysNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String setShortcutFor({required Object actionName}) => 'Stel sneltoets in voor ${actionName}';
+	@override String get clearShortcut => 'Wis sneltoets';
+}
+
+// Path: pinEntry
+class _StringsPinEntryNl implements _StringsPinEntryEn {
+	_StringsPinEntryNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get enterPin => 'Voer PIN in';
+	@override String get showPin => 'Toon PIN';
+	@override String get hidePin => 'Verberg PIN';
+}
+
+// Path: fileInfo
+class _StringsFileInfoNl implements _StringsFileInfoEn {
+	_StringsFileInfoNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bestand info';
+	@override String get video => 'Video';
+	@override String get audio => 'Audio';
+	@override String get file => 'Bestand';
+	@override String get advanced => 'Geavanceerd';
+	@override String get codec => 'Codec';
+	@override String get resolution => 'Resolutie';
+	@override String get bitrate => 'Bitrate';
+	@override String get frameRate => 'Frame rate';
+	@override String get aspectRatio => 'Beeldverhouding';
+	@override String get profile => 'Profiel';
+	@override String get bitDepth => 'Bit diepte';
+	@override String get colorSpace => 'Kleurruimte';
+	@override String get colorRange => 'Kleurbereik';
+	@override String get colorPrimaries => 'Kleurprimaires';
+	@override String get chromaSubsampling => 'Chroma subsampling';
+	@override String get channels => 'Kanalen';
+	@override String get path => 'Pad';
+	@override String get size => 'Grootte';
+	@override String get container => 'Container';
+	@override String get duration => 'Duur';
+	@override String get optimizedForStreaming => 'Geoptimaliseerd voor streaming';
+	@override String get has64bitOffsets => '64-bit Offsets';
+}
+
+// Path: mediaMenu
+class _StringsMediaMenuNl implements _StringsMediaMenuEn {
+	_StringsMediaMenuNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get markAsWatched => 'Markeer als gekeken';
+	@override String get markAsUnwatched => 'Markeer als ongekeken';
+	@override String get goToSeries => 'Ga naar serie';
+	@override String get goToSeason => 'Ga naar seizoen';
+	@override String get shufflePlay => 'Willekeurig afspelen';
+	@override String get fileInfo => 'Bestand info';
+}
+
+// Path: tooltips
+class _StringsTooltipsNl implements _StringsTooltipsEn {
+	_StringsTooltipsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get shufflePlay => 'Willekeurig afspelen';
+	@override String get markAsWatched => 'Markeer als gekeken';
+	@override String get markAsUnwatched => 'Markeer als ongekeken';
+}
+
+// Path: videoControls
+class _StringsVideoControlsNl implements _StringsVideoControlsEn {
+	_StringsVideoControlsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioLabel => 'Audio';
+	@override String get subtitlesLabel => 'Ondertitels';
+	@override String get resetToZero => 'Reset naar 0ms';
+	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
+	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
+	@override String playsLater({required Object label}) => '${label} speelt later af';
+	@override String playsEarlier({required Object label}) => '${label} speelt eerder af';
+	@override String get noOffset => 'Geen offset';
+	@override String get letterbox => 'Letterbox';
+	@override String get fillScreen => 'Vul scherm';
+	@override String get stretch => 'Uitrekken';
+	@override String get lockRotation => 'Vergrendel rotatie';
+	@override String get unlockRotation => 'Ontgrendel rotatie';
+}
+
+// Path: userStatus
+class _StringsUserStatusNl implements _StringsUserStatusEn {
+	_StringsUserStatusNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get admin => 'Beheerder';
+	@override String get restricted => 'Beperkt';
+	@override String get protected => 'Beschermd';
+}
+
+// Path: messages
+class _StringsMessagesNl implements _StringsMessagesEn {
+	_StringsMessagesNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get markedAsWatched => 'Gemarkeerd als gekeken';
+	@override String get markedAsUnwatched => 'Gemarkeerd als ongekeken';
+	@override String errorLoading({required Object error}) => 'Fout: ${error}';
+	@override String get fileInfoNotAvailable => 'Bestand informatie niet beschikbaar';
+	@override String errorLoadingFileInfo({required Object error}) => 'Fout bij laden bestand info: ${error}';
+	@override String get errorLoadingSeries => 'Fout bij laden serie';
+	@override String get errorLoadingSeason => 'Fout bij laden seizoen';
+	@override String get musicNotSupported => 'Muziek afspelen wordt nog niet ondersteund';
+	@override String get logsCleared => 'Logs gewist';
+	@override String get logsCopied => 'Logs gekopieerd naar klembord';
+	@override String get noLogsAvailable => 'Geen logs beschikbaar';
+	@override String libraryScanning({required Object title}) => 'Scannen "${title}"...';
+	@override String libraryScanStarted({required Object title}) => 'Bibliotheek scan gestart voor "${title}"';
+	@override String libraryScanFailed({required Object error}) => 'Kon bibliotheek niet scannen: ${error}';
+	@override String metadataRefreshing({required Object title}) => 'Metadata vernieuwen voor "${title}"...';
+	@override String metadataRefreshStarted({required Object title}) => 'Metadata vernieuwen gestart voor "${title}"';
+	@override String metadataRefreshFailed({required Object error}) => 'Kon metadata niet vernieuwen: ${error}';
+	@override String get noPlexToken => 'Geen Plex token gevonden. Log opnieuw in.';
+	@override String get logoutConfirm => 'Weet je zeker dat je wilt uitloggen?';
+	@override String get noSeasonsFound => 'Geen seizoenen gevonden';
+	@override String get noEpisodesFound => 'Geen afleveringen gevonden in eerste seizoen';
+	@override String get noEpisodesFoundGeneral => 'Geen afleveringen gevonden';
+	@override String get noResultsFound => 'Geen resultaten gevonden';
+	@override String sleepTimerSet({required Object label}) => 'Slaap timer ingesteld voor ${label}';
+	@override String failedToSwitchProfile({required Object displayName}) => 'Kon niet wisselen naar ${displayName}';
+}
+
+// Path: profile
+class _StringsProfileNl implements _StringsProfileEn {
+	_StringsProfileNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get noUsersAvailable => 'Geen gebruikers beschikbaar';
+}
+
+// Path: subtitlingStyling
+class _StringsSubtitlingStylingNl implements _StringsSubtitlingStylingEn {
+	_StringsSubtitlingStylingNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get stylingOptions => 'Opmaak opties';
+	@override String get fontSize => 'Lettergrootte';
+	@override String get textColor => 'Tekstkleur';
+	@override String get borderSize => 'Rand grootte';
+	@override String get borderColor => 'Randkleur';
+	@override String get backgroundOpacity => 'Achtergrond transparantie';
+	@override String get backgroundColor => 'Achtergrondkleur';
+}
+
+// Path: dialog
+class _StringsDialogNl implements _StringsDialogEn {
+	_StringsDialogNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get confirmAction => 'Bevestig actie';
+	@override String get areYouSure => 'Weet je zeker dat je deze actie wilt uitvoeren?';
+	@override String get cancel => 'Annuleren';
+	@override String get playNow => 'Nu afspelen';
+}
+
+// Path: discover
+class _StringsDiscoverNl implements _StringsDiscoverEn {
+	_StringsDiscoverNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Ontdekken';
+	@override String get switchProfile => 'Wissel van profiel';
+	@override String get switchServer => 'Wissel van server';
+	@override String get logout => 'Uitloggen';
+	@override String get noContentAvailable => 'Geen inhoud beschikbaar';
+	@override String get addMediaToLibraries => 'Voeg wat media toe aan je bibliotheken';
+	@override String get continueWatching => 'Verder kijken';
+	@override String get recentlyAdded => 'Recent toegevoegd';
+	@override String get play => 'Afspelen';
+	@override String get resume => 'Hervatten';
+	@override String playEpisode({required Object season, required Object episode}) => 'Speel S${season}, E${episode}';
+	@override String resumeEpisode({required Object season, required Object episode}) => 'Hervat S${season}, E${episode}';
+	@override String get pause => 'Pauzeren';
+	@override String get overview => 'Overzicht';
+	@override String get cast => 'Cast';
+	@override String episodeCount({required Object count}) => '${count} afleveringen';
+	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} gekeken';
+	@override String get movie => 'Film';
+	@override String get tvShow => 'TV Serie';
+	@override String minutesLeft({required Object minutes}) => '${minutes} min over';
+}
+
+// Path: errors
+class _StringsErrorsNl implements _StringsErrorsEn {
+	_StringsErrorsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String searchFailed({required Object error}) => 'Zoeken mislukt: ${error}';
+	@override String connectionTimeout({required Object context}) => 'Verbinding time-out tijdens laden ${context}';
+	@override String get connectionFailed => 'Kan geen verbinding maken met Plex server';
+	@override String failedToLoad({required Object context, required Object error}) => 'Kon ${context} niet laden: ${error}';
+	@override String get noClientAvailable => 'Geen client beschikbaar';
+	@override String authenticationFailed({required Object error}) => 'Authenticatie mislukt: ${error}';
+	@override String get couldNotLaunchUrl => 'Kon auth URL niet openen';
+	@override String get pleaseEnterToken => 'Voer een token in';
+	@override String get invalidToken => 'Ongeldig token';
+	@override String failedToVerifyToken({required Object error}) => 'Kon token niet verifiëren: ${error}';
+	@override String failedToSwitchProfile({required Object displayName}) => 'Kon niet wisselen naar ${displayName}';
+	@override String get connectionFailedGeneric => 'Verbinding mislukt';
+}
+
+// Path: libraries
+class _StringsLibrariesNl implements _StringsLibrariesEn {
+	_StringsLibrariesNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bibliotheken';
+	@override String get scanLibraryFiles => 'Scan bibliotheek bestanden';
+	@override String get scanLibrary => 'Scan bibliotheek';
+	@override String get analyze => 'Analyseren';
+	@override String get analyzeLibrary => 'Analyseer bibliotheek';
+	@override String get refreshMetadata => 'Vernieuw metadata';
+	@override String get emptyTrash => 'Prullenbak legen';
+	@override String emptyingTrash({required Object title}) => 'Prullenbak legen voor "${title}"...';
+	@override String trashEmptied({required Object title}) => 'Prullenbak geleegd voor "${title}"';
+	@override String failedToEmptyTrash({required Object error}) => 'Kon prullenbak niet legen: ${error}';
+	@override String analyzing({required Object title}) => 'Analyseren "${title}"...';
+	@override String analysisStarted({required Object title}) => 'Analyse gestart voor "${title}"';
+	@override String failedToAnalyze({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}';
+	@override String get noLibrariesFound => 'Geen bibliotheken gevonden';
+	@override String get thisLibraryIsEmpty => 'Deze bibliotheek is leeg';
+	@override String get all => 'Alles';
+	@override String get clearAll => 'Alles wissen';
+	@override String scanLibraryConfirm({required Object title}) => 'Weet je zeker dat je "${title}" wilt scannen?';
+	@override String analyzeLibraryConfirm({required Object title}) => 'Weet je zeker dat je "${title}" wilt analyseren?';
+	@override String refreshMetadataConfirm({required Object title}) => 'Weet je zeker dat je metadata wilt vernieuwen voor "${title}"?';
+	@override String emptyTrashConfirm({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?';
+	@override String get manageLibraries => 'Beheer bibliotheken';
+	@override String get sort => 'Sorteren';
+	@override String get sortBy => 'Sorteer op';
+	@override String get filters => 'Filters';
+	@override String loadingLibraryWithCount({required Object count}) => 'Bibliotheek laden... (${count} items geladen)';
+	@override String get confirmActionMessage => 'Weet je zeker dat je deze actie wilt uitvoeren?';
+	@override String get showLibrary => 'Toon bibliotheek';
+	@override String get hideLibrary => 'Verberg bibliotheek';
+	@override String get libraryOptions => 'Bibliotheek opties';
+}
+
+// Path: about
+class _StringsAboutNl implements _StringsAboutEn {
+	_StringsAboutNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Over';
+	@override String get openSourceLicenses => 'Open Source licenties';
+	@override String versionLabel({required Object version}) => 'Versie ${version}';
+	@override String get appDescription => 'Een mooie Plex client voor Flutter';
+	@override String get viewLicensesDescription => 'Bekijk licenties van third-party bibliotheken';
+}
+
+// Path: serverSelection
+class _StringsServerSelectionNl implements _StringsServerSelectionEn {
+	_StringsServerSelectionNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get connectingToServer => 'Verbinden met server...';
+	@override String get serverDebugCopied => 'Server debug gegevens gekopieerd naar klembord';
+	@override String get copyDebugData => 'Kopieer debug gegevens';
+	@override String get noServersFound => 'Geen servers gevonden';
+	@override String malformedServerData({required Object count}) => '${count} server(s) gevonden met verkeerde data. Geen geldige servers beschikbaar.';
+	@override String get incompleteServerInfo => 'Sommige servers hebben incomplete informatie en zijn overgeslagen. Controleer je Plex.tv account.';
+	@override String get incompleteConnectionInfo => 'Server verbinding informatie is incompleet. Probeer opnieuw.';
+	@override String malformedServerInfo({required Object message}) => 'Server informatie is verkeerd geformatteerd: ${message}';
+	@override String get networkConnectionFailed => 'Netwerkverbinding mislukt. Controleer je internetverbinding en probeer opnieuw.';
+	@override String get authenticationFailed => 'Authenticatie mislukt. Log opnieuw in.';
+	@override String get plexServiceUnavailable => 'Plex service niet beschikbaar. Probeer later opnieuw.';
+	@override String failedToLoadServers({required Object error}) => 'Kon servers niet laden: ${error}';
+}
+
+// Path: hubDetail
+class _StringsHubDetailNl implements _StringsHubDetailEn {
+	_StringsHubDetailNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Titel';
+	@override String get releaseYear => 'Uitgavejaar';
+	@override String get dateAdded => 'Datum toegevoegd';
+	@override String get rating => 'Beoordeling';
+	@override String get noItemsFound => 'Geen items gevonden';
+}
+
+// Path: logs
+class _StringsLogsNl implements _StringsLogsEn {
+	_StringsLogsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Logs';
+	@override String get clearLogs => 'Wis logs';
+	@override String get copyLogs => 'Kopieer logs';
+	@override String get exportLogs => 'Exporteer logs';
+	@override String get noLogsToShow => 'Geen logs om te tonen';
+	@override String get error => 'Fout:';
+	@override String get stackTrace => 'Stack Trace:';
+}
+
+// Path: licenses
+class _StringsLicensesNl implements _StringsLicensesEn {
+	_StringsLicensesNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get relatedPackages => 'Gerelateerde pakketten';
+	@override String get license => 'Licentie';
+	@override String licenseNumber({required Object number}) => 'Licentie ${number}';
+	@override String licensesCount({required Object count}) => '${count} licenties';
+}
+
+// Path: navigation
+class _StringsNavigationNl implements _StringsNavigationEn {
+	_StringsNavigationNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get home => 'Home';
+	@override String get search => 'Zoeken';
+	@override String get libraries => 'Bibliotheken';
+	@override String get settings => 'Instellingen';
+}
+
+// Path: <root>
 class _StringsSv implements Translations {
 	/// You can call this constructor and build your own translation instance of this locale.
 	/// Constructing via the enum [AppLocale.build] is preferred.
@@ -1576,6 +2189,8 @@ class _StringsSearchSv implements _StringsSearchEn {
 	// Translations
 	@override String get hint => 'Sök filmer, serier, musik...';
 	@override String get tryDifferentTerm => 'Prova en annan sökterm';
+	@override String get searchYourMedia => 'Sök i dina media';
+	@override String get enterTitleActorOrKeyword => 'Ange en titel, skådespelare eller nyckelord';
 }
 
 // Path: hotkeys
@@ -2076,6 +2691,8 @@ extension on Translations {
 			case 'settings.shortcutUpdated': return ({required Object action}) => 'Shortcut updated for ${action}';
 			case 'search.hint': return 'Search movies, shows, music...';
 			case 'search.tryDifferentTerm': return 'Try a different search term';
+			case 'search.searchYourMedia': return 'Search your media';
+			case 'search.enterTitleActorOrKeyword': return 'Enter a title, actor, or keyword';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Set Shortcut for ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Clear shortcut';
 			case 'pinEntry.enterPin': return 'Enter PIN';
@@ -2396,6 +3013,8 @@ extension on _StringsIt {
 			case 'settings.shortcutUpdated': return ({required Object action}) => 'Scorciatoia aggiornata per ${action}';
 			case 'search.hint': return 'Cerca film. spettacoli, musica...';
 			case 'search.tryDifferentTerm': return 'Prova altri termini di ricerca';
+			case 'search.searchYourMedia': return 'Cerca nei tuoi media';
+			case 'search.enterTitleActorOrKeyword': return 'Inserisci un titolo, attore o parola chiave';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Imposta scorciatoia per ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Elimina scorciatoia';
 			case 'pinEntry.enterPin': return 'Inserisci PIN';
@@ -2592,6 +3211,326 @@ extension on _StringsIt {
 	}
 }
 
+extension on _StringsNl {
+	dynamic _flatMapFunction(String path) {
+		switch (path) {
+			case 'app.title': return 'Plezy';
+			case 'app.loading': return 'Laden...';
+			case 'auth.signInWithPlex': return 'Inloggen met Plex';
+			case 'auth.showQRCode': return 'Toon QR-code';
+			case 'auth.cancel': return 'Annuleren';
+			case 'auth.authenticate': return 'Authenticeren';
+			case 'auth.retry': return 'Opnieuw proberen';
+			case 'auth.debugEnterToken': return 'Debug: Voer Plex Token in';
+			case 'auth.plexTokenLabel': return 'Plex Auth Token';
+			case 'auth.plexTokenHint': return 'Voer je Plex.tv token in';
+			case 'auth.authenticationTimeout': return 'Authenticatie verlopen. Probeer opnieuw.';
+			case 'auth.scanQRCodeInstruction': return 'Scan deze QR-code met een apparaat dat is ingelogd op Plex om te authenticeren.';
+			case 'auth.waitingForAuth': return 'Wachten op authenticatie...\nVoltooi het inloggen in je browser.';
+			case 'common.cancel': return 'Annuleren';
+			case 'common.save': return 'Opslaan';
+			case 'common.close': return 'Sluiten';
+			case 'common.clear': return 'Wissen';
+			case 'common.reset': return 'Resetten';
+			case 'common.later': return 'Later';
+			case 'common.submit': return 'Verzenden';
+			case 'common.confirm': return 'Bevestigen';
+			case 'common.retry': return 'Opnieuw proberen';
+			case 'common.playNow': return 'Nu afspelen';
+			case 'common.logout': return 'Uitloggen';
+			case 'common.online': return 'Online';
+			case 'common.offline': return 'Offline';
+			case 'common.owned': return 'Eigendom';
+			case 'common.shared': return 'Gedeeld';
+			case 'common.current': return 'HUIDIG';
+			case 'common.unknown': return 'Onbekend';
+			case 'common.refresh': return 'Vernieuwen';
+			case 'common.yes': return 'Ja';
+			case 'common.no': return 'Nee';
+			case 'common.server': return 'Server';
+			case 'screens.licenses': return 'Licenties';
+			case 'screens.selectServer': return 'Selecteer server';
+			case 'screens.switchProfile': return 'Wissel van profiel';
+			case 'screens.subtitleStyling': return 'Ondertitel opmaak';
+			case 'screens.search': return 'Zoeken';
+			case 'screens.logs': return 'Logs';
+			case 'update.available': return 'Update beschikbaar';
+			case 'update.versionAvailable': return ({required Object version}) => 'Versie ${version} is beschikbaar';
+			case 'update.currentVersion': return ({required Object version}) => 'Huidig: ${version}';
+			case 'update.skipVersion': return 'Deze versie overslaan';
+			case 'update.viewRelease': return 'Bekijk release';
+			case 'update.latestVersion': return 'Je hebt de nieuwste versie';
+			case 'update.checkFailed': return 'Kon niet controleren op updates';
+			case 'settings.title': return 'Instellingen';
+			case 'settings.language': return 'Taal';
+			case 'settings.theme': return 'Thema';
+			case 'settings.appearance': return 'Uiterlijk';
+			case 'settings.videoPlayback': return 'Video afspelen';
+			case 'settings.shufflePlay': return 'Willekeurig afspelen';
+			case 'settings.advanced': return 'Geavanceerd';
+			case 'settings.useSeasonPostersDescription': return 'Toon seizoenposter in plaats van serieposter voor afleveringen';
+			case 'settings.showHeroSectionDescription': return 'Toon uitgelichte inhoud carrousel op startscherm';
+			case 'settings.secondsLabel': return 'Seconden';
+			case 'settings.minutesLabel': return 'Minuten';
+			case 'settings.secondsShort': return 's';
+			case 'settings.minutesShort': return 'm';
+			case 'settings.durationHint': return ({required Object min, required Object max}) => 'Voer duur in (${min}-${max})';
+			case 'settings.systemTheme': return 'Systeem';
+			case 'settings.systemThemeDescription': return 'Volg systeeminstellingen';
+			case 'settings.lightTheme': return 'Licht';
+			case 'settings.darkTheme': return 'Donker';
+			case 'settings.libraryDensity': return 'Bibliotheek dichtheid';
+			case 'settings.compact': return 'Compact';
+			case 'settings.compactDescription': return 'Kleinere kaarten, meer items zichtbaar';
+			case 'settings.normal': return 'Normaal';
+			case 'settings.normalDescription': return 'Standaard grootte';
+			case 'settings.comfortable': return 'Comfortabel';
+			case 'settings.comfortableDescription': return 'Grotere kaarten, minder items zichtbaar';
+			case 'settings.viewMode': return 'Weergavemodus';
+			case 'settings.gridView': return 'Raster';
+			case 'settings.gridViewDescription': return 'Items weergeven in een rasterindeling';
+			case 'settings.listView': return 'Lijst';
+			case 'settings.listViewDescription': return 'Items weergeven in een lijstindeling';
+			case 'settings.useSeasonPosters': return 'Gebruik seizoenposters';
+			case 'settings.showHeroSection': return 'Toon hoofdsectie';
+			case 'settings.hardwareDecoding': return 'Hardware decodering';
+			case 'settings.hardwareDecodingDescription': return 'Gebruik hardware versnelling indien beschikbaar';
+			case 'settings.bufferSize': return 'Buffer grootte';
+			case 'settings.bufferSizeMB': return ({required Object size}) => '${size}MB';
+			case 'settings.subtitleStyling': return 'Ondertitel opmaak';
+			case 'settings.subtitleStylingDescription': return 'Pas ondertitel uiterlijk aan';
+			case 'settings.smallSkipDuration': return 'Korte skip duur';
+			case 'settings.largeSkipDuration': return 'Lange skip duur';
+			case 'settings.secondsUnit': return ({required Object seconds}) => '${seconds} seconden';
+			case 'settings.defaultSleepTimer': return 'Standaard slaap timer';
+			case 'settings.minutesUnit': return ({required Object minutes}) => 'bij ${minutes} minuten';
+			case 'settings.unwatchedOnly': return 'Alleen ongekeken';
+			case 'settings.unwatchedOnlyDescription': return 'Alleen ongekeken afleveringen opnemen in willekeurige wachtrij';
+			case 'settings.shuffleOrderNavigation': return 'Willekeurige volgorde navigatie';
+			case 'settings.shuffleOrderNavigationDescription': return 'Volgende/vorige knoppen volgen willekeurige volgorde';
+			case 'settings.loopShuffleQueue': return 'Herhaal willekeurige wachtrij';
+			case 'settings.loopShuffleQueueDescription': return 'Start wachtrij opnieuw bij het einde';
+			case 'settings.videoPlayerControls': return 'Videospeler bediening';
+			case 'settings.keyboardShortcuts': return 'Toetsenbord sneltoetsen';
+			case 'settings.keyboardShortcutsDescription': return 'Pas toetsenbord sneltoetsen aan';
+			case 'settings.debugLogging': return 'Debug logging';
+			case 'settings.debugLoggingDescription': return 'Schakel gedetailleerde logging in voor probleemoplossing';
+			case 'settings.viewLogs': return 'Bekijk logs';
+			case 'settings.viewLogsDescription': return 'Bekijk applicatie logs';
+			case 'settings.clearCache': return 'Cache wissen';
+			case 'settings.clearCacheDescription': return 'Dit wist alle gecachte afbeeldingen en gegevens. De app kan langer duren om inhoud te laden na het wissen van de cache.';
+			case 'settings.clearCacheSuccess': return 'Cache succesvol gewist';
+			case 'settings.resetSettings': return 'Instellingen resetten';
+			case 'settings.resetSettingsDescription': return 'Dit reset alle instellingen naar hun standaard waarden. Deze actie kan niet ongedaan gemaakt worden.';
+			case 'settings.resetSettingsSuccess': return 'Instellingen succesvol gereset';
+			case 'settings.shortcutsReset': return 'Sneltoetsen gereset naar standaard';
+			case 'settings.about': return 'Over';
+			case 'settings.aboutDescription': return 'App informatie en licenties';
+			case 'settings.updates': return 'Updates';
+			case 'settings.updateAvailable': return 'Update beschikbaar';
+			case 'settings.checkForUpdates': return 'Controleer op updates';
+			case 'settings.validationErrorEnterNumber': return 'Voer een geldig nummer in';
+			case 'settings.validationErrorDuration': return ({required Object min, required Object max, required Object unit}) => 'Duur moet tussen ${min} en ${max} ${unit} zijn';
+			case 'settings.shortcutAlreadyAssigned': return ({required Object action}) => 'Sneltoets al toegewezen aan ${action}';
+			case 'settings.shortcutUpdated': return ({required Object action}) => 'Sneltoets bijgewerkt voor ${action}';
+			case 'search.hint': return 'Zoek films, series, muziek...';
+			case 'search.tryDifferentTerm': return 'Probeer een andere zoekterm';
+			case 'search.searchYourMedia': return 'Zoek in je media';
+			case 'search.enterTitleActorOrKeyword': return 'Voer een titel, acteur of trefwoord in';
+			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Stel sneltoets in voor ${actionName}';
+			case 'hotkeys.clearShortcut': return 'Wis sneltoets';
+			case 'pinEntry.enterPin': return 'Voer PIN in';
+			case 'pinEntry.showPin': return 'Toon PIN';
+			case 'pinEntry.hidePin': return 'Verberg PIN';
+			case 'fileInfo.title': return 'Bestand info';
+			case 'fileInfo.video': return 'Video';
+			case 'fileInfo.audio': return 'Audio';
+			case 'fileInfo.file': return 'Bestand';
+			case 'fileInfo.advanced': return 'Geavanceerd';
+			case 'fileInfo.codec': return 'Codec';
+			case 'fileInfo.resolution': return 'Resolutie';
+			case 'fileInfo.bitrate': return 'Bitrate';
+			case 'fileInfo.frameRate': return 'Frame rate';
+			case 'fileInfo.aspectRatio': return 'Beeldverhouding';
+			case 'fileInfo.profile': return 'Profiel';
+			case 'fileInfo.bitDepth': return 'Bit diepte';
+			case 'fileInfo.colorSpace': return 'Kleurruimte';
+			case 'fileInfo.colorRange': return 'Kleurbereik';
+			case 'fileInfo.colorPrimaries': return 'Kleurprimaires';
+			case 'fileInfo.chromaSubsampling': return 'Chroma subsampling';
+			case 'fileInfo.channels': return 'Kanalen';
+			case 'fileInfo.path': return 'Pad';
+			case 'fileInfo.size': return 'Grootte';
+			case 'fileInfo.container': return 'Container';
+			case 'fileInfo.duration': return 'Duur';
+			case 'fileInfo.optimizedForStreaming': return 'Geoptimaliseerd voor streaming';
+			case 'fileInfo.has64bitOffsets': return '64-bit Offsets';
+			case 'mediaMenu.markAsWatched': return 'Markeer als gekeken';
+			case 'mediaMenu.markAsUnwatched': return 'Markeer als ongekeken';
+			case 'mediaMenu.goToSeries': return 'Ga naar serie';
+			case 'mediaMenu.goToSeason': return 'Ga naar seizoen';
+			case 'mediaMenu.shufflePlay': return 'Willekeurig afspelen';
+			case 'mediaMenu.fileInfo': return 'Bestand info';
+			case 'tooltips.shufflePlay': return 'Willekeurig afspelen';
+			case 'tooltips.markAsWatched': return 'Markeer als gekeken';
+			case 'tooltips.markAsUnwatched': return 'Markeer als ongekeken';
+			case 'videoControls.audioLabel': return 'Audio';
+			case 'videoControls.subtitlesLabel': return 'Ondertitels';
+			case 'videoControls.resetToZero': return 'Reset naar 0ms';
+			case 'videoControls.addTime': return ({required Object amount, required Object unit}) => '+${amount}${unit}';
+			case 'videoControls.minusTime': return ({required Object amount, required Object unit}) => '-${amount}${unit}';
+			case 'videoControls.playsLater': return ({required Object label}) => '${label} speelt later af';
+			case 'videoControls.playsEarlier': return ({required Object label}) => '${label} speelt eerder af';
+			case 'videoControls.noOffset': return 'Geen offset';
+			case 'videoControls.letterbox': return 'Letterbox';
+			case 'videoControls.fillScreen': return 'Vul scherm';
+			case 'videoControls.stretch': return 'Uitrekken';
+			case 'videoControls.lockRotation': return 'Vergrendel rotatie';
+			case 'videoControls.unlockRotation': return 'Ontgrendel rotatie';
+			case 'userStatus.admin': return 'Beheerder';
+			case 'userStatus.restricted': return 'Beperkt';
+			case 'userStatus.protected': return 'Beschermd';
+			case 'messages.markedAsWatched': return 'Gemarkeerd als gekeken';
+			case 'messages.markedAsUnwatched': return 'Gemarkeerd als ongekeken';
+			case 'messages.errorLoading': return ({required Object error}) => 'Fout: ${error}';
+			case 'messages.fileInfoNotAvailable': return 'Bestand informatie niet beschikbaar';
+			case 'messages.errorLoadingFileInfo': return ({required Object error}) => 'Fout bij laden bestand info: ${error}';
+			case 'messages.errorLoadingSeries': return 'Fout bij laden serie';
+			case 'messages.errorLoadingSeason': return 'Fout bij laden seizoen';
+			case 'messages.musicNotSupported': return 'Muziek afspelen wordt nog niet ondersteund';
+			case 'messages.logsCleared': return 'Logs gewist';
+			case 'messages.logsCopied': return 'Logs gekopieerd naar klembord';
+			case 'messages.noLogsAvailable': return 'Geen logs beschikbaar';
+			case 'messages.libraryScanning': return ({required Object title}) => 'Scannen "${title}"...';
+			case 'messages.libraryScanStarted': return ({required Object title}) => 'Bibliotheek scan gestart voor "${title}"';
+			case 'messages.libraryScanFailed': return ({required Object error}) => 'Kon bibliotheek niet scannen: ${error}';
+			case 'messages.metadataRefreshing': return ({required Object title}) => 'Metadata vernieuwen voor "${title}"...';
+			case 'messages.metadataRefreshStarted': return ({required Object title}) => 'Metadata vernieuwen gestart voor "${title}"';
+			case 'messages.metadataRefreshFailed': return ({required Object error}) => 'Kon metadata niet vernieuwen: ${error}';
+			case 'messages.noPlexToken': return 'Geen Plex token gevonden. Log opnieuw in.';
+			case 'messages.logoutConfirm': return 'Weet je zeker dat je wilt uitloggen?';
+			case 'messages.noSeasonsFound': return 'Geen seizoenen gevonden';
+			case 'messages.noEpisodesFound': return 'Geen afleveringen gevonden in eerste seizoen';
+			case 'messages.noEpisodesFoundGeneral': return 'Geen afleveringen gevonden';
+			case 'messages.noResultsFound': return 'Geen resultaten gevonden';
+			case 'messages.sleepTimerSet': return ({required Object label}) => 'Slaap timer ingesteld voor ${label}';
+			case 'messages.failedToSwitchProfile': return ({required Object displayName}) => 'Kon niet wisselen naar ${displayName}';
+			case 'profile.noUsersAvailable': return 'Geen gebruikers beschikbaar';
+			case 'subtitlingStyling.stylingOptions': return 'Opmaak opties';
+			case 'subtitlingStyling.fontSize': return 'Lettergrootte';
+			case 'subtitlingStyling.textColor': return 'Tekstkleur';
+			case 'subtitlingStyling.borderSize': return 'Rand grootte';
+			case 'subtitlingStyling.borderColor': return 'Randkleur';
+			case 'subtitlingStyling.backgroundOpacity': return 'Achtergrond transparantie';
+			case 'subtitlingStyling.backgroundColor': return 'Achtergrondkleur';
+			case 'dialog.confirmAction': return 'Bevestig actie';
+			case 'dialog.areYouSure': return 'Weet je zeker dat je deze actie wilt uitvoeren?';
+			case 'dialog.cancel': return 'Annuleren';
+			case 'dialog.playNow': return 'Nu afspelen';
+			case 'discover.title': return 'Ontdekken';
+			case 'discover.switchProfile': return 'Wissel van profiel';
+			case 'discover.switchServer': return 'Wissel van server';
+			case 'discover.logout': return 'Uitloggen';
+			case 'discover.noContentAvailable': return 'Geen inhoud beschikbaar';
+			case 'discover.addMediaToLibraries': return 'Voeg wat media toe aan je bibliotheken';
+			case 'discover.continueWatching': return 'Verder kijken';
+			case 'discover.recentlyAdded': return 'Recent toegevoegd';
+			case 'discover.play': return 'Afspelen';
+			case 'discover.resume': return 'Hervatten';
+			case 'discover.playEpisode': return ({required Object season, required Object episode}) => 'Speel S${season}, E${episode}';
+			case 'discover.resumeEpisode': return ({required Object season, required Object episode}) => 'Hervat S${season}, E${episode}';
+			case 'discover.pause': return 'Pauzeren';
+			case 'discover.overview': return 'Overzicht';
+			case 'discover.cast': return 'Cast';
+			case 'discover.episodeCount': return ({required Object count}) => '${count} afleveringen';
+			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '${watched}/${total} gekeken';
+			case 'discover.movie': return 'Film';
+			case 'discover.tvShow': return 'TV Serie';
+			case 'discover.minutesLeft': return ({required Object minutes}) => '${minutes} min over';
+			case 'errors.searchFailed': return ({required Object error}) => 'Zoeken mislukt: ${error}';
+			case 'errors.connectionTimeout': return ({required Object context}) => 'Verbinding time-out tijdens laden ${context}';
+			case 'errors.connectionFailed': return 'Kan geen verbinding maken met Plex server';
+			case 'errors.failedToLoad': return ({required Object context, required Object error}) => 'Kon ${context} niet laden: ${error}';
+			case 'errors.noClientAvailable': return 'Geen client beschikbaar';
+			case 'errors.authenticationFailed': return ({required Object error}) => 'Authenticatie mislukt: ${error}';
+			case 'errors.couldNotLaunchUrl': return 'Kon auth URL niet openen';
+			case 'errors.pleaseEnterToken': return 'Voer een token in';
+			case 'errors.invalidToken': return 'Ongeldig token';
+			case 'errors.failedToVerifyToken': return ({required Object error}) => 'Kon token niet verifiëren: ${error}';
+			case 'errors.failedToSwitchProfile': return ({required Object displayName}) => 'Kon niet wisselen naar ${displayName}';
+			case 'errors.connectionFailedGeneric': return 'Verbinding mislukt';
+			case 'libraries.title': return 'Bibliotheken';
+			case 'libraries.scanLibraryFiles': return 'Scan bibliotheek bestanden';
+			case 'libraries.scanLibrary': return 'Scan bibliotheek';
+			case 'libraries.analyze': return 'Analyseren';
+			case 'libraries.analyzeLibrary': return 'Analyseer bibliotheek';
+			case 'libraries.refreshMetadata': return 'Vernieuw metadata';
+			case 'libraries.emptyTrash': return 'Prullenbak legen';
+			case 'libraries.emptyingTrash': return ({required Object title}) => 'Prullenbak legen voor "${title}"...';
+			case 'libraries.trashEmptied': return ({required Object title}) => 'Prullenbak geleegd voor "${title}"';
+			case 'libraries.failedToEmptyTrash': return ({required Object error}) => 'Kon prullenbak niet legen: ${error}';
+			case 'libraries.analyzing': return ({required Object title}) => 'Analyseren "${title}"...';
+			case 'libraries.analysisStarted': return ({required Object title}) => 'Analyse gestart voor "${title}"';
+			case 'libraries.failedToAnalyze': return ({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}';
+			case 'libraries.noLibrariesFound': return 'Geen bibliotheken gevonden';
+			case 'libraries.thisLibraryIsEmpty': return 'Deze bibliotheek is leeg';
+			case 'libraries.all': return 'Alles';
+			case 'libraries.clearAll': return 'Alles wissen';
+			case 'libraries.scanLibraryConfirm': return ({required Object title}) => 'Weet je zeker dat je "${title}" wilt scannen?';
+			case 'libraries.analyzeLibraryConfirm': return ({required Object title}) => 'Weet je zeker dat je "${title}" wilt analyseren?';
+			case 'libraries.refreshMetadataConfirm': return ({required Object title}) => 'Weet je zeker dat je metadata wilt vernieuwen voor "${title}"?';
+			case 'libraries.emptyTrashConfirm': return ({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?';
+			case 'libraries.manageLibraries': return 'Beheer bibliotheken';
+			case 'libraries.sort': return 'Sorteren';
+			case 'libraries.sortBy': return 'Sorteer op';
+			case 'libraries.filters': return 'Filters';
+			case 'libraries.loadingLibraryWithCount': return ({required Object count}) => 'Bibliotheek laden... (${count} items geladen)';
+			case 'libraries.confirmActionMessage': return 'Weet je zeker dat je deze actie wilt uitvoeren?';
+			case 'libraries.showLibrary': return 'Toon bibliotheek';
+			case 'libraries.hideLibrary': return 'Verberg bibliotheek';
+			case 'libraries.libraryOptions': return 'Bibliotheek opties';
+			case 'about.title': return 'Over';
+			case 'about.openSourceLicenses': return 'Open Source licenties';
+			case 'about.versionLabel': return ({required Object version}) => 'Versie ${version}';
+			case 'about.appDescription': return 'Een mooie Plex client voor Flutter';
+			case 'about.viewLicensesDescription': return 'Bekijk licenties van third-party bibliotheken';
+			case 'serverSelection.connectingToServer': return 'Verbinden met server...';
+			case 'serverSelection.serverDebugCopied': return 'Server debug gegevens gekopieerd naar klembord';
+			case 'serverSelection.copyDebugData': return 'Kopieer debug gegevens';
+			case 'serverSelection.noServersFound': return 'Geen servers gevonden';
+			case 'serverSelection.malformedServerData': return ({required Object count}) => '${count} server(s) gevonden met verkeerde data. Geen geldige servers beschikbaar.';
+			case 'serverSelection.incompleteServerInfo': return 'Sommige servers hebben incomplete informatie en zijn overgeslagen. Controleer je Plex.tv account.';
+			case 'serverSelection.incompleteConnectionInfo': return 'Server verbinding informatie is incompleet. Probeer opnieuw.';
+			case 'serverSelection.malformedServerInfo': return ({required Object message}) => 'Server informatie is verkeerd geformatteerd: ${message}';
+			case 'serverSelection.networkConnectionFailed': return 'Netwerkverbinding mislukt. Controleer je internetverbinding en probeer opnieuw.';
+			case 'serverSelection.authenticationFailed': return 'Authenticatie mislukt. Log opnieuw in.';
+			case 'serverSelection.plexServiceUnavailable': return 'Plex service niet beschikbaar. Probeer later opnieuw.';
+			case 'serverSelection.failedToLoadServers': return ({required Object error}) => 'Kon servers niet laden: ${error}';
+			case 'hubDetail.title': return 'Titel';
+			case 'hubDetail.releaseYear': return 'Uitgavejaar';
+			case 'hubDetail.dateAdded': return 'Datum toegevoegd';
+			case 'hubDetail.rating': return 'Beoordeling';
+			case 'hubDetail.noItemsFound': return 'Geen items gevonden';
+			case 'logs.title': return 'Logs';
+			case 'logs.clearLogs': return 'Wis logs';
+			case 'logs.copyLogs': return 'Kopieer logs';
+			case 'logs.exportLogs': return 'Exporteer logs';
+			case 'logs.noLogsToShow': return 'Geen logs om te tonen';
+			case 'logs.error': return 'Fout:';
+			case 'logs.stackTrace': return 'Stack Trace:';
+			case 'licenses.relatedPackages': return 'Gerelateerde pakketten';
+			case 'licenses.license': return 'Licentie';
+			case 'licenses.licenseNumber': return ({required Object number}) => 'Licentie ${number}';
+			case 'licenses.licensesCount': return ({required Object count}) => '${count} licenties';
+			case 'navigation.home': return 'Home';
+			case 'navigation.search': return 'Zoeken';
+			case 'navigation.libraries': return 'Bibliotheken';
+			case 'navigation.settings': return 'Instellingen';
+			default: return null;
+		}
+	}
+}
+
 extension on _StringsSv {
 	dynamic _flatMapFunction(String path) {
 		switch (path) {
@@ -2716,6 +3655,8 @@ extension on _StringsSv {
 			case 'settings.shortcutUpdated': return ({required Object action}) => 'Genväg uppdaterad för ${action}';
 			case 'search.hint': return 'Sök filmer, serier, musik...';
 			case 'search.tryDifferentTerm': return 'Prova en annan sökterm';
+			case 'search.searchYourMedia': return 'Sök i dina media';
+			case 'search.enterTitleActorOrKeyword': return 'Ange en titel, skådespelare eller nyckelord';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Sätt genväg för ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Rensa genväg';
 			case 'pinEntry.enterPin': return 'Ange PIN';

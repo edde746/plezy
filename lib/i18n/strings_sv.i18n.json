@@ -132,7 +132,9 @@
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
-    "tryDifferentTerm": "Prova en annan sökterm"
+    "tryDifferentTerm": "Prova en annan sökterm",
+    "searchYourMedia": "Sök i dina media",
+    "enterTitleActorOrKeyword": "Ange en titel, skådespelare eller nyckelord"
   },
   "hotkeys": {
     "setShortcutFor": "Sätt genväg för ${actionName}",
