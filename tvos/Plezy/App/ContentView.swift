@@ -29,25 +29,40 @@ struct ContentView: View {
     }
 
     private func initializeApp() async {
+        print("📺 [ContentView] initializeApp started")
+
         // Load stored credentials
         await storageService.loadStoredData()
+        print("📺 [ContentView] Storage loaded. Has token: \(storageService.plexToken != nil), Has saved server: \(storageService.selectedServer != nil)")
 
         // Check if user has valid token
         if let token = storageService.plexToken {
+            print("📺 [ContentView] Found stored token, setting it...")
             authService.setToken(token)
 
             // Validate token and load servers
+            print("📺 [ContentView] Validating token...")
             if await authService.validateToken() {
+                print("📺 [ContentView] Token is valid! Loading servers...")
                 await authService.loadServers()
+                print("📺 [ContentView] Servers loaded: \(authService.availableServers.count)")
 
                 // Auto-select last used server
                 if let serverData = storageService.selectedServer {
+                    print("📺 [ContentView] Auto-selecting saved server...")
                     authService.selectServer(from: serverData)
+                } else {
+                    print("📺 [ContentView] No saved server to auto-select")
                 }
+            } else {
+                print("📺 [ContentView] Token validation failed")
             }
+        } else {
+            print("📺 [ContentView] No stored token found")
         }
 
         isLoading = false
+        print("📺 [ContentView] initializeApp complete. isAuthenticated: \(authService.isAuthenticated)")
     }
 }
 
