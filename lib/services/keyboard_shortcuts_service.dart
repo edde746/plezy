@@ -239,8 +239,8 @@ class KeyboardShortcutsService {
 
     // Clamp between 0 and video duration
     final clampedPosition = newPosition.isNegative
-      ? Duration.zero
-      : (newPosition > duration ? duration : newPosition);
+        ? Duration.zero
+        : (newPosition > duration ? duration : newPosition);
 
     player.seek(clampedPosition);
   }

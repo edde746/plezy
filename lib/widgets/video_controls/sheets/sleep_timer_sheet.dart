@@ -37,10 +37,8 @@ class SleepTimerSheet extends StatelessWidget {
       backgroundColor: Colors.grey[900],
       isScrollControlled: true,
       constraints: getBottomSheetConstraints(context),
-      builder: (context) => SleepTimerSheet(
-        player: player,
-        defaultDuration: defaultDuration,
-      ),
+      builder: (context) =>
+          SleepTimerSheet(player: player, defaultDuration: defaultDuration),
     );
   }
 
@@ -86,7 +84,9 @@ class SleepTimerSheet extends StatelessWidget {
                         sleepTimer.isActive
                             ? Icons.bedtime
                             : Icons.bedtime_outlined,
-                        color: sleepTimer.isActive ? Colors.amber : Colors.white,
+                        color: sleepTimer.isActive
+                            ? Colors.amber
+                            : Colors.white,
                       ),
                       const SizedBox(width: 12),
                       const Text(
@@ -136,12 +136,15 @@ class SleepTimerSheet extends StatelessWidget {
                           children: [
                             OutlinedButton.icon(
                               icon: const Icon(Icons.add),
-                              label: Text(t.videoControls.addTime(amount: "15", unit: " min")),
+                              label: Text(
+                                t.videoControls.addTime(
+                                  amount: "15",
+                                  unit: " min",
+                                ),
+                              ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white,
-                                side: const BorderSide(
-                                  color: Colors.white54,
-                                ),
+                                side: const BorderSide(color: Colors.white54),
                               ),
                               onPressed: () {
                                 sleepTimer.extendTimer(
@@ -180,10 +183,7 @@ class SleepTimerSheet extends StatelessWidget {
                           : '${(minutes / 60).toStringAsFixed(minutes % 60 == 0 ? 0 : 1)} ${minutes == 60 ? 'hour' : 'hours'}';
 
                       return ListTile(
-                        leading: const Icon(
-                          Icons.timer,
-                          color: Colors.white70,
-                        ),
+                        leading: const Icon(Icons.timer, color: Colors.white70),
                         title: Text(
                           label,
                           style: const TextStyle(
@@ -192,31 +192,30 @@ class SleepTimerSheet extends StatelessWidget {
                           ),
                         ),
                         onTap: () {
-                          sleepTimer.startTimer(
-                            Duration(minutes: minutes),
-                            () {
-                              // Pause playback when timer completes
-                              player.pause();
+                          sleepTimer.startTimer(Duration(minutes: minutes), () {
+                            // Pause playback when timer completes
+                            player.pause();
 
-                              // Show a snackbar notification
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Sleep timer completed - playback paused',
-                                    ),
-                                    duration: Duration(seconds: 3),
+                            // Show a snackbar notification
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Sleep timer completed - playback paused',
                                   ),
-                                );
-                              }
-                            },
-                          );
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            }
+                          });
                           Navigator.pop(context);
 
                           // Show confirmation snackbar
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(t.messages.sleepTimerSet(label: label)),
+                              content: Text(
+                                t.messages.sleepTimerSet(label: label),
+                              ),
                               duration: const Duration(seconds: 2),
                             ),
                           );

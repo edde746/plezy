@@ -6,10 +6,7 @@ import '../../../i18n/strings.g.dart';
 class SubtitleTrackSheet extends StatelessWidget {
   final Player player;
 
-  const SubtitleTrackSheet({
-    super.key,
-    required this.player,
-  });
+  const SubtitleTrackSheet({super.key, required this.player});
 
   static BoxConstraints getBottomSheetConstraints(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -115,9 +112,7 @@ class SubtitleTrackSheet extends StatelessWidget {
                                       )
                                     : null,
                                 onTap: () {
-                                  player.setSubtitleTrack(
-                                    SubtitleTrack.no(),
-                                  );
+                                  player.setSubtitleTrack(SubtitleTrack.no());
                                   Navigator.pop(context);
                                 },
                               );
@@ -162,15 +157,13 @@ class SubtitleTrackSheet extends StatelessWidget {
                               title: Text(
                                 label,
                                 style: TextStyle(
-                                  color:
-                                      isSelected ? Colors.blue : Colors.white,
+                                  color: isSelected
+                                      ? Colors.blue
+                                      : Colors.white,
                                 ),
                               ),
                               trailing: isSelected
-                                  ? const Icon(
-                                      Icons.check,
-                                      color: Colors.blue,
-                                    )
+                                  ? const Icon(Icons.check, color: Colors.blue)
                                   : null,
                               onTap: () {
                                 player.setSubtitleTrack(subtitle);

@@ -167,9 +167,7 @@ class _ContextMenuWrapperState extends State<ContextMenuWrapper> {
       if (selectedItem.requiresConfirmation) {
         final confirmed = await _showConfirmationDialog(
           title: selectedItem.confirmationTitle ?? t.dialog.confirmAction,
-          message:
-              selectedItem.confirmationMessage ??
-              t.dialog.areYouSure,
+          message: selectedItem.confirmationMessage ?? t.dialog.areYouSure,
           isDestructive: selectedItem.isDestructive,
         );
 

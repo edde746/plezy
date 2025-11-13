@@ -102,7 +102,11 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     if ((itemType == 'episode' || itemType == 'season') &&
         widget.metadata.grandparentTitle != null) {
       menuActions.add(
-        _MenuAction(value: 'series', icon: Icons.tv, label: t.mediaMenu.goToSeries),
+        _MenuAction(
+          value: 'series',
+          icon: Icons.tv,
+          label: t.mediaMenu.goToSeries,
+        ),
       );
     }
 
@@ -262,7 +266,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         } catch (e) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+              SnackBar(
+                content: Text(t.messages.errorLoading(error: e.toString())),
+              ),
             );
           }
         }
@@ -312,9 +318,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        );
       }
     }
   }
@@ -397,13 +403,14 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoadingFileInfo(error: e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(t.messages.errorLoadingFileInfo(error: e.toString())),
+          ),
+        );
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
