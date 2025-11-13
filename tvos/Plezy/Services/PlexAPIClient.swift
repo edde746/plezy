@@ -94,10 +94,18 @@ class PlexAPIClient {
         decoder.keyDecodingStrategy = .useDefaultKeys
 
         do {
+            // Debug: Print first 500 characters of response for inspection
+            if let jsonString = String(data: data, encoding: .utf8) {
+                let preview = String(jsonString.prefix(500))
+                print("🔍 [API] Response preview: \(preview)")
+            }
             return try decoder.decode(T.self, from: data)
         } catch {
-            print("Decoding error: \(error)")
-            print("Response data: \(String(data: data, encoding: .utf8) ?? "nil")")
+            print("🔴 [API] Decoding error: \(error)")
+            if let jsonString = String(data: data, encoding: .utf8) {
+                let preview = String(jsonString.prefix(1000))
+                print("🔴 [API] Failed JSON preview: \(preview)")
+            }
             throw PlexAPIError.decodingError(error)
         }
     }
