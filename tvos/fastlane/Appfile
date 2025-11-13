@@ -1,0 +1,13 @@
+# Appfile for Plezy tvOS
+
+# Your Apple ID
+apple_id ENV["APPLE_ID"]
+
+# Team ID
+team_id ENV["TEAM_ID"]
+
+# Bundle identifier
+app_identifier "com.plezy.tvos"
+
+# iTunes Connect Team ID (if different from team_id)
+itc_team_id ENV["ITC_TEAM_ID"]

@@ -1,0 +1,380 @@
+//
+//  PlexAPIClient.swift
+//  Plezy tvOS
+//
+//  Plex API HTTP client
+//
+
+import Foundation
+
+class PlexAPIClient {
+    private let baseURL: URL
+    private let accessToken: String?
+    private let session: URLSession
+
+    // Plex.tv API constants
+    static let plexTVURL = "https://plex.tv"
+    static let plexClientIdentifier = UUID().uuidString
+    static let plexProduct = "Plezy tvOS"
+    static let plexVersion = "1.0.0"
+    static let plexPlatform = "tvOS"
+    static let plexDevice = "Apple TV"
+
+    // Standard Plex headers
+    private var headers: [String: String] {
+        var headers = [
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Plex-Product": Self.plexProduct,
+            "X-Plex-Version": Self.plexVersion,
+            "X-Plex-Client-Identifier": Self.plexClientIdentifier,
+            "X-Plex-Platform": Self.plexPlatform,
+            "X-Plex-Platform-Version": UIDevice.current.systemVersion,
+            "X-Plex-Device": Self.plexDevice,
+            "X-Plex-Device-Name": UIDevice.current.name
+        ]
+
+        if let token = accessToken {
+            headers["X-Plex-Token"] = token
+        }
+
+        return headers
+    }
+
+    init(baseURL: URL, accessToken: String? = nil) {
+        self.baseURL = baseURL
+        self.accessToken = accessToken
+
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 30
+        configuration.timeoutIntervalForResource = 120
+        self.session = URLSession(configuration: configuration)
+    }
+
+    // MARK: - Generic Request Methods
+
+    func request<T: Decodable>(
+        path: String,
+        method: String = "GET",
+        queryItems: [URLQueryItem]? = nil,
+        body: Data? = nil
+    ) async throws -> T {
+        var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)
+        urlComponents?.queryItems = queryItems
+
+        guard let url = urlComponents?.url else {
+            throw PlexAPIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.httpBody = body
+
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw PlexAPIError.invalidResponse
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw PlexAPIError.httpError(statusCode: httpResponse.statusCode)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        decoder.keyDecodingStrategy = .useDefaultKeys
+
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            print("Decoding error: \(error)")
+            print("Response data: \(String(data: data, encoding: .utf8) ?? "nil")")
+            throw PlexAPIError.decodingError(error)
+        }
+    }
+
+    // MARK: - Library Methods
+
+    func getLibraries() async throws -> [PlexLibrary] {
+        let container: PlexMediaContainer<PlexLibrary> = try await request(path: "/library/sections")
+        return container.items
+    }
+
+    func getLibraryContent(sectionKey: String, start: Int = 0, size: Int = 50) async throws -> [PlexMetadata] {
+        let queryItems = [
+            URLQueryItem(name: "X-Plex-Container-Start", value: "\(start)"),
+            URLQueryItem(name: "X-Plex-Container-Size", value: "\(size)")
+        ]
+        let container: PlexMediaContainer<PlexMetadata> = try await request(
+            path: "/library/sections/\(sectionKey)/all",
+            queryItems: queryItems
+        )
+        return container.items
+    }
+
+    func getMetadata(ratingKey: String) async throws -> PlexMetadata {
+        let container: PlexMediaContainer<PlexMetadata> = try await request(path: "/library/metadata/\(ratingKey)")
+        guard let metadata = container.items.first else {
+            throw PlexAPIError.noData
+        }
+        return metadata
+    }
+
+    func getChildren(ratingKey: String) async throws -> [PlexMetadata] {
+        let container: PlexMediaContainer<PlexMetadata> = try await request(path: "/library/metadata/\(ratingKey)/children")
+        return container.items
+    }
+
+    func getOnDeck() async throws -> [PlexMetadata] {
+        let container: PlexMediaContainer<PlexMetadata> = try await request(path: "/library/onDeck")
+        return container.items
+    }
+
+    func getRecentlyAdded(sectionKey: String? = nil) async throws -> [PlexMetadata] {
+        let path = sectionKey != nil ? "/library/sections/\(sectionKey!)/recentlyAdded" : "/library/recentlyAdded"
+        let container: PlexMediaContainer<PlexMetadata> = try await request(path: path)
+        return container.items
+    }
+
+    // MARK: - Hub Methods (Content Discovery)
+
+    func getHubs(sectionKey: String? = nil) async throws -> [PlexHub] {
+        let path = sectionKey != nil ? "/hubs/sections/\(sectionKey!)" : "/hubs"
+        let container: PlexMediaContainer<PlexMetadata> = try await request(path: path)
+        return container.hub ?? []
+    }
+
+    func getHubContent(hubKey: String) async throws -> [PlexMetadata] {
+        let container: PlexMediaContainer<PlexMetadata> = try await request(path: hubKey)
+        return container.items
+    }
+
+    // MARK: - Search
+
+    func search(query: String, sectionKey: String? = nil) async throws -> [PlexMetadata] {
+        var queryItems = [
+            URLQueryItem(name: "query", value: query)
+        ]
+        if let sectionKey = sectionKey {
+            queryItems.append(URLQueryItem(name: "sectionId", value: sectionKey))
+        }
+        let container: PlexMediaContainer<PlexMetadata> = try await request(
+            path: "/hubs/search",
+            queryItems: queryItems
+        )
+        return container.items
+    }
+
+    // MARK: - Playback & Progress
+
+    func getMediaInfo(ratingKey: String) async throws -> PlexMetadata {
+        try await getMetadata(ratingKey: ratingKey)
+    }
+
+    func updateTimeline(ratingKey: String, state: PlaybackState, time: Int, duration: Int) async throws {
+        let queryItems = [
+            URLQueryItem(name: "ratingKey", value: ratingKey),
+            URLQueryItem(name: "state", value: state.rawValue),
+            URLQueryItem(name: "time", value: "\(time)"),
+            URLQueryItem(name: "duration", value: "\(duration)")
+        ]
+        let _: PlexMediaContainer<PlexMetadata> = try await request(
+            path: "/:/timeline",
+            queryItems: queryItems
+        )
+    }
+
+    func scrobble(ratingKey: String) async throws {
+        let queryItems = [
+            URLQueryItem(name: "identifier", value: "com.plexapp.plugins.library"),
+            URLQueryItem(name: "key", value: ratingKey)
+        ]
+        let _: PlexMediaContainer<PlexMetadata> = try await request(
+            path: "/:/scrobble",
+            queryItems: queryItems
+        )
+    }
+
+    func unscrobble(ratingKey: String) async throws {
+        let queryItems = [
+            URLQueryItem(name: "identifier", value: "com.plexapp.plugins.library"),
+            URLQueryItem(name: "key", value: ratingKey)
+        ]
+        let _: PlexMediaContainer<PlexMetadata> = try await request(
+            path: "/:/unscrobble",
+            queryItems: queryItems
+        )
+    }
+
+    // MARK: - Chapters
+
+    func getChapters(ratingKey: String) async throws -> [PlexChapter] {
+        struct ChapterContainer: Codable {
+            let chapters: [PlexChapter]?
+        }
+        let container: ChapterContainer = try await request(path: "/library/metadata/\(ratingKey)/chapters")
+        return container.chapters ?? []
+    }
+
+    enum PlaybackState: String {
+        case playing
+        case paused
+        case stopped
+    }
+}
+
+// MARK: - Plex.tv API Client
+
+extension PlexAPIClient {
+    static func createPlexTVClient(token: String? = nil) -> PlexAPIClient {
+        PlexAPIClient(baseURL: URL(string: plexTVURL)!, accessToken: token)
+    }
+
+    // MARK: - PIN Authentication
+
+    func createPin() async throws -> PlexPin {
+        struct PinRequest: Encodable {
+            let strong: Bool = true
+        }
+
+        struct PinResponse: Decodable {
+            let id: Int
+            let code: String
+        }
+
+        let body = try JSONEncoder().encode(PinRequest())
+        let response: PinResponse = try await request(
+            path: "/api/v2/pins",
+            method: "POST",
+            body: body
+        )
+
+        return PlexPin(id: response.id, code: response.code, authToken: nil)
+    }
+
+    func checkPin(id: Int) async throws -> PlexPin {
+        struct PinResponse: Decodable {
+            let id: Int
+            let code: String
+            let authToken: String?
+        }
+
+        let response: PinResponse = try await request(path: "/api/v2/pins/\(id)")
+        return PlexPin(id: response.id, code: response.code, authToken: response.authToken)
+    }
+
+    func getUser() async throws -> PlexUser {
+        struct UserResponse: Decodable {
+            let id: Int
+            let uuid: String
+            let username: String
+            let title: String
+            let email: String?
+            let thumb: String?
+        }
+
+        let response: UserResponse = try await request(path: "/api/v2/user")
+        return PlexUser(
+            id: response.id,
+            uuid: response.uuid,
+            username: response.username,
+            title: response.title,
+            email: response.email,
+            thumb: response.thumb,
+            authToken: accessToken
+        )
+    }
+
+    // MARK: - Server Discovery
+
+    func getServers() async throws -> [PlexServer] {
+        struct ResourcesResponse: Decodable {
+            let servers: [PlexServer]?
+
+            enum CodingKeys: String, CodingKey {
+                case servers = "MediaContainer"
+            }
+
+            struct MediaContainer: Decodable {
+                let device: [PlexServer]?
+
+                enum CodingKeys: String, CodingKey {
+                    case device = "Device"
+                }
+            }
+        }
+
+        // Note: The actual API structure may vary
+        let container: PlexMediaContainer<PlexServer> = try await request(path: "/api/v2/resources")
+        return container.items
+    }
+
+    // MARK: - Home Users
+
+    func getHomeUsers() async throws -> [PlexHomeUser] {
+        struct UsersResponse: Decodable {
+            let users: [PlexHomeUser]
+
+            enum CodingKeys: String, CodingKey {
+                case users = "users"
+            }
+        }
+
+        let response: UsersResponse = try await request(path: "/api/v2/home/users")
+        return response.users
+    }
+
+    func switchHomeUser(userId: Int, pin: String?) async throws -> String {
+        struct SwitchRequest: Encodable {
+            let pin: String?
+        }
+
+        struct SwitchResponse: Decodable {
+            let authToken: String
+        }
+
+        let body = try JSONEncoder().encode(SwitchRequest(pin: pin))
+        let response: SwitchResponse = try await request(
+            path: "/api/v2/home/users/\(userId)/switch",
+            method: "POST",
+            body: body
+        )
+
+        return response.authToken
+    }
+}
+
+// MARK: - Errors
+
+enum PlexAPIError: LocalizedError {
+    case invalidURL
+    case invalidResponse
+    case httpError(statusCode: Int)
+    case decodingError(Error)
+    case noData
+    case unauthorized
+    case serverNotReachable
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "Invalid URL"
+        case .invalidResponse:
+            return "Invalid server response"
+        case .httpError(let code):
+            return "HTTP error: \(code)"
+        case .decodingError(let error):
+            return "Failed to decode response: \(error.localizedDescription)"
+        case .noData:
+            return "No data received"
+        case .unauthorized:
+            return "Unauthorized - please login again"
+        case .serverNotReachable:
+            return "Server not reachable"
+        }
+    }
+}

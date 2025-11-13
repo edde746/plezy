@@ -1,0 +1,121 @@
+# Fastfile for Plezy tvOS
+#
+# This file contains the fastlane.tools configuration for tvOS deployment
+
+default_platform(:tvos)
+
+platform :tvos do
+  desc "Build tvOS app"
+  lane :build do
+    build_app(
+      scheme: "Plezy",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "Plezy-tvOS.ipa"
+    )
+  end
+
+  desc "Deploy to TestFlight"
+  lane :beta do
+    # Increment build number
+    increment_build_number(
+      build_number: latest_testflight_build_number + 1
+    )
+
+    # Build the app
+    build_app(
+      scheme: "Plezy",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "Plezy-tvOS.ipa"
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      distribute_external: false,
+      notify_external_testers: false
+    )
+  end
+
+  desc "Deploy to App Store"
+  lane :release do
+    # Ensure we're on the right branch
+    ensure_git_status_clean
+
+    # Increment version
+    increment_version_number
+
+    # Increment build number
+    increment_build_number(
+      build_number: latest_testflight_build_number + 1
+    )
+
+    # Build the app
+    build_app(
+      scheme: "Plezy",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "Plezy-tvOS.ipa"
+    )
+
+    # Upload to App Store
+    upload_to_app_store(
+      ipa: "./build/Plezy-tvOS.ipa",
+      submit_for_review: false,
+      automatic_release: false,
+      skip_screenshots: true,
+      skip_metadata: false,
+      precheck_include_in_app_purchases: false
+    )
+
+    # Tag the release
+    add_git_tag(
+      tag: "tvos-v#{get_version_number}"
+    )
+
+    # Push to remote
+    push_to_git_remote
+  end
+
+  desc "Run tests"
+  lane :test do
+    scan(
+      scheme: "Plezy",
+      destination: "platform=tvOS Simulator,name=Apple TV"
+    )
+  end
+
+  desc "Setup code signing"
+  lane :setup_signing do
+    match(
+      type: "appstore",
+      platform: "tvos",
+      readonly: true
+    )
+  end
+
+  desc "Take screenshots"
+  lane :screenshots do
+    snapshot(
+      scheme: "Plezy",
+      devices: [
+        "Apple TV",
+        "Apple TV 4K (3rd generation)"
+      ],
+      languages: ["en-US"],
+      output_directory: "./fastlane/screenshots"
+    )
+  end
+
+  # Error handling
+  error do |lane, exception|
+    notification(
+      subtitle: "Error in lane #{lane}",
+      message: exception.message
+    )
+  end
+end
