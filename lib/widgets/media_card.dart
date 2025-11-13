@@ -181,34 +181,31 @@ class _MediaCardGrid extends StatelessWidget {
                         item.displaySubtitle!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(
-                              color: tokens(context).textMuted,
-                              fontSize: 11,
-                              height: 1.1,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(context).textMuted,
+                          fontSize: 11,
+                          height: 1.1,
+                        ),
                       )
                     else if (item.parentTitle != null)
                       Text(
                         item.parentTitle!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(
-                              color: tokens(context).textMuted,
-                              fontSize: 11,
-                              height: 1.1,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(context).textMuted,
+                          fontSize: 11,
+                          height: 1.1,
+                        ),
                       )
                     else if (item.year != null)
                       Text(
                         '${item.year}',
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(
-                              color: tokens(context).textMuted,
-                              fontSize: 11,
-                              height: 1.1,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(context).textMuted,
+                          fontSize: 11,
+                          height: 1.1,
+                        ),
                       ),
                   ],
                 ),
@@ -473,10 +470,12 @@ class _MediaCardList extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: tokens(context).textMuted.withValues(alpha: 0.9),
-                              fontSize: _metadataFontSize,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          color: tokens(
+                            context,
+                          ).textMuted.withValues(alpha: 0.9),
+                          fontSize: _metadataFontSize,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       const SizedBox(height: 2),
                     ],
@@ -487,9 +486,11 @@ class _MediaCardList extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: tokens(context).textMuted.withValues(alpha: 0.85),
-                              fontSize: _subtitleFontSize,
-                            ),
+                          color: tokens(
+                            context,
+                          ).textMuted.withValues(alpha: 0.85),
+                          fontSize: _subtitleFontSize,
+                        ),
                       ),
                       const SizedBox(height: 4),
                     ],
@@ -500,10 +501,12 @@ class _MediaCardList extends StatelessWidget {
                         maxLines: _summaryMaxLines,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: tokens(context).textMuted.withValues(alpha: 0.7),
-                              fontSize: _summaryFontSize,
-                              height: 1.3,
-                            ),
+                          color: tokens(
+                            context,
+                          ).textMuted.withValues(alpha: 0.7),
+                          fontSize: _summaryFontSize,
+                          height: 1.3,
+                        ),
                       ),
                     ],
                   ],

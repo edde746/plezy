@@ -26,7 +26,10 @@ class PlaybackStateProvider with ChangeNotifier {
   /// Gets the next episode in the shuffle queue.
   /// Returns null if queue is exhausted or current episode is not in queue.
   /// [loopQueue] - If true, restart from beginning when queue is exhausted
-  PlexMetadata? getNextEpisode(String currentEpisodeKey, {bool loopQueue = false}) {
+  PlexMetadata? getNextEpisode(
+    String currentEpisodeKey, {
+    bool loopQueue = false,
+  }) {
     if (_shuffleQueue.isEmpty) return null;
 
     // Find current episode in queue

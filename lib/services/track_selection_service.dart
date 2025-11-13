@@ -68,7 +68,8 @@ class TrackSelectionService {
     // Mode 1: Shown with foreign audio
     if (profile.autoSelectSubtitle == 1) {
       // Check if audio language matches user's preferred subtitle language
-      if (selectedAudioTrack != null && profile.defaultSubtitleLanguage != null) {
+      if (selectedAudioTrack != null &&
+          profile.defaultSubtitleLanguage != null) {
         final audioLang = selectedAudioTrack.languageCode;
         final prefLang = profile.defaultSubtitleLanguage;
 
@@ -108,10 +109,16 @@ class TrackSelectionService {
     var candidateTracks = tracks;
 
     // Apply SDH (hearing impaired) filtering
-    candidateTracks = _filterBySDH(candidateTracks, profile.defaultSubtitleAccessibility);
+    candidateTracks = _filterBySDH(
+      candidateTracks,
+      profile.defaultSubtitleAccessibility,
+    );
 
     // Apply forced subtitle filtering
-    candidateTracks = _filterByForced(candidateTracks, profile.defaultSubtitleForced);
+    candidateTracks = _filterByForced(
+      candidateTracks,
+      profile.defaultSubtitleForced,
+    );
 
     // If no candidates after filtering, relax filters
     if (candidateTracks.isEmpty) {
@@ -200,17 +207,20 @@ class TrackSelectionService {
 
     // Look for common SDH indicators
     return title.contains('sdh') ||
-           displayTitle.contains('sdh') ||
-           title.contains('cc') ||
-           displayTitle.contains('cc') ||
-           title.contains('hearing impaired') ||
-           displayTitle.contains('hearing impaired');
+        displayTitle.contains('sdh') ||
+        title.contains('cc') ||
+        displayTitle.contains('cc') ||
+        title.contains('hearing impaired') ||
+        displayTitle.contains('hearing impaired');
   }
 
   /// Checks if a language code matches a preferred language
   ///
   /// Handles both 2-letter (ISO 639-1) and 3-letter (ISO 639-2) codes
-  static bool _matchesLanguage(String? trackLanguage, String? preferredLanguage) {
+  static bool _matchesLanguage(
+    String? trackLanguage,
+    String? preferredLanguage,
+  ) {
     if (trackLanguage == null || preferredLanguage == null) {
       return false;
     }

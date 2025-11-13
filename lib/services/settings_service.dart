@@ -37,7 +37,8 @@ class SettingsService {
   static const String _keySubtitleBorderSize = 'subtitle_border_size';
   static const String _keySubtitleBorderColor = 'subtitle_border_color';
   static const String _keySubtitleBackgroundColor = 'subtitle_background_color';
-  static const String _keySubtitleBackgroundOpacity = 'subtitle_background_opacity';
+  static const String _keySubtitleBackgroundOpacity =
+      'subtitle_background_opacity';
   static const String _keyShuffleUnwatchedOnly = 'shuffle_unwatched_only';
   static const String _keyShuffleOrderNavigation = 'shuffle_order_navigation';
   static const String _keyShuffleLoopQueue = 'shuffle_loop_queue';
@@ -228,7 +229,8 @@ class SettingsService {
   }
 
   bool getRotationLocked() {
-    return _prefs.getBool(_keyRotationLocked) ?? true; // Default: locked (landscape only)
+    return _prefs.getBool(_keyRotationLocked) ??
+        true; // Default: locked (landscape only)
   }
 
   // Subtitle Styling Settings

@@ -13,7 +13,10 @@ String _redactSensitiveData(String message) {
 
   // Redact authorization headers
   redacted = redacted.replaceAllMapped(
-    RegExp(r'([Aa]uthorization[=:]\s*)([A-Za-z0-9_\-\.]+)', caseSensitive: false),
+    RegExp(
+      r'([Aa]uthorization[=:]\s*)([A-Za-z0-9_\-\.]+)',
+      caseSensitive: false,
+    ),
     (match) => '${match.group(1)}[REDACTED]',
   );
 
@@ -31,7 +34,9 @@ String _redactSensitiveData(String message) {
 
   // Redact full URLs with tokens in query parameters
   redacted = redacted.replaceAllMapped(
-    RegExp(r'(https?://[^\s]*[?&])([Xx]-[Pp]lex-[Tt]oken|token)=([A-Za-z0-9_-]+)'),
+    RegExp(
+      r'(https?://[^\s]*[?&])([Xx]-[Pp]lex-[Tt]oken|token)=([A-Za-z0-9_-]+)',
+    ),
     (match) => '${match.group(1)}${match.group(2)}=[REDACTED]',
   );
 
@@ -49,18 +54,18 @@ String _redactSensitiveData(String message) {
 
   // Redact standalone token-like strings (20+ alphanumeric characters)
   // Only if they appear in common token contexts
-  redacted = redacted.replaceAllMapped(
-    RegExp(r'\b([A-Za-z0-9_-]{20,})\b'),
-    (match) {
-      final token = match.group(1)!;
-      // Only redact if it looks like a token (mixed case or contains hyphens/underscores)
-      if (token.contains(RegExp(r'[A-Z]')) && token.contains(RegExp(r'[a-z]')) ||
-          token.contains('_') || token.contains('-')) {
-        return '[REDACTED_TOKEN]';
-      }
-      return token;
-    },
-  );
+  redacted = redacted.replaceAllMapped(RegExp(r'\b([A-Za-z0-9_-]{20,})\b'), (
+    match,
+  ) {
+    final token = match.group(1)!;
+    // Only redact if it looks like a token (mixed case or contains hyphens/underscores)
+    if (token.contains(RegExp(r'[A-Z]')) && token.contains(RegExp(r'[a-z]')) ||
+        token.contains('_') ||
+        token.contains('-')) {
+      return '[REDACTED_TOKEN]';
+    }
+    return token;
+  });
 
   return redacted;
 }

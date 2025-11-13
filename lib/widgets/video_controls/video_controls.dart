@@ -1602,9 +1602,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        );
       }
     }
   }

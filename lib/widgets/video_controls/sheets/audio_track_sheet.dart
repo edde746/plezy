@@ -6,10 +6,7 @@ import '../../../i18n/strings.g.dart';
 class AudioTrackSheet extends StatelessWidget {
   final Player player;
 
-  const AudioTrackSheet({
-    super.key,
-    required this.player,
-  });
+  const AudioTrackSheet({super.key, required this.player});
 
   static BoxConstraints getBottomSheetConstraints(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -123,15 +120,13 @@ class AudioTrackSheet extends StatelessWidget {
                               title: Text(
                                 label,
                                 style: TextStyle(
-                                  color:
-                                      isSelected ? Colors.blue : Colors.white,
+                                  color: isSelected
+                                      ? Colors.blue
+                                      : Colors.white,
                                 ),
                               ),
                               trailing: isSelected
-                                  ? const Icon(
-                                      Icons.check,
-                                      color: Colors.blue,
-                                    )
+                                  ? const Icon(Icons.check, color: Colors.blue)
                                   : null,
                               onTap: () {
                                 player.setAudioTrack(audioTrack);

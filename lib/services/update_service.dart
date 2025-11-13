@@ -18,7 +18,10 @@ class UpdateService {
 
   /// Check if update checking is enabled via build flag
   static bool get isUpdateCheckEnabled {
-    const enabled = bool.fromEnvironment('ENABLE_UPDATE_CHECK', defaultValue: false);
+    const enabled = bool.fromEnvironment(
+      'ENABLE_UPDATE_CHECK',
+      defaultValue: false,
+    );
     return enabled;
   }
 
@@ -62,24 +65,21 @@ class UpdateService {
 
   /// Check for updates on GitHub (manual check, ignores cooldown)
   /// Returns a map with update info, or null if no update or error
-  static Future<Map<String, dynamic>?> checkForUpdates({bool silent = false}) async {
+  static Future<Map<String, dynamic>?> checkForUpdates({
+    bool silent = false,
+  }) async {
     if (!isUpdateCheckEnabled) {
       return null;
     }
 
     try {
-
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
       final dio = Dio();
       final response = await dio.get(
         'https://api.github.com/repos/$_githubRepo/releases/latest',
-        options: Options(
-          headers: {
-            'Accept': 'application/vnd.github+json',
-          },
-        ),
+        options: Options(headers: {'Accept': 'application/vnd.github+json'}),
       );
 
       if (response.statusCode == 200) {

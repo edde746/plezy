@@ -32,8 +32,7 @@ Future<void> handleShufflePlay(
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) =>
-            const Center(child: CircularProgressIndicator()),
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -42,9 +41,7 @@ Future<void> handleShufflePlay(
     if (itemType == 'show') {
       if (unwatchedOnly) {
         // Get only unwatched episodes
-        episodes = await client.getAllUnwatchedEpisodes(
-          metadata.ratingKey,
-        );
+        episodes = await client.getAllUnwatchedEpisodes(metadata.ratingKey);
       } else {
         // Get all episodes from all seasons
         final allEpisodes = <PlexMetadata>[];
@@ -71,9 +68,7 @@ Future<void> handleShufflePlay(
       } else {
         // Get all episodes in season
         final seasonEpisodes = await client.getChildren(metadata.ratingKey);
-        episodes = seasonEpisodes
-            .where((ep) => ep.type == 'episode')
-            .toList();
+        episodes = seasonEpisodes.where((ep) => ep.type == 'episode').toList();
       }
     }
 
@@ -84,9 +79,9 @@ Future<void> handleShufflePlay(
 
     if (episodes.isEmpty) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.noEpisodesFound)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.messages.noEpisodesFound)));
       }
       return;
     }
