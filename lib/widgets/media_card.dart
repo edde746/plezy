@@ -14,6 +14,7 @@ import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/duration_formatter.dart';
+import '../utils/platform_detector.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
@@ -868,7 +869,9 @@ class _MediaCardListState extends State<_MediaCardList>
                       children: [
                         // Title
                         Text(
-                          widget.item.displayTitle,
+                          widget.item is PlexPlaylist
+                              ? (widget.item as PlexPlaylist).title
+                              : (widget.item as PlexMetadata).displayTitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -912,9 +915,9 @@ class _MediaCardListState extends State<_MediaCardList>
                           const SizedBox(height: 4),
                         ],
                         // Summary
-                        if (widget.item.summary != null) ...[
+                        if (widget.item is PlexMetadata && (widget.item as PlexMetadata).summary != null) ...[
                           Text(
-                            widget.item.summary!,
+                            (widget.item as PlexMetadata).summary!,
                             maxLines: _summaryMaxLines,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodySmall
