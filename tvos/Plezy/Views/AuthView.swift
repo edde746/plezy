@@ -82,11 +82,24 @@ struct AuthView: View {
         }
         .onChange(of: authService.isAuthenticated) { _, isAuth in
             if isAuth && pin != nil {
-                // User authenticated, show server selection
+                // User authenticated, load servers
                 authService.cancelPinPolling()
                 Task {
+                    print("🟢 [AuthView] Authentication successful, loading servers...")
                     await authService.loadServers()
-                    showServerSelection = true
+                    print("🟢 [AuthView] Loaded \(authService.availableServers.count) servers")
+
+                    // If only one server, auto-select it
+                    if authService.availableServers.count == 1, let server = authService.availableServers.first {
+                        print("🟢 [AuthView] Only one server found, auto-selecting: \(server.name)")
+                        await authService.selectServer(server)
+                    } else if authService.availableServers.count > 1 {
+                        // Multiple servers, show selection screen
+                        print("🟢 [AuthView] Multiple servers found, showing selection screen")
+                        showServerSelection = true
+                    } else {
+                        print("🔴 [AuthView] No servers found")
+                    }
                 }
             }
         }
