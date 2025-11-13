@@ -91,7 +91,7 @@ struct ServerCard: View {
 
                     Spacer()
 
-                    if server.owned {
+                    if server.isOwned {
                         Image(systemName: "checkmark.shield.fill")
                             .font(.system(size: 24))
                             .foregroundColor(.green)

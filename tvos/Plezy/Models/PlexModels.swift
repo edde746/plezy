@@ -41,25 +41,29 @@ struct PlexServer: Codable, Identifiable, Equatable {
     let platformVersion: String
     let device: String
     let clientIdentifier: String
-    let createdAt: Date
-    let lastSeenAt: Date
+    let createdAt: Date?
+    let lastSeenAt: Date?
     let provides: String
     let ownerId: Int?
     let sourceTitle: String?
     let publicAddress: String?
     let accessToken: String?
-    let owned: Bool
-    let home: Bool
-    let synced: Bool
-    let relay: Bool
-    let presence: Bool
-    let httpsRequired: Bool
-    let publicAddressMatches: Bool
-    let dnsRebindingProtection: Bool
-    let natLoopbackSupported: Bool
+    let owned: Bool?
+    let home: Bool?
+    let synced: Bool?
+    let relay: Bool?
+    let presence: Bool?
+    let httpsRequired: Bool?
+    let publicAddressMatches: Bool?
+    let dnsRebindingProtection: Bool?
+    let natLoopbackSupported: Bool?
     let connections: [PlexConnection]
 
     var id: String { clientIdentifier }
+
+    // Computed properties with default values
+    var isOwned: Bool { owned ?? false }
+    var isHome: Bool { home ?? false }
 
     enum CodingKeys: String, CodingKey {
         case name, product, productVersion, platform, platformVersion

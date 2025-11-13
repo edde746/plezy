@@ -134,7 +134,7 @@ class PlexAuthService: ObservableObject {
 
             // Filter to only owned servers that provide "server"
             let validServers = servers.filter { server in
-                server.owned && server.provides.contains("server")
+                server.isOwned && server.provides.contains("server")
             }
 
             self.availableServers = validServers
