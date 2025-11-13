@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 class PlexAPIClient {
     private let baseURL: URL

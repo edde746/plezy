@@ -8,6 +8,7 @@
 import SwiftUI
 import AVKit
 import AVFoundation
+import Combine
 
 struct VideoPlayerView: View {
     let media: PlexMetadata
@@ -144,8 +145,8 @@ class VideoPlayerManager: ObservableObject {
             let asset = AVURLAsset(url: videoURL)
             playerItem = AVPlayerItem(asset: asset)
 
-            // Configure player item for external playback
-            playerItem?.externalSubtitleOptionLanguages = []
+            // Note: externalSubtitleOptionLanguages is not available on tvOS
+            // External subtitle options need to be handled differently
 
             // Create player
             let player = AVPlayer(playerItem: playerItem)
@@ -154,7 +155,7 @@ class VideoPlayerManager: ObservableObject {
             // Resume from saved position if available
             if let viewOffset = media.viewOffset, viewOffset > 0 {
                 let seconds = Double(viewOffset) / 1000.0
-                player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+                await player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
             }
 
             self.player = player
@@ -220,7 +221,9 @@ class VideoPlayerManager: ObservableObject {
     }
 
     deinit {
-        cleanup()
+        Task { @MainActor in
+            cleanup()
+        }
     }
 }
 
