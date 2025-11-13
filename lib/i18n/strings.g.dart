@@ -3,10 +3,10 @@
 /// Original: lib/i18n
 /// To regenerate, run: `dart run slang`
 ///
-/// Locales: 3
-/// Strings: 936 (312 per locale)
+/// Locales: 4
+/// Strings: 1256 (314 per locale)
 ///
-/// Built on 2025-11-13 at 18:06 UTC
+/// Built on 2025-11-13 at 21:35 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -1649,6 +1649,7 @@ class _StringsMediaMenuNl implements _StringsMediaMenuEn {
 	// Translations
 	@override String get markAsWatched => 'Markeer als gekeken';
 	@override String get markAsUnwatched => 'Markeer als ongekeken';
+	@override String get removeFromContinueWatching => 'Verwijder uit Doorgaan met kijken';
 	@override String get goToSeries => 'Ga naar serie';
 	@override String get goToSeason => 'Ga naar seizoen';
 	@override String get shufflePlay => 'Willekeurig afspelen';
@@ -1710,6 +1711,7 @@ class _StringsMessagesNl implements _StringsMessagesEn {
 	// Translations
 	@override String get markedAsWatched => 'Gemarkeerd als gekeken';
 	@override String get markedAsUnwatched => 'Gemarkeerd als ongekeken';
+	@override String get removedFromContinueWatching => 'Verwijderd uit Doorgaan met kijken';
 	@override String errorLoading({required Object error}) => 'Fout: ${error}';
 	@override String get fileInfoNotAvailable => 'Bestand informatie niet beschikbaar';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fout bij laden bestand info: ${error}';
@@ -3367,6 +3369,7 @@ extension on _StringsNl {
 			case 'fileInfo.has64bitOffsets': return '64-bit Offsets';
 			case 'mediaMenu.markAsWatched': return 'Markeer als gekeken';
 			case 'mediaMenu.markAsUnwatched': return 'Markeer als ongekeken';
+			case 'mediaMenu.removeFromContinueWatching': return 'Verwijder uit Doorgaan met kijken';
 			case 'mediaMenu.goToSeries': return 'Ga naar serie';
 			case 'mediaMenu.goToSeason': return 'Ga naar seizoen';
 			case 'mediaMenu.shufflePlay': return 'Willekeurig afspelen';
@@ -3392,6 +3395,7 @@ extension on _StringsNl {
 			case 'userStatus.protected': return 'Beschermd';
 			case 'messages.markedAsWatched': return 'Gemarkeerd als gekeken';
 			case 'messages.markedAsUnwatched': return 'Gemarkeerd als ongekeken';
+			case 'messages.removedFromContinueWatching': return 'Verwijderd uit Doorgaan met kijken';
 			case 'messages.errorLoading': return ({required Object error}) => 'Fout: ${error}';
 			case 'messages.fileInfoNotAvailable': return 'Bestand informatie niet beschikbaar';
 			case 'messages.errorLoadingFileInfo': return ({required Object error}) => 'Fout bij laden bestand info: ${error}';
