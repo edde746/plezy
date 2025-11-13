@@ -91,7 +91,10 @@ struct ServerCard: View {
     @State private var isFocused = false
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            print("🔵 [ServerCard] Button tapped for: \(server.name)")
+            action()
+        } label: {
             VStack(alignment: .leading, spacing: 15) {
                 HStack {
                     Image(systemName: "server.rack")
@@ -155,7 +158,6 @@ struct ServerCard: View {
                     .stroke(isFocused ? Color.orange : Color.white.opacity(0.2), lineWidth: isFocused ? 4 : 2)
             )
         }
-        .buttonStyle(.plain)
         .onFocusChange(true) { focused in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isFocused = focused
