@@ -40,7 +40,7 @@ jobs:
       - name: Verify formatting
         run: |
           # Find all Dart files excluding generated files
-          FILES=$(find lib test -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null || true)
+          FILES=$(find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null || true)
           if [ -z "$FILES" ]; then
             echo "No Dart files found to format"
             exit 0
