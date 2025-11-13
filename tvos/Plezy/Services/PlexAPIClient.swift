@@ -86,7 +86,7 @@ class PlexAPIClient {
         }
 
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .secondsSince1970
         decoder.keyDecodingStrategy = .useDefaultKeys
 
         do {
@@ -293,25 +293,9 @@ extension PlexAPIClient {
     // MARK: - Server Discovery
 
     func getServers() async throws -> [PlexServer] {
-        struct ResourcesResponse: Decodable {
-            let servers: [PlexServer]?
-
-            enum CodingKeys: String, CodingKey {
-                case servers = "MediaContainer"
-            }
-
-            struct MediaContainer: Decodable {
-                let device: [PlexServer]?
-
-                enum CodingKeys: String, CodingKey {
-                    case device = "Device"
-                }
-            }
-        }
-
-        // Note: The actual API structure may vary
-        let container: PlexMediaContainer<PlexServer> = try await request(path: "/api/v2/resources")
-        return container.items
+        // The /api/v2/resources endpoint returns a simple array of server objects
+        let servers: [PlexServer] = try await request(path: "/api/v2/resources")
+        return servers
     }
 
     // MARK: - Home Users
