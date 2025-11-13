@@ -239,7 +239,7 @@ extension PlexAPIClient {
 
     func createPin() async throws -> PlexPin {
         struct PinRequest: Encodable {
-            let strong: Bool = true
+            let strong: Bool = false
         }
 
         struct PinResponse: Decodable {
