@@ -21,6 +21,7 @@ struct HomeView: View {
     @State private var currentHeroIndex = 0
     @State private var heroProgress: Double = 0.0
     @State private var heroTimer: Timer?
+    @Namespace private var focusNamespace
 
     private let heroDisplayDuration: TimeInterval = 7.0 // 7 seconds per item
     private let heroTimerInterval: TimeInterval = 0.05 // 50ms updates for smooth progress
@@ -99,6 +100,7 @@ struct HomeView: View {
                         // Hero Banner
                         if !onDeck.isEmpty {
                             HeroBanner(
+                                focusNamespace: _focusNamespace,
                                 items: onDeck,
                                 currentIndex: $currentHeroIndex,
                                 progress: $heroProgress,
@@ -138,6 +140,7 @@ struct HomeView: View {
                     }
                     .padding(.bottom, 40)
                 }
+                .focusScope(focusNamespace)
             }
 
             // Offline banner overlay
@@ -473,6 +476,7 @@ struct MediaCard: View {
 // MARK: - Hero Banner
 
 struct HeroBanner: View {
+    var focusNamespace: Namespace.ID
     let items: [PlexMetadata]
     @Binding var currentIndex: Int
     @Binding var progress: Double
@@ -506,7 +510,7 @@ struct HeroBanner: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .frame(height: 600)
                 .ignoresSafeArea()
-                .focusable()
+                .focusEffectDisabled()
 
                 // Gradient overlay
                 LinearGradient(
@@ -578,6 +582,7 @@ struct HeroBanner: View {
                             .foregroundColor(.white)
                         }
                         .buttonStyle(.clearGlass)
+                        .prefersDefaultFocus(in: focusNamespace)
 
                         Spacer()
                     }
