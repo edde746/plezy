@@ -17,6 +17,7 @@ struct LibraryContentView: View {
     @State private var selectedMedia: PlexMetadata?
     @State private var filterStatus: FilterStatus = .all
     @State private var sortOption: SortOption = .recentlyAdded
+    @State private var errorMessage: String?
 
     private let cache = CacheService.shared
 
@@ -67,17 +68,14 @@ struct LibraryContentView: View {
                     HStack(spacing: 15) {
                         FilterButton(title: "All", isSelected: filterStatus == .all) {
                             filterStatus = .all
-                            applyFilters()
                         }
 
                         FilterButton(title: "Unwatched", isSelected: filterStatus == .unwatched) {
                             filterStatus = .unwatched
-                            applyFilters()
                         }
 
                         FilterButton(title: "Watched", isSelected: filterStatus == .watched) {
                             filterStatus = .watched
-                            applyFilters()
                         }
                     }
 
@@ -88,7 +86,6 @@ struct LibraryContentView: View {
                         ForEach(SortOption.allCases, id: \.self) { option in
                             Button {
                                 sortOption = option
-                                applyFilters()
                             } label: {
                                 HStack {
                                     Text(option.rawValue)
@@ -125,6 +122,37 @@ struct LibraryContentView: View {
                             .padding(.top)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = errorMessage {
+                    VStack(spacing: 30) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 80))
+                            .foregroundColor(.red)
+
+                        Text("Error Loading Library")
+                            .font(.title)
+                            .foregroundColor(.white)
+
+                        Text(error)
+                            .font(.body)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 100)
+
+                        Button {
+                            print("🔄 [LibraryContent] Retry button tapped")
+                            Task {
+                                await loadContent()
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Retry")
+                            }
+                            .font(.title3)
+                        }
+                        .buttonStyle(ClearGlassButtonStyle())
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if filteredItems.isEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "tray")
@@ -158,6 +186,28 @@ struct LibraryContentView: View {
         .task {
             await loadContent()
         }
+        .onChange(of: filterStatus) { oldValue, newValue in
+            print("🔄 [LibraryContent] Filter status changed from \(oldValue) to \(newValue)")
+            Task {
+                // Invalidate cache when filters change
+                if let serverID = authService.selectedServer?.clientIdentifier {
+                    let cacheKey = CacheService.libraryContentKey(serverID: serverID, libraryKey: library.key)
+                    cache.invalidate(cacheKey)
+                }
+                await loadContent()
+            }
+        }
+        .onChange(of: sortOption) { oldValue, newValue in
+            print("🔄 [LibraryContent] Sort option changed from \(oldValue) to \(newValue)")
+            Task {
+                // Invalidate cache when sort changes
+                if let serverID = authService.selectedServer?.clientIdentifier {
+                    let cacheKey = CacheService.libraryContentKey(serverID: serverID, libraryKey: library.key)
+                    cache.invalidate(cacheKey)
+                }
+                await loadContent()
+            }
+        }
         .sheet(item: $selectedMedia) { media in
             let _ = print("📱 [LibraryContent] Sheet presenting MediaDetailView for: \(media.title)")
             MediaDetailView(media: media)
@@ -187,18 +237,52 @@ struct LibraryContentView: View {
 
         print("📚 [LibraryContent] Loading fresh content for \(library.title)...")
         isLoading = true
+        errorMessage = nil
 
         do {
-            let fetchedItems = try await client.getLibraryContent(sectionKey: library.key, size: 200)
+            // Map sort option to Plex API sort parameter
+            let sortParam: String? = {
+                switch sortOption {
+                case .recentlyAdded:
+                    return "addedAt:desc"
+                case .titleAsc:
+                    return "titleSort:asc"
+                case .titleDesc:
+                    return "titleSort:desc"
+                case .yearDesc:
+                    return "year:desc"
+                case .yearAsc:
+                    return "year:asc"
+                }
+            }()
+
+            // Map filter status to unwatched parameter
+            let unwatchedParam: Bool? = {
+                switch filterStatus {
+                case .unwatched:
+                    return true
+                case .all, .watched:
+                    return nil // Server-side filtering only supports unwatched
+                }
+            }()
+
+            let fetchedItems = try await client.getLibraryContent(
+                sectionKey: library.key,
+                size: 200,
+                sort: sortParam,
+                unwatched: unwatchedParam
+            )
             self.items = fetchedItems
 
             // Cache the results with 10 minute TTL
             cache.set(cacheKey, value: fetchedItems, ttl: 600)
 
-            applyFilters()
+            applyFilters() // Still apply client-side filters for watched items
             print("📚 [LibraryContent] Content loaded: \(fetchedItems.count) items")
+            errorMessage = nil
         } catch {
             print("Error loading library content: \(error)")
+            errorMessage = error.localizedDescription
         }
 
         isLoading = false
@@ -207,29 +291,17 @@ struct LibraryContentView: View {
     private func applyFilters() {
         var filtered = items
 
-        // Apply watch status filter
+        // Apply client-side watch status filter only for "watched" items
+        // (unwatched is handled server-side)
         switch filterStatus {
-        case .all:
-            break
-        case .unwatched:
-            filtered = filtered.filter { !$0.isWatched }
+        case .all, .unwatched:
+            break // Server handles unwatched filtering
         case .watched:
             filtered = filtered.filter { $0.isWatched }
         }
 
-        // Apply sort
-        switch sortOption {
-        case .recentlyAdded:
-            filtered.sort { ($0.addedAt ?? 0) > ($1.addedAt ?? 0) }
-        case .titleAsc:
-            filtered.sort { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
-        case .titleDesc:
-            filtered.sort { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedDescending }
-        case .yearDesc:
-            filtered.sort { ($0.year ?? 0) > ($1.year ?? 0) }
-        case .yearAsc:
-            filtered.sort { ($0.year ?? 0) < ($1.year ?? 0) }
-        }
+        // Sorting is now handled server-side via API parameters
+        // No need for client-side sorting
 
         filteredItems = filtered
     }

@@ -16,6 +16,7 @@ struct HomeView: View {
     @State private var playingMedia: PlexMetadata?
     @State private var showServerSelection = false
     @State private var noServerSelected = false
+    @State private var errorMessage: String?
     @State private var currentHeroIndex = 0
     @State private var heroProgress: Double = 0.0
     @State private var heroTimer: Timer?
@@ -37,6 +38,38 @@ struct HomeView: View {
                     Text("Loading content...")
                         .foregroundColor(.gray)
                         .padding(.top)
+                }
+            } else if let error = errorMessage {
+                VStack(spacing: 30) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 80))
+                        .foregroundColor(.red)
+
+                    Text("Error Loading Content")
+                        .font(.title)
+                        .foregroundColor(.white)
+
+                    Text(error)
+                        .font(.body)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 100)
+
+                    HStack(spacing: 20) {
+                        Button {
+                            print("🔄 [HomeView] Retry button tapped")
+                            Task {
+                                await loadContent()
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Retry")
+                            }
+                            .font(.title3)
+                        }
+                        .buttonStyle(ClearGlassButtonStyle())
+                    }
                 }
             } else if noServerSelected {
                 VStack(spacing: 30) {
@@ -212,6 +245,7 @@ struct HomeView: View {
         print("🏠 [HomeView] Client available, loading fresh content...")
         isLoading = true
         noServerSelected = false
+        errorMessage = nil
 
         async let onDeckTask = client.getOnDeck()
         async let hubsTask = client.getHubs()
@@ -228,9 +262,11 @@ struct HomeView: View {
             cache.set(cacheKey, value: (onDeck: fetchedOnDeck, hubs: fetchedHubs))
 
             print("🏠 [HomeView] Content loaded successfully. OnDeck: \(self.onDeck.count), Hubs: \(self.hubs.count)")
+            errorMessage = nil
         } catch {
             print("🔴 [HomeView] Error loading content: \(error)")
             print("🔴 [HomeView] Error details: \(error.localizedDescription)")
+            errorMessage = error.localizedDescription
         }
 
         isLoading = false

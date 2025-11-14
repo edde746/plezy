@@ -133,11 +133,29 @@ class PlexAPIClient {
         return response.MediaContainer.items
     }
 
-    func getLibraryContent(sectionKey: String, start: Int = 0, size: Int = 50) async throws -> [PlexMetadata] {
-        let queryItems = [
+    func getLibraryContent(
+        sectionKey: String,
+        start: Int = 0,
+        size: Int = 50,
+        sort: String? = nil,
+        unwatched: Bool? = nil
+    ) async throws -> [PlexMetadata] {
+        var queryItems = [
             URLQueryItem(name: "X-Plex-Container-Start", value: "\(start)"),
             URLQueryItem(name: "X-Plex-Container-Size", value: "\(size)")
         ]
+
+        // Add sort parameter if provided
+        // Common values: "addedAt:desc", "titleSort:asc", "year:desc", "rating:desc"
+        if let sort = sort {
+            queryItems.append(URLQueryItem(name: "sort", value: sort))
+        }
+
+        // Add unwatched filter if provided
+        if let unwatched = unwatched, unwatched {
+            queryItems.append(URLQueryItem(name: "unwatched", value: "1"))
+        }
+
         let response: PlexResponse<PlexMetadata> = try await request(
             path: "/library/sections/\(sectionKey)/all",
             queryItems: queryItems

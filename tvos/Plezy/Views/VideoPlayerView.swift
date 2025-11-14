@@ -15,6 +15,7 @@ struct VideoPlayerView: View {
     let media: PlexMetadata
     @EnvironmentObject var authService: PlexAuthService
     @Environment(\.dismiss) var dismiss
+    @Environment(\.scenePhase) var scenePhase
     @StateObject private var playerManager: VideoPlayerManager
 
     init(media: PlexMetadata) {
@@ -72,11 +73,45 @@ struct VideoPlayerView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 100)
 
-                    Button("Close") {
-                        dismiss()
+                    HStack(spacing: 20) {
+                        Button {
+                            print("🔄 [VideoPlayerView] Retry button tapped")
+                            Task {
+                                await playerManager.setupPlayer(authService: authService)
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Retry")
+                            }
+                            .font(.title3)
+                        }
+                        .buttonStyle(ClearGlassButtonStyle())
+
+                        Button("Close") {
+                            dismiss()
+                        }
+                        .buttonStyle(CardButtonStyle())
                     }
-                    .buttonStyle(CardButtonStyle())
                 }
+            }
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            print("🔄 [VideoPlayerView] Scene phase changed from \(oldPhase) to \(newPhase)")
+            switch newPhase {
+            case .background:
+                print("⏸️ [VideoPlayerView] App backgrounded - pausing playback")
+                playerManager.player?.pause()
+            case .active:
+                print("▶️ [VideoPlayerView] App active - resuming playback if it was playing")
+                // Only resume if we're not at the error or loading state
+                if playerManager.player != nil && playerManager.error == nil {
+                    playerManager.player?.play()
+                }
+            case .inactive:
+                print("💤 [VideoPlayerView] App inactive")
+            @unknown default:
+                break
             }
         }
     }
@@ -298,8 +333,8 @@ class VideoPlayerManager: ObservableObject {
     }
 
     private func setupProgressTracking(client: PlexAPIClient, player: AVPlayer, ratingKey: String) {
-        // Update progress every 10 seconds
-        let interval = CMTime(seconds: 10, preferredTimescale: 600)
+        // Update progress every 30 seconds (reduces server load while maintaining reasonable tracking)
+        let interval = CMTime(seconds: 30, preferredTimescale: 600)
 
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self,
