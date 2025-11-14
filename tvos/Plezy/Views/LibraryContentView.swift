@@ -157,6 +157,7 @@ struct LibraryContentView: View {
         }
         .sheet(item: $selectedMedia) { media in
             MediaDetailView(media: media)
+                .environmentObject(authService)
         }
     }
 

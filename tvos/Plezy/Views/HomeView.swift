@@ -117,9 +117,11 @@ struct HomeView: View {
         }
         .sheet(item: $selectedMedia) { media in
             MediaDetailView(media: media)
+                .environmentObject(authService)
         }
         .fullScreenCover(item: $playingMedia) { media in
             VideoPlayerView(media: media)
+                .environmentObject(authService)
         }
         .sheet(isPresented: $showServerSelection) {
             ServerSelectionView()

@@ -228,15 +228,18 @@ struct MediaDetailView: View {
         }
         .sheet(item: $selectedSeason) { season in
             SeasonDetailView(season: season, show: displayMedia)
+                .environmentObject(authService)
         }
         .fullScreenCover(isPresented: $showVideoPlayer) {
             if media.type == "show" {
                 // For shows, need to pick an episode first
                 if let season = seasons.first {
                     SeasonDetailView(season: season, show: displayMedia)
+                        .environmentObject(authService)
                 }
             } else {
                 VideoPlayerView(media: displayMedia)
+                    .environmentObject(authService)
             }
         }
     }

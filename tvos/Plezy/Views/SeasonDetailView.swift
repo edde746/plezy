@@ -81,6 +81,7 @@ struct SeasonDetailView: View {
         .fullScreenCover(isPresented: $showVideoPlayer) {
             if let episode = selectedEpisode {
                 VideoPlayerView(media: episode)
+                    .environmentObject(authService)
             }
         }
     }
