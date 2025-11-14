@@ -155,7 +155,7 @@ struct MediaDetailView: View {
                                     }
                                     .foregroundColor(.white)
                                 }
-                                .buttonStyle(.clearGlass)
+                                .buttonStyle(ClearGlassButtonStyle())
 
                                 // Mark as watched/unwatched
                                 Button {
@@ -171,7 +171,7 @@ struct MediaDetailView: View {
                                     }
                                     .foregroundColor(.white)
                                 }
-                                .buttonStyle(.card)
+                                .buttonStyle(CardButtonStyle())
                             }
                             .padding(.top, 20)
 
