@@ -53,7 +53,7 @@
     "currentVersion": "当前版本: ${version}",
     "skipVersion": "跳过此版本",
     "viewRelease": "查看发布详情",
-    "latestVersion": "已经使用的是最新版本",
+    "latestVersion": "已安装的版本是可用的最新版本",
     "checkFailed": "无法检查更新"
   },
   "settings": {
