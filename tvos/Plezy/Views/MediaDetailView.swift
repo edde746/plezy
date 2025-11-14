@@ -246,7 +246,7 @@ struct MediaDetailView: View {
                 .environmentObject(authService)
         }
         .fullScreenCover(isPresented: $showVideoPlayer) {
-            let _ = print("🎬 [MediaDetailView] FullScreenCover triggered. showVideoPlayer: \(showVideoPlayer), media type: \(media.type)")
+            let _ = print("🎬 [MediaDetailView] FullScreenCover triggered. showVideoPlayer: \(showVideoPlayer), media type: \(media.type ?? "unknown")")
             if media.type == "show" {
                 // For shows, need to pick an episode first
                 if let season = seasons.first {

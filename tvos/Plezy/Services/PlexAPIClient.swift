@@ -145,7 +145,7 @@ class PlexAPIClient {
         guard let metadata = response.MediaContainer.items.first else {
             throw PlexAPIError.noData
         }
-        print("📡 [API] First metadata item - type: \(metadata.type), title: \(metadata.title)")
+        print("📡 [API] First metadata item - type: \(metadata.type ?? "unknown"), title: \(metadata.title)")
         print("📡 [API] Metadata has media array: \(metadata.media != nil), count: \(metadata.media?.count ?? 0)")
         return metadata
     }

@@ -158,7 +158,7 @@ class VideoPlayerManager: ObservableObject {
             let detailedMedia = try await client.getMetadata(ratingKey: ratingKey)
 
             print("🎬 [Player] Detailed metadata received")
-            print("🎬 [Player] Type: \(detailedMedia.type)")
+            print("🎬 [Player] Type: \(detailedMedia.type ?? "unknown")")
             print("🎬 [Player] Title: \(detailedMedia.title)")
             print("🎬 [Player] Has media array: \(detailedMedia.media != nil)")
             print("🎬 [Player] Media count: \(detailedMedia.media?.count ?? 0)")

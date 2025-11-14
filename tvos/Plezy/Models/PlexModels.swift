@@ -151,7 +151,7 @@ struct PlexMetadata: Codable, Identifiable, Equatable {
     let key: String
     let guid: String?
     let studio: String?
-    let type: String
+    let type: String?  // Optional to support Directory items without type
     let title: String
     let titleSort: String?
     let librarySectionTitle: String?
@@ -317,6 +317,39 @@ struct PlexMedia: Codable {
         case has64bitOffsets, videoProfile
         case part = "Part"  // Plex API uses capital P
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(Int.self, forKey: .id)
+        duration = try container.decodeIfPresent(Int.self, forKey: .duration)
+        bitrate = try container.decodeIfPresent(Int.self, forKey: .bitrate)
+        width = try container.decodeIfPresent(Int.self, forKey: .width)
+        height = try container.decodeIfPresent(Int.self, forKey: .height)
+        aspectRatio = try container.decodeIfPresent(Double.self, forKey: .aspectRatio)
+        audioChannels = try container.decodeIfPresent(Int.self, forKey: .audioChannels)
+        audioCodec = try container.decodeIfPresent(String.self, forKey: .audioCodec)
+        videoCodec = try container.decodeIfPresent(String.self, forKey: .videoCodec)
+        videoResolution = try container.decodeIfPresent(String.self, forKey: .videoResolution)
+        self.container = try container.decodeIfPresent(String.self, forKey: .container)
+        videoFrameRate = try container.decodeIfPresent(String.self, forKey: .videoFrameRate)
+        videoProfile = try container.decodeIfPresent(String.self, forKey: .videoProfile)
+        part = try container.decodeIfPresent([PlexPart].self, forKey: .part)
+
+        // Handle optimizedForStreaming as Int or Bool
+        if let intValue = try? container.decodeIfPresent(Int.self, forKey: .optimizedForStreaming) {
+            optimizedForStreaming = intValue != 0
+        } else {
+            optimizedForStreaming = try container.decodeIfPresent(Bool.self, forKey: .optimizedForStreaming)
+        }
+
+        // Handle has64bitOffsets as Int or Bool
+        if let intValue = try? container.decodeIfPresent(Int.self, forKey: .has64bitOffsets) {
+            has64bitOffsets = intValue != 0
+        } else {
+            has64bitOffsets = try container.decodeIfPresent(Bool.self, forKey: .has64bitOffsets)
+        }
+    }
 }
 
 struct PlexPart: Codable {
@@ -334,6 +367,32 @@ struct PlexPart: Codable {
         case id, key, duration, file, size, container
         case optimizedForStreaming, has64bitOffsets
         case stream = "Stream"  // Plex API uses capital S
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(Int.self, forKey: .id)
+        key = try container.decode(String.self, forKey: .key)
+        duration = try container.decodeIfPresent(Int.self, forKey: .duration)
+        file = try container.decodeIfPresent(String.self, forKey: .file)
+        size = try container.decodeIfPresent(Int.self, forKey: .size)
+        self.container = try container.decodeIfPresent(String.self, forKey: .container)
+        stream = try container.decodeIfPresent([PlexStream].self, forKey: .stream)
+
+        // Handle optimizedForStreaming as Int or Bool
+        if let intValue = try? container.decodeIfPresent(Int.self, forKey: .optimizedForStreaming) {
+            optimizedForStreaming = intValue != 0
+        } else {
+            optimizedForStreaming = try container.decodeIfPresent(Bool.self, forKey: .optimizedForStreaming)
+        }
+
+        // Handle has64bitOffsets as Int or Bool
+        if let intValue = try? container.decodeIfPresent(Int.self, forKey: .has64bitOffsets) {
+            has64bitOffsets = intValue != 0
+        } else {
+            has64bitOffsets = try container.decodeIfPresent(Bool.self, forKey: .has64bitOffsets)
+        }
     }
 }
 
