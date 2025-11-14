@@ -333,6 +333,7 @@ class VideoPlayerManager: ObservableObject {
     }
 
     func cleanup() {
+        print("🧹 [Player] Cleaning up player resources")
         if let timeObserver = timeObserver {
             player?.removeTimeObserver(timeObserver)
             self.timeObserver = nil
@@ -341,12 +342,6 @@ class VideoPlayerManager: ObservableObject {
         player?.pause()
         player = nil
         playerItem = nil
-    }
-
-    deinit {
-        Task { @MainActor in
-            cleanup()
-        }
     }
 }
 

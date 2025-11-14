@@ -15,7 +15,16 @@ class PlexAPIClient {
 
     // Plex.tv API constants
     static let plexTVURL = "https://plex.tv"
-    static let plexClientIdentifier = UUID().uuidString
+    static let plexClientIdentifier: String = {
+        let key = "PlexClientIdentifier"
+        if let stored = UserDefaults.standard.string(forKey: key) {
+            return stored
+        } else {
+            let newIdentifier = UUID().uuidString
+            UserDefaults.standard.set(newIdentifier, forKey: key)
+            return newIdentifier
+        }
+    }()
     static let plexProduct = "Plezy tvOS"
     static let plexVersion = "1.0.0"
     static let plexPlatform = "tvOS"
@@ -60,6 +69,13 @@ class PlexAPIClient {
         queryItems: [URLQueryItem]? = nil,
         body: Data? = nil
     ) async throws -> T {
+        // Validate authentication for server endpoints (not plex.tv public endpoints)
+        let requiresAuth = !path.hasPrefix("/api/v2/pins") && baseURL.host != "plex.tv"
+        if requiresAuth && accessToken == nil {
+            print("❌ [API] Unauthorized request to \(path) - no access token")
+            throw PlexAPIError.unauthorized
+        }
+
         var urlComponents = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)
         urlComponents?.queryItems = queryItems
 
