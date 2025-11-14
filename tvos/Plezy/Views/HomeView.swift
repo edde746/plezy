@@ -199,10 +199,11 @@ struct MediaCard: View {
                     AsyncImage(url: posterURL) { image in
                         image
                             .resizable()
-                            .aspectRatio(contentMode: .fit)
+                            .scaledToFit()
                     } placeholder: {
                         Rectangle()
                             .fill(Color.gray.opacity(0.3))
+                            .aspectRatio(2/3, contentMode: .fit)
                             .overlay(
                                 Image(systemName: "photo")
                                     .font(.largeTitle)
@@ -210,7 +211,6 @@ struct MediaCard: View {
                             )
                     }
                     .frame(width: 300, height: 450)
-                    .clipped()
 
                     // Progress indicator
                     if media.progress > 0 && media.progress < 0.98 {
@@ -265,8 +265,19 @@ struct MediaCard: View {
     private var posterURL: URL? {
         guard let server = authService.selectedServer,
               let connection = server.connections.first,
-              let baseURL = connection.url,
-              let thumb = media.thumb else {
+              let baseURL = connection.url else {
+            return nil
+        }
+
+        // Use grandparentThumb for TV episodes (show poster), otherwise use thumb
+        let imagePath: String?
+        if media.type == "episode", let grandparentThumb = media.grandparentThumb {
+            imagePath = grandparentThumb
+        } else {
+            imagePath = media.thumb
+        }
+
+        guard let thumb = imagePath else {
             return nil
         }
 
