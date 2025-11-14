@@ -10,6 +10,7 @@ import AVKit
 import AVFoundation
 import Combine
 import MediaPlayer
+import AVFAudio
 
 struct VideoPlayerView: View {
     let media: PlexMetadata
@@ -163,6 +164,7 @@ class VideoPlayerManager: ObservableObject {
     private let media: PlexMetadata
     private var timeObserver: Any?
     private var playerItem: AVPlayerItem?
+    private var remoteCommandsConfigured = false
 
     init(media: PlexMetadata) {
         self.media = media
@@ -245,6 +247,9 @@ class VideoPlayerManager: ObservableObject {
             let asset = AVURLAsset(url: videoURL)
             playerItem = AVPlayerItem(asset: asset)
 
+            // Configure audio session for playback
+            setupAudioSession()
+
             // Set up metadata for Now Playing
             setupNowPlayingMetadata(media: detailedMedia, server: server, baseURL: baseURL)
 
@@ -268,6 +273,9 @@ class VideoPlayerManager: ObservableObject {
             // Setup progress tracking
             setupProgressTracking(client: client, player: player, ratingKey: ratingKey)
 
+            // Setup remote command handling
+            setupRemoteCommands(player: player)
+
             isLoading = false
 
         } catch {
@@ -275,6 +283,19 @@ class VideoPlayerManager: ObservableObject {
             self.error = "Failed to load video: \(error.localizedDescription)"
             isLoading = false
         }
+    }
+
+    private func setupAudioSession() {
+        #if os(tvOS)
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playback, mode: .moviePlayback)
+            try audioSession.setActive(true)
+            print("🔊 [Player] Audio session configured for playback")
+        } catch {
+            print("⚠️ [Player] Failed to configure audio session: \(error)")
+        }
+        #endif
     }
 
     private func setupNowPlayingMetadata(media: PlexMetadata, server: PlexServer, baseURL: URL) {
@@ -367,8 +388,92 @@ class VideoPlayerManager: ObservableObject {
         }
     }
 
+    private func setupRemoteCommands(player: AVPlayer) {
+        guard !remoteCommandsConfigured else { return }
+
+        let commandCenter = MPRemoteCommandCenter.shared()
+
+        // Play command
+        commandCenter.playCommand.isEnabled = true
+        commandCenter.playCommand.addTarget { [weak self] _ in
+            player.play()
+            print("🎮 [RemoteCommands] Play command executed")
+            return .success
+        }
+
+        // Pause command
+        commandCenter.pauseCommand.isEnabled = true
+        commandCenter.pauseCommand.addTarget { [weak self] _ in
+            player.pause()
+            print("🎮 [RemoteCommands] Pause command executed")
+            return .success
+        }
+
+        // Toggle play/pause
+        commandCenter.togglePlayPauseCommand.isEnabled = true
+        commandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
+            if player.rate > 0 {
+                player.pause()
+                print("🎮 [RemoteCommands] Toggle pause executed")
+            } else {
+                player.play()
+                print("🎮 [RemoteCommands] Toggle play executed")
+            }
+            return .success
+        }
+
+        // Skip forward (15 seconds)
+        commandCenter.skipForwardCommand.isEnabled = true
+        commandCenter.skipForwardCommand.preferredIntervals = [15]
+        commandCenter.skipForwardCommand.addTarget { [weak self] event in
+            if let skipEvent = event as? MPSkipIntervalCommandEvent {
+                let currentTime = player.currentTime()
+                let newTime = CMTimeAdd(currentTime, CMTime(seconds: skipEvent.interval, preferredTimescale: 600))
+                player.seek(to: newTime)
+                print("🎮 [RemoteCommands] Skip forward \(skipEvent.interval)s")
+                return .success
+            }
+            return .commandFailed
+        }
+
+        // Skip backward (15 seconds)
+        commandCenter.skipBackwardCommand.isEnabled = true
+        commandCenter.skipBackwardCommand.preferredIntervals = [15]
+        commandCenter.skipBackwardCommand.addTarget { [weak self] event in
+            if let skipEvent = event as? MPSkipIntervalCommandEvent {
+                let currentTime = player.currentTime()
+                let newTime = CMTimeSubtract(currentTime, CMTime(seconds: skipEvent.interval, preferredTimescale: 600))
+                player.seek(to: max(newTime, CMTime.zero))
+                print("🎮 [RemoteCommands] Skip backward \(skipEvent.interval)s")
+                return .success
+            }
+            return .commandFailed
+        }
+
+        remoteCommandsConfigured = true
+        print("🎮 [RemoteCommands] Remote command handling configured")
+    }
+
+    private func removeRemoteCommands() {
+        guard remoteCommandsConfigured else { return }
+
+        let commandCenter = MPRemoteCommandCenter.shared()
+        commandCenter.playCommand.removeTarget(nil)
+        commandCenter.pauseCommand.removeTarget(nil)
+        commandCenter.togglePlayPauseCommand.removeTarget(nil)
+        commandCenter.skipForwardCommand.removeTarget(nil)
+        commandCenter.skipBackwardCommand.removeTarget(nil)
+
+        remoteCommandsConfigured = false
+        print("🎮 [RemoteCommands] Remote commands removed")
+    }
+
     func cleanup() {
         print("🧹 [Player] Cleaning up player resources")
+
+        // Remove remote command handlers
+        removeRemoteCommands()
+
         if let timeObserver = timeObserver {
             player?.removeTimeObserver(timeObserver)
             self.timeObserver = nil
@@ -377,6 +482,16 @@ class VideoPlayerManager: ObservableObject {
         player?.pause()
         player = nil
         playerItem = nil
+
+        // Deactivate audio session
+        #if os(tvOS)
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            print("🔊 [Player] Audio session deactivated")
+        } catch {
+            print("⚠️ [Player] Failed to deactivate audio session: \(error)")
+        }
+        #endif
     }
 }
 

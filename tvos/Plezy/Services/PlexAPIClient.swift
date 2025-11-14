@@ -102,7 +102,24 @@ class PlexAPIClient {
         print("🌐 [API] Response: \(httpResponse.statusCode) - \(data.count) bytes")
 
         guard (200...299).contains(httpResponse.statusCode) else {
-            throw PlexAPIError.httpError(statusCode: httpResponse.statusCode)
+            // Provide specific error messages for common HTTP status codes
+            switch httpResponse.statusCode {
+            case 401:
+                print("❌ [API] Unauthorized - invalid or expired token")
+                throw PlexAPIError.unauthorized
+            case 404:
+                print("❌ [API] Not found - resource doesn't exist")
+                throw PlexAPIError.notFound
+            case 429:
+                print("❌ [API] Rate limited - too many requests")
+                throw PlexAPIError.rateLimited
+            case 500...599:
+                print("❌ [API] Server error (\(httpResponse.statusCode))")
+                throw PlexAPIError.serverError(statusCode: httpResponse.statusCode)
+            default:
+                print("❌ [API] HTTP error \(httpResponse.statusCode)")
+                throw PlexAPIError.httpError(statusCode: httpResponse.statusCode)
+            }
         }
 
         let decoder = JSONDecoder()
@@ -453,6 +470,9 @@ enum PlexAPIError: LocalizedError {
     case decodingError(Error)
     case noData
     case unauthorized
+    case notFound
+    case rateLimited
+    case serverError(statusCode: Int)
     case serverNotReachable
 
     var errorDescription: String? {
@@ -468,7 +488,13 @@ enum PlexAPIError: LocalizedError {
         case .noData:
             return "No data received"
         case .unauthorized:
-            return "Unauthorized - please login again"
+            return "Session expired. Please sign in again"
+        case .notFound:
+            return "Content not found on server"
+        case .rateLimited:
+            return "Too many requests. Please wait a moment"
+        case .serverError(let code):
+            return "Server error (\(code)). Please try again later"
         case .serverNotReachable:
             return "Server not reachable"
         }

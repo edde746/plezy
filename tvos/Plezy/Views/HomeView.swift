@@ -413,6 +413,34 @@ struct MediaCard: View {
         .focused($isFocused)
         .scaleEffect(isFocused ? 1.04 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint(accessibilityHint)
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var accessibilityLabel: String {
+        var label = media.title
+        if let year = media.year {
+            label += ", \(year)"
+        }
+        if media.type == "episode", let show = media.grandparentTitle {
+            label = "\(show), \(media.title)"
+            if let seasonEp = media.formatSeasonEpisode() {
+                label += " \(seasonEp)"
+            }
+        }
+        return label
+    }
+
+    private var accessibilityHint: String {
+        if media.isWatched {
+            return "Watched. Double tap to view details"
+        } else if media.progress > 0 {
+            let percent = Int(media.progress * 100)
+            return "\(percent)% watched. Double tap to view details"
+        } else {
+            return "Double tap to view details"
+        }
     }
 
     private var posterURL: URL? {
@@ -804,6 +832,30 @@ struct LandscapeMediaCard: View {
         .focused($isFocused)
         .scaleEffect(isFocused ? 1.05 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("In progress. Double tap to continue watching")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var accessibilityLabel: String {
+        if media.type == "episode", let show = media.grandparentTitle {
+            var label = "\(show), \(media.title)"
+            if let seasonEp = media.formatSeasonEpisode() {
+                label += " \(seasonEp)"
+            }
+            if media.progress > 0 {
+                let percent = Int(media.progress * 100)
+                label += ", \(percent)% watched"
+            }
+            return label
+        } else {
+            var label = media.title
+            if media.progress > 0 {
+                let percent = Int(media.progress * 100)
+                label += ", \(percent)% watched"
+            }
+            return label
+        }
     }
 
     private var artURL: URL? {

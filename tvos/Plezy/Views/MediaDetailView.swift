@@ -160,6 +160,8 @@ struct MediaDetailView: View {
                                     .foregroundColor(.white)
                                 }
                                 .buttonStyle(ClearGlassButtonStyle())
+                                .accessibilityLabel(displayMedia.progress > 0 ? "Resume" : "Play")
+                                .accessibilityHint(displayMedia.progress > 0 ? "Continue watching from where you left off" : "Start watching \(displayMedia.title)")
 
                                 // Mark as watched/unwatched
                                 Button {
@@ -176,6 +178,8 @@ struct MediaDetailView: View {
                                     .foregroundColor(.white)
                                 }
                                 .buttonStyle(CardButtonStyle())
+                                .accessibilityLabel(displayMedia.isWatched ? "Watched" : "Mark as watched")
+                                .accessibilityHint(displayMedia.isWatched ? "Mark this as unwatched" : "Mark this as watched")
                             }
                             .padding(.top, 20)
 

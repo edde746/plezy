@@ -18,8 +18,12 @@ struct LibraryContentView: View {
     @State private var filterStatus: FilterStatus = .all
     @State private var sortOption: SortOption = .recentlyAdded
     @State private var errorMessage: String?
+    @State private var currentOffset = 0
+    @State private var hasMoreItems = true
+    @State private var isLoadingMore = false
 
     private let cache = CacheService.shared
+    private let pageSize = 50
 
     enum FilterStatus {
         case all
@@ -177,6 +181,26 @@ struct LibraryContentView: View {
                                     print("🎯 [LibraryContent] selectedMedia set to: \(String(describing: selectedMedia?.title))")
                                 }
                             }
+
+                            // Load more indicator
+                            if hasMoreItems {
+                                VStack {
+                                    if isLoadingMore {
+                                        ProgressView()
+                                            .scaleEffect(1.2)
+                                            .tint(.white)
+                                    } else {
+                                        Color.clear.frame(height: 1)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 40)
+                                .onAppear {
+                                    Task {
+                                        await loadMoreContent()
+                                    }
+                                }
+                            }
                         }
                         .padding(80)
                     }
@@ -238,47 +262,22 @@ struct LibraryContentView: View {
         print("📚 [LibraryContent] Loading fresh content for \(library.title)...")
         isLoading = true
         errorMessage = nil
+        currentOffset = 0
+        hasMoreItems = true
 
         do {
-            // Map sort option to Plex API sort parameter
-            let sortParam: String? = {
-                switch sortOption {
-                case .recentlyAdded:
-                    return "addedAt:desc"
-                case .titleAsc:
-                    return "titleSort:asc"
-                case .titleDesc:
-                    return "titleSort:desc"
-                case .yearDesc:
-                    return "year:desc"
-                case .yearAsc:
-                    return "year:asc"
-                }
-            }()
-
-            // Map filter status to unwatched parameter
-            let unwatchedParam: Bool? = {
-                switch filterStatus {
-                case .unwatched:
-                    return true
-                case .all, .watched:
-                    return nil // Server-side filtering only supports unwatched
-                }
-            }()
-
-            let fetchedItems = try await client.getLibraryContent(
-                sectionKey: library.key,
-                size: 200,
-                sort: sortParam,
-                unwatched: unwatchedParam
-            )
+            let fetchedItems = try await fetchItems(start: 0, size: pageSize)
             self.items = fetchedItems
+
+            // Check if there are more items
+            hasMoreItems = fetchedItems.count == pageSize
+            currentOffset = pageSize
 
             // Cache the results with 10 minute TTL
             cache.set(cacheKey, value: fetchedItems, ttl: 600)
 
             applyFilters() // Still apply client-side filters for watched items
-            print("📚 [LibraryContent] Content loaded: \(fetchedItems.count) items")
+            print("📚 [LibraryContent] Content loaded: \(fetchedItems.count) items, hasMore: \(hasMoreItems)")
             errorMessage = nil
         } catch {
             print("Error loading library content: \(error)")
@@ -286,6 +285,72 @@ struct LibraryContentView: View {
         }
 
         isLoading = false
+    }
+
+    private func loadMoreContent() async {
+        guard hasMoreItems, !isLoadingMore else { return }
+        guard let client = authService.currentClient else { return }
+
+        print("📚 [LibraryContent] Loading more content from offset \(currentOffset)")
+        isLoadingMore = true
+
+        do {
+            let fetchedItems = try await fetchItems(start: currentOffset, size: pageSize)
+
+            // Append new items
+            self.items.append(contentsOf: fetchedItems)
+
+            // Check if there are more items
+            hasMoreItems = fetchedItems.count == pageSize
+            currentOffset += fetchedItems.count
+
+            applyFilters()
+            print("📚 [LibraryContent] Loaded \(fetchedItems.count) more items, total: \(items.count), hasMore: \(hasMoreItems)")
+        } catch {
+            print("Error loading more content: \(error)")
+        }
+
+        isLoadingMore = false
+    }
+
+    private func fetchItems(start: Int, size: Int) async throws -> [PlexMetadata] {
+        guard let client = authService.currentClient else {
+            throw PlexAPIError.unauthorized
+        }
+
+        // Map sort option to Plex API sort parameter
+        let sortParam: String? = {
+            switch sortOption {
+            case .recentlyAdded:
+                return "addedAt:desc"
+            case .titleAsc:
+                return "titleSort:asc"
+            case .titleDesc:
+                return "titleSort:desc"
+            case .yearDesc:
+                return "year:desc"
+            case .yearAsc:
+                return "year:asc"
+            }
+        }()
+
+        // Map filter status to unwatched parameter
+        let unwatchedParam: Bool? = {
+            switch filterStatus {
+            case .unwatched:
+                return true
+            case .all, .watched:
+                return nil // Server-side filtering only supports unwatched
+            }
+        }()
+
+        return try await client.getLibraryContent(
+            sectionKey: library.key,
+            start: start,
+            size: size,
+            sort: sortParam,
+            unwatched: unwatchedParam
+        )
     }
 
     private func applyFilters() {
