@@ -80,11 +80,15 @@ struct TVPlayerViewController: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let controller = AVPlayerViewController()
-        controller.delegate = context.coordinator
 
-        // Configure for tvOS
+        #if os(tvOS)
+        // tvOS-specific configuration
+        // Note: PiP settings not available on tvOS
+        #else
+        // iOS-specific configuration
         controller.allowsPictureInPicturePlayback = true
         controller.canStartPictureInPictureAutomaticallyFromInline = true
+        #endif
 
         return controller
     }
@@ -97,23 +101,11 @@ struct TVPlayerViewController: UIViewControllerRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(playerManager: playerManager)
+        Coordinator()
     }
 
-    class Coordinator: NSObject, AVPlayerViewControllerDelegate {
-        let playerManager: VideoPlayerManager
-
-        init(playerManager: VideoPlayerManager) {
-            self.playerManager = playerManager
-        }
-
-        func playerViewController(
-            _ playerViewController: AVPlayerViewController,
-            willEndFullScreenPresentationWithAnimationCoordinator coordinator: UIViewControllerTransitionCoordinator
-        ) {
-            // Player is being dismissed
-            playerManager.cleanup()
-        }
+    class Coordinator: NSObject {
+        // Coordinator for future use if needed
     }
 }
 
