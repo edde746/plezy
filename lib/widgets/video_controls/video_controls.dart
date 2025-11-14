@@ -38,6 +38,8 @@ Widget plexVideoControlsBuilder(
   int? selectedMediaIndex,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
+  Function(AudioTrack)? onAudioTrackChanged,
+  Function(SubtitleTrack)? onSubtitleTrackChanged,
 }) {
   return PlexVideoControls(
     player: player,
@@ -48,6 +50,8 @@ Widget plexVideoControlsBuilder(
     selectedMediaIndex: selectedMediaIndex ?? 0,
     boxFitMode: boxFitMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
+    onAudioTrackChanged: onAudioTrackChanged,
+    onSubtitleTrackChanged: onSubtitleTrackChanged,
   );
 }
 
@@ -60,6 +64,8 @@ class PlexVideoControls extends StatefulWidget {
   final int selectedMediaIndex;
   final int boxFitMode;
   final VoidCallback? onCycleBoxFitMode;
+  final Function(AudioTrack)? onAudioTrackChanged;
+  final Function(SubtitleTrack)? onSubtitleTrackChanged;
 
   const PlexVideoControls({
     super.key,
@@ -71,6 +77,8 @@ class PlexVideoControls extends StatefulWidget {
     this.selectedMediaIndex = 0,
     this.boxFitMode = 0,
     this.onCycleBoxFitMode,
+    this.onAudioTrackChanged,
+    this.onSubtitleTrackChanged,
   });
 
   @override
@@ -464,13 +472,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               if (_hasMultipleAudioTracks(tracks))
                 VideoControlButton(
                   icon: Icons.audiotrack,
-                  onPressed: () => AudioTrackSheet.show(context, widget.player),
+                  onPressed: () => AudioTrackSheet.show(
+                    context,
+                    widget.player,
+                    onTrackChanged: widget.onAudioTrackChanged,
+                  ),
                 ),
               if (_hasSubtitles(tracks))
                 VideoControlButton(
                   icon: Icons.subtitles,
-                  onPressed: () =>
-                      SubtitleTrackSheet.show(context, widget.player),
+                  onPressed: () => SubtitleTrackSheet.show(
+                    context,
+                    widget.player,
+                    onTrackChanged: widget.onSubtitleTrackChanged,
+                  ),
                 ),
               if (_chapters.isNotEmpty)
                 VideoControlButton(

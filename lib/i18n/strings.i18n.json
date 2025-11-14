@@ -100,6 +100,8 @@
     "secondsUnit": "${seconds} seconds",
     "defaultSleepTimer": "Default Sleep Timer",
     "minutesUnit": "${minutes} minutes",
+    "rememberTrackSelections": "Remember track selections per show/movie",
+    "rememberTrackSelectionsDescription": "Automatically save audio and subtitle language preferences when you change tracks during playback",
     "unwatchedOnly": "Unwatched Only",
     "unwatchedOnlyDescription": "Only include unwatched episodes in shuffle queue",
     "shuffleOrderNavigation": "Shuffle Order Navigation",

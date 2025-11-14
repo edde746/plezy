@@ -100,6 +100,8 @@
     "secondsUnit": "${seconds} secondi",
     "defaultSleepTimer": "Timer spegnimento predefinito",
     "minutesUnit": "${minutes} minuti",
+    "rememberTrackSelections": "Ricorda selezioni tracce per serie/film",
+    "rememberTrackSelectionsDescription": "Salva automaticamente le preferenze delle lingue audio e sottotitoli quando cambi tracce durante la riproduzione",
     "unwatchedOnly": "Solo non guardati",
     "unwatchedOnlyDescription": "Includi solo gli episodi non guardati nella coda di riproduzione casuale",
     "shuffleOrderNavigation": "Navigazione in ordine casuale",

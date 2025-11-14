@@ -302,6 +302,40 @@ class PlexClient {
         : null;
   }
 
+  /// Set per-media language preferences (audio and subtitle)
+  /// For TV shows, use grandparentRatingKey to set preference for the entire series
+  /// For movies, use the movie's ratingKey
+  Future<bool> setMetadataPreferences(
+    String ratingKey, {
+    String? audioLanguage,
+    String? subtitleLanguage,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (audioLanguage != null) {
+        queryParams['audioLanguage'] = audioLanguage;
+      }
+      if (subtitleLanguage != null) {
+        queryParams['subtitleLanguage'] = subtitleLanguage;
+      }
+
+      // If no preferences to set, return early
+      if (queryParams.isEmpty) {
+        return true;
+      }
+
+      final response = await _dio.put(
+        '/library/metadata/$ratingKey/prefs',
+        queryParameters: queryParams,
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      appLogger.e('Failed to set metadata preferences', error: e);
+      return false;
+    }
+  }
+
   /// Search across all libraries using the hub search endpoint
   /// Only returns movies and shows, filtering out seasons and episodes
   Future<List<PlexMetadata>> search(String query, {int limit = 10}) async {

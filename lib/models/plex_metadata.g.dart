@@ -40,6 +40,8 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   role: (json['Role'] as List<dynamic>?)
       ?.map((e) => PlexRole.fromJson(e as Map<String, dynamic>))
       .toList(),
+  audioLanguage: json['audioLanguage'] as String?,
+  subtitleLanguage: json['subtitleLanguage'] as String?,
 );
 
 Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
@@ -75,4 +77,6 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
       'leafCount': instance.leafCount,
       'viewedLeafCount': instance.viewedLeafCount,
       'Role': instance.role,
+      'audioLanguage': instance.audioLanguage,
+      'subtitleLanguage': instance.subtitleLanguage,
     };

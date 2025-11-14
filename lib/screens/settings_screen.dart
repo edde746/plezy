@@ -33,6 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _seekTimeSmall = 10;
   int _seekTimeLarge = 30;
   int _sleepTimerDuration = 30;
+  bool _rememberTrackSelections = true;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -55,6 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _seekTimeSmall = _settingsService.getSeekTimeSmall();
       _seekTimeLarge = _settingsService.getSeekTimeLarge();
       _sleepTimerDuration = _settingsService.getSleepTimerDuration();
+      _rememberTrackSelections = _settingsService.getRememberTrackSelections();
       _isLoading = false;
     });
   }
@@ -263,6 +265,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showSleepTimerDurationDialog(),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.bookmark),
+            title: Text(t.settings.rememberTrackSelections),
+            subtitle: Text(t.settings.rememberTrackSelectionsDescription),
+            value: _rememberTrackSelections,
+            onChanged: (value) async {
+              setState(() {
+                _rememberTrackSelections = value;
+              });
+              await _settingsService.setRememberTrackSelections(value);
+            },
           ),
         ],
       ),

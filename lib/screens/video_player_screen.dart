@@ -7,6 +7,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
 
+import '../client/plex_client.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
@@ -1073,6 +1074,34 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     return title.contains('forced');
   }
 
+  /// Checks if a track language matches a preferred language
+  ///
+  /// Handles both 2-letter (ISO 639-1) and 3-letter (ISO 639-2) codes
+  /// Also handles bibliographic variants and region codes (e.g., "en-US")
+  bool _languageMatches(String? trackLanguage, String? preferredLanguage) {
+    if (trackLanguage == null || preferredLanguage == null) {
+      return false;
+    }
+
+    final track = trackLanguage.toLowerCase();
+    final preferred = preferredLanguage.toLowerCase();
+
+    // Direct match
+    if (track == preferred) return true;
+
+    // Extract base language codes (handle region codes like "en-US")
+    final trackBase = track.split('-').first;
+    final preferredBase = preferred.split('-').first;
+
+    if (trackBase == preferredBase) return true;
+
+    // Get all variations of the preferred language (e.g., "en" → ["en", "eng"])
+    final variations = LanguageCodes.getVariations(preferredBase);
+
+    // Check if track's base code matches any variation
+    return variations.contains(trackBase);
+  }
+
   void _waitForTracksAndApply() async {
     // Helper function to process tracks
     Future<void> processTracks(Tracks tracks) async {
@@ -1102,7 +1131,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         );
       }
 
-      // Select audio track with priority: preferred > user profile > default > first
+      // Select audio track with priority: preferred > per-media > user profile > default > first
       appLogger.d('Audio track selection');
       if (realAudioTracks.isNotEmpty) {
         AudioTrack? trackToSelect;
@@ -1126,20 +1155,46 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           appLogger.d('Priority 1: No preferred track from navigation');
         }
 
-        // Priority 2: If no preferred track matched, try user profile preferences
+        // Priority 2: If no preferred track matched, try per-media language preference
+        if (trackToSelect == null && widget.metadata.audioLanguage != null) {
+          appLogger.d(
+            'Priority 2: Checking per-media audio language preference',
+          );
+          appLogger.d(
+            '  Per-media audio language: ${widget.metadata.audioLanguage}',
+          );
+          trackToSelect = realAudioTracks.firstWhere(
+            (track) =>
+                _languageMatches(track.language, widget.metadata.audioLanguage),
+            orElse: () => realAudioTracks.first,
+          );
+          if (_languageMatches(
+            trackToSelect.language,
+            widget.metadata.audioLanguage,
+          )) {
+            appLogger.d('  Matched per-media audio language preference');
+          } else {
+            appLogger.d('  No match found for per-media audio language');
+            trackToSelect = null;
+          }
+        } else if (trackToSelect == null) {
+          appLogger.d('Priority 2: No per-media audio language preference');
+        }
+
+        // Priority 3: If no preferred track matched, try user profile preferences
         if (trackToSelect == null && profileSettings != null) {
-          appLogger.d('Priority 2: Checking user profile preferences');
+          appLogger.d('Priority 3: Checking user profile preferences');
           trackToSelect = _findAudioTrackByProfile(
             realAudioTracks,
             profileSettings,
           );
         } else if (trackToSelect == null) {
-          appLogger.d('Priority 2: No user profile available');
+          appLogger.d('Priority 3: No user profile available');
         }
 
-        // Priority 3: If no match, use default or first track
+        // Priority 4: If no match, use default or first track
         if (trackToSelect == null) {
-          appLogger.d('Priority 3: Using default or first available track');
+          appLogger.d('Priority 4: Using default or first available track');
           trackToSelect = realAudioTracks.firstWhere(
             (t) => t.isDefault == true,
             orElse: () => realAudioTracks.first,
@@ -1158,7 +1213,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         appLogger.d('No audio tracks available');
       }
 
-      // Select subtitle track with priority: preferred > user profile > default > off
+      // Select subtitle track with priority: preferred > per-media > user profile > default > off
       appLogger.d('Subtitle track selection');
       SubtitleTrack? subtitleToSelect;
 
@@ -1187,11 +1242,47 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         appLogger.d('Priority 1: No preferred track from navigation');
       }
 
-      // Priority 2: If no preferred match, apply user profile preferences
+      // Priority 2: If no preferred match, try per-media language preference
+      if (subtitleToSelect == null &&
+          widget.metadata.subtitleLanguage != null) {
+        appLogger.d(
+          'Priority 2: Checking per-media subtitle language preference',
+        );
+        appLogger.d(
+          '  Per-media subtitle language: ${widget.metadata.subtitleLanguage}',
+        );
+        // Check if subtitle should be disabled
+        if (widget.metadata.subtitleLanguage == 'none' ||
+            widget.metadata.subtitleLanguage!.isEmpty) {
+          appLogger.d('  Per-media preference: Subtitles OFF');
+          subtitleToSelect = SubtitleTrack.no();
+        } else if (realSubtitleTracks.isNotEmpty) {
+          final matchedTrack = realSubtitleTracks.firstWhere(
+            (track) => _languageMatches(
+              track.language,
+              widget.metadata.subtitleLanguage,
+            ),
+            orElse: () => realSubtitleTracks.first,
+          );
+          if (_languageMatches(
+            matchedTrack.language,
+            widget.metadata.subtitleLanguage,
+          )) {
+            subtitleToSelect = matchedTrack;
+            appLogger.d('  Matched per-media subtitle language preference');
+          } else {
+            appLogger.d('  No match found for per-media subtitle language');
+          }
+        }
+      } else if (subtitleToSelect == null) {
+        appLogger.d('Priority 2: No per-media subtitle language preference');
+      }
+
+      // Priority 3: If no preferred match, apply user profile preferences
       if (subtitleToSelect == null &&
           profileSettings != null &&
           realSubtitleTracks.isNotEmpty) {
-        appLogger.d('Priority 2: Checking user profile preferences');
+        appLogger.d('Priority 3: Checking user profile preferences');
         // Get the currently selected audio track
         final currentAudioTrack = realAudioTracks.firstWhere(
           (t) => t.id == player!.state.track.audio.id,
@@ -1203,12 +1294,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           selectedAudioTrack: currentAudioTrack,
         );
       } else if (subtitleToSelect == null && realSubtitleTracks.isNotEmpty) {
-        appLogger.d('Priority 2: No user profile available');
+        appLogger.d('Priority 3: No user profile available');
       }
 
-      // Priority 3: If no profile match, check for default subtitle
+      // Priority 4: If no profile match, check for default subtitle
       if (subtitleToSelect == null && realSubtitleTracks.isNotEmpty) {
-        appLogger.d('Priority 3: Checking for default subtitle track');
+        appLogger.d('Priority 4: Checking for default subtitle track');
         final defaultTrackIndex = realSubtitleTracks.indexWhere(
           (t) => t.isDefault == true,
         );
@@ -1224,7 +1315,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       // If still no subtitle selected, turn off
       if (subtitleToSelect == null) {
-        appLogger.d('Priority 4: No subtitle selected - Subtitles OFF');
+        appLogger.d('Priority 5: No subtitle selected - Subtitles OFF');
         subtitleToSelect = SubtitleTrack.no();
       }
 
@@ -1485,6 +1576,94 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     await _navigateToEpisode(_previousEpisode!);
   }
 
+  /// Handle audio track changes from the user - save as per-media preference if enabled
+  Future<void> _onAudioTrackChanged(AudioTrack track) async {
+    final settings = await SettingsService.getInstance();
+
+    // Only save if remember track selections is enabled
+    if (!settings.getRememberTrackSelections()) {
+      return;
+    }
+
+    // Extract language code from the track
+    final languageCode = track.language;
+    if (languageCode == null || languageCode.isEmpty) {
+      appLogger.d('Audio track has no language code, not saving preference');
+      return;
+    }
+
+    // Determine which ratingKey to use
+    // For TV shows: use grandparentRatingKey (series level)
+    // For movies: use ratingKey (movie level)
+    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    final targetRatingKey = isEpisode
+        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
+        : widget.metadata.ratingKey;
+
+    appLogger.i(
+      'Saving audio language preference: $languageCode for ${isEpisode ? "series" : "movie"} (ratingKey: $targetRatingKey)',
+    );
+
+    try {
+      if (!mounted) return;
+      final client = context.read<PlexClient>();
+      await client.setMetadataPreferences(
+        targetRatingKey,
+        audioLanguage: languageCode,
+      );
+      appLogger.d('Successfully saved audio language preference');
+    } catch (e) {
+      appLogger.e('Failed to save audio language preference', error: e);
+    }
+  }
+
+  /// Handle subtitle track changes from the user - save as per-media preference if enabled
+  Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async {
+    final settings = await SettingsService.getInstance();
+
+    // Only save if remember track selections is enabled
+    if (!settings.getRememberTrackSelections()) {
+      return;
+    }
+
+    // Handle "Off" selection
+    String? languageCode;
+    if (track.id == 'no') {
+      languageCode = 'none';
+      appLogger.i('User turned subtitles off, saving preference');
+    } else {
+      languageCode = track.language;
+      if (languageCode == null || languageCode.isEmpty) {
+        appLogger.d(
+          'Subtitle track has no language code, not saving preference',
+        );
+        return;
+      }
+    }
+
+    // Determine which ratingKey to use
+    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    final targetRatingKey = isEpisode
+        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
+        : widget.metadata.ratingKey;
+
+    appLogger.i(
+      'Saving subtitle language preference: $languageCode for ${isEpisode ? "series" : "movie"} (ratingKey: $targetRatingKey)',
+    );
+
+    try {
+      if (!mounted) return;
+      final client = context.read<PlexClient>();
+      await client.setMetadataPreferences(
+        targetRatingKey,
+        subtitleLanguage: languageCode,
+      );
+      appLogger.d('Successfully saved subtitle language preference');
+    } catch (e) {
+      appLogger.e('Failed to save subtitle language preference', error: e);
+    }
+  }
+
   /// Set flag to skip orientation restoration when replacing with another video
   void setReplacingWithVideo() {
     _isReplacingWithVideo = true;
@@ -1615,6 +1794,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         selectedMediaIndex: widget.selectedMediaIndex,
                         boxFitMode: _boxFitMode,
                         onCycleBoxFitMode: _cycleBoxFitMode,
+                        onAudioTrackChanged: _onAudioTrackChanged,
+                        onSubtitleTrackChanged: _onSubtitleTrackChanged,
                       ),
                     );
                   },

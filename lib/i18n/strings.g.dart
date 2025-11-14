@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 4
-/// Strings: 1256 (314 per locale)
+/// Strings: 1264 (316 per locale)
 ///
-/// Built on 2025-11-13 at 21:35 UTC
+/// Built on 2025-11-14 at 21:16 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -321,6 +321,8 @@ class _StringsSettingsEn {
 	String secondsUnit({required Object seconds}) => '${seconds} seconds';
 	String get defaultSleepTimer => 'Default Sleep Timer';
 	String minutesUnit({required Object minutes}) => '${minutes} minutes';
+	String get rememberTrackSelections => 'Remember track selections per show/movie';
+	String get rememberTrackSelectionsDescription => 'Automatically save audio and subtitle language preferences when you change tracks during playback';
 	String get unwatchedOnly => 'Unwatched Only';
 	String get unwatchedOnlyDescription => 'Only include unwatched episodes in shuffle queue';
 	String get shuffleOrderNavigation => 'Shuffle Order Navigation';
@@ -931,6 +933,8 @@ class _StringsSettingsIt implements _StringsSettingsEn {
 	@override String secondsUnit({required Object seconds}) => '${seconds} secondi';
 	@override String get defaultSleepTimer => 'Timer spegnimento predefinito';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuti';
+	@override String get rememberTrackSelections => 'Ricorda selezioni tracce per serie/film';
+	@override String get rememberTrackSelectionsDescription => 'Salva automaticamente le preferenze delle lingue audio e sottotitoli quando cambi tracce durante la riproduzione';
 	@override String get unwatchedOnly => 'Solo non guardati';
 	@override String get unwatchedOnlyDescription => 'Includi solo gli episodi non guardati nella coda di riproduzione casuale';
 	@override String get shuffleOrderNavigation => 'Navigazione in ordine casuale';
@@ -1541,6 +1545,8 @@ class _StringsSettingsNl implements _StringsSettingsEn {
 	@override String secondsUnit({required Object seconds}) => '${seconds} seconden';
 	@override String get defaultSleepTimer => 'Standaard slaap timer';
 	@override String minutesUnit({required Object minutes}) => 'bij ${minutes} minuten';
+	@override String get rememberTrackSelections => 'Onthoud track selecties per serie/film';
+	@override String get rememberTrackSelectionsDescription => 'Bewaar automatisch audio- en ondertiteltaalvoorkeuren wanneer je tracks wijzigt tijdens afspelen';
 	@override String get unwatchedOnly => 'Alleen ongekeken';
 	@override String get unwatchedOnlyDescription => 'Alleen ongekeken afleveringen opnemen in willekeurige wachtrij';
 	@override String get shuffleOrderNavigation => 'Willekeurige volgorde navigatie';
@@ -2151,6 +2157,8 @@ class _StringsSettingsSv implements _StringsSettingsEn {
 	@override String secondsUnit({required Object seconds}) => '${seconds} sekunder';
 	@override String get defaultSleepTimer => 'Standard sovtimer';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuter';
+	@override String get rememberTrackSelections => 'Kom ihåg spårval per serie/film';
+	@override String get rememberTrackSelectionsDescription => 'Spara automatiskt ljud- och undertextspråkpreferenser när du ändrar spår under uppspelning';
 	@override String get unwatchedOnly => 'Endast osedda';
 	@override String get unwatchedOnlyDescription => 'Inkludera endast osedda avsnitt i blandningskön';
 	@override String get shuffleOrderNavigation => 'Blandningsordning-navigation';
@@ -2662,6 +2670,8 @@ extension on Translations {
 			case 'settings.secondsUnit': return ({required Object seconds}) => '${seconds} seconds';
 			case 'settings.defaultSleepTimer': return 'Default Sleep Timer';
 			case 'settings.minutesUnit': return ({required Object minutes}) => '${minutes} minutes';
+			case 'settings.rememberTrackSelections': return 'Remember track selections per show/movie';
+			case 'settings.rememberTrackSelectionsDescription': return 'Automatically save audio and subtitle language preferences when you change tracks during playback';
 			case 'settings.unwatchedOnly': return 'Unwatched Only';
 			case 'settings.unwatchedOnlyDescription': return 'Only include unwatched episodes in shuffle queue';
 			case 'settings.shuffleOrderNavigation': return 'Shuffle Order Navigation';
@@ -2984,6 +2994,8 @@ extension on _StringsIt {
 			case 'settings.secondsUnit': return ({required Object seconds}) => '${seconds} secondi';
 			case 'settings.defaultSleepTimer': return 'Timer spegnimento predefinito';
 			case 'settings.minutesUnit': return ({required Object minutes}) => '${minutes} minuti';
+			case 'settings.rememberTrackSelections': return 'Ricorda selezioni tracce per serie/film';
+			case 'settings.rememberTrackSelectionsDescription': return 'Salva automaticamente le preferenze delle lingue audio e sottotitoli quando cambi tracce durante la riproduzione';
 			case 'settings.unwatchedOnly': return 'Solo non guardati';
 			case 'settings.unwatchedOnlyDescription': return 'Includi solo gli episodi non guardati nella coda di riproduzione casuale';
 			case 'settings.shuffleOrderNavigation': return 'Navigazione in ordine casuale';
@@ -3306,6 +3318,8 @@ extension on _StringsNl {
 			case 'settings.secondsUnit': return ({required Object seconds}) => '${seconds} seconden';
 			case 'settings.defaultSleepTimer': return 'Standaard slaap timer';
 			case 'settings.minutesUnit': return ({required Object minutes}) => 'bij ${minutes} minuten';
+			case 'settings.rememberTrackSelections': return 'Onthoud track selecties per serie/film';
+			case 'settings.rememberTrackSelectionsDescription': return 'Bewaar automatisch audio- en ondertiteltaalvoorkeuren wanneer je tracks wijzigt tijdens afspelen';
 			case 'settings.unwatchedOnly': return 'Alleen ongekeken';
 			case 'settings.unwatchedOnlyDescription': return 'Alleen ongekeken afleveringen opnemen in willekeurige wachtrij';
 			case 'settings.shuffleOrderNavigation': return 'Willekeurige volgorde navigatie';
@@ -3628,6 +3642,8 @@ extension on _StringsSv {
 			case 'settings.secondsUnit': return ({required Object seconds}) => '${seconds} sekunder';
 			case 'settings.defaultSleepTimer': return 'Standard sovtimer';
 			case 'settings.minutesUnit': return ({required Object minutes}) => '${minutes} minuter';
+			case 'settings.rememberTrackSelections': return 'Kom ihåg spårval per serie/film';
+			case 'settings.rememberTrackSelectionsDescription': return 'Spara automatiskt ljud- och undertextspråkpreferenser när du ändrar spår under uppspelning';
 			case 'settings.unwatchedOnly': return 'Endast osedda';
 			case 'settings.unwatchedOnlyDescription': return 'Inkludera endast osedda avsnitt i blandningskön';
 			case 'settings.shuffleOrderNavigation': return 'Blandningsordning-navigation';

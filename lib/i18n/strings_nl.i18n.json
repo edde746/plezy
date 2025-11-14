@@ -100,6 +100,8 @@
     "secondsUnit": "${seconds} seconden",
     "defaultSleepTimer": "Standaard slaap timer",
     "minutesUnit": "bij ${minutes} minuten",
+    "rememberTrackSelections": "Onthoud track selecties per serie/film",
+    "rememberTrackSelectionsDescription": "Bewaar automatisch audio- en ondertiteltaalvoorkeuren wanneer je tracks wijzigt tijdens afspelen",
     "unwatchedOnly": "Alleen ongekeken",
     "unwatchedOnlyDescription": "Alleen ongekeken afleveringen opnemen in willekeurige wachtrij",
     "shuffleOrderNavigation": "Willekeurige volgorde navigatie",
