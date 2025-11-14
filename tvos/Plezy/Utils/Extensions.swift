@@ -39,7 +39,7 @@ struct CardButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(.horizontal, 35)
-            .padding(.vertical, 18)
+            .padding(.vertical, 22) // Ensures minimum 44pt height
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
@@ -72,7 +72,7 @@ struct ClearGlassButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(.horizontal, 40)
-            .padding(.vertical, 16)
+            .padding(.vertical, 22) // Ensures minimum 44pt height
             .background(
                 ZStack {
                     // Dark dimming layer (35% opacity) for contrast over bright content
