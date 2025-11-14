@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var hubs: [PlexHub] = []
     @State private var isLoading = true
     @State private var selectedMedia: PlexMetadata?
+    @State private var playingMedia: PlexMetadata?
     @State private var showServerSelection = false
     @State private var noServerSelected = false
     @State private var currentHeroIndex = 0
@@ -76,14 +77,14 @@ struct HomeView: View {
                                 progress: $heroProgress,
                                 onNavigate: navigateHero
                             ) { media in
-                                selectedMedia = media
+                                playingMedia = media
                             }
                         }
 
                         // Continue Watching
                         if !onDeck.isEmpty {
                             ContinueWatchingShelf(items: onDeck) { media in
-                                selectedMedia = media
+                                playingMedia = media
                             }
                         }
 
@@ -116,6 +117,9 @@ struct HomeView: View {
         }
         .sheet(item: $selectedMedia) { media in
             MediaDetailView(media: media)
+        }
+        .fullScreenCover(item: $playingMedia) { media in
+            VideoPlayerView(media: media)
         }
         .sheet(isPresented: $showServerSelection) {
             ServerSelectionView()
