@@ -96,6 +96,25 @@ struct VideoPlayerView: View {
                     }
                 }
             }
+
+            // Next episode countdown overlay
+            if playerManager.showNextEpisodePrompt, let nextEp = playerManager.nextEpisode {
+                NextEpisodeOverlay(
+                    nextEpisode: nextEp,
+                    countdown: playerManager.nextEpisodeCountdown,
+                    onPlayNow: {
+                        playerManager.cancelNextEpisode()
+                        // Transition to next episode
+                        // Note: This requires dismissing current player and showing new one
+                        // For now, just dismiss - the view layer will handle navigation
+                        dismiss()
+                    },
+                    onCancel: {
+                        playerManager.cancelNextEpisode()
+                    }
+                )
+                .environmentObject(authService)
+            }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             print("🔄 [VideoPlayerView] Scene phase changed from \(oldPhase) to \(newPhase)")
@@ -164,11 +183,16 @@ class VideoPlayerManager: ObservableObject {
     @Published var availableSubtitleTracks: [AVMediaSelectionOption] = []
     @Published var currentAudioTrack: AVMediaSelectionOption?
     @Published var currentSubtitleTrack: AVMediaSelectionOption?
+    @Published var nextEpisode: PlexMetadata?
+    @Published var showNextEpisodePrompt: Bool = false
+    @Published var nextEpisodeCountdown: Int = 15
 
     private let media: PlexMetadata
     private var timeObserver: Any?
     private var playerItem: AVPlayerItem?
     private var remoteCommandsConfigured = false
+    private var nextEpisodeTimer: Timer?
+    private var hasTriggeredNextEpisode = false
 
     init(media: PlexMetadata) {
         self.media = media
@@ -283,6 +307,11 @@ class VideoPlayerManager: ObservableObject {
             // Discover and configure audio/subtitle tracks
             discoverTracks()
 
+            // Fetch next episode for TV shows
+            if detailedMedia.type == "episode" {
+                await fetchNextEpisode(client: client)
+            }
+
             isLoading = false
 
         } catch {
@@ -373,6 +402,7 @@ class VideoPlayerManager: ObservableObject {
 
             let currentTime = CMTimeGetSeconds(time)
             let totalDuration = CMTimeGetSeconds(duration)
+            let timeRemaining = totalDuration - currentTime
 
             // Update timeline
             Task {
@@ -390,6 +420,15 @@ class VideoPlayerManager: ObservableObject {
                     }
                 } catch {
                     print("Error updating timeline: \(error)")
+                }
+            }
+
+            // Trigger next episode countdown when 30 seconds remaining (for TV episodes)
+            if !self.hasTriggeredNextEpisode && timeRemaining <= 30 && timeRemaining > 0 {
+                if self.media.type == "episode" && self.nextEpisode != nil {
+                    Task { @MainActor in
+                        self.startNextEpisodeCountdown()
+                    }
                 }
             }
         }
@@ -565,8 +604,95 @@ class VideoPlayerManager: ObservableObject {
         selectSubtitleTrack(matchingTrack)
     }
 
+    // MARK: - Next Episode Auto-Play
+
+    /// Fetch the next episode for TV shows
+    func fetchNextEpisode(client: PlexAPIClient) async {
+        // Only fetch for TV episodes
+        guard media.type == "episode",
+              let grandparentRatingKey = media.grandparentRatingKey,
+              let parentRatingKey = media.parentRatingKey,
+              let currentIndex = media.index else {
+            print("📺 [NextEp] Not an episode or missing hierarchy info")
+            return
+        }
+
+        do {
+            // Get all episodes in the current season
+            let seasonEpisodes = try await client.getChildren(ratingKey: parentRatingKey)
+
+            // Find the next episode
+            if let nextEp = seasonEpisodes.first(where: { $0.index == currentIndex + 1 }) {
+                self.nextEpisode = nextEp
+                print("📺 [NextEp] Found next episode: \(nextEp.title) (S\(nextEp.parentIndex ?? 0)E\(nextEp.index ?? 0))")
+            } else {
+                // No more episodes in this season, try to get next season
+                print("📺 [NextEp] No more episodes in season, checking for next season")
+                let allSeasons = try await client.getChildren(ratingKey: grandparentRatingKey)
+
+                if let currentSeasonIndex = media.parentIndex,
+                   let nextSeason = allSeasons.first(where: { $0.index == currentSeasonIndex + 1 }),
+                   let nextSeasonKey = nextSeason.ratingKey {
+                    let nextSeasonEpisodes = try await client.getChildren(ratingKey: nextSeasonKey)
+                    if let firstEpisode = nextSeasonEpisodes.first {
+                        self.nextEpisode = firstEpisode
+                        print("📺 [NextEp] Found first episode of next season: \(firstEpisode.title)")
+                    }
+                }
+            }
+        } catch {
+            print("❌ [NextEp] Failed to fetch next episode: \(error)")
+        }
+    }
+
+    /// Start the next episode countdown
+    func startNextEpisodeCountdown() {
+        guard nextEpisode != nil else { return }
+
+        print("📺 [NextEp] Starting countdown")
+        showNextEpisodePrompt = true
+        nextEpisodeCountdown = 15
+        hasTriggeredNextEpisode = true
+
+        // Cancel any existing timer
+        nextEpisodeTimer?.invalidate()
+
+        // Start countdown timer
+        nextEpisodeTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+            guard let self = self else {
+                timer.invalidate()
+                return
+            }
+
+            Task { @MainActor in
+                self.nextEpisodeCountdown -= 1
+
+                if self.nextEpisodeCountdown <= 0 {
+                    timer.invalidate()
+                    self.showNextEpisodePrompt = false
+                    // Trigger next episode play
+                    // Note: This will be handled by the view layer
+                    print("📺 [NextEp] Countdown complete - should play next episode")
+                }
+            }
+        }
+    }
+
+    /// Cancel the next episode auto-play
+    func cancelNextEpisode() {
+        print("📺 [NextEp] Cancelled by user")
+        nextEpisodeTimer?.invalidate()
+        nextEpisodeTimer = nil
+        showNextEpisodePrompt = false
+        nextEpisodeCountdown = 15
+    }
+
     func cleanup() {
         print("🧹 [Player] Cleaning up player resources")
+
+        // Cancel next episode timer
+        nextEpisodeTimer?.invalidate()
+        nextEpisodeTimer = nil
 
         // Remove remote command handlers
         removeRemoteCommands()
@@ -589,6 +715,112 @@ class VideoPlayerManager: ObservableObject {
             print("⚠️ [Player] Failed to deactivate audio session: \(error)")
         }
         #endif
+    }
+}
+
+// MARK: - Next Episode Overlay
+
+struct NextEpisodeOverlay: View {
+    let nextEpisode: PlexMetadata
+    let countdown: Int
+    let onPlayNow: () -> Void
+    let onCancel: () -> Void
+    @EnvironmentObject var authService: PlexAuthService
+
+    var body: some View {
+        VStack {
+            Spacer()
+
+            // Bottom overlay
+            HStack(spacing: 30) {
+                // Thumbnail
+                CachedAsyncImage(url: thumbnailURL) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(16/9, contentMode: .fill)
+                } placeholder: {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .aspectRatio(16/9, contentMode: .fill)
+                        .overlay(
+                            Image(systemName: "tv")
+                                .font(.largeTitle)
+                                .foregroundColor(.gray)
+                        )
+                }
+                .frame(width: 280, height: 158)
+                .cornerRadius(8)
+
+                // Info
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Next Episode")
+                        .font(.headline)
+                        .foregroundColor(.gray)
+
+                    Text(nextEpisode.title)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+
+                    if let showTitle = nextEpisode.grandparentTitle {
+                        Text("\(showTitle) • \(nextEpisode.formatSeasonEpisode())")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                }
+
+                Spacer()
+
+                // Countdown and buttons
+                VStack(spacing: 15) {
+                    Text("Playing in \(countdown)s")
+                        .font(.title3)
+                        .foregroundColor(.white)
+
+                    HStack(spacing: 15) {
+                        Button {
+                            onPlayNow()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "play.fill")
+                                Text("Play Now")
+                            }
+                            .font(.headline)
+                        }
+                        .buttonStyle(ClearGlassButtonStyle())
+
+                        Button {
+                            onCancel()
+                        } label: {
+                            Text("Cancel")
+                                .font(.headline)
+                        }
+                        .buttonStyle(CardButtonStyle())
+                    }
+                }
+            }
+            .padding(40)
+            .background(.ultraThinMaterial)
+            .cornerRadius(15)
+            .shadow(radius: 20)
+            .padding(60)
+        }
+    }
+
+    private var thumbnailURL: URL? {
+        guard let server = authService.selectedServer,
+              let connection = server.connections.first,
+              let baseURL = connection.url,
+              let thumb = nextEpisode.thumb else {
+            return nil
+        }
+
+        var urlString = baseURL.absoluteString + thumb
+        if let token = server.accessToken {
+            urlString += "?X-Plex-Token=\(token)"
+        }
+
+        return URL(string: urlString)
     }
 }
 
