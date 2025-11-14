@@ -160,6 +160,10 @@ class VideoPlayerManager: ObservableObject {
     @Published var playerViewController: AVPlayerViewController?
     @Published var isLoading = true
     @Published var error: String?
+    @Published var availableAudioTracks: [AVMediaSelectionOption] = []
+    @Published var availableSubtitleTracks: [AVMediaSelectionOption] = []
+    @Published var currentAudioTrack: AVMediaSelectionOption?
+    @Published var currentSubtitleTrack: AVMediaSelectionOption?
 
     private let media: PlexMetadata
     private var timeObserver: Any?
@@ -275,6 +279,9 @@ class VideoPlayerManager: ObservableObject {
 
             // Setup remote command handling
             setupRemoteCommands(player: player)
+
+            // Discover and configure audio/subtitle tracks
+            discoverTracks()
 
             isLoading = false
 
@@ -466,6 +473,96 @@ class VideoPlayerManager: ObservableObject {
 
         remoteCommandsConfigured = false
         print("🎮 [RemoteCommands] Remote commands removed")
+    }
+
+    // MARK: - Audio & Subtitle Track Management
+
+    /// Discover available audio and subtitle tracks from the player item
+    private func discoverTracks() {
+        guard let playerItem = playerItem else {
+            print("⚠️ [Tracks] No player item available")
+            return
+        }
+
+        // Get audio tracks
+        if let audioGroup = playerItem.asset.mediaSelectionGroup(forMediaCharacteristic: .audible) {
+            availableAudioTracks = audioGroup.options
+            currentAudioTrack = playerItem.selectedMediaOption(in: audioGroup)
+
+            print("🎵 [Tracks] Found \(availableAudioTracks.count) audio tracks")
+            for (index, track) in availableAudioTracks.enumerated() {
+                let language = track.locale?.identifier ?? "unknown"
+                let title = track.displayName
+                let selected = track == currentAudioTrack ? "✓" : " "
+                print("🎵 [Tracks]   [\(selected)] \(index): \(title) (\(language))")
+            }
+        }
+
+        // Get subtitle tracks
+        if let subtitleGroup = playerItem.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) {
+            availableSubtitleTracks = subtitleGroup.options
+            currentSubtitleTrack = playerItem.selectedMediaOption(in: subtitleGroup)
+
+            print("📝 [Tracks] Found \(availableSubtitleTracks.count) subtitle tracks")
+            for (index, track) in availableSubtitleTracks.enumerated() {
+                let language = track.locale?.identifier ?? "unknown"
+                let title = track.displayName
+                let selected = track == currentSubtitleTrack ? "✓" : " "
+                print("📝 [Tracks]   [\(selected)] \(index): \(title) (\(language))")
+            }
+        }
+    }
+
+    /// Select an audio track
+    func selectAudioTrack(_ track: AVMediaSelectionOption?) {
+        guard let playerItem = playerItem,
+              let audioGroup = playerItem.asset.mediaSelectionGroup(forMediaCharacteristic: .audible) else {
+            print("⚠️ [Tracks] Cannot select audio track - no audio group")
+            return
+        }
+
+        playerItem.select(track, in: audioGroup)
+        currentAudioTrack = track
+
+        if let track = track {
+            print("🎵 [Tracks] Selected audio track: \(track.displayName)")
+        } else {
+            print("🎵 [Tracks] Disabled audio track")
+        }
+    }
+
+    /// Select a subtitle track
+    func selectSubtitleTrack(_ track: AVMediaSelectionOption?) {
+        guard let playerItem = playerItem,
+              let subtitleGroup = playerItem.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) else {
+            print("⚠️ [Tracks] Cannot select subtitle track - no subtitle group")
+            return
+        }
+
+        playerItem.select(track, in: subtitleGroup)
+        currentSubtitleTrack = track
+
+        if let track = track {
+            print("📝 [Tracks] Selected subtitle track: \(track.displayName)")
+        } else {
+            print("📝 [Tracks] Disabled subtitles")
+        }
+    }
+
+    /// Select audio track by language code (e.g., "en", "es", "fr")
+    func selectAudioTrackByLanguage(_ languageCode: String) {
+        let matchingTrack = availableAudioTracks.first { track in
+            track.locale?.languageCode == languageCode
+        }
+        selectAudioTrack(matchingTrack)
+    }
+
+    /// Select subtitle track by language code
+    func selectSubtitleTrackByLanguage(_ languageCode: String) {
+        let matchingTrack = availableSubtitleTracks.first { track in
+            track.locale?.languageCode == languageCode
+        }
+        selectSubtitleTrack(matchingTrack)
     }
 
     func cleanup() {
