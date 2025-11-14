@@ -130,7 +130,17 @@ class PlexAPIClient {
     }
 
     func getMetadata(ratingKey: String) async throws -> PlexMetadata {
-        let response: PlexResponse<PlexMetadata> = try await request(path: "/library/metadata/\(ratingKey)")
+        // Include all necessary data for playback
+        let queryItems = [
+            URLQueryItem(name: "includeMarkers", value: "1"),
+            URLQueryItem(name: "includeChapters", value: "1"),
+            URLQueryItem(name: "includeExtras", value: "0"),
+            URLQueryItem(name: "includeRelated", value: "0")
+        ]
+        let response: PlexResponse<PlexMetadata> = try await request(
+            path: "/library/metadata/\(ratingKey)",
+            queryItems: queryItems
+        )
         guard let metadata = response.MediaContainer.items.first else {
             throw PlexAPIError.noData
         }

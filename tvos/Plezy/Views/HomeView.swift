@@ -375,7 +375,7 @@ struct MediaCard: View {
         }
         .buttonStyle(.plain)
         .focused($isFocused)
-        .scaleEffect(isFocused ? 1.08 : 1.0)
+        .scaleEffect(isFocused ? 1.04 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
     }
 
@@ -766,7 +766,7 @@ struct LandscapeMediaCard: View {
         }
         .buttonStyle(.plain)
         .focused($isFocused)
-        .scaleEffect(isFocused ? 1.1 : 1.0)
+        .scaleEffect(isFocused ? 1.05 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
     }
 
