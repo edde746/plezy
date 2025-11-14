@@ -44,7 +44,8 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => VideoPlayerScreenState();
 }
 
-class VideoPlayerScreenState extends State<VideoPlayerScreen> {
+class VideoPlayerScreenState extends State<VideoPlayerScreen>
+    with WidgetsBindingObserver {
   Player? player;
   VideoController? controller;
   bool _isPlayerInitialized = false;
@@ -91,6 +92,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       appLogger.d('Preferred subtitle track: $subtitleDesc');
     }
 
+    // Register app lifecycle observer
+    WidgetsBinding.instance.addObserver(this);
+
     // Initialize player asynchronously with buffer size from settings
     _initializePlayer();
   }
@@ -119,6 +123,33 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _debouncedUpdateVideoFilter();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+        // Clear media controls when app goes to background or screen locks
+        // (we don't support background playback)
+        OsMediaControls.clear();
+        appLogger.d('Media controls cleared due to app lifecycle state: $state');
+        break;
+      case AppLifecycleState.resumed:
+        // Restore media controls when app is resumed
+        if (_isPlayerInitialized && mounted) {
+          _updateMediaMetadata();
+          _updateMediaControlsPlaybackState();
+          appLogger.d('Media controls restored on app resume');
+        }
+        break;
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        // No action needed for these states
+        break;
+    }
   }
 
   Future<void> _initializePlayer() async {
@@ -650,6 +681,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   void dispose() {
+    // Unregister app lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
+
     // Stop progress tracking
     _progressTimer?.cancel();
 
