@@ -1,5 +1,8 @@
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../utils/log_redaction_manager.dart';
 
 class StorageService {
   static const String _keyServerUrl = 'server_url';
@@ -32,11 +35,16 @@ class StorageService {
 
   Future<void> _init() async {
     _prefs = await SharedPreferences.getInstance();
+    // Seed known values so logs can redact immediately on startup.
+    LogRedactionManager.registerServerUrl(getServerUrl());
+    LogRedactionManager.registerToken(getToken());
+    LogRedactionManager.registerToken(getPlexToken());
   }
 
   // Server URL
   Future<void> saveServerUrl(String url) async {
     await _prefs.setString(_keyServerUrl, url);
+    LogRedactionManager.registerServerUrl(url);
   }
 
   String? getServerUrl() {
@@ -46,6 +54,7 @@ class StorageService {
   // Server Access Token
   Future<void> saveToken(String token) async {
     await _prefs.setString(_keyToken, token);
+    LogRedactionManager.registerToken(token);
   }
 
   String? getToken() {
@@ -64,6 +73,7 @@ class StorageService {
   // Plex.tv Token (for API access)
   Future<void> savePlexToken(String token) async {
     await _prefs.setString(_keyPlexToken, token);
+    LogRedactionManager.registerToken(token);
   }
 
   String? getPlexToken() {
@@ -127,6 +137,7 @@ class StorageService {
       _prefs.remove(_keyHomeUsersCache),
       _prefs.remove(_keyHomeUsersCacheExpiry),
     ]);
+    LogRedactionManager.clearTrackedValues();
   }
 
   // Get all credentials as a map
