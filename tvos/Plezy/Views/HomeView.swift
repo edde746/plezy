@@ -284,7 +284,7 @@ struct MediaShelf: View {
 struct MediaCard: View {
     let media: PlexMetadata
     let action: () -> Void
-    @State private var isFocused = false
+    @FocusState private var isFocused: Bool
     @EnvironmentObject var authService: PlexAuthService
 
     var body: some View {
@@ -354,8 +354,6 @@ struct MediaCard: View {
                         )
                 )
                 .shadow(color: .black.opacity(isFocused ? 0.6 : 0.4), radius: isFocused ? 30 : 15, x: 0, y: isFocused ? 15 : 8)
-                .scaleEffect(isFocused ? 1.08 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
 
                 // Title
                 Text(media.title)
@@ -376,12 +374,9 @@ struct MediaCard: View {
             }
         }
         .buttonStyle(.plain)
-        .onFocusChange(true) { focused in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isFocused = focused
-            }
-        }
-        .focusable()
+        .focused($isFocused)
+        .scaleEffect(isFocused ? 1.08 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
     }
 
     private var posterURL: URL? {
@@ -662,7 +657,7 @@ struct ContinueWatchingShelf: View {
 struct LandscapeMediaCard: View {
     let media: PlexMetadata
     let action: () -> Void
-    @State private var isFocused = false
+    @FocusState private var isFocused: Bool
     @EnvironmentObject var authService: PlexAuthService
 
     var body: some View {
@@ -728,8 +723,6 @@ struct LandscapeMediaCard: View {
                         )
                 )
                 .shadow(color: .black.opacity(isFocused ? 0.7 : 0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
-                .scaleEffect(isFocused ? 1.1 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
 
                 // Progress bar below card with Liquid Glass styling
                 if media.progress > 0 && media.progress < 0.98 {
@@ -772,12 +765,9 @@ struct LandscapeMediaCard: View {
             }
         }
         .buttonStyle(.plain)
-        .onFocusChange(true) { focused in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isFocused = focused
-            }
-        }
-        .focusable()
+        .focused($isFocused)
+        .scaleEffect(isFocused ? 1.1 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
     }
 
     private var artURL: URL? {
