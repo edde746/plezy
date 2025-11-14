@@ -147,17 +147,15 @@ struct MediaDetailView: View {
                                 Button {
                                     showVideoPlayer = true
                                 } label: {
-                                    HStack {
+                                    HStack(spacing: 12) {
                                         Image(systemName: displayMedia.progress > 0 ? "play.fill" : "play.fill")
+                                            .font(.system(size: 20, weight: .semibold))
                                         Text(displayMedia.progress > 0 ? "Resume" : "Play")
+                                            .font(.system(size: 24, weight: .semibold))
                                     }
-                                    .font(.title2)
-                                    .padding(.horizontal, 40)
-                                    .padding(.vertical, 15)
+                                    .foregroundColor(.white)
                                 }
-                                .buttonStyle(CardButtonStyle())
-                                .background(Color.orange)
-                                .cornerRadius(10)
+                                .buttonStyle(.clearGlass)
 
                                 // Mark as watched/unwatched
                                 Button {
@@ -165,10 +163,15 @@ struct MediaDetailView: View {
                                         await toggleWatched()
                                     }
                                 } label: {
-                                    Image(systemName: displayMedia.isWatched ? "checkmark.circle.fill" : "checkmark.circle")
-                                        .font(.title)
+                                    HStack(spacing: 8) {
+                                        Image(systemName: displayMedia.isWatched ? "checkmark.circle.fill" : "checkmark.circle")
+                                            .font(.system(size: 20))
+                                        Text(displayMedia.isWatched ? "Watched" : "Mark Watched")
+                                            .font(.system(size: 18, weight: .medium))
+                                    }
+                                    .foregroundColor(.white)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.card)
                             }
                             .padding(.top, 20)
 
