@@ -131,11 +131,10 @@ class PlexAPIClient {
 
     func getMetadata(ratingKey: String) async throws -> PlexMetadata {
         // Include all necessary data for playback
+        // Based on official Plex API docs: https://plexapi.dev/api-reference/library/get-metadata-by-ratingkey
         let queryItems = [
-            URLQueryItem(name: "includeMarkers", value: "1"),
             URLQueryItem(name: "includeChapters", value: "1"),
-            URLQueryItem(name: "includeExtras", value: "0"),
-            URLQueryItem(name: "includeRelated", value: "0")
+            URLQueryItem(name: "includeExtras", value: "0")
         ]
         print("📡 [API] getMetadata for ratingKey: \(ratingKey)")
         let response: PlexResponse<PlexMetadata> = try await request(
