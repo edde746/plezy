@@ -117,15 +117,9 @@ struct LibraryContentView: View {
                 .padding(.bottom, 20)
 
                 if isLoading {
-                    VStack {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                            .tint(.white)
-                        Text("Loading content...")
-                            .foregroundColor(.gray)
-                            .padding(.top)
+                    ScrollView {
+                        LibraryGridSkeleton()
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     VStack(spacing: 30) {
                         Image(systemName: "exclamationmark.triangle")

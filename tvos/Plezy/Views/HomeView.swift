@@ -31,14 +31,7 @@ struct HomeView: View {
             Color.black.ignoresSafeArea()
 
             if isLoading {
-                VStack {
-                    ProgressView()
-                        .scaleEffect(1.5)
-                        .tint(.white)
-                    Text("Loading content...")
-                        .foregroundColor(.gray)
-                        .padding(.top)
-                }
+                HomeViewSkeleton()
             } else if let error = errorMessage {
                 VStack(spacing: 30) {
                     Image(systemName: "exclamationmark.triangle")
