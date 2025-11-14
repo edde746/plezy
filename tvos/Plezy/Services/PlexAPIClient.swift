@@ -167,10 +167,23 @@ class PlexAPIClient {
     func getHubs(sectionKey: String? = nil) async throws -> [PlexHub] {
         let path = sectionKey != nil ? "/hubs/sections/\(sectionKey!)" : "/hubs"
         print("📚 [API] Requesting Hubs from \(path)")
-        let response: PlexResponse<PlexMetadata> = try await request(path: path)
+
+        // Include metadata and images in the response
+        let queryItems = [
+            URLQueryItem(name: "includeImages", value: "1"),
+            URLQueryItem(name: "count", value: "20")
+        ]
+
+        let response: PlexResponse<PlexMetadata> = try await request(path: path, queryItems: queryItems)
         let container = response.MediaContainer
-        print("📚 [API] Hubs response - size: \(container.size), hubs: \(container.hub?.count ?? 0)")
-        return container.hub ?? []
+        let hubs = container.hub ?? []
+
+        print("📚 [API] Hubs response - size: \(container.size), hubs: \(hubs.count)")
+        for hub in hubs {
+            print("📚 [API]   Hub: \(hub.title) - metadata count: \(hub.metadata?.count ?? 0)")
+        }
+
+        return hubs
     }
 
     func getHubContent(hubKey: String) async throws -> [PlexMetadata] {

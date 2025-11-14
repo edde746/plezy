@@ -128,6 +128,9 @@ struct HomeView: View {
                                 MediaShelf(title: hub.title, items: items) { media in
                                     selectedMedia = media
                                 }
+                            } else {
+                                // Debug: Show why hub is not displaying
+                                let _ = print("🏠 [HomeView] Skipping hub '\(hub.title)' - has metadata: \(hub.metadata != nil), count: \(hub.metadata?.count ?? 0)")
                             }
                         }
                     }
