@@ -57,8 +57,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   int _currentIndex = 0;
 
   late final List<Widget> _screens;
+  late final List<Widget> _tvScreens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
+  final GlobalKey<State<LibrariesScreen>> _moviesKey = GlobalKey();
+  final GlobalKey<State<LibrariesScreen>> _showsKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
 
@@ -75,12 +78,25 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     _bottomNavFocusScopeNode = FocusScopeNode(debugLabel: 'BottomNavigation');
     _contentFocusScopeNode = FocusScopeNode(debugLabel: 'MainContent');
 
+    // Mobile/Tablet screens (4 screens)
     _screens = [
       DiscoverScreen(
         key: _discoverKey,
         onBecameVisible: _onDiscoverBecameVisible,
       ),
       LibrariesScreen(key: _librariesKey),
+      SearchScreen(key: _searchKey),
+      SettingsScreen(key: _settingsKey),
+    ];
+
+    // TV screens (5 screens - Movies and TV Shows separated)
+    _tvScreens = [
+      DiscoverScreen(
+        key: _discoverKey,
+        onBecameVisible: _onDiscoverBecameVisible,
+      ),
+      LibrariesScreen(key: _moviesKey, initialLibraryType: 'movie'),
+      LibrariesScreen(key: _showsKey, initialLibraryType: 'show'),
       SearchScreen(key: _searchKey),
       SettingsScreen(key: _settingsKey),
     ];
@@ -208,6 +224,18 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       (librariesState as dynamic).fullRefresh();
     }
 
+    // Full refresh movies screen for TV (clear filters and reload for new profile)
+    final moviesState = _moviesKey.currentState;
+    if (moviesState != null) {
+      (moviesState as dynamic).fullRefresh();
+    }
+
+    // Full refresh shows screen for TV (clear filters and reload for new profile)
+    final showsState = _showsKey.currentState;
+    if (showsState != null) {
+      (showsState as dynamic).fullRefresh();
+    }
+
     // Full refresh search screen (clear search for new profile)
     final searchState = _searchKey.currentState;
     if (searchState != null) {
@@ -274,9 +302,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
                   label: Text(t.navigation.home),
                 ),
                 NavigationRailDestination(
-                  icon: const Icon(Icons.video_library_outlined),
-                  selectedIcon: const Icon(Icons.video_library),
-                  label: Text(t.navigation.libraries),
+                  icon: const Icon(Icons.movie_outlined),
+                  selectedIcon: const Icon(Icons.movie),
+                  label: const Text('Movies'),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.tv_outlined),
+                  selectedIcon: const Icon(Icons.tv),
+                  label: const Text('TV Shows'),
                 ),
                 NavigationRailDestination(
                   icon: const Icon(Icons.search),
@@ -292,7 +325,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
             ),
             const VerticalDivider(thickness: 1, width: 1),
             Expanded(
-              child: IndexedStack(index: _currentIndex, children: _screens),
+              child: IndexedStack(index: _currentIndex, children: _tvScreens),
             ),
           ],
         ),
