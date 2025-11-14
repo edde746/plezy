@@ -125,26 +125,20 @@ struct HomeView: View {
             await loadContent()
         }
         .sheet(item: $selectedMedia) { media in
-            print("📱 [HomeView] Sheet presenting MediaDetailView for: \(media.title)")
-            return MediaDetailView(media: media)
+            let _ = print("📱 [HomeView] Sheet presenting MediaDetailView for: \(media.title)")
+            MediaDetailView(media: media)
                 .environmentObject(authService)
                 .onAppear {
                     print("📱 [HomeView] MediaDetailView appeared for: \(media.title)")
                 }
         }
         .fullScreenCover(item: $playingMedia) { media in
-            print("🎬 [HomeView] FullScreenCover presenting VideoPlayerView for: \(media.title)")
-            return VideoPlayerView(media: media)
+            let _ = print("🎬 [HomeView] FullScreenCover presenting VideoPlayerView for: \(media.title)")
+            VideoPlayerView(media: media)
                 .environmentObject(authService)
                 .onAppear {
                     print("🎬 [HomeView] VideoPlayerView appeared for: \(media.title)")
                 }
-        }
-        .onChange(of: selectedMedia) { oldValue, newValue in
-            print("🔄 [HomeView] selectedMedia changed from \(oldValue?.title ?? "nil") to \(newValue?.title ?? "nil")")
-        }
-        .onChange(of: playingMedia) { oldValue, newValue in
-            print("🔄 [HomeView] playingMedia changed from \(oldValue?.title ?? "nil") to \(newValue?.title ?? "nil")")
         }
         .sheet(isPresented: $showServerSelection) {
             ServerSelectionView()

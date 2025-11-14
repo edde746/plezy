@@ -138,7 +138,11 @@ struct PlexLibrary: Codable, Identifiable {
     }
 }
 
-struct PlexMetadata: Codable, Identifiable {
+struct PlexMetadata: Codable, Identifiable, Equatable {
+    static func == (lhs: PlexMetadata, rhs: PlexMetadata) -> Bool {
+        lhs.ratingKey == rhs.ratingKey
+    }
+
     let ratingKey: String
     let key: String
     let guid: String?

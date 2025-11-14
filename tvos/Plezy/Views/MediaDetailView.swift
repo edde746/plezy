@@ -241,25 +241,25 @@ struct MediaDetailView: View {
             print("⚙️ [MediaDetailView] Task completed for: \(media.title)")
         }
         .sheet(item: $selectedSeason) { season in
-            print("📱 [MediaDetailView] Sheet presenting SeasonDetailView for: \(season.title)")
-            return SeasonDetailView(season: season, show: displayMedia)
+            let _ = print("📱 [MediaDetailView] Sheet presenting SeasonDetailView for: \(season.title)")
+            SeasonDetailView(season: season, show: displayMedia)
                 .environmentObject(authService)
         }
         .fullScreenCover(isPresented: $showVideoPlayer) {
-            print("🎬 [MediaDetailView] FullScreenCover triggered. showVideoPlayer: \(showVideoPlayer), media type: \(media.type)")
+            let _ = print("🎬 [MediaDetailView] FullScreenCover triggered. showVideoPlayer: \(showVideoPlayer), media type: \(media.type)")
             if media.type == "show" {
                 // For shows, need to pick an episode first
                 if let season = seasons.first {
-                    print("🎬 [MediaDetailView] Presenting SeasonDetailView for first season: \(season.title)")
-                    return SeasonDetailView(season: season, show: displayMedia)
+                    let _ = print("🎬 [MediaDetailView] Presenting SeasonDetailView for first season: \(season.title)")
+                    SeasonDetailView(season: season, show: displayMedia)
                         .environmentObject(authService)
                 } else {
-                    print("❌ [MediaDetailView] No seasons available for show: \(media.title)")
-                    return EmptyView() as! AnyView
+                    let _ = print("❌ [MediaDetailView] No seasons available for show: \(media.title)")
+                    EmptyView()
                 }
             } else {
-                print("🎬 [MediaDetailView] Presenting VideoPlayerView for: \(displayMedia.title)")
-                return VideoPlayerView(media: displayMedia)
+                let _ = print("🎬 [MediaDetailView] Presenting VideoPlayerView for: \(displayMedia.title)")
+                VideoPlayerView(media: displayMedia)
                     .environmentObject(authService)
             }
         }

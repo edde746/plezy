@@ -159,15 +159,12 @@ struct LibraryContentView: View {
             await loadContent()
         }
         .sheet(item: $selectedMedia) { media in
-            print("📱 [LibraryContent] Sheet presenting MediaDetailView for: \(media.title)")
-            return MediaDetailView(media: media)
+            let _ = print("📱 [LibraryContent] Sheet presenting MediaDetailView for: \(media.title)")
+            MediaDetailView(media: media)
                 .environmentObject(authService)
                 .onAppear {
                     print("📱 [LibraryContent] MediaDetailView appeared for: \(media.title)")
                 }
-        }
-        .onChange(of: selectedMedia) { oldValue, newValue in
-            print("🔄 [LibraryContent] selectedMedia changed from \(oldValue?.title ?? "nil") to \(newValue?.title ?? "nil")")
         }
     }
 
