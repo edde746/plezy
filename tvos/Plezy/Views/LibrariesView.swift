@@ -10,48 +10,74 @@ import SwiftUI
 struct LibrariesView: View {
     @EnvironmentObject var authService: PlexAuthService
     @State private var libraries: [PlexLibrary] = []
-    @State private var selectedLibrary: PlexLibrary?
+    @State private var selectedTab: LibraryTab = .tvShows
     @State private var isLoading = true
+
+    enum LibraryTab {
+        case tvShows
+        case movies
+    }
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if isLoading {
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
-            } else if libraries.isEmpty {
-                VStack(spacing: 20) {
-                    Image(systemName: "folder.badge.questionmark")
-                        .font(.system(size: 80))
-                        .foregroundColor(.gray)
-
-                    Text("No libraries found")
-                        .font(.title2)
-                        .foregroundColor(.gray)
-                }
-            } else {
-                ScrollView {
-                    LazyVGrid(columns: [
-                        GridItem(.adaptive(minimum: 400, maximum: 600), spacing: 30)
-                    ], spacing: 30) {
-                        ForEach(libraries) { library in
-                            LibraryCard(library: library) {
-                                selectedLibrary = library
-                            }
-                        }
+            VStack(alignment: .leading, spacing: 0) {
+                // Tab Selector
+                HStack(spacing: 40) {
+                    TabButton(title: "TV Shows", isSelected: selectedTab == .tvShows) {
+                        selectedTab = .tvShows
                     }
-                    .padding(80)
+
+                    TabButton(title: "Movies", isSelected: selectedTab == .movies) {
+                        selectedTab = .movies
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, 80)
+                .padding(.top, 40)
+                .padding(.bottom, 20)
+
+                // Content
+                if isLoading {
+                    VStack {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.white)
+                        Text("Loading libraries...")
+                            .foregroundColor(.gray)
+                            .padding(.top)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let library = currentLibrary {
+                    LibraryContentView(library: library)
+                        .id(library.key) // Force refresh when library changes
+                } else {
+                    VStack(spacing: 20) {
+                        Image(systemName: selectedTab == .tvShows ? "tv.badge.questionmark" : "film.badge.questionmark")
+                            .font(.system(size: 80))
+                            .foregroundColor(.gray)
+
+                        Text("No \(selectedTab == .tvShows ? "TV Shows" : "Movies") library found")
+                            .font(.title2)
+                            .foregroundColor(.gray)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
         }
-        .navigationTitle("Libraries")
         .task {
             await loadLibraries()
         }
-        .sheet(item: $selectedLibrary) { library in
-            LibraryContentView(library: library)
+    }
+
+    private var currentLibrary: PlexLibrary? {
+        switch selectedTab {
+        case .tvShows:
+            return libraries.first { $0.mediaType == .show }
+        case .movies:
+            return libraries.first { $0.mediaType == .movie }
         }
     }
 
@@ -69,6 +95,35 @@ struct LibrariesView: View {
         }
 
         isLoading = false
+    }
+}
+
+struct TabButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    @State private var isFocused = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 10) {
+                Text(title)
+                    .font(.title2)
+                    .fontWeight(isSelected ? .bold : .regular)
+                    .foregroundColor(isSelected ? .white : .gray)
+
+                Rectangle()
+                    .fill(isSelected ? Color.orange : Color.clear)
+                    .frame(height: 4)
+            }
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isFocused ? 1.05 : 1.0)
+        .onFocusChange(true) { focused in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isFocused = focused
+            }
+        }
     }
 }
 

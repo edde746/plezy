@@ -509,30 +509,53 @@ struct LandscapeMediaCard: View {
                         }
                     }
 
-                    // Play icon overlay
+                    // Play icon overlay (center)
                     Image(systemName: "play.circle.fill")
                         .font(.system(size: 60))
                         .foregroundColor(.white.opacity(isFocused ? 1.0 : 0.7))
+
+                    // Show logo in bottom left corner
+                    if media.type == "episode" {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Spacer()
+                            HStack {
+                                if let logoURL = showLogoURL {
+                                    AsyncImage(url: logoURL) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                    } placeholder: {
+                                        EmptyView()
+                                    }
+                                    .frame(maxWidth: 180, maxHeight: 60)
+                                }
+                                Spacer()
+                            }
+                            .padding(.leading, 20)
+                            .padding(.bottom, 20)
+                        }
+                    }
                 }
                 .cornerRadius(10)
                 .shadow(radius: isFocused ? 20 : 10)
                 .scaleEffect(isFocused ? 1.05 : 1.0)
 
-                // Title
-                Text(media.displayTitle)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .frame(width: 500, alignment: .leading)
-                    .padding(.top, 10)
-
-                // Episode info
+                // Episode info below card
                 if media.type == "episode" {
                     Text(media.episodeInfo)
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .font(.headline)
+                        .foregroundColor(.white)
                         .frame(width: 500, alignment: .leading)
+                        .padding(.top, 10)
+                } else {
+                    // Title for movies
+                    Text(media.title)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .frame(width: 500, alignment: .leading)
+                        .padding(.top, 10)
                 }
             }
         }
@@ -553,6 +576,23 @@ struct LandscapeMediaCard: View {
         }
 
         var urlString = baseURL.absoluteString + art
+        if let token = server.accessToken {
+            urlString += "?X-Plex-Token=\(token)"
+        }
+
+        return URL(string: urlString)
+    }
+
+    private var showLogoURL: URL? {
+        guard media.type == "episode",
+              let server = authService.selectedServer,
+              let connection = server.connections.first,
+              let baseURL = connection.url,
+              let thumb = media.grandparentThumb else {
+            return nil
+        }
+
+        var urlString = baseURL.absoluteString + thumb
         if let token = server.accessToken {
             urlString += "?X-Plex-Token=\(token)"
         }
