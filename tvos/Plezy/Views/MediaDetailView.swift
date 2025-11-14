@@ -445,7 +445,8 @@ struct SeasonCard: View {
         genre: nil,
         director: nil,
         writer: nil,
-        country: nil
+        country: nil,
+        Image: nil
     ))
     .environmentObject(PlexAuthService())
 }

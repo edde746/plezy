@@ -22,23 +22,29 @@ struct MainTabView: View {
                     print("📱 [MainTabView] Home tab appeared")
                 }
 
-            LibrariesView()
+            TVShowsLibraryView()
                 .tabItem {
-                    Label("Libraries", systemImage: "folder.fill")
+                    Label("TV Shows", systemImage: "tv.fill")
                 }
                 .tag(1)
+
+            MoviesLibraryView()
+                .tabItem {
+                    Label("Movies", systemImage: "film.fill")
+                }
+                .tag(2)
 
             SearchView()
                 .tabItem {
                     Label("Search", systemImage: "magnifyingglass")
                 }
-                .tag(2)
+                .tag(3)
 
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
-                .tag(3)
+                .tag(4)
         }
         .onAppear {
             print("📱 [MainTabView] MainTabView appeared")
