@@ -10,6 +10,7 @@ import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/keyboard_utils.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../widgets/desktop_app_bar.dart';
 import 'context_menu_wrapper.dart';
@@ -27,7 +28,9 @@ import 'tabs/library_playlists_tab.dart';
 import '../main_screen.dart';
 
 class LibrariesScreen extends StatefulWidget {
-  const LibrariesScreen({super.key});
+  final String? initialLibraryType; // 'movie' or 'show'
+  
+  const LibrariesScreen({super.key, this.initialLibraryType});
 
   @override
   State<LibrariesScreen> createState() => _LibrariesScreenState();
@@ -309,7 +312,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
         // Find the library by key in visible libraries
         String? libraryGlobalKeyToLoad;
-        if (savedLibraryKey != null) {
+        
+        // If initialLibraryType is specified, select first library of that type
+        if (widget.initialLibraryType != null && visibleLibraries.isNotEmpty) {
+          final matchingLibrary = visibleLibraries.firstWhere(
+            (lib) => lib.type.toLowerCase() == widget.initialLibraryType!.toLowerCase(),
+            orElse: () => visibleLibraries.first,
+          );
+          libraryGlobalKeyToLoad = matchingLibrary.globalKey;
+        } else if (savedLibraryKey != null) {
           // Check if saved library exists and is visible
           final libraryExists = visibleLibraries.any(
             (lib) => lib.globalKey == savedLibraryKey,
@@ -1888,7 +1899,6 @@ class _SortBottomSheetState extends State<_SortBottomSheet> {
       },
     );
   }
->>>>>>> 4602690 (feat(tv): adjust library density values for TV screens)
 }
 
 class _LibraryManagementSheet extends StatefulWidget {
