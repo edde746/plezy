@@ -382,6 +382,7 @@ struct MediaCard: View {
                 isFocused = focused
             }
         }
+        .focusable()
     }
 
     private var posterURL: URL? {
@@ -778,6 +779,7 @@ struct LandscapeMediaCard: View {
                 isFocused = focused
             }
         }
+        .focusable()
     }
 
     private var artURL: URL? {
