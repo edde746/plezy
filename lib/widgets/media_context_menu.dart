@@ -37,8 +37,8 @@ class MediaContextMenu extends StatefulWidget {
   final VoidCallback? onTap;
   final Widget child;
   final bool isInContinueWatching;
-  final String?
-  collectionId; // The collection ID if displaying within a collection
+  final String? collectionId; // The collection ID if displaying within a collection
+  final void Function(VoidCallback showMenu)? onMenuReady;
 
   const MediaContextMenu({
     super.key,
@@ -50,6 +50,7 @@ class MediaContextMenu extends StatefulWidget {
     required this.child,
     this.isInContinueWatching = false,
     this.collectionId,
+    this.onMenuReady,
   });
 
   @override
@@ -58,6 +59,13 @@ class MediaContextMenu extends StatefulWidget {
 
 class MediaContextMenuState extends State<MediaContextMenu> {
   Offset? _tapPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pass the showMenu callback to parent if requested
+    widget.onMenuReady?.call(() => _showContextMenu(context));
+  }
 
   void _storeTapPosition(TapDownDetails details) {
     _tapPosition = details.globalPosition;
