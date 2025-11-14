@@ -137,8 +137,8 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
         // Handle D-pad center/select and Enter key
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.select ||
-             event.logicalKey == LogicalKeyboardKey.enter ||
-             event.logicalKey == LogicalKeyboardKey.space)) {
+                event.logicalKey == LogicalKeyboardKey.enter ||
+                event.logicalKey == LogicalKeyboardKey.space)) {
           _handlePressed();
           return KeyEventResult.handled;
         }
@@ -170,13 +170,14 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
                       color: currentColor,
                       shape: BoxShape.circle,
                       border: isFocused
-                          ? Border.all(
-                              color: Colors.white,
-                              width: 2,
-                            )
+                          ? Border.all(color: Colors.white, width: 2)
                           : null,
                     ),
-                    child: Icon(Icons.arrow_back, color: effectiveColor, size: 20),
+                    child: Icon(
+                      Icons.arrow_back,
+                      color: effectiveColor,
+                      size: 20,
+                    ),
                   );
                 },
               ),

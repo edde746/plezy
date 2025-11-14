@@ -43,10 +43,7 @@ class TVUIHelper {
   }
 
   /// Get text style with TV-adjusted font size
-  static TextStyle getTextStyle(
-    BuildContext context,
-    TextStyle baseStyle,
-  ) {
+  static TextStyle getTextStyle(BuildContext context, TextStyle baseStyle) {
     if (PlatformDetector.isTVSync()) {
       final fontSize = baseStyle.fontSize ?? 14.0;
       return baseStyle.copyWith(fontSize: fontSize * 1.3);
