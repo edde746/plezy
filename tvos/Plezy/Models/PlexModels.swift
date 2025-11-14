@@ -229,6 +229,13 @@ struct PlexMetadata: Codable, Identifiable {
         let episode = index ?? 0
         return String(format: "S%02dE%02d", season, episode)
     }
+
+    var episodeInfo: String {
+        if type == "episode" {
+            return formatSeasonEpisode() + (parentTitle != nil ? " · \(parentTitle!)" : "")
+        }
+        return ""
+    }
 }
 
 struct PlexMedia: Codable {

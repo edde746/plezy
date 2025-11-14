@@ -15,6 +15,8 @@ struct HomeView: View {
     @State private var selectedMedia: PlexMetadata?
     @State private var showServerSelection = false
     @State private var noServerSelected = false
+    @State private var currentHeroIndex = 0
+    @State private var heroTimer: Timer?
 
     var body: some View {
         ZStack {
@@ -83,9 +85,16 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 100)
                     } else {
+                        // Hero Banner
+                        if !onDeck.isEmpty {
+                            HeroBanner(items: onDeck, currentIndex: $currentHeroIndex) { media in
+                                selectedMedia = media
+                            }
+                        }
+
                         // Continue Watching
                         if !onDeck.isEmpty {
-                            MediaShelf(title: "Continue Watching", items: onDeck) { media in
+                            ContinueWatchingShelf(items: onDeck) { media in
                                 selectedMedia = media
                             }
                         }
@@ -105,6 +114,10 @@ struct HomeView: View {
         }
         .onAppear {
             print("🏠 [HomeView] View appeared")
+            startHeroTimer()
+        }
+        .onDisappear {
+            stopHeroTimer()
         }
         .task {
             print("🏠 [HomeView] .task modifier triggered")
@@ -123,6 +136,21 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private func startHeroTimer() {
+        heroTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.8)) {
+                if !onDeck.isEmpty {
+                    currentHeroIndex = (currentHeroIndex + 1) % min(onDeck.count, 5)
+                }
+            }
+        }
+    }
+
+    private func stopHeroTimer() {
+        heroTimer?.invalidate()
+        heroTimer = nil
     }
 
     private func loadContent() async {
@@ -282,6 +310,249 @@ struct MediaCard: View {
         }
 
         var urlString = baseURL.absoluteString + thumb
+        if let token = server.accessToken {
+            urlString += "?X-Plex-Token=\(token)"
+        }
+
+        return URL(string: urlString)
+    }
+}
+
+// MARK: - Hero Banner
+
+struct HeroBanner: View {
+    let items: [PlexMetadata]
+    @Binding var currentIndex: Int
+    let onSelect: (PlexMetadata) -> Void
+    @EnvironmentObject var authService: PlexAuthService
+
+    var body: some View {
+        let heroItems = Array(items.prefix(5))
+
+        if currentIndex < heroItems.count {
+            let item = heroItems[currentIndex]
+
+            Button {
+                onSelect(item)
+            } label: {
+                ZStack(alignment: .bottomLeading) {
+                    // Background art
+                    AsyncImage(url: artURL(for: item)) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                    }
+                    .frame(height: 600)
+                    .clipped()
+
+                    // Gradient overlay
+                    LinearGradient(
+                        gradient: Gradient(colors: [.clear, .black.opacity(0.8)]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+
+                    // Content
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text(item.displayTitle)
+                            .font(.system(size: 56, weight: .bold))
+                            .foregroundColor(.white)
+                            .lineLimit(2)
+
+                        if let summary = item.summary {
+                            Text(summary)
+                                .font(.title3)
+                                .foregroundColor(.white.opacity(0.9))
+                                .lineLimit(3)
+                        }
+
+                        HStack(spacing: 20) {
+                            Button {
+                                onSelect(item)
+                            } label: {
+                                HStack {
+                                    Image(systemName: "play.fill")
+                                    Text(item.progress > 0 ? "Resume" : "Play")
+                                }
+                                .font(.title2)
+                                .padding(.horizontal, 50)
+                                .padding(.vertical, 15)
+                            }
+                            .buttonStyle(CardButtonStyle())
+                        }
+
+                        // Progress indicator
+                        if item.progress > 0 && item.progress < 0.98 {
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    Rectangle()
+                                        .fill(Color.white.opacity(0.3))
+                                        .frame(height: 4)
+
+                                    Rectangle()
+                                        .fill(Color.orange)
+                                        .frame(width: geometry.size.width * item.progress, height: 4)
+                                }
+                            }
+                            .frame(height: 4)
+                            .frame(maxWidth: 800)
+                        }
+                    }
+                    .padding(.horizontal, 80)
+                    .padding(.bottom, 60)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func artURL(for media: PlexMetadata) -> URL? {
+        guard let server = authService.selectedServer,
+              let connection = server.connections.first,
+              let baseURL = connection.url,
+              let art = media.art else {
+            return nil
+        }
+
+        var urlString = baseURL.absoluteString + art
+        if let token = server.accessToken {
+            urlString += "?X-Plex-Token=\(token)"
+        }
+
+        return URL(string: urlString)
+    }
+}
+
+// MARK: - Continue Watching Shelf
+
+struct ContinueWatchingShelf: View {
+    let items: [PlexMetadata]
+    let onSelect: (PlexMetadata) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Continue Watching")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+                .padding(.horizontal, 80)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 30) {
+                    ForEach(items) { item in
+                        LandscapeMediaCard(media: item) {
+                            onSelect(item)
+                        }
+                    }
+                }
+                .padding(.horizontal, 80)
+            }
+        }
+    }
+}
+
+// MARK: - Landscape Media Card
+
+struct LandscapeMediaCard: View {
+    let media: PlexMetadata
+    let action: () -> Void
+    @State private var isFocused = false
+    @EnvironmentObject var authService: PlexAuthService
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Background art
+                ZStack(alignment: .bottomLeading) {
+                    AsyncImage(url: artURL) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .overlay(
+                                Image(systemName: "photo")
+                                    .font(.largeTitle)
+                                    .foregroundColor(.gray)
+                            )
+                    }
+                    .frame(width: 500, height: 280)
+                    .clipped()
+
+                    // Gradient overlay
+                    LinearGradient(
+                        gradient: Gradient(colors: [.clear, .black.opacity(0.7)]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+
+                    // Progress indicator
+                    if media.progress > 0 && media.progress < 0.98 {
+                        VStack {
+                            Spacer()
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    Rectangle()
+                                        .fill(Color.white.opacity(0.3))
+                                        .frame(height: 6)
+
+                                    Rectangle()
+                                        .fill(Color.orange)
+                                        .frame(width: geometry.size.width * media.progress, height: 6)
+                                }
+                            }
+                            .frame(height: 6)
+                        }
+                    }
+
+                    // Play icon overlay
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.white.opacity(isFocused ? 1.0 : 0.7))
+                }
+                .cornerRadius(10)
+                .shadow(radius: isFocused ? 20 : 10)
+                .scaleEffect(isFocused ? 1.05 : 1.0)
+
+                // Title
+                Text(media.displayTitle)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .frame(width: 500, alignment: .leading)
+                    .padding(.top, 10)
+
+                // Episode info
+                if media.type == "episode" {
+                    Text(media.episodeInfo)
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .frame(width: 500, alignment: .leading)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .onFocusChange(true) { focused in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isFocused = focused
+            }
+        }
+    }
+
+    private var artURL: URL? {
+        guard let server = authService.selectedServer,
+              let connection = server.connections.first,
+              let baseURL = connection.url,
+              let art = media.art else {
+            return nil
+        }
+
+        var urlString = baseURL.absoluteString + art
         if let token = server.accessToken {
             urlString += "?X-Plex-Token=\(token)"
         }
