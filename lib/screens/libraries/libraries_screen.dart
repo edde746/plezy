@@ -1357,6 +1357,538 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         return Icons.folder;
     }
   }
+
+  double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final padding = 16.0; // 8px left + 8px right
+    final availableWidth = screenWidth - padding;
+    final isTV = PlatformDetector.isTVSync();
+
+    // On TV, use larger card sizes for better visibility with D-pad navigation
+    if (isTV) {
+      double divisor;
+      double maxItemWidth;
+
+      switch (density) {
+        case LibraryDensity.comfortable:
+          divisor = 4.0;  // Larger cards
+          maxItemWidth = 350;
+          break;
+        case LibraryDensity.normal:
+          divisor = 5.0;  // Medium cards
+          maxItemWidth = 280;
+          break;
+        case LibraryDensity.compact:
+          divisor = 6.5;  // Smaller but still readable
+          maxItemWidth = 220;
+          break;
+      }
+
+      return (availableWidth / divisor).clamp(0, maxItemWidth);
+    }
+
+    if (screenWidth >= 900) {
+      // Wide screens (desktop/large tablet landscape): Responsive division
+      double divisor;
+      double maxItemWidth;
+
+      switch (density) {
+        case LibraryDensity.comfortable:
+          divisor = 6.5;
+          maxItemWidth = 280;
+          break;
+        case LibraryDensity.normal:
+          divisor = 8.0;
+          maxItemWidth = 200;
+          break;
+        case LibraryDensity.compact:
+          divisor = 10.0;
+          maxItemWidth = 160;
+          break;
+      }
+
+      return (availableWidth / divisor).clamp(0, maxItemWidth);
+    } else if (screenWidth >= 600) {
+      // Medium screens (tablets): Fixed 4-5-6 items
+      int targetItemCount = switch (density) {
+        LibraryDensity.comfortable => 4,
+        LibraryDensity.normal => 5,
+        LibraryDensity.compact => 6,
+      };
+      return availableWidth / targetItemCount;
+    } else {
+      // Small screens (phones): Fixed 2-3-4 items
+      int targetItemCount = switch (density) {
+        LibraryDensity.comfortable => 2,
+        LibraryDensity.normal => 3,
+        LibraryDensity.compact => 4,
+      };
+      return availableWidth / targetItemCount;
+    }
+  }
+}
+
+class _FiltersBottomSheet extends StatefulWidget {
+  final List<PlexFilter> filters;
+  final Map<String, String> selectedFilters;
+  final Function(Map<String, String>) onFiltersChanged;
+
+  const _FiltersBottomSheet({
+    required this.filters,
+    required this.selectedFilters,
+    required this.onFiltersChanged,
+  });
+
+  @override
+  State<_FiltersBottomSheet> createState() => _FiltersBottomSheetState();
+}
+
+class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
+  PlexFilter? _currentFilter;
+  List<PlexFilterValue> _filterValues = [];
+  bool _isLoadingValues = false;
+  final Map<String, String> _tempSelectedFilters = {};
+  final Map<String, String> _filterDisplayNames = {}; // Cache for display names
+  late List<PlexFilter> _sortedFilters;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelectedFilters.addAll(widget.selectedFilters);
+    _sortFilters();
+  }
+
+  void _sortFilters() {
+    // Separate boolean filters (toggles) from regular filters
+    final booleanFilters = widget.filters
+        .where((f) => f.filterType == 'boolean')
+        .toList();
+    final regularFilters = widget.filters
+        .where((f) => f.filterType != 'boolean')
+        .toList();
+
+    // Combine with boolean filters first
+    _sortedFilters = [...booleanFilters, ...regularFilters];
+  }
+
+  bool _isBooleanFilter(PlexFilter filter) {
+    return filter.filterType == 'boolean';
+  }
+
+  Future<void> _loadFilterValues(PlexFilter filter) async {
+    setState(() {
+      _currentFilter = filter;
+      _isLoadingValues = true;
+    });
+
+    try {
+      final clientProvider = Provider.of<PlexClientProvider>(
+        context,
+        listen: false,
+      );
+      final client = clientProvider.client;
+      if (client == null) {
+        throw Exception(t.errors.noClientAvailable);
+      }
+
+      final values = await client.getFilterValues(filter.key);
+      setState(() {
+        _filterValues = values;
+        _isLoadingValues = false;
+      });
+    } catch (e) {
+      setState(() {
+        _filterValues = [];
+        _isLoadingValues = false;
+      });
+    }
+  }
+
+  void _goBack() {
+    setState(() {
+      _currentFilter = null;
+      _filterValues = [];
+    });
+  }
+
+  void _applyFilters() {
+    widget.onFiltersChanged(_tempSelectedFilters);
+    Navigator.pop(context);
+  }
+
+  String _extractFilterValue(String key, String filterName) {
+    if (key.contains('?')) {
+      final queryStart = key.indexOf('?');
+      final queryString = key.substring(queryStart + 1);
+      final params = Uri.splitQueryString(queryString);
+      return params[filterName] ?? key;
+    } else if (key.startsWith('/')) {
+      return key.split('/').last;
+    }
+    return key;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        if (_currentFilter != null) {
+          // Show filter options view
+          return Column(
+            children: [
+              // Header with back button
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Theme.of(context).dividerColor),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    AppBarBackButton(
+                      style: BackButtonStyle.plain,
+                      onPressed: _goBack,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _currentFilter!.title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Filter options list
+              if (_isLoadingValues)
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: _filterValues.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        final isSelected = !_tempSelectedFilters.containsKey(
+                          _currentFilter!.filter,
+                        );
+                        return ListTile(
+                          title: Text(t.libraries.all),
+                          selected: isSelected,
+                          onTap: () {
+                            setState(() {
+                              _tempSelectedFilters.remove(
+                                _currentFilter!.filter,
+                              );
+                            });
+                            _applyFilters();
+                          },
+                        );
+                      }
+
+                      final value = _filterValues[index - 1];
+                      final filterValue = _extractFilterValue(
+                        value.key,
+                        _currentFilter!.filter,
+                      );
+                      final isSelected =
+                          _tempSelectedFilters[_currentFilter!.filter] ==
+                          filterValue;
+
+                      return ListTile(
+                        title: Text(value.title),
+                        selected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            _tempSelectedFilters[_currentFilter!.filter] =
+                                filterValue;
+                            // Cache the display name for this filter value
+                            _filterDisplayNames['${_currentFilter!.filter}:$filterValue'] =
+                                value.title;
+                          });
+                          _applyFilters();
+                        },
+                      );
+                    },
+                  ),
+                ),
+            ],
+          );
+        }
+
+        // Show main filters view
+        return Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.filter_list),
+                  const SizedBox(width: 12),
+                  Text(
+                    t.libraries.filters,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (_tempSelectedFilters.isNotEmpty)
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _tempSelectedFilters.clear();
+                        });
+                        _applyFilters();
+                      },
+                      icon: const Icon(Icons.clear_all),
+                      label: Text(t.libraries.clearAll),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // All Filters (boolean toggles first, then regular filters)
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: _sortedFilters.length,
+                itemBuilder: (context, index) {
+                  final filter = _sortedFilters[index];
+
+                  // Handle boolean filters as switches (unwatched, inProgress, unmatched, hdr, etc.)
+                  if (_isBooleanFilter(filter)) {
+                    final isActive =
+                        _tempSelectedFilters.containsKey(filter.filter) &&
+                        _tempSelectedFilters[filter.filter] == '1';
+                    return SwitchListTile(
+                      value: isActive,
+                      onChanged: (value) {
+                        setState(() {
+                          if (value) {
+                            _tempSelectedFilters[filter.filter] = '1';
+                          } else {
+                            _tempSelectedFilters.remove(filter.filter);
+                          }
+                        });
+                        _applyFilters();
+                      },
+                      title: Text(filter.title),
+                    );
+                  }
+
+                  // Regular navigable filters - show selected value instead of checkmark
+                  final selectedValue = _tempSelectedFilters[filter.filter];
+                  String? displayValue;
+                  if (selectedValue != null) {
+                    // Try to get the cached display name, fall back to the value itself
+                    displayValue =
+                        _filterDisplayNames['${filter.filter}:$selectedValue'] ??
+                        selectedValue;
+                  }
+
+                  return ListTile(
+                    title: Text(filter.title),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (displayValue != null)
+                          Flexible(
+                            child: Text(
+                              displayValue,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        if (displayValue != null) const SizedBox(width: 8),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                    onTap: () => _loadFilterValues(filter),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SortBottomSheet extends StatefulWidget {
+  final List<PlexSort> sortOptions;
+  final PlexSort? selectedSort;
+  final bool isSortDescending;
+  final Function(PlexSort, bool) onSortChanged;
+
+  const _SortBottomSheet({
+    required this.sortOptions,
+    required this.selectedSort,
+    required this.isSortDescending,
+    required this.onSortChanged,
+  });
+
+  @override
+  State<_SortBottomSheet> createState() => _SortBottomSheetState();
+}
+
+class _SortBottomSheetState extends State<_SortBottomSheet> {
+  late PlexSort? _tempSelectedSort;
+  late bool _tempDescending;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelectedSort = widget.selectedSort;
+    _tempDescending = widget.isSortDescending;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      t.libraries.sortBy,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Sort options list
+            Expanded(
+              child: RadioGroup<String>(
+                groupValue: _tempSelectedSort?.key,
+                onChanged: (value) {
+                  final sort = widget.sortOptions.firstWhere(
+                    (s) => s.key == value,
+                  );
+                  setState(() {
+                    _tempSelectedSort = sort;
+                    // Use default direction for newly selected sort
+                    _tempDescending = sort.isDefaultDescending;
+                  });
+                  // Apply sort immediately with default direction
+                  widget.onSortChanged(sort, sort.isDefaultDescending);
+                },
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: widget.sortOptions.length,
+                  itemBuilder: (context, index) {
+                    final sort = widget.sortOptions[index];
+                    final isSelected = _tempSelectedSort?.key == sort.key;
+
+                    return ListTile(
+                      title: Text(sort.title),
+                      trailing: isSelected
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Direction toggle buttons
+                                SegmentedButton<bool>(
+                                  showSelectedIcon: false,
+                                  segments: const [
+                                    ButtonSegment(
+                                      value: false,
+                                      icon: Icon(Icons.arrow_upward, size: 16),
+                                    ),
+                                    ButtonSegment(
+                                      value: true,
+                                      icon: Icon(
+                                        Icons.arrow_downward,
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ],
+                                  selected: {_tempDescending},
+                                  onSelectionChanged: (Set<bool> selected) {
+                                    widget.onSortChanged(sort, selected.first);
+                                  },
+                                ),
+                              ],
+                            )
+                          : null,
+                      leading: Radio<String>(
+                        value: sort.key,
+                        toggleable: false,
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _tempSelectedSort = sort;
+                          // Use default direction for newly selected sort
+                          _tempDescending = sort.isDefaultDescending;
+                        });
+                        // Apply sort immediately with default direction
+                        widget.onSortChanged(sort, sort.isDefaultDescending);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+>>>>>>> 4602690 (feat(tv): adjust library density values for TV screens)
 }
 
 class _LibraryManagementSheet extends StatefulWidget {
