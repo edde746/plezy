@@ -18,6 +18,8 @@ struct HomeView: View {
     @State private var currentHeroIndex = 0
     @State private var heroTimer: Timer?
 
+    private let cache = CacheService.shared
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -39,6 +41,27 @@ struct HomeView: View {
                         }
 
                         Spacer()
+
+                        // Refresh button
+                        if !isLoading {
+                            Button {
+                                Task {
+                                    await refreshContent()
+                                }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Refresh")
+                                }
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 25)
+                                .padding(.vertical, 15)
+                                .background(Color.white.opacity(0.1))
+                                .cornerRadius(10)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                     .padding(.horizontal, 80)
                     .padding(.top, 40)
@@ -157,14 +180,27 @@ struct HomeView: View {
         print("🏠 [HomeView] loadContent called")
         print("🏠 [HomeView] currentClient exists: \(authService.currentClient != nil)")
 
-        guard let client = authService.currentClient else {
+        guard let client = authService.currentClient,
+              let serverID = authService.selectedServer?.clientIdentifier else {
             print("🏠 [HomeView] No client available, showing no server selected")
             isLoading = false
             noServerSelected = true
             return
         }
 
-        print("🏠 [HomeView] Client available, starting content load...")
+        let cacheKey = CacheService.homeKey(serverID: serverID)
+
+        // Check cache first
+        if let cached: (onDeck: [PlexMetadata], hubs: [PlexHub]) = cache.get(cacheKey) {
+            print("🏠 [HomeView] Using cached content")
+            self.onDeck = cached.onDeck
+            self.hubs = cached.hubs
+            isLoading = false
+            noServerSelected = false
+            return
+        }
+
+        print("🏠 [HomeView] Client available, loading fresh content...")
         isLoading = true
         noServerSelected = false
 
@@ -173,8 +209,15 @@ struct HomeView: View {
 
         do {
             print("🏠 [HomeView] Fetching on deck and hubs...")
-            self.onDeck = try await onDeckTask
-            self.hubs = try await hubsTask
+            let fetchedOnDeck = try await onDeckTask
+            let fetchedHubs = try await hubsTask
+
+            self.onDeck = fetchedOnDeck
+            self.hubs = fetchedHubs
+
+            // Cache the results
+            cache.set(cacheKey, value: (onDeck: fetchedOnDeck, hubs: fetchedHubs))
+
             print("🏠 [HomeView] Content loaded successfully. OnDeck: \(self.onDeck.count), Hubs: \(self.hubs.count)")
         } catch {
             print("🔴 [HomeView] Error loading content: \(error)")
@@ -183,6 +226,21 @@ struct HomeView: View {
 
         isLoading = false
         print("🏠 [HomeView] loadContent complete")
+    }
+
+    private func refreshContent() async {
+        guard let serverID = authService.selectedServer?.clientIdentifier else {
+            return
+        }
+
+        print("🔄 [HomeView] Refreshing content...")
+
+        // Invalidate cache
+        let cacheKey = CacheService.homeKey(serverID: serverID)
+        cache.invalidate(cacheKey)
+
+        // Reload content
+        await loadContent()
     }
 }
 

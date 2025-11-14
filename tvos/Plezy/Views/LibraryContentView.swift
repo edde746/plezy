@@ -18,6 +18,8 @@ struct LibraryContentView: View {
     @State private var filterStatus: FilterStatus = .all
     @State private var sortOption: SortOption = .recentlyAdded
 
+    private let cache = CacheService.shared
+
     enum FilterStatus {
         case all
         case unwatched
@@ -159,15 +161,34 @@ struct LibraryContentView: View {
     }
 
     private func loadContent() async {
-        guard let client = authService.currentClient else {
+        guard let client = authService.currentClient,
+              let serverID = authService.selectedServer?.clientIdentifier else {
             return
         }
 
+        let cacheKey = CacheService.libraryContentKey(serverID: serverID, libraryKey: library.key)
+
+        // Check cache first
+        if let cached: [PlexMetadata] = cache.get(cacheKey) {
+            print("📚 [LibraryContent] Using cached content for \(library.title)")
+            self.items = cached
+            applyFilters()
+            isLoading = false
+            return
+        }
+
+        print("📚 [LibraryContent] Loading fresh content for \(library.title)...")
         isLoading = true
 
         do {
-            items = try await client.getLibraryContent(sectionKey: library.key, size: 200)
+            let fetchedItems = try await client.getLibraryContent(sectionKey: library.key, size: 200)
+            self.items = fetchedItems
+
+            // Cache the results with 10 minute TTL
+            cache.set(cacheKey, value: fetchedItems, ttl: 600)
+
             applyFilters()
+            print("📚 [LibraryContent] Content loaded: \(fetchedItems.count) items")
         } catch {
             print("Error loading library content: \(error)")
         }

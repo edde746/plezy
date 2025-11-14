@@ -13,6 +13,8 @@ struct LibrariesView: View {
     @State private var selectedTab: LibraryTab = .tvShows
     @State private var isLoading = true
 
+    private let cache = CacheService.shared
+
     enum LibraryTab {
         case tvShows
         case movies
@@ -82,14 +84,32 @@ struct LibrariesView: View {
     }
 
     private func loadLibraries() async {
-        guard let client = authService.currentClient else {
+        guard let client = authService.currentClient,
+              let serverID = authService.selectedServer?.clientIdentifier else {
             return
         }
 
+        let cacheKey = CacheService.librariesKey(serverID: serverID)
+
+        // Check cache first
+        if let cached: [PlexLibrary] = cache.get(cacheKey) {
+            print("📚 [LibrariesView] Using cached libraries")
+            self.libraries = cached
+            isLoading = false
+            return
+        }
+
+        print("📚 [LibrariesView] Loading fresh libraries...")
         isLoading = true
 
         do {
-            libraries = try await client.getLibraries()
+            let fetchedLibraries = try await client.getLibraries()
+            self.libraries = fetchedLibraries
+
+            // Cache the results with 10 minute TTL
+            cache.set(cacheKey, value: fetchedLibraries, ttl: 600)
+
+            print("📚 [LibrariesView] Libraries loaded: \(fetchedLibraries.count)")
         } catch {
             print("Error loading libraries: \(error)")
         }
