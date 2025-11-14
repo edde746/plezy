@@ -140,10 +140,14 @@ struct PlexLibrary: Codable, Identifiable {
 
 struct PlexMetadata: Codable, Identifiable, Equatable {
     static func == (lhs: PlexMetadata, rhs: PlexMetadata) -> Bool {
-        lhs.ratingKey == rhs.ratingKey
+        // Compare by ratingKey if available, otherwise by key
+        if let lhsRating = lhs.ratingKey, let rhsRating = rhs.ratingKey {
+            return lhsRating == rhsRating
+        }
+        return lhs.key == rhs.key
     }
 
-    let ratingKey: String
+    let ratingKey: String?
     let key: String
     let guid: String?
     let studio: String?
@@ -203,7 +207,7 @@ struct PlexMetadata: Codable, Identifiable, Equatable {
     // Images (for clearLogo, etc.)
     let Image: [PlexImage]?
 
-    var id: String { ratingKey }
+    var id: String { ratingKey ?? key }
 
     // Extract clearLogo from Image array
     var clearLogo: String? {
@@ -267,6 +271,25 @@ struct PlexMetadata: Codable, Identifiable, Equatable {
         }
         return duration / 60000
     }
+
+    enum CodingKeys: String, CodingKey {
+        case ratingKey, key, guid, studio, type, title, titleSort
+        case librarySectionTitle, librarySectionID, librarySectionKey
+        case contentRating, summary, rating, audienceRating, year, tagline
+        case thumb, art, duration, originallyAvailableAt, addedAt, updatedAt
+        case audienceRatingImage, primaryExtraKey, ratingImage
+        case viewOffset, viewCount, lastViewedAt
+        case grandparentRatingKey, grandparentKey, grandparentTitle, grandparentThumb, grandparentArt
+        case parentRatingKey, parentKey, parentTitle, parentThumb, parentIndex
+        case index, childCount, leafCount, viewedLeafCount
+        case media = "Media"  // Plex API uses capital M
+        case role = "Role"
+        case genre = "Genre"
+        case director = "Director"
+        case writer = "Writer"
+        case country = "Country"
+        case Image
+    }
 }
 
 struct PlexMedia: Codable {
@@ -286,6 +309,14 @@ struct PlexMedia: Codable {
     let has64bitOffsets: Bool?
     let videoProfile: String?
     let part: [PlexPart]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, duration, bitrate, width, height, aspectRatio
+        case audioChannels, audioCodec, videoCodec, videoResolution
+        case container, videoFrameRate, optimizedForStreaming
+        case has64bitOffsets, videoProfile
+        case part = "Part"  // Plex API uses capital P
+    }
 }
 
 struct PlexPart: Codable {
@@ -298,6 +329,12 @@ struct PlexPart: Codable {
     let optimizedForStreaming: Bool?
     let has64bitOffsets: Bool?
     let stream: [PlexStream]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, key, duration, file, size, container
+        case optimizedForStreaming, has64bitOffsets
+        case stream = "Stream"  // Plex API uses capital S
+    }
 }
 
 struct PlexStream: Codable {

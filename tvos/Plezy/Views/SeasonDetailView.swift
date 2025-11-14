@@ -87,14 +87,15 @@ struct SeasonDetailView: View {
     }
 
     private func loadEpisodes() async {
-        guard let client = authService.currentClient else {
+        guard let client = authService.currentClient,
+              let ratingKey = season.ratingKey else {
             return
         }
 
         isLoading = true
 
         do {
-            episodes = try await client.getChildren(ratingKey: season.ratingKey)
+            episodes = try await client.getChildren(ratingKey: ratingKey)
         } catch {
             print("Error loading episodes: \(error)")
         }

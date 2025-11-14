@@ -142,6 +142,12 @@ class VideoPlayerManager: ObservableObject {
             return
         }
 
+        guard let ratingKey = media.ratingKey else {
+            error = "Invalid media item"
+            isLoading = false
+            return
+        }
+
         isLoading = true
         error = nil
 
@@ -149,7 +155,21 @@ class VideoPlayerManager: ObservableObject {
             print("🎬 [Player] Loading video for: \(media.title)")
 
             // Get detailed metadata
-            let detailedMedia = try await client.getMetadata(ratingKey: media.ratingKey)
+            let detailedMedia = try await client.getMetadata(ratingKey: ratingKey)
+
+            print("🎬 [Player] Detailed metadata received")
+            print("🎬 [Player] Type: \(detailedMedia.type)")
+            print("🎬 [Player] Title: \(detailedMedia.title)")
+            print("🎬 [Player] Has media array: \(detailedMedia.media != nil)")
+            print("🎬 [Player] Media count: \(detailedMedia.media?.count ?? 0)")
+            if let media = detailedMedia.media?.first {
+                print("🎬 [Player] First media item exists")
+                print("🎬 [Player] Has part array: \(media.part != nil)")
+                print("🎬 [Player] Part count: \(media.part?.count ?? 0)")
+                if let part = media.part?.first {
+                    print("🎬 [Player] Part key: \(part.key)")
+                }
+            }
 
             // Build video URL
             guard let mediaItem = detailedMedia.media?.first,
@@ -211,7 +231,7 @@ class VideoPlayerManager: ObservableObject {
             print("🎬 [Player] Starting playback")
 
             // Setup progress tracking
-            setupProgressTracking(client: client, player: player)
+            setupProgressTracking(client: client, player: player, ratingKey: ratingKey)
 
             isLoading = false
 
@@ -277,7 +297,7 @@ class VideoPlayerManager: ObservableObject {
         }
     }
 
-    private func setupProgressTracking(client: PlexAPIClient, player: AVPlayer) {
+    private func setupProgressTracking(client: PlexAPIClient, player: AVPlayer, ratingKey: String) {
         // Update progress every 10 seconds
         let interval = CMTime(seconds: 10, preferredTimescale: 600)
 
@@ -295,7 +315,7 @@ class VideoPlayerManager: ObservableObject {
             Task {
                 do {
                     try await client.updateTimeline(
-                        ratingKey: self.media.ratingKey,
+                        ratingKey: ratingKey,
                         state: player.rate > 0 ? .playing : .paused,
                         time: Int(currentTime * 1000),
                         duration: Int(totalDuration * 1000)
@@ -303,7 +323,7 @@ class VideoPlayerManager: ObservableObject {
 
                     // Mark as watched when 90% complete
                     if currentTime / totalDuration > 0.9 {
-                        try await client.scrobble(ratingKey: self.media.ratingKey)
+                        try await client.scrobble(ratingKey: ratingKey)
                     }
                 } catch {
                     print("Error updating timeline: \(error)")

@@ -305,19 +305,20 @@ struct MediaDetailView: View {
     }
 
     private func loadDetails() async {
-        guard let client = authService.currentClient else {
+        guard let client = authService.currentClient,
+              let ratingKey = media.ratingKey else {
             return
         }
 
         isLoading = true
 
         do {
-            let detailed = try await client.getMetadata(ratingKey: media.ratingKey)
+            let detailed = try await client.getMetadata(ratingKey: ratingKey)
             detailedMedia = detailed
 
             // If it's a TV show, load seasons
             if media.type == "show" {
-                seasons = try await client.getChildren(ratingKey: media.ratingKey)
+                seasons = try await client.getChildren(ratingKey: ratingKey)
             }
         } catch {
             print("Error loading details: \(error)")
@@ -327,15 +328,16 @@ struct MediaDetailView: View {
     }
 
     private func toggleWatched() async {
-        guard let client = authService.currentClient else {
+        guard let client = authService.currentClient,
+              let ratingKey = displayMedia.ratingKey else {
             return
         }
 
         do {
             if displayMedia.isWatched {
-                try await client.unscrobble(ratingKey: displayMedia.ratingKey)
+                try await client.unscrobble(ratingKey: ratingKey)
             } else {
-                try await client.scrobble(ratingKey: displayMedia.ratingKey)
+                try await client.scrobble(ratingKey: ratingKey)
             }
 
             // Reload details

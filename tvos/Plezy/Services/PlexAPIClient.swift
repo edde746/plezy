@@ -137,13 +137,17 @@ class PlexAPIClient {
             URLQueryItem(name: "includeExtras", value: "0"),
             URLQueryItem(name: "includeRelated", value: "0")
         ]
+        print("📡 [API] getMetadata for ratingKey: \(ratingKey)")
         let response: PlexResponse<PlexMetadata> = try await request(
             path: "/library/metadata/\(ratingKey)",
             queryItems: queryItems
         )
+        print("📡 [API] Metadata response - items count: \(response.MediaContainer.items.count)")
         guard let metadata = response.MediaContainer.items.first else {
             throw PlexAPIError.noData
         }
+        print("📡 [API] First metadata item - type: \(metadata.type), title: \(metadata.title)")
+        print("📡 [API] Metadata has media array: \(metadata.media != nil), count: \(metadata.media?.count ?? 0)")
         return metadata
     }
 
