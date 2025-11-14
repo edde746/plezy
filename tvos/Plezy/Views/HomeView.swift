@@ -328,7 +328,7 @@ struct MediaCard: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Poster image
                 ZStack(alignment: .bottomLeading) {
-                    AsyncImage(url: posterURL) { image in
+                    CachedAsyncImage(url: posterURL) { image in
                         image
                             .resizable()
                             .scaledToFit()
@@ -491,7 +491,7 @@ struct HeroBanner: View {
                 // Background art with transition
                 TabView(selection: $currentIndex) {
                     ForEach(0..<heroItems.count, id: \.self) { index in
-                        AsyncImage(url: artURL(for: heroItems[index])) { image in
+                        CachedAsyncImage(url: artURL(for: heroItems[index])) { image in
                             image
                                 .resizable()
                                 .scaledToFill()
@@ -523,7 +523,7 @@ struct HeroBanner: View {
 
                     // Show logo or title
                     if item.type == "episode", let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
-                        AsyncImage(url: logoURL) { image in
+                        CachedAsyncImage(url: logoURL) { image in
                             image
                                 .resizable()
                                 .scaledToFit()
@@ -729,7 +729,7 @@ struct LandscapeMediaCard: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Background art
                 ZStack(alignment: .bottomLeading) {
-                    AsyncImage(url: artURL) { image in
+                    CachedAsyncImage(url: artURL) { image in
                         image
                             .resizable()
                             .scaledToFill()
@@ -758,7 +758,7 @@ struct LandscapeMediaCard: View {
                             Spacer()
                             HStack {
                                 if let logoURL = showLogoURL {
-                                    AsyncImage(url: logoURL) { image in
+                                    CachedAsyncImage(url: logoURL) { image in
                                         image
                                             .resizable()
                                             .scaledToFit()

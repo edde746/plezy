@@ -67,7 +67,8 @@ class PlexAPIClient {
         path: String,
         method: String = "GET",
         queryItems: [URLQueryItem]? = nil,
-        body: Data? = nil
+        body: Data? = nil,
+        retries: Int = 3
     ) async throws -> T {
         // Validate authentication for server endpoints (not plex.tv public endpoints)
         let requiresAuth = !path.hasPrefix("/api/v2/pins") && baseURL.host != "plex.tv"
@@ -83,64 +84,100 @@ class PlexAPIClient {
             throw PlexAPIError.invalidURL
         }
 
-        print("🌐 [API] \(method) \(url)")
+        var lastError: Error?
 
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.httpBody = body
+        for attempt in 0..<retries {
+            if attempt > 0 {
+                let delay = min(pow(2.0, Double(attempt)), 16.0) // Cap at 16 seconds
+                print("🔄 [API] Retry attempt \(attempt + 1)/\(retries) after \(delay)s delay")
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
 
-        for (key, value) in headers {
-            request.setValue(value, forHTTPHeaderField: key)
-        }
+            print("🌐 [API] \(method) \(url) (attempt \(attempt + 1)/\(retries))")
 
-        let (data, response) = try await session.data(for: request)
+            var request = URLRequest(url: url)
+            request.httpMethod = method
+            request.httpBody = body
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw PlexAPIError.invalidResponse
-        }
+            for (key, value) in headers {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
 
-        print("🌐 [API] Response: \(httpResponse.statusCode) - \(data.count) bytes")
+            do {
+                let (data, response) = try await session.data(for: request)
 
-        guard (200...299).contains(httpResponse.statusCode) else {
-            // Provide specific error messages for common HTTP status codes
-            switch httpResponse.statusCode {
-            case 401:
-                print("❌ [API] Unauthorized - invalid or expired token")
-                throw PlexAPIError.unauthorized
-            case 404:
-                print("❌ [API] Not found - resource doesn't exist")
-                throw PlexAPIError.notFound
-            case 429:
-                print("❌ [API] Rate limited - too many requests")
-                throw PlexAPIError.rateLimited
-            case 500...599:
-                print("❌ [API] Server error (\(httpResponse.statusCode))")
-                throw PlexAPIError.serverError(statusCode: httpResponse.statusCode)
-            default:
-                print("❌ [API] HTTP error \(httpResponse.statusCode)")
-                throw PlexAPIError.httpError(statusCode: httpResponse.statusCode)
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw PlexAPIError.invalidResponse
+                }
+
+                print("🌐 [API] Response: \(httpResponse.statusCode) - \(data.count) bytes")
+
+                guard (200...299).contains(httpResponse.statusCode) else {
+                    // Provide specific error messages for common HTTP status codes
+                    switch httpResponse.statusCode {
+                    case 401:
+                        print("❌ [API] Unauthorized - invalid or expired token")
+                        throw PlexAPIError.unauthorized
+                    case 404:
+                        print("❌ [API] Not found - resource doesn't exist")
+                        throw PlexAPIError.notFound
+                    case 429:
+                        print("❌ [API] Rate limited - too many requests")
+                        throw PlexAPIError.rateLimited
+                    case 500...599:
+                        print("❌ [API] Server error (\(httpResponse.statusCode))")
+                        throw PlexAPIError.serverError(statusCode: httpResponse.statusCode)
+                    default:
+                        print("❌ [API] HTTP error \(httpResponse.statusCode)")
+                        throw PlexAPIError.httpError(statusCode: httpResponse.statusCode)
+                    }
+                }
+
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                decoder.keyDecodingStrategy = .useDefaultKeys
+
+                do {
+                    // Debug: Print first 500 characters of response for inspection
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        let preview = String(jsonString.prefix(500))
+                        print("🔍 [API] Response preview: \(preview)")
+                    }
+                    let result = try decoder.decode(T.self, from: data)
+                    print("✅ [API] Request successful on attempt \(attempt + 1)")
+                    return result
+                } catch {
+                    print("🔴 [API] Decoding error: \(error)")
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        let preview = String(jsonString.prefix(1000))
+                        print("🔴 [API] Failed JSON preview: \(preview)")
+                    }
+                    throw PlexAPIError.decodingError(error)
+                }
+            } catch {
+                lastError = error
+                print("⚠️ [API] Attempt \(attempt + 1)/\(retries) failed: \(error.localizedDescription)")
+
+                // Don't retry on certain errors - they won't succeed on retry
+                if let apiError = error as? PlexAPIError {
+                    switch apiError {
+                    case .unauthorized, .notFound, .decodingError:
+                        print("❌ [API] Non-retryable error, failing immediately")
+                        throw apiError
+                    default:
+                        break
+                    }
+                }
+
+                // If this was the last attempt, don't sleep
+                if attempt == retries - 1 {
+                    print("❌ [API] All retry attempts exhausted")
+                }
             }
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        decoder.keyDecodingStrategy = .useDefaultKeys
-
-        do {
-            // Debug: Print first 500 characters of response for inspection
-            if let jsonString = String(data: data, encoding: .utf8) {
-                let preview = String(jsonString.prefix(500))
-                print("🔍 [API] Response preview: \(preview)")
-            }
-            return try decoder.decode(T.self, from: data)
-        } catch {
-            print("🔴 [API] Decoding error: \(error)")
-            if let jsonString = String(data: data, encoding: .utf8) {
-                let preview = String(jsonString.prefix(1000))
-                print("🔴 [API] Failed JSON preview: \(preview)")
-            }
-            throw PlexAPIError.decodingError(error)
-        }
+        // All retries exhausted, throw the last error
+        throw lastError ?? PlexAPIError.serverNotReachable
     }
 
     // MARK: - Library Methods

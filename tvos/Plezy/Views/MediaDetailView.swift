@@ -22,7 +22,7 @@ struct MediaDetailView: View {
         ZStack {
             // Background with backdrop
             if let artURL = artworkURL {
-                AsyncImage(url: artURL) { image in
+                CachedAsyncImage(url: artURL) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -54,7 +54,7 @@ struct MediaDetailView: View {
                     // Main content
                     HStack(alignment: .top, spacing: 40) {
                         // Poster
-                        AsyncImage(url: posterURL) { image in
+                        CachedAsyncImage(url: posterURL) { image in
                             image
                                 .resizable()
                                 .aspectRatio(2/3, contentMode: .fill)
@@ -373,7 +373,7 @@ struct SeasonCard: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 10) {
-                AsyncImage(url: posterURL) { image in
+                CachedAsyncImage(url: posterURL) { image in
                     image
                         .resizable()
                         .aspectRatio(2/3, contentMode: .fill)

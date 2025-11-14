@@ -114,7 +114,7 @@ struct EpisodeRow: View {
         Button(action: action) {
             HStack(spacing: 30) {
                 // Thumbnail
-                AsyncImage(url: thumbnailURL) { image in
+                CachedAsyncImage(url: thumbnailURL) { image in
                     image
                         .resizable()
                         .aspectRatio(16/9, contentMode: .fill)
