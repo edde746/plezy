@@ -34,15 +34,32 @@ struct FocusableModifier: ViewModifier {
 // MARK: - Button Styles
 
 struct CardButtonStyle: ButtonStyle {
+    @FocusState private var isFocused: Bool
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, 30)
-            .padding(.vertical, 15)
+            .padding(.horizontal, 35)
+            .padding(.vertical, 18)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.white.opacity(configuration.isPressed ? 0.2 : 0.1))
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.regularMaterial)
+                        .opacity(configuration.isPressed ? 0.7 : (isFocused ? 1.0 : 0.8))
+
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(configuration.isPressed ? 0.15 : (isFocused ? 0.25 : 0.1)))
+                }
             )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.white.opacity(isFocused ? 0.4 : 0.0), lineWidth: 2)
+            )
+            .shadow(color: .black.opacity(0.3), radius: isFocused ? 20 : 10, x: 0, y: isFocused ? 10 : 5)
+            .scaleEffect(configuration.isPressed ? 0.95 : (isFocused ? 1.08 : 1.0))
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .focused($isFocused)
+            .focusable()
     }
 }
 

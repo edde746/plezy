@@ -24,118 +24,86 @@ struct HomeView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 40) {
-                    // Header
-                    HStack {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text("Welcome to Plezy")
-                                .font(.system(size: 48, weight: .bold))
-                                .foregroundColor(.white)
+            if isLoading {
+                VStack {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.white)
+                    Text("Loading content...")
+                        .foregroundColor(.gray)
+                        .padding(.top)
+                }
+            } else if noServerSelected {
+                VStack(spacing: 30) {
+                    Image(systemName: "server.rack")
+                        .font(.system(size: 80))
+                        .foregroundColor(.gray)
 
-                            if let serverName = authService.selectedServer?.name {
-                                Text(serverName)
-                                    .font(.title3)
-                                    .foregroundColor(.gray)
-                            }
-                        }
+                    Text("No Server Selected")
+                        .font(.title)
+                        .foregroundColor(.white)
 
-                        Spacer()
+                    Text("Please select a Plex server to start watching")
+                        .font(.title3)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
 
-                        // Refresh button
-                        if !isLoading {
-                            Button {
-                                Task {
-                                    await refreshContent()
-                                }
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: "arrow.clockwise")
-                                    Text("Refresh")
-                                }
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 25)
-                                .padding(.vertical, 15)
-                                .background(Color.white.opacity(0.1))
-                                .cornerRadius(10)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 80)
-                    .padding(.top, 40)
-
-                    if isLoading {
-                        VStack {
-                            ProgressView()
-                                .scaleEffect(1.5)
-                                .tint(.white)
-                            Text("Loading content...")
-                                .foregroundColor(.gray)
-                                .padding(.top)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 100)
-                    } else if noServerSelected {
-                        VStack(spacing: 30) {
+                    Button {
+                        showServerSelection = true
+                    } label: {
+                        HStack {
                             Image(systemName: "server.rack")
-                                .font(.system(size: 80))
-                                .foregroundColor(.gray)
-
-                            Text("No Server Selected")
-                                .font(.title)
-                                .foregroundColor(.white)
-
-                            Text("Please select a Plex server to start watching")
-                                .font(.title3)
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.center)
-
-                            Button {
-                                showServerSelection = true
-                            } label: {
-                                HStack {
-                                    Image(systemName: "server.rack")
-                                    Text("Select Server")
+                            Text("Select Server")
+                        }
+                        .font(.title2)
+                        .padding(.horizontal, 60)
+                        .padding(.vertical, 20)
+                    }
+                    .buttonStyle(CardButtonStyle())
+                }
+            } else {
+                GeometryReader { geometry in
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            // Hero with Continue Watching overlay
+                            ZStack(alignment: .bottom) {
+                                // Hero Banner (fullscreen)
+                                if !onDeck.isEmpty {
+                                    HeroBanner(items: onDeck, currentIndex: $currentHeroIndex) { media in
+                                        selectedMedia = media
+                                    }
+                                    .frame(height: geometry.size.height)
                                 }
-                                .font(.title2)
-                                .padding(.horizontal, 60)
-                                .padding(.vertical, 20)
-                            }
-                            .buttonStyle(CardButtonStyle())
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 100)
-                    } else {
-                        // Hero Banner
-                        if !onDeck.isEmpty {
-                            HeroBanner(items: onDeck, currentIndex: $currentHeroIndex) { media in
-                                selectedMedia = media
-                            }
-                        }
 
-                        // Continue Watching
-                        if !onDeck.isEmpty {
-                            ContinueWatchingShelf(items: onDeck) { media in
-                                selectedMedia = media
-                            }
-                        }
-
-                        // Hubs
-                        ForEach(hubs) { hub in
-                            if let items = hub.metadata, !items.isEmpty {
-                                MediaShelf(title: hub.title, items: items) { media in
-                                    selectedMedia = media
+                                // Continue Watching overlaid at bottom
+                                if !onDeck.isEmpty {
+                                    ContinueWatchingShelf(items: onDeck) { media in
+                                        selectedMedia = media
+                                    }
+                                    .padding(.bottom, 60)
                                 }
-                            } else {
-                                // Debug: Show why hub is not displaying
-                                let _ = print("🏠 [HomeView] Skipping hub '\(hub.title)' - has metadata: \(hub.metadata != nil), count: \(hub.metadata?.count ?? 0)")
                             }
+                            .frame(height: geometry.size.height)
+
+                            // Hubs section
+                            VStack(alignment: .leading, spacing: 40) {
+                                ForEach(hubs) { hub in
+                                    if let items = hub.metadata, !items.isEmpty {
+                                        MediaShelf(title: hub.title, items: items) { media in
+                                            selectedMedia = media
+                                        }
+                                    } else {
+                                        // Debug: Show why hub is not displaying
+                                        let _ = print("🏠 [HomeView] Skipping hub '\(hub.title)' - has metadata: \(hub.metadata != nil), count: \(hub.metadata?.count ?? 0)")
+                                    }
+                                }
+                            }
+                            .padding(.top, 40)
+                            .padding(.bottom, 40)
+                            .background(Color.black)
                         }
                     }
                 }
-                .padding(.bottom, 40)
             }
         }
         .onAppear {
@@ -255,8 +223,7 @@ struct MediaShelf: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text(title)
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.system(size: 38, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding(.horizontal, 80)
 
@@ -321,13 +288,18 @@ struct MediaCard: View {
                             .padding(15)
                     }
                 }
-                .cornerRadius(10)
-                .shadow(radius: isFocused ? 20 : 10)
-                .scaleEffect(isFocused ? 1.05 : 1.0)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(isFocused ? 0.5 : 0.0), lineWidth: 3)
+                )
+                .shadow(color: .black.opacity(0.5), radius: isFocused ? 30 : 15, x: 0, y: isFocused ? 15 : 8)
+                .scaleEffect(isFocused ? 1.08 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
 
                 // Title
                 Text(media.title)
-                    .font(.headline)
+                    .font(.system(size: 22, weight: .medium, design: .default))
                     .foregroundColor(.white)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -337,7 +309,7 @@ struct MediaCard: View {
                 // Metadata
                 if let year = media.year {
                     Text(String(year))
-                        .font(.subheadline)
+                        .font(.system(size: 20, weight: .regular, design: .default))
                         .foregroundColor(.gray)
                         .frame(width: 300, alignment: .leading)
                 }
@@ -427,13 +399,13 @@ struct HeroBanner: View {
                                     .scaledToFit()
                             } placeholder: {
                                 Text(item.grandparentTitle ?? item.title)
-                                    .font(.system(size: 56, weight: .bold))
+                                    .font(.system(size: 72, weight: .heavy, design: .default))
                                     .foregroundColor(.white)
                             }
-                            .frame(maxWidth: 500, maxHeight: 120, alignment: .leading)
+                            .frame(maxWidth: 500, maxHeight: 140, alignment: .leading)
                         } else {
                             Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
-                                .font(.system(size: 56, weight: .bold))
+                                .font(.system(size: 72, weight: .heavy, design: .default))
                                 .foregroundColor(.white)
                                 .lineLimit(2)
                         }
@@ -442,20 +414,20 @@ struct HeroBanner: View {
                         if item.type == "episode" {
                             HStack(spacing: 10) {
                                 Text(item.formatSeasonEpisode())
-                                    .font(.title2)
+                                    .font(.system(size: 28, weight: .medium, design: .default))
                                     .foregroundColor(.white)
                                 Text("·")
                                     .foregroundColor(.white.opacity(0.7))
                                 Text(item.title)
-                                    .font(.title2)
+                                    .font(.system(size: 28, weight: .medium, design: .default))
                                     .foregroundColor(.white.opacity(0.9))
                             }
                         }
 
                         if let summary = item.summary {
                             Text(summary)
-                                .font(.title3)
-                                .foregroundColor(.white.opacity(0.9))
+                                .font(.system(size: 24, weight: .regular, design: .default))
+                                .foregroundColor(.white.opacity(0.85))
                                 .lineLimit(3)
                         }
 
@@ -594,10 +566,10 @@ struct ContinueWatchingShelf: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Continue Watching")
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.system(size: 38, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding(.horizontal, 80)
+                .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 30) {
@@ -608,8 +580,18 @@ struct ContinueWatchingShelf: View {
                     }
                 }
                 .padding(.horizontal, 80)
+                .padding(.bottom, 20)
             }
         }
+        .padding(.top, 30)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.6), Color.black.opacity(0.9)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .background(.ultraThinMaterial.opacity(0.3))
     }
 }
 
@@ -649,30 +631,6 @@ struct LandscapeMediaCard: View {
                         endPoint: .bottom
                     )
 
-                    // Progress indicator
-                    if media.progress > 0 && media.progress < 0.98 {
-                        VStack {
-                            Spacer()
-                            GeometryReader { geometry in
-                                ZStack(alignment: .leading) {
-                                    Rectangle()
-                                        .fill(Color.white.opacity(0.3))
-                                        .frame(height: 6)
-
-                                    Rectangle()
-                                        .fill(Color.orange)
-                                        .frame(width: geometry.size.width * media.progress, height: 6)
-                                }
-                            }
-                            .frame(height: 6)
-                        }
-                    }
-
-                    // Play icon overlay (center)
-                    Image(systemName: "play.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.white.opacity(isFocused ? 1.0 : 0.7))
-
                     // Show logo in bottom left corner
                     if media.type == "episode" {
                         VStack(alignment: .leading, spacing: 0) {
@@ -695,21 +653,40 @@ struct LandscapeMediaCard: View {
                         }
                     }
                 }
-                .cornerRadius(10)
-                .shadow(radius: isFocused ? 20 : 10)
-                .scaleEffect(isFocused ? 1.05 : 1.0)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(isFocused ? 0.6 : 0.0), lineWidth: 3)
+                )
+                .shadow(color: .black.opacity(0.6), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
+                .scaleEffect(isFocused ? 1.1 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+
+                // Progress bar below card
+                if media.progress > 0 && media.progress < 0.98 {
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.2))
+                            .frame(width: 500, height: 4)
+
+                        Rectangle()
+                            .fill(Color.white)
+                            .frame(width: 500 * media.progress, height: 4)
+                    }
+                    .cornerRadius(2)
+                }
 
                 // Episode info below card
                 if media.type == "episode" {
                     Text(media.episodeInfo)
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        .font(.system(size: 24, weight: .medium, design: .default))
+                        .foregroundColor(.white.opacity(0.9))
                         .frame(width: 500, alignment: .leading)
                         .padding(.top, 10)
                 } else {
                     // Title for movies
                     Text(media.title)
-                        .font(.headline)
+                        .font(.system(size: 24, weight: .medium, design: .default))
                         .foregroundColor(.white)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)

@@ -238,11 +238,30 @@ struct PlexMetadata: Codable, Identifiable {
         return String(format: "S%02dE%02d", season, episode)
     }
 
+    // Format for Continue Watching: "S1, E2 • 45m"
     var episodeInfo: String {
         if type == "episode" {
-            return formatSeasonEpisode() + (parentTitle != nil ? " · \(parentTitle!)" : "")
+            let season = parentIndex ?? 0
+            let episode = index ?? 0
+            var info = "S\(season), E\(episode)"
+
+            // Add runtime in minutes
+            if let duration = duration, duration > 0 {
+                let minutes = duration / 60000 // Convert milliseconds to minutes
+                info += " • \(minutes)m"
+            }
+
+            return info
         }
         return ""
+    }
+
+    // Helper to get runtime in minutes
+    var runtimeMinutes: Int? {
+        guard let duration = duration, duration > 0 else {
+            return nil
+        }
+        return duration / 60000
     }
 }
 
