@@ -186,6 +186,7 @@ class VideoPlayerManager: ObservableObject {
     @Published var nextEpisode: PlexMetadata?
     @Published var showNextEpisodePrompt: Bool = false
     @Published var nextEpisodeCountdown: Int = 15
+    @Published var chapters: [PlexChapter] = []
 
     private let media: PlexMetadata
     private var timeObserver: Any?
@@ -306,6 +307,12 @@ class VideoPlayerManager: ObservableObject {
 
             // Discover and configure audio/subtitle tracks
             discoverTracks()
+
+            // Fetch chapters
+            await fetchChapters(client: client, ratingKey: ratingKey)
+
+            // Configure chapter markers on player item
+            configureChapterMarkers()
 
             // Fetch next episode for TV shows
             if detailedMedia.type == "episode" {
@@ -685,6 +692,95 @@ class VideoPlayerManager: ObservableObject {
         nextEpisodeTimer = nil
         showNextEpisodePrompt = false
         nextEpisodeCountdown = 15
+    }
+
+    // MARK: - Chapter Markers
+
+    /// Fetch chapters from Plex API
+    func fetchChapters(client: PlexAPIClient, ratingKey: String) async {
+        do {
+            let fetchedChapters = try await client.getChapters(ratingKey: ratingKey)
+            self.chapters = fetchedChapters
+            print("📖 [Chapters] Loaded \(fetchedChapters.count) chapters")
+            for (index, chapter) in fetchedChapters.enumerated() {
+                let title = chapter.title ?? "Chapter \(index + 1)"
+                let time = Int(chapter.startTime)
+                print("📖 [Chapters]   \(index + 1): \(title) @ \(time)s")
+            }
+        } catch {
+            print("⚠️ [Chapters] Failed to fetch chapters: \(error)")
+        }
+    }
+
+    /// Configure chapter markers on the player item for tvOS
+    private func configureChapterMarkers() {
+        guard !chapters.isEmpty, let playerItem = playerItem else {
+            print("📖 [Chapters] No chapters to configure")
+            return
+        }
+
+        #if os(tvOS)
+        // Create navigation markers for tvOS
+        var markers: [AVNavigationMarkersGroup] = []
+
+        // Create time markers for each chapter
+        let timeMarkers = chapters.map { chapter -> AVTimedMetadataGroup in
+            let time = CMTime(seconds: chapter.startTime, preferredTimescale: 600)
+
+            // Create metadata items for the chapter
+            var items: [AVMetadataItem] = []
+
+            // Add title
+            if let title = chapter.title {
+                let titleItem = AVMutableMetadataItem()
+                titleItem.identifier = .commonIdentifierTitle
+                titleItem.value = title as NSString
+                titleItem.dataType = kCMMetadataBaseDataType_UTF8 as String
+                items.append(titleItem)
+            }
+
+            // Add artwork if available
+            if let thumbPath = chapter.thumb,
+               let server = playerViewController?.player?.currentItem?.accessLog()?.description,
+               let thumbURL = URL(string: thumbPath) {
+                let artworkItem = AVMutableMetadataItem()
+                artworkItem.identifier = .commonIdentifierArtwork
+                // Note: Would need to fetch image data for full implementation
+                items.append(artworkItem)
+            }
+
+            return AVTimedMetadataGroup(items: items, timeRange: CMTimeRange(start: time, duration: .zero))
+        }
+
+        // Create chapter metadata group
+        let chapterGroup = AVNavigationMarkersGroup(
+            title: nil,
+            timedNavigationMarkers: timeMarkers
+        )
+
+        markers.append(chapterGroup)
+
+        // Set the markers on the player item
+        if #available(tvOS 16.0, *) {
+            playerItem.navigationMarkerGroups = markers
+            print("📖 [Chapters] Configured \(chapters.count) chapter markers")
+        } else {
+            print("⚠️ [Chapters] Chapter markers require tvOS 16.0+")
+        }
+        #else
+        print("⚠️ [Chapters] Chapter markers only supported on tvOS")
+        #endif
+    }
+
+    /// Jump to a specific chapter
+    func jumpToChapter(_ chapter: PlexChapter) {
+        guard let player = player else { return }
+
+        let time = CMTime(seconds: chapter.startTime, preferredTimescale: 600)
+        Task {
+            await player.seek(to: time)
+            print("📖 [Chapters] Jumped to chapter: \(chapter.title ?? "Untitled")")
+        }
     }
 
     func cleanup() {
