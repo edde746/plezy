@@ -37,13 +37,33 @@ dependency_overrides:
   media_kit:
     git:
       url: https://github.com/edde746/media-kit
-      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
+      ref: 6bf03092e10e2f6ce19766ed290c0e6610be76f1
       path: media_kit
+  media_kit_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: 6bf03092e10e2f6ce19766ed290c0e6610be76f1
+      path: media_kit_video
   media_kit_libs_video:
     git:
       url: https://github.com/edde746/media-kit
-      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
+      ref: 6bf03092e10e2f6ce19766ed290c0e6610be76f1
       path: libs/universal/media_kit_libs_video
+  media_kit_libs_macos_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: 6bf03092e10e2f6ce19766ed290c0e6610be76f1
+      path: libs/macos/media_kit_libs_macos_video
+  media_kit_libs_ios_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: 6bf03092e10e2f6ce19766ed290c0e6610be76f1
+      path: libs/ios/media_kit_libs_ios_video
+  media_kit_libs_android_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: 6bf03092e10e2f6ce19766ed290c0e6610be76f1
+      path: libs/android/media_kit_libs_android_video
 
 dev_dependencies:
   flutter_test:

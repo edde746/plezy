@@ -68,6 +68,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   int _boxFitMode = 0;
   bool _isPinching = false; // Track if a pinch gesture is occurring
 
+  // Video cropping state for fill screen mode
+  Size? _playerSize;
+  Size? _videoSize;
+  Timer? _resizeDebounceTimer;
+
   @override
   void initState() {
     super.initState();
@@ -108,6 +113,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       appLogger.w('Failed to determine device type', error: e);
       _isPhone = false; // Default to tablet/desktop (all orientations)
     }
+
+    // Update video filter when dependencies change (orientation, screen size, etc.)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _debouncedUpdateVideoFilter();
+    });
   }
 
   Future<void> _initializePlayer() async {
@@ -137,6 +147,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
             'sub-border-color': settingsService.getSubtitleBorderColor(),
             'sub-back-color':
                 '#${(settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt().toRadixString(16).padLeft(2, '0').toUpperCase()}${settingsService.getSubtitleBackgroundColor().replaceFirst('#', '')}',
+            'sub-ass-override': 'yes',
           },
         ),
       );
@@ -316,6 +327,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           setState(() {
             _availableVersions = playbackData.availableVersions;
           });
+          // Update video filter once dimensions are available
+          _updateVideoFilter();
         }
 
         // Build list of external subtitle tracks for media_kit
@@ -440,6 +453,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     setState(() {
       _boxFitMode = (_boxFitMode + 1) % 3;
     });
+    _updateVideoFilter();
   }
 
   /// Toggle between contain and cover modes only (for pinch gesture)
@@ -447,6 +461,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     setState(() {
       _boxFitMode = _boxFitMode == 0 ? 1 : 0;
     });
+    _updateVideoFilter();
   }
 
   /// Get current BoxFit based on mode
@@ -463,10 +478,182 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
+  /// Calculate crop parameters to match what BoxFit.cover will show
+  Map<String, dynamic>? _calculateCropParameters() {
+    if (_boxFitMode != 1 || _playerSize == null || _videoSize == null) {
+      return null;
+    }
+
+    final playerAspectRatio = _playerSize!.width / _playerSize!.height;
+    final videoAspectRatio = _videoSize!.width / _videoSize!.height;
+
+    // No cropping needed if aspect ratios are very similar
+    if ((playerAspectRatio - videoAspectRatio).abs() < 0.01) {
+      return null;
+    }
+
+    int cropWidth, cropHeight, cropX, cropY;
+
+    // BoxFit.cover scales the video to fill the container, cropping the excess
+    // We need to crop the video to match what will actually be visible
+    if (videoAspectRatio > playerAspectRatio) {
+      // Video is wider than player - BoxFit.cover will crop horizontally
+      // Scale video height to match player height, then crop the width
+      final scale = _playerSize!.height / _videoSize!.height;
+
+      cropHeight = _videoSize!.height.toInt();
+      cropWidth = (_playerSize!.width / scale).toInt();
+      cropX = ((_videoSize!.width - cropWidth) / 2).toInt();
+      cropY = 0;
+    } else {
+      // Video is taller than player - BoxFit.cover will crop vertically
+      // Scale video width to match player width, then crop the height
+      final scale = _playerSize!.width / _videoSize!.width;
+
+      cropWidth = _videoSize!.width.toInt();
+      cropHeight = (_playerSize!.height / scale).toInt();
+      cropX = 0;
+      cropY = ((_videoSize!.height - cropHeight) / 2).toInt();
+    }
+
+    // Calculate subtitle margins to prevent text subtitles from appearing in cropped areas
+    // MPV subtitle coordinates use a normalized system where video height = 720
+    const double subCoordinateHeight = 720.0;
+    const double baseMarginY =
+        40.0; // Base margin from bottom edge (subtitle coordinates)
+    const double baseMarginX =
+        20.0; // Base margin from sides (subtitle coordinates)
+
+    double subMarginX = baseMarginX;
+    double subMarginY = baseMarginY;
+    double subScale = 1.0; // Default scale
+
+    if (videoAspectRatio > playerAspectRatio) {
+      // Horizontal crop - need additional horizontal margins and scaling
+      // Convert pixel margin to subtitle coordinate system
+      final subCoordinateWidth = subCoordinateHeight * videoAspectRatio;
+      final cropMarginX = (cropX / _videoSize!.width) * subCoordinateWidth;
+
+      // Calculate scale factor first
+      subScale = cropWidth / _videoSize!.width;
+
+      // Apply margin accounting for scaling (scaled margins are effectively larger)
+      subMarginX = (baseMarginX + cropMarginX) / subScale;
+    } else {
+      // Vertical crop - need additional vertical margins and scaling
+      // Convert pixel margin to subtitle coordinate system
+      final cropMarginY = (cropY / _videoSize!.height) * subCoordinateHeight;
+
+      // Calculate scale factor first
+      subScale = cropHeight / _videoSize!.height;
+
+      // Apply margin accounting for scaling (scaled margins are effectively larger)
+      subMarginY = (baseMarginY + cropMarginY) / subScale;
+    }
+
+    return {
+      'width': cropWidth,
+      'height': cropHeight,
+      'x': cropX,
+      'y': cropY,
+      'subMarginX': subMarginX.round(),
+      'subMarginY': subMarginY.round(),
+      'subScale': subScale,
+    };
+  }
+
+  /// Get video dimensions from the currently selected media version
+  Size? _getCurrentVideoSize() {
+    if (_availableVersions.isEmpty ||
+        widget.selectedMediaIndex >= _availableVersions.length) {
+      return null;
+    }
+
+    final currentVersion = _availableVersions[widget.selectedMediaIndex];
+    if (currentVersion.width != null && currentVersion.height != null) {
+      return Size(
+        currentVersion.width!.toDouble(),
+        currentVersion.height!.toDouble(),
+      );
+    }
+
+    return null;
+  }
+
+  /// Update the video filter based on current crop mode
+  void _updateVideoFilter() async {
+    if (player == null) return;
+
+    try {
+      final nativePlayer = player!.platform as dynamic;
+
+      if (_boxFitMode == 1) {
+        // Fill screen mode - apply crop filter
+        _videoSize = _getCurrentVideoSize();
+        final cropParams = _calculateCropParameters();
+
+        if (cropParams != null) {
+          final cropFilter =
+              'crop=${cropParams['width']}:${cropParams['height']}:${cropParams['x']}:${cropParams['y']}';
+          appLogger.d(
+            'Applying video filter: $cropFilter (player: $_playerSize, video: $_videoSize)',
+          );
+
+          // Apply crop filter
+          await nativePlayer.setProperty('vf', cropFilter);
+
+          // Apply subtitle margins and scaling to compensate for crop zoom
+          final subMarginX = cropParams['subMarginX']!;
+          final subMarginY = cropParams['subMarginY']!;
+          final subScale = cropParams['subScale']!;
+
+          appLogger.d(
+            'Applying subtitle properties - margins: x=$subMarginX, y=$subMarginY, scale=$subScale',
+          );
+
+          await nativePlayer.setProperty('sub-margin-x', subMarginX.toString());
+          await nativePlayer.setProperty('sub-margin-y', subMarginY.toString());
+          await nativePlayer.setProperty('sub-scale', subScale.toString());
+        } else {
+          // Clear filter but apply base margins if no cropping needed
+          appLogger.d(
+            'Clearing video filter - aspect ratios similar, applying base margins (player: $_playerSize, video: $_videoSize)',
+          );
+          await nativePlayer.setProperty('vf', '');
+          await nativePlayer.setProperty('sub-margin-x', '20'); // Base margin
+          await nativePlayer.setProperty('sub-margin-y', '40'); // Base margin
+          await nativePlayer.setProperty('sub-scale', '1.0'); // Reset scale
+        }
+      } else {
+        // Other modes - clear video filter but apply base margins
+        appLogger.d(
+          'Clearing video filter, applying base margins - BoxFit mode $_boxFitMode',
+        );
+        await nativePlayer.setProperty('vf', '');
+        await nativePlayer.setProperty('sub-margin-x', '20'); // Base margin
+        await nativePlayer.setProperty('sub-margin-y', '40'); // Base margin
+        await nativePlayer.setProperty('sub-scale', '1.0'); // Reset scale
+      }
+    } catch (e) {
+      appLogger.w('Failed to update video filter', error: e);
+    }
+  }
+
+  /// Debounced version of _updateVideoFilter for resize events
+  void _debouncedUpdateVideoFilter() {
+    _resizeDebounceTimer?.cancel();
+    _resizeDebounceTimer = Timer(const Duration(milliseconds: 50), () {
+      _updateVideoFilter();
+    });
+  }
+
   @override
   void dispose() {
     // Stop progress tracking
     _progressTimer?.cancel();
+
+    // Cancel debounce timer
+    _resizeDebounceTimer?.cancel();
 
     // Cancel stream subscriptions
     _playingSubscription?.cancel();
@@ -481,6 +668,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Send final stopped state
     _sendProgress('stopped');
+
+    // Clear video filter and reset subtitle margins before disposing player
+    try {
+      if (player != null) {
+        final nativePlayer = player!.platform as dynamic;
+        nativePlayer.setProperty('vf', '');
+        nativePlayer.setProperty('sub-margin-x', '0');
+        nativePlayer.setProperty('sub-margin-y', '0');
+        nativePlayer.setProperty('sub-scale', '1.0');
+      }
+    } catch (e) {
+      // Ignore errors during cleanup
+    }
 
     // Restore system UI and orientation preferences (skip if navigating to another video)
     if (!_isReplacingWithVideo) {
@@ -1378,19 +1578,46 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
             children: [
               // Video player
               Center(
-                child: Video(
-                  controller: controller!,
-                  fit: _getCurrentBoxFit,
-                  controls: (state) => plexVideoControlsBuilder(
-                    player!,
-                    widget.metadata,
-                    onNext: _nextEpisode != null ? _playNext : null,
-                    onPrevious: _previousEpisode != null ? _playPrevious : null,
-                    availableVersions: _availableVersions,
-                    selectedMediaIndex: widget.selectedMediaIndex,
-                    boxFitMode: _boxFitMode,
-                    onCycleBoxFitMode: _cycleBoxFitMode,
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Update player size when layout changes
+                    final newSize = Size(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
+
+                    // Check if size actually changed to avoid unnecessary updates
+                    if (_playerSize == null ||
+                        (_playerSize!.width - newSize.width).abs() > 0.1 ||
+                        (_playerSize!.height - newSize.height).abs() > 0.1) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          setState(() {
+                            _playerSize = newSize;
+                          });
+                          // Use debounced update for resize events
+                          _debouncedUpdateVideoFilter();
+                        }
+                      });
+                    }
+
+                    return Video(
+                      controller: controller!,
+                      fit: _getCurrentBoxFit,
+                      controls: (state) => plexVideoControlsBuilder(
+                        player!,
+                        widget.metadata,
+                        onNext: _nextEpisode != null ? _playNext : null,
+                        onPrevious: _previousEpisode != null
+                            ? _playPrevious
+                            : null,
+                        availableVersions: _availableVersions,
+                        selectedMediaIndex: widget.selectedMediaIndex,
+                        boxFitMode: _boxFitMode,
+                        onCycleBoxFitMode: _cycleBoxFitMode,
+                      ),
+                    );
+                  },
                 ),
               ),
               // Play Next Dialog
