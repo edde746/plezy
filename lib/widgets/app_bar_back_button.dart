@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Defines the visual style of the back button
 enum BackButtonStyle {
@@ -129,44 +130,70 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
         break;
     }
 
-    final buttonWidget = MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => _onHoverChange(true),
-      onExit: (_) => _onHoverChange(false),
-      child: GestureDetector(
-        onTap: _handlePressed,
-        child: AnimatedBuilder(
-          animation: _backgroundAnimation,
-          builder: (context, child) {
-            final currentColor = Color.lerp(
-              baseColor,
-              hoverColor,
-              _backgroundAnimation.value,
-            );
+    final button = Focus(
+      // Make the button focusable on TV for D-pad navigation
+      autofocus: false,
+      onKeyEvent: (node, event) {
+        // Handle D-pad center/select and Enter key
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.enter ||
+             event.logicalKey == LogicalKeyboardKey.space)) {
+          _handlePressed();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+          return MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => _onHoverChange(true),
+            onExit: (_) => _onHoverChange(false),
+            child: GestureDetector(
+              onTap: _handlePressed,
+              child: AnimatedBuilder(
+                animation: _backgroundAnimation,
+                builder: (context, child) {
+                  final currentColor = Color.lerp(
+                    baseColor,
+                    hoverColor,
+                    _backgroundAnimation.value,
+                  );
 
-            return Container(
-              margin: const EdgeInsets.all(8),
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: currentColor,
-                shape: BoxShape.circle,
+                  return Container(
+                    margin: const EdgeInsets.all(8),
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: currentColor,
+                      shape: BoxShape.circle,
+                      border: isFocused
+                          ? Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            )
+                          : null,
+                    ),
+                    child: Icon(Icons.arrow_back, color: effectiveColor, size: 20),
+                  );
+                },
               ),
-              child: Icon(Icons.arrow_back, color: effectiveColor, size: 20),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
 
-    final button = widget.semanticLabel != null
+    final buttonWidget = widget.semanticLabel != null
         ? Semantics(
             label: widget.semanticLabel,
             button: true,
             excludeSemantics: true,
-            child: buttonWidget,
+            child: button,
           )
-        : buttonWidget;
+        : button;
 
     return widget.style == BackButtonStyle.circular
         ? SafeArea(child: button)
