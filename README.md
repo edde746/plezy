@@ -77,6 +77,25 @@ flutter run
 
 ## Development
 
+### Code Quality
+
+Before submitting changes, ensure your code passes all quality checks:
+
+```bash
+# Format code (including generated files)
+dart format .
+
+# Analyze code for issues
+flutter analyze
+
+# Run tests (if available)
+flutter test
+```
+
+**Note**: CI checks exclude generated files (`.g.dart`, `.freezed.dart`) from formatting and analysis checks. You can run `dart format .` locally to format everything, but only your hand-written code will be validated in CI.
+
+These checks are automatically run in CI for all pull requests.
+
 ### Code Generation
 
 The project uses code generation for JSON serialization. After modifying model classes, run:

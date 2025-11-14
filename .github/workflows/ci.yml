@@ -1,0 +1,122 @@
+name: CI - Sanity Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Code Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-v2-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-v2-
+
+      - name: Install dependencies
+        run: |
+
+          flutter pub get
+
+      - name: Verify formatting
+        run: |
+          # Find all Dart files excluding generated files
+          find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null | while IFS= read -r file; do
+            files_found=true
+            break
+          done
+          if [ "$files_found" != "true" ]; then
+            echo "No Dart files found to format"
+            exit 0
+          fi
+          find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null -print0 | xargs -0 dart format --output=none --set-exit-if-changed
+      - name: Analyze code
+        run: flutter analyze
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-v2-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-v2-
+
+      - name: Install dependencies
+        run: |
+          flutter clean
+          flutter pub get
+
+      - name: Run tests
+        run: |
+          if [ -d "test" ] && [ "$(find test -name '*_test.dart' | wc -l)" -gt 0 ]; then
+            flutter test
+          else
+            echo "No tests found, skipping test execution"
+          fi
+
+  dependency-check:
+    name: Dependency Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-v2-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-v2-
+
+      - name: Verify dependencies
+        run: |
+          flutter clean
+          flutter pub get
+          flutter pub outdated
