@@ -11,6 +11,7 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
 import '../../utils/keyboard_utils.dart';
+import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
 import 'hotkey_recorder_widget.dart';
 import 'about_screen.dart';
@@ -98,8 +99,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 24),
                   _buildVideoPlaybackSection(),
                   const SizedBox(height: 24),
-                  _buildKeyboardShortcutsSection(),
-                  const SizedBox(height: 24),
+                  // Hide keyboard shortcuts on TV
+                  if (!PlatformDetector.isTVSync()) ...[
+                    _buildKeyboardShortcutsSection(),
+                    const SizedBox(height: 24),
+                  ],
                   _buildAdvancedSection(),
                   const SizedBox(height: 24),
                   if (UpdateService.isUpdateCheckEnabled) ...[
