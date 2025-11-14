@@ -76,7 +76,7 @@ class _VideoControlButtonState extends State<VideoControlButton> {
 
     final button = Focus(
       focusNode: _focusNode,
-      onKey: (node, event) {
+      onKeyEvent: (node, event) {
         // Handle Enter/Select key on TV
         if (isTV && event is KeyDownEvent && widget.onPressed != null) {
           if (event.logicalKey == LogicalKeyboardKey.select ||
