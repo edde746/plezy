@@ -16,7 +16,11 @@ struct HomeView: View {
     @State private var showServerSelection = false
     @State private var noServerSelected = false
     @State private var currentHeroIndex = 0
+    @State private var heroProgress: Double = 0.0
     @State private var heroTimer: Timer?
+
+    private let heroDisplayDuration: TimeInterval = 7.0 // 7 seconds per item
+    private let heroTimerInterval: TimeInterval = 0.05 // 50ms updates for smooth progress
 
     private let cache = CacheService.shared
 
@@ -66,7 +70,12 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 40) {
                         // Hero Banner
                         if !onDeck.isEmpty {
-                            HeroBanner(items: onDeck, currentIndex: $currentHeroIndex) { media in
+                            HeroBanner(
+                                items: onDeck,
+                                currentIndex: $currentHeroIndex,
+                                progress: $heroProgress,
+                                onNavigate: navigateHero
+                            ) { media in
                                 selectedMedia = media
                             }
                         }
@@ -121,10 +130,16 @@ struct HomeView: View {
     }
 
     private func startHeroTimer() {
-        heroTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.8)) {
-                if !onDeck.isEmpty {
-                    currentHeroIndex = (currentHeroIndex + 1) % min(onDeck.count, 5)
+        heroTimer = Timer.scheduledTimer(withTimeInterval: heroTimerInterval, repeats: true) { _ in
+            if !onDeck.isEmpty {
+                heroProgress += heroTimerInterval / heroDisplayDuration
+
+                if heroProgress >= 1.0 {
+                    // Move to next item with smooth transition
+                    withAnimation(.easeInOut(duration: 0.6)) {
+                        currentHeroIndex = (currentHeroIndex + 1) % min(onDeck.count, 5)
+                    }
+                    heroProgress = 0.0
                 }
             }
         }
@@ -133,6 +148,18 @@ struct HomeView: View {
     private func stopHeroTimer() {
         heroTimer?.invalidate()
         heroTimer = nil
+    }
+
+    private func resetHeroProgress() {
+        heroProgress = 0.0
+    }
+
+    private func navigateHero(to index: Int) {
+        guard index >= 0 && index < min(onDeck.count, 5) else { return }
+        withAnimation(.easeInOut(duration: 0.6)) {
+            currentHeroIndex = index
+        }
+        resetHeroProgress()
     }
 
     private func loadContent() async {
@@ -221,10 +248,12 @@ struct MediaShelf: View {
                         MediaCard(media: item) {
                             onSelect(item)
                         }
+                        .padding(.vertical, 30) // Padding for focus scale
                     }
                 }
                 .padding(.horizontal, 80)
             }
+            .clipped()
         }
     }
 }
@@ -344,8 +373,11 @@ struct MediaCard: View {
 struct HeroBanner: View {
     let items: [PlexMetadata]
     @Binding var currentIndex: Int
+    @Binding var progress: Double
+    let onNavigate: (Int) -> Void
     let onSelect: (PlexMetadata) -> Void
     @EnvironmentObject var authService: PlexAuthService
+    @GestureState private var dragOffset: CGFloat = 0
 
     var body: some View {
         let heroItems = Array(items.prefix(5))
@@ -353,157 +385,165 @@ struct HeroBanner: View {
         if currentIndex < heroItems.count {
             let item = heroItems[currentIndex]
 
-            ZStack {
-                Button {
-                    onSelect(item)
-                } label: {
-                    ZStack(alignment: .bottomLeading) {
-                    // Background art
-                    AsyncImage(url: artURL(for: item)) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
+            ZStack(alignment: .top) {
+                // Background art with transition
+                TabView(selection: $currentIndex) {
+                    ForEach(0..<heroItems.count, id: \.self) { index in
+                        AsyncImage(url: artURL(for: heroItems[index])) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.3))
+                        }
+                        .frame(height: 600)
+                        .clipped()
+                        .tag(index)
                     }
-                    .frame(height: 600)
-                    .clipped()
-
-                    // Gradient overlay
-                    LinearGradient(
-                        gradient: Gradient(colors: [.clear, .black.opacity(0.8)]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-
-                    // Content
-                    VStack(alignment: .leading, spacing: 15) {
-                        // Show logo or title
-                        if item.type == "episode", let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
-                            AsyncImage(url: logoURL) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFit()
-                            } placeholder: {
-                                Text(item.grandparentTitle ?? item.title)
-                                    .font(.system(size: 72, weight: .heavy, design: .default))
-                                    .foregroundColor(.white)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(height: 600)
+                .ignoresSafeArea()
+                .gesture(
+                    DragGesture()
+                        .onEnded { value in
+                            let threshold: CGFloat = 50
+                            if value.translation.width > threshold && currentIndex > 0 {
+                                onNavigate(currentIndex - 1)
+                            } else if value.translation.width < -threshold && currentIndex < heroItems.count - 1 {
+                                onNavigate(currentIndex + 1)
                             }
-                            .frame(maxWidth: 500, maxHeight: 140, alignment: .leading)
-                        } else {
-                            Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
+                        }
+                )
+
+                // Gradient overlay
+                LinearGradient(
+                    gradient: Gradient(colors: [.clear, .black.opacity(0.8)]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 600)
+
+                // Content
+                VStack(alignment: .leading, spacing: 20) {
+                    Spacer()
+
+                    // Show logo or title
+                    if item.type == "episode", let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
+                        AsyncImage(url: logoURL) { image in
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } placeholder: {
+                            Text(item.grandparentTitle ?? item.title)
                                 .font(.system(size: 72, weight: .heavy, design: .default))
                                 .foregroundColor(.white)
-                                .lineLimit(2)
                         }
+                        .frame(maxWidth: 500, maxHeight: 140, alignment: .leading)
+                    } else {
+                        Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
+                            .font(.system(size: 72, weight: .heavy, design: .default))
+                            .foregroundColor(.white)
+                            .lineLimit(2)
+                            .frame(maxWidth: 700, alignment: .leading)
+                    }
 
-                        // Episode info for TV shows
-                        if item.type == "episode" {
-                            HStack(spacing: 10) {
-                                Text(item.formatSeasonEpisode())
-                                    .font(.system(size: 28, weight: .medium, design: .default))
-                                    .foregroundColor(.white)
-                                Text("·")
-                                    .foregroundColor(.white.opacity(0.7))
-                                Text(item.title)
-                                    .font(.system(size: 28, weight: .medium, design: .default))
-                                    .foregroundColor(.white.opacity(0.9))
+                    // Episode info for TV shows
+                    if item.type == "episode" {
+                        HStack(spacing: 10) {
+                            Text(item.formatSeasonEpisode())
+                                .font(.system(size: 28, weight: .medium, design: .default))
+                                .foregroundColor(.white)
+                            Text("·")
+                                .foregroundColor(.white.opacity(0.7))
+                            Text(item.title)
+                                .font(.system(size: 28, weight: .medium, design: .default))
+                                .foregroundColor(.white.opacity(0.9))
+                                .lineLimit(1)
+                        }
+                    }
+
+                    // Synopsis with maxWidth
+                    if let summary = item.summary {
+                        Text(summary)
+                            .font(.system(size: 24, weight: .regular, design: .default))
+                            .foregroundColor(.white.opacity(0.85))
+                            .lineLimit(3)
+                            .frame(maxWidth: 900, alignment: .leading)
+                    }
+
+                    // Pill-shaped play button (fixed position)
+                    HStack {
+                        Button {
+                            onSelect(item)
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                Text(item.progress > 0 ? "Resume" : "Play")
+                                    .font(.system(size: 24, weight: .semibold))
                             }
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 16)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white)
+                            )
                         }
+                        .buttonStyle(.plain)
 
-                        if let summary = item.summary {
-                            Text(summary)
-                                .font(.system(size: 24, weight: .regular, design: .default))
-                                .foregroundColor(.white.opacity(0.85))
-                                .lineLimit(3)
+                        Spacer()
+                    }
+                    .padding(.top, 10)
+
+                    // Watch progress indicator (for media in progress)
+                    if item.progress > 0 && item.progress < 0.98 {
+                        ZStack(alignment: .leading) {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .frame(height: 4)
+
+                            Rectangle()
+                                .fill(Color.white)
+                                .frame(width: 800 * item.progress, height: 4)
                         }
+                        .frame(width: 800)
+                        .cornerRadius(2)
+                        .padding(.top, 5)
+                    }
+                }
+                .padding(.horizontal, 80)
+                .padding(.bottom, 120)
+                .frame(height: 600, alignment: .bottom)
 
-                        HStack(spacing: 20) {
-                            Button {
-                                onSelect(item)
-                            } label: {
-                                HStack {
-                                    Image(systemName: "play.fill")
-                                    Text(item.progress > 0 ? "Resume" : "Play")
-                                }
-                                .font(.title2)
-                                .padding(.horizontal, 50)
-                                .padding(.vertical, 15)
+                // Progress bars for hero carousel
+                VStack {
+                    HStack(spacing: 8) {
+                        ForEach(0..<heroItems.count, id: \.self) { index in
+                            ZStack(alignment: .leading) {
+                                // Background
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.3))
+                                    .frame(height: 3)
+
+                                // Progress fill
+                                Rectangle()
+                                    .fill(Color.white)
+                                    .frame(width: index == currentIndex ? (UIScreen.main.bounds.width / CGFloat(heroItems.count) - 8) * progress : (index < currentIndex ? (UIScreen.main.bounds.width / CGFloat(heroItems.count) - 8) : 0), height: 3)
                             }
-                            .buttonStyle(CardButtonStyle())
-                        }
-
-                        // Progress indicator
-                        if item.progress > 0 && item.progress < 0.98 {
-                            GeometryReader { geometry in
-                                ZStack(alignment: .leading) {
-                                    Rectangle()
-                                        .fill(Color.white.opacity(0.3))
-                                        .frame(height: 4)
-
-                                    Rectangle()
-                                        .fill(Color.orange)
-                                        .frame(width: geometry.size.width * item.progress, height: 4)
-                                }
-                            }
-                            .frame(height: 4)
-                            .frame(maxWidth: 800)
+                            .cornerRadius(1.5)
                         }
                     }
                     .padding(.horizontal, 80)
-                    .padding(.bottom, 60)
-                }
-                }
-                .buttonStyle(.plain)
-
-                // Navigation buttons
-                HStack {
-                    // Previous button
-                    if currentIndex > 0 {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                currentIndex -= 1
-                            }
-                        } label: {
-                            Image(systemName: "chevron.left.circle.fill")
-                                .font(.system(size: 50))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.leading, 40)
-                    }
+                    .padding(.top, 40)
 
                     Spacer()
-
-                    // Next button
-                    if currentIndex < heroItems.count - 1 {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.5)) {
-                                currentIndex += 1
-                            }
-                        } label: {
-                            Image(systemName: "chevron.right.circle.fill")
-                                .font(.system(size: 50))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.trailing, 40)
-                    }
                 }
-                .padding(.bottom, 100)
-
-                // Pagination dots
-                HStack(spacing: 12) {
-                    ForEach(0..<heroItems.count, id: \.self) { index in
-                        Circle()
-                            .fill(index == currentIndex ? Color.orange : Color.white.opacity(0.5))
-                            .frame(width: 12, height: 12)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, 30)
+                .frame(height: 600)
             }
+            .frame(height: 600)
         }
     }
 
@@ -564,10 +604,12 @@ struct ContinueWatchingShelf: View {
                         LandscapeMediaCard(media: item) {
                             onSelect(item)
                         }
+                        .padding(.vertical, 40) // Padding for focus scale
                     }
                 }
                 .padding(.horizontal, 80)
             }
+            .clipped()
         }
     }
 }
