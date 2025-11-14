@@ -285,15 +285,28 @@ struct MediaCard: View {
                     }
                     .frame(width: 300, height: 450)
 
-                    // Progress indicator
+                    // Progress indicator with Liquid Glass styling
                     if media.progress > 0 && media.progress < 0.98 {
                         VStack(spacing: 0) {
                             GeometryReader { geometry in
-                                Rectangle()
-                                    .fill(Color.orange)
-                                    .frame(width: geometry.size.width * media.progress)
+                                ZStack(alignment: .leading) {
+                                    Capsule()
+                                        .fill(.ultraThinMaterial)
+                                        .opacity(0.3)
+
+                                    Capsule()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [.white, .white.opacity(0.95)],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .frame(width: geometry.size.width * media.progress)
+                                        .shadow(color: .white.opacity(0.3), radius: 1)
+                                }
                             }
-                            .frame(height: 6)
+                            .frame(height: 4)
                         }
                     }
 
@@ -308,9 +321,16 @@ struct MediaCard: View {
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.white.opacity(isFocused ? 0.5 : 0.0), lineWidth: 3)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: isFocused ? [.white.opacity(0.6), .white.opacity(0.3)] : [.clear, .clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isFocused ? 3 : 0
+                        )
                 )
-                .shadow(color: .black.opacity(0.5), radius: isFocused ? 30 : 15, x: 0, y: isFocused ? 15 : 8)
+                .shadow(color: .black.opacity(isFocused ? 0.6 : 0.4), radius: isFocused ? 30 : 15, x: 0, y: isFocused ? 15 : 8)
                 .scaleEffect(isFocused ? 1.08 : 1.0)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
 
@@ -473,7 +493,7 @@ struct HeroBanner: View {
                             .frame(maxWidth: 900, alignment: .leading)
                     }
 
-                    // Pill-shaped play button (fixed position)
+                    // Pill-shaped play button with clear Liquid Glass (fixed position)
                     HStack {
                         Button {
                             onSelect(item)
@@ -484,33 +504,34 @@ struct HeroBanner: View {
                                 Text(item.progress > 0 ? "Resume" : "Play")
                                     .font(.system(size: 24, weight: .semibold))
                             }
-                            .foregroundColor(.black)
-                            .padding(.horizontal, 40)
-                            .padding(.vertical, 16)
-                            .background(
-                                Capsule()
-                                    .fill(Color.white)
-                            )
+                            .foregroundColor(.white)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.clearGlass)
 
                         Spacer()
                     }
                     .padding(.top, 10)
 
-                    // Watch progress indicator (for media in progress)
+                    // Watch progress indicator with Liquid Glass (for media in progress)
                     if item.progress > 0 && item.progress < 0.98 {
                         ZStack(alignment: .leading) {
-                            Rectangle()
-                                .fill(Color.white.opacity(0.3))
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                                .opacity(0.3)
                                 .frame(height: 4)
 
-                            Rectangle()
-                                .fill(Color.white)
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.white, .white.opacity(0.95)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                                 .frame(width: 800 * item.progress, height: 4)
+                                .shadow(color: .white.opacity(0.4), radius: 2)
                         }
                         .frame(width: 800)
-                        .cornerRadius(2)
                         .padding(.top, 5)
                     }
                 }
@@ -518,22 +539,35 @@ struct HeroBanner: View {
                 .padding(.bottom, 120)
                 .frame(height: 600, alignment: .bottom)
 
-                // Progress bars for hero carousel
+                // Progress bars for hero carousel with Liquid Glass styling
                 VStack {
                     HStack(spacing: 8) {
                         ForEach(0..<heroItems.count, id: \.self) { index in
-                            ZStack(alignment: .leading) {
-                                // Background
-                                Rectangle()
-                                    .fill(Color.white.opacity(0.3))
-                                    .frame(height: 3)
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    // Background with subtle material
+                                    Capsule()
+                                        .fill(.ultraThinMaterial)
+                                        .opacity(0.4)
+                                        .frame(height: 3)
 
-                                // Progress fill
-                                Rectangle()
-                                    .fill(Color.white)
-                                    .frame(width: index == currentIndex ? (UIScreen.main.bounds.width / CGFloat(heroItems.count) - 8) * progress : (index < currentIndex ? (UIScreen.main.bounds.width / CGFloat(heroItems.count) - 8) : 0), height: 3)
+                                    // Progress fill with glow effect
+                                    Capsule()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [.white, .white.opacity(0.9)],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .frame(
+                                            width: index == currentIndex ? geo.size.width * progress : (index < currentIndex ? geo.size.width : 0),
+                                            height: 3
+                                        )
+                                        .shadow(color: .white.opacity(0.5), radius: index == currentIndex ? 2 : 0)
+                                }
                             }
-                            .cornerRadius(1.5)
+                            .frame(height: 3)
                         }
                     }
                     .padding(.horizontal, 80)
@@ -675,24 +709,38 @@ struct LandscapeMediaCard: View {
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.white.opacity(isFocused ? 0.6 : 0.0), lineWidth: 3)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: isFocused ? [.white.opacity(0.7), .white.opacity(0.4)] : [.clear, .clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isFocused ? 3 : 0
+                        )
                 )
-                .shadow(color: .black.opacity(0.6), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
+                .shadow(color: .black.opacity(isFocused ? 0.7 : 0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
                 .scaleEffect(isFocused ? 1.1 : 1.0)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
 
-                // Progress bar below card
+                // Progress bar below card with Liquid Glass styling
                 if media.progress > 0 && media.progress < 0.98 {
                     ZStack(alignment: .leading) {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.2))
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .opacity(0.3)
                             .frame(width: 500, height: 4)
 
-                        Rectangle()
-                            .fill(Color.white)
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.white, .white.opacity(0.95)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .frame(width: 500 * media.progress, height: 4)
+                            .shadow(color: .white.opacity(0.3), radius: 1)
                     }
-                    .cornerRadius(2)
                 }
 
                 // Episode info below card

@@ -63,9 +63,49 @@ struct CardButtonStyle: ButtonStyle {
     }
 }
 
+/// Clear Liquid Glass button style for media overlays
+/// Uses highly translucent material ideal for rich media backgrounds
+struct ClearGlassButtonStyle: ButtonStyle {
+    @FocusState private var isFocused: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 40)
+            .padding(.vertical, 16)
+            .background(
+                ZStack {
+                    // Dark dimming layer (35% opacity) for contrast over bright content
+                    Capsule()
+                        .fill(Color.black.opacity(0.35))
+
+                    // Clear Liquid Glass material
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .opacity(configuration.isPressed ? 0.7 : (isFocused ? 1.0 : 0.9))
+                }
+            )
+            .overlay(
+                Capsule()
+                    .stroke(Color.white.opacity(isFocused ? 0.6 : 0.3), lineWidth: 2)
+            )
+            .shadow(color: .black.opacity(0.5), radius: isFocused ? 25 : 12, x: 0, y: isFocused ? 12 : 6)
+            .scaleEffect(configuration.isPressed ? 0.95 : (isFocused ? 1.1 : 1.0))
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .focused($isFocused)
+            .focusable()
+    }
+}
+
 extension ButtonStyle where Self == CardButtonStyle {
     static var card: CardButtonStyle {
         CardButtonStyle()
+    }
+}
+
+extension ButtonStyle where Self == ClearGlassButtonStyle {
+    static var clearGlass: ClearGlassButtonStyle {
+        ClearGlassButtonStyle()
     }
 }
 
