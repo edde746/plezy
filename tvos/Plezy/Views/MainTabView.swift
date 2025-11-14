@@ -46,6 +46,7 @@ struct MainTabView: View {
                 }
                 .tag(4)
         }
+        .tabViewStyle(.automatic)
         .onAppear {
             print("📱 [MainTabView] MainTabView appeared")
         }

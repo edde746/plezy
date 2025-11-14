@@ -58,6 +58,7 @@ struct CardButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.95 : (isFocused ? 1.08 : 1.0))
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
             .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .focusEffectDisabled()
             .focused($isFocused)
             .focusable()
     }
@@ -92,6 +93,7 @@ struct ClearGlassButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.95 : (isFocused ? 1.1 : 1.0))
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
             .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .focusEffectDisabled()
             .focused($isFocused)
             .focusable()
     }

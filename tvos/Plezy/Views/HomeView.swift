@@ -353,6 +353,7 @@ struct MediaCard: View {
             }
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .onFocusChange(true) { focused in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isFocused = focused
@@ -424,6 +425,7 @@ struct HeroBanner: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .frame(height: 600)
                 .ignoresSafeArea()
+                .focusable()
 
                 // Gradient overlay
                 LinearGradient(
@@ -527,43 +529,39 @@ struct HeroBanner: View {
                 .padding(.bottom, 120)
                 .frame(height: 600, alignment: .bottom)
 
-                // Progress bars for hero carousel with Liquid Glass styling
-                VStack {
-                    HStack(spacing: 8) {
-                        ForEach(0..<heroItems.count, id: \.self) { index in
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    // Background with subtle material
-                                    Capsule()
-                                        .fill(.ultraThinMaterial)
-                                        .opacity(0.4)
-                                        .frame(height: 3)
+                // Pagination dots at bottom with expanding countdown
+                HStack(spacing: 12) {
+                    ForEach(0..<heroItems.count, id: \.self) { index in
+                        ZStack {
+                            // Background dot
+                            Circle()
+                                .fill(Color.white.opacity(0.3))
+                                .frame(width: 8, height: 8)
 
-                                    // Progress fill with glow effect
-                                    Capsule()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [.white, .white.opacity(0.9)],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
-                                        .frame(
-                                            width: index == currentIndex ? geo.size.width * progress : (index < currentIndex ? geo.size.width : 0),
-                                            height: 3
-                                        )
-                                        .shadow(color: .white.opacity(0.5), radius: index == currentIndex ? 2 : 0)
-                                }
+                            // Expanding progress ring for current item
+                            if index == currentIndex {
+                                Circle()
+                                    .trim(from: 0, to: progress)
+                                    .stroke(
+                                        Color.white,
+                                        style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                                    )
+                                    .frame(width: 14, height: 14)
+                                    .rotationEffect(.degrees(-90))
+                                    .shadow(color: .white.opacity(0.5), radius: 2)
                             }
-                            .frame(height: 3)
+
+                            // Filled dot for completed items
+                            if index < currentIndex {
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 8, height: 8)
+                            }
                         }
                     }
-                    .padding(.horizontal, 80)
-                    .padding(.top, 40)
-
-                    Spacer()
                 }
-                .frame(height: 600)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, 40)
             }
             .frame(height: 600)
         }
@@ -751,6 +749,7 @@ struct LandscapeMediaCard: View {
             }
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .onFocusChange(true) { focused in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isFocused = focused
