@@ -12,7 +12,9 @@ import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_video_playback_data.dart';
+import '../network/endpoint_failover_interceptor.dart';
 import '../utils/app_logger.dart';
+import '../utils/log_redaction_manager.dart';
 
 /// Result of testing a connection, including success status and latency
 class ConnectionTestResult {
@@ -25,6 +27,8 @@ class ConnectionTestResult {
 class PlexClient {
   PlexConfig config;
   late final Dio _dio;
+  final EndpointFailoverManager? _endpointManager;
+  final Future<void> Function(String newBaseUrl)? _onEndpointChanged;
 
   /// Custom response decoder that handles malformed UTF-8 gracefully
   static String _lenientUtf8Decoder(
@@ -35,7 +39,18 @@ class PlexClient {
     return utf8.decode(responseBytes, allowMalformed: true);
   }
 
-  PlexClient(this.config) {
+  PlexClient(
+    this.config, {
+    List<String>? prioritizedEndpoints,
+    Future<void> Function(String newBaseUrl)? onEndpointChanged,
+  })  : _endpointManager = (prioritizedEndpoints != null &&
+                prioritizedEndpoints.isNotEmpty)
+            ? EndpointFailoverManager(prioritizedEndpoints)
+            : null,
+        _onEndpointChanged = onEndpointChanged {
+    LogRedactionManager.registerServerUrl(config.baseUrl);
+    LogRedactionManager.registerToken(config.token);
+
     _dio = Dio(
       BaseOptions(
         baseUrl: config.baseUrl,
@@ -59,6 +74,16 @@ class PlexClient {
         responseHeader: false,
       ),
     );
+
+    if (_endpointManager != null) {
+      _dio.interceptors.add(
+        EndpointFailoverInterceptor(
+          dio: _dio,
+          endpointManager: _endpointManager,
+          onEndpointSwitch: _handleEndpointSwitch,
+        ),
+      );
+    }
   }
 
   /// Update the token used by this client
@@ -66,7 +91,29 @@ class PlexClient {
     // Update both the Dio headers and the config to ensure consistency
     _dio.options.headers['X-Plex-Token'] = newToken;
     config = config.copyWith(token: newToken);
+    LogRedactionManager.registerToken(newToken);
     appLogger.d('PlexClient token updated (headers and config)');
+  }
+
+  /// Update endpoint priority list and optionally hop to the new best endpoint.
+  Future<void> updateEndpointPreferences(
+    List<String> prioritizedEndpoints, {
+    bool switchToFirst = false,
+  }) async {
+    if (_endpointManager == null || prioritizedEndpoints.isEmpty) {
+      return;
+    }
+
+    final targetBaseUrl =
+        switchToFirst ? prioritizedEndpoints.first : config.baseUrl;
+    _endpointManager.reset(
+      prioritizedEndpoints,
+      currentBaseUrl: targetBaseUrl,
+    );
+
+    if (switchToFirst && targetBaseUrl != config.baseUrl) {
+      await _handleEndpointSwitch(targetBaseUrl);
+    }
   }
 
   /// Test connection to server
@@ -1208,5 +1255,20 @@ class PlexClient {
   /// Analyze library section
   Future<void> analyzeLibrary(String sectionId) async {
     await _dio.get('/library/sections/$sectionId/analyze');
+  }
+
+  Future<void> _handleEndpointSwitch(String newBaseUrl) async {
+    if (config.baseUrl == newBaseUrl) {
+      return;
+    }
+
+    appLogger.i('Applying Plex endpoint switch', error: newBaseUrl);
+    _dio.options.baseUrl = newBaseUrl;
+    config = config.copyWith(baseUrl: newBaseUrl);
+    LogRedactionManager.registerServerUrl(newBaseUrl);
+
+    if (_onEndpointChanged != null) {
+      await _onEndpointChanged(newBaseUrl);
+    }
   }
 }

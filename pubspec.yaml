@@ -28,6 +28,7 @@ dependencies:
   qr_flutter: ^4.1.0
   slang: ^3.31.2
   slang_flutter: ^3.31.0
+  connectivity_plus: ^6.0.5
   os_media_controls:
     git:
       url: https://github.com/edde746/os-media-controls
