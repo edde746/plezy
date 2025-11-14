@@ -7,8 +7,7 @@
 
 import Foundation
 
-@MainActor
-class CacheService: ObservableObject {
+class CacheService {
     static let shared = CacheService()
 
     private struct CacheEntry<T> {

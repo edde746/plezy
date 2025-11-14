@@ -390,10 +390,11 @@ struct HeroBanner: View {
         if currentIndex < heroItems.count {
             let item = heroItems[currentIndex]
 
-            Button {
-                onSelect(item)
-            } label: {
-                ZStack(alignment: .bottomLeading) {
+            ZStack {
+                Button {
+                    onSelect(item)
+                } label: {
+                    ZStack(alignment: .bottomLeading) {
                     // Background art
                     AsyncImage(url: artURL(for: item)) { image in
                         image
@@ -490,8 +491,56 @@ struct HeroBanner: View {
                     .padding(.horizontal, 80)
                     .padding(.bottom, 60)
                 }
+                }
+                .buttonStyle(.plain)
+
+                // Navigation buttons
+                HStack {
+                    // Previous button
+                    if currentIndex > 0 {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                currentIndex -= 1
+                            }
+                        } label: {
+                            Image(systemName: "chevron.left.circle.fill")
+                                .font(.system(size: 50))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.leading, 40)
+                    }
+
+                    Spacer()
+
+                    // Next button
+                    if currentIndex < heroItems.count - 1 {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                currentIndex += 1
+                            }
+                        } label: {
+                            Image(systemName: "chevron.right.circle.fill")
+                                .font(.system(size: 50))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 40)
+                    }
+                }
+                .padding(.bottom, 100)
+
+                // Pagination dots
+                HStack(spacing: 12) {
+                    ForEach(0..<heroItems.count, id: \.self) { index in
+                        Circle()
+                            .fill(index == currentIndex ? Color.orange : Color.white.opacity(0.5))
+                            .frame(width: 12, height: 12)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.bottom, 30)
             }
-            .buttonStyle(.plain)
         }
     }
 
