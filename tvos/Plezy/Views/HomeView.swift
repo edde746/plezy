@@ -411,6 +411,7 @@ struct MediaCard: View {
         }
         .buttonStyle(.plain)
         .focused($isFocused)
+        .focusable()
         .scaleEffect(isFocused ? 1.04 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
         .accessibilityLabel(accessibilityLabel)
@@ -830,6 +831,7 @@ struct LandscapeMediaCard: View {
         }
         .buttonStyle(.plain)
         .focused($isFocused)
+        .focusable()
         .scaleEffect(isFocused ? 1.05 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
         .accessibilityLabel(accessibilityLabel)
