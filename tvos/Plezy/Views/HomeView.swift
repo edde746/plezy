@@ -415,10 +415,38 @@ struct HeroBanner: View {
 
                     // Content
                     VStack(alignment: .leading, spacing: 15) {
-                        Text(item.displayTitle)
-                            .font(.system(size: 56, weight: .bold))
-                            .foregroundColor(.white)
-                            .lineLimit(2)
+                        // Show logo or title
+                        if item.type == "episode", let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
+                            AsyncImage(url: logoURL) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFit()
+                            } placeholder: {
+                                Text(item.grandparentTitle ?? item.title)
+                                    .font(.system(size: 56, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: 500, maxHeight: 120, alignment: .leading)
+                        } else {
+                            Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
+                                .font(.system(size: 56, weight: .bold))
+                                .foregroundColor(.white)
+                                .lineLimit(2)
+                        }
+
+                        // Episode info for TV shows
+                        if item.type == "episode" {
+                            HStack(spacing: 10) {
+                                Text(item.formatSeasonEpisode())
+                                    .font(.title2)
+                                    .foregroundColor(.white)
+                                Text("·")
+                                    .foregroundColor(.white.opacity(0.7))
+                                Text(item.title)
+                                    .font(.title2)
+                                    .foregroundColor(.white.opacity(0.9))
+                            }
+                        }
 
                         if let summary = item.summary {
                             Text(summary)
@@ -476,6 +504,27 @@ struct HeroBanner: View {
         }
 
         var urlString = baseURL.absoluteString + art
+        if let token = server.accessToken {
+            urlString += "?X-Plex-Token=\(token)"
+        }
+
+        return URL(string: urlString)
+    }
+
+    private func logoURL(for clearLogo: String) -> URL? {
+        // clearLogo already includes the full URL from the Image array
+        if clearLogo.starts(with: "http") {
+            return URL(string: clearLogo)
+        }
+
+        // Fallback to building URL if it's a relative path
+        guard let server = authService.selectedServer,
+              let connection = server.connections.first,
+              let baseURL = connection.url else {
+            return nil
+        }
+
+        var urlString = baseURL.absoluteString + clearLogo
         if let token = server.accessToken {
             urlString += "?X-Plex-Token=\(token)"
         }
@@ -646,11 +695,17 @@ struct LandscapeMediaCard: View {
               let server = authService.selectedServer,
               let connection = server.connections.first,
               let baseURL = connection.url,
-              let thumb = media.grandparentThumb else {
+              let clearLogo = media.clearLogo else {
             return nil
         }
 
-        var urlString = baseURL.absoluteString + thumb
+        // clearLogo already includes the full URL from the Image array
+        if clearLogo.starts(with: "http") {
+            return URL(string: clearLogo)
+        }
+
+        // Fallback to building URL if it's a relative path
+        var urlString = baseURL.absoluteString + clearLogo
         if let token = server.accessToken {
             urlString += "?X-Plex-Token=\(token)"
         }

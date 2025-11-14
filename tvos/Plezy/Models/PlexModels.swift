@@ -196,7 +196,15 @@ struct PlexMetadata: Codable, Identifiable {
     let writer: [PlexTag]?
     let country: [PlexTag]?
 
+    // Images (for clearLogo, etc.)
+    let Image: [PlexImage]?
+
     var id: String { ratingKey }
+
+    // Extract clearLogo from Image array
+    var clearLogo: String? {
+        Image?.first(where: { $0.type == "clearLogo" })?.url
+    }
 
     var isWatched: Bool {
         if let viewCount = viewCount, viewCount > 0 {
@@ -321,6 +329,11 @@ struct PlexRole: Codable {
 
 struct PlexTag: Codable {
     let tag: String
+}
+
+struct PlexImage: Codable {
+    let type: String
+    let url: String
 }
 
 // MARK: - Hubs (Content Discovery)

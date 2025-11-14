@@ -144,7 +144,13 @@ class PlexAPIClient {
 
     func getOnDeck() async throws -> [PlexMetadata] {
         print("📚 [API] Requesting OnDeck from /library/onDeck")
-        let response: PlexResponse<PlexMetadata> = try await request(path: "/library/onDeck")
+        let queryItems = [
+            URLQueryItem(name: "includeImages", value: "1")
+        ]
+        let response: PlexResponse<PlexMetadata> = try await request(
+            path: "/library/onDeck",
+            queryItems: queryItems
+        )
         let container = response.MediaContainer
         print("📚 [API] OnDeck response - size: \(container.size), items: \(container.items.count)")
         return container.items
