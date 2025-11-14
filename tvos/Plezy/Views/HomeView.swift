@@ -62,47 +62,35 @@ struct HomeView: View {
                     .buttonStyle(CardButtonStyle())
                 }
             } else {
-                GeometryReader { geometry in
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            // Hero with Continue Watching overlay
-                            ZStack(alignment: .bottom) {
-                                // Hero Banner (fullscreen)
-                                if !onDeck.isEmpty {
-                                    HeroBanner(items: onDeck, currentIndex: $currentHeroIndex) { media in
-                                        selectedMedia = media
-                                    }
-                                    .frame(height: geometry.size.height)
-                                }
-
-                                // Continue Watching overlaid at bottom
-                                if !onDeck.isEmpty {
-                                    ContinueWatchingShelf(items: onDeck) { media in
-                                        selectedMedia = media
-                                    }
-                                    .padding(.bottom, 60)
-                                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 40) {
+                        // Hero Banner
+                        if !onDeck.isEmpty {
+                            HeroBanner(items: onDeck, currentIndex: $currentHeroIndex) { media in
+                                selectedMedia = media
                             }
-                            .frame(height: geometry.size.height)
+                        }
 
-                            // Hubs section
-                            VStack(alignment: .leading, spacing: 40) {
-                                ForEach(hubs) { hub in
-                                    if let items = hub.metadata, !items.isEmpty {
-                                        MediaShelf(title: hub.title, items: items) { media in
-                                            selectedMedia = media
-                                        }
-                                    } else {
-                                        // Debug: Show why hub is not displaying
-                                        let _ = print("🏠 [HomeView] Skipping hub '\(hub.title)' - has metadata: \(hub.metadata != nil), count: \(hub.metadata?.count ?? 0)")
-                                    }
-                                }
+                        // Continue Watching
+                        if !onDeck.isEmpty {
+                            ContinueWatchingShelf(items: onDeck) { media in
+                                selectedMedia = media
                             }
-                            .padding(.top, 40)
-                            .padding(.bottom, 40)
-                            .background(Color.black)
+                        }
+
+                        // Hubs
+                        ForEach(hubs) { hub in
+                            if let items = hub.metadata, !items.isEmpty {
+                                MediaShelf(title: hub.title, items: items) { media in
+                                    selectedMedia = media
+                                }
+                            } else {
+                                // Debug: Show why hub is not displaying
+                                let _ = print("🏠 [HomeView] Skipping hub '\(hub.title)' - has metadata: \(hub.metadata != nil), count: \(hub.metadata?.count ?? 0)")
+                            }
                         }
                     }
+                    .padding(.bottom, 40)
                 }
             }
         }
@@ -569,7 +557,6 @@ struct ContinueWatchingShelf: View {
                 .font(.system(size: 38, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding(.horizontal, 80)
-                .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 30) {
@@ -580,18 +567,8 @@ struct ContinueWatchingShelf: View {
                     }
                 }
                 .padding(.horizontal, 80)
-                .padding(.bottom, 20)
             }
         }
-        .padding(.top, 30)
-        .background(
-            LinearGradient(
-                gradient: Gradient(colors: [Color.clear, Color.black.opacity(0.6), Color.black.opacity(0.9)]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-        .background(.ultraThinMaterial.opacity(0.3))
     }
 }
 
