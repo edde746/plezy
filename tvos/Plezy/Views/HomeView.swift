@@ -376,7 +376,6 @@ struct MediaCard: View {
             }
         }
         .buttonStyle(.plain)
-        .focusEffectDisabled()
         .onFocusChange(true) { focused in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isFocused = focused
@@ -773,7 +772,6 @@ struct LandscapeMediaCard: View {
             }
         }
         .buttonStyle(.plain)
-        .focusEffectDisabled()
         .onFocusChange(true) { focused in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isFocused = focused
