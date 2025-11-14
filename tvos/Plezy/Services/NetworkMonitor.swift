@@ -8,6 +8,7 @@
 import Foundation
 import Network
 import SwiftUI
+import Combine
 
 /// Monitors network connectivity and notifies observers of status changes
 @MainActor
@@ -71,7 +72,7 @@ class NetworkMonitor: ObservableObject {
         print("🌐 [NetworkMonitor] Started monitoring")
     }
 
-    func stopMonitoring() {
+    nonisolated func stopMonitoring() {
         monitor.cancel()
         print("🌐 [NetworkMonitor] Stopped monitoring")
     }

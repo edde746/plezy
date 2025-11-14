@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct TVShowsLibraryView: View {
     @EnvironmentObject var authService: PlexAuthService

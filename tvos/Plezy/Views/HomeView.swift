@@ -426,9 +426,7 @@ struct MediaCard: View {
         }
         if media.type == "episode", let show = media.grandparentTitle {
             label = "\(show), \(media.title)"
-            if let seasonEp = media.formatSeasonEpisode() {
-                label += " \(seasonEp)"
-            }
+            label += " \(media.formatSeasonEpisode())"
         }
         return label
     }
@@ -842,9 +840,7 @@ struct LandscapeMediaCard: View {
     private var accessibilityLabel: String {
         if media.type == "episode", let show = media.grandparentTitle {
             var label = "\(show), \(media.title)"
-            if let seasonEp = media.formatSeasonEpisode() {
-                label += " \(seasonEp)"
-            }
+            label += " \(media.formatSeasonEpisode())"
             if media.progress > 0 {
                 let percent = Int(media.progress * 100)
                 label += ", \(percent)% watched"
