@@ -143,7 +143,10 @@ struct LibraryContentView: View {
                         ], spacing: 40) {
                             ForEach(filteredItems) { item in
                                 MediaCard(media: item) {
+                                    print("🎯 [LibraryContent] Item tapped in \(library.title): \(item.title)")
+                                    print("🎯 [LibraryContent] Setting selectedMedia to trigger sheet")
                                     selectedMedia = item
+                                    print("🎯 [LibraryContent] selectedMedia set to: \(String(describing: selectedMedia?.title))")
                                 }
                             }
                         }
@@ -156,8 +159,15 @@ struct LibraryContentView: View {
             await loadContent()
         }
         .sheet(item: $selectedMedia) { media in
-            MediaDetailView(media: media)
+            print("📱 [LibraryContent] Sheet presenting MediaDetailView for: \(media.title)")
+            return MediaDetailView(media: media)
                 .environmentObject(authService)
+                .onAppear {
+                    print("📱 [LibraryContent] MediaDetailView appeared for: \(media.title)")
+                }
+        }
+        .onChange(of: selectedMedia) { oldValue, newValue in
+            print("🔄 [LibraryContent] selectedMedia changed from \(oldValue?.title ?? "nil") to \(newValue?.title ?? "nil")")
         }
     }
 

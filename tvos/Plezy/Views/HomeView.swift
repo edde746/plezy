@@ -77,14 +77,20 @@ struct HomeView: View {
                                 progress: $heroProgress,
                                 onNavigate: navigateHero
                             ) { media in
+                                print("🎯 [HomeView] Hero play button tapped for: \(media.title)")
+                                print("🎯 [HomeView] Setting playingMedia to trigger fullScreenCover")
                                 playingMedia = media
+                                print("🎯 [HomeView] playingMedia set to: \(String(describing: playingMedia?.title))")
                             }
                         }
 
                         // Continue Watching
                         if !onDeck.isEmpty {
                             ContinueWatchingShelf(items: onDeck) { media in
+                                print("🎯 [HomeView] Continue Watching item tapped for: \(media.title)")
+                                print("🎯 [HomeView] Setting playingMedia to trigger fullScreenCover")
                                 playingMedia = media
+                                print("🎯 [HomeView] playingMedia set to: \(String(describing: playingMedia?.title))")
                             }
                         }
 
@@ -92,7 +98,10 @@ struct HomeView: View {
                         ForEach(hubs) { hub in
                             if let items = hub.metadata, !items.isEmpty {
                                 MediaShelf(title: hub.title, items: items) { media in
+                                    print("🎯 [HomeView] Hub '\(hub.title)' item tapped for: \(media.title)")
+                                    print("🎯 [HomeView] Setting selectedMedia to trigger sheet")
                                     selectedMedia = media
+                                    print("🎯 [HomeView] selectedMedia set to: \(String(describing: selectedMedia?.title))")
                                 }
                             } else {
                                 // Debug: Show why hub is not displaying
@@ -116,12 +125,26 @@ struct HomeView: View {
             await loadContent()
         }
         .sheet(item: $selectedMedia) { media in
-            MediaDetailView(media: media)
+            print("📱 [HomeView] Sheet presenting MediaDetailView for: \(media.title)")
+            return MediaDetailView(media: media)
                 .environmentObject(authService)
+                .onAppear {
+                    print("📱 [HomeView] MediaDetailView appeared for: \(media.title)")
+                }
         }
         .fullScreenCover(item: $playingMedia) { media in
-            VideoPlayerView(media: media)
+            print("🎬 [HomeView] FullScreenCover presenting VideoPlayerView for: \(media.title)")
+            return VideoPlayerView(media: media)
                 .environmentObject(authService)
+                .onAppear {
+                    print("🎬 [HomeView] VideoPlayerView appeared for: \(media.title)")
+                }
+        }
+        .onChange(of: selectedMedia) { oldValue, newValue in
+            print("🔄 [HomeView] selectedMedia changed from \(oldValue?.title ?? "nil") to \(newValue?.title ?? "nil")")
+        }
+        .onChange(of: playingMedia) { oldValue, newValue in
+            print("🔄 [HomeView] playingMedia changed from \(oldValue?.title ?? "nil") to \(newValue?.title ?? "nil")")
         }
         .sheet(isPresented: $showServerSelection) {
             ServerSelectionView()

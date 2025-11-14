@@ -18,11 +18,16 @@ struct VideoPlayerView: View {
     @StateObject private var playerManager: VideoPlayerManager
 
     init(media: PlexMetadata) {
+        print("🎥 [VideoPlayerView] init() called for: \(media.title)")
         self.media = media
         _playerManager = StateObject(wrappedValue: VideoPlayerManager(media: media))
     }
 
     var body: some View {
+        let _ = print("🎥 [VideoPlayerView] body evaluated for: \(media.title)")
+        let _ = print("🎥 [VideoPlayerView] playerViewController: \(playerManager.playerViewController != nil)")
+        let _ = print("🎥 [VideoPlayerView] isLoading: \(playerManager.isLoading)")
+        let _ = print("🎥 [VideoPlayerView] error: \(playerManager.error ?? "none")")
         ZStack {
             Color.black.ignoresSafeArea()
 
@@ -30,11 +35,15 @@ struct VideoPlayerView: View {
                 TVPlayerViewController(playerManager: playerManager)
                     .ignoresSafeArea()
                     .onAppear {
+                        print("👁️ [VideoPlayerView] TVPlayerViewController appeared for: \(media.title)")
+                        print("👁️ [VideoPlayerView] Has authService: \(authService)")
+                        print("👁️ [VideoPlayerView] Starting player setup...")
                         Task {
                             await playerManager.setupPlayer(authService: authService)
                         }
                     }
                     .onDisappear {
+                        print("👋 [VideoPlayerView] TVPlayerViewController disappeared for: \(media.title)")
                         playerManager.cleanup()
                     }
             } else if playerManager.isLoading {

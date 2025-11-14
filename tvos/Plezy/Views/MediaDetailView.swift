@@ -18,6 +18,7 @@ struct MediaDetailView: View {
     @State private var showVideoPlayer = false
 
     var body: some View {
+        let _ = print("📄 [MediaDetailView] body evaluated for: \(media.title)")
         ZStack {
             // Background with backdrop
             if let artURL = artworkURL {
@@ -145,7 +146,10 @@ struct MediaDetailView: View {
                             HStack(spacing: 20) {
                                 // Play button
                                 Button {
+                                    print("▶️ [MediaDetailView] Play button tapped for: \(displayMedia.title)")
+                                    print("▶️ [MediaDetailView] Setting showVideoPlayer = true")
                                     showVideoPlayer = true
+                                    print("▶️ [MediaDetailView] showVideoPlayer is now: \(showVideoPlayer)")
                                 } label: {
                                     HStack(spacing: 12) {
                                         Image(systemName: displayMedia.progress > 0 ? "play.fill" : "play.fill")
@@ -226,24 +230,41 @@ struct MediaDetailView: View {
                 .padding(.bottom, 40)
             }
         }
+        .onAppear {
+            print("👁️ [MediaDetailView] View appeared for: \(media.title)")
+            print("👁️ [MediaDetailView] authService: \(authService)")
+            print("👁️ [MediaDetailView] Has client: \(authService.currentClient != nil)")
+        }
         .task {
+            print("⚙️ [MediaDetailView] Task started for: \(media.title)")
             await loadDetails()
+            print("⚙️ [MediaDetailView] Task completed for: \(media.title)")
         }
         .sheet(item: $selectedSeason) { season in
-            SeasonDetailView(season: season, show: displayMedia)
+            print("📱 [MediaDetailView] Sheet presenting SeasonDetailView for: \(season.title)")
+            return SeasonDetailView(season: season, show: displayMedia)
                 .environmentObject(authService)
         }
         .fullScreenCover(isPresented: $showVideoPlayer) {
+            print("🎬 [MediaDetailView] FullScreenCover triggered. showVideoPlayer: \(showVideoPlayer), media type: \(media.type)")
             if media.type == "show" {
                 // For shows, need to pick an episode first
                 if let season = seasons.first {
-                    SeasonDetailView(season: season, show: displayMedia)
+                    print("🎬 [MediaDetailView] Presenting SeasonDetailView for first season: \(season.title)")
+                    return SeasonDetailView(season: season, show: displayMedia)
                         .environmentObject(authService)
+                } else {
+                    print("❌ [MediaDetailView] No seasons available for show: \(media.title)")
+                    return EmptyView() as! AnyView
                 }
             } else {
-                VideoPlayerView(media: displayMedia)
+                print("🎬 [MediaDetailView] Presenting VideoPlayerView for: \(displayMedia.title)")
+                return VideoPlayerView(media: displayMedia)
                     .environmentObject(authService)
             }
+        }
+        .onChange(of: showVideoPlayer) { oldValue, newValue in
+            print("🔄 [MediaDetailView] showVideoPlayer changed from \(oldValue) to \(newValue)")
         }
     }
 
