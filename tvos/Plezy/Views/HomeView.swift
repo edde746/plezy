@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var authService: PlexAuthService
+    @StateObject private var networkMonitor = NetworkMonitor.shared
     @State private var onDeck: [PlexMetadata] = []
     @State private var hubs: [PlexHub] = []
     @State private var isLoading = true
@@ -137,6 +138,12 @@ struct HomeView: View {
                     }
                     .padding(.bottom, 40)
                 }
+            }
+
+            // Offline banner overlay
+            VStack {
+                OfflineBanner()
+                Spacer()
             }
         }
         .onAppear {
