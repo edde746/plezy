@@ -369,6 +369,19 @@ struct PlexHub: Codable, Identifiable {
     let promoted: Bool?
     let metadata: [PlexMetadata]?
 
+    enum CodingKeys: String, CodingKey {
+        case hubKey
+        case key
+        case title
+        case type
+        case hubIdentifier
+        case size
+        case more
+        case style
+        case promoted
+        case metadata = "Metadata"
+    }
+
     var id: String {
         hubKey ?? key ?? UUID().uuidString
     }
