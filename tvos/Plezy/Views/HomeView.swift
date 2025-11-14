@@ -397,7 +397,6 @@ struct HeroBanner: View {
     let onNavigate: (Int) -> Void
     let onSelect: (PlexMetadata) -> Void
     @EnvironmentObject var authService: PlexAuthService
-    @GestureState private var dragOffset: CGFloat = 0
 
     var body: some View {
         let heroItems = Array(items.prefix(5))
@@ -425,17 +424,6 @@ struct HeroBanner: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .frame(height: 600)
                 .ignoresSafeArea()
-                .gesture(
-                    DragGesture()
-                        .onEnded { value in
-                            let threshold: CGFloat = 50
-                            if value.translation.width > threshold && currentIndex > 0 {
-                                onNavigate(currentIndex - 1)
-                            } else if value.translation.width < -threshold && currentIndex < heroItems.count - 1 {
-                                onNavigate(currentIndex + 1)
-                            }
-                        }
-                )
 
                 // Gradient overlay
                 LinearGradient(
