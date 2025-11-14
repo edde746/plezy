@@ -9,13 +9,13 @@ import SwiftUI
 import AVKit
 import AVFoundation
 import Combine
+import MediaPlayer
 
 struct VideoPlayerView: View {
     let media: PlexMetadata
     @EnvironmentObject var authService: PlexAuthService
     @Environment(\.dismiss) var dismiss
     @StateObject private var playerManager: VideoPlayerManager
-    @State private var showControls = true
 
     init(media: PlexMetadata) {
         self.media = media
@@ -26,8 +26,8 @@ struct VideoPlayerView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if let player = playerManager.player {
-                VideoPlayer(player: player)
+            if playerManager.playerViewController != nil {
+                TVPlayerViewController(playerManager: playerManager)
                     .ignoresSafeArea()
                     .onAppear {
                         Task {
@@ -73,9 +73,54 @@ struct VideoPlayerView: View {
     }
 }
 
+// MARK: - AVPlayerViewController Wrapper
+
+struct TVPlayerViewController: UIViewControllerRepresentable {
+    @ObservedObject var playerManager: VideoPlayerManager
+
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let controller = AVPlayerViewController()
+        controller.delegate = context.coordinator
+
+        // Configure for tvOS
+        controller.allowsPictureInPicturePlayback = true
+        controller.canStartPictureInPictureAutomaticallyFromInline = true
+
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
+        // Update player if it changes
+        if uiViewController.player !== playerManager.player {
+            uiViewController.player = playerManager.player
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(playerManager: playerManager)
+    }
+
+    class Coordinator: NSObject, AVPlayerViewControllerDelegate {
+        let playerManager: VideoPlayerManager
+
+        init(playerManager: VideoPlayerManager) {
+            self.playerManager = playerManager
+        }
+
+        func playerViewController(
+            _ playerViewController: AVPlayerViewController,
+            willEndFullScreenPresentationWithAnimationCoordinator coordinator: UIViewControllerTransitionCoordinator
+        ) {
+            // Player is being dismissed
+            playerManager.cleanup()
+        }
+    }
+}
+
 @MainActor
 class VideoPlayerManager: ObservableObject {
     @Published var player: AVPlayer?
+    @Published var playerViewController: AVPlayerViewController?
     @Published var isLoading = true
     @Published var error: String?
 
@@ -85,6 +130,7 @@ class VideoPlayerManager: ObservableObject {
 
     init(media: PlexMetadata) {
         self.media = media
+        self.playerViewController = AVPlayerViewController()
     }
 
     func setupPlayer(authService: PlexAuthService) async {
@@ -99,6 +145,8 @@ class VideoPlayerManager: ObservableObject {
         error = nil
 
         do {
+            print("🎬 [Player] Loading video for: \(media.title)")
+
             // Get detailed metadata
             let detailedMedia = try await client.getMetadata(ratingKey: media.ratingKey)
 
@@ -107,6 +155,7 @@ class VideoPlayerManager: ObservableObject {
                   let part = mediaItem.part?.first else {
                 error = "No media available"
                 isLoading = false
+                print("❌ [Player] No media or part found")
                 return
             }
 
@@ -114,47 +163,43 @@ class VideoPlayerManager: ObservableObject {
                   let baseURL = connection.url else {
                 error = "Invalid server connection"
                 isLoading = false
+                print("❌ [Player] No connection found")
                 return
             }
 
+            // Build direct play URL with token
             var urlString = baseURL.absoluteString + part.key
-
-            // Add transcoding parameters for compatibility
-            let params = [
-                "X-Plex-Platform": "tvOS",
-                "directPlay": "1",
-                "directStream": "1",
-                "protocol": "hls",
-                "fastSeek": "1",
-                "path": part.key,
-                "mediaIndex": "0",
-                "partIndex": "0",
-                "X-Plex-Token": server.accessToken ?? ""
-            ]
-
-            let queryString = params.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
-            urlString += "?" + queryString
+            if !urlString.contains("?") {
+                urlString += "?"
+            } else {
+                urlString += "&"
+            }
+            urlString += "X-Plex-Token=\(server.accessToken ?? "")"
 
             guard let videoURL = URL(string: urlString) else {
                 error = "Invalid video URL"
                 isLoading = false
+                print("❌ [Player] Invalid URL: \(urlString)")
                 return
             }
 
-            // Create player item
+            print("🎬 [Player] Video URL: \(videoURL)")
+
+            // Create player item with metadata
             let asset = AVURLAsset(url: videoURL)
             playerItem = AVPlayerItem(asset: asset)
 
-            // Note: externalSubtitleOptionLanguages is not available on tvOS
-            // External subtitle options need to be handled differently
+            // Set up metadata for Now Playing
+            setupNowPlayingMetadata(media: detailedMedia, server: server, baseURL: baseURL)
 
             // Create player
             let player = AVPlayer(playerItem: playerItem)
             player.allowsExternalPlayback = true
 
             // Resume from saved position if available
-            if let viewOffset = media.viewOffset, viewOffset > 0 {
+            if let viewOffset = detailedMedia.viewOffset, viewOffset > 0 {
                 let seconds = Double(viewOffset) / 1000.0
+                print("🎬 [Player] Resuming from \(seconds)s")
                 await player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
             }
 
@@ -162,6 +207,7 @@ class VideoPlayerManager: ObservableObject {
 
             // Start playback
             player.play()
+            print("🎬 [Player] Starting playback")
 
             // Setup progress tracking
             setupProgressTracking(client: client, player: player)
@@ -169,8 +215,64 @@ class VideoPlayerManager: ObservableObject {
             isLoading = false
 
         } catch {
+            print("❌ [Player] Error: \(error)")
             self.error = "Failed to load video: \(error.localizedDescription)"
             isLoading = false
+        }
+    }
+
+    private func setupNowPlayingMetadata(media: PlexMetadata, server: PlexServer, baseURL: URL) {
+        var nowPlayingInfo: [String: Any] = [:]
+
+        // Title
+        if media.type == "episode" {
+            // For TV shows: "Show Name - S1E1 - Episode Title"
+            if let showTitle = media.grandparentTitle {
+                nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = showTitle
+                nowPlayingInfo[MPMediaItemPropertyTitle] = media.title
+                let seasonEpisode = media.formatSeasonEpisode()
+                nowPlayingInfo[MPNowPlayingInfoPropertyChapterNumber] = seasonEpisode as Any
+            }
+        } else {
+            // For movies
+            nowPlayingInfo[MPMediaItemPropertyTitle] = media.title
+        }
+
+        // Duration
+        if let duration = media.duration, duration > 0 {
+            let seconds = Double(duration) / 1000.0
+            nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = seconds
+        }
+
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+        print("🎬 [Player] Set Now Playing metadata: \(media.title)")
+
+        // Artwork - load asynchronously
+        if let artPath = media.art ?? media.thumb {
+            var artURLString = baseURL.absoluteString + artPath
+            if let token = server.accessToken {
+                artURLString += "?X-Plex-Token=\(token)"
+            }
+            if let artURL = URL(string: artURLString) {
+                Task {
+                    await loadArtwork(from: artURL)
+                }
+            }
+        }
+    }
+
+    private func loadArtwork(from url: URL) async {
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            if let image = UIImage(data: data) {
+                let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+                var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+                info[MPMediaItemPropertyArtwork] = artwork
+                MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+                print("🎬 [Player] Loaded artwork")
+            }
+        } catch {
+            print("⚠️ [Player] Failed to load artwork: \(error)")
         }
     }
 
