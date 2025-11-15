@@ -204,7 +204,8 @@
   "userStatus": {
     "admin": "管理员",
     "restricted": "受限",
-    "protected": "受保护"
+    "protected": "受保护",
+    "current": "当前"
   },
   "messages": {
     "markedAsWatched": "已标记为已观看",
@@ -268,6 +269,10 @@
     "pause": "暂停",
     "overview": "概述",
     "cast": "演员表",
+    "seasons": "季数",
+    "studio": "制作公司",
+    "rating": "年龄分级",
+    "watched": "已观看",
     "episodeCount": "${count} 集",
     "watchedProgress": "已观看 ${watched}/${total} 集",
     "movie": "电影",

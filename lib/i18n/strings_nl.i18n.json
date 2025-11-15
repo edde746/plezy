@@ -204,7 +204,8 @@
   "userStatus": {
     "admin": "Beheerder",
     "restricted": "Beperkt",
-    "protected": "Beschermd"
+    "protected": "Beschermd",
+    "current": "HUIDIG"
   },
   "messages": {
     "markedAsWatched": "Gemarkeerd als gekeken",
@@ -268,6 +269,10 @@
     "pause": "Pauzeren",
     "overview": "Overzicht",
     "cast": "Cast",
+    "seasons": "Seizoenen",
+    "studio": "Studio",
+    "rating": "Leeftijd",
+    "watched": "Bekeken",
     "episodeCount": "${count} afleveringen",
     "watchedProgress": "${watched}/${total} gekeken",
     "movie": "Film",

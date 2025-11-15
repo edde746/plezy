@@ -204,7 +204,8 @@
   "userStatus": {
     "admin": "Admin",
     "restricted": "Restricted",
-    "protected": "Protected"
+    "protected": "Protected",
+    "current": "CURRENT"
   },
   "messages": {
     "markedAsWatched": "Marked as watched",
@@ -268,6 +269,10 @@
     "pause": "Pause",
     "overview": "Overview",
     "cast": "Cast",
+    "seasons": "Seasons",
+    "studio": "Studio",
+    "rating": "Rating",
+    "watched": "Watched",
     "episodeCount": "${count} episodes",
     "watchedProgress": "${watched}/${total} watched",
     "movie": "Movie",

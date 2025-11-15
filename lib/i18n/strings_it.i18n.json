@@ -204,7 +204,8 @@
   "userStatus": {
     "admin": "Admin",
     "restricted": "Limitato",
-    "protected": "Protetto"
+    "protected": "Protetto",
+    "current": "ATTUALE"
   },
   "messages": {
     "markedAsWatched": "Segna come visto",
@@ -268,6 +269,10 @@
     "pause": "Pausa",
     "overview": "Panoramica",
     "cast": "Cast",
+    "seasons": "Stagioni",
+    "studio": "Studio",
+    "rating": "Classificazione",
+    "watched": "Guardato",
     "episodeCount": "${count} episodi",
     "watchedProgress": "${watched}/${total} guardati",
     "movie": "Film",
