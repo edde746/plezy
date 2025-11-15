@@ -204,7 +204,8 @@
   "userStatus": {
     "admin": "Admin",
     "restricted": "Begränsad",
-    "protected": "Skyddad"
+    "protected": "Skyddad",
+    "current": "NUVARANDE"
   },
   "messages": {
     "markedAsWatched": "Markerad som sedd",
@@ -268,6 +269,10 @@
     "pause": "Pausa",
     "overview": "Översikt",
     "cast": "Rollbesättning",
+    "seasons": "Säsonger",
+    "studio": "Studio",
+    "rating": "Åldersgräns",
+    "watched": "Tittad",
     "episodeCount": "${count} avsnitt",
     "watchedProgress": "${watched}/${total} sedda",
     "movie": "Film",

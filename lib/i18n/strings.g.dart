@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2100 (350 per locale)
+/// Strings: 2130 (355 per locale)
 ///
-/// Built on 2025-11-15 at 02:45 UTC
+/// Built on 2025-11-15 at 11:48 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -485,6 +485,7 @@ class _StringsUserStatusEn {
 	String get admin => 'Admin';
 	String get restricted => 'Restricted';
 	String get protected => 'Protected';
+	String get current => 'CURRENT';
 }
 
 // Path: messages
@@ -583,6 +584,10 @@ class _StringsDiscoverEn {
 	String get pause => 'Pause';
 	String get overview => 'Overview';
 	String get cast => 'Cast';
+	String get seasons => 'Seasons';
+	String get studio => 'Studio';
+	String get rating => 'Rating';
+	String get watched => 'Watched';
 	String episodeCount({required Object count}) => '${count} episodes';
 	String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} watched';
 	String get movie => 'Movie';
@@ -889,7 +894,7 @@ class _StringsCommonDe implements _StringsCommonEn {
 	@override String get logout => 'Abmelden';
 	@override String get online => 'Online';
 	@override String get offline => 'Offline';
-	@override String get owned => 'Eigentum';
+	@override String get owned => 'Besitzer';
 	@override String get shared => 'Geteilt';
 	@override String get current => 'AKTUELL';
 	@override String get unknown => 'Unbekannt';
@@ -939,7 +944,7 @@ class _StringsSettingsDe implements _StringsSettingsEn {
 	// Translations
 	@override String get title => 'Einstellungen';
 	@override String get language => 'Sprache';
-	@override String get theme => 'Theme';
+	@override String get theme => 'Design';
 	@override String get appearance => 'Darstellung';
 	@override String get videoPlayback => 'Videowiedergabe';
 	@override String get shufflePlay => 'Zufallswiedergabe';
@@ -955,7 +960,7 @@ class _StringsSettingsDe implements _StringsSettingsEn {
 	@override String get systemThemeDescription => 'Systemeinstellungen folgen';
 	@override String get lightTheme => 'Hell';
 	@override String get darkTheme => 'Dunkel';
-	@override String get libraryDensity => 'Bibliotheksdichte';
+	@override String get libraryDensity => 'Mediathekdichte';
 	@override String get compact => 'Kompakt';
 	@override String get compactDescription => 'Kleinere Karten, mehr Elemente sichtbar';
 	@override String get normal => 'Normal';
@@ -970,7 +975,7 @@ class _StringsSettingsDe implements _StringsSettingsEn {
 	@override String get useSeasonPosters => 'Staffelposter verwenden';
 	@override String get showHeroSection => 'Hero-Bereich anzeigen';
 	@override String get hardwareDecoding => 'Hardware-Decodierung';
-	@override String get hardwareDecodingDescription => 'Hardwarebeschleunigung verwenden, wenn verfügbar';
+	@override String get hardwareDecodingDescription => 'Hardwarebeschleunigung verwenden, sofern verfügbar';
 	@override String get bufferSize => 'Puffergröße';
 	@override String bufferSizeMB({required Object size}) => '${size}MB';
 	@override String get subtitleStyling => 'Untertitel-Stil';
@@ -1138,9 +1143,10 @@ class _StringsUserStatusDe implements _StringsUserStatusEn {
 	@override final _StringsDe _root; // ignore: unused_field
 
 	// Translations
-	@override String get admin => 'Admin';
+	@override String get admin => 'Eigentümer';
 	@override String get restricted => 'Eingeschränkt';
 	@override String get protected => 'Geschützt';
+	@override String get current => 'AKTUELL';
 }
 
 // Path: messages
@@ -1163,8 +1169,8 @@ class _StringsMessagesDe implements _StringsMessagesEn {
 	@override String get logsCopied => 'Protokolle in Zwischenablage kopiert';
 	@override String get noLogsAvailable => 'Keine Protokolle verfügbar';
 	@override String libraryScanning({required Object title}) => 'Scanne „${title}“...';
-	@override String libraryScanStarted({required Object title}) => 'Bibliotheksscan gestartet für „${title}“';
-	@override String libraryScanFailed({required Object error}) => 'Fehler beim Scannen der Bibliothek: ${error}';
+	@override String libraryScanStarted({required Object title}) => 'Mediathekscan gestartet für „${title}“';
+	@override String libraryScanFailed({required Object error}) => 'Fehler beim Scannen der Mediathek: ${error}';
 	@override String metadataRefreshing({required Object title}) => 'Metadaten werden aktualisiert für „${title}“...';
 	@override String metadataRefreshStarted({required Object title}) => 'Metadaten-Aktualisierung gestartet für „${title}“';
 	@override String metadataRefreshFailed({required Object error}) => 'Metadaten konnten nicht aktualisiert werden: ${error}';
@@ -1229,18 +1235,22 @@ class _StringsDiscoverDe implements _StringsDiscoverEn {
 	@override String get switchServer => 'Server wechseln';
 	@override String get logout => 'Abmelden';
 	@override String get noContentAvailable => 'Kein Inhalt verfügbar';
-	@override String get addMediaToLibraries => 'Medien zur Bibliothek hinzufügen';
+	@override String get addMediaToLibraries => 'Medien zur Mediathek hinzufügen';
 	@override String get continueWatching => 'Weiterschauen';
 	@override String get recentlyAdded => 'Kürzlich hinzugefügt';
 	@override String get play => 'Abspielen';
 	@override String get resume => 'Fortsetzen';
-	@override String playEpisode({required Object season, required Object episode}) => 'Spiele S${season}, E${episode}';
-	@override String resumeEpisode({required Object season, required Object episode}) => 'Fortsetzen S${season}, E${episode}';
+	@override String playEpisode({required Object season, required Object episode}) => 'S${season}, E${episode} - Abspielen';
+	@override String resumeEpisode({required Object season, required Object episode}) => 'S${season}, E${episode} - Fortsetzen';
 	@override String get pause => 'Pause';
 	@override String get overview => 'Übersicht';
 	@override String get cast => 'Besetzung';
+	@override String get seasons => 'Staffeln';
+	@override String get studio => 'Studio';
+	@override String get rating => 'Altersfreigabe';
+	@override String get watched => 'Gesehen';
 	@override String episodeCount({required Object count}) => '${count} Episoden';
-	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} gesehen';
+	@override String watchedProgress({required Object watched, required Object total}) => '${watched} von ${total} gesehen';
 	@override String get movie => 'Film';
 	@override String get tvShow => 'Serie';
 	@override String minutesLeft({required Object minutes}) => '${minutes} Min übrig';
@@ -1274,11 +1284,11 @@ class _StringsLibrariesDe implements _StringsLibrariesEn {
 	@override final _StringsDe _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Bibliotheken';
-	@override String get scanLibraryFiles => 'Bibliotheksdateien scannen';
-	@override String get scanLibrary => 'Bibliothek scannen';
+	@override String get title => 'Mediatheken';
+	@override String get scanLibraryFiles => 'Mediatheksdateien scannen';
+	@override String get scanLibrary => 'Mediathek scannen';
 	@override String get analyze => 'Analysieren';
-	@override String get analyzeLibrary => 'Bibliothek analysieren';
+	@override String get analyzeLibrary => 'Mediathek analysieren';
 	@override String get refreshMetadata => 'Metadaten aktualisieren';
 	@override String get emptyTrash => 'Papierkorb leeren';
 	@override String emptyingTrash({required Object title}) => 'Papierkorb für „${title}“ wird geleert...';
@@ -1286,24 +1296,24 @@ class _StringsLibrariesDe implements _StringsLibrariesEn {
 	@override String failedToEmptyTrash({required Object error}) => 'Papierkorb konnte nicht geleert werden: ${error}';
 	@override String analyzing({required Object title}) => 'Analysiere „${title}“...';
 	@override String analysisStarted({required Object title}) => 'Analyse gestartet für „${title}“';
-	@override String failedToAnalyze({required Object error}) => 'Analyse der Bibliothek fehlgeschlagen: ${error}';
-	@override String get noLibrariesFound => 'Keine Bibliotheken gefunden';
-	@override String get thisLibraryIsEmpty => 'Diese Bibliothek ist leer';
+	@override String failedToAnalyze({required Object error}) => 'Analyse der Mediathek fehlgeschlagen: ${error}';
+	@override String get noLibrariesFound => 'Keine Mediatheken gefunden';
+	@override String get thisLibraryIsEmpty => 'Diese Mediathek ist leer';
 	@override String get all => 'Alle';
 	@override String get clearAll => 'Alle löschen';
 	@override String scanLibraryConfirm({required Object title}) => '„${title}“ wirklich scannen?';
 	@override String analyzeLibraryConfirm({required Object title}) => '„${title}“ wirklich analysieren?';
 	@override String refreshMetadataConfirm({required Object title}) => 'Metadaten für „${title}“ wirklich aktualisieren?';
 	@override String emptyTrashConfirm({required Object title}) => 'Papierkorb für „${title}“ wirklich leeren?';
-	@override String get manageLibraries => 'Bibliotheken verwalten';
+	@override String get manageLibraries => 'Mediatheken verwalten';
 	@override String get sort => 'Sortieren';
 	@override String get sortBy => 'Sortieren nach';
 	@override String get filters => 'Filter';
-	@override String loadingLibraryWithCount({required Object count}) => 'Lade Bibliothek... (${count} Elemente geladen)';
+	@override String loadingLibraryWithCount({required Object count}) => 'Lade Mediathek... (${count} Elemente geladen)';
 	@override String get confirmActionMessage => 'Aktion wirklich durchführen?';
-	@override String get showLibrary => 'Bibliothek anzeigen';
-	@override String get hideLibrary => 'Bibliothek ausblenden';
-	@override String get libraryOptions => 'Bibliotheksoptionen';
+	@override String get showLibrary => 'Mediathek anzeigen';
+	@override String get hideLibrary => 'Mediathek ausblenden';
+	@override String get libraryOptions => 'Mediatheksoptionen';
 }
 
 // Path: about
@@ -1393,7 +1403,7 @@ class _StringsNavigationDe implements _StringsNavigationEn {
 	// Translations
 	@override String get home => 'Start';
 	@override String get search => 'Suche';
-	@override String get libraries => 'Bibliotheken';
+	@override String get libraries => 'Mediatheken';
 	@override String get settings => 'Einstellungen';
 }
 
@@ -1404,40 +1414,40 @@ class _StringsPlaylistsDe implements _StringsPlaylistsEn {
 	@override final _StringsDe _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Playlists';
-	@override String get noPlaylists => 'Keine Playlists gefunden';
-	@override String get create => 'Playlist erstellen';
-	@override String get newPlaylist => 'Neue Playlist';
-	@override String get playlistName => 'Playlist-Name';
-	@override String get enterPlaylistName => 'Playlist-Namen eingeben';
-	@override String get edit => 'Playlist bearbeiten';
-	@override String get delete => 'Playlist löschen';
-	@override String get addTo => 'Zur Playlist hinzufügen';
+	@override String get title => 'Wiedergabelisten';
+	@override String get noPlaylists => 'Keine Wiedergabelisten gefunden';
+	@override String get create => 'Wiedergabeliste erstellen';
+	@override String get newPlaylist => 'Neue Wiedergabeliste';
+	@override String get playlistName => 'Name der Wiedergabeliste';
+	@override String get enterPlaylistName => 'Name der Wiedergabeliste eingeben';
+	@override String get edit => 'Wiedergabeliste bearbeiten';
+	@override String get delete => 'Wiedergabeliste löschen';
+	@override String get addTo => 'Zur Wiedergabeliste hinzufügen';
 	@override String get addItems => 'Elemente hinzufügen';
-	@override String get removeItem => 'Aus Playlist entfernen';
-	@override String get clearPlaylist => 'Playlist leeren';
+	@override String get removeItem => 'Aus Wiedergabeliste entfernen';
+	@override String get clearPlaylist => 'Wiedergabeliste leeren';
 	@override String get playAll => 'Alle abspielen';
 	@override String get shuffle => 'Zufällig';
-	@override String get smartPlaylist => 'Intelligente Playlist';
-	@override String get regularPlaylist => 'Normale Playlist';
+	@override String get smartPlaylist => 'Intelligente Wiedergabeliste';
+	@override String get regularPlaylist => 'Normale Wiedergabeliste';
 	@override String itemCount({required Object count}) => '${count} Elemente';
 	@override String get oneItem => '1 Element';
-	@override String get emptyPlaylist => 'Diese Playlist ist leer';
-	@override String get deleteConfirm => 'Playlist löschen?';
-	@override String deleteMessage({required Object name}) => 'Möchten Sie "${name}" wirklich löschen?';
-	@override String get created => 'Playlist erstellt';
-	@override String get updated => 'Playlist aktualisiert';
-	@override String get deleted => 'Playlist gelöscht';
-	@override String get itemAdded => 'Zur Playlist hinzugefügt';
-	@override String get itemRemoved => 'Aus Playlist entfernt';
-	@override String get selectPlaylist => 'Playlist auswählen';
-	@override String get createNewPlaylist => 'Neue Playlist erstellen';
-	@override String get errorCreating => 'Fehler beim Erstellen der Playlist';
-	@override String get errorDeleting => 'Fehler beim Löschen der Playlist';
-	@override String get errorLoading => 'Fehler beim Laden der Playlists';
-	@override String get errorAdding => 'Fehler beim Hinzufügen zur Playlist';
-	@override String get errorReordering => 'Fehler beim Neuordnen des Playlist-Elements';
-	@override String get errorRemoving => 'Fehler beim Entfernen aus der Playlist';
+	@override String get emptyPlaylist => 'Diese Wiedergabeliste ist leer';
+	@override String get deleteConfirm => 'Wiedergabeliste löschen?';
+	@override String deleteMessage({required Object name}) => 'Soll "${name}" wirklich gelöscht werden?';
+	@override String get created => 'Wiedergabeliste erstellt';
+	@override String get updated => 'Wiedergabeliste aktualisiert';
+	@override String get deleted => 'Wiedergabeliste gelöscht';
+	@override String get itemAdded => 'Zur Wiedergabeliste hinzugefügt';
+	@override String get itemRemoved => 'Aus Wiedergabeliste entfernt';
+	@override String get selectPlaylist => 'Wiedergabeliste auswählen';
+	@override String get createNewPlaylist => 'Neue Wiedergabeliste erstellen';
+	@override String get errorCreating => 'Wiedergabeliste konnte nicht erstellt werden';
+	@override String get errorDeleting => 'Wiedergabeliste konnte nicht gelöscht werden';
+	@override String get errorLoading => 'Wiedergabelisten konnten nicht geladen werden';
+	@override String get errorAdding => 'Konnte nicht zur Wiedergabeliste hinzugefügt werden';
+	@override String get errorReordering => 'Element der Wiedergabeliste konnte nicht neu geordnet werden';
+	@override String get errorRemoving => 'Konnte nicht aus der Wiedergabeliste entfernt werden';
 }
 
 // Path: <root>
@@ -1797,6 +1807,7 @@ class _StringsUserStatusIt implements _StringsUserStatusEn {
 	@override String get admin => 'Admin';
 	@override String get restricted => 'Limitato';
 	@override String get protected => 'Protetto';
+	@override String get current => 'ATTUALE';
 }
 
 // Path: messages
@@ -1895,6 +1906,10 @@ class _StringsDiscoverIt implements _StringsDiscoverEn {
 	@override String get pause => 'Pausa';
 	@override String get overview => 'Panoramica';
 	@override String get cast => 'Cast';
+	@override String get seasons => 'Stagioni';
+	@override String get studio => 'Studio';
+	@override String get rating => 'Classificazione';
+	@override String get watched => 'Guardato';
 	@override String episodeCount({required Object count}) => '${count} episodi';
 	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} guardati';
 	@override String get movie => 'Film';
@@ -2453,6 +2468,7 @@ class _StringsUserStatusNl implements _StringsUserStatusEn {
 	@override String get admin => 'Beheerder';
 	@override String get restricted => 'Beperkt';
 	@override String get protected => 'Beschermd';
+	@override String get current => 'HUIDIG';
 }
 
 // Path: messages
@@ -2551,6 +2567,10 @@ class _StringsDiscoverNl implements _StringsDiscoverEn {
 	@override String get pause => 'Pauzeren';
 	@override String get overview => 'Overzicht';
 	@override String get cast => 'Cast';
+	@override String get seasons => 'Seizoenen';
+	@override String get studio => 'Studio';
+	@override String get rating => 'Leeftijd';
+	@override String get watched => 'Bekeken';
 	@override String episodeCount({required Object count}) => '${count} afleveringen';
 	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} gekeken';
 	@override String get movie => 'Film';
@@ -3109,6 +3129,7 @@ class _StringsUserStatusSv implements _StringsUserStatusEn {
 	@override String get admin => 'Admin';
 	@override String get restricted => 'Begränsad';
 	@override String get protected => 'Skyddad';
+	@override String get current => 'NUVARANDE';
 }
 
 // Path: messages
@@ -3207,6 +3228,10 @@ class _StringsDiscoverSv implements _StringsDiscoverEn {
 	@override String get pause => 'Pausa';
 	@override String get overview => 'Översikt';
 	@override String get cast => 'Rollbesättning';
+	@override String get seasons => 'Säsonger';
+	@override String get studio => 'Studio';
+	@override String get rating => 'Åldersgräns';
+	@override String get watched => 'Tittad';
 	@override String episodeCount({required Object count}) => '${count} avsnitt';
 	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} sedda';
 	@override String get movie => 'Film';
@@ -3765,6 +3790,7 @@ class _StringsUserStatusZh implements _StringsUserStatusEn {
 	@override String get admin => '管理员';
 	@override String get restricted => '受限';
 	@override String get protected => '受保护';
+	@override String get current => '当前';
 }
 
 // Path: messages
@@ -3863,6 +3889,10 @@ class _StringsDiscoverZh implements _StringsDiscoverEn {
 	@override String get pause => '暂停';
 	@override String get overview => '概述';
 	@override String get cast => '演员表';
+	@override String get seasons => '季数';
+	@override String get studio => '制作公司';
+	@override String get rating => '年龄分级';
+	@override String get watched => '已观看';
 	@override String episodeCount({required Object count}) => '${count} 集';
 	@override String watchedProgress({required Object watched, required Object total}) => '已观看 ${watched}/${total} 集';
 	@override String get movie => '电影';
@@ -4249,6 +4279,7 @@ extension on Translations {
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Restricted';
 			case 'userStatus.protected': return 'Protected';
+			case 'userStatus.current': return 'CURRENT';
 			case 'messages.markedAsWatched': return 'Marked as watched';
 			case 'messages.markedAsUnwatched': return 'Marked as unwatched';
 			case 'messages.removedFromContinueWatching': return 'Removed from Continue Watching';
@@ -4302,6 +4333,10 @@ extension on Translations {
 			case 'discover.pause': return 'Pause';
 			case 'discover.overview': return 'Overview';
 			case 'discover.cast': return 'Cast';
+			case 'discover.seasons': return 'Seasons';
+			case 'discover.studio': return 'Studio';
+			case 'discover.rating': return 'Rating';
+			case 'discover.watched': return 'Watched';
 			case 'discover.episodeCount': return ({required Object count}) => '${count} episodes';
 			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '${watched}/${total} watched';
 			case 'discover.movie': return 'Movie';
@@ -4454,7 +4489,7 @@ extension on _StringsDe {
 			case 'common.logout': return 'Abmelden';
 			case 'common.online': return 'Online';
 			case 'common.offline': return 'Offline';
-			case 'common.owned': return 'Eigentum';
+			case 'common.owned': return 'Besitzer';
 			case 'common.shared': return 'Geteilt';
 			case 'common.current': return 'AKTUELL';
 			case 'common.unknown': return 'Unbekannt';
@@ -4477,7 +4512,7 @@ extension on _StringsDe {
 			case 'update.checkFailed': return 'Fehler bei der Updateprüfung';
 			case 'settings.title': return 'Einstellungen';
 			case 'settings.language': return 'Sprache';
-			case 'settings.theme': return 'Theme';
+			case 'settings.theme': return 'Design';
 			case 'settings.appearance': return 'Darstellung';
 			case 'settings.videoPlayback': return 'Videowiedergabe';
 			case 'settings.shufflePlay': return 'Zufallswiedergabe';
@@ -4493,7 +4528,7 @@ extension on _StringsDe {
 			case 'settings.systemThemeDescription': return 'Systemeinstellungen folgen';
 			case 'settings.lightTheme': return 'Hell';
 			case 'settings.darkTheme': return 'Dunkel';
-			case 'settings.libraryDensity': return 'Bibliotheksdichte';
+			case 'settings.libraryDensity': return 'Mediathekdichte';
 			case 'settings.compact': return 'Kompakt';
 			case 'settings.compactDescription': return 'Kleinere Karten, mehr Elemente sichtbar';
 			case 'settings.normal': return 'Normal';
@@ -4508,7 +4543,7 @@ extension on _StringsDe {
 			case 'settings.useSeasonPosters': return 'Staffelposter verwenden';
 			case 'settings.showHeroSection': return 'Hero-Bereich anzeigen';
 			case 'settings.hardwareDecoding': return 'Hardware-Decodierung';
-			case 'settings.hardwareDecodingDescription': return 'Hardwarebeschleunigung verwenden, wenn verfügbar';
+			case 'settings.hardwareDecodingDescription': return 'Hardwarebeschleunigung verwenden, sofern verfügbar';
 			case 'settings.bufferSize': return 'Puffergröße';
 			case 'settings.bufferSizeMB': return ({required Object size}) => '${size}MB';
 			case 'settings.subtitleStyling': return 'Untertitel-Stil';
@@ -4604,9 +4639,10 @@ extension on _StringsDe {
 			case 'videoControls.stretch': return 'Strecken';
 			case 'videoControls.lockRotation': return 'Rotation sperren';
 			case 'videoControls.unlockRotation': return 'Rotation entsperren';
-			case 'userStatus.admin': return 'Admin';
+			case 'userStatus.admin': return 'Eigentümer';
 			case 'userStatus.restricted': return 'Eingeschränkt';
 			case 'userStatus.protected': return 'Geschützt';
+			case 'userStatus.current': return 'AKTUELL';
 			case 'messages.markedAsWatched': return 'Als gesehen markiert';
 			case 'messages.markedAsUnwatched': return 'Als ungesehen markiert';
 			case 'messages.removedFromContinueWatching': return 'Aus ‚Weiterschauen‘ entfernt';
@@ -4620,8 +4656,8 @@ extension on _StringsDe {
 			case 'messages.logsCopied': return 'Protokolle in Zwischenablage kopiert';
 			case 'messages.noLogsAvailable': return 'Keine Protokolle verfügbar';
 			case 'messages.libraryScanning': return ({required Object title}) => 'Scanne „${title}“...';
-			case 'messages.libraryScanStarted': return ({required Object title}) => 'Bibliotheksscan gestartet für „${title}“';
-			case 'messages.libraryScanFailed': return ({required Object error}) => 'Fehler beim Scannen der Bibliothek: ${error}';
+			case 'messages.libraryScanStarted': return ({required Object title}) => 'Mediathekscan gestartet für „${title}“';
+			case 'messages.libraryScanFailed': return ({required Object error}) => 'Fehler beim Scannen der Mediathek: ${error}';
 			case 'messages.metadataRefreshing': return ({required Object title}) => 'Metadaten werden aktualisiert für „${title}“...';
 			case 'messages.metadataRefreshStarted': return ({required Object title}) => 'Metadaten-Aktualisierung gestartet für „${title}“';
 			case 'messages.metadataRefreshFailed': return ({required Object error}) => 'Metadaten konnten nicht aktualisiert werden: ${error}';
@@ -4650,18 +4686,22 @@ extension on _StringsDe {
 			case 'discover.switchServer': return 'Server wechseln';
 			case 'discover.logout': return 'Abmelden';
 			case 'discover.noContentAvailable': return 'Kein Inhalt verfügbar';
-			case 'discover.addMediaToLibraries': return 'Medien zur Bibliothek hinzufügen';
+			case 'discover.addMediaToLibraries': return 'Medien zur Mediathek hinzufügen';
 			case 'discover.continueWatching': return 'Weiterschauen';
 			case 'discover.recentlyAdded': return 'Kürzlich hinzugefügt';
 			case 'discover.play': return 'Abspielen';
 			case 'discover.resume': return 'Fortsetzen';
-			case 'discover.playEpisode': return ({required Object season, required Object episode}) => 'Spiele S${season}, E${episode}';
-			case 'discover.resumeEpisode': return ({required Object season, required Object episode}) => 'Fortsetzen S${season}, E${episode}';
+			case 'discover.playEpisode': return ({required Object season, required Object episode}) => 'S${season}, E${episode} - Abspielen';
+			case 'discover.resumeEpisode': return ({required Object season, required Object episode}) => 'S${season}, E${episode} - Fortsetzen';
 			case 'discover.pause': return 'Pause';
 			case 'discover.overview': return 'Übersicht';
 			case 'discover.cast': return 'Besetzung';
+			case 'discover.seasons': return 'Staffeln';
+			case 'discover.studio': return 'Studio';
+			case 'discover.rating': return 'Altersfreigabe';
+			case 'discover.watched': return 'Gesehen';
 			case 'discover.episodeCount': return ({required Object count}) => '${count} Episoden';
-			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '${watched}/${total} gesehen';
+			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '${watched} von ${total} gesehen';
 			case 'discover.movie': return 'Film';
 			case 'discover.tvShow': return 'Serie';
 			case 'discover.minutesLeft': return ({required Object minutes}) => '${minutes} Min übrig';
@@ -4677,11 +4717,11 @@ extension on _StringsDe {
 			case 'errors.failedToVerifyToken': return ({required Object error}) => 'Token-Verifizierung fehlgeschlagen: ${error}';
 			case 'errors.failedToSwitchProfile': return ({required Object displayName}) => 'Profilwechsel zu ${displayName} fehlgeschlagen';
 			case 'errors.connectionFailedGeneric': return 'Verbindung fehlgeschlagen';
-			case 'libraries.title': return 'Bibliotheken';
-			case 'libraries.scanLibraryFiles': return 'Bibliotheksdateien scannen';
-			case 'libraries.scanLibrary': return 'Bibliothek scannen';
+			case 'libraries.title': return 'Mediatheken';
+			case 'libraries.scanLibraryFiles': return 'Mediatheksdateien scannen';
+			case 'libraries.scanLibrary': return 'Mediathek scannen';
 			case 'libraries.analyze': return 'Analysieren';
-			case 'libraries.analyzeLibrary': return 'Bibliothek analysieren';
+			case 'libraries.analyzeLibrary': return 'Mediathek analysieren';
 			case 'libraries.refreshMetadata': return 'Metadaten aktualisieren';
 			case 'libraries.emptyTrash': return 'Papierkorb leeren';
 			case 'libraries.emptyingTrash': return ({required Object title}) => 'Papierkorb für „${title}“ wird geleert...';
@@ -4689,24 +4729,24 @@ extension on _StringsDe {
 			case 'libraries.failedToEmptyTrash': return ({required Object error}) => 'Papierkorb konnte nicht geleert werden: ${error}';
 			case 'libraries.analyzing': return ({required Object title}) => 'Analysiere „${title}“...';
 			case 'libraries.analysisStarted': return ({required Object title}) => 'Analyse gestartet für „${title}“';
-			case 'libraries.failedToAnalyze': return ({required Object error}) => 'Analyse der Bibliothek fehlgeschlagen: ${error}';
-			case 'libraries.noLibrariesFound': return 'Keine Bibliotheken gefunden';
-			case 'libraries.thisLibraryIsEmpty': return 'Diese Bibliothek ist leer';
+			case 'libraries.failedToAnalyze': return ({required Object error}) => 'Analyse der Mediathek fehlgeschlagen: ${error}';
+			case 'libraries.noLibrariesFound': return 'Keine Mediatheken gefunden';
+			case 'libraries.thisLibraryIsEmpty': return 'Diese Mediathek ist leer';
 			case 'libraries.all': return 'Alle';
 			case 'libraries.clearAll': return 'Alle löschen';
 			case 'libraries.scanLibraryConfirm': return ({required Object title}) => '„${title}“ wirklich scannen?';
 			case 'libraries.analyzeLibraryConfirm': return ({required Object title}) => '„${title}“ wirklich analysieren?';
 			case 'libraries.refreshMetadataConfirm': return ({required Object title}) => 'Metadaten für „${title}“ wirklich aktualisieren?';
 			case 'libraries.emptyTrashConfirm': return ({required Object title}) => 'Papierkorb für „${title}“ wirklich leeren?';
-			case 'libraries.manageLibraries': return 'Bibliotheken verwalten';
+			case 'libraries.manageLibraries': return 'Mediatheken verwalten';
 			case 'libraries.sort': return 'Sortieren';
 			case 'libraries.sortBy': return 'Sortieren nach';
 			case 'libraries.filters': return 'Filter';
-			case 'libraries.loadingLibraryWithCount': return ({required Object count}) => 'Lade Bibliothek... (${count} Elemente geladen)';
+			case 'libraries.loadingLibraryWithCount': return ({required Object count}) => 'Lade Mediathek... (${count} Elemente geladen)';
 			case 'libraries.confirmActionMessage': return 'Aktion wirklich durchführen?';
-			case 'libraries.showLibrary': return 'Bibliothek anzeigen';
-			case 'libraries.hideLibrary': return 'Bibliothek ausblenden';
-			case 'libraries.libraryOptions': return 'Bibliotheksoptionen';
+			case 'libraries.showLibrary': return 'Mediathek anzeigen';
+			case 'libraries.hideLibrary': return 'Mediathek ausblenden';
+			case 'libraries.libraryOptions': return 'Mediatheksoptionen';
 			case 'about.title': return 'Über';
 			case 'about.openSourceLicenses': return 'Open-Source-Lizenzen';
 			case 'about.versionLabel': return ({required Object version}) => 'Version ${version}';
@@ -4742,42 +4782,42 @@ extension on _StringsDe {
 			case 'licenses.licensesCount': return ({required Object count}) => '${count} Lizenzen';
 			case 'navigation.home': return 'Start';
 			case 'navigation.search': return 'Suche';
-			case 'navigation.libraries': return 'Bibliotheken';
+			case 'navigation.libraries': return 'Mediatheken';
 			case 'navigation.settings': return 'Einstellungen';
-			case 'playlists.title': return 'Playlists';
-			case 'playlists.noPlaylists': return 'Keine Playlists gefunden';
-			case 'playlists.create': return 'Playlist erstellen';
-			case 'playlists.newPlaylist': return 'Neue Playlist';
-			case 'playlists.playlistName': return 'Playlist-Name';
-			case 'playlists.enterPlaylistName': return 'Playlist-Namen eingeben';
-			case 'playlists.edit': return 'Playlist bearbeiten';
-			case 'playlists.delete': return 'Playlist löschen';
-			case 'playlists.addTo': return 'Zur Playlist hinzufügen';
+			case 'playlists.title': return 'Wiedergabelisten';
+			case 'playlists.noPlaylists': return 'Keine Wiedergabelisten gefunden';
+			case 'playlists.create': return 'Wiedergabeliste erstellen';
+			case 'playlists.newPlaylist': return 'Neue Wiedergabeliste';
+			case 'playlists.playlistName': return 'Name der Wiedergabeliste';
+			case 'playlists.enterPlaylistName': return 'Name der Wiedergabeliste eingeben';
+			case 'playlists.edit': return 'Wiedergabeliste bearbeiten';
+			case 'playlists.delete': return 'Wiedergabeliste löschen';
+			case 'playlists.addTo': return 'Zur Wiedergabeliste hinzufügen';
 			case 'playlists.addItems': return 'Elemente hinzufügen';
-			case 'playlists.removeItem': return 'Aus Playlist entfernen';
-			case 'playlists.clearPlaylist': return 'Playlist leeren';
+			case 'playlists.removeItem': return 'Aus Wiedergabeliste entfernen';
+			case 'playlists.clearPlaylist': return 'Wiedergabeliste leeren';
 			case 'playlists.playAll': return 'Alle abspielen';
 			case 'playlists.shuffle': return 'Zufällig';
-			case 'playlists.smartPlaylist': return 'Intelligente Playlist';
-			case 'playlists.regularPlaylist': return 'Normale Playlist';
+			case 'playlists.smartPlaylist': return 'Intelligente Wiedergabeliste';
+			case 'playlists.regularPlaylist': return 'Normale Wiedergabeliste';
 			case 'playlists.itemCount': return ({required Object count}) => '${count} Elemente';
 			case 'playlists.oneItem': return '1 Element';
-			case 'playlists.emptyPlaylist': return 'Diese Playlist ist leer';
-			case 'playlists.deleteConfirm': return 'Playlist löschen?';
-			case 'playlists.deleteMessage': return ({required Object name}) => 'Möchten Sie "${name}" wirklich löschen?';
-			case 'playlists.created': return 'Playlist erstellt';
-			case 'playlists.updated': return 'Playlist aktualisiert';
-			case 'playlists.deleted': return 'Playlist gelöscht';
-			case 'playlists.itemAdded': return 'Zur Playlist hinzugefügt';
-			case 'playlists.itemRemoved': return 'Aus Playlist entfernt';
-			case 'playlists.selectPlaylist': return 'Playlist auswählen';
-			case 'playlists.createNewPlaylist': return 'Neue Playlist erstellen';
-			case 'playlists.errorCreating': return 'Fehler beim Erstellen der Playlist';
-			case 'playlists.errorDeleting': return 'Fehler beim Löschen der Playlist';
-			case 'playlists.errorLoading': return 'Fehler beim Laden der Playlists';
-			case 'playlists.errorAdding': return 'Fehler beim Hinzufügen zur Playlist';
-			case 'playlists.errorReordering': return 'Fehler beim Neuordnen des Playlist-Elements';
-			case 'playlists.errorRemoving': return 'Fehler beim Entfernen aus der Playlist';
+			case 'playlists.emptyPlaylist': return 'Diese Wiedergabeliste ist leer';
+			case 'playlists.deleteConfirm': return 'Wiedergabeliste löschen?';
+			case 'playlists.deleteMessage': return ({required Object name}) => 'Soll "${name}" wirklich gelöscht werden?';
+			case 'playlists.created': return 'Wiedergabeliste erstellt';
+			case 'playlists.updated': return 'Wiedergabeliste aktualisiert';
+			case 'playlists.deleted': return 'Wiedergabeliste gelöscht';
+			case 'playlists.itemAdded': return 'Zur Wiedergabeliste hinzugefügt';
+			case 'playlists.itemRemoved': return 'Aus Wiedergabeliste entfernt';
+			case 'playlists.selectPlaylist': return 'Wiedergabeliste auswählen';
+			case 'playlists.createNewPlaylist': return 'Neue Wiedergabeliste erstellen';
+			case 'playlists.errorCreating': return 'Wiedergabeliste konnte nicht erstellt werden';
+			case 'playlists.errorDeleting': return 'Wiedergabeliste konnte nicht gelöscht werden';
+			case 'playlists.errorLoading': return 'Wiedergabelisten konnten nicht geladen werden';
+			case 'playlists.errorAdding': return 'Konnte nicht zur Wiedergabeliste hinzugefügt werden';
+			case 'playlists.errorReordering': return 'Element der Wiedergabeliste konnte nicht neu geordnet werden';
+			case 'playlists.errorRemoving': return 'Konnte nicht aus der Wiedergabeliste entfernt werden';
 			default: return null;
 		}
 	}
@@ -4965,6 +5005,7 @@ extension on _StringsIt {
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Limitato';
 			case 'userStatus.protected': return 'Protetto';
+			case 'userStatus.current': return 'ATTUALE';
 			case 'messages.markedAsWatched': return 'Segna come visto';
 			case 'messages.markedAsUnwatched': return 'Segna come non visto';
 			case 'messages.removedFromContinueWatching': return 'Rimosso da Continua a guardare';
@@ -5018,6 +5059,10 @@ extension on _StringsIt {
 			case 'discover.pause': return 'Pausa';
 			case 'discover.overview': return 'Panoramica';
 			case 'discover.cast': return 'Cast';
+			case 'discover.seasons': return 'Stagioni';
+			case 'discover.studio': return 'Studio';
+			case 'discover.rating': return 'Classificazione';
+			case 'discover.watched': return 'Guardato';
 			case 'discover.episodeCount': return ({required Object count}) => '${count} episodi';
 			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '${watched}/${total} guardati';
 			case 'discover.movie': return 'Film';
@@ -5323,6 +5368,7 @@ extension on _StringsNl {
 			case 'userStatus.admin': return 'Beheerder';
 			case 'userStatus.restricted': return 'Beperkt';
 			case 'userStatus.protected': return 'Beschermd';
+			case 'userStatus.current': return 'HUIDIG';
 			case 'messages.markedAsWatched': return 'Gemarkeerd als gekeken';
 			case 'messages.markedAsUnwatched': return 'Gemarkeerd als ongekeken';
 			case 'messages.removedFromContinueWatching': return 'Verwijderd uit Doorgaan met kijken';
@@ -5376,6 +5422,10 @@ extension on _StringsNl {
 			case 'discover.pause': return 'Pauzeren';
 			case 'discover.overview': return 'Overzicht';
 			case 'discover.cast': return 'Cast';
+			case 'discover.seasons': return 'Seizoenen';
+			case 'discover.studio': return 'Studio';
+			case 'discover.rating': return 'Leeftijd';
+			case 'discover.watched': return 'Bekeken';
 			case 'discover.episodeCount': return ({required Object count}) => '${count} afleveringen';
 			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '${watched}/${total} gekeken';
 			case 'discover.movie': return 'Film';
@@ -5681,6 +5731,7 @@ extension on _StringsSv {
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Begränsad';
 			case 'userStatus.protected': return 'Skyddad';
+			case 'userStatus.current': return 'NUVARANDE';
 			case 'messages.markedAsWatched': return 'Markerad som sedd';
 			case 'messages.markedAsUnwatched': return 'Markerad som osedd';
 			case 'messages.removedFromContinueWatching': return 'Borttagen från Fortsätt titta';
@@ -5734,6 +5785,10 @@ extension on _StringsSv {
 			case 'discover.pause': return 'Pausa';
 			case 'discover.overview': return 'Översikt';
 			case 'discover.cast': return 'Rollbesättning';
+			case 'discover.seasons': return 'Säsonger';
+			case 'discover.studio': return 'Studio';
+			case 'discover.rating': return 'Åldersgräns';
+			case 'discover.watched': return 'Tittad';
 			case 'discover.episodeCount': return ({required Object count}) => '${count} avsnitt';
 			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '${watched}/${total} sedda';
 			case 'discover.movie': return 'Film';
@@ -6039,6 +6094,7 @@ extension on _StringsZh {
 			case 'userStatus.admin': return '管理员';
 			case 'userStatus.restricted': return '受限';
 			case 'userStatus.protected': return '受保护';
+			case 'userStatus.current': return '当前';
 			case 'messages.markedAsWatched': return '已标记为已观看';
 			case 'messages.markedAsUnwatched': return '已标记为未观看';
 			case 'messages.removedFromContinueWatching': return '已从继续观看中移除';
@@ -6092,6 +6148,10 @@ extension on _StringsZh {
 			case 'discover.pause': return '暂停';
 			case 'discover.overview': return '概述';
 			case 'discover.cast': return '演员表';
+			case 'discover.seasons': return '季数';
+			case 'discover.studio': return '制作公司';
+			case 'discover.rating': return '年龄分级';
+			case 'discover.watched': return '已观看';
 			case 'discover.episodeCount': return ({required Object count}) => '${count} 集';
 			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '已观看 ${watched}/${total} 集';
 			case 'discover.movie': return '电影';
