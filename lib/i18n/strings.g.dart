@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 1894 (315 per locale)
+/// Strings: 1896 (316 per locale)
 ///
-/// Built on 2025-11-15 at 00:10 UTC
+/// Built on 2025-11-15 at 00:12 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -3383,6 +3383,8 @@ class _StringsSettingsZh implements _StringsSettingsEn {
 	@override String secondsUnit({required Object seconds}) => '${seconds} 秒';
 	@override String get defaultSleepTimer => '默认睡眠定时器';
 	@override String minutesUnit({required Object minutes}) => '${minutes} 分钟';
+	@override String get rememberTrackSelections => '记住每个剧集/电影的音轨选择';
+	@override String get rememberTrackSelectionsDescription => '在播放过程中更改音轨时自动保存音频和字幕语言偏好';
 	@override String get unwatchedOnly => '仅未观看';
 	@override String get unwatchedOnlyDescription => '随机队列中仅包含未观看的剧集';
 	@override String get shuffleOrderNavigation => '随机顺序导航';
@@ -5514,6 +5516,8 @@ extension on _StringsZh {
 			case 'settings.secondsUnit': return ({required Object seconds}) => '${seconds} 秒';
 			case 'settings.defaultSleepTimer': return '默认睡眠定时器';
 			case 'settings.minutesUnit': return ({required Object minutes}) => '${minutes} 分钟';
+			case 'settings.rememberTrackSelections': return '记住每个剧集/电影的音轨选择';
+			case 'settings.rememberTrackSelectionsDescription': return '在播放过程中更改音轨时自动保存音频和字幕语言偏好';
 			case 'settings.unwatchedOnly': return '仅未观看';
 			case 'settings.unwatchedOnlyDescription': return '随机队列中仅包含未观看的剧集';
 			case 'settings.shuffleOrderNavigation': return '随机顺序导航';

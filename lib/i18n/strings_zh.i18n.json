@@ -100,6 +100,8 @@
     "secondsUnit": "${seconds} 秒",
     "defaultSleepTimer": "默认睡眠定时器",
     "minutesUnit": "${minutes} 分钟",
+    "rememberTrackSelections": "记住每个剧集/电影的音轨选择",
+    "rememberTrackSelectionsDescription": "在播放过程中更改音轨时自动保存音频和字幕语言偏好",
     "unwatchedOnly": "仅未观看",
     "unwatchedOnlyDescription": "随机队列中仅包含未观看的剧集",
     "shuffleOrderNavigation": "随机顺序导航",
