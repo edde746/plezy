@@ -284,10 +284,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   Future<void> _loadAdjacentEpisodes() async {
-    if (widget.metadata.type.toLowerCase() != 'episode') {
-      return;
-    }
-
     try {
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
@@ -299,8 +295,25 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       PlexMetadata? next;
       PlexMetadata? previous;
 
+      // Check if playlist mode is active (takes priority)
+      if (playbackState.isPlaylistActive) {
+        // For playlists, always use the queue regardless of item type
+        // Playlists can contain both movies and episodes
+        next = playbackState.getNextEpisode(
+          widget.metadata.ratingKey,
+          loopQueue: false, // Don't loop playlists by default
+        );
+        previous = playbackState.getPreviousEpisode(
+          widget.metadata.ratingKey,
+        );
+      }
       // Check if shuffle mode is active
-      if (playbackState.isShuffleActive) {
+      else if (playbackState.isShuffleActive) {
+        // Only works for episodes in shuffle mode
+        if (widget.metadata.type.toLowerCase() != 'episode') {
+          return;
+        }
+
         // Get settings
         final shuffleOrderNavigation = settingsProvider.shuffleOrderNavigation;
         final loopQueue = settingsProvider.shuffleLoopQueue;
@@ -319,7 +332,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           next = await client.findAdjacentEpisode(widget.metadata, 1);
           previous = await client.findAdjacentEpisode(widget.metadata, -1);
         }
-      } else {
+      }
+      // Normal sequential playback
+      else {
+        // Only works for episodes in sequential mode
+        if (widget.metadata.type.toLowerCase() != 'episode') {
+          return;
+        }
+
         // Use normal sequential episode loading
         next = await client.findAdjacentEpisode(widget.metadata, 1);
         previous = await client.findAdjacentEpisode(widget.metadata, -1);
@@ -1483,16 +1503,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
     });
 
-    // Enable/disable next/previous track controls based on content type
+    // Enable/disable next/previous track controls based on content type and playback mode
+    final playbackState = context.read<PlaybackStateProvider>();
     final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
-    if (isEpisode) {
-      // Enable next/previous track controls for episodes
+    final isInPlaylist = playbackState.isPlaylistActive;
+
+    // Enable controls for episodes OR playlist items
+    if (isEpisode || isInPlaylist) {
+      // Enable next/previous track controls for episodes and playlist items
       await OsMediaControls.enableControls([
         MediaControl.next,
         MediaControl.previous,
       ]);
     } else {
-      // Disable next/previous track controls for movies
+      // Disable next/previous track controls for standalone movies
       await OsMediaControls.disableControls([
         MediaControl.next,
         MediaControl.previous,

@@ -10,6 +10,7 @@ import '../models/plex_library.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_playlist.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_video_playback_data.dart';
 import '../network/endpoint_failover_interceptor.dart';
@@ -43,11 +44,11 @@ class PlexClient {
     this.config, {
     List<String>? prioritizedEndpoints,
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
-  })  : _endpointManager = (prioritizedEndpoints != null &&
-                prioritizedEndpoints.isNotEmpty)
-            ? EndpointFailoverManager(prioritizedEndpoints)
-            : null,
-        _onEndpointChanged = onEndpointChanged {
+  }) : _endpointManager =
+           (prioritizedEndpoints != null && prioritizedEndpoints.isNotEmpty)
+           ? EndpointFailoverManager(prioritizedEndpoints)
+           : null,
+       _onEndpointChanged = onEndpointChanged {
     LogRedactionManager.registerServerUrl(config.baseUrl);
     LogRedactionManager.registerToken(config.token);
 
@@ -104,12 +105,10 @@ class PlexClient {
       return;
     }
 
-    final targetBaseUrl =
-        switchToFirst ? prioritizedEndpoints.first : config.baseUrl;
-    _endpointManager.reset(
-      prioritizedEndpoints,
-      currentBaseUrl: targetBaseUrl,
-    );
+    final targetBaseUrl = switchToFirst
+        ? prioritizedEndpoints.first
+        : config.baseUrl;
+    _endpointManager.reset(prioritizedEndpoints, currentBaseUrl: targetBaseUrl);
 
     if (switchToFirst && targetBaseUrl != config.baseUrl) {
       await _handleEndpointSwitch(targetBaseUrl);
@@ -302,6 +301,30 @@ class PlexClient {
   Future<PlexMetadata?> getMetadata(String ratingKey) async {
     final response = await _dio.get('/library/metadata/$ratingKey');
     return _extractSingleMetadata(response);
+  }
+
+  /// Get the server's machine identifier
+  Future<String?> getMachineIdentifier() async {
+    try {
+      final response = await _dio.get('/');
+      final container = _getMediaContainer(response);
+      if (container == null) return null;
+      return container['machineIdentifier'] as String?;
+    } catch (e) {
+      appLogger.e('Failed to get machine identifier', error: e);
+      return null;
+    }
+  }
+
+  /// Build a proper metadata URI for adding to playlists
+  /// Returns URI in format: server://{machineId}/com.plexapp.plugins.library/library/metadata/{ratingKey}
+  Future<String> buildMetadataUri(String ratingKey) async {
+    // Use cached machine identifier from config if available
+    final machineId = config.machineIdentifier ?? await getMachineIdentifier();
+    if (machineId == null) {
+      throw Exception('Could not get server machine identifier');
+    }
+    return 'server://$machineId/com.plexapp.plugins.library/library/metadata/$ratingKey';
   }
 
   /// Get metadata by rating key with images (includes clearLogo and OnDeck)
@@ -1230,6 +1253,234 @@ class PlexClient {
     } catch (e) {
       appLogger.e('Failed to get playlist: $e');
       return [];
+    }
+  }
+
+  /// Get all playlists
+  /// Filters by playlistType=video by default
+  /// Set smart to true/false to filter smart playlists, or null for all
+  Future<List<PlexPlaylist>> getPlaylists({
+    String playlistType = 'video',
+    bool? smart,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{'playlistType': playlistType};
+      if (smart != null) {
+        queryParams['smart'] = smart ? '1' : '0';
+      }
+
+      final response = await _dio.get(
+        '/playlists',
+        queryParameters: queryParams,
+      );
+      final container = _getMediaContainer(response);
+
+      if (container == null || container['Metadata'] == null) {
+        return [];
+      }
+
+      final List<dynamic> metadata = container['Metadata'] as List;
+
+      if (metadata.isEmpty) {
+        return [];
+      }
+
+      return metadata
+          .map((item) => PlexPlaylist.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      appLogger.e('Failed to get playlists: $e');
+      return [];
+    }
+  }
+
+  /// Get playlist metadata by playlist ID
+  /// Returns the playlist details (not the items)
+  Future<PlexPlaylist?> getPlaylistMetadata(String playlistId) async {
+    try {
+      final response = await _dio.get('/playlists/$playlistId');
+      final container = _getMediaContainer(response);
+
+      if (container == null || container['Metadata'] == null) {
+        return null;
+      }
+
+      final List<dynamic> metadata = container['Metadata'] as List;
+
+      if (metadata.isEmpty) {
+        return null;
+      }
+
+      return PlexPlaylist.fromJson(metadata.first as Map<String, dynamic>);
+    } catch (e) {
+      appLogger.e('Failed to get playlist metadata: $e');
+      return null;
+    }
+  }
+
+  /// Create a new playlist
+  /// [title] - Name of the playlist
+  /// [uri] - Optional comma-separated list of item URIs to add (e.g., "server://uuid/com.plexapp.plugins.library/library/metadata/1234")
+  /// [playQueueId] - Optional play queue ID to create playlist from
+  Future<PlexPlaylist?> createPlaylist({
+    required String title,
+    String? uri,
+    int? playQueueId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'type': 'video',
+        'title': title,
+        'smart': '0',
+      };
+
+      if (uri != null) {
+        queryParams['uri'] = uri;
+      }
+      if (playQueueId != null) {
+        queryParams['playQueueID'] = playQueueId.toString();
+      }
+
+      final response = await _dio.post(
+        '/playlists',
+        queryParameters: queryParams,
+      );
+      final container = _getMediaContainer(response);
+
+      if (container == null || container['Metadata'] == null) {
+        return null;
+      }
+
+      final List<dynamic> metadata = container['Metadata'] as List;
+
+      if (metadata.isEmpty) {
+        return null;
+      }
+
+      return PlexPlaylist.fromJson(metadata.first as Map<String, dynamic>);
+    } catch (e) {
+      appLogger.e('Failed to create playlist: $e');
+      return null;
+    }
+  }
+
+  /// Delete a playlist
+  Future<bool> deletePlaylist(String playlistId) async {
+    try {
+      await _dio.delete('/playlists/$playlistId');
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to delete playlist: $e');
+      return false;
+    }
+  }
+
+  /// Add items to a playlist
+  /// [playlistId] - The playlist to add items to
+  /// [uri] - Comma-separated list of item URIs to add
+  Future<bool> addToPlaylist({
+    required String playlistId,
+    required String uri,
+  }) async {
+    try {
+      appLogger.d(
+        'Adding to playlist $playlistId with URI: ${uri.substring(0, uri.length > 100 ? 100 : uri.length)}${uri.length > 100 ? "..." : ""}',
+      );
+      final response = await _dio.put(
+        '/playlists/$playlistId/items',
+        queryParameters: {'uri': uri},
+      );
+      appLogger.d('Add to playlist response status: ${response.statusCode}');
+      return response.statusCode == 200;
+    } catch (e) {
+      appLogger.e('Failed to add to playlist', error: e);
+      return false;
+    }
+  }
+
+  /// Remove an item from a playlist
+  /// [playlistId] - The playlist to remove from
+  /// [playlistItemId] - The playlist item ID to remove (from the item's playlistItemID field)
+  Future<bool> removeFromPlaylist({
+    required String playlistId,
+    required String playlistItemId,
+  }) async {
+    try {
+      await _dio.delete('/playlists/$playlistId/items/$playlistItemId');
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to remove from playlist: $e');
+      return false;
+    }
+  }
+
+  /// Move a playlist item to a new position
+  /// Only works with non-smart playlists
+  /// [playlistId] - The playlist rating key
+  /// [playlistItemId] - The playlist item ID to move
+  /// [afterPlaylistItemId] - Move the item after this playlist item ID (0 = move to top)
+  Future<bool> movePlaylistItem({
+    required String playlistId,
+    required int playlistItemId,
+    required int afterPlaylistItemId,
+  }) async {
+    try {
+      appLogger.d(
+        'Moving playlist item $playlistItemId after $afterPlaylistItemId in playlist $playlistId',
+      );
+      await _dio.put(
+        '/playlists/$playlistId/items/$playlistItemId/move',
+        queryParameters: {'after': afterPlaylistItemId},
+      );
+      appLogger.d('Successfully moved playlist item');
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to move playlist item', error: e);
+      return false;
+    }
+  }
+
+  /// Clear all items from a playlist
+  Future<bool> clearPlaylist(String playlistId) async {
+    try {
+      await _dio.delete('/playlists/$playlistId/items');
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to clear playlist: $e');
+      return false;
+    }
+  }
+
+  /// Update playlist metadata (e.g., title, summary)
+  /// Uses the same metadata editing mechanism as other items
+  Future<bool> updatePlaylist({
+    required String playlistId,
+    String? title,
+    String? summary,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'type': 'playlist',
+        'id': playlistId,
+      };
+
+      if (title != null) {
+        queryParams['title.value'] = title;
+        queryParams['title.locked'] = '1';
+      }
+      if (summary != null) {
+        queryParams['summary.value'] = summary;
+        queryParams['summary.locked'] = '1';
+      }
+
+      await _dio.put(
+        '/library/metadata/$playlistId',
+        queryParameters: queryParams,
+      );
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to update playlist: $e');
+      return false;
     }
   }
 

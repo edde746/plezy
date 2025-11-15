@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 1896 (316 per locale)
+/// Strings: 2100 (350 per locale)
 ///
-/// Built on 2025-11-15 at 00:12 UTC
+/// Built on 2025-11-15 at 02:45 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -179,6 +179,7 @@ class Translations implements BaseTranslations<AppLocale, Translations> {
 	late final _StringsLogsEn logs = _StringsLogsEn._(_root);
 	late final _StringsLicensesEn licenses = _StringsLicensesEn._(_root);
 	late final _StringsNavigationEn navigation = _StringsNavigationEn._(_root);
+	late final _StringsPlaylistsEn playlists = _StringsPlaylistsEn._(_root);
 }
 
 // Path: app
@@ -740,6 +741,49 @@ class _StringsNavigationEn {
 	String get settings => 'Settings';
 }
 
+// Path: playlists
+class _StringsPlaylistsEn {
+	_StringsPlaylistsEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get title => 'Playlists';
+	String get noPlaylists => 'No playlists found';
+	String get create => 'Create Playlist';
+	String get newPlaylist => 'New Playlist';
+	String get playlistName => 'Playlist Name';
+	String get enterPlaylistName => 'Enter playlist name';
+	String get edit => 'Edit Playlist';
+	String get delete => 'Delete Playlist';
+	String get addTo => 'Add to Playlist';
+	String get addItems => 'Add Items';
+	String get removeItem => 'Remove from Playlist';
+	String get clearPlaylist => 'Clear Playlist';
+	String get playAll => 'Play All';
+	String get shuffle => 'Shuffle';
+	String get smartPlaylist => 'Smart Playlist';
+	String get regularPlaylist => 'Regular Playlist';
+	String itemCount({required Object count}) => '${count} items';
+	String get oneItem => '1 item';
+	String get emptyPlaylist => 'This playlist is empty';
+	String get deleteConfirm => 'Delete Playlist?';
+	String deleteMessage({required Object name}) => 'Are you sure you want to delete "${name}"?';
+	String get created => 'Playlist created';
+	String get updated => 'Playlist updated';
+	String get deleted => 'Playlist deleted';
+	String get itemAdded => 'Added to playlist';
+	String get itemRemoved => 'Removed from playlist';
+	String get selectPlaylist => 'Select Playlist';
+	String get createNewPlaylist => 'Create New Playlist';
+	String get errorCreating => 'Failed to create playlist';
+	String get errorDeleting => 'Failed to delete playlist';
+	String get errorLoading => 'Failed to load playlists';
+	String get errorAdding => 'Failed to add to playlist';
+	String get errorReordering => 'Failed to reorder playlist item';
+	String get errorRemoving => 'Failed to remove from playlist';
+}
+
 // Path: <root>
 class _StringsDe implements Translations {
 	/// You can call this constructor and build your own translation instance of this locale.
@@ -791,6 +835,7 @@ class _StringsDe implements Translations {
 	@override late final _StringsLogsDe logs = _StringsLogsDe._(_root);
 	@override late final _StringsLicensesDe licenses = _StringsLicensesDe._(_root);
 	@override late final _StringsNavigationDe navigation = _StringsNavigationDe._(_root);
+	@override late final _StringsPlaylistsDe playlists = _StringsPlaylistsDe._(_root);
 }
 
 // Path: app
@@ -1352,6 +1397,49 @@ class _StringsNavigationDe implements _StringsNavigationEn {
 	@override String get settings => 'Einstellungen';
 }
 
+// Path: playlists
+class _StringsPlaylistsDe implements _StringsPlaylistsEn {
+	_StringsPlaylistsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Playlists';
+	@override String get noPlaylists => 'Keine Playlists gefunden';
+	@override String get create => 'Playlist erstellen';
+	@override String get newPlaylist => 'Neue Playlist';
+	@override String get playlistName => 'Playlist-Name';
+	@override String get enterPlaylistName => 'Playlist-Namen eingeben';
+	@override String get edit => 'Playlist bearbeiten';
+	@override String get delete => 'Playlist löschen';
+	@override String get addTo => 'Zur Playlist hinzufügen';
+	@override String get addItems => 'Elemente hinzufügen';
+	@override String get removeItem => 'Aus Playlist entfernen';
+	@override String get clearPlaylist => 'Playlist leeren';
+	@override String get playAll => 'Alle abspielen';
+	@override String get shuffle => 'Zufällig';
+	@override String get smartPlaylist => 'Intelligente Playlist';
+	@override String get regularPlaylist => 'Normale Playlist';
+	@override String itemCount({required Object count}) => '${count} Elemente';
+	@override String get oneItem => '1 Element';
+	@override String get emptyPlaylist => 'Diese Playlist ist leer';
+	@override String get deleteConfirm => 'Playlist löschen?';
+	@override String deleteMessage({required Object name}) => 'Möchten Sie "${name}" wirklich löschen?';
+	@override String get created => 'Playlist erstellt';
+	@override String get updated => 'Playlist aktualisiert';
+	@override String get deleted => 'Playlist gelöscht';
+	@override String get itemAdded => 'Zur Playlist hinzugefügt';
+	@override String get itemRemoved => 'Aus Playlist entfernt';
+	@override String get selectPlaylist => 'Playlist auswählen';
+	@override String get createNewPlaylist => 'Neue Playlist erstellen';
+	@override String get errorCreating => 'Fehler beim Erstellen der Playlist';
+	@override String get errorDeleting => 'Fehler beim Löschen der Playlist';
+	@override String get errorLoading => 'Fehler beim Laden der Playlists';
+	@override String get errorAdding => 'Fehler beim Hinzufügen zur Playlist';
+	@override String get errorReordering => 'Fehler beim Neuordnen des Playlist-Elements';
+	@override String get errorRemoving => 'Fehler beim Entfernen aus der Playlist';
+}
+
 // Path: <root>
 class _StringsIt implements Translations {
 	/// You can call this constructor and build your own translation instance of this locale.
@@ -1403,6 +1491,7 @@ class _StringsIt implements Translations {
 	@override late final _StringsLogsIt logs = _StringsLogsIt._(_root);
 	@override late final _StringsLicensesIt licenses = _StringsLicensesIt._(_root);
 	@override late final _StringsNavigationIt navigation = _StringsNavigationIt._(_root);
+	@override late final _StringsPlaylistsIt playlists = _StringsPlaylistsIt._(_root);
 }
 
 // Path: app
@@ -1964,6 +2053,49 @@ class _StringsNavigationIt implements _StringsNavigationEn {
 	@override String get settings => 'Impostazioni';
 }
 
+// Path: playlists
+class _StringsPlaylistsIt implements _StringsPlaylistsEn {
+	_StringsPlaylistsIt._(this._root);
+
+	@override final _StringsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Playlist';
+	@override String get noPlaylists => 'Nessuna playlist trovata';
+	@override String get create => 'Crea playlist';
+	@override String get newPlaylist => 'Nuova playlist';
+	@override String get playlistName => 'Nome playlist';
+	@override String get enterPlaylistName => 'Inserisci nome playlist';
+	@override String get edit => 'Modifica playlist';
+	@override String get delete => 'Elimina playlist';
+	@override String get addTo => 'Aggiungi a playlist';
+	@override String get addItems => 'Aggiungi elementi';
+	@override String get removeItem => 'Rimuovi da playlist';
+	@override String get clearPlaylist => 'Svuota playlist';
+	@override String get playAll => 'Riproduci tutto';
+	@override String get shuffle => 'Casuale';
+	@override String get smartPlaylist => 'Playlist intelligente';
+	@override String get regularPlaylist => 'Playlist normale';
+	@override String itemCount({required Object count}) => '${count} elementi';
+	@override String get oneItem => '1 elemento';
+	@override String get emptyPlaylist => 'Questa playlist è vuota';
+	@override String get deleteConfirm => 'Eliminare playlist?';
+	@override String deleteMessage({required Object name}) => 'Sei sicuro di voler eliminare "${name}"?';
+	@override String get created => 'Playlist creata';
+	@override String get updated => 'Playlist aggiornata';
+	@override String get deleted => 'Playlist eliminata';
+	@override String get itemAdded => 'Aggiunto alla playlist';
+	@override String get itemRemoved => 'Rimosso dalla playlist';
+	@override String get selectPlaylist => 'Seleziona playlist';
+	@override String get createNewPlaylist => 'Crea nuova playlist';
+	@override String get errorCreating => 'Errore durante la creazione della playlist';
+	@override String get errorDeleting => 'Errore durante l\'eliminazione della playlist';
+	@override String get errorLoading => 'Errore durante il caricamento delle playlist';
+	@override String get errorAdding => 'Errore durante l\'aggiunta alla playlist';
+	@override String get errorReordering => 'Errore durante il riordino dell\'elemento della playlist';
+	@override String get errorRemoving => 'Errore durante la rimozione dalla playlist';
+}
+
 // Path: <root>
 class _StringsNl implements Translations {
 	/// You can call this constructor and build your own translation instance of this locale.
@@ -2015,6 +2147,7 @@ class _StringsNl implements Translations {
 	@override late final _StringsLogsNl logs = _StringsLogsNl._(_root);
 	@override late final _StringsLicensesNl licenses = _StringsLicensesNl._(_root);
 	@override late final _StringsNavigationNl navigation = _StringsNavigationNl._(_root);
+	@override late final _StringsPlaylistsNl playlists = _StringsPlaylistsNl._(_root);
 }
 
 // Path: app
@@ -2576,6 +2709,49 @@ class _StringsNavigationNl implements _StringsNavigationEn {
 	@override String get settings => 'Instellingen';
 }
 
+// Path: playlists
+class _StringsPlaylistsNl implements _StringsPlaylistsEn {
+	_StringsPlaylistsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Afspeellijsten';
+	@override String get noPlaylists => 'Geen afspeellijsten gevonden';
+	@override String get create => 'Afspeellijst maken';
+	@override String get newPlaylist => 'Nieuwe afspeellijst';
+	@override String get playlistName => 'Naam afspeellijst';
+	@override String get enterPlaylistName => 'Voer naam afspeellijst in';
+	@override String get edit => 'Afspeellijst bewerken';
+	@override String get delete => 'Afspeellijst verwijderen';
+	@override String get addTo => 'Toevoegen aan afspeellijst';
+	@override String get addItems => 'Items toevoegen';
+	@override String get removeItem => 'Verwijderen uit afspeellijst';
+	@override String get clearPlaylist => 'Afspeellijst wissen';
+	@override String get playAll => 'Alles afspelen';
+	@override String get shuffle => 'Shuffle';
+	@override String get smartPlaylist => 'Slimme afspeellijst';
+	@override String get regularPlaylist => 'Normale afspeellijst';
+	@override String itemCount({required Object count}) => '${count} items';
+	@override String get oneItem => '1 item';
+	@override String get emptyPlaylist => 'Deze afspeellijst is leeg';
+	@override String get deleteConfirm => 'Afspeellijst verwijderen?';
+	@override String deleteMessage({required Object name}) => 'Weet je zeker dat je "${name}" wilt verwijderen?';
+	@override String get created => 'Afspeellijst gemaakt';
+	@override String get updated => 'Afspeellijst bijgewerkt';
+	@override String get deleted => 'Afspeellijst verwijderd';
+	@override String get itemAdded => 'Toegevoegd aan afspeellijst';
+	@override String get itemRemoved => 'Verwijderd uit afspeellijst';
+	@override String get selectPlaylist => 'Selecteer afspeellijst';
+	@override String get createNewPlaylist => 'Nieuwe afspeellijst maken';
+	@override String get errorCreating => 'Fout bij maken afspeellijst';
+	@override String get errorDeleting => 'Fout bij verwijderen afspeellijst';
+	@override String get errorLoading => 'Fout bij laden afspeellijsten';
+	@override String get errorAdding => 'Fout bij toevoegen aan afspeellijst';
+	@override String get errorReordering => 'Fout bij herschikken van afspeellijstitem';
+	@override String get errorRemoving => 'Fout bij verwijderen uit afspeellijst';
+}
+
 // Path: <root>
 class _StringsSv implements Translations {
 	/// You can call this constructor and build your own translation instance of this locale.
@@ -2627,6 +2803,7 @@ class _StringsSv implements Translations {
 	@override late final _StringsLogsSv logs = _StringsLogsSv._(_root);
 	@override late final _StringsLicensesSv licenses = _StringsLicensesSv._(_root);
 	@override late final _StringsNavigationSv navigation = _StringsNavigationSv._(_root);
+	@override late final _StringsPlaylistsSv playlists = _StringsPlaylistsSv._(_root);
 }
 
 // Path: app
@@ -3188,6 +3365,49 @@ class _StringsNavigationSv implements _StringsNavigationEn {
 	@override String get settings => 'Inställningar';
 }
 
+// Path: playlists
+class _StringsPlaylistsSv implements _StringsPlaylistsEn {
+	_StringsPlaylistsSv._(this._root);
+
+	@override final _StringsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Spellistor';
+	@override String get noPlaylists => 'Inga spellistor hittades';
+	@override String get create => 'Skapa spellista';
+	@override String get newPlaylist => 'Ny spellista';
+	@override String get playlistName => 'Spellistans namn';
+	@override String get enterPlaylistName => 'Ange spellistans namn';
+	@override String get edit => 'Redigera spellista';
+	@override String get delete => 'Ta bort spellista';
+	@override String get addTo => 'Lägg till i spellista';
+	@override String get addItems => 'Lägg till objekt';
+	@override String get removeItem => 'Ta bort från spellista';
+	@override String get clearPlaylist => 'Rensa spellista';
+	@override String get playAll => 'Spela alla';
+	@override String get shuffle => 'Blanda';
+	@override String get smartPlaylist => 'Smart spellista';
+	@override String get regularPlaylist => 'Vanlig spellista';
+	@override String itemCount({required Object count}) => '${count} objekt';
+	@override String get oneItem => '1 objekt';
+	@override String get emptyPlaylist => 'Denna spellista är tom';
+	@override String get deleteConfirm => 'Ta bort spellista?';
+	@override String deleteMessage({required Object name}) => 'Är du säker på att du vill ta bort "${name}"?';
+	@override String get created => 'Spellista skapad';
+	@override String get updated => 'Spellista uppdaterad';
+	@override String get deleted => 'Spellista borttagen';
+	@override String get itemAdded => 'Tillagd i spellista';
+	@override String get itemRemoved => 'Borttagen från spellista';
+	@override String get selectPlaylist => 'Välj spellista';
+	@override String get createNewPlaylist => 'Skapa ny spellista';
+	@override String get errorCreating => 'Det gick inte att skapa spellista';
+	@override String get errorDeleting => 'Det gick inte att ta bort spellista';
+	@override String get errorLoading => 'Det gick inte att ladda spellistor';
+	@override String get errorAdding => 'Det gick inte att lägga till i spellista';
+	@override String get errorReordering => 'Det gick inte att omordna spellisteobjekt';
+	@override String get errorRemoving => 'Det gick inte att ta bort från spellista';
+}
+
 // Path: <root>
 class _StringsZh implements Translations {
 	/// You can call this constructor and build your own translation instance of this locale.
@@ -3239,6 +3459,7 @@ class _StringsZh implements Translations {
 	@override late final _StringsLogsZh logs = _StringsLogsZh._(_root);
 	@override late final _StringsLicensesZh licenses = _StringsLicensesZh._(_root);
 	@override late final _StringsNavigationZh navigation = _StringsNavigationZh._(_root);
+	@override late final _StringsPlaylistsZh playlists = _StringsPlaylistsZh._(_root);
 }
 
 // Path: app
@@ -3800,6 +4021,49 @@ class _StringsNavigationZh implements _StringsNavigationEn {
 	@override String get settings => '设置';
 }
 
+// Path: playlists
+class _StringsPlaylistsZh implements _StringsPlaylistsEn {
+	_StringsPlaylistsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '播放列表';
+	@override String get noPlaylists => '未找到播放列表';
+	@override String get create => '创建播放列表';
+	@override String get newPlaylist => '新播放列表';
+	@override String get playlistName => '播放列表名称';
+	@override String get enterPlaylistName => '输入播放列表名称';
+	@override String get edit => '编辑播放列表';
+	@override String get delete => '删除播放列表';
+	@override String get addTo => '添加到播放列表';
+	@override String get addItems => '添加项目';
+	@override String get removeItem => '从播放列表中移除';
+	@override String get clearPlaylist => '清空播放列表';
+	@override String get playAll => '全部播放';
+	@override String get shuffle => '随机播放';
+	@override String get smartPlaylist => '智能播放列表';
+	@override String get regularPlaylist => '普通播放列表';
+	@override String itemCount({required Object count}) => '${count} 个项目';
+	@override String get oneItem => '1 个项目';
+	@override String get emptyPlaylist => '此播放列表为空';
+	@override String get deleteConfirm => '删除播放列表？';
+	@override String deleteMessage({required Object name}) => '确定要删除 "${name}" 吗？';
+	@override String get created => '播放列表已创建';
+	@override String get updated => '播放列表已更新';
+	@override String get deleted => '播放列表已删除';
+	@override String get itemAdded => '已添加到播放列表';
+	@override String get itemRemoved => '已从播放列表中移除';
+	@override String get selectPlaylist => '选择播放列表';
+	@override String get createNewPlaylist => '创建新播放列表';
+	@override String get errorCreating => '创建播放列表失败';
+	@override String get errorDeleting => '删除播放列表失败';
+	@override String get errorLoading => '加载播放列表失败';
+	@override String get errorAdding => '添加到播放列表失败';
+	@override String get errorReordering => '重新排序播放列表项目失败';
+	@override String get errorRemoving => '从播放列表中移除失败';
+}
+
 /// Flat map(s) containing all translations.
 /// Only for edge cases! For simple maps, use the map function of this library.
 
@@ -4122,6 +4386,40 @@ extension on Translations {
 			case 'navigation.search': return 'Search';
 			case 'navigation.libraries': return 'Libraries';
 			case 'navigation.settings': return 'Settings';
+			case 'playlists.title': return 'Playlists';
+			case 'playlists.noPlaylists': return 'No playlists found';
+			case 'playlists.create': return 'Create Playlist';
+			case 'playlists.newPlaylist': return 'New Playlist';
+			case 'playlists.playlistName': return 'Playlist Name';
+			case 'playlists.enterPlaylistName': return 'Enter playlist name';
+			case 'playlists.edit': return 'Edit Playlist';
+			case 'playlists.delete': return 'Delete Playlist';
+			case 'playlists.addTo': return 'Add to Playlist';
+			case 'playlists.addItems': return 'Add Items';
+			case 'playlists.removeItem': return 'Remove from Playlist';
+			case 'playlists.clearPlaylist': return 'Clear Playlist';
+			case 'playlists.playAll': return 'Play All';
+			case 'playlists.shuffle': return 'Shuffle';
+			case 'playlists.smartPlaylist': return 'Smart Playlist';
+			case 'playlists.regularPlaylist': return 'Regular Playlist';
+			case 'playlists.itemCount': return ({required Object count}) => '${count} items';
+			case 'playlists.oneItem': return '1 item';
+			case 'playlists.emptyPlaylist': return 'This playlist is empty';
+			case 'playlists.deleteConfirm': return 'Delete Playlist?';
+			case 'playlists.deleteMessage': return ({required Object name}) => 'Are you sure you want to delete "${name}"?';
+			case 'playlists.created': return 'Playlist created';
+			case 'playlists.updated': return 'Playlist updated';
+			case 'playlists.deleted': return 'Playlist deleted';
+			case 'playlists.itemAdded': return 'Added to playlist';
+			case 'playlists.itemRemoved': return 'Removed from playlist';
+			case 'playlists.selectPlaylist': return 'Select Playlist';
+			case 'playlists.createNewPlaylist': return 'Create New Playlist';
+			case 'playlists.errorCreating': return 'Failed to create playlist';
+			case 'playlists.errorDeleting': return 'Failed to delete playlist';
+			case 'playlists.errorLoading': return 'Failed to load playlists';
+			case 'playlists.errorAdding': return 'Failed to add to playlist';
+			case 'playlists.errorReordering': return 'Failed to reorder playlist item';
+			case 'playlists.errorRemoving': return 'Failed to remove from playlist';
 			default: return null;
 		}
 	}
@@ -4446,6 +4744,40 @@ extension on _StringsDe {
 			case 'navigation.search': return 'Suche';
 			case 'navigation.libraries': return 'Bibliotheken';
 			case 'navigation.settings': return 'Einstellungen';
+			case 'playlists.title': return 'Playlists';
+			case 'playlists.noPlaylists': return 'Keine Playlists gefunden';
+			case 'playlists.create': return 'Playlist erstellen';
+			case 'playlists.newPlaylist': return 'Neue Playlist';
+			case 'playlists.playlistName': return 'Playlist-Name';
+			case 'playlists.enterPlaylistName': return 'Playlist-Namen eingeben';
+			case 'playlists.edit': return 'Playlist bearbeiten';
+			case 'playlists.delete': return 'Playlist löschen';
+			case 'playlists.addTo': return 'Zur Playlist hinzufügen';
+			case 'playlists.addItems': return 'Elemente hinzufügen';
+			case 'playlists.removeItem': return 'Aus Playlist entfernen';
+			case 'playlists.clearPlaylist': return 'Playlist leeren';
+			case 'playlists.playAll': return 'Alle abspielen';
+			case 'playlists.shuffle': return 'Zufällig';
+			case 'playlists.smartPlaylist': return 'Intelligente Playlist';
+			case 'playlists.regularPlaylist': return 'Normale Playlist';
+			case 'playlists.itemCount': return ({required Object count}) => '${count} Elemente';
+			case 'playlists.oneItem': return '1 Element';
+			case 'playlists.emptyPlaylist': return 'Diese Playlist ist leer';
+			case 'playlists.deleteConfirm': return 'Playlist löschen?';
+			case 'playlists.deleteMessage': return ({required Object name}) => 'Möchten Sie "${name}" wirklich löschen?';
+			case 'playlists.created': return 'Playlist erstellt';
+			case 'playlists.updated': return 'Playlist aktualisiert';
+			case 'playlists.deleted': return 'Playlist gelöscht';
+			case 'playlists.itemAdded': return 'Zur Playlist hinzugefügt';
+			case 'playlists.itemRemoved': return 'Aus Playlist entfernt';
+			case 'playlists.selectPlaylist': return 'Playlist auswählen';
+			case 'playlists.createNewPlaylist': return 'Neue Playlist erstellen';
+			case 'playlists.errorCreating': return 'Fehler beim Erstellen der Playlist';
+			case 'playlists.errorDeleting': return 'Fehler beim Löschen der Playlist';
+			case 'playlists.errorLoading': return 'Fehler beim Laden der Playlists';
+			case 'playlists.errorAdding': return 'Fehler beim Hinzufügen zur Playlist';
+			case 'playlists.errorReordering': return 'Fehler beim Neuordnen des Playlist-Elements';
+			case 'playlists.errorRemoving': return 'Fehler beim Entfernen aus der Playlist';
 			default: return null;
 		}
 	}
@@ -4770,6 +5102,40 @@ extension on _StringsIt {
 			case 'navigation.search': return 'Cerca';
 			case 'navigation.libraries': return 'Librerie';
 			case 'navigation.settings': return 'Impostazioni';
+			case 'playlists.title': return 'Playlist';
+			case 'playlists.noPlaylists': return 'Nessuna playlist trovata';
+			case 'playlists.create': return 'Crea playlist';
+			case 'playlists.newPlaylist': return 'Nuova playlist';
+			case 'playlists.playlistName': return 'Nome playlist';
+			case 'playlists.enterPlaylistName': return 'Inserisci nome playlist';
+			case 'playlists.edit': return 'Modifica playlist';
+			case 'playlists.delete': return 'Elimina playlist';
+			case 'playlists.addTo': return 'Aggiungi a playlist';
+			case 'playlists.addItems': return 'Aggiungi elementi';
+			case 'playlists.removeItem': return 'Rimuovi da playlist';
+			case 'playlists.clearPlaylist': return 'Svuota playlist';
+			case 'playlists.playAll': return 'Riproduci tutto';
+			case 'playlists.shuffle': return 'Casuale';
+			case 'playlists.smartPlaylist': return 'Playlist intelligente';
+			case 'playlists.regularPlaylist': return 'Playlist normale';
+			case 'playlists.itemCount': return ({required Object count}) => '${count} elementi';
+			case 'playlists.oneItem': return '1 elemento';
+			case 'playlists.emptyPlaylist': return 'Questa playlist è vuota';
+			case 'playlists.deleteConfirm': return 'Eliminare playlist?';
+			case 'playlists.deleteMessage': return ({required Object name}) => 'Sei sicuro di voler eliminare "${name}"?';
+			case 'playlists.created': return 'Playlist creata';
+			case 'playlists.updated': return 'Playlist aggiornata';
+			case 'playlists.deleted': return 'Playlist eliminata';
+			case 'playlists.itemAdded': return 'Aggiunto alla playlist';
+			case 'playlists.itemRemoved': return 'Rimosso dalla playlist';
+			case 'playlists.selectPlaylist': return 'Seleziona playlist';
+			case 'playlists.createNewPlaylist': return 'Crea nuova playlist';
+			case 'playlists.errorCreating': return 'Errore durante la creazione della playlist';
+			case 'playlists.errorDeleting': return 'Errore durante l\'eliminazione della playlist';
+			case 'playlists.errorLoading': return 'Errore durante il caricamento delle playlist';
+			case 'playlists.errorAdding': return 'Errore durante l\'aggiunta alla playlist';
+			case 'playlists.errorReordering': return 'Errore durante il riordino dell\'elemento della playlist';
+			case 'playlists.errorRemoving': return 'Errore durante la rimozione dalla playlist';
 			default: return null;
 		}
 	}
@@ -5094,6 +5460,40 @@ extension on _StringsNl {
 			case 'navigation.search': return 'Zoeken';
 			case 'navigation.libraries': return 'Bibliotheken';
 			case 'navigation.settings': return 'Instellingen';
+			case 'playlists.title': return 'Afspeellijsten';
+			case 'playlists.noPlaylists': return 'Geen afspeellijsten gevonden';
+			case 'playlists.create': return 'Afspeellijst maken';
+			case 'playlists.newPlaylist': return 'Nieuwe afspeellijst';
+			case 'playlists.playlistName': return 'Naam afspeellijst';
+			case 'playlists.enterPlaylistName': return 'Voer naam afspeellijst in';
+			case 'playlists.edit': return 'Afspeellijst bewerken';
+			case 'playlists.delete': return 'Afspeellijst verwijderen';
+			case 'playlists.addTo': return 'Toevoegen aan afspeellijst';
+			case 'playlists.addItems': return 'Items toevoegen';
+			case 'playlists.removeItem': return 'Verwijderen uit afspeellijst';
+			case 'playlists.clearPlaylist': return 'Afspeellijst wissen';
+			case 'playlists.playAll': return 'Alles afspelen';
+			case 'playlists.shuffle': return 'Shuffle';
+			case 'playlists.smartPlaylist': return 'Slimme afspeellijst';
+			case 'playlists.regularPlaylist': return 'Normale afspeellijst';
+			case 'playlists.itemCount': return ({required Object count}) => '${count} items';
+			case 'playlists.oneItem': return '1 item';
+			case 'playlists.emptyPlaylist': return 'Deze afspeellijst is leeg';
+			case 'playlists.deleteConfirm': return 'Afspeellijst verwijderen?';
+			case 'playlists.deleteMessage': return ({required Object name}) => 'Weet je zeker dat je "${name}" wilt verwijderen?';
+			case 'playlists.created': return 'Afspeellijst gemaakt';
+			case 'playlists.updated': return 'Afspeellijst bijgewerkt';
+			case 'playlists.deleted': return 'Afspeellijst verwijderd';
+			case 'playlists.itemAdded': return 'Toegevoegd aan afspeellijst';
+			case 'playlists.itemRemoved': return 'Verwijderd uit afspeellijst';
+			case 'playlists.selectPlaylist': return 'Selecteer afspeellijst';
+			case 'playlists.createNewPlaylist': return 'Nieuwe afspeellijst maken';
+			case 'playlists.errorCreating': return 'Fout bij maken afspeellijst';
+			case 'playlists.errorDeleting': return 'Fout bij verwijderen afspeellijst';
+			case 'playlists.errorLoading': return 'Fout bij laden afspeellijsten';
+			case 'playlists.errorAdding': return 'Fout bij toevoegen aan afspeellijst';
+			case 'playlists.errorReordering': return 'Fout bij herschikken van afspeellijstitem';
+			case 'playlists.errorRemoving': return 'Fout bij verwijderen uit afspeellijst';
 			default: return null;
 		}
 	}
@@ -5418,6 +5818,40 @@ extension on _StringsSv {
 			case 'navigation.search': return 'Sök';
 			case 'navigation.libraries': return 'Bibliotek';
 			case 'navigation.settings': return 'Inställningar';
+			case 'playlists.title': return 'Spellistor';
+			case 'playlists.noPlaylists': return 'Inga spellistor hittades';
+			case 'playlists.create': return 'Skapa spellista';
+			case 'playlists.newPlaylist': return 'Ny spellista';
+			case 'playlists.playlistName': return 'Spellistans namn';
+			case 'playlists.enterPlaylistName': return 'Ange spellistans namn';
+			case 'playlists.edit': return 'Redigera spellista';
+			case 'playlists.delete': return 'Ta bort spellista';
+			case 'playlists.addTo': return 'Lägg till i spellista';
+			case 'playlists.addItems': return 'Lägg till objekt';
+			case 'playlists.removeItem': return 'Ta bort från spellista';
+			case 'playlists.clearPlaylist': return 'Rensa spellista';
+			case 'playlists.playAll': return 'Spela alla';
+			case 'playlists.shuffle': return 'Blanda';
+			case 'playlists.smartPlaylist': return 'Smart spellista';
+			case 'playlists.regularPlaylist': return 'Vanlig spellista';
+			case 'playlists.itemCount': return ({required Object count}) => '${count} objekt';
+			case 'playlists.oneItem': return '1 objekt';
+			case 'playlists.emptyPlaylist': return 'Denna spellista är tom';
+			case 'playlists.deleteConfirm': return 'Ta bort spellista?';
+			case 'playlists.deleteMessage': return ({required Object name}) => 'Är du säker på att du vill ta bort "${name}"?';
+			case 'playlists.created': return 'Spellista skapad';
+			case 'playlists.updated': return 'Spellista uppdaterad';
+			case 'playlists.deleted': return 'Spellista borttagen';
+			case 'playlists.itemAdded': return 'Tillagd i spellista';
+			case 'playlists.itemRemoved': return 'Borttagen från spellista';
+			case 'playlists.selectPlaylist': return 'Välj spellista';
+			case 'playlists.createNewPlaylist': return 'Skapa ny spellista';
+			case 'playlists.errorCreating': return 'Det gick inte att skapa spellista';
+			case 'playlists.errorDeleting': return 'Det gick inte att ta bort spellista';
+			case 'playlists.errorLoading': return 'Det gick inte att ladda spellistor';
+			case 'playlists.errorAdding': return 'Det gick inte att lägga till i spellista';
+			case 'playlists.errorReordering': return 'Det gick inte att omordna spellisteobjekt';
+			case 'playlists.errorRemoving': return 'Det gick inte att ta bort från spellista';
 			default: return null;
 		}
 	}
@@ -5742,6 +6176,40 @@ extension on _StringsZh {
 			case 'navigation.search': return '搜索';
 			case 'navigation.libraries': return '媒体库';
 			case 'navigation.settings': return '设置';
+			case 'playlists.title': return '播放列表';
+			case 'playlists.noPlaylists': return '未找到播放列表';
+			case 'playlists.create': return '创建播放列表';
+			case 'playlists.newPlaylist': return '新播放列表';
+			case 'playlists.playlistName': return '播放列表名称';
+			case 'playlists.enterPlaylistName': return '输入播放列表名称';
+			case 'playlists.edit': return '编辑播放列表';
+			case 'playlists.delete': return '删除播放列表';
+			case 'playlists.addTo': return '添加到播放列表';
+			case 'playlists.addItems': return '添加项目';
+			case 'playlists.removeItem': return '从播放列表中移除';
+			case 'playlists.clearPlaylist': return '清空播放列表';
+			case 'playlists.playAll': return '全部播放';
+			case 'playlists.shuffle': return '随机播放';
+			case 'playlists.smartPlaylist': return '智能播放列表';
+			case 'playlists.regularPlaylist': return '普通播放列表';
+			case 'playlists.itemCount': return ({required Object count}) => '${count} 个项目';
+			case 'playlists.oneItem': return '1 个项目';
+			case 'playlists.emptyPlaylist': return '此播放列表为空';
+			case 'playlists.deleteConfirm': return '删除播放列表？';
+			case 'playlists.deleteMessage': return ({required Object name}) => '确定要删除 "${name}" 吗？';
+			case 'playlists.created': return '播放列表已创建';
+			case 'playlists.updated': return '播放列表已更新';
+			case 'playlists.deleted': return '播放列表已删除';
+			case 'playlists.itemAdded': return '已添加到播放列表';
+			case 'playlists.itemRemoved': return '已从播放列表中移除';
+			case 'playlists.selectPlaylist': return '选择播放列表';
+			case 'playlists.createNewPlaylist': return '创建新播放列表';
+			case 'playlists.errorCreating': return '创建播放列表失败';
+			case 'playlists.errorDeleting': return '删除播放列表失败';
+			case 'playlists.errorLoading': return '加载播放列表失败';
+			case 'playlists.errorAdding': return '添加到播放列表失败';
+			case 'playlists.errorReordering': return '重新排序播放列表项目失败';
+			case 'playlists.errorRemoving': return '从播放列表中移除失败';
 			default: return null;
 		}
 	}

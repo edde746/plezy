@@ -112,6 +112,18 @@ class ServerConnectionService {
         },
       );
 
+      // Fetch machine identifier and cache it in config
+      try {
+        final machineId = await client.getMachineIdentifier();
+        if (machineId != null) {
+          client.config = config.copyWith(machineIdentifier: machineId);
+          appLogger.d('Cached machine identifier: $machineId');
+        }
+      } catch (e) {
+        appLogger.w('Failed to fetch machine identifier', error: e);
+        // Continue without it - buildMetadataUri will fallback to fetching it
+      }
+
       // Verify server is accessible if requested
       if (verifyServer) {
         try {

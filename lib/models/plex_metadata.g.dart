@@ -42,6 +42,7 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
       .toList(),
   audioLanguage: json['audioLanguage'] as String?,
   subtitleLanguage: json['subtitleLanguage'] as String?,
+  playlistItemID: (json['playlistItemID'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
@@ -79,4 +80,5 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
       'Role': instance.role,
       'audioLanguage': instance.audioLanguage,
       'subtitleLanguage': instance.subtitleLanguage,
+      'playlistItemID': instance.playlistItemID,
     };
