@@ -1145,7 +1145,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               iconSize: size,
               onPressed: onPressed,
               autofocus: false,
-              focusNode: isTV ? FocusNode(skipTraversal: true) : null,
             ),
           );
         },

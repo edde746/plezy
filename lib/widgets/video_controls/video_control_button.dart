@@ -45,12 +45,14 @@ class VideoControlButton extends StatefulWidget {
 }
 
 class _VideoControlButtonState extends State<VideoControlButton> {
-  final FocusNode _focusNode = FocusNode();
+  late final FocusNode _focusNode;
   bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
+    final isTV = PlatformDetector.isTVSync();
+    _focusNode = FocusNode(skipTraversal: isTV);
     _focusNode.addListener(_onFocusChange);
   }
 
@@ -103,7 +105,6 @@ class _VideoControlButtonState extends State<VideoControlButton> {
           constraints: BoxConstraints(minWidth: minSize, minHeight: minSize),
           iconSize: isTV ? 28 : 24,
           autofocus: false,
-          focusNode: isTV ? FocusNode(skipTraversal: true) : null,
         ),
       ),
     );
