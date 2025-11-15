@@ -24,7 +24,7 @@ class ServerConnectionResult {
 /// Implements fast-first connection with background optimization
 class ServerConnectionService {
   static StreamSubscription<List<ConnectivityResult>>?
-      _connectivitySubscription;
+  _connectivitySubscription;
   static Future<void>? _activeOptimization;
   static PlexServer? _activeServer;
   static PlexClient? _activeClient;
@@ -51,28 +51,31 @@ class ServerConnectionService {
   }) async {
     final storage = await StorageService.getInstance();
 
-    final connectionStream =
-        server.findBestWorkingConnection().asBroadcastStream();
+    final connectionStream = server
+        .findBestWorkingConnection()
+        .asBroadcastStream();
     PlexClient? client;
 
-    final optimizationSubscription = connectionStream.skip(1).listen(
-      (connection) async {
-        await _handleOptimizedConnection(
-          connection: connection,
-          storage: storage,
-          server: server,
-          client: client,
-          reason: 'initial_latency_sweep',
+    final optimizationSubscription = connectionStream
+        .skip(1)
+        .listen(
+          (connection) async {
+            await _handleOptimizedConnection(
+              connection: connection,
+              storage: storage,
+              server: server,
+              client: client,
+              reason: 'initial_latency_sweep',
+            );
+          },
+          onError: (error, stackTrace) {
+            appLogger.w(
+              'Background connection optimization error',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          },
         );
-      },
-      onError: (error, stackTrace) {
-        appLogger.w(
-          'Background connection optimization error',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      },
-    );
 
     try {
       final connection = await connectionStream.first;
@@ -132,9 +135,7 @@ class ServerConnectionService {
           await optimizationSubscription.cancel();
           appLogger.w('Server identity verification failed', error: e);
           await storage.clearCredentials();
-          return ServerConnectionResult(
-            error: 'Server is not accessible: $e',
-          );
+          return ServerConnectionResult(error: 'Server is not accessible: $e');
         }
       }
 
@@ -149,10 +150,7 @@ class ServerConnectionService {
       _activeClient = client;
       _startConnectivityMonitoring(server);
 
-      return ServerConnectionResult(
-        client: client,
-        userProfile: userProfile,
-      );
+      return ServerConnectionResult(client: client, userProfile: userProfile);
     } on StateError catch (e, stackTrace) {
       await optimizationSubscription.cancel();
       appLogger.e(
@@ -205,8 +203,9 @@ class ServerConnectionService {
     final connectivity = Connectivity();
     _connectivitySubscription = connectivity.onConnectivityChanged.listen(
       (results) {
-        final status =
-            results.isNotEmpty ? results.first : ConnectivityResult.none;
+        final status = results.isNotEmpty
+            ? results.first
+            : ConnectivityResult.none;
         if (status == ConnectivityResult.none) {
           appLogger.w(
             'Connectivity lost, pausing optimization until network returns',
@@ -250,13 +249,14 @@ class ServerConnectionService {
       return;
     }
 
-    _activeOptimization = _runOptimization(
-      server: _activeServer!,
-      client: _activeClient,
-      reason: reason,
-    ).whenComplete(() {
-      _activeOptimization = null;
-    });
+    _activeOptimization =
+        _runOptimization(
+          server: _activeServer!,
+          client: _activeClient,
+          reason: reason,
+        ).whenComplete(() {
+          _activeOptimization = null;
+        });
   }
 
   static Future<void> _runOptimization({

@@ -135,7 +135,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // Clear media controls when app goes to background or screen locks
         // (we don't support background playback)
         OsMediaControls.clear();
-        appLogger.d('Media controls cleared due to app lifecycle state: $state');
+        appLogger.d(
+          'Media controls cleared due to app lifecycle state: $state',
+        );
         break;
       case AppLifecycleState.resumed:
         // Restore media controls when app is resumed
@@ -303,9 +305,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           widget.metadata.ratingKey,
           loopQueue: false, // Don't loop playlists by default
         );
-        previous = playbackState.getPreviousEpisode(
-          widget.metadata.ratingKey,
-        );
+        previous = playbackState.getPreviousEpisode(widget.metadata.ratingKey);
       }
       // Check if shuffle mode is active
       else if (playbackState.isShuffleActive) {

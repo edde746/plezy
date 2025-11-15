@@ -61,7 +61,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
         _isLoading = false;
       });
 
-      appLogger.d('Loaded ${items.length} items for playlist: ${widget.playlist.title}');
+      appLogger.d(
+        'Loaded ${items.length} items for playlist: ${widget.playlist.title}',
+      );
     } catch (e) {
       appLogger.e('Failed to load playlist items', error: e);
       setState(() {
@@ -96,14 +98,14 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
 
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.playlists.deleted)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.playlists.deleted)));
           Navigator.pop(context); // Return to playlists screen
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.playlists.errorDeleting)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.playlists.errorDeleting)));
         }
       }
     }
@@ -124,9 +126,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
     if (movedItem.playlistItemID == null) {
       appLogger.e('Cannot reorder: item missing playlistItemID');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.playlists.errorReordering)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
       }
       return;
     }
@@ -142,16 +144,18 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
       if (afterItem.playlistItemID == null) {
         appLogger.e('Cannot reorder: after item missing playlistItemID');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.playlists.errorReordering)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
         }
         return;
       }
       afterPlaylistItemId = afterItem.playlistItemID!;
     }
 
-    appLogger.d('Reordering item from $oldIndex to $newIndex (after ID: $afterPlaylistItemId)');
+    appLogger.d(
+      'Reordering item from $oldIndex to $newIndex (after ID: $afterPlaylistItemId)',
+    );
 
     // Optimistically update UI
     setState(() {
@@ -175,9 +179,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
           _items.insert(oldIndex, item);
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.playlists.errorReordering)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
       }
     }
   }
@@ -189,14 +193,16 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
     if (item.playlistItemID == null) {
       appLogger.e('Cannot remove: item missing playlistItemID');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.playlists.errorRemoving)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.playlists.errorRemoving)));
       }
       return;
     }
 
-    appLogger.d('Removing item ${item.title} (playlistItemID: ${item.playlistItemID}) from playlist');
+    appLogger.d(
+      'Removing item ${item.title} (playlistItemID: ${item.playlistItemID}) from playlist',
+    );
 
     // Optimistically update UI
     setState(() {
@@ -211,9 +217,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
 
     if (mounted) {
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.playlists.itemRemoved)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.playlists.itemRemoved)));
       } else {
         // Revert on failure
         appLogger.e('Failed to remove playlist item, reverting UI');
@@ -221,9 +227,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
           _items.insert(index, item);
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.playlists.errorRemoving)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.playlists.errorRemoving)));
       }
     }
   }
@@ -244,9 +250,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
   Future<void> _playPlaylist() async {
     if (_items.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.playlists.emptyPlaylist)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.playlists.emptyPlaylist)));
       }
       return;
     }
@@ -265,9 +271,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
   Future<void> _shufflePlayPlaylist() async {
     if (_items.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.playlists.emptyPlaylist)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.playlists.emptyPlaylist)));
       }
       return;
     }
@@ -422,10 +428,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
                   mainAxisSpacing: 0,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  return MediaCard(
-                    item: _items[index],
-                    onRefresh: updateItem,
-                  );
+                  return MediaCard(item: _items[index], onRefresh: updateItem);
                 }, childCount: _items.length),
               ),
             )

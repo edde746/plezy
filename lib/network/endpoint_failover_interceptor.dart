@@ -25,10 +25,7 @@ class EndpointFailoverManager {
   }
 
   /// Replace the endpoint list and optionally set the active endpoint.
-  void reset(
-    List<String> urls, {
-    String? currentBaseUrl,
-  }) {
+  void reset(List<String> urls, {String? currentBaseUrl}) {
     _setEndpoints(urls);
     if (currentBaseUrl != null) {
       final index = _endpoints.indexOf(currentBaseUrl);
@@ -60,8 +57,8 @@ class EndpointFailoverInterceptor extends Interceptor {
     required Dio dio,
     required this.endpointManager,
     required Future<void> Function(String newBaseUrl) onEndpointSwitch,
-  })  : _dio = dio,
-        _onEndpointSwitch = onEndpointSwitch;
+  }) : _dio = dio,
+       _onEndpointSwitch = onEndpointSwitch;
 
   final Dio _dio;
   final EndpointFailoverManager endpointManager;

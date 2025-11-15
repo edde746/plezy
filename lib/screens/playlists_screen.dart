@@ -156,9 +156,8 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> with Refreshable {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PlaylistDetailScreen(
-                            playlist: _playlists[index],
-                          ),
+                          builder: (context) =>
+                              PlaylistDetailScreen(playlist: _playlists[index]),
                         ),
                       ).then((_) => _loadPlaylists()); // Refresh on return
                     },
@@ -275,14 +274,14 @@ class _PlaylistCard extends StatelessWidget {
 
       if (context.mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.playlists.deleted)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.playlists.deleted)));
           onDeleted();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.playlists.errorDeleting)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.playlists.errorDeleting)));
         }
       }
     }
@@ -370,13 +369,12 @@ class _PlaylistCard extends StatelessWidget {
                       Text(
                         playlist.leafCount != null && playlist.leafCount! > 0
                             ? (playlist.leafCount == 1
-                                ? t.playlists.oneItem
-                                : t.playlists.itemCount(count: playlist.leafCount!))
+                                  ? t.playlists.oneItem
+                                  : t.playlists.itemCount(
+                                      count: playlist.leafCount!,
+                                    ))
                             : t.playlists.emptyPlaylist,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -393,11 +391,7 @@ class _PlaylistCard extends StatelessWidget {
     return Container(
       color: Colors.grey[850],
       child: const Center(
-        child: Icon(
-          Icons.playlist_play,
-          size: 48,
-          color: Colors.grey,
-        ),
+        child: Icon(Icons.playlist_play, size: 48, color: Colors.grey),
       ),
     );
   }

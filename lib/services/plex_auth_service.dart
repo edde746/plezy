@@ -418,10 +418,7 @@ class PlexServer {
     final totalCandidates = candidates.length;
     appLogger.d(
       'Starting server connection discovery',
-      error: {
-        'preferred': preferredUri,
-        'candidateCount': totalCandidates,
-      },
+      error: {'preferred': preferredUri, 'candidateCount': totalCandidates},
     );
 
     _ConnectionCandidate? firstCandidate;
@@ -466,13 +463,11 @@ class PlexServer {
       );
 
       for (final candidate in candidates) {
-        PlexClient
-            .testConnectionWithLatency(
+        PlexClient.testConnectionWithLatency(
           candidate.url,
           accessToken,
           timeout: raceTimeout,
-        )
-            .then((result) {
+        ).then((result) {
           completedTests++;
 
           if (result.success && !completer.isCompleted) {
@@ -545,7 +540,7 @@ class PlexServer {
     if (bestCandidate != null) {
       final upgradedCandidate =
           await _upgradeCandidateToHttpsIfPossible(bestCandidate) ??
-              bestCandidate;
+          bestCandidate;
 
       final bestConnection = _updateConnectionUrl(
         upgradedCandidate.connection,
@@ -596,8 +591,7 @@ class PlexServer {
       if (uri == url) {
         final isHttps = uri.startsWith('https://');
         final parsedHost = Uri.tryParse(uri)?.host ?? '';
-        final isPlexDirect =
-            parsedHost.toLowerCase().contains('plex.direct');
+        final isPlexDirect = parsedHost.toLowerCase().contains('plex.direct');
         return _ConnectionCandidate(connection, uri, isPlexDirect, isHttps);
       }
     }
@@ -644,18 +638,14 @@ class PlexServer {
         return;
       }
       seen.add(url);
-      bucketFor(connection, isHttps).add(
-        _ConnectionCandidate(connection, url, isPlexDirectUri, isHttps),
-      );
+      bucketFor(
+        connection,
+        isHttps,
+      ).add(_ConnectionCandidate(connection, url, isPlexDirectUri, isHttps));
     }
 
     for (final connection in connections) {
-      addCandidate(
-        connection,
-        connection.httpDirectUrl,
-        false,
-        false,
-      );
+      addCandidate(connection, connection.httpDirectUrl, false, false);
     }
 
     return [
@@ -789,8 +779,9 @@ class PlexServer {
       current.uri.contains('.plex.direct'),
       current.uri.startsWith('https://'),
     );
-    final upgradedCandidate =
-        await _upgradeCandidateToHttpsIfPossible(candidate);
+    final upgradedCandidate = await _upgradeCandidateToHttpsIfPossible(
+      candidate,
+    );
     if (upgradedCandidate == null) {
       return null;
     }

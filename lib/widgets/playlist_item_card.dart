@@ -39,10 +39,7 @@ class PlaylistItemCard extends StatelessWidget {
                   index: index,
                   child: const Padding(
                     padding: EdgeInsets.only(right: 12),
-                    child: Icon(
-                      Icons.drag_indicator,
-                      color: Colors.grey,
-                    ),
+                    child: Icon(Icons.drag_indicator, color: Colors.grey),
                   ),
                 ),
 
@@ -73,10 +70,7 @@ class PlaylistItemCard extends StatelessWidget {
                     // Subtitle (episode info or type)
                     Text(
                       _buildSubtitle(),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[400],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -104,10 +98,7 @@ class PlaylistItemCard extends StatelessWidget {
               if (item.duration != null)
                 Text(
                   _formatDuration(item.duration!),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[400],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                 ),
 
               const SizedBox(width: 8),

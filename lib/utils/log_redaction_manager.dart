@@ -2,10 +2,10 @@ class LogRedactionManager {
   static final Set<String> _tokens = <String>{};
   static final Set<String> _urls = <String>{};
   static final Set<String> _customValues = <String>{};
-  static final RegExp _ipv4Pattern =
-      RegExp(r'\b(\d{1,3})([.-])(\d{1,3})\2(\d{1,3})\2(\d{1,3})\b');
-  static final RegExp _ipv4HostPattern =
-      RegExp(r'^\d{1,3}([.-]\d{1,3}){3}$');
+  static final RegExp _ipv4Pattern = RegExp(
+    r'\b(\d{1,3})([.-])(\d{1,3})\2(\d{1,3})\2(\d{1,3})\b',
+  );
+  static final RegExp _ipv4HostPattern = RegExp(r'^\d{1,3}([.-]\d{1,3}){3}$');
 
   /// Register a server access token or Plex.tv token for redaction.
   static void registerToken(String? token) {
@@ -129,8 +129,9 @@ class LogRedactionManager {
         ? (url.length / 2).ceil()
         : startPreviewLength;
     final remainingForEnd = url.length - startLength;
-    final endLength =
-        remainingForEnd <= endPreviewLength ? remainingForEnd : endPreviewLength;
+    final endLength = remainingForEnd <= endPreviewLength
+        ? remainingForEnd
+        : endPreviewLength;
 
     final start = url.substring(0, startLength);
     if (endLength <= 0) {

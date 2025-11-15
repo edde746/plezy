@@ -146,7 +146,10 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     }
 
     // Add to Playlist (for episodes, movies, shows, and seasons)
-    if (itemType == 'episode' || itemType == 'movie' || itemType == 'show' || itemType == 'season') {
+    if (itemType == 'episode' ||
+        itemType == 'movie' ||
+        itemType == 'show' ||
+        itemType == 'season') {
       menuActions.add(
         _MenuAction(
           value: 'add_to_playlist',
@@ -445,9 +448,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       // Show dialog to select playlist or create new
       final result = await showDialog<String>(
         context: context,
-        builder: (context) => _PlaylistSelectionDialog(
-          playlists: playlists,
-        ),
+        builder: (context) => _PlaylistSelectionDialog(playlists: playlists),
       );
 
       if (result == null || !context.mounted) return;
@@ -469,7 +470,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         }
 
         // Create playlist with the item(s)
-        appLogger.d('Creating playlist "$playlistName" with URI length: ${itemUri.length}');
+        appLogger.d(
+          'Creating playlist "$playlistName" with URI length: ${itemUri.length}',
+        );
         final newPlaylist = await client.createPlaylist(
           title: playlistName,
           uri: itemUri,
@@ -478,14 +481,14 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         if (context.mounted) {
           if (newPlaylist != null) {
             appLogger.d('Successfully created playlist: ${newPlaylist.title}');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.playlists.created)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(t.playlists.created)));
           } else {
             appLogger.e('Failed to create playlist - API returned null');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.playlists.errorCreating)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(t.playlists.errorCreating)));
           }
         }
       } else {
@@ -499,19 +502,25 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         if (context.mounted) {
           if (success) {
             appLogger.d('Successfully added item(s) to playlist $result');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.playlists.itemAdded)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(t.playlists.itemAdded)));
           } else {
-            appLogger.e('Failed to add item(s) to playlist $result - API returned false');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.playlists.errorAdding)),
+            appLogger.e(
+              'Failed to add item(s) to playlist $result - API returned false',
             );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(t.playlists.errorAdding)));
           }
         }
       }
     } catch (e, stackTrace) {
-      appLogger.e('Error in add to playlist flow', error: e, stackTrace: stackTrace);
+      appLogger.e(
+        'Error in add to playlist flow',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -568,9 +577,11 @@ class _PlaylistSelectionDialog extends StatelessWidget {
                   : const Icon(Icons.playlist_play),
               title: Text(playlist.title),
               subtitle: playlist.leafCount != null
-                  ? Text(playlist.leafCount == 1
-                      ? t.playlists.oneItem
-                      : t.playlists.itemCount(count: playlist.leafCount!))
+                  ? Text(
+                      playlist.leafCount == 1
+                          ? t.playlists.oneItem
+                          : t.playlists.itemCount(count: playlist.leafCount!),
+                    )
                   : null,
               onTap: playlist.smart
                   ? null // Disable smart playlists

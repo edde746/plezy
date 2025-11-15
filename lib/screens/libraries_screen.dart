@@ -1130,9 +1130,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const PlaylistsScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const PlaylistsScreen()),
           );
         },
         tooltip: t.playlists.title,

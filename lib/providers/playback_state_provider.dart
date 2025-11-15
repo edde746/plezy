@@ -27,7 +27,8 @@ class PlaybackStateProvider with ChangeNotifier {
   bool get isPlaylistActive => _playbackMode == PlaybackMode.playlist;
 
   /// Whether any queue-based playback is active
-  bool get isQueueActive => _queue.isNotEmpty && _playbackMode != PlaybackMode.none;
+  bool get isQueueActive =>
+      _queue.isNotEmpty && _playbackMode != PlaybackMode.none;
 
   /// The context key (show/season/playlist ratingKey) for the current session
   String? get shuffleContextKey => _contextKey;
