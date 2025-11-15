@@ -37,10 +37,13 @@ class TVUIHelper {
   /// Get card padding adjusted for TV
   static EdgeInsets getCardPadding() {
     if (PlatformDetector.isTVSync()) {
-      return const EdgeInsets.all(8.0);
+      return const EdgeInsets.all(12.0);
     }
     return const EdgeInsets.all(8.0);
   }
+  
+  /// Minimum width for NavigationRail items on TV
+  static const double tvNavigationRailMinWidth = 80.0;
 
   /// Get text style with TV-adjusted font size
   static TextStyle getTextStyle(BuildContext context, TextStyle baseStyle) {

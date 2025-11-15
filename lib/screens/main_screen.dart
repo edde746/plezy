@@ -7,6 +7,7 @@ import '../utils/app_logger.dart';
 import '../utils/keyboard_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
+import '../utils/tv_ui_helper.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
 import '../providers/multi_server_provider.dart';
@@ -294,7 +295,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
               selectedIndex: _currentIndex,
               onDestinationSelected: _selectTab,
               labelType: NavigationRailLabelType.all,
-              minWidth: 80,
+              minWidth: TVUIHelper.tvNavigationRailMinWidth,
               destinations: [
                 NavigationRailDestination(
                   icon: const Icon(Icons.home_outlined),
