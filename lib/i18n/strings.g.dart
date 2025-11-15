@@ -3,10 +3,10 @@
 /// Original: lib/i18n
 /// To regenerate, run: `dart run slang`
 ///
-/// Locales: 4
-/// Strings: 1264 (316 per locale)
+/// Locales: 6
+/// Strings: 1894 (315 per locale)
 ///
-/// Built on 2025-11-14 at 21:16 UTC
+/// Built on 2025-11-15 at 00:10 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -26,9 +26,11 @@ const AppLocale _baseLocale = AppLocale.en;
 /// - if (LocaleSettings.currentLocale == AppLocale.en) // locale check
 enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	en(languageCode: 'en', build: Translations.build),
+	de(languageCode: 'de', build: _StringsDe.build),
 	it(languageCode: 'it', build: _StringsIt.build),
 	nl(languageCode: 'nl', build: _StringsNl.build),
-	sv(languageCode: 'sv', build: _StringsSv.build);
+	sv(languageCode: 'sv', build: _StringsSv.build),
+	zh(languageCode: 'zh', build: _StringsZh.build);
 
 	const AppLocale({required this.languageCode, this.scriptCode, this.countryCode, required this.build}); // ignore: unused_element
 
@@ -736,6 +738,618 @@ class _StringsNavigationEn {
 	String get search => 'Search';
 	String get libraries => 'Libraries';
 	String get settings => 'Settings';
+}
+
+// Path: <root>
+class _StringsDe implements Translations {
+	/// You can call this constructor and build your own translation instance of this locale.
+	/// Constructing via the enum [AppLocale.build] is preferred.
+	_StringsDe.build({Map<String, Node>? overrides, PluralResolver? cardinalResolver, PluralResolver? ordinalResolver})
+		: assert(overrides == null, 'Set "translation_overrides: true" in order to enable this feature.'),
+		  $meta = TranslationMetadata(
+		    locale: AppLocale.de,
+		    overrides: overrides ?? {},
+		    cardinalResolver: cardinalResolver,
+		    ordinalResolver: ordinalResolver,
+		  ) {
+		$meta.setFlatMapFunction(_flatMapFunction);
+	}
+
+	/// Metadata for the translations of <de>.
+	@override final TranslationMetadata<AppLocale, Translations> $meta;
+
+	/// Access flat map
+	@override dynamic operator[](String key) => $meta.getTranslation(key);
+
+	@override late final _StringsDe _root = this; // ignore: unused_field
+
+	// Translations
+	@override late final _StringsAppDe app = _StringsAppDe._(_root);
+	@override late final _StringsAuthDe auth = _StringsAuthDe._(_root);
+	@override late final _StringsCommonDe common = _StringsCommonDe._(_root);
+	@override late final _StringsScreensDe screens = _StringsScreensDe._(_root);
+	@override late final _StringsUpdateDe update = _StringsUpdateDe._(_root);
+	@override late final _StringsSettingsDe settings = _StringsSettingsDe._(_root);
+	@override late final _StringsSearchDe search = _StringsSearchDe._(_root);
+	@override late final _StringsHotkeysDe hotkeys = _StringsHotkeysDe._(_root);
+	@override late final _StringsPinEntryDe pinEntry = _StringsPinEntryDe._(_root);
+	@override late final _StringsFileInfoDe fileInfo = _StringsFileInfoDe._(_root);
+	@override late final _StringsMediaMenuDe mediaMenu = _StringsMediaMenuDe._(_root);
+	@override late final _StringsTooltipsDe tooltips = _StringsTooltipsDe._(_root);
+	@override late final _StringsVideoControlsDe videoControls = _StringsVideoControlsDe._(_root);
+	@override late final _StringsUserStatusDe userStatus = _StringsUserStatusDe._(_root);
+	@override late final _StringsMessagesDe messages = _StringsMessagesDe._(_root);
+	@override late final _StringsProfileDe profile = _StringsProfileDe._(_root);
+	@override late final _StringsSubtitlingStylingDe subtitlingStyling = _StringsSubtitlingStylingDe._(_root);
+	@override late final _StringsDialogDe dialog = _StringsDialogDe._(_root);
+	@override late final _StringsDiscoverDe discover = _StringsDiscoverDe._(_root);
+	@override late final _StringsErrorsDe errors = _StringsErrorsDe._(_root);
+	@override late final _StringsLibrariesDe libraries = _StringsLibrariesDe._(_root);
+	@override late final _StringsAboutDe about = _StringsAboutDe._(_root);
+	@override late final _StringsServerSelectionDe serverSelection = _StringsServerSelectionDe._(_root);
+	@override late final _StringsHubDetailDe hubDetail = _StringsHubDetailDe._(_root);
+	@override late final _StringsLogsDe logs = _StringsLogsDe._(_root);
+	@override late final _StringsLicensesDe licenses = _StringsLicensesDe._(_root);
+	@override late final _StringsNavigationDe navigation = _StringsNavigationDe._(_root);
+}
+
+// Path: app
+class _StringsAppDe implements _StringsAppEn {
+	_StringsAppDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Plezy';
+	@override String get loading => 'Lädt...';
+}
+
+// Path: auth
+class _StringsAuthDe implements _StringsAuthEn {
+	_StringsAuthDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get signInWithPlex => 'Mit Plex anmelden';
+	@override String get showQRCode => 'QR-Code anzeigen';
+	@override String get cancel => 'Abbrechen';
+	@override String get authenticate => 'Authentifizieren';
+	@override String get retry => 'Erneut versuchen';
+	@override String get debugEnterToken => 'Debug: Plex-Token eingeben';
+	@override String get plexTokenLabel => 'Plex-Auth-Token';
+	@override String get plexTokenHint => 'Plex.tv-Token eingeben';
+	@override String get authenticationTimeout => 'Authentifizierung abgelaufen. Bitte erneut versuchen.';
+	@override String get scanQRCodeInstruction => 'Diesen QR-Code mit einem bei Plex angemeldeten Gerät scannen, um zu authentifizieren.';
+	@override String get waitingForAuth => 'Warte auf Authentifizierung...\nBitte Anmeldung im Browser abschließen.';
+}
+
+// Path: common
+class _StringsCommonDe implements _StringsCommonEn {
+	_StringsCommonDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get cancel => 'Abbrechen';
+	@override String get save => 'Speichern';
+	@override String get close => 'Schließen';
+	@override String get clear => 'Leeren';
+	@override String get reset => 'Zurücksetzen';
+	@override String get later => 'Später';
+	@override String get submit => 'Senden';
+	@override String get confirm => 'Bestätigen';
+	@override String get retry => 'Erneut versuchen';
+	@override String get playNow => 'Jetzt abspielen';
+	@override String get logout => 'Abmelden';
+	@override String get online => 'Online';
+	@override String get offline => 'Offline';
+	@override String get owned => 'Eigentum';
+	@override String get shared => 'Geteilt';
+	@override String get current => 'AKTUELL';
+	@override String get unknown => 'Unbekannt';
+	@override String get refresh => 'Aktualisieren';
+	@override String get yes => 'Ja';
+	@override String get no => 'Nein';
+	@override String get server => 'Server';
+}
+
+// Path: screens
+class _StringsScreensDe implements _StringsScreensEn {
+	_StringsScreensDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get licenses => 'Lizenzen';
+	@override String get selectServer => 'Server auswählen';
+	@override String get switchProfile => 'Profil wechseln';
+	@override String get subtitleStyling => 'Untertitel-Stil';
+	@override String get search => 'Suche';
+	@override String get logs => 'Protokolle';
+}
+
+// Path: update
+class _StringsUpdateDe implements _StringsUpdateEn {
+	_StringsUpdateDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get available => 'Update verfügbar';
+	@override String versionAvailable({required Object version}) => 'Version ${version} ist verfügbar';
+	@override String currentVersion({required Object version}) => 'Aktuell: ${version}';
+	@override String get skipVersion => 'Diese Version überspringen';
+	@override String get viewRelease => 'Release anzeigen';
+	@override String get latestVersion => 'Aktuellste Version installiert';
+	@override String get checkFailed => 'Fehler bei der Updateprüfung';
+}
+
+// Path: settings
+class _StringsSettingsDe implements _StringsSettingsEn {
+	_StringsSettingsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Einstellungen';
+	@override String get language => 'Sprache';
+	@override String get theme => 'Theme';
+	@override String get appearance => 'Darstellung';
+	@override String get videoPlayback => 'Videowiedergabe';
+	@override String get shufflePlay => 'Zufallswiedergabe';
+	@override String get advanced => 'Erweitert';
+	@override String get useSeasonPostersDescription => 'Staffelposter statt Serienposter für Episoden anzeigen';
+	@override String get showHeroSectionDescription => 'Bereich mit empfohlenen Inhalten auf der Startseite anzeigen';
+	@override String get secondsLabel => 'Sekunden';
+	@override String get minutesLabel => 'Minuten';
+	@override String get secondsShort => 's';
+	@override String get minutesShort => 'm';
+	@override String durationHint({required Object min, required Object max}) => 'Dauer eingeben (${min}-${max})';
+	@override String get systemTheme => 'System';
+	@override String get systemThemeDescription => 'Systemeinstellungen folgen';
+	@override String get lightTheme => 'Hell';
+	@override String get darkTheme => 'Dunkel';
+	@override String get libraryDensity => 'Bibliotheksdichte';
+	@override String get compact => 'Kompakt';
+	@override String get compactDescription => 'Kleinere Karten, mehr Elemente sichtbar';
+	@override String get normal => 'Normal';
+	@override String get normalDescription => 'Standardgröße';
+	@override String get comfortable => 'Großzügig';
+	@override String get comfortableDescription => 'Größere Karten, weniger Elemente sichtbar';
+	@override String get viewMode => 'Ansichtsmodus';
+	@override String get gridView => 'Raster';
+	@override String get gridViewDescription => 'Elemente im Raster anzeigen';
+	@override String get listView => 'Liste';
+	@override String get listViewDescription => 'Elemente in Listenansicht anzeigen';
+	@override String get useSeasonPosters => 'Staffelposter verwenden';
+	@override String get showHeroSection => 'Hero-Bereich anzeigen';
+	@override String get hardwareDecoding => 'Hardware-Decodierung';
+	@override String get hardwareDecodingDescription => 'Hardwarebeschleunigung verwenden, wenn verfügbar';
+	@override String get bufferSize => 'Puffergröße';
+	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get subtitleStyling => 'Untertitel-Stil';
+	@override String get subtitleStylingDescription => 'Aussehen von Untertiteln anpassen';
+	@override String get smallSkipDuration => 'Kleine Sprungdauer';
+	@override String get largeSkipDuration => 'Große Sprungdauer';
+	@override String secondsUnit({required Object seconds}) => '${seconds} Sekunden';
+	@override String get defaultSleepTimer => 'Standard-Sleep-Timer';
+	@override String minutesUnit({required Object minutes}) => '${minutes} Minuten';
+	@override String get rememberTrackSelections => 'Spurauswahl pro Serie/Film merken';
+	@override String get rememberTrackSelectionsDescription => 'Audio- und Untertitelsprache automatisch speichern, wenn während der Wiedergabe geändert';
+	@override String get unwatchedOnly => 'Nur ungesehene';
+	@override String get unwatchedOnlyDescription => 'Nur ungesehene Episoden in die Shuffle-Warteschlange aufnehmen';
+	@override String get shuffleOrderNavigation => 'Navigation der Shuffle-Reihenfolge';
+	@override String get shuffleOrderNavigationDescription => 'Weiter/Zurück folgt der zufälligen Reihenfolge';
+	@override String get loopShuffleQueue => 'Shuffle-Warteschlange wiederholen';
+	@override String get loopShuffleQueueDescription => 'Warteschlange neu starten, wenn das Ende erreicht ist';
+	@override String get videoPlayerControls => 'Videoplayer-Steuerung';
+	@override String get keyboardShortcuts => 'Tastenkürzel';
+	@override String get keyboardShortcutsDescription => 'Tastenkürzel anpassen';
+	@override String get debugLogging => 'Debug-Protokollierung';
+	@override String get debugLoggingDescription => 'Detaillierte Protokolle zur Fehleranalyse aktivieren';
+	@override String get viewLogs => 'Protokolle anzeigen';
+	@override String get viewLogsDescription => 'App-Protokolle anzeigen';
+	@override String get clearCache => 'Cache löschen';
+	@override String get clearCacheDescription => 'Löscht alle zwischengespeicherten Bilder und Daten. Die App kann danach langsamer laden.';
+	@override String get clearCacheSuccess => 'Cache erfolgreich gelöscht';
+	@override String get resetSettings => 'Einstellungen zurücksetzen';
+	@override String get resetSettingsDescription => 'Alle Einstellungen auf Standard zurücksetzen. Dies kann nicht rückgängig gemacht werden.';
+	@override String get resetSettingsSuccess => 'Einstellungen erfolgreich zurückgesetzt';
+	@override String get shortcutsReset => 'Tastenkürzel auf Standard zurückgesetzt';
+	@override String get about => 'Über';
+	@override String get aboutDescription => 'App-Informationen und Lizenzen';
+	@override String get updates => 'Updates';
+	@override String get updateAvailable => 'Update verfügbar';
+	@override String get checkForUpdates => 'Nach Updates suchen';
+	@override String get validationErrorEnterNumber => 'Bitte eine gültige Zahl eingeben';
+	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Dauer muss zwischen ${min} und ${max} ${unit} liegen';
+	@override String shortcutAlreadyAssigned({required Object action}) => 'Tastenkürzel bereits zugewiesen an ${action}';
+	@override String shortcutUpdated({required Object action}) => 'Tastenkürzel aktualisiert für ${action}';
+}
+
+// Path: search
+class _StringsSearchDe implements _StringsSearchEn {
+	_StringsSearchDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get hint => 'Filme, Serien, Musik suchen...';
+	@override String get tryDifferentTerm => 'Anderen Suchbegriff versuchen';
+	@override String get searchYourMedia => 'In den eigenen Medien suchen';
+	@override String get enterTitleActorOrKeyword => 'Titel, Schauspieler oder Stichwort eingeben';
+}
+
+// Path: hotkeys
+class _StringsHotkeysDe implements _StringsHotkeysEn {
+	_StringsHotkeysDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String setShortcutFor({required Object actionName}) => 'Tastenkürzel festlegen für ${actionName}';
+	@override String get clearShortcut => 'Kürzel löschen';
+}
+
+// Path: pinEntry
+class _StringsPinEntryDe implements _StringsPinEntryEn {
+	_StringsPinEntryDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get enterPin => 'PIN eingeben';
+	@override String get showPin => 'PIN anzeigen';
+	@override String get hidePin => 'PIN verbergen';
+}
+
+// Path: fileInfo
+class _StringsFileInfoDe implements _StringsFileInfoEn {
+	_StringsFileInfoDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Dateiinfo';
+	@override String get video => 'Video';
+	@override String get audio => 'Audio';
+	@override String get file => 'Datei';
+	@override String get advanced => 'Erweitert';
+	@override String get codec => 'Codec';
+	@override String get resolution => 'Auflösung';
+	@override String get bitrate => 'Bitrate';
+	@override String get frameRate => 'Bildrate';
+	@override String get aspectRatio => 'Seitenverhältnis';
+	@override String get profile => 'Profil';
+	@override String get bitDepth => 'Farbtiefe';
+	@override String get colorSpace => 'Farbraum';
+	@override String get colorRange => 'Farbbereich';
+	@override String get colorPrimaries => 'Primärfarben';
+	@override String get chromaSubsampling => 'Chroma-Subsampling';
+	@override String get channels => 'Kanäle';
+	@override String get path => 'Pfad';
+	@override String get size => 'Größe';
+	@override String get container => 'Container';
+	@override String get duration => 'Dauer';
+	@override String get optimizedForStreaming => 'Für Streaming optimiert';
+	@override String get has64bitOffsets => '64-Bit-Offsets';
+}
+
+// Path: mediaMenu
+class _StringsMediaMenuDe implements _StringsMediaMenuEn {
+	_StringsMediaMenuDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get markAsWatched => 'Als gesehen markieren';
+	@override String get markAsUnwatched => 'Als ungesehen markieren';
+	@override String get removeFromContinueWatching => 'Aus ‚Weiterschauen‘ entfernen';
+	@override String get goToSeries => 'Zur Serie';
+	@override String get goToSeason => 'Zur Staffel';
+	@override String get shufflePlay => 'Zufallswiedergabe';
+	@override String get fileInfo => 'Dateiinfo';
+}
+
+// Path: tooltips
+class _StringsTooltipsDe implements _StringsTooltipsEn {
+	_StringsTooltipsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get shufflePlay => 'Zufallswiedergabe';
+	@override String get markAsWatched => 'Als gesehen markieren';
+	@override String get markAsUnwatched => 'Als ungesehen markieren';
+}
+
+// Path: videoControls
+class _StringsVideoControlsDe implements _StringsVideoControlsEn {
+	_StringsVideoControlsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioLabel => 'Audio';
+	@override String get subtitlesLabel => 'Untertitel';
+	@override String get resetToZero => 'Auf 0 ms zurücksetzen';
+	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
+	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
+	@override String playsLater({required Object label}) => '${label} spielt später';
+	@override String playsEarlier({required Object label}) => '${label} spielt früher';
+	@override String get noOffset => 'Kein Offset';
+	@override String get letterbox => 'Letterbox';
+	@override String get fillScreen => 'Bild füllen';
+	@override String get stretch => 'Strecken';
+	@override String get lockRotation => 'Rotation sperren';
+	@override String get unlockRotation => 'Rotation entsperren';
+}
+
+// Path: userStatus
+class _StringsUserStatusDe implements _StringsUserStatusEn {
+	_StringsUserStatusDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get admin => 'Admin';
+	@override String get restricted => 'Eingeschränkt';
+	@override String get protected => 'Geschützt';
+}
+
+// Path: messages
+class _StringsMessagesDe implements _StringsMessagesEn {
+	_StringsMessagesDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get markedAsWatched => 'Als gesehen markiert';
+	@override String get markedAsUnwatched => 'Als ungesehen markiert';
+	@override String get removedFromContinueWatching => 'Aus ‚Weiterschauen‘ entfernt';
+	@override String errorLoading({required Object error}) => 'Fehler: ${error}';
+	@override String get fileInfoNotAvailable => 'Dateiinfo nicht verfügbar';
+	@override String errorLoadingFileInfo({required Object error}) => 'Fehler beim Laden der Dateiinfo: ${error}';
+	@override String get errorLoadingSeries => 'Fehler beim Laden der Serie';
+	@override String get errorLoadingSeason => 'Fehler beim Laden der Staffel';
+	@override String get musicNotSupported => 'Musikwiedergabe wird noch nicht unterstützt';
+	@override String get logsCleared => 'Protokolle gelöscht';
+	@override String get logsCopied => 'Protokolle in Zwischenablage kopiert';
+	@override String get noLogsAvailable => 'Keine Protokolle verfügbar';
+	@override String libraryScanning({required Object title}) => 'Scanne „${title}“...';
+	@override String libraryScanStarted({required Object title}) => 'Bibliotheksscan gestartet für „${title}“';
+	@override String libraryScanFailed({required Object error}) => 'Fehler beim Scannen der Bibliothek: ${error}';
+	@override String metadataRefreshing({required Object title}) => 'Metadaten werden aktualisiert für „${title}“...';
+	@override String metadataRefreshStarted({required Object title}) => 'Metadaten-Aktualisierung gestartet für „${title}“';
+	@override String metadataRefreshFailed({required Object error}) => 'Metadaten konnten nicht aktualisiert werden: ${error}';
+	@override String get noPlexToken => 'Kein Plex-Token gefunden. Bitte erneut anmelden.';
+	@override String get logoutConfirm => 'Abmeldung wirklich durchführen?';
+	@override String get noSeasonsFound => 'Keine Staffeln gefunden';
+	@override String get noEpisodesFound => 'Keine Episoden in der ersten Staffel gefunden';
+	@override String get noEpisodesFoundGeneral => 'Keine Episoden gefunden';
+	@override String get noResultsFound => 'Keine Ergebnisse gefunden';
+	@override String sleepTimerSet({required Object label}) => 'Sleep-Timer gesetzt auf ${label}';
+	@override String failedToSwitchProfile({required Object displayName}) => 'Profilwechsel zu ${displayName} fehlgeschlagen';
+}
+
+// Path: profile
+class _StringsProfileDe implements _StringsProfileEn {
+	_StringsProfileDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get noUsersAvailable => 'Keine Benutzer verfügbar';
+}
+
+// Path: subtitlingStyling
+class _StringsSubtitlingStylingDe implements _StringsSubtitlingStylingEn {
+	_StringsSubtitlingStylingDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get stylingOptions => 'Stiloptionen';
+	@override String get fontSize => 'Schriftgröße';
+	@override String get textColor => 'Textfarbe';
+	@override String get borderSize => 'Rahmengröße';
+	@override String get borderColor => 'Rahmenfarbe';
+	@override String get backgroundOpacity => 'Hintergrunddeckkraft';
+	@override String get backgroundColor => 'Hintergrundfarbe';
+}
+
+// Path: dialog
+class _StringsDialogDe implements _StringsDialogEn {
+	_StringsDialogDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get confirmAction => 'Aktion bestätigen';
+	@override String get areYouSure => 'Aktion wirklich ausführen?';
+	@override String get cancel => 'Abbrechen';
+	@override String get playNow => 'Jetzt abspielen';
+}
+
+// Path: discover
+class _StringsDiscoverDe implements _StringsDiscoverEn {
+	_StringsDiscoverDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Entdecken';
+	@override String get switchProfile => 'Profil wechseln';
+	@override String get switchServer => 'Server wechseln';
+	@override String get logout => 'Abmelden';
+	@override String get noContentAvailable => 'Kein Inhalt verfügbar';
+	@override String get addMediaToLibraries => 'Medien zur Bibliothek hinzufügen';
+	@override String get continueWatching => 'Weiterschauen';
+	@override String get recentlyAdded => 'Kürzlich hinzugefügt';
+	@override String get play => 'Abspielen';
+	@override String get resume => 'Fortsetzen';
+	@override String playEpisode({required Object season, required Object episode}) => 'Spiele S${season}, E${episode}';
+	@override String resumeEpisode({required Object season, required Object episode}) => 'Fortsetzen S${season}, E${episode}';
+	@override String get pause => 'Pause';
+	@override String get overview => 'Übersicht';
+	@override String get cast => 'Besetzung';
+	@override String episodeCount({required Object count}) => '${count} Episoden';
+	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} gesehen';
+	@override String get movie => 'Film';
+	@override String get tvShow => 'Serie';
+	@override String minutesLeft({required Object minutes}) => '${minutes} Min übrig';
+}
+
+// Path: errors
+class _StringsErrorsDe implements _StringsErrorsEn {
+	_StringsErrorsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String searchFailed({required Object error}) => 'Suche fehlgeschlagen: ${error}';
+	@override String connectionTimeout({required Object context}) => 'Zeitüberschreitung beim Laden von ${context}';
+	@override String get connectionFailed => 'Verbindung zum Plex-Server fehlgeschlagen';
+	@override String failedToLoad({required Object context, required Object error}) => 'Fehler beim Laden von ${context}: ${error}';
+	@override String get noClientAvailable => 'Kein Client verfügbar';
+	@override String authenticationFailed({required Object error}) => 'Authentifizierung fehlgeschlagen: ${error}';
+	@override String get couldNotLaunchUrl => 'Auth-URL konnte nicht geöffnet werden';
+	@override String get pleaseEnterToken => 'Bitte Token eingeben';
+	@override String get invalidToken => 'Ungültiges Token';
+	@override String failedToVerifyToken({required Object error}) => 'Token-Verifizierung fehlgeschlagen: ${error}';
+	@override String failedToSwitchProfile({required Object displayName}) => 'Profilwechsel zu ${displayName} fehlgeschlagen';
+	@override String get connectionFailedGeneric => 'Verbindung fehlgeschlagen';
+}
+
+// Path: libraries
+class _StringsLibrariesDe implements _StringsLibrariesEn {
+	_StringsLibrariesDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bibliotheken';
+	@override String get scanLibraryFiles => 'Bibliotheksdateien scannen';
+	@override String get scanLibrary => 'Bibliothek scannen';
+	@override String get analyze => 'Analysieren';
+	@override String get analyzeLibrary => 'Bibliothek analysieren';
+	@override String get refreshMetadata => 'Metadaten aktualisieren';
+	@override String get emptyTrash => 'Papierkorb leeren';
+	@override String emptyingTrash({required Object title}) => 'Papierkorb für „${title}“ wird geleert...';
+	@override String trashEmptied({required Object title}) => 'Papierkorb für „${title}“ geleert';
+	@override String failedToEmptyTrash({required Object error}) => 'Papierkorb konnte nicht geleert werden: ${error}';
+	@override String analyzing({required Object title}) => 'Analysiere „${title}“...';
+	@override String analysisStarted({required Object title}) => 'Analyse gestartet für „${title}“';
+	@override String failedToAnalyze({required Object error}) => 'Analyse der Bibliothek fehlgeschlagen: ${error}';
+	@override String get noLibrariesFound => 'Keine Bibliotheken gefunden';
+	@override String get thisLibraryIsEmpty => 'Diese Bibliothek ist leer';
+	@override String get all => 'Alle';
+	@override String get clearAll => 'Alle löschen';
+	@override String scanLibraryConfirm({required Object title}) => '„${title}“ wirklich scannen?';
+	@override String analyzeLibraryConfirm({required Object title}) => '„${title}“ wirklich analysieren?';
+	@override String refreshMetadataConfirm({required Object title}) => 'Metadaten für „${title}“ wirklich aktualisieren?';
+	@override String emptyTrashConfirm({required Object title}) => 'Papierkorb für „${title}“ wirklich leeren?';
+	@override String get manageLibraries => 'Bibliotheken verwalten';
+	@override String get sort => 'Sortieren';
+	@override String get sortBy => 'Sortieren nach';
+	@override String get filters => 'Filter';
+	@override String loadingLibraryWithCount({required Object count}) => 'Lade Bibliothek... (${count} Elemente geladen)';
+	@override String get confirmActionMessage => 'Aktion wirklich durchführen?';
+	@override String get showLibrary => 'Bibliothek anzeigen';
+	@override String get hideLibrary => 'Bibliothek ausblenden';
+	@override String get libraryOptions => 'Bibliotheksoptionen';
+}
+
+// Path: about
+class _StringsAboutDe implements _StringsAboutEn {
+	_StringsAboutDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Über';
+	@override String get openSourceLicenses => 'Open-Source-Lizenzen';
+	@override String versionLabel({required Object version}) => 'Version ${version}';
+	@override String get appDescription => 'Ein schöner Plex-Client für Flutter';
+	@override String get viewLicensesDescription => 'Lizenzen von Drittanbieter-Bibliotheken anzeigen';
+}
+
+// Path: serverSelection
+class _StringsServerSelectionDe implements _StringsServerSelectionEn {
+	_StringsServerSelectionDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get connectingToServer => 'Verbinde mit Server...';
+	@override String get serverDebugCopied => 'Server-Debugdaten kopiert';
+	@override String get copyDebugData => 'Debugdaten kopieren';
+	@override String get noServersFound => 'Keine Server gefunden';
+	@override String malformedServerData({required Object count}) => '${count} Server mit fehlerhaften Daten gefunden. Keine gültigen Server verfügbar.';
+	@override String get incompleteServerInfo => 'Einige Serverinformationen sind unvollständig und wurden übersprungen. Plex.tv-Konto prüfen.';
+	@override String get incompleteConnectionInfo => 'Serververbindungsinformationen unvollständig. Bitte erneut versuchen.';
+	@override String malformedServerInfo({required Object message}) => 'Serverinformationen fehlerhaft: ${message}';
+	@override String get networkConnectionFailed => 'Netzwerkverbindung fehlgeschlagen. Internetverbindung prüfen und erneut versuchen.';
+	@override String get authenticationFailed => 'Authentifizierung fehlgeschlagen. Bitte erneut anmelden.';
+	@override String get plexServiceUnavailable => 'Plex-Dienst nicht verfügbar. Bitte später erneut versuchen.';
+	@override String failedToLoadServers({required Object error}) => 'Server konnten nicht geladen werden: ${error}';
+}
+
+// Path: hubDetail
+class _StringsHubDetailDe implements _StringsHubDetailEn {
+	_StringsHubDetailDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Titel';
+	@override String get releaseYear => 'Erscheinungsjahr';
+	@override String get dateAdded => 'Hinzugefügt am';
+	@override String get rating => 'Bewertung';
+	@override String get noItemsFound => 'Keine Elemente gefunden';
+}
+
+// Path: logs
+class _StringsLogsDe implements _StringsLogsEn {
+	_StringsLogsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Protokolle';
+	@override String get clearLogs => 'Protokolle löschen';
+	@override String get copyLogs => 'Protokolle kopieren';
+	@override String get exportLogs => 'Protokolle exportieren';
+	@override String get noLogsToShow => 'Keine Protokolle zum Anzeigen';
+	@override String get error => 'Fehler:';
+	@override String get stackTrace => 'Stacktrace:';
+}
+
+// Path: licenses
+class _StringsLicensesDe implements _StringsLicensesEn {
+	_StringsLicensesDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get relatedPackages => 'Verwandte Pakete';
+	@override String get license => 'Lizenz';
+	@override String licenseNumber({required Object number}) => 'Lizenz ${number}';
+	@override String licensesCount({required Object count}) => '${count} Lizenzen';
+}
+
+// Path: navigation
+class _StringsNavigationDe implements _StringsNavigationEn {
+	_StringsNavigationDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get home => 'Start';
+	@override String get search => 'Suche';
+	@override String get libraries => 'Bibliotheken';
+	@override String get settings => 'Einstellungen';
 }
 
 // Path: <root>
@@ -2574,6 +3188,616 @@ class _StringsNavigationSv implements _StringsNavigationEn {
 	@override String get settings => 'Inställningar';
 }
 
+// Path: <root>
+class _StringsZh implements Translations {
+	/// You can call this constructor and build your own translation instance of this locale.
+	/// Constructing via the enum [AppLocale.build] is preferred.
+	_StringsZh.build({Map<String, Node>? overrides, PluralResolver? cardinalResolver, PluralResolver? ordinalResolver})
+		: assert(overrides == null, 'Set "translation_overrides: true" in order to enable this feature.'),
+		  $meta = TranslationMetadata(
+		    locale: AppLocale.zh,
+		    overrides: overrides ?? {},
+		    cardinalResolver: cardinalResolver,
+		    ordinalResolver: ordinalResolver,
+		  ) {
+		$meta.setFlatMapFunction(_flatMapFunction);
+	}
+
+	/// Metadata for the translations of <zh>.
+	@override final TranslationMetadata<AppLocale, Translations> $meta;
+
+	/// Access flat map
+	@override dynamic operator[](String key) => $meta.getTranslation(key);
+
+	@override late final _StringsZh _root = this; // ignore: unused_field
+
+	// Translations
+	@override late final _StringsAppZh app = _StringsAppZh._(_root);
+	@override late final _StringsAuthZh auth = _StringsAuthZh._(_root);
+	@override late final _StringsCommonZh common = _StringsCommonZh._(_root);
+	@override late final _StringsScreensZh screens = _StringsScreensZh._(_root);
+	@override late final _StringsUpdateZh update = _StringsUpdateZh._(_root);
+	@override late final _StringsSettingsZh settings = _StringsSettingsZh._(_root);
+	@override late final _StringsSearchZh search = _StringsSearchZh._(_root);
+	@override late final _StringsHotkeysZh hotkeys = _StringsHotkeysZh._(_root);
+	@override late final _StringsPinEntryZh pinEntry = _StringsPinEntryZh._(_root);
+	@override late final _StringsFileInfoZh fileInfo = _StringsFileInfoZh._(_root);
+	@override late final _StringsMediaMenuZh mediaMenu = _StringsMediaMenuZh._(_root);
+	@override late final _StringsTooltipsZh tooltips = _StringsTooltipsZh._(_root);
+	@override late final _StringsVideoControlsZh videoControls = _StringsVideoControlsZh._(_root);
+	@override late final _StringsUserStatusZh userStatus = _StringsUserStatusZh._(_root);
+	@override late final _StringsMessagesZh messages = _StringsMessagesZh._(_root);
+	@override late final _StringsProfileZh profile = _StringsProfileZh._(_root);
+	@override late final _StringsSubtitlingStylingZh subtitlingStyling = _StringsSubtitlingStylingZh._(_root);
+	@override late final _StringsDialogZh dialog = _StringsDialogZh._(_root);
+	@override late final _StringsDiscoverZh discover = _StringsDiscoverZh._(_root);
+	@override late final _StringsErrorsZh errors = _StringsErrorsZh._(_root);
+	@override late final _StringsLibrariesZh libraries = _StringsLibrariesZh._(_root);
+	@override late final _StringsAboutZh about = _StringsAboutZh._(_root);
+	@override late final _StringsServerSelectionZh serverSelection = _StringsServerSelectionZh._(_root);
+	@override late final _StringsHubDetailZh hubDetail = _StringsHubDetailZh._(_root);
+	@override late final _StringsLogsZh logs = _StringsLogsZh._(_root);
+	@override late final _StringsLicensesZh licenses = _StringsLicensesZh._(_root);
+	@override late final _StringsNavigationZh navigation = _StringsNavigationZh._(_root);
+}
+
+// Path: app
+class _StringsAppZh implements _StringsAppEn {
+	_StringsAppZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Plezy';
+	@override String get loading => '加载中...';
+}
+
+// Path: auth
+class _StringsAuthZh implements _StringsAuthEn {
+	_StringsAuthZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get signInWithPlex => '使用 Plex 登录';
+	@override String get showQRCode => '显示二维码';
+	@override String get cancel => '取消';
+	@override String get authenticate => '验证';
+	@override String get retry => '重试';
+	@override String get debugEnterToken => '调试：输入 Plex Token';
+	@override String get plexTokenLabel => 'Plex 授权令牌 (Auth Token)';
+	@override String get plexTokenHint => '输入你的 Plex.tv 令牌';
+	@override String get authenticationTimeout => '验证超时。请重试。';
+	@override String get scanQRCodeInstruction => '请使用已登录 Plex 的设备扫描此二维码进行验证。';
+	@override String get waitingForAuth => '等待验证中...\n请在你的浏览器中完成登录。';
+}
+
+// Path: common
+class _StringsCommonZh implements _StringsCommonEn {
+	_StringsCommonZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get cancel => '取消';
+	@override String get save => '保存';
+	@override String get close => '关闭';
+	@override String get clear => '清除';
+	@override String get reset => '重置';
+	@override String get later => '稍后';
+	@override String get submit => '提交';
+	@override String get confirm => '确认';
+	@override String get retry => '重试';
+	@override String get playNow => '立即播放';
+	@override String get logout => '登出';
+	@override String get online => '在线';
+	@override String get offline => '离线';
+	@override String get owned => '拥有';
+	@override String get shared => '共享';
+	@override String get current => '当前';
+	@override String get unknown => '未知';
+	@override String get refresh => '刷新';
+	@override String get yes => '是';
+	@override String get no => '否';
+	@override String get server => '服务器';
+}
+
+// Path: screens
+class _StringsScreensZh implements _StringsScreensEn {
+	_StringsScreensZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get licenses => '许可证';
+	@override String get selectServer => '选择服务器';
+	@override String get switchProfile => '切换配置文件';
+	@override String get subtitleStyling => '字幕样式';
+	@override String get search => '搜索';
+	@override String get logs => '日志';
+}
+
+// Path: update
+class _StringsUpdateZh implements _StringsUpdateEn {
+	_StringsUpdateZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get available => '有可用更新';
+	@override String versionAvailable({required Object version}) => '版本 ${version} 已发布';
+	@override String currentVersion({required Object version}) => '当前版本: ${version}';
+	@override String get skipVersion => '跳过此版本';
+	@override String get viewRelease => '查看发布详情';
+	@override String get latestVersion => '已安装的版本是可用的最新版本';
+	@override String get checkFailed => '无法检查更新';
+}
+
+// Path: settings
+class _StringsSettingsZh implements _StringsSettingsEn {
+	_StringsSettingsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '设置';
+	@override String get language => '语言';
+	@override String get theme => '主题';
+	@override String get appearance => '外观';
+	@override String get videoPlayback => '视频播放';
+	@override String get shufflePlay => '随机播放';
+	@override String get advanced => '高级';
+	@override String get useSeasonPostersDescription => '为剧集显示季海报而非剧集海报';
+	@override String get showHeroSectionDescription => '在主屏幕上显示精选内容轮播区';
+	@override String get secondsLabel => '秒';
+	@override String get minutesLabel => '分钟';
+	@override String get secondsShort => 's';
+	@override String get minutesShort => 'm';
+	@override String durationHint({required Object min, required Object max}) => '输入时长 (${min}-${max})';
+	@override String get systemTheme => '系统';
+	@override String get systemThemeDescription => '跟随系统设置';
+	@override String get lightTheme => '浅色';
+	@override String get darkTheme => '深色';
+	@override String get libraryDensity => '媒体库密度';
+	@override String get compact => '紧凑';
+	@override String get compactDescription => '卡片更小，显示更多项目';
+	@override String get normal => '标准';
+	@override String get normalDescription => '默认尺寸';
+	@override String get comfortable => '舒适';
+	@override String get comfortableDescription => '卡片更大，显示更少项目';
+	@override String get viewMode => '视图模式';
+	@override String get gridView => '网格视图';
+	@override String get gridViewDescription => '以网格布局显示项目';
+	@override String get listView => '列表视图';
+	@override String get listViewDescription => '以列表布局显示项目';
+	@override String get useSeasonPosters => '使用季海报';
+	@override String get showHeroSection => '显示主要精选区';
+	@override String get hardwareDecoding => '硬件解码';
+	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
+	@override String get bufferSize => '缓冲区大小';
+	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get subtitleStyling => '字幕样式';
+	@override String get subtitleStylingDescription => '调整字幕外观';
+	@override String get smallSkipDuration => '短跳过时长';
+	@override String get largeSkipDuration => '长跳过时长';
+	@override String secondsUnit({required Object seconds}) => '${seconds} 秒';
+	@override String get defaultSleepTimer => '默认睡眠定时器';
+	@override String minutesUnit({required Object minutes}) => '${minutes} 分钟';
+	@override String get unwatchedOnly => '仅未观看';
+	@override String get unwatchedOnlyDescription => '随机队列中仅包含未观看的剧集';
+	@override String get shuffleOrderNavigation => '随机顺序导航';
+	@override String get shuffleOrderNavigationDescription => '下一集/上一集按钮遵循随机播放顺序';
+	@override String get loopShuffleQueue => '循环随机队列';
+	@override String get loopShuffleQueueDescription => '在队列结束时重新开始';
+	@override String get videoPlayerControls => '视频播放器控制';
+	@override String get keyboardShortcuts => '键盘快捷键';
+	@override String get keyboardShortcutsDescription => '自定义键盘快捷键';
+	@override String get debugLogging => '调试日志';
+	@override String get debugLoggingDescription => '启用详细日志记录以便故障排除';
+	@override String get viewLogs => '查看日志';
+	@override String get viewLogsDescription => '查看应用程序日志';
+	@override String get clearCache => '清除缓存';
+	@override String get clearCacheDescription => '这将清除所有缓存的图片和数据。清除缓存后，应用程序加载内容可能会变慢。';
+	@override String get clearCacheSuccess => '缓存清除成功';
+	@override String get resetSettings => '重置设置';
+	@override String get resetSettingsDescription => '这会将所有设置重置为其默认值。此操作无法撤销。';
+	@override String get resetSettingsSuccess => '设置重置成功';
+	@override String get shortcutsReset => '快捷键已重置为默认值';
+	@override String get about => '关于';
+	@override String get aboutDescription => '应用程序信息和许可证';
+	@override String get updates => '更新';
+	@override String get updateAvailable => '有可用更新';
+	@override String get checkForUpdates => '检查更新';
+	@override String get validationErrorEnterNumber => '请输入一个有效的数字';
+	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => '时长必须介于 ${min} 和 ${max} ${unit} 之间';
+	@override String shortcutAlreadyAssigned({required Object action}) => '快捷键已被分配给 ${action}';
+	@override String shortcutUpdated({required Object action}) => '快捷键已为 ${action} 更新';
+}
+
+// Path: search
+class _StringsSearchZh implements _StringsSearchEn {
+	_StringsSearchZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get hint => '搜索电影、系列、音乐...';
+	@override String get tryDifferentTerm => '尝试不同的搜索词';
+	@override String get searchYourMedia => '搜索媒体';
+	@override String get enterTitleActorOrKeyword => '输入标题、演员或关键词';
+}
+
+// Path: hotkeys
+class _StringsHotkeysZh implements _StringsHotkeysEn {
+	_StringsHotkeysZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String setShortcutFor({required Object actionName}) => '为 ${actionName} 设置快捷键';
+	@override String get clearShortcut => '清除快捷键';
+}
+
+// Path: pinEntry
+class _StringsPinEntryZh implements _StringsPinEntryEn {
+	_StringsPinEntryZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get enterPin => '输入 PIN';
+	@override String get showPin => '显示 PIN';
+	@override String get hidePin => '隐藏 PIN';
+}
+
+// Path: fileInfo
+class _StringsFileInfoZh implements _StringsFileInfoEn {
+	_StringsFileInfoZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '文件信息';
+	@override String get video => '视频';
+	@override String get audio => '音频';
+	@override String get file => '文件';
+	@override String get advanced => '高级';
+	@override String get codec => '编解码器';
+	@override String get resolution => '分辨率';
+	@override String get bitrate => '比特率';
+	@override String get frameRate => '帧率';
+	@override String get aspectRatio => '宽高比';
+	@override String get profile => '配置文件';
+	@override String get bitDepth => '位深度';
+	@override String get colorSpace => '色彩空间';
+	@override String get colorRange => '色彩范围';
+	@override String get colorPrimaries => '颜色原色';
+	@override String get chromaSubsampling => '色度子采样';
+	@override String get channels => '声道';
+	@override String get path => '路径';
+	@override String get size => '大小';
+	@override String get container => '容器';
+	@override String get duration => '时长';
+	@override String get optimizedForStreaming => '已优化用于流媒体';
+	@override String get has64bitOffsets => '64位偏移量';
+}
+
+// Path: mediaMenu
+class _StringsMediaMenuZh implements _StringsMediaMenuEn {
+	_StringsMediaMenuZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get markAsWatched => '标记为已观看';
+	@override String get markAsUnwatched => '标记为未观看';
+	@override String get removeFromContinueWatching => '从继续观看中移除';
+	@override String get goToSeries => '转到系列';
+	@override String get goToSeason => '转到季';
+	@override String get shufflePlay => '随机播放';
+	@override String get fileInfo => '文件信息';
+}
+
+// Path: tooltips
+class _StringsTooltipsZh implements _StringsTooltipsEn {
+	_StringsTooltipsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get shufflePlay => '随机播放';
+	@override String get markAsWatched => '标记为已观看';
+	@override String get markAsUnwatched => '标记为未观看';
+}
+
+// Path: videoControls
+class _StringsVideoControlsZh implements _StringsVideoControlsEn {
+	_StringsVideoControlsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioLabel => '音频';
+	@override String get subtitlesLabel => '字幕';
+	@override String get resetToZero => '重置为 0ms';
+	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
+	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
+	@override String playsLater({required Object label}) => '${label} 播放较晚';
+	@override String playsEarlier({required Object label}) => '${label} 播放较早';
+	@override String get noOffset => '无偏移';
+	@override String get letterbox => '信箱模式（Letterbox）';
+	@override String get fillScreen => '填充屏幕';
+	@override String get stretch => '拉伸';
+	@override String get lockRotation => '锁定旋转';
+	@override String get unlockRotation => '解锁旋转';
+}
+
+// Path: userStatus
+class _StringsUserStatusZh implements _StringsUserStatusEn {
+	_StringsUserStatusZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get admin => '管理员';
+	@override String get restricted => '受限';
+	@override String get protected => '受保护';
+}
+
+// Path: messages
+class _StringsMessagesZh implements _StringsMessagesEn {
+	_StringsMessagesZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get markedAsWatched => '已标记为已观看';
+	@override String get markedAsUnwatched => '已标记为未观看';
+	@override String get removedFromContinueWatching => '已从继续观看中移除';
+	@override String errorLoading({required Object error}) => '错误: ${error}';
+	@override String get fileInfoNotAvailable => '文件信息不可用';
+	@override String errorLoadingFileInfo({required Object error}) => '加载文件信息时出错: ${error}';
+	@override String get errorLoadingSeries => '加载系列时出错';
+	@override String get errorLoadingSeason => '加载季时出错';
+	@override String get musicNotSupported => '尚不支持播放音乐';
+	@override String get logsCleared => '日志已清除';
+	@override String get logsCopied => '日志已复制到剪贴板';
+	@override String get noLogsAvailable => '没有可用日志';
+	@override String libraryScanning({required Object title}) => '正在扫描 “${title}”...';
+	@override String libraryScanStarted({required Object title}) => '已开始扫描 “${title}” 媒体库';
+	@override String libraryScanFailed({required Object error}) => '无法扫描媒体库: ${error}';
+	@override String metadataRefreshing({required Object title}) => '正在刷新 “${title}” 的元数据...';
+	@override String metadataRefreshStarted({required Object title}) => '已开始刷新 “${title}” 的元数据';
+	@override String metadataRefreshFailed({required Object error}) => '无法刷新元数据: ${error}';
+	@override String get noPlexToken => '未找到 Plex 令牌。请重新登录。';
+	@override String get logoutConfirm => '你确定要登出吗？';
+	@override String get noSeasonsFound => '未找到季';
+	@override String get noEpisodesFound => '在第一季中未找到剧集';
+	@override String get noEpisodesFoundGeneral => '未找到剧集';
+	@override String get noResultsFound => '未找到结果';
+	@override String sleepTimerSet({required Object label}) => '睡眠定时器已设置为 ${label}';
+	@override String failedToSwitchProfile({required Object displayName}) => '无法切换到 ${displayName}';
+}
+
+// Path: profile
+class _StringsProfileZh implements _StringsProfileEn {
+	_StringsProfileZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get noUsersAvailable => '没有可用用户';
+}
+
+// Path: subtitlingStyling
+class _StringsSubtitlingStylingZh implements _StringsSubtitlingStylingEn {
+	_StringsSubtitlingStylingZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get stylingOptions => '样式选项';
+	@override String get fontSize => '字号';
+	@override String get textColor => '文本颜色';
+	@override String get borderSize => '边框大小';
+	@override String get borderColor => '边框颜色';
+	@override String get backgroundOpacity => '背景不透明度';
+	@override String get backgroundColor => '背景颜色';
+}
+
+// Path: dialog
+class _StringsDialogZh implements _StringsDialogEn {
+	_StringsDialogZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get confirmAction => '确认操作';
+	@override String get areYouSure => '确定要执行此操作吗？';
+	@override String get cancel => '取消';
+	@override String get playNow => '立即播放';
+}
+
+// Path: discover
+class _StringsDiscoverZh implements _StringsDiscoverEn {
+	_StringsDiscoverZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '发现';
+	@override String get switchProfile => '切换配置文件';
+	@override String get switchServer => '切换服务器';
+	@override String get logout => '登出';
+	@override String get noContentAvailable => '没有可用内容';
+	@override String get addMediaToLibraries => '请向你的媒体库添加一些媒体';
+	@override String get continueWatching => '继续观看';
+	@override String get recentlyAdded => '最近添加';
+	@override String get play => '播放';
+	@override String get resume => '继续';
+	@override String playEpisode({required Object season, required Object episode}) => '播放 S${season}, E${episode}';
+	@override String resumeEpisode({required Object season, required Object episode}) => '继续 S${season}, E${episode}';
+	@override String get pause => '暂停';
+	@override String get overview => '概述';
+	@override String get cast => '演员表';
+	@override String episodeCount({required Object count}) => '${count} 集';
+	@override String watchedProgress({required Object watched, required Object total}) => '已观看 ${watched}/${total} 集';
+	@override String get movie => '电影';
+	@override String get tvShow => '电视剧';
+	@override String minutesLeft({required Object minutes}) => '剩余 ${minutes} 分钟';
+}
+
+// Path: errors
+class _StringsErrorsZh implements _StringsErrorsEn {
+	_StringsErrorsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String searchFailed({required Object error}) => '搜索失败: ${error}';
+	@override String connectionTimeout({required Object context}) => '加载 ${context} 时连接超时';
+	@override String get connectionFailed => '无法连接到 Plex 服务器';
+	@override String failedToLoad({required Object context, required Object error}) => '无法加载 ${context}: ${error}';
+	@override String get noClientAvailable => '没有可用客户端';
+	@override String authenticationFailed({required Object error}) => '验证失败: ${error}';
+	@override String get couldNotLaunchUrl => '无法打开授权 URL';
+	@override String get pleaseEnterToken => '请输入一个令牌';
+	@override String get invalidToken => '令牌无效';
+	@override String failedToVerifyToken({required Object error}) => '无法验证令牌: ${error}';
+	@override String failedToSwitchProfile({required Object displayName}) => '无法切换到 ${displayName}';
+	@override String get connectionFailedGeneric => '连接失败';
+}
+
+// Path: libraries
+class _StringsLibrariesZh implements _StringsLibrariesEn {
+	_StringsLibrariesZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '媒体库';
+	@override String get scanLibraryFiles => '扫描媒体库文件';
+	@override String get scanLibrary => '扫描媒体库';
+	@override String get analyze => '分析';
+	@override String get analyzeLibrary => '分析媒体库';
+	@override String get refreshMetadata => '刷新元数据';
+	@override String get emptyTrash => '清空回收站';
+	@override String emptyingTrash({required Object title}) => '正在清空 “${title}” 的回收站...';
+	@override String trashEmptied({required Object title}) => '已清空 “${title}” 的回收站';
+	@override String failedToEmptyTrash({required Object error}) => '无法清空回收站: ${error}';
+	@override String analyzing({required Object title}) => '正在分析 “${title}”...';
+	@override String analysisStarted({required Object title}) => '已开始分析 “${title}”';
+	@override String failedToAnalyze({required Object error}) => '无法分析媒体库: ${error}';
+	@override String get noLibrariesFound => '未找到媒体库';
+	@override String get thisLibraryIsEmpty => '此媒体库为空';
+	@override String get all => '全部';
+	@override String get clearAll => '全部清除';
+	@override String scanLibraryConfirm({required Object title}) => '确定要扫描 “${title}” 吗？';
+	@override String analyzeLibraryConfirm({required Object title}) => '确定要分析 “${title}” 吗？';
+	@override String refreshMetadataConfirm({required Object title}) => '确定要刷新 “${title}” 的元数据吗？';
+	@override String emptyTrashConfirm({required Object title}) => '确定要清空 “${title}” 的回收站吗？';
+	@override String get manageLibraries => '管理媒体库';
+	@override String get sort => '排序';
+	@override String get sortBy => '排序依据';
+	@override String get filters => '筛选器';
+	@override String loadingLibraryWithCount({required Object count}) => '正在加载媒体库... (已加载 ${count} 个项目)';
+	@override String get confirmActionMessage => '确定要执行此操作吗？';
+	@override String get showLibrary => '显示媒体库';
+	@override String get hideLibrary => '隐藏媒体库';
+	@override String get libraryOptions => '媒体库选项';
+}
+
+// Path: about
+class _StringsAboutZh implements _StringsAboutEn {
+	_StringsAboutZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '关于';
+	@override String get openSourceLicenses => '开源许可证';
+	@override String versionLabel({required Object version}) => '版本 ${version}';
+	@override String get appDescription => '一款精美的 Flutter Plex 客户端';
+	@override String get viewLicensesDescription => '查看第三方库的许可证';
+}
+
+// Path: serverSelection
+class _StringsServerSelectionZh implements _StringsServerSelectionEn {
+	_StringsServerSelectionZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get connectingToServer => '正在连接服务器...';
+	@override String get serverDebugCopied => '服务器调试数据已复制到剪贴板';
+	@override String get copyDebugData => '复制调试数据';
+	@override String get noServersFound => '未找到服务器';
+	@override String malformedServerData({required Object count}) => '找到 ${count} 个数据格式错误的服务器。没有可用的有效服务器。';
+	@override String get incompleteServerInfo => '某些服务器信息不完整，已被跳过。请检查你的 Plex.tv 账户。';
+	@override String get incompleteConnectionInfo => '服务器连接信息不完整。请重试。';
+	@override String malformedServerInfo({required Object message}) => '服务器信息格式错误: ${message}';
+	@override String get networkConnectionFailed => '网络连接失败。请检查你的网络连接并重试。';
+	@override String get authenticationFailed => '验证失败。请重新登录。';
+	@override String get plexServiceUnavailable => 'Plex 服务不可用。请稍后重试。';
+	@override String failedToLoadServers({required Object error}) => '无法加载服务器: ${error}';
+}
+
+// Path: hubDetail
+class _StringsHubDetailZh implements _StringsHubDetailEn {
+	_StringsHubDetailZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '标题';
+	@override String get releaseYear => '发行年份';
+	@override String get dateAdded => '添加日期';
+	@override String get rating => '评分';
+	@override String get noItemsFound => '未找到项目';
+}
+
+// Path: logs
+class _StringsLogsZh implements _StringsLogsEn {
+	_StringsLogsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '日志';
+	@override String get clearLogs => '清除日志';
+	@override String get copyLogs => '复制日志';
+	@override String get exportLogs => '导出日志';
+	@override String get noLogsToShow => '没有可显示的日志';
+	@override String get error => '错误:';
+	@override String get stackTrace => '堆栈跟踪 (Stack Trace):';
+}
+
+// Path: licenses
+class _StringsLicensesZh implements _StringsLicensesEn {
+	_StringsLicensesZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get relatedPackages => '相关软件包';
+	@override String get license => '许可证';
+	@override String licenseNumber({required Object number}) => '许可证 ${number}';
+	@override String licensesCount({required Object count}) => '${count} 个许可证';
+}
+
+// Path: navigation
+class _StringsNavigationZh implements _StringsNavigationEn {
+	_StringsNavigationZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get home => '主页';
+	@override String get search => '搜索';
+	@override String get libraries => '媒体库';
+	@override String get settings => '设置';
+}
+
 /// Flat map(s) containing all translations.
 /// Only for edge cases! For simple maps, use the map function of this library.
 
@@ -2896,6 +4120,330 @@ extension on Translations {
 			case 'navigation.search': return 'Search';
 			case 'navigation.libraries': return 'Libraries';
 			case 'navigation.settings': return 'Settings';
+			default: return null;
+		}
+	}
+}
+
+extension on _StringsDe {
+	dynamic _flatMapFunction(String path) {
+		switch (path) {
+			case 'app.title': return 'Plezy';
+			case 'app.loading': return 'Lädt...';
+			case 'auth.signInWithPlex': return 'Mit Plex anmelden';
+			case 'auth.showQRCode': return 'QR-Code anzeigen';
+			case 'auth.cancel': return 'Abbrechen';
+			case 'auth.authenticate': return 'Authentifizieren';
+			case 'auth.retry': return 'Erneut versuchen';
+			case 'auth.debugEnterToken': return 'Debug: Plex-Token eingeben';
+			case 'auth.plexTokenLabel': return 'Plex-Auth-Token';
+			case 'auth.plexTokenHint': return 'Plex.tv-Token eingeben';
+			case 'auth.authenticationTimeout': return 'Authentifizierung abgelaufen. Bitte erneut versuchen.';
+			case 'auth.scanQRCodeInstruction': return 'Diesen QR-Code mit einem bei Plex angemeldeten Gerät scannen, um zu authentifizieren.';
+			case 'auth.waitingForAuth': return 'Warte auf Authentifizierung...\nBitte Anmeldung im Browser abschließen.';
+			case 'common.cancel': return 'Abbrechen';
+			case 'common.save': return 'Speichern';
+			case 'common.close': return 'Schließen';
+			case 'common.clear': return 'Leeren';
+			case 'common.reset': return 'Zurücksetzen';
+			case 'common.later': return 'Später';
+			case 'common.submit': return 'Senden';
+			case 'common.confirm': return 'Bestätigen';
+			case 'common.retry': return 'Erneut versuchen';
+			case 'common.playNow': return 'Jetzt abspielen';
+			case 'common.logout': return 'Abmelden';
+			case 'common.online': return 'Online';
+			case 'common.offline': return 'Offline';
+			case 'common.owned': return 'Eigentum';
+			case 'common.shared': return 'Geteilt';
+			case 'common.current': return 'AKTUELL';
+			case 'common.unknown': return 'Unbekannt';
+			case 'common.refresh': return 'Aktualisieren';
+			case 'common.yes': return 'Ja';
+			case 'common.no': return 'Nein';
+			case 'common.server': return 'Server';
+			case 'screens.licenses': return 'Lizenzen';
+			case 'screens.selectServer': return 'Server auswählen';
+			case 'screens.switchProfile': return 'Profil wechseln';
+			case 'screens.subtitleStyling': return 'Untertitel-Stil';
+			case 'screens.search': return 'Suche';
+			case 'screens.logs': return 'Protokolle';
+			case 'update.available': return 'Update verfügbar';
+			case 'update.versionAvailable': return ({required Object version}) => 'Version ${version} ist verfügbar';
+			case 'update.currentVersion': return ({required Object version}) => 'Aktuell: ${version}';
+			case 'update.skipVersion': return 'Diese Version überspringen';
+			case 'update.viewRelease': return 'Release anzeigen';
+			case 'update.latestVersion': return 'Aktuellste Version installiert';
+			case 'update.checkFailed': return 'Fehler bei der Updateprüfung';
+			case 'settings.title': return 'Einstellungen';
+			case 'settings.language': return 'Sprache';
+			case 'settings.theme': return 'Theme';
+			case 'settings.appearance': return 'Darstellung';
+			case 'settings.videoPlayback': return 'Videowiedergabe';
+			case 'settings.shufflePlay': return 'Zufallswiedergabe';
+			case 'settings.advanced': return 'Erweitert';
+			case 'settings.useSeasonPostersDescription': return 'Staffelposter statt Serienposter für Episoden anzeigen';
+			case 'settings.showHeroSectionDescription': return 'Bereich mit empfohlenen Inhalten auf der Startseite anzeigen';
+			case 'settings.secondsLabel': return 'Sekunden';
+			case 'settings.minutesLabel': return 'Minuten';
+			case 'settings.secondsShort': return 's';
+			case 'settings.minutesShort': return 'm';
+			case 'settings.durationHint': return ({required Object min, required Object max}) => 'Dauer eingeben (${min}-${max})';
+			case 'settings.systemTheme': return 'System';
+			case 'settings.systemThemeDescription': return 'Systemeinstellungen folgen';
+			case 'settings.lightTheme': return 'Hell';
+			case 'settings.darkTheme': return 'Dunkel';
+			case 'settings.libraryDensity': return 'Bibliotheksdichte';
+			case 'settings.compact': return 'Kompakt';
+			case 'settings.compactDescription': return 'Kleinere Karten, mehr Elemente sichtbar';
+			case 'settings.normal': return 'Normal';
+			case 'settings.normalDescription': return 'Standardgröße';
+			case 'settings.comfortable': return 'Großzügig';
+			case 'settings.comfortableDescription': return 'Größere Karten, weniger Elemente sichtbar';
+			case 'settings.viewMode': return 'Ansichtsmodus';
+			case 'settings.gridView': return 'Raster';
+			case 'settings.gridViewDescription': return 'Elemente im Raster anzeigen';
+			case 'settings.listView': return 'Liste';
+			case 'settings.listViewDescription': return 'Elemente in Listenansicht anzeigen';
+			case 'settings.useSeasonPosters': return 'Staffelposter verwenden';
+			case 'settings.showHeroSection': return 'Hero-Bereich anzeigen';
+			case 'settings.hardwareDecoding': return 'Hardware-Decodierung';
+			case 'settings.hardwareDecodingDescription': return 'Hardwarebeschleunigung verwenden, wenn verfügbar';
+			case 'settings.bufferSize': return 'Puffergröße';
+			case 'settings.bufferSizeMB': return ({required Object size}) => '${size}MB';
+			case 'settings.subtitleStyling': return 'Untertitel-Stil';
+			case 'settings.subtitleStylingDescription': return 'Aussehen von Untertiteln anpassen';
+			case 'settings.smallSkipDuration': return 'Kleine Sprungdauer';
+			case 'settings.largeSkipDuration': return 'Große Sprungdauer';
+			case 'settings.secondsUnit': return ({required Object seconds}) => '${seconds} Sekunden';
+			case 'settings.defaultSleepTimer': return 'Standard-Sleep-Timer';
+			case 'settings.minutesUnit': return ({required Object minutes}) => '${minutes} Minuten';
+			case 'settings.rememberTrackSelections': return 'Spurauswahl pro Serie/Film merken';
+			case 'settings.rememberTrackSelectionsDescription': return 'Audio- und Untertitelsprache automatisch speichern, wenn während der Wiedergabe geändert';
+			case 'settings.unwatchedOnly': return 'Nur ungesehene';
+			case 'settings.unwatchedOnlyDescription': return 'Nur ungesehene Episoden in die Shuffle-Warteschlange aufnehmen';
+			case 'settings.shuffleOrderNavigation': return 'Navigation der Shuffle-Reihenfolge';
+			case 'settings.shuffleOrderNavigationDescription': return 'Weiter/Zurück folgt der zufälligen Reihenfolge';
+			case 'settings.loopShuffleQueue': return 'Shuffle-Warteschlange wiederholen';
+			case 'settings.loopShuffleQueueDescription': return 'Warteschlange neu starten, wenn das Ende erreicht ist';
+			case 'settings.videoPlayerControls': return 'Videoplayer-Steuerung';
+			case 'settings.keyboardShortcuts': return 'Tastenkürzel';
+			case 'settings.keyboardShortcutsDescription': return 'Tastenkürzel anpassen';
+			case 'settings.debugLogging': return 'Debug-Protokollierung';
+			case 'settings.debugLoggingDescription': return 'Detaillierte Protokolle zur Fehleranalyse aktivieren';
+			case 'settings.viewLogs': return 'Protokolle anzeigen';
+			case 'settings.viewLogsDescription': return 'App-Protokolle anzeigen';
+			case 'settings.clearCache': return 'Cache löschen';
+			case 'settings.clearCacheDescription': return 'Löscht alle zwischengespeicherten Bilder und Daten. Die App kann danach langsamer laden.';
+			case 'settings.clearCacheSuccess': return 'Cache erfolgreich gelöscht';
+			case 'settings.resetSettings': return 'Einstellungen zurücksetzen';
+			case 'settings.resetSettingsDescription': return 'Alle Einstellungen auf Standard zurücksetzen. Dies kann nicht rückgängig gemacht werden.';
+			case 'settings.resetSettingsSuccess': return 'Einstellungen erfolgreich zurückgesetzt';
+			case 'settings.shortcutsReset': return 'Tastenkürzel auf Standard zurückgesetzt';
+			case 'settings.about': return 'Über';
+			case 'settings.aboutDescription': return 'App-Informationen und Lizenzen';
+			case 'settings.updates': return 'Updates';
+			case 'settings.updateAvailable': return 'Update verfügbar';
+			case 'settings.checkForUpdates': return 'Nach Updates suchen';
+			case 'settings.validationErrorEnterNumber': return 'Bitte eine gültige Zahl eingeben';
+			case 'settings.validationErrorDuration': return ({required Object min, required Object max, required Object unit}) => 'Dauer muss zwischen ${min} und ${max} ${unit} liegen';
+			case 'settings.shortcutAlreadyAssigned': return ({required Object action}) => 'Tastenkürzel bereits zugewiesen an ${action}';
+			case 'settings.shortcutUpdated': return ({required Object action}) => 'Tastenkürzel aktualisiert für ${action}';
+			case 'search.hint': return 'Filme, Serien, Musik suchen...';
+			case 'search.tryDifferentTerm': return 'Anderen Suchbegriff versuchen';
+			case 'search.searchYourMedia': return 'In den eigenen Medien suchen';
+			case 'search.enterTitleActorOrKeyword': return 'Titel, Schauspieler oder Stichwort eingeben';
+			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Tastenkürzel festlegen für ${actionName}';
+			case 'hotkeys.clearShortcut': return 'Kürzel löschen';
+			case 'pinEntry.enterPin': return 'PIN eingeben';
+			case 'pinEntry.showPin': return 'PIN anzeigen';
+			case 'pinEntry.hidePin': return 'PIN verbergen';
+			case 'fileInfo.title': return 'Dateiinfo';
+			case 'fileInfo.video': return 'Video';
+			case 'fileInfo.audio': return 'Audio';
+			case 'fileInfo.file': return 'Datei';
+			case 'fileInfo.advanced': return 'Erweitert';
+			case 'fileInfo.codec': return 'Codec';
+			case 'fileInfo.resolution': return 'Auflösung';
+			case 'fileInfo.bitrate': return 'Bitrate';
+			case 'fileInfo.frameRate': return 'Bildrate';
+			case 'fileInfo.aspectRatio': return 'Seitenverhältnis';
+			case 'fileInfo.profile': return 'Profil';
+			case 'fileInfo.bitDepth': return 'Farbtiefe';
+			case 'fileInfo.colorSpace': return 'Farbraum';
+			case 'fileInfo.colorRange': return 'Farbbereich';
+			case 'fileInfo.colorPrimaries': return 'Primärfarben';
+			case 'fileInfo.chromaSubsampling': return 'Chroma-Subsampling';
+			case 'fileInfo.channels': return 'Kanäle';
+			case 'fileInfo.path': return 'Pfad';
+			case 'fileInfo.size': return 'Größe';
+			case 'fileInfo.container': return 'Container';
+			case 'fileInfo.duration': return 'Dauer';
+			case 'fileInfo.optimizedForStreaming': return 'Für Streaming optimiert';
+			case 'fileInfo.has64bitOffsets': return '64-Bit-Offsets';
+			case 'mediaMenu.markAsWatched': return 'Als gesehen markieren';
+			case 'mediaMenu.markAsUnwatched': return 'Als ungesehen markieren';
+			case 'mediaMenu.removeFromContinueWatching': return 'Aus ‚Weiterschauen‘ entfernen';
+			case 'mediaMenu.goToSeries': return 'Zur Serie';
+			case 'mediaMenu.goToSeason': return 'Zur Staffel';
+			case 'mediaMenu.shufflePlay': return 'Zufallswiedergabe';
+			case 'mediaMenu.fileInfo': return 'Dateiinfo';
+			case 'tooltips.shufflePlay': return 'Zufallswiedergabe';
+			case 'tooltips.markAsWatched': return 'Als gesehen markieren';
+			case 'tooltips.markAsUnwatched': return 'Als ungesehen markieren';
+			case 'videoControls.audioLabel': return 'Audio';
+			case 'videoControls.subtitlesLabel': return 'Untertitel';
+			case 'videoControls.resetToZero': return 'Auf 0 ms zurücksetzen';
+			case 'videoControls.addTime': return ({required Object amount, required Object unit}) => '+${amount}${unit}';
+			case 'videoControls.minusTime': return ({required Object amount, required Object unit}) => '-${amount}${unit}';
+			case 'videoControls.playsLater': return ({required Object label}) => '${label} spielt später';
+			case 'videoControls.playsEarlier': return ({required Object label}) => '${label} spielt früher';
+			case 'videoControls.noOffset': return 'Kein Offset';
+			case 'videoControls.letterbox': return 'Letterbox';
+			case 'videoControls.fillScreen': return 'Bild füllen';
+			case 'videoControls.stretch': return 'Strecken';
+			case 'videoControls.lockRotation': return 'Rotation sperren';
+			case 'videoControls.unlockRotation': return 'Rotation entsperren';
+			case 'userStatus.admin': return 'Admin';
+			case 'userStatus.restricted': return 'Eingeschränkt';
+			case 'userStatus.protected': return 'Geschützt';
+			case 'messages.markedAsWatched': return 'Als gesehen markiert';
+			case 'messages.markedAsUnwatched': return 'Als ungesehen markiert';
+			case 'messages.removedFromContinueWatching': return 'Aus ‚Weiterschauen‘ entfernt';
+			case 'messages.errorLoading': return ({required Object error}) => 'Fehler: ${error}';
+			case 'messages.fileInfoNotAvailable': return 'Dateiinfo nicht verfügbar';
+			case 'messages.errorLoadingFileInfo': return ({required Object error}) => 'Fehler beim Laden der Dateiinfo: ${error}';
+			case 'messages.errorLoadingSeries': return 'Fehler beim Laden der Serie';
+			case 'messages.errorLoadingSeason': return 'Fehler beim Laden der Staffel';
+			case 'messages.musicNotSupported': return 'Musikwiedergabe wird noch nicht unterstützt';
+			case 'messages.logsCleared': return 'Protokolle gelöscht';
+			case 'messages.logsCopied': return 'Protokolle in Zwischenablage kopiert';
+			case 'messages.noLogsAvailable': return 'Keine Protokolle verfügbar';
+			case 'messages.libraryScanning': return ({required Object title}) => 'Scanne „${title}“...';
+			case 'messages.libraryScanStarted': return ({required Object title}) => 'Bibliotheksscan gestartet für „${title}“';
+			case 'messages.libraryScanFailed': return ({required Object error}) => 'Fehler beim Scannen der Bibliothek: ${error}';
+			case 'messages.metadataRefreshing': return ({required Object title}) => 'Metadaten werden aktualisiert für „${title}“...';
+			case 'messages.metadataRefreshStarted': return ({required Object title}) => 'Metadaten-Aktualisierung gestartet für „${title}“';
+			case 'messages.metadataRefreshFailed': return ({required Object error}) => 'Metadaten konnten nicht aktualisiert werden: ${error}';
+			case 'messages.noPlexToken': return 'Kein Plex-Token gefunden. Bitte erneut anmelden.';
+			case 'messages.logoutConfirm': return 'Abmeldung wirklich durchführen?';
+			case 'messages.noSeasonsFound': return 'Keine Staffeln gefunden';
+			case 'messages.noEpisodesFound': return 'Keine Episoden in der ersten Staffel gefunden';
+			case 'messages.noEpisodesFoundGeneral': return 'Keine Episoden gefunden';
+			case 'messages.noResultsFound': return 'Keine Ergebnisse gefunden';
+			case 'messages.sleepTimerSet': return ({required Object label}) => 'Sleep-Timer gesetzt auf ${label}';
+			case 'messages.failedToSwitchProfile': return ({required Object displayName}) => 'Profilwechsel zu ${displayName} fehlgeschlagen';
+			case 'profile.noUsersAvailable': return 'Keine Benutzer verfügbar';
+			case 'subtitlingStyling.stylingOptions': return 'Stiloptionen';
+			case 'subtitlingStyling.fontSize': return 'Schriftgröße';
+			case 'subtitlingStyling.textColor': return 'Textfarbe';
+			case 'subtitlingStyling.borderSize': return 'Rahmengröße';
+			case 'subtitlingStyling.borderColor': return 'Rahmenfarbe';
+			case 'subtitlingStyling.backgroundOpacity': return 'Hintergrunddeckkraft';
+			case 'subtitlingStyling.backgroundColor': return 'Hintergrundfarbe';
+			case 'dialog.confirmAction': return 'Aktion bestätigen';
+			case 'dialog.areYouSure': return 'Aktion wirklich ausführen?';
+			case 'dialog.cancel': return 'Abbrechen';
+			case 'dialog.playNow': return 'Jetzt abspielen';
+			case 'discover.title': return 'Entdecken';
+			case 'discover.switchProfile': return 'Profil wechseln';
+			case 'discover.switchServer': return 'Server wechseln';
+			case 'discover.logout': return 'Abmelden';
+			case 'discover.noContentAvailable': return 'Kein Inhalt verfügbar';
+			case 'discover.addMediaToLibraries': return 'Medien zur Bibliothek hinzufügen';
+			case 'discover.continueWatching': return 'Weiterschauen';
+			case 'discover.recentlyAdded': return 'Kürzlich hinzugefügt';
+			case 'discover.play': return 'Abspielen';
+			case 'discover.resume': return 'Fortsetzen';
+			case 'discover.playEpisode': return ({required Object season, required Object episode}) => 'Spiele S${season}, E${episode}';
+			case 'discover.resumeEpisode': return ({required Object season, required Object episode}) => 'Fortsetzen S${season}, E${episode}';
+			case 'discover.pause': return 'Pause';
+			case 'discover.overview': return 'Übersicht';
+			case 'discover.cast': return 'Besetzung';
+			case 'discover.episodeCount': return ({required Object count}) => '${count} Episoden';
+			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '${watched}/${total} gesehen';
+			case 'discover.movie': return 'Film';
+			case 'discover.tvShow': return 'Serie';
+			case 'discover.minutesLeft': return ({required Object minutes}) => '${minutes} Min übrig';
+			case 'errors.searchFailed': return ({required Object error}) => 'Suche fehlgeschlagen: ${error}';
+			case 'errors.connectionTimeout': return ({required Object context}) => 'Zeitüberschreitung beim Laden von ${context}';
+			case 'errors.connectionFailed': return 'Verbindung zum Plex-Server fehlgeschlagen';
+			case 'errors.failedToLoad': return ({required Object context, required Object error}) => 'Fehler beim Laden von ${context}: ${error}';
+			case 'errors.noClientAvailable': return 'Kein Client verfügbar';
+			case 'errors.authenticationFailed': return ({required Object error}) => 'Authentifizierung fehlgeschlagen: ${error}';
+			case 'errors.couldNotLaunchUrl': return 'Auth-URL konnte nicht geöffnet werden';
+			case 'errors.pleaseEnterToken': return 'Bitte Token eingeben';
+			case 'errors.invalidToken': return 'Ungültiges Token';
+			case 'errors.failedToVerifyToken': return ({required Object error}) => 'Token-Verifizierung fehlgeschlagen: ${error}';
+			case 'errors.failedToSwitchProfile': return ({required Object displayName}) => 'Profilwechsel zu ${displayName} fehlgeschlagen';
+			case 'errors.connectionFailedGeneric': return 'Verbindung fehlgeschlagen';
+			case 'libraries.title': return 'Bibliotheken';
+			case 'libraries.scanLibraryFiles': return 'Bibliotheksdateien scannen';
+			case 'libraries.scanLibrary': return 'Bibliothek scannen';
+			case 'libraries.analyze': return 'Analysieren';
+			case 'libraries.analyzeLibrary': return 'Bibliothek analysieren';
+			case 'libraries.refreshMetadata': return 'Metadaten aktualisieren';
+			case 'libraries.emptyTrash': return 'Papierkorb leeren';
+			case 'libraries.emptyingTrash': return ({required Object title}) => 'Papierkorb für „${title}“ wird geleert...';
+			case 'libraries.trashEmptied': return ({required Object title}) => 'Papierkorb für „${title}“ geleert';
+			case 'libraries.failedToEmptyTrash': return ({required Object error}) => 'Papierkorb konnte nicht geleert werden: ${error}';
+			case 'libraries.analyzing': return ({required Object title}) => 'Analysiere „${title}“...';
+			case 'libraries.analysisStarted': return ({required Object title}) => 'Analyse gestartet für „${title}“';
+			case 'libraries.failedToAnalyze': return ({required Object error}) => 'Analyse der Bibliothek fehlgeschlagen: ${error}';
+			case 'libraries.noLibrariesFound': return 'Keine Bibliotheken gefunden';
+			case 'libraries.thisLibraryIsEmpty': return 'Diese Bibliothek ist leer';
+			case 'libraries.all': return 'Alle';
+			case 'libraries.clearAll': return 'Alle löschen';
+			case 'libraries.scanLibraryConfirm': return ({required Object title}) => '„${title}“ wirklich scannen?';
+			case 'libraries.analyzeLibraryConfirm': return ({required Object title}) => '„${title}“ wirklich analysieren?';
+			case 'libraries.refreshMetadataConfirm': return ({required Object title}) => 'Metadaten für „${title}“ wirklich aktualisieren?';
+			case 'libraries.emptyTrashConfirm': return ({required Object title}) => 'Papierkorb für „${title}“ wirklich leeren?';
+			case 'libraries.manageLibraries': return 'Bibliotheken verwalten';
+			case 'libraries.sort': return 'Sortieren';
+			case 'libraries.sortBy': return 'Sortieren nach';
+			case 'libraries.filters': return 'Filter';
+			case 'libraries.loadingLibraryWithCount': return ({required Object count}) => 'Lade Bibliothek... (${count} Elemente geladen)';
+			case 'libraries.confirmActionMessage': return 'Aktion wirklich durchführen?';
+			case 'libraries.showLibrary': return 'Bibliothek anzeigen';
+			case 'libraries.hideLibrary': return 'Bibliothek ausblenden';
+			case 'libraries.libraryOptions': return 'Bibliotheksoptionen';
+			case 'about.title': return 'Über';
+			case 'about.openSourceLicenses': return 'Open-Source-Lizenzen';
+			case 'about.versionLabel': return ({required Object version}) => 'Version ${version}';
+			case 'about.appDescription': return 'Ein schöner Plex-Client für Flutter';
+			case 'about.viewLicensesDescription': return 'Lizenzen von Drittanbieter-Bibliotheken anzeigen';
+			case 'serverSelection.connectingToServer': return 'Verbinde mit Server...';
+			case 'serverSelection.serverDebugCopied': return 'Server-Debugdaten kopiert';
+			case 'serverSelection.copyDebugData': return 'Debugdaten kopieren';
+			case 'serverSelection.noServersFound': return 'Keine Server gefunden';
+			case 'serverSelection.malformedServerData': return ({required Object count}) => '${count} Server mit fehlerhaften Daten gefunden. Keine gültigen Server verfügbar.';
+			case 'serverSelection.incompleteServerInfo': return 'Einige Serverinformationen sind unvollständig und wurden übersprungen. Plex.tv-Konto prüfen.';
+			case 'serverSelection.incompleteConnectionInfo': return 'Serververbindungsinformationen unvollständig. Bitte erneut versuchen.';
+			case 'serverSelection.malformedServerInfo': return ({required Object message}) => 'Serverinformationen fehlerhaft: ${message}';
+			case 'serverSelection.networkConnectionFailed': return 'Netzwerkverbindung fehlgeschlagen. Internetverbindung prüfen und erneut versuchen.';
+			case 'serverSelection.authenticationFailed': return 'Authentifizierung fehlgeschlagen. Bitte erneut anmelden.';
+			case 'serverSelection.plexServiceUnavailable': return 'Plex-Dienst nicht verfügbar. Bitte später erneut versuchen.';
+			case 'serverSelection.failedToLoadServers': return ({required Object error}) => 'Server konnten nicht geladen werden: ${error}';
+			case 'hubDetail.title': return 'Titel';
+			case 'hubDetail.releaseYear': return 'Erscheinungsjahr';
+			case 'hubDetail.dateAdded': return 'Hinzugefügt am';
+			case 'hubDetail.rating': return 'Bewertung';
+			case 'hubDetail.noItemsFound': return 'Keine Elemente gefunden';
+			case 'logs.title': return 'Protokolle';
+			case 'logs.clearLogs': return 'Protokolle löschen';
+			case 'logs.copyLogs': return 'Protokolle kopieren';
+			case 'logs.exportLogs': return 'Protokolle exportieren';
+			case 'logs.noLogsToShow': return 'Keine Protokolle zum Anzeigen';
+			case 'logs.error': return 'Fehler:';
+			case 'logs.stackTrace': return 'Stacktrace:';
+			case 'licenses.relatedPackages': return 'Verwandte Pakete';
+			case 'licenses.license': return 'Lizenz';
+			case 'licenses.licenseNumber': return ({required Object number}) => 'Lizenz ${number}';
+			case 'licenses.licensesCount': return ({required Object count}) => '${count} Lizenzen';
+			case 'navigation.home': return 'Start';
+			case 'navigation.search': return 'Suche';
+			case 'navigation.libraries': return 'Bibliotheken';
+			case 'navigation.settings': return 'Einstellungen';
 			default: return null;
 		}
 	}
@@ -3868,6 +5416,328 @@ extension on _StringsSv {
 			case 'navigation.search': return 'Sök';
 			case 'navigation.libraries': return 'Bibliotek';
 			case 'navigation.settings': return 'Inställningar';
+			default: return null;
+		}
+	}
+}
+
+extension on _StringsZh {
+	dynamic _flatMapFunction(String path) {
+		switch (path) {
+			case 'app.title': return 'Plezy';
+			case 'app.loading': return '加载中...';
+			case 'auth.signInWithPlex': return '使用 Plex 登录';
+			case 'auth.showQRCode': return '显示二维码';
+			case 'auth.cancel': return '取消';
+			case 'auth.authenticate': return '验证';
+			case 'auth.retry': return '重试';
+			case 'auth.debugEnterToken': return '调试：输入 Plex Token';
+			case 'auth.plexTokenLabel': return 'Plex 授权令牌 (Auth Token)';
+			case 'auth.plexTokenHint': return '输入你的 Plex.tv 令牌';
+			case 'auth.authenticationTimeout': return '验证超时。请重试。';
+			case 'auth.scanQRCodeInstruction': return '请使用已登录 Plex 的设备扫描此二维码进行验证。';
+			case 'auth.waitingForAuth': return '等待验证中...\n请在你的浏览器中完成登录。';
+			case 'common.cancel': return '取消';
+			case 'common.save': return '保存';
+			case 'common.close': return '关闭';
+			case 'common.clear': return '清除';
+			case 'common.reset': return '重置';
+			case 'common.later': return '稍后';
+			case 'common.submit': return '提交';
+			case 'common.confirm': return '确认';
+			case 'common.retry': return '重试';
+			case 'common.playNow': return '立即播放';
+			case 'common.logout': return '登出';
+			case 'common.online': return '在线';
+			case 'common.offline': return '离线';
+			case 'common.owned': return '拥有';
+			case 'common.shared': return '共享';
+			case 'common.current': return '当前';
+			case 'common.unknown': return '未知';
+			case 'common.refresh': return '刷新';
+			case 'common.yes': return '是';
+			case 'common.no': return '否';
+			case 'common.server': return '服务器';
+			case 'screens.licenses': return '许可证';
+			case 'screens.selectServer': return '选择服务器';
+			case 'screens.switchProfile': return '切换配置文件';
+			case 'screens.subtitleStyling': return '字幕样式';
+			case 'screens.search': return '搜索';
+			case 'screens.logs': return '日志';
+			case 'update.available': return '有可用更新';
+			case 'update.versionAvailable': return ({required Object version}) => '版本 ${version} 已发布';
+			case 'update.currentVersion': return ({required Object version}) => '当前版本: ${version}';
+			case 'update.skipVersion': return '跳过此版本';
+			case 'update.viewRelease': return '查看发布详情';
+			case 'update.latestVersion': return '已安装的版本是可用的最新版本';
+			case 'update.checkFailed': return '无法检查更新';
+			case 'settings.title': return '设置';
+			case 'settings.language': return '语言';
+			case 'settings.theme': return '主题';
+			case 'settings.appearance': return '外观';
+			case 'settings.videoPlayback': return '视频播放';
+			case 'settings.shufflePlay': return '随机播放';
+			case 'settings.advanced': return '高级';
+			case 'settings.useSeasonPostersDescription': return '为剧集显示季海报而非剧集海报';
+			case 'settings.showHeroSectionDescription': return '在主屏幕上显示精选内容轮播区';
+			case 'settings.secondsLabel': return '秒';
+			case 'settings.minutesLabel': return '分钟';
+			case 'settings.secondsShort': return 's';
+			case 'settings.minutesShort': return 'm';
+			case 'settings.durationHint': return ({required Object min, required Object max}) => '输入时长 (${min}-${max})';
+			case 'settings.systemTheme': return '系统';
+			case 'settings.systemThemeDescription': return '跟随系统设置';
+			case 'settings.lightTheme': return '浅色';
+			case 'settings.darkTheme': return '深色';
+			case 'settings.libraryDensity': return '媒体库密度';
+			case 'settings.compact': return '紧凑';
+			case 'settings.compactDescription': return '卡片更小，显示更多项目';
+			case 'settings.normal': return '标准';
+			case 'settings.normalDescription': return '默认尺寸';
+			case 'settings.comfortable': return '舒适';
+			case 'settings.comfortableDescription': return '卡片更大，显示更少项目';
+			case 'settings.viewMode': return '视图模式';
+			case 'settings.gridView': return '网格视图';
+			case 'settings.gridViewDescription': return '以网格布局显示项目';
+			case 'settings.listView': return '列表视图';
+			case 'settings.listViewDescription': return '以列表布局显示项目';
+			case 'settings.useSeasonPosters': return '使用季海报';
+			case 'settings.showHeroSection': return '显示主要精选区';
+			case 'settings.hardwareDecoding': return '硬件解码';
+			case 'settings.hardwareDecodingDescription': return '如果可用，使用硬件加速';
+			case 'settings.bufferSize': return '缓冲区大小';
+			case 'settings.bufferSizeMB': return ({required Object size}) => '${size}MB';
+			case 'settings.subtitleStyling': return '字幕样式';
+			case 'settings.subtitleStylingDescription': return '调整字幕外观';
+			case 'settings.smallSkipDuration': return '短跳过时长';
+			case 'settings.largeSkipDuration': return '长跳过时长';
+			case 'settings.secondsUnit': return ({required Object seconds}) => '${seconds} 秒';
+			case 'settings.defaultSleepTimer': return '默认睡眠定时器';
+			case 'settings.minutesUnit': return ({required Object minutes}) => '${minutes} 分钟';
+			case 'settings.unwatchedOnly': return '仅未观看';
+			case 'settings.unwatchedOnlyDescription': return '随机队列中仅包含未观看的剧集';
+			case 'settings.shuffleOrderNavigation': return '随机顺序导航';
+			case 'settings.shuffleOrderNavigationDescription': return '下一集/上一集按钮遵循随机播放顺序';
+			case 'settings.loopShuffleQueue': return '循环随机队列';
+			case 'settings.loopShuffleQueueDescription': return '在队列结束时重新开始';
+			case 'settings.videoPlayerControls': return '视频播放器控制';
+			case 'settings.keyboardShortcuts': return '键盘快捷键';
+			case 'settings.keyboardShortcutsDescription': return '自定义键盘快捷键';
+			case 'settings.debugLogging': return '调试日志';
+			case 'settings.debugLoggingDescription': return '启用详细日志记录以便故障排除';
+			case 'settings.viewLogs': return '查看日志';
+			case 'settings.viewLogsDescription': return '查看应用程序日志';
+			case 'settings.clearCache': return '清除缓存';
+			case 'settings.clearCacheDescription': return '这将清除所有缓存的图片和数据。清除缓存后，应用程序加载内容可能会变慢。';
+			case 'settings.clearCacheSuccess': return '缓存清除成功';
+			case 'settings.resetSettings': return '重置设置';
+			case 'settings.resetSettingsDescription': return '这会将所有设置重置为其默认值。此操作无法撤销。';
+			case 'settings.resetSettingsSuccess': return '设置重置成功';
+			case 'settings.shortcutsReset': return '快捷键已重置为默认值';
+			case 'settings.about': return '关于';
+			case 'settings.aboutDescription': return '应用程序信息和许可证';
+			case 'settings.updates': return '更新';
+			case 'settings.updateAvailable': return '有可用更新';
+			case 'settings.checkForUpdates': return '检查更新';
+			case 'settings.validationErrorEnterNumber': return '请输入一个有效的数字';
+			case 'settings.validationErrorDuration': return ({required Object min, required Object max, required Object unit}) => '时长必须介于 ${min} 和 ${max} ${unit} 之间';
+			case 'settings.shortcutAlreadyAssigned': return ({required Object action}) => '快捷键已被分配给 ${action}';
+			case 'settings.shortcutUpdated': return ({required Object action}) => '快捷键已为 ${action} 更新';
+			case 'search.hint': return '搜索电影、系列、音乐...';
+			case 'search.tryDifferentTerm': return '尝试不同的搜索词';
+			case 'search.searchYourMedia': return '搜索媒体';
+			case 'search.enterTitleActorOrKeyword': return '输入标题、演员或关键词';
+			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => '为 ${actionName} 设置快捷键';
+			case 'hotkeys.clearShortcut': return '清除快捷键';
+			case 'pinEntry.enterPin': return '输入 PIN';
+			case 'pinEntry.showPin': return '显示 PIN';
+			case 'pinEntry.hidePin': return '隐藏 PIN';
+			case 'fileInfo.title': return '文件信息';
+			case 'fileInfo.video': return '视频';
+			case 'fileInfo.audio': return '音频';
+			case 'fileInfo.file': return '文件';
+			case 'fileInfo.advanced': return '高级';
+			case 'fileInfo.codec': return '编解码器';
+			case 'fileInfo.resolution': return '分辨率';
+			case 'fileInfo.bitrate': return '比特率';
+			case 'fileInfo.frameRate': return '帧率';
+			case 'fileInfo.aspectRatio': return '宽高比';
+			case 'fileInfo.profile': return '配置文件';
+			case 'fileInfo.bitDepth': return '位深度';
+			case 'fileInfo.colorSpace': return '色彩空间';
+			case 'fileInfo.colorRange': return '色彩范围';
+			case 'fileInfo.colorPrimaries': return '颜色原色';
+			case 'fileInfo.chromaSubsampling': return '色度子采样';
+			case 'fileInfo.channels': return '声道';
+			case 'fileInfo.path': return '路径';
+			case 'fileInfo.size': return '大小';
+			case 'fileInfo.container': return '容器';
+			case 'fileInfo.duration': return '时长';
+			case 'fileInfo.optimizedForStreaming': return '已优化用于流媒体';
+			case 'fileInfo.has64bitOffsets': return '64位偏移量';
+			case 'mediaMenu.markAsWatched': return '标记为已观看';
+			case 'mediaMenu.markAsUnwatched': return '标记为未观看';
+			case 'mediaMenu.removeFromContinueWatching': return '从继续观看中移除';
+			case 'mediaMenu.goToSeries': return '转到系列';
+			case 'mediaMenu.goToSeason': return '转到季';
+			case 'mediaMenu.shufflePlay': return '随机播放';
+			case 'mediaMenu.fileInfo': return '文件信息';
+			case 'tooltips.shufflePlay': return '随机播放';
+			case 'tooltips.markAsWatched': return '标记为已观看';
+			case 'tooltips.markAsUnwatched': return '标记为未观看';
+			case 'videoControls.audioLabel': return '音频';
+			case 'videoControls.subtitlesLabel': return '字幕';
+			case 'videoControls.resetToZero': return '重置为 0ms';
+			case 'videoControls.addTime': return ({required Object amount, required Object unit}) => '+${amount}${unit}';
+			case 'videoControls.minusTime': return ({required Object amount, required Object unit}) => '-${amount}${unit}';
+			case 'videoControls.playsLater': return ({required Object label}) => '${label} 播放较晚';
+			case 'videoControls.playsEarlier': return ({required Object label}) => '${label} 播放较早';
+			case 'videoControls.noOffset': return '无偏移';
+			case 'videoControls.letterbox': return '信箱模式（Letterbox）';
+			case 'videoControls.fillScreen': return '填充屏幕';
+			case 'videoControls.stretch': return '拉伸';
+			case 'videoControls.lockRotation': return '锁定旋转';
+			case 'videoControls.unlockRotation': return '解锁旋转';
+			case 'userStatus.admin': return '管理员';
+			case 'userStatus.restricted': return '受限';
+			case 'userStatus.protected': return '受保护';
+			case 'messages.markedAsWatched': return '已标记为已观看';
+			case 'messages.markedAsUnwatched': return '已标记为未观看';
+			case 'messages.removedFromContinueWatching': return '已从继续观看中移除';
+			case 'messages.errorLoading': return ({required Object error}) => '错误: ${error}';
+			case 'messages.fileInfoNotAvailable': return '文件信息不可用';
+			case 'messages.errorLoadingFileInfo': return ({required Object error}) => '加载文件信息时出错: ${error}';
+			case 'messages.errorLoadingSeries': return '加载系列时出错';
+			case 'messages.errorLoadingSeason': return '加载季时出错';
+			case 'messages.musicNotSupported': return '尚不支持播放音乐';
+			case 'messages.logsCleared': return '日志已清除';
+			case 'messages.logsCopied': return '日志已复制到剪贴板';
+			case 'messages.noLogsAvailable': return '没有可用日志';
+			case 'messages.libraryScanning': return ({required Object title}) => '正在扫描 “${title}”...';
+			case 'messages.libraryScanStarted': return ({required Object title}) => '已开始扫描 “${title}” 媒体库';
+			case 'messages.libraryScanFailed': return ({required Object error}) => '无法扫描媒体库: ${error}';
+			case 'messages.metadataRefreshing': return ({required Object title}) => '正在刷新 “${title}” 的元数据...';
+			case 'messages.metadataRefreshStarted': return ({required Object title}) => '已开始刷新 “${title}” 的元数据';
+			case 'messages.metadataRefreshFailed': return ({required Object error}) => '无法刷新元数据: ${error}';
+			case 'messages.noPlexToken': return '未找到 Plex 令牌。请重新登录。';
+			case 'messages.logoutConfirm': return '你确定要登出吗？';
+			case 'messages.noSeasonsFound': return '未找到季';
+			case 'messages.noEpisodesFound': return '在第一季中未找到剧集';
+			case 'messages.noEpisodesFoundGeneral': return '未找到剧集';
+			case 'messages.noResultsFound': return '未找到结果';
+			case 'messages.sleepTimerSet': return ({required Object label}) => '睡眠定时器已设置为 ${label}';
+			case 'messages.failedToSwitchProfile': return ({required Object displayName}) => '无法切换到 ${displayName}';
+			case 'profile.noUsersAvailable': return '没有可用用户';
+			case 'subtitlingStyling.stylingOptions': return '样式选项';
+			case 'subtitlingStyling.fontSize': return '字号';
+			case 'subtitlingStyling.textColor': return '文本颜色';
+			case 'subtitlingStyling.borderSize': return '边框大小';
+			case 'subtitlingStyling.borderColor': return '边框颜色';
+			case 'subtitlingStyling.backgroundOpacity': return '背景不透明度';
+			case 'subtitlingStyling.backgroundColor': return '背景颜色';
+			case 'dialog.confirmAction': return '确认操作';
+			case 'dialog.areYouSure': return '确定要执行此操作吗？';
+			case 'dialog.cancel': return '取消';
+			case 'dialog.playNow': return '立即播放';
+			case 'discover.title': return '发现';
+			case 'discover.switchProfile': return '切换配置文件';
+			case 'discover.switchServer': return '切换服务器';
+			case 'discover.logout': return '登出';
+			case 'discover.noContentAvailable': return '没有可用内容';
+			case 'discover.addMediaToLibraries': return '请向你的媒体库添加一些媒体';
+			case 'discover.continueWatching': return '继续观看';
+			case 'discover.recentlyAdded': return '最近添加';
+			case 'discover.play': return '播放';
+			case 'discover.resume': return '继续';
+			case 'discover.playEpisode': return ({required Object season, required Object episode}) => '播放 S${season}, E${episode}';
+			case 'discover.resumeEpisode': return ({required Object season, required Object episode}) => '继续 S${season}, E${episode}';
+			case 'discover.pause': return '暂停';
+			case 'discover.overview': return '概述';
+			case 'discover.cast': return '演员表';
+			case 'discover.episodeCount': return ({required Object count}) => '${count} 集';
+			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '已观看 ${watched}/${total} 集';
+			case 'discover.movie': return '电影';
+			case 'discover.tvShow': return '电视剧';
+			case 'discover.minutesLeft': return ({required Object minutes}) => '剩余 ${minutes} 分钟';
+			case 'errors.searchFailed': return ({required Object error}) => '搜索失败: ${error}';
+			case 'errors.connectionTimeout': return ({required Object context}) => '加载 ${context} 时连接超时';
+			case 'errors.connectionFailed': return '无法连接到 Plex 服务器';
+			case 'errors.failedToLoad': return ({required Object context, required Object error}) => '无法加载 ${context}: ${error}';
+			case 'errors.noClientAvailable': return '没有可用客户端';
+			case 'errors.authenticationFailed': return ({required Object error}) => '验证失败: ${error}';
+			case 'errors.couldNotLaunchUrl': return '无法打开授权 URL';
+			case 'errors.pleaseEnterToken': return '请输入一个令牌';
+			case 'errors.invalidToken': return '令牌无效';
+			case 'errors.failedToVerifyToken': return ({required Object error}) => '无法验证令牌: ${error}';
+			case 'errors.failedToSwitchProfile': return ({required Object displayName}) => '无法切换到 ${displayName}';
+			case 'errors.connectionFailedGeneric': return '连接失败';
+			case 'libraries.title': return '媒体库';
+			case 'libraries.scanLibraryFiles': return '扫描媒体库文件';
+			case 'libraries.scanLibrary': return '扫描媒体库';
+			case 'libraries.analyze': return '分析';
+			case 'libraries.analyzeLibrary': return '分析媒体库';
+			case 'libraries.refreshMetadata': return '刷新元数据';
+			case 'libraries.emptyTrash': return '清空回收站';
+			case 'libraries.emptyingTrash': return ({required Object title}) => '正在清空 “${title}” 的回收站...';
+			case 'libraries.trashEmptied': return ({required Object title}) => '已清空 “${title}” 的回收站';
+			case 'libraries.failedToEmptyTrash': return ({required Object error}) => '无法清空回收站: ${error}';
+			case 'libraries.analyzing': return ({required Object title}) => '正在分析 “${title}”...';
+			case 'libraries.analysisStarted': return ({required Object title}) => '已开始分析 “${title}”';
+			case 'libraries.failedToAnalyze': return ({required Object error}) => '无法分析媒体库: ${error}';
+			case 'libraries.noLibrariesFound': return '未找到媒体库';
+			case 'libraries.thisLibraryIsEmpty': return '此媒体库为空';
+			case 'libraries.all': return '全部';
+			case 'libraries.clearAll': return '全部清除';
+			case 'libraries.scanLibraryConfirm': return ({required Object title}) => '确定要扫描 “${title}” 吗？';
+			case 'libraries.analyzeLibraryConfirm': return ({required Object title}) => '确定要分析 “${title}” 吗？';
+			case 'libraries.refreshMetadataConfirm': return ({required Object title}) => '确定要刷新 “${title}” 的元数据吗？';
+			case 'libraries.emptyTrashConfirm': return ({required Object title}) => '确定要清空 “${title}” 的回收站吗？';
+			case 'libraries.manageLibraries': return '管理媒体库';
+			case 'libraries.sort': return '排序';
+			case 'libraries.sortBy': return '排序依据';
+			case 'libraries.filters': return '筛选器';
+			case 'libraries.loadingLibraryWithCount': return ({required Object count}) => '正在加载媒体库... (已加载 ${count} 个项目)';
+			case 'libraries.confirmActionMessage': return '确定要执行此操作吗？';
+			case 'libraries.showLibrary': return '显示媒体库';
+			case 'libraries.hideLibrary': return '隐藏媒体库';
+			case 'libraries.libraryOptions': return '媒体库选项';
+			case 'about.title': return '关于';
+			case 'about.openSourceLicenses': return '开源许可证';
+			case 'about.versionLabel': return ({required Object version}) => '版本 ${version}';
+			case 'about.appDescription': return '一款精美的 Flutter Plex 客户端';
+			case 'about.viewLicensesDescription': return '查看第三方库的许可证';
+			case 'serverSelection.connectingToServer': return '正在连接服务器...';
+			case 'serverSelection.serverDebugCopied': return '服务器调试数据已复制到剪贴板';
+			case 'serverSelection.copyDebugData': return '复制调试数据';
+			case 'serverSelection.noServersFound': return '未找到服务器';
+			case 'serverSelection.malformedServerData': return ({required Object count}) => '找到 ${count} 个数据格式错误的服务器。没有可用的有效服务器。';
+			case 'serverSelection.incompleteServerInfo': return '某些服务器信息不完整，已被跳过。请检查你的 Plex.tv 账户。';
+			case 'serverSelection.incompleteConnectionInfo': return '服务器连接信息不完整。请重试。';
+			case 'serverSelection.malformedServerInfo': return ({required Object message}) => '服务器信息格式错误: ${message}';
+			case 'serverSelection.networkConnectionFailed': return '网络连接失败。请检查你的网络连接并重试。';
+			case 'serverSelection.authenticationFailed': return '验证失败。请重新登录。';
+			case 'serverSelection.plexServiceUnavailable': return 'Plex 服务不可用。请稍后重试。';
+			case 'serverSelection.failedToLoadServers': return ({required Object error}) => '无法加载服务器: ${error}';
+			case 'hubDetail.title': return '标题';
+			case 'hubDetail.releaseYear': return '发行年份';
+			case 'hubDetail.dateAdded': return '添加日期';
+			case 'hubDetail.rating': return '评分';
+			case 'hubDetail.noItemsFound': return '未找到项目';
+			case 'logs.title': return '日志';
+			case 'logs.clearLogs': return '清除日志';
+			case 'logs.copyLogs': return '复制日志';
+			case 'logs.exportLogs': return '导出日志';
+			case 'logs.noLogsToShow': return '没有可显示的日志';
+			case 'logs.error': return '错误:';
+			case 'logs.stackTrace': return '堆栈跟踪 (Stack Trace):';
+			case 'licenses.relatedPackages': return '相关软件包';
+			case 'licenses.license': return '许可证';
+			case 'licenses.licenseNumber': return ({required Object number}) => '许可证 ${number}';
+			case 'licenses.licensesCount': return ({required Object count}) => '${count} 个许可证';
+			case 'navigation.home': return '主页';
+			case 'navigation.search': return '搜索';
+			case 'navigation.libraries': return '媒体库';
+			case 'navigation.settings': return '设置';
 			default: return null;
 		}
 	}

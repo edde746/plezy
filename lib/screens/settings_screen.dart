@@ -885,6 +885,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return 'Italiano';
       case AppLocale.nl:
         return 'Nederlands';
+      case AppLocale.de:
+        return 'Deutsch';
+      case AppLocale.zh:
+        return '中文';
     }
   }
 
