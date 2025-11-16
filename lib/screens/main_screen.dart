@@ -3,6 +3,8 @@ import '../client/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/platform_detector.dart';
+import '../utils/tv_ui_helper.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
 import 'discover_screen.dart';
@@ -23,8 +25,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   int _currentIndex = 0;
 
   late final List<Widget> _screens;
+  late final List<Widget> _tvScreens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
+  final GlobalKey<State<LibrariesScreen>> _moviesKey = GlobalKey();
+  final GlobalKey<State<LibrariesScreen>> _showsKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
 
@@ -32,12 +37,25 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   void initState() {
     super.initState();
 
+    // Mobile/Tablet screens (4 screens)
     _screens = [
       DiscoverScreen(
         key: _discoverKey,
         onBecameVisible: _onDiscoverBecameVisible,
       ),
       LibrariesScreen(key: _librariesKey),
+      SearchScreen(key: _searchKey),
+      SettingsScreen(key: _settingsKey),
+    ];
+
+    // TV screens (5 screens - Movies and TV Shows separated)
+    _tvScreens = [
+      DiscoverScreen(
+        key: _discoverKey,
+        onBecameVisible: _onDiscoverBecameVisible,
+      ),
+      LibrariesScreen(key: _moviesKey, initialLibraryType: 'movie'),
+      LibrariesScreen(key: _showsKey, initialLibraryType: 'show'),
       SearchScreen(key: _searchKey),
       SettingsScreen(key: _settingsKey),
     ];
@@ -106,6 +124,18 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       (librariesState as dynamic).fullRefresh();
     }
 
+    // Full refresh movies screen for TV (clear filters and reload for new profile)
+    final moviesState = _moviesKey.currentState;
+    if (moviesState != null) {
+      (moviesState as dynamic).fullRefresh();
+    }
+
+    // Full refresh shows screen for TV (clear filters and reload for new profile)
+    final showsState = _showsKey.currentState;
+    if (showsState != null) {
+      (showsState as dynamic).fullRefresh();
+    }
+
     // Full refresh search screen (clear search for new profile)
     final searchState = _searchKey.currentState;
     if (searchState != null) {
@@ -115,6 +145,64 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    final isTV = PlatformDetector.isTVSync();
+
+    // Use NavigationRail for TV, NavigationBar for other devices
+    if (isTV) {
+      return Scaffold(
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+                // Notify discover screen when it becomes visible via tab switch
+                if (index == 0) {
+                  _onDiscoverBecameVisible();
+                }
+              },
+              labelType: NavigationRailLabelType.all,
+              minWidth: TVUIHelper.tvNavigationRailMinWidth,
+              destinations: [
+                NavigationRailDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(Icons.home),
+                  label: Text(t.navigation.home),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.movie_outlined),
+                  selectedIcon: const Icon(Icons.movie),
+                  label: const Text('Movies'),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.tv_outlined),
+                  selectedIcon: const Icon(Icons.tv),
+                  label: const Text('TV Shows'),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.search),
+                  selectedIcon: const Icon(Icons.search),
+                  label: Text(t.navigation.search),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(Icons.settings),
+                  label: Text(t.navigation.settings),
+                ),
+              ],
+            ),
+            const VerticalDivider(thickness: 1, width: 1),
+            Expanded(
+              child: IndexedStack(index: _currentIndex, children: _tvScreens),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Default mobile/tablet layout with bottom navigation
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: NavigationBar(

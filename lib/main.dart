@@ -23,6 +23,7 @@ import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
 import 'utils/provider_extensions.dart';
 import 'utils/orientation_helper.dart';
+import 'utils/platform_detector.dart';
 import 'i18n/strings.g.dart';
 
 void main() async {
@@ -49,6 +50,9 @@ void main() async {
 
   // Initialize MediaKit
   MediaKit.ensureInitialized();
+
+  // Initialize TV detection early for Android devices
+  await PlatformDetector.initializeTVDetection();
 
   // Note: Orientation will be set dynamically based on device type in MainApp
 

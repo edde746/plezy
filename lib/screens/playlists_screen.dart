@@ -261,8 +261,8 @@ class _PlaylistCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(t.playlists.delete),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(t.playlists.delete),
           ),
         ],
       ),
@@ -329,7 +329,7 @@ class _PlaylistCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.9),
+                          color: Colors.blue.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Icon(
