@@ -37,12 +37,12 @@ struct FocusableModifier: ViewModifier {
 /// Media Card button style for tvOS focus engine
 /// Designed for poster/card-based media browsing with proper focus indication
 struct MediaCardButtonStyle: ButtonStyle {
-    @Binding var isFocused: Bool
+    let isFocused: FocusState<Bool>.Binding
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .focusEffectDisabled()
-            .focused($isFocused)
+            .focused(isFocused)
             .focusable()
     }
 }
