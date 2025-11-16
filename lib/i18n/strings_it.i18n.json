@@ -100,6 +100,8 @@
     "secondsUnit": "${seconds} secondi",
     "defaultSleepTimer": "Timer spegnimento predefinito",
     "minutesUnit": "${minutes} minuti",
+    "rememberTrackSelections": "Ricorda selezioni tracce per serie/film",
+    "rememberTrackSelectionsDescription": "Salva automaticamente le preferenze delle lingue audio e sottotitoli quando cambi tracce durante la riproduzione",
     "unwatchedOnly": "Solo non guardati",
     "unwatchedOnlyDescription": "Includi solo gli episodi non guardati nella coda di riproduzione casuale",
     "shuffleOrderNavigation": "Navigazione in ordine casuale",
@@ -132,7 +134,9 @@
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",
-    "tryDifferentTerm": "Prova altri termini di ricerca"
+    "tryDifferentTerm": "Prova altri termini di ricerca",
+    "searchYourMedia": "Cerca nei tuoi media",
+    "enterTitleActorOrKeyword": "Inserisci un titolo, attore o parola chiave"
   },
   "hotkeys": {
     "setShortcutFor": "Imposta scorciatoia per ${actionName}",
@@ -171,6 +175,7 @@
   "mediaMenu": {
     "markAsWatched": "Segna come visto",
     "markAsUnwatched": "Segna come non visto",
+    "removeFromContinueWatching": "Rimuovi da Continua a guardare",
     "goToSeries": "Vai alle serie",
     "goToSeason": "Vai alla stagione",
     "shufflePlay": "Riproduzione casuale",
@@ -199,11 +204,13 @@
   "userStatus": {
     "admin": "Admin",
     "restricted": "Limitato",
-    "protected": "Protetto"
+    "protected": "Protetto",
+    "current": "ATTUALE"
   },
   "messages": {
     "markedAsWatched": "Segna come visto",
     "markedAsUnwatched": "Segna come non visto",
+    "removedFromContinueWatching": "Rimosso da Continua a guardare",
     "errorLoading": "Errore: ${error}",
     "fileInfoNotAvailable": "Informazioni sul file non disponibili",
     "errorLoadingFileInfo": "Errore caricamento informazioni sul file: ${error}",
@@ -262,6 +269,10 @@
     "pause": "Pausa",
     "overview": "Panoramica",
     "cast": "Cast",
+    "seasons": "Stagioni",
+    "studio": "Studio",
+    "rating": "Classificazione",
+    "watched": "Guardato",
     "episodeCount": "${count} episodi",
     "watchedProgress": "${watched}/${total} guardati",
     "movie": "Film",
@@ -362,5 +373,41 @@
     "search": "Cerca",
     "libraries": "Librerie",
     "settings": "Impostazioni"
+  },
+  "playlists": {
+    "title": "Playlist",
+    "noPlaylists": "Nessuna playlist trovata",
+    "create": "Crea playlist",
+    "newPlaylist": "Nuova playlist",
+    "playlistName": "Nome playlist",
+    "enterPlaylistName": "Inserisci nome playlist",
+    "edit": "Modifica playlist",
+    "delete": "Elimina playlist",
+    "addTo": "Aggiungi a playlist",
+    "addItems": "Aggiungi elementi",
+    "removeItem": "Rimuovi da playlist",
+    "clearPlaylist": "Svuota playlist",
+    "playAll": "Riproduci tutto",
+    "shuffle": "Casuale",
+    "smartPlaylist": "Playlist intelligente",
+    "regularPlaylist": "Playlist normale",
+    "itemCount": "${count} elementi",
+    "oneItem": "1 elemento",
+    "emptyPlaylist": "Questa playlist è vuota",
+    "deleteConfirm": "Eliminare playlist?",
+    "deleteMessage": "Sei sicuro di voler eliminare \"${name}\"?",
+    "created": "Playlist creata",
+    "updated": "Playlist aggiornata",
+    "deleted": "Playlist eliminata",
+    "itemAdded": "Aggiunto alla playlist",
+    "itemRemoved": "Rimosso dalla playlist",
+    "selectPlaylist": "Seleziona playlist",
+    "createNewPlaylist": "Crea nuova playlist",
+    "errorCreating": "Errore durante la creazione della playlist",
+    "errorDeleting": "Errore durante l'eliminazione della playlist",
+    "errorLoading": "Errore durante il caricamento delle playlist",
+    "errorAdding": "Errore durante l'aggiunta alla playlist",
+    "errorReordering": "Errore durante il riordino dell'elemento della playlist",
+    "errorRemoving": "Errore durante la rimozione dalla playlist"
   }
 }

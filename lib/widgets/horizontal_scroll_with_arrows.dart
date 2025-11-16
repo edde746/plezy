@@ -56,9 +56,9 @@ class _HorizontalScrollWithArrowsState
 
   void _scrollLeft() {
     final position = _scrollController.position;
-    final targetScroll = (position.pixels -
-            (position.viewportDimension * widget.scrollAmount))
-        .clamp(0.0, position.maxScrollExtent);
+    final targetScroll =
+        (position.pixels - (position.viewportDimension * widget.scrollAmount))
+            .clamp(0.0, position.maxScrollExtent);
 
     _scrollController.animateTo(
       targetScroll,
@@ -69,9 +69,9 @@ class _HorizontalScrollWithArrowsState
 
   void _scrollRight() {
     final position = _scrollController.position;
-    final targetScroll = (position.pixels +
-            (position.viewportDimension * widget.scrollAmount))
-        .clamp(0.0, position.maxScrollExtent);
+    final targetScroll =
+        (position.pixels + (position.viewportDimension * widget.scrollAmount))
+            .clamp(0.0, position.maxScrollExtent);
 
     _scrollController.animateTo(
       targetScroll,
@@ -145,10 +145,7 @@ class _NavigationArrow extends StatefulWidget {
   final IconData icon;
   final VoidCallback onPressed;
 
-  const _NavigationArrow({
-    required this.icon,
-    required this.onPressed,
-  });
+  const _NavigationArrow({required this.icon, required this.onPressed});
 
   @override
   State<_NavigationArrow> createState() => _NavigationArrowState();
@@ -182,11 +179,7 @@ class _NavigationArrowState extends State<_NavigationArrow> {
               ),
             ],
           ),
-          child: Icon(
-            widget.icon,
-            color: Colors.white,
-            size: 32,
-          ),
+          child: Icon(widget.icon, color: Colors.white, size: 32),
         ),
       ),
     );

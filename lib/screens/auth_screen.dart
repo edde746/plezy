@@ -245,13 +245,16 @@ class _AuthScreenState extends State<AuthScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Image.asset('assets/plezy.png', width: 120, height: 120),
+                          Image.asset(
+                            'assets/plezy.png',
+                            width: 120,
+                            height: 120,
+                          ),
                           const SizedBox(height: 24),
                           Text(
                             t.app.title,
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -321,7 +324,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             ElevatedButton(
                               onPressed: _startAuthentication,
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                               ),
                               child: Text(t.auth.signInWithPlex),
                             ),
@@ -334,7 +339,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                 _startAuthentication();
                               },
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                               ),
                               child: Text(t.auth.showQRCode),
                             ),
@@ -343,11 +350,12 @@ class _AuthScreenState extends State<AuthScreen> {
                               OutlinedButton(
                                 onPressed: _handleDebugTap,
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
                                   side: BorderSide(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.outline.withValues(alpha: 0.5),
+                                    color: Theme.of(context).colorScheme.outline
+                                        .withValues(alpha: 0.5),
                                   ),
                                 ),
                                 child: Text(
@@ -380,9 +388,8 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 24),
                     Text(
                       t.app.title,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 48),
@@ -405,7 +412,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                         child: Text(t.auth.retry),
                       ),
-                    ] else ...[ // add QR button here
+                    ] else ...[
+                      // add QR button here
                       ElevatedButton(
                         onPressed: _startAuthentication,
                         style: ElevatedButton.styleFrom(

@@ -240,7 +240,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// This is called when returning to the home screen to avoid blocking UI
   Future<void> _refreshContinueWatching() async {
     appLogger.d('Refreshing Continue Watching in background');
-    
+
     try {
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
@@ -250,7 +250,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
 
       final onDeck = await client.getOnDeck();
-      
+
       if (mounted) {
         setState(() {
           _onDeck = onDeck;
@@ -412,11 +412,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     if (plexToken == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.messages.noPlexToken),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.messages.noPlexToken)));
       }
       return;
     }
@@ -627,9 +625,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
                   ),
                 ),
-                _buildHorizontalList(_onDeck, isLarge: false),
+                _buildHorizontalList(
+                  _onDeck,
+                  isLarge: false,
+                  isInContinueWatching: true,
+                ),
               ],
-
 
               // Recommendation Hubs (Trending, Top in Genre, etc.)
               for (final hub in _hubs) ...[
@@ -1236,6 +1237,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Widget _buildHorizontalList(
     List<PlexMetadata> items, {
     bool isLarge = false,
+    bool isInContinueWatching = false,
   }) {
     return SliverToBoxAdapter(
       child: LayoutBuilder(
@@ -1278,7 +1280,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       width: cardWidth,
                       height: posterHeight,
                       onRefresh: updateItem,
+                      onRemoveFromContinueWatching: isInContinueWatching
+                          ? _refreshContinueWatching
+                          : null,
                       forceGridMode: true,
+                      isInContinueWatching: isInContinueWatching,
                     ),
                   );
                 },

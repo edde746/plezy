@@ -103,7 +103,10 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // Slider
           Row(
             children: [
-              Text(t.videoControls.minusTime(amount: "2", unit: "s"), style: const TextStyle(color: Colors.white70)),
+              Text(
+                t.videoControls.minusTime(amount: "2", unit: "s"),
+                style: const TextStyle(color: Colors.white70),
+              ),
               Expanded(
                 child: Slider(
                   value: _currentOffset,
@@ -122,7 +125,10 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                   },
                 ),
               ),
-              Text(t.videoControls.addTime(amount: "2", unit: "s"), style: const TextStyle(color: Colors.white70)),
+              Text(
+                t.videoControls.addTime(amount: "2", unit: "s"),
+                style: const TextStyle(color: Colors.white70),
+              ),
             ],
           ),
           const SizedBox(height: 24),

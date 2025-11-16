@@ -116,7 +116,9 @@ class ProfileSwitchScreen extends StatelessWidget {
     } else if (!success && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(t.errors.failedToSwitchProfile(displayName: user.displayName)),
+          content: Text(
+            t.errors.failedToSwitchProfile(displayName: user.displayName),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

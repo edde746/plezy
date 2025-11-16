@@ -93,7 +93,9 @@ class _LicensesScreenState extends State<LicensesScreen> {
                     ),
                     subtitle: mergedLicense.licenseEntries.length > 1
                         ? Text(
-                            t.licenses.licensesCount(count: mergedLicense.licenseEntries.length),
+                            t.licenses.licensesCount(
+                              count: mergedLicense.licenseEntries.length,
+                            ),
                           )
                         : null,
                     trailing: const Icon(Icons.chevron_right),
@@ -178,7 +180,9 @@ class _LicenseDetailScreen extends StatelessWidget {
                             children: [
                               Text(
                                 isMultipleLicenses
-                                    ? t.licenses.licenseNumber(number: index + 1)
+                                    ? t.licenses.licenseNumber(
+                                        number: index + 1,
+                                      )
                                     : t.licenses.license,
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),

@@ -69,10 +69,10 @@ packages:
     dependency: transitive
     description:
       name: build_daemon
-      sha256: "409002f1adeea601018715d613115cfaf0e31f512cb80ae4534c79867ae2363d"
+      sha256: bf05f6e12cfea92d3c09308d7bcdab1906cd8a179b023269eed00c071004b957
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.0"
+    version: "4.1.1"
   build_resolvers:
     dependency: transitive
     description:
@@ -185,6 +185,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
+  connectivity_plus:
+    dependency: "direct main"
+    description:
+      name: connectivity_plus
+      sha256: b5e72753cf63becce2c61fd04dfe0f1c430cc5278b53a1342dc5ad839eab29ec
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.5"
+  connectivity_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: connectivity_plus_platform_interface
+      sha256: "42657c1715d48b167930d5f34d00222ac100475f73d10162ddf43e714932f204"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.1"
   convert:
     dependency: transitive
     description:
@@ -396,10 +412,10 @@ packages:
     dependency: transitive
     description:
       name: http
-      sha256: bb2ce4590bc2667c96f318d68cac1b5a7987ec819351d32b1c987239a815e007
+      sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.0"
+    version: "1.6.0"
   http_multi_server:
     dependency: transitive
     description:
@@ -540,26 +556,26 @@ packages:
     dependency: "direct main"
     description:
       path: media_kit
-      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
-      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
+      resolved-ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.2.1"
   media_kit_libs_android_video:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: "libs/android/media_kit_libs_android_video"
-      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
-      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
+      resolved-ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.3.9"
   media_kit_libs_ios_video:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: "libs/ios/media_kit_libs_ios_video"
-      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
-      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
+      resolved-ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.1.4"
@@ -567,17 +583,17 @@ packages:
     dependency: transitive
     description:
       path: "libs/linux/media_kit_libs_linux"
-      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
-      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
+      resolved-ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.2.1"
   media_kit_libs_macos_video:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: "libs/macos/media_kit_libs_macos_video"
-      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
-      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
+      resolved-ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.1.5"
@@ -585,8 +601,8 @@ packages:
     dependency: "direct main"
     description:
       path: "libs/universal/media_kit_libs_video"
-      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
-      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
+      resolved-ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.0.7"
@@ -594,18 +610,19 @@ packages:
     dependency: transitive
     description:
       path: "libs/windows/media_kit_libs_windows_video"
-      ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
-      resolved-ref: "9782771486c0356b48c2e31e47365d1ed0b7fcb5"
+      ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
+      resolved-ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
       url: "https://github.com/edde746/media-kit"
     source: git
     version: "1.0.12"
   media_kit_video:
     dependency: "direct main"
     description:
-      name: media_kit_video
-      sha256: "813858c3fe84eb46679eb698695f60665e2bfbef757766fac4d2e683f926e15a"
-      url: "https://pub.dev"
-    source: hosted
+      path: media_kit_video
+      ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
+      resolved-ref: "6077829fa6705f30f85c1393a36008d5f66c06f4"
+      url: "https://github.com/edde746/media-kit"
+    source: git
     version: "1.3.1"
   meta:
     dependency: transitive
@@ -631,6 +648,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  nm:
+    dependency: transitive
+    description:
+      name: nm
+      sha256: "2c9aae4127bdc8993206464fcc063611e0e36e72018696cd9631023a31b24254"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.0"
   octo_image:
     dependency: transitive
     description:
@@ -643,8 +668,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "53d803e1c228eb7eab9ca642119d404c21f4a52f"
-      resolved-ref: "53d803e1c228eb7eab9ca642119d404c21f4a52f"
+      ref: a196b022dcbcc3433bae9233be179f02062327e7
+      resolved-ref: a196b022dcbcc3433bae9233be179f02062327e7
       url: "https://github.com/edde746/os-media-controls"
     source: git
     version: "0.0.2"
@@ -812,10 +837,10 @@ packages:
     dependency: transitive
     description:
       name: rxdart
-      sha256: "0c7c0cedd93788d996e33041ffecda924cc54389199cde4e6a34b440f50044cb"
+      sha256: "5c3004a4a8dbb94bd4bf5412a4def4acdaa12e12f269737a5751369e12d1a962"
       url: "https://pub.dev"
     source: hosted
-    version: "0.27.7"
+    version: "0.28.0"
   safe_local_storage:
     dependency: transitive
     description:

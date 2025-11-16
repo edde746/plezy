@@ -75,7 +75,9 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
 
   String _getErrorMessage(dynamic error) {
     if (error is ServerParsingException) {
-      return t.serverSelection.malformedServerData(count: error.invalidServerData.length);
+      return t.serverSelection.malformedServerData(
+        count: error.invalidServerData.length,
+      );
     } else if (error is FormatException) {
       // Handle JSON parsing errors with more user-friendly messages
       if (error.message.contains('Invalid server data')) {
@@ -85,13 +87,13 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
       }
       return t.serverSelection.malformedServerInfo(message: error.message);
     } else if (error.toString().contains('SocketException') ||
-               error.toString().contains('TimeoutException')) {
+        error.toString().contains('TimeoutException')) {
       return t.serverSelection.networkConnectionFailed;
     } else if (error.toString().contains('401') ||
-               error.toString().contains('Unauthorized')) {
+        error.toString().contains('Unauthorized')) {
       return t.serverSelection.authenticationFailed;
     } else if (error.toString().contains('404') ||
-               error.toString().contains('Not Found')) {
+        error.toString().contains('Not Found')) {
       return t.serverSelection.plexServiceUnavailable;
     }
 
@@ -101,7 +103,9 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
   Future<void> _copyDebugDataToClipboard() async {
     if (_debugServerData == null) return;
 
-    final jsonString = const JsonEncoder.withIndent('  ').convert(_debugServerData);
+    final jsonString = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(_debugServerData);
     await Clipboard.setData(ClipboardData(text: jsonString));
 
     if (mounted) {
@@ -207,7 +211,9 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
         // Show error
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.error ?? t.errors.connectionFailedGeneric)),
+            SnackBar(
+              content: Text(result.error ?? t.errors.connectionFailedGeneric),
+            ),
           );
         }
       }

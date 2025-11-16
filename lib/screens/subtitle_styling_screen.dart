@@ -52,10 +52,15 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   }
 
   String _colorToHex(Color color) {
-    return '#${((color.r * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.g * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.b * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+    return '#${((color.r * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.g * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}${((color.b * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0')}'
+        .toUpperCase();
   }
 
-  Future<void> _showColorPicker(String title, String currentColor, Function(String) onColorSelected) async {
+  Future<void> _showColorPicker(
+    String title,
+    String currentColor,
+    Function(String) onColorSelected,
+  ) async {
     Color initialColor = _hexToColor(currentColor);
 
     final Color selectedColor = await showColorPickerDialog(
@@ -123,7 +128,9 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               t.subtitlingStyling.stylingOptions,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           // Font Size Slider
@@ -142,7 +149,10 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Text('30', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text(
+                      '30',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                     Expanded(
                       child: Slider(
                         value: _fontSize.toDouble(),
@@ -160,7 +170,10 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                         },
                       ),
                     ),
-                    const Text('80', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text(
+                      '80',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                   ],
                 ),
               ],
@@ -182,7 +195,9 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             subtitle: Text(_textColor),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              _showColorPicker(t.subtitlingStyling.textColor, _textColor, (color) {
+              _showColorPicker(t.subtitlingStyling.textColor, _textColor, (
+                color,
+              ) {
                 setState(() {
                   _textColor = color;
                 });
@@ -207,7 +222,10 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Text('0', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text(
+                      '0',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                     Expanded(
                       child: Slider(
                         value: _borderSize.toDouble(),
@@ -225,7 +243,10 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                         },
                       ),
                     ),
-                    const Text('5', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text(
+                      '5',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                   ],
                 ),
               ],
@@ -247,7 +268,9 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             subtitle: Text(_borderColor),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, (color) {
+              _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, (
+                color,
+              ) {
                 setState(() {
                   _borderColor = color;
                 });
@@ -272,7 +295,10 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Text('0%', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text(
+                      '0%',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                     Expanded(
                       child: Slider(
                         value: _backgroundOpacity.toDouble(),
@@ -286,11 +312,16 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                           });
                         },
                         onChangeEnd: (value) {
-                          _settingsService.setSubtitleBackgroundOpacity(_backgroundOpacity);
+                          _settingsService.setSubtitleBackgroundOpacity(
+                            _backgroundOpacity,
+                          );
                         },
                       ),
                     ),
-                    const Text('100%', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text(
+                      '100%',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                   ],
                 ),
               ],
@@ -312,12 +343,16 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             subtitle: Text(_backgroundColor),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              _showColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, (color) {
-                setState(() {
-                  _backgroundColor = color;
-                });
-                _settingsService.setSubtitleBackgroundColor(color);
-              });
+              _showColorPicker(
+                t.subtitlingStyling.backgroundColor,
+                _backgroundColor,
+                (color) {
+                  setState(() {
+                    _backgroundColor = color;
+                  });
+                  _settingsService.setSubtitleBackgroundColor(color);
+                },
+              );
             },
           ),
         ],

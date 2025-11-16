@@ -100,6 +100,8 @@
     "secondsUnit": "${seconds} sekunder",
     "defaultSleepTimer": "Standard sovtimer",
     "minutesUnit": "${minutes} minuter",
+    "rememberTrackSelections": "Kom ihåg spårval per serie/film",
+    "rememberTrackSelectionsDescription": "Spara automatiskt ljud- och undertextspråkpreferenser när du ändrar spår under uppspelning",
     "unwatchedOnly": "Endast osedda",
     "unwatchedOnlyDescription": "Inkludera endast osedda avsnitt i blandningskön",
     "shuffleOrderNavigation": "Blandningsordning-navigation",
@@ -132,7 +134,9 @@
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
-    "tryDifferentTerm": "Prova en annan sökterm"
+    "tryDifferentTerm": "Prova en annan sökterm",
+    "searchYourMedia": "Sök i dina media",
+    "enterTitleActorOrKeyword": "Ange en titel, skådespelare eller nyckelord"
   },
   "hotkeys": {
     "setShortcutFor": "Sätt genväg för ${actionName}",
@@ -171,6 +175,7 @@
   "mediaMenu": {
     "markAsWatched": "Markera som sedd",
     "markAsUnwatched": "Markera som osedd",
+    "removeFromContinueWatching": "Ta bort från Fortsätt titta",
     "goToSeries": "Gå till serie",
     "goToSeason": "Gå till säsong",
     "shufflePlay": "Blanda uppspelning",
@@ -199,11 +204,13 @@
   "userStatus": {
     "admin": "Admin",
     "restricted": "Begränsad",
-    "protected": "Skyddad"
+    "protected": "Skyddad",
+    "current": "NUVARANDE"
   },
   "messages": {
     "markedAsWatched": "Markerad som sedd",
     "markedAsUnwatched": "Markerad som osedd",
+    "removedFromContinueWatching": "Borttagen från Fortsätt titta",
     "errorLoading": "Fel: ${error}",
     "fileInfoNotAvailable": "Filinformation inte tillgänglig",
     "errorLoadingFileInfo": "Fel vid laddning av filinformation: ${error}",
@@ -262,6 +269,10 @@
     "pause": "Pausa",
     "overview": "Översikt",
     "cast": "Rollbesättning",
+    "seasons": "Säsonger",
+    "studio": "Studio",
+    "rating": "Åldersgräns",
+    "watched": "Tittad",
     "episodeCount": "${count} avsnitt",
     "watchedProgress": "${watched}/${total} sedda",
     "movie": "Film",
@@ -362,5 +373,41 @@
     "search": "Sök",
     "libraries": "Bibliotek",
     "settings": "Inställningar"
+  },
+  "playlists": {
+    "title": "Spellistor",
+    "noPlaylists": "Inga spellistor hittades",
+    "create": "Skapa spellista",
+    "newPlaylist": "Ny spellista",
+    "playlistName": "Spellistans namn",
+    "enterPlaylistName": "Ange spellistans namn",
+    "edit": "Redigera spellista",
+    "delete": "Ta bort spellista",
+    "addTo": "Lägg till i spellista",
+    "addItems": "Lägg till objekt",
+    "removeItem": "Ta bort från spellista",
+    "clearPlaylist": "Rensa spellista",
+    "playAll": "Spela alla",
+    "shuffle": "Blanda",
+    "smartPlaylist": "Smart spellista",
+    "regularPlaylist": "Vanlig spellista",
+    "itemCount": "${count} objekt",
+    "oneItem": "1 objekt",
+    "emptyPlaylist": "Denna spellista är tom",
+    "deleteConfirm": "Ta bort spellista?",
+    "deleteMessage": "Är du säker på att du vill ta bort \"${name}\"?",
+    "created": "Spellista skapad",
+    "updated": "Spellista uppdaterad",
+    "deleted": "Spellista borttagen",
+    "itemAdded": "Tillagd i spellista",
+    "itemRemoved": "Borttagen från spellista",
+    "selectPlaylist": "Välj spellista",
+    "createNewPlaylist": "Skapa ny spellista",
+    "errorCreating": "Det gick inte att skapa spellista",
+    "errorDeleting": "Det gick inte att ta bort spellista",
+    "errorLoading": "Det gick inte att ladda spellistor",
+    "errorAdding": "Det gick inte att lägga till i spellista",
+    "errorReordering": "Det gick inte att omordna spellisteobjekt",
+    "errorRemoving": "Det gick inte att ta bort från spellista"
   }
 }
