@@ -171,7 +171,7 @@ class _MediaCardGridState extends State<_MediaCardGrid> {
     setState(() {
       _isFocused = _focusNode.hasFocus;
     });
-    
+
     // Ensure the focused card is visible on TV
     if (_isFocused && PlatformDetector.isTVSync() && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

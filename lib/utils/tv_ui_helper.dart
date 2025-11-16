@@ -41,7 +41,7 @@ class TVUIHelper {
     }
     return const EdgeInsets.all(8.0);
   }
-  
+
   /// Minimum width for NavigationRail items on TV
   static const double tvNavigationRailMinWidth = 80.0;
 

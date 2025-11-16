@@ -42,7 +42,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   static const double _tvNormalMaxWidth = 280.0;
   static const double _tvCompactDivisor = 6.5;
   static const double _tvCompactMaxWidth = 220.0;
-  
+
   @override
   PlexClient get client => context.clientSafe;
 

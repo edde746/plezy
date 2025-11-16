@@ -86,8 +86,8 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(t.playlists.delete),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(t.playlists.delete),
           ),
         ],
       ),

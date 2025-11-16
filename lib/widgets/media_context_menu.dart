@@ -475,6 +475,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
 
       if (result == '_create_new') {
         // Create new playlist flow
+        if (!context.mounted) return;
+        
         final playlistName = await showDialog<String>(
           context: context,
           builder: (context) => _CreatePlaylistDialog(),
