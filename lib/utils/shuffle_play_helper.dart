@@ -90,6 +90,7 @@ Future<void> handleShufflePlay(
     episodes.shuffle();
 
     // Store shuffle queue in provider
+    // ignore: deprecated_member_use_from_same_package
     playbackState.setShuffleQueue(episodes, metadata.ratingKey);
 
     // Navigate to first episode

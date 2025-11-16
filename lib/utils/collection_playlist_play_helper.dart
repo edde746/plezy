@@ -64,6 +64,8 @@ Future<void> playCollectionOrPlaylist({
         playbackState.setClient(client);
         await playbackState.setPlaybackFromPlayQueue(fetchedQueue, ratingKey);
 
+        if (!context.mounted) return;
+
         // Navigate to first item
         await navigateToVideoPlayer(
           context,
@@ -90,6 +92,8 @@ Future<void> playCollectionOrPlaylist({
     final playbackState = context.read<PlaybackStateProvider>();
     playbackState.setClient(client);
     await playbackState.setPlaybackFromPlayQueue(playQueue, ratingKey);
+
+    if (!context.mounted) return;
 
     // Navigate to first item
     await navigateToVideoPlayer(context, metadata: playQueue.items!.first);

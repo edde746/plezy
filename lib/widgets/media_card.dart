@@ -607,13 +607,11 @@ Widget _buildPosterImage(BuildContext context, dynamic item) {
   IconData fallbackIcon = Icons.movie;
 
   if (item is PlexPlaylist) {
-    posterUrl = (item as PlexPlaylist).displayImage;
+    posterUrl = item.displayImage;
     fallbackIcon = Icons.playlist_play;
   } else if (item is PlexMetadata) {
     final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
-    posterUrl = (item as PlexMetadata).posterThumb(
-      useSeasonPoster: useSeasonPoster,
-    );
+    posterUrl = item.posterThumb(useSeasonPoster: useSeasonPoster);
   }
 
   if (posterUrl != null) {

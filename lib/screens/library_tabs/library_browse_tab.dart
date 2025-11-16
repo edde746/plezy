@@ -315,7 +315,9 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
             return RadioListTile<String>(
               title: Text(_getGroupingLabel(grouping)),
               value: grouping,
+              // ignore: deprecated_member_use
               groupValue: _selectedGrouping,
+              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   setState(() {
@@ -324,6 +326,8 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
 
                   final storage = await StorageService.getInstance();
                   await storage.saveLibraryGrouping(widget.library.key, value);
+
+                  if (!mounted) return;
 
                   Navigator.pop(context);
                   _loadItems();

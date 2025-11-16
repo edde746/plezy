@@ -245,6 +245,8 @@ class _PlaylistDetailScreenState
         return;
       }
 
+      if (!mounted) return;
+
       // Set play queue in provider
       final playbackState = context.read<PlaybackStateProvider>();
       playbackState.setClient(client);

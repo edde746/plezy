@@ -5,7 +5,6 @@ import '../models/plex_hub.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';
 import '../providers/settings_provider.dart';
-import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/grid_cross_axis_extent.dart';

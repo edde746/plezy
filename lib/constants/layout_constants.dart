@@ -1,5 +1,4 @@
 /// Layout and sizing constants used throughout the application
-
 /// Screen width breakpoints for responsive design
 class ScreenBreakpoints {
   /// Breakpoint for tablet devices (600px)

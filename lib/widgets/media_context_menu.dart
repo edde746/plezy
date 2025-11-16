@@ -608,6 +608,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       final itemUri = await client.buildMetadataUri(metadata.ratingKey);
       appLogger.d('Built URI for $itemType: $itemUri');
 
+      if (!context.mounted) return;
+
       if (result == '_create_new') {
         // Create new playlist flow
         final playlistName = await showDialog<String>(
@@ -627,6 +629,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           title: playlistName,
           uri: itemUri,
         );
+
+        if (!context.mounted) return;
 
         if (context.mounted) {
           if (newPlaylist != null) {
@@ -650,6 +654,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           playlistId: result,
           uri: itemUri,
         );
+
+        if (!context.mounted) return;
 
         if (context.mounted) {
           if (success) {
@@ -819,6 +825,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           type: collectionType,
         );
 
+        if (!context.mounted) return;
+
         if (context.mounted) {
           if (newCollectionId != null) {
             appLogger.d(
@@ -833,6 +841,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
               collectionId: newCollectionId,
               uri: itemUri,
             );
+
+            if (!context.mounted) return;
 
             if (addSuccess) {
               appLogger.d('Successfully added item to new collection');
@@ -861,6 +871,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           collectionId: result,
           uri: itemUri,
         );
+
+        if (!context.mounted) return;
 
         if (context.mounted) {
           if (success) {

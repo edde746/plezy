@@ -12,18 +12,9 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
     extends State<T>
     with Refreshable, ItemUpdatable {
   // State properties - concrete implementations to avoid duplication
-  List<PlexMetadata> _items = [];
-  bool _isLoading = false;
-  String? _errorMessage;
-
-  List<PlexMetadata> get items => _items;
-  set items(List<PlexMetadata> value) => _items = value;
-
-  bool get isLoading => _isLoading;
-  set isLoading(bool value) => _isLoading = value;
-
-  String? get errorMessage => _errorMessage;
-  set errorMessage(String? value) => _errorMessage = value;
+  List<PlexMetadata> items = [];
+  bool isLoading = false;
+  String? errorMessage;
 
   @override
   PlexClient get client => context.clientSafe;
