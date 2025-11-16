@@ -41,7 +41,9 @@ Future<bool?> navigateToVideoPlayer(
     try {
       final settingsService = await SettingsService.getInstance();
       final seriesKey = metadata.grandparentRatingKey ?? metadata.ratingKey;
-      final savedPreference = settingsService.getMediaVersionPreference(seriesKey);
+      final savedPreference = settingsService.getMediaVersionPreference(
+        seriesKey,
+      );
       if (savedPreference != null) {
         mediaIndex = savedPreference;
       }

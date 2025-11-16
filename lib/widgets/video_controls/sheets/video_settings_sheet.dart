@@ -321,7 +321,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             stream: widget.player.stream.audioDevice,
             initialData: widget.player.state.audioDevice,
             builder: (context, snapshot) {
-              final currentDevice = snapshot.data ?? widget.player.state.audioDevice;
+              final currentDevice =
+                  snapshot.data ?? widget.player.state.audioDevice;
               final deviceLabel = currentDevice.description.isEmpty
                   ? currentDevice.name
                   : currentDevice.description;
@@ -338,7 +339,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                     Flexible(
                       child: Text(
                         deviceLabel,
-                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -432,7 +436,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                       children: [
                         OutlinedButton.icon(
                           icon: const Icon(Icons.add),
-                          label: Text(t.videoControls.addTime(amount: "15", unit: " min")),
+                          label: Text(
+                            t.videoControls.addTime(amount: "15", unit: " min"),
+                          ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: const BorderSide(color: Colors.white54),
@@ -552,7 +558,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           stream: widget.player.stream.audioDevice,
           initialData: widget.player.state.audioDevice,
           builder: (context, selectedSnapshot) {
-            final currentDevice = selectedSnapshot.data ?? widget.player.state.audioDevice;
+            final currentDevice =
+                selectedSnapshot.data ?? widget.player.state.audioDevice;
 
             return ListView.builder(
               itemCount: devices.length,

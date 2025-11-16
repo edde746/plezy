@@ -21,6 +21,7 @@ import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
+import 'playlists_screen.dart';
 
 class LibrariesScreen extends StatefulWidget {
   const LibrariesScreen({super.key});
@@ -72,7 +73,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           return t.errors.connectionFailed;
         default:
           appLogger.e('Error loading $context', error: error);
-          return t.errors.failedToLoad(context: context, error: error.message ?? 'Unknown error');
+          return t.errors.failedToLoad(
+            context: context,
+            error: error.message ?? 'Unknown error',
+          );
       }
     }
 
@@ -601,8 +605,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         label: t.libraries.scanLibraryFiles,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.scanLibrary,
-        confirmationMessage:
-            t.libraries.scanLibraryConfirm(title: library.title),
+        confirmationMessage: t.libraries.scanLibraryConfirm(
+          title: library.title,
+        ),
       ),
       ContextMenuItem(
         value: 'analyze',
@@ -610,8 +615,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         label: t.libraries.analyze,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.analyzeLibrary,
-        confirmationMessage:
-            t.libraries.analyzeLibraryConfirm(title: library.title),
+        confirmationMessage: t.libraries.analyzeLibraryConfirm(
+          title: library.title,
+        ),
       ),
       ContextMenuItem(
         value: 'refresh',
@@ -619,8 +625,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         label: t.libraries.refreshMetadata,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.refreshMetadata,
-        confirmationMessage:
-            t.libraries.refreshMetadataConfirm(title: library.title),
+        confirmationMessage: t.libraries.refreshMetadataConfirm(
+          title: library.title,
+        ),
         isDestructive: true,
       ),
       ContextMenuItem(
@@ -629,8 +636,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         label: t.libraries.emptyTrash,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.emptyTrash,
-        confirmationMessage:
-            t.libraries.emptyTrashConfirm(title: library.title),
+        confirmationMessage: t.libraries.emptyTrashConfirm(
+          title: library.title,
+        ),
         isDestructive: true,
       ),
     ];
@@ -743,7 +751,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(t.messages.metadataRefreshStarted(title: library.title)),
+            content: Text(
+              t.messages.metadataRefreshStarted(title: library.title),
+            ),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -753,7 +763,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(t.messages.metadataRefreshFailed(error: e.toString())),
+            content: Text(
+              t.messages.metadataRefreshFailed(error: e.toString()),
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -1037,7 +1049,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.folder_open, size: 64, color: Colors.grey),
+                      const Icon(
+                        Icons.folder_open,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(height: 16),
                       Text(t.libraries.thisLibraryIsEmpty),
                     ],
@@ -1097,7 +1113,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                         const CircularProgressIndicator(),
                         const SizedBox(height: 8),
                         Text(
-                          t.libraries.loadingLibraryWithCount(count: _items.length),
+                          t.libraries.loadingLibraryWithCount(
+                            count: _items.length,
+                          ),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -1107,6 +1125,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             ],
           ],
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const PlaylistsScreen()),
+          );
+        },
+        tooltip: t.playlists.title,
+        child: const Icon(Icons.playlist_play),
       ),
     );
   }
@@ -1393,7 +1421,10 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
                   const SizedBox(width: 12),
                   Text(
                     t.libraries.filters,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const Spacer(),
                   if (_tempSelectedFilters.isNotEmpty)
@@ -1718,7 +1749,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(selectedItem.confirmationTitle ?? t.dialog.confirmAction),
+            title: Text(
+              selectedItem.confirmationTitle ?? t.dialog.confirmAction,
+            ),
             content: Text(
               selectedItem.confirmationMessage ??
                   t.libraries.confirmActionMessage,
@@ -1852,7 +1885,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                                   : Icons.visibility,
                             ),
                             onPressed: () => widget.onToggleVisibility(library),
-                            tooltip: isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,
+                            tooltip: isHidden
+                                ? t.libraries.showLibrary
+                                : t.libraries.hideLibrary,
                           ),
                           IconButton(
                             icon: const Icon(Icons.more_vert),

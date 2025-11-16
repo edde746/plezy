@@ -40,9 +40,9 @@ class _LogsScreenState extends State<LogsScreen> {
       MemoryLogOutput.clearLogs();
       _logs = [];
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(t.messages.logsCleared)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.messages.logsCleared)));
   }
 
   void _copyAllLogs() {
@@ -55,7 +55,8 @@ class _LogsScreenState extends State<LogsScreen> {
       isFirst = false;
 
       buffer.write(
-          '[${_formatTime(log.timestamp)}] [${log.level.name.toUpperCase()}] ${log.message}');
+        '[${_formatTime(log.timestamp)}] [${log.level.name.toUpperCase()}] ${log.message}',
+      );
       if (log.error != null) {
         buffer.write('\nError: ${log.error}');
       }
@@ -64,9 +65,9 @@ class _LogsScreenState extends State<LogsScreen> {
       }
     }
     Clipboard.setData(ClipboardData(text: buffer.toString()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(t.messages.logsCopied)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.messages.logsCopied)));
   }
 
   Color _getLevelColor(Level level) {
@@ -131,26 +132,21 @@ class _LogsScreenState extends State<LogsScreen> {
           ),
           if (_logs.isEmpty)
             SliverFillRemaining(
-              child: Center(
-                child: Text(t.messages.noLogsAvailable),
-              ),
+              child: Center(child: Text(t.messages.noLogsAvailable)),
             )
           else
             SliverPadding(
               padding: const EdgeInsets.all(8),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final log = _logs[index];
-                    return _LogEntryCard(
-                      log: log,
-                      formatTime: _formatTime,
-                      levelColor: _getLevelColor(log.level),
-                      levelIcon: _getLevelIcon(log.level),
-                    );
-                  },
-                  childCount: _logs.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final log = _logs[index];
+                  return _LogEntryCard(
+                    log: log,
+                    formatTime: _formatTime,
+                    levelColor: _getLevelColor(log.level),
+                    levelIcon: _getLevelIcon(log.level),
+                  );
+                }, childCount: _logs.length),
               ),
             ),
         ],
@@ -198,11 +194,7 @@ class _LogEntryCardState extends State<_LogEntryCard> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    widget.levelIcon,
-                    color: widget.levelColor,
-                    size: 20,
-                  ),
+                  Icon(widget.levelIcon, color: widget.levelColor, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -221,9 +213,7 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                             const SizedBox(width: 8),
                             Text(
                               widget.formatTime(widget.log.timestamp),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: Theme.of(context)
                                         .textTheme
@@ -244,13 +234,10 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                   ),
                   if (hasErrorOrStackTrace)
                     Icon(
-                      _isExpanded
-                          ? Icons.expand_less
-                          : Icons.expand_more,
-                      color: Theme.of(context)
-                          .iconTheme
-                          .color
-                          ?.withValues(alpha: 0.6),
+                      _isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Theme.of(
+                        context,
+                      ).iconTheme.color?.withValues(alpha: 0.6),
                     ),
                 ],
               ),
@@ -262,9 +249,9 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                   Text(
                     t.logs.error,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: widget.levelColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: widget.levelColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -277,9 +264,9 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                     ),
                     child: SelectableText(
                       widget.log.error.toString(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontFamily: 'monospace',
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
                     ),
                   ),
                 ],
@@ -288,9 +275,9 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                   Text(
                     t.logs.stackTrace,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: widget.levelColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: widget.levelColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -303,9 +290,9 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                     ),
                     child: SelectableText(
                       widget.log.stackTrace.toString(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontFamily: 'monospace',
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
                     ),
                   ),
                 ],

@@ -95,10 +95,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                 groupValue: _currentSort,
                 onChanged: (PlexSort? value) {
                   if (value != null) {
-                    _handleSortChange(
-                      value,
-                      value.defaultDirection == 'desc',
-                    );
+                    _handleSortChange(value, value.defaultDirection == 'desc');
                   }
                 },
                 child: ListView.builder(
@@ -124,7 +121,10 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                                     ),
                                     ButtonSegment(
                                       value: true,
-                                      icon: Icon(Icons.arrow_downward, size: 16),
+                                      icon: Icon(
+                                        Icons.arrow_downward,
+                                        size: 16,
+                                      ),
                                     ),
                                   ],
                                   selected: {_currentDescending},
@@ -135,12 +135,12 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                               ],
                             )
                           : null,
-                      leading: Radio<PlexSort>(
-                        value: sort,
-                        toggleable: false,
-                      ),
+                      leading: Radio<PlexSort>(value: sort, toggleable: false),
                       onTap: () {
-                        _handleSortChange(sort, sort.defaultDirection == 'desc');
+                        _handleSortChange(
+                          sort,
+                          sort.defaultDirection == 'desc',
+                        );
                       },
                     );
                   },

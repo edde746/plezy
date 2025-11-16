@@ -100,7 +100,11 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   List<PlexSort> _getDefaultSortOptions() {
     return [
-      PlexSort(key: 'titleSort', title: t.hubDetail.title, defaultDirection: 'asc'),
+      PlexSort(
+        key: 'titleSort',
+        title: t.hubDetail.title,
+        defaultDirection: 'asc',
+      ),
       PlexSort(
         key: 'year',
         descKey: 'year:desc',

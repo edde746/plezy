@@ -9,6 +9,7 @@ class PlexConfig {
   final String platform;
   final String? device;
   final bool acceptJson;
+  final String? machineIdentifier;
 
   PlexConfig({
     required this.baseUrl,
@@ -19,6 +20,7 @@ class PlexConfig {
     this.platform = 'Flutter',
     this.device,
     this.acceptJson = true,
+    this.machineIdentifier,
   });
 
   static Future<PlexConfig> create({
@@ -29,6 +31,7 @@ class PlexConfig {
     String? platform,
     String? device,
     bool acceptJson = true,
+    String? machineIdentifier,
   }) async {
     final packageInfo = await PackageInfo.fromPlatform();
     return PlexConfig(
@@ -40,6 +43,7 @@ class PlexConfig {
       platform: platform ?? 'Flutter',
       device: device,
       acceptJson: acceptJson,
+      machineIdentifier: machineIdentifier,
     );
   }
 
@@ -70,6 +74,7 @@ class PlexConfig {
     String? platform,
     String? device,
     bool? acceptJson,
+    String? machineIdentifier,
   }) {
     return PlexConfig(
       baseUrl: baseUrl ?? this.baseUrl,
@@ -80,6 +85,7 @@ class PlexConfig {
       platform: platform ?? this.platform,
       device: device ?? this.device,
       acceptJson: acceptJson ?? this.acceptJson,
+      machineIdentifier: machineIdentifier ?? this.machineIdentifier,
     );
   }
 }

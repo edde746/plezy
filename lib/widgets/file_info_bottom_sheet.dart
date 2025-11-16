@@ -77,30 +77,66 @@ class FileInfoBottomSheet extends StatelessWidget {
                     // Video Section
                     _buildSectionHeader(t.fileInfo.video),
                     const SizedBox(height: 8),
-                    _buildInfoRow(t.fileInfo.codec, fileInfo.videoCodec ?? t.common.unknown),
-                    _buildInfoRow(t.fileInfo.resolution, fileInfo.resolutionFormatted),
-                    _buildInfoRow(t.fileInfo.bitrate, fileInfo.bitrateFormatted),
-                    _buildInfoRow(t.fileInfo.frameRate, fileInfo.frameRateFormatted),
-                    _buildInfoRow(t.fileInfo.aspectRatio, fileInfo.aspectRatioFormatted),
+                    _buildInfoRow(
+                      t.fileInfo.codec,
+                      fileInfo.videoCodec ?? t.common.unknown,
+                    ),
+                    _buildInfoRow(
+                      t.fileInfo.resolution,
+                      fileInfo.resolutionFormatted,
+                    ),
+                    _buildInfoRow(
+                      t.fileInfo.bitrate,
+                      fileInfo.bitrateFormatted,
+                    ),
+                    _buildInfoRow(
+                      t.fileInfo.frameRate,
+                      fileInfo.frameRateFormatted,
+                    ),
+                    _buildInfoRow(
+                      t.fileInfo.aspectRatio,
+                      fileInfo.aspectRatioFormatted,
+                    ),
                     if (fileInfo.videoProfile != null)
                       _buildInfoRow(t.fileInfo.profile, fileInfo.videoProfile!),
                     if (fileInfo.bitDepth != null)
-                      _buildInfoRow(t.fileInfo.bitDepth, '${fileInfo.bitDepth} bit'),
+                      _buildInfoRow(
+                        t.fileInfo.bitDepth,
+                        '${fileInfo.bitDepth} bit',
+                      ),
                     if (fileInfo.colorSpace != null)
-                      _buildInfoRow(t.fileInfo.colorSpace, fileInfo.colorSpace!),
+                      _buildInfoRow(
+                        t.fileInfo.colorSpace,
+                        fileInfo.colorSpace!,
+                      ),
                     if (fileInfo.colorRange != null)
-                      _buildInfoRow(t.fileInfo.colorRange, fileInfo.colorRange!),
+                      _buildInfoRow(
+                        t.fileInfo.colorRange,
+                        fileInfo.colorRange!,
+                      ),
                     if (fileInfo.colorPrimaries != null)
-                      _buildInfoRow(t.fileInfo.colorPrimaries, fileInfo.colorPrimaries!),
+                      _buildInfoRow(
+                        t.fileInfo.colorPrimaries,
+                        fileInfo.colorPrimaries!,
+                      ),
                     if (fileInfo.chromaSubsampling != null)
-                      _buildInfoRow(t.fileInfo.chromaSubsampling, fileInfo.chromaSubsampling!),
+                      _buildInfoRow(
+                        t.fileInfo.chromaSubsampling,
+                        fileInfo.chromaSubsampling!,
+                      ),
                     const SizedBox(height: 20),
 
                     // Audio Section
                     _buildSectionHeader(t.fileInfo.audio),
                     const SizedBox(height: 8),
-                    _buildInfoRow(t.fileInfo.codec, fileInfo.audioCodec ?? t.common.unknown),
-                    _buildInfoRow(t.fileInfo.channels, fileInfo.audioChannelsFormatted),
+                    _buildInfoRow(
+                      t.fileInfo.codec,
+                      fileInfo.audioCodec ?? t.common.unknown,
+                    ),
+                    _buildInfoRow(
+                      t.fileInfo.channels,
+                      fileInfo.audioChannelsFormatted,
+                    ),
                     if (fileInfo.audioProfile != null)
                       _buildInfoRow(t.fileInfo.profile, fileInfo.audioProfile!),
                     const SizedBox(height: 20),
@@ -109,10 +145,20 @@ class FileInfoBottomSheet extends StatelessWidget {
                     _buildSectionHeader(t.fileInfo.file),
                     const SizedBox(height: 8),
                     if (fileInfo.filePath != null)
-                      _buildInfoRow(t.fileInfo.path, fileInfo.filePath!, isMonospace: true),
+                      _buildInfoRow(
+                        t.fileInfo.path,
+                        fileInfo.filePath!,
+                        isMonospace: true,
+                      ),
                     _buildInfoRow(t.fileInfo.size, fileInfo.fileSizeFormatted),
-                    _buildInfoRow(t.fileInfo.container, fileInfo.container ?? t.common.unknown),
-                    _buildInfoRow(t.fileInfo.duration, fileInfo.durationFormatted),
+                    _buildInfoRow(
+                      t.fileInfo.container,
+                      fileInfo.container ?? t.common.unknown,
+                    ),
+                    _buildInfoRow(
+                      t.fileInfo.duration,
+                      fileInfo.durationFormatted,
+                    ),
                     const SizedBox(height: 20),
 
                     // Advanced Section
@@ -120,11 +166,15 @@ class FileInfoBottomSheet extends StatelessWidget {
                     const SizedBox(height: 8),
                     _buildInfoRow(
                       t.fileInfo.optimizedForStreaming,
-                      fileInfo.optimizedForStreaming == true ? t.common.yes : t.common.no,
+                      fileInfo.optimizedForStreaming == true
+                          ? t.common.yes
+                          : t.common.no,
                     ),
                     _buildInfoRow(
                       t.fileInfo.has64bitOffsets,
-                      fileInfo.has64bitOffsets == true ? t.common.yes : t.common.no,
+                      fileInfo.has64bitOffsets == true
+                          ? t.common.yes
+                          : t.common.no,
                     ),
                   ],
                 ),
@@ -157,10 +207,7 @@ class FileInfoBottomSheet extends StatelessWidget {
             width: 140,
             child: Text(
               label,
-              style: TextStyle(
-                color: Colors.grey[400],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[400], fontSize: 14),
             ),
           ),
           Expanded(
