@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2130 (355 per locale)
+/// Strings: 2160 (360 per locale)
 ///
-/// Built on 2025-11-15 at 11:48 UTC
+/// Built on 2025-11-16 at 03:49 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -163,6 +163,7 @@ class Translations implements BaseTranslations<AppLocale, Translations> {
 	late final _StringsPinEntryEn pinEntry = _StringsPinEntryEn._(_root);
 	late final _StringsFileInfoEn fileInfo = _StringsFileInfoEn._(_root);
 	late final _StringsMediaMenuEn mediaMenu = _StringsMediaMenuEn._(_root);
+	late final _StringsAccessibilityEn accessibility = _StringsAccessibilityEn._(_root);
 	late final _StringsTooltipsEn tooltips = _StringsTooltipsEn._(_root);
 	late final _StringsVideoControlsEn videoControls = _StringsVideoControlsEn._(_root);
 	late final _StringsUserStatusEn userStatus = _StringsUserStatusEn._(_root);
@@ -441,6 +442,22 @@ class _StringsMediaMenuEn {
 	String get fileInfo => 'File Info';
 }
 
+// Path: accessibility
+class _StringsAccessibilityEn {
+	_StringsAccessibilityEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String mediaCardMovie({required Object title}) => '${title}, movie';
+	String mediaCardShow({required Object title}) => '${title}, TV show';
+	String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	String get mediaCardWatched => 'watched';
+	String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	String get mediaCardUnwatched => 'unwatched';
+}
+
 // Path: tooltips
 class _StringsTooltipsEn {
 	_StringsTooltipsEn._(this._root);
@@ -473,6 +490,29 @@ class _StringsVideoControlsEn {
 	String get stretch => 'Stretch';
 	String get lockRotation => 'Lock rotation';
 	String get unlockRotation => 'Unlock rotation';
+	String get playButton => 'Play';
+	String get pauseButton => 'Pause';
+	String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	String get previousButton => 'Previous episode';
+	String get nextButton => 'Next episode';
+	String get previousChapterButton => 'Previous chapter';
+	String get nextChapterButton => 'Next chapter';
+	String get volumeButton => 'Volume';
+	String get muteButton => 'Mute';
+	String get unmuteButton => 'Unmute';
+	String get settingsButton => 'Video settings';
+	String get audioTrackButton => 'Audio tracks';
+	String get subtitlesButton => 'Subtitles';
+	String get chaptersButton => 'Chapters';
+	String get versionsButton => 'Video versions';
+	String get aspectRatioButton => 'Aspect ratio';
+	String get fullscreenButton => 'Enter fullscreen';
+	String get exitFullscreenButton => 'Exit fullscreen';
+	String get rotationLockButton => 'Rotation lock';
+	String get timelineSlider => 'Video timeline';
+	String get volumeSlider => 'Volume level';
+	String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -4260,6 +4300,13 @@ extension on Translations {
 			case 'mediaMenu.goToSeason': return 'Go to season';
 			case 'mediaMenu.shufflePlay': return 'Shuffle Play';
 			case 'mediaMenu.fileInfo': return 'File Info';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
 			case 'tooltips.shufflePlay': return 'Shuffle play';
 			case 'tooltips.markAsWatched': return 'Mark as watched';
 			case 'tooltips.markAsUnwatched': return 'Mark as unwatched';
@@ -4276,6 +4323,29 @@ extension on Translations {
 			case 'videoControls.stretch': return 'Stretch';
 			case 'videoControls.lockRotation': return 'Lock rotation';
 			case 'videoControls.unlockRotation': return 'Unlock rotation';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Restricted';
 			case 'userStatus.protected': return 'Protected';

@@ -181,6 +181,15 @@
     "shufflePlay": "Willekeurig afspelen",
     "fileInfo": "Bestand info"
   },
+  "accessibility": {
+    "mediaCardMovie": "${title}, movie",
+    "mediaCardShow": "${title}, TV show",
+    "mediaCardEpisode": "${title}, ${episodeInfo}",
+    "mediaCardSeason": "${title}, ${seasonInfo}",
+    "mediaCardWatched": "watched",
+    "mediaCardPartiallyWatched": "${percent} percent watched",
+    "mediaCardUnwatched": "unwatched"
+  },
   "tooltips": {
     "shufflePlay": "Willekeurig afspelen",
     "markAsWatched": "Markeer als gekeken",
@@ -199,7 +208,30 @@
     "fillScreen": "Vul scherm",
     "stretch": "Uitrekken",
     "lockRotation": "Vergrendel rotatie",
-    "unlockRotation": "Ontgrendel rotatie"
+    "unlockRotation": "Ontgrendel rotatie",
+    "playButton": "Play",
+    "pauseButton": "Pause",
+    "seekBackwardButton": "Seek backward ${seconds} seconds",
+    "seekForwardButton": "Seek forward ${seconds} seconds",
+    "previousButton": "Previous episode",
+    "nextButton": "Next episode",
+    "previousChapterButton": "Previous chapter",
+    "nextChapterButton": "Next chapter",
+    "volumeButton": "Volume",
+    "muteButton": "Mute",
+    "unmuteButton": "Unmute",
+    "settingsButton": "Video settings",
+    "audioTrackButton": "Audio tracks",
+    "subtitlesButton": "Subtitles",
+    "chaptersButton": "Chapters",
+    "versionsButton": "Video versions",
+    "aspectRatioButton": "Aspect ratio",
+    "fullscreenButton": "Enter fullscreen",
+    "exitFullscreenButton": "Exit fullscreen",
+    "rotationLockButton": "Rotation lock",
+    "timelineSlider": "Video timeline",
+    "volumeSlider": "Volume level",
+    "backButton": "Back"
   },
   "userStatus": {
     "admin": "Beheerder",
