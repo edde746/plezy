@@ -57,7 +57,7 @@ struct LibraryContentView: View {
                                 .background(.regularMaterial.opacity(0.3))
                                 .clipShape(Circle())
                         }
-                        .buttonStyle(.card)
+                        .buttonStyle(CardButtonStyle())
                     }
 
                     Text(library.title)
@@ -243,7 +243,7 @@ struct LibraryContentView: View {
     }
 
     private func loadContent() async {
-        guard let client = authService.currentClient,
+        guard let _ = authService.currentClient,
               let serverID = authService.selectedServer?.clientIdentifier else {
             return
         }
@@ -289,7 +289,7 @@ struct LibraryContentView: View {
 
     private func loadMoreContent() async {
         guard hasMoreItems, !isLoadingMore else { return }
-        guard let client = authService.currentClient else { return }
+        guard authService.currentClient != nil else { return }
 
         print("📚 [LibraryContent] Loading more content from offset \(currentOffset)")
         isLoadingMore = true
@@ -414,13 +414,13 @@ struct FilterButton: View {
 
 /// Button style for filter buttons with focus handling
 struct FilterButtonStyle: ButtonStyle {
-    @Binding var isFocused: Bool
+    let isFocused: FocusState<Bool>.Binding
     let isSelected: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .focusEffectDisabled()
-            .focused($isFocused)
+            .focused(isFocused)
             .focusable()
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
             .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)

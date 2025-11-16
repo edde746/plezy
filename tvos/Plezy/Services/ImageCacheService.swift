@@ -59,10 +59,15 @@ class ImageCacheService {
             return diskImage
         }
 
-        // Check if already downloading
-        downloadLock.lock()
-        if let existingTask = activeDownloads[url] {
+        // Check if already downloading (async-safe)
+        let existingTask = await withCheckedContinuation { continuation in
+            downloadLock.lock()
+            let task = activeDownloads[url]
             downloadLock.unlock()
+            continuation.resume(returning: task)
+        }
+
+        if let existingTask = existingTask {
             print("⏳ [ImageCache] Waiting for existing download: \(url.lastPathComponent)")
             return await existingTask.value
         }
@@ -71,16 +76,24 @@ class ImageCacheService {
         let downloadTask = Task<UIImage?, Never> {
             await self.downloadImage(from: url)
         }
-        activeDownloads[url] = downloadTask
-        downloadLock.unlock()
+
+        await withCheckedContinuation { continuation in
+            downloadLock.lock()
+            activeDownloads[url] = downloadTask
+            downloadLock.unlock()
+            continuation.resume()
+        }
 
         // Wait for download
         let image = await downloadTask.value
 
-        // Clean up task
-        downloadLock.lock()
-        activeDownloads.removeValue(forKey: url)
-        downloadLock.unlock()
+        // Clean up task (async-safe)
+        await withCheckedContinuation { continuation in
+            downloadLock.lock()
+            activeDownloads.removeValue(forKey: url)
+            downloadLock.unlock()
+            continuation.resume()
+        }
 
         return image
     }
