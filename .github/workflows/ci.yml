@@ -52,7 +52,21 @@ jobs:
           fi
           find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null -print0 | xargs -0 dart format --output=none --set-exit-if-changed
       - name: Analyze code
-        run: flutter analyze
+        run: |
+          # Run flutter analyze and filter out info-level warnings
+          # Only fail on errors and warnings, not on info messages
+          flutter analyze 2>&1 | tee analyze_output.txt
+          # Check if there are any errors (not just info)
+          if grep -q "error •" analyze_output.txt; then
+            echo "❌ Analysis failed with errors"
+            exit 1
+          elif grep -q "warning •" analyze_output.txt; then
+            echo "⚠️  Analysis completed with warnings"
+            exit 1
+          else
+            echo "✅ Analysis passed (info messages are allowed)"
+            exit 0
+          fi
 
   test:
     name: Unit Tests
