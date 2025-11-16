@@ -181,7 +181,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             'sub-border-color': settingsService.getSubtitleBorderColor(),
             'sub-back-color':
                 '#${(settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt().toRadixString(16).padLeft(2, '0').toUpperCase()}${settingsService.getSubtitleBackgroundColor().replaceFirst('#', '')}',
-            'sub-ass-override': 'yes',
+            'sub-ass-override': 'no',
           },
         ),
       );

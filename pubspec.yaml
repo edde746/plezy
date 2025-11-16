@@ -38,32 +38,32 @@ dependency_overrides:
   media_kit:
     git:
       url: https://github.com/edde746/media-kit
-      ref: de5c4e23722999b63ac9fbd648019a2288028721
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
       path: media_kit
   media_kit_video:
     git:
       url: https://github.com/edde746/media-kit
-      ref: de5c4e23722999b63ac9fbd648019a2288028721
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
       path: media_kit_video
   media_kit_libs_video:
     git:
       url: https://github.com/edde746/media-kit
-      ref: de5c4e23722999b63ac9fbd648019a2288028721
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
       path: libs/universal/media_kit_libs_video
   media_kit_libs_macos_video:
     git:
       url: https://github.com/edde746/media-kit
-      ref: de5c4e23722999b63ac9fbd648019a2288028721
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
       path: libs/macos/media_kit_libs_macos_video
   media_kit_libs_ios_video:
     git:
       url: https://github.com/edde746/media-kit
-      ref: de5c4e23722999b63ac9fbd648019a2288028721
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
       path: libs/ios/media_kit_libs_ios_video
   media_kit_libs_android_video:
     git:
       url: https://github.com/edde746/media-kit
-      ref: de5c4e23722999b63ac9fbd648019a2288028721
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
       path: libs/android/media_kit_libs_android_video
 
 dev_dependencies:
