@@ -45,9 +45,7 @@ class VersionSheet extends StatelessWidget {
           return ListTile(
             title: Text(
               version.displayLabel,
-              style: TextStyle(
-                color: isSelected ? Colors.blue : Colors.white,
-              ),
+              style: TextStyle(color: isSelected ? Colors.blue : Colors.white),
             ),
             trailing: isSelected
                 ? const Icon(Icons.check, color: Colors.blue)

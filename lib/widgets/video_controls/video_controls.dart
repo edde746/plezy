@@ -1624,5 +1624,4 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       }
     }
   }
-
 }

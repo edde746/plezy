@@ -49,7 +49,8 @@ class ChapterSheet extends StatelessWidget {
         for (int i = 0; i < chapters.length; i++) {
           final chapter = chapters[i];
           final startMs = chapter.startTimeOffset ?? 0;
-          final endMs = chapter.endTimeOffset ??
+          final endMs =
+              chapter.endTimeOffset ??
               (i < chapters.length - 1
                   ? chapters[i + 1].startTimeOffset ?? 0
                   : double.maxFinite.toInt());
@@ -94,22 +95,16 @@ class ChapterSheet extends StatelessWidget {
                                   );
                                 }
                                 return Image.network(
-                                  client.getThumbnailUrl(
-                                    chapter.thumb,
-                                  ),
+                                  client.getThumbnailUrl(chapter.thumb),
                                   width: 60,
                                   height: 34,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (
-                                    context,
-                                    error,
-                                    stackTrace,
-                                  ) =>
+                                  errorBuilder: (context, error, stackTrace) =>
                                       const Icon(
-                                    Icons.image,
-                                    color: Colors.white54,
-                                    size: 34,
-                                  ),
+                                        Icons.image,
+                                        color: Colors.white54,
+                                        size: 34,
+                                      ),
                                 );
                               },
                             ),
@@ -118,9 +113,7 @@ class ChapterSheet extends StatelessWidget {
                             Positioned.fill(
                               child: Container(
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                    4,
-                                  ),
+                                  borderRadius: BorderRadius.circular(4),
                                   border: Border.all(
                                     color: Colors.blue,
                                     width: 2,
@@ -150,10 +143,7 @@ class ChapterSheet extends StatelessWidget {
                   ),
                 ),
                 trailing: isCurrentChapter
-                    ? const Icon(
-                        Icons.play_circle_filled,
-                        color: Colors.blue,
-                      )
+                    ? const Icon(Icons.play_circle_filled, color: Colors.blue)
                     : null,
                 onTap: () {
                   player.seek(chapter.startTime);

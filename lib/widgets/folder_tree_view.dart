@@ -15,11 +15,7 @@ class FolderTreeView extends StatefulWidget {
   final String libraryKey;
   final void Function(String)? onRefresh;
 
-  const FolderTreeView({
-    super.key,
-    required this.libraryKey,
-    this.onRefresh,
-  });
+  const FolderTreeView({super.key, required this.libraryKey, this.onRefresh});
 
   @override
   State<FolderTreeView> createState() => _FolderTreeViewState();
@@ -109,7 +105,9 @@ class _FolderTreeViewState extends State<FolderTreeView> {
         _loadingFolders.remove(folder.key);
       });
 
-      appLogger.d('Loaded ${children.length} children for folder: ${folder.title}');
+      appLogger.d(
+        'Loaded ${children.length} children for folder: ${folder.title}',
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -148,10 +146,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
     // For episodes, start playback directly
     if (itemType == 'episode') {
-      final result = await navigateToVideoPlayer(
-        context,
-        metadata: item,
-      );
+      final result = await navigateToVideoPlayer(context, metadata: item);
       if (result == true) {
         widget.onRefresh?.call(item.ratingKey);
       }
@@ -181,11 +176,15 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     // Folders typically don't have a specific type or might have special indicators
     // Check for common folder indicators
     return item.key.contains('/folder') ||
-           item.type.isEmpty ||
-           item.type.toLowerCase() == 'folder';
+        item.type.isEmpty ||
+        item.type.toLowerCase() == 'folder';
   }
 
-  List<Widget> _buildTreeItems(List<PlexMetadata> items, int depth, [String parentPath = '']) {
+  List<Widget> _buildTreeItems(
+    List<PlexMetadata> items,
+    int depth, [
+    String parentPath = '',
+  ]) {
     final List<Widget> widgets = [];
 
     for (int i = 0; i < items.length; i++) {
@@ -260,9 +259,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
     return RefreshIndicator(
       onRefresh: _loadRootFolders,
-      child: ListView(
-        children: _buildTreeItems(_rootFolders, 0),
-      ),
+      child: ListView(children: _buildTreeItems(_rootFolders, 0)),
     );
   }
 }

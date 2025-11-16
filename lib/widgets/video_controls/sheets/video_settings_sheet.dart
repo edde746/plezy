@@ -6,6 +6,7 @@ import '../../../utils/platform_detector.dart';
 import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
+import 'base_video_control_sheet.dart';
 
 enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice }
 
@@ -39,21 +40,12 @@ class _SettingsMenuItem extends StatelessWidget {
     );
 
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isHighlighted ? Colors.amber : Colors.white70,
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(color: Colors.white),
-      ),
+      leading: Icon(icon, color: isHighlighted ? Colors.amber : Colors.white70),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (allowValueOverflow)
-            Flexible(child: valueWidget)
-          else
-            valueWidget,
+          if (allowValueOverflow) Flexible(child: valueWidget) else valueWidget,
           const SizedBox(width: 8),
           const Icon(Icons.chevron_right, color: Colors.white70),
         ],
@@ -76,17 +68,6 @@ class VideoSettingsSheet extends StatefulWidget {
     required this.subtitleSyncOffset,
   });
 
-  static BoxConstraints getBottomSheetConstraints(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 600;
-
-    return BoxConstraints(
-      maxWidth: isDesktop ? 700 : double.infinity,
-      maxHeight: isDesktop ? 400 : size.height * 0.75,
-      minHeight: isDesktop ? 300 : size.height * 0.5,
-    );
-  }
-
   static Future<void> show(
     BuildContext context,
     Player player,
@@ -97,7 +78,7 @@ class VideoSettingsSheet extends StatefulWidget {
       context: context,
       backgroundColor: Colors.grey[900],
       isScrollControlled: true,
-      constraints: getBottomSheetConstraints(context),
+      constraints: BaseVideoControlSheet.getBottomSheetConstraints(context),
       builder: (context) => VideoSettingsSheet(
         player: player,
         audioSyncOffset: audioSyncOffset,
@@ -193,7 +174,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       return 'Active (${seconds}s)';
     }
   }
-
 
   Widget _buildHeader() {
     final sleepTimer = SleepTimerService();

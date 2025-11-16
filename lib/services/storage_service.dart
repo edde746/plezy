@@ -180,11 +180,13 @@ class StorageService {
   }
 
   Map<String, String> getLibraryFilters({String? sectionId}) {
-    final scopedKey =
-        sectionId != null ? 'library_filters_$sectionId' : _keyLibraryFilters;
+    final scopedKey = sectionId != null
+        ? 'library_filters_$sectionId'
+        : _keyLibraryFilters;
 
     // Prefer per-library filters when available
-    final jsonString = _prefs.getString(scopedKey) ??
+    final jsonString =
+        _prefs.getString(scopedKey) ??
         // Legacy support: fall back to global filters if present
         _prefs.getString(_keyLibraryFilters);
     if (jsonString == null) return {};

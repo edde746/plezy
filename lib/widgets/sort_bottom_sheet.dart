@@ -138,10 +138,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                           : null,
                       leading: Radio<PlexSort>(value: sort, toggleable: false),
                       onTap: () {
-                        _handleSortChange(
-                          sort,
-                          sort.isDefaultDescending,
-                        );
+                        _handleSortChange(sort, sort.isDefaultDescending);
                       },
                     );
                   },

@@ -57,10 +57,7 @@ class ContentStateBuilder<T> extends StatelessWidget {
               style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: Text(t.common.retry),
-            ),
+            ElevatedButton(onPressed: onRetry, child: Text(t.common.retry)),
           ],
         ),
       );
@@ -74,10 +71,7 @@ class ContentStateBuilder<T> extends StatelessWidget {
           children: [
             Icon(emptyIcon, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            Text(
-              emptyMessage,
-              style: const TextStyle(color: Colors.white70),
-            ),
+            Text(emptyMessage, style: const TextStyle(color: Colors.white70)),
           ],
         ),
       );

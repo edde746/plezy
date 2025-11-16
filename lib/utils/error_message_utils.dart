@@ -22,8 +22,5 @@ String mapDioErrorToMessage(DioException error, {required String context}) {
 /// Generic fallback for unexpected errors.
 String mapUnexpectedErrorToMessage(dynamic error, {required String context}) {
   appLogger.e('Unexpected error in $context', error: error);
-  return t.errors.failedToLoad(
-    context: context,
-    error: error.toString(),
-  );
+  return t.errors.failedToLoad(context: context, error: error.toString());
 }

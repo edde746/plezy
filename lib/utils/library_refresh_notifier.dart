@@ -3,7 +3,8 @@ import 'dart:async';
 /// Notifier for triggering refreshes of library tabs
 /// Singleton pattern for global access
 class LibraryRefreshNotifier {
-  static final LibraryRefreshNotifier _instance = LibraryRefreshNotifier._internal();
+  static final LibraryRefreshNotifier _instance =
+      LibraryRefreshNotifier._internal();
 
   factory LibraryRefreshNotifier() => _instance;
 

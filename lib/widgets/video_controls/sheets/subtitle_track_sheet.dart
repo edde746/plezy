@@ -67,15 +67,13 @@ class SubtitleTrackSheet extends StatelessWidget {
                             title: Text(
                               'Off',
                               style: TextStyle(
-                                color:
-                                    isOffSelected ? Colors.blue : Colors.white,
+                                color: isOffSelected
+                                    ? Colors.blue
+                                    : Colors.white,
                               ),
                             ),
                             trailing: isOffSelected
-                                ? const Icon(
-                                    Icons.check,
-                                    color: Colors.blue,
-                                  )
+                                ? const Icon(Icons.check, color: Colors.blue)
                                 : null,
                             onTap: () {
                               player.setSubtitleTrack(SubtitleTrack.no());
@@ -107,8 +105,7 @@ class SubtitleTrackSheet extends StatelessWidget {
                             codecName = 'SRT';
                           } else if (codecName == 'DVD_SUBTITLE') {
                             codecName = 'DVD';
-                          } else if (codecName == 'ASS' ||
-                              codecName == 'SSA') {
+                          } else if (codecName == 'ASS' || codecName == 'SSA') {
                             codecName = codecName; // Keep as-is
                           } else if (codecName == 'WEBVTT') {
                             codecName = 'VTT';
@@ -116,8 +113,9 @@ class SubtitleTrackSheet extends StatelessWidget {
                           parts.add(codecName);
                         }
 
-                        final label =
-                            parts.isEmpty ? 'Track $index' : parts.join(' · ');
+                        final label = parts.isEmpty
+                            ? 'Track $index'
+                            : parts.join(' · ');
 
                         return ListTile(
                           title: Text(

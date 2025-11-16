@@ -62,13 +62,13 @@ Future<void> playCollectionOrPlaylist({
         // Set play queue in provider
         final playbackState = context.read<PlaybackStateProvider>();
         playbackState.setClient(client);
-        await playbackState.setPlaybackFromPlayQueue(
-          fetchedQueue,
-          ratingKey,
-        );
+        await playbackState.setPlaybackFromPlayQueue(fetchedQueue, ratingKey);
 
         // Navigate to first item
-        await navigateToVideoPlayer(context, metadata: fetchedQueue.items!.first);
+        await navigateToVideoPlayer(
+          context,
+          metadata: fetchedQueue.items!.first,
+        );
         return;
       }
     }
@@ -78,9 +78,7 @@ Future<void> playCollectionOrPlaylist({
         playQueue.items!.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.messages.failedToCreatePlayQueueNoItems),
-          ),
+          SnackBar(content: Text(t.messages.failedToCreatePlayQueueNoItems)),
         );
       }
       return;
@@ -91,10 +89,7 @@ Future<void> playCollectionOrPlaylist({
     // Set play queue in provider
     final playbackState = context.read<PlaybackStateProvider>();
     playbackState.setClient(client);
-    await playbackState.setPlaybackFromPlayQueue(
-      playQueue,
-      ratingKey,
-    );
+    await playbackState.setPlaybackFromPlayQueue(playQueue, ratingKey);
 
     // Navigate to first item
     await navigateToVideoPlayer(context, metadata: playQueue.items!.first);

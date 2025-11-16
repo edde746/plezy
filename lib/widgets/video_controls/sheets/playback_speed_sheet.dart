@@ -36,8 +36,9 @@ class PlaybackSpeedSheet extends StatelessWidget {
               final isSelected = (currentRate - speed).abs() < 0.01;
 
               // Format speed label
-              final label =
-                  speed == 1.0 ? 'Normal' : '${speed.toStringAsFixed(2)}x';
+              final label = speed == 1.0
+                  ? 'Normal'
+                  : '${speed.toStringAsFixed(2)}x';
 
               return ListTile(
                 title: Text(

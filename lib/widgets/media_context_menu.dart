@@ -31,7 +31,8 @@ class MediaContextMenu extends StatefulWidget {
   final VoidCallback? onTap;
   final Widget child;
   final bool isInContinueWatching;
-  final String? collectionId; // The collection ID if displaying within a collection
+  final String?
+  collectionId; // The collection ID if displaying within a collection
 
   const MediaContextMenu({
     super.key,
@@ -65,7 +66,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     final itemType = isPlaylist ? 'playlist' : (metadata!.type.toLowerCase());
     final isCollection = itemType == 'collection';
 
-    final isPartiallyWatched = !isPlaylist &&
+    final isPartiallyWatched =
+        !isPlaylist &&
         metadata!.viewedLeafCount != null &&
         metadata.leafCount != null &&
         metadata.viewedLeafCount! > 0 &&
@@ -110,108 +112,104 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     } else {
       // Regular menu items for other types
 
-    // Mark as Watched
-    if (!metadata!.isWatched || isPartiallyWatched) {
-      menuActions.add(
-        _MenuAction(
-          value: 'watch',
-          icon: Icons.check_circle_outline,
-          label: t.mediaMenu.markAsWatched,
-        ),
-      );
-    }
+      // Mark as Watched
+      if (!metadata!.isWatched || isPartiallyWatched) {
+        menuActions.add(
+          _MenuAction(
+            value: 'watch',
+            icon: Icons.check_circle_outline,
+            label: t.mediaMenu.markAsWatched,
+          ),
+        );
+      }
 
-    // Mark as Unwatched
-    if (metadata.isWatched || isPartiallyWatched) {
-      menuActions.add(
-        _MenuAction(
-          value: 'unwatch',
-          icon: Icons.remove_circle_outline,
-          label: t.mediaMenu.markAsUnwatched,
-        ),
-      );
-    }
+      // Mark as Unwatched
+      if (metadata.isWatched || isPartiallyWatched) {
+        menuActions.add(
+          _MenuAction(
+            value: 'unwatch',
+            icon: Icons.remove_circle_outline,
+            label: t.mediaMenu.markAsUnwatched,
+          ),
+        );
+      }
 
-    // Remove from Continue Watching (only in continue watching section)
-    if (widget.isInContinueWatching) {
-      menuActions.add(
-        _MenuAction(
-          value: 'remove_from_continue_watching',
-          icon: Icons.close,
-          label: t.mediaMenu.removeFromContinueWatching,
-        ),
-      );
-    }
+      // Remove from Continue Watching (only in continue watching section)
+      if (widget.isInContinueWatching) {
+        menuActions.add(
+          _MenuAction(
+            value: 'remove_from_continue_watching',
+            icon: Icons.close,
+            label: t.mediaMenu.removeFromContinueWatching,
+          ),
+        );
+      }
 
-    // Remove from Collection (only when viewing items within a collection)
-    if (widget.collectionId != null) {
-      menuActions.add(
-        _MenuAction(
-          value: 'remove_from_collection',
-          icon: Icons.delete_outline,
-          label: t.collections.removeFromCollection,
-        ),
-      );
-    }
+      // Remove from Collection (only when viewing items within a collection)
+      if (widget.collectionId != null) {
+        menuActions.add(
+          _MenuAction(
+            value: 'remove_from_collection',
+            icon: Icons.delete_outline,
+            label: t.collections.removeFromCollection,
+          ),
+        );
+      }
 
-    // Go to Series (for episodes and seasons)
-    if ((itemType == 'episode' || itemType == 'season') &&
-        metadata.grandparentTitle != null) {
-      menuActions.add(
-        _MenuAction(
-          value: 'series',
-          icon: Icons.tv,
-          label: t.mediaMenu.goToSeries,
-        ),
-      );
-    }
+      // Go to Series (for episodes and seasons)
+      if ((itemType == 'episode' || itemType == 'season') &&
+          metadata.grandparentTitle != null) {
+        menuActions.add(
+          _MenuAction(
+            value: 'series',
+            icon: Icons.tv,
+            label: t.mediaMenu.goToSeries,
+          ),
+        );
+      }
 
-    // Go to Season (for episodes)
-    if (itemType == 'episode' && metadata.parentTitle != null) {
-      menuActions.add(
-        _MenuAction(
-          value: 'season',
-          icon: Icons.playlist_play,
-          label: t.mediaMenu.goToSeason,
-        ),
-      );
-    }
+      // Go to Season (for episodes)
+      if (itemType == 'episode' && metadata.parentTitle != null) {
+        menuActions.add(
+          _MenuAction(
+            value: 'season',
+            icon: Icons.playlist_play,
+            label: t.mediaMenu.goToSeason,
+          ),
+        );
+      }
 
-    // Shuffle Play (for shows and seasons)
-    if (itemType == 'show' || itemType == 'season') {
-      menuActions.add(
-        _MenuAction(
-          value: 'shuffle_play',
-          icon: Icons.shuffle,
-          label: t.mediaMenu.shufflePlay,
-        ),
-      );
-    }
+      // Shuffle Play (for shows and seasons)
+      if (itemType == 'show' || itemType == 'season') {
+        menuActions.add(
+          _MenuAction(
+            value: 'shuffle_play',
+            icon: Icons.shuffle,
+            label: t.mediaMenu.shufflePlay,
+          ),
+        );
+      }
 
-    // File Info (for episodes and movies)
-    if (itemType == 'episode' || itemType == 'movie') {
-      menuActions.add(
-        _MenuAction(
-          value: 'fileinfo',
-          icon: Icons.info_outline,
-          label: t.mediaMenu.fileInfo,
-        ),
-      );
-    }
+      // File Info (for episodes and movies)
+      if (itemType == 'episode' || itemType == 'movie') {
+        menuActions.add(
+          _MenuAction(
+            value: 'fileinfo',
+            icon: Icons.info_outline,
+            label: t.mediaMenu.fileInfo,
+          ),
+        );
+      }
 
-    // Add to... (for episodes, movies, shows, and seasons)
-    if (itemType == 'episode' ||
-        itemType == 'movie' ||
-        itemType == 'show' ||
-        itemType == 'season') {
-      menuActions.add(
-        _MenuAction(
-          value: 'add_to',
-          icon: Icons.add,
-          label: t.common.addTo,
-        ),
-      );
-    }
+      // Add to... (for episodes, movies, shows, and seasons)
+      if (itemType == 'episode' ||
+          itemType == 'movie' ||
+          itemType == 'show' ||
+          itemType == 'season') {
+        menuActions.add(
+          _MenuAction(value: 'add_to', icon: Icons.add, label: t.common.addTo),
+        );
+      }
     } // End of regular menu items else block
 
     String? selected;
@@ -478,10 +476,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (context) => FileInfoBottomSheet(
-            fileInfo: fileInfo,
-            title: metadata.title,
-          ),
+          builder: (context) =>
+              FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
         );
       } else if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -722,7 +718,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
 
       // If still not found, try to extract from the key field
       if (sectionId == null) {
-        final keyMatch = RegExp(r'/library/sections/(\d+)').firstMatch(metadata.key);
+        final keyMatch = RegExp(
+          r'/library/sections/(\d+)',
+        ).firstMatch(metadata.key);
         if (keyMatch != null) {
           sectionId = int.tryParse(keyMatch.group(1)!);
           appLogger.d('  - Extracted from key: $sectionId');
@@ -732,8 +730,12 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       // Last resort: try to get it from the item's parent (for episodes/seasons)
       if (sectionId == null && metadata.grandparentRatingKey != null) {
         try {
-          appLogger.d('  - Trying to get from parent: ${metadata.grandparentRatingKey}');
-          final parentMeta = await client.getMetadata(metadata.grandparentRatingKey!);
+          appLogger.d(
+            '  - Trying to get from parent: ${metadata.grandparentRatingKey}',
+          );
+          final parentMeta = await client.getMetadata(
+            metadata.grandparentRatingKey!,
+          );
           sectionId = parentMeta?.librarySectionID;
           appLogger.d('  - Parent sectionId: $sectionId');
         } catch (e) {
@@ -747,7 +749,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Unable to determine library section for this item'),
+              content: Text(
+                'Unable to determine library section for this item',
+              ),
             ),
           );
         }
@@ -755,14 +759,17 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Load collections for this library section
-      final collections = await client.getLibraryCollections(sectionId.toString());
+      final collections = await client.getLibraryCollections(
+        sectionId.toString(),
+      );
 
       if (!context.mounted) return;
 
       // Show dialog to select collection or create new
       final result = await showDialog<String>(
         context: context,
-        builder: (context) => _CollectionSelectionDialog(collections: collections),
+        builder: (context) =>
+            _CollectionSelectionDialog(collections: collections),
       );
 
       if (result == null || !context.mounted) return;
@@ -778,7 +785,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           builder: (context) => _CreateCollectionDialog(),
         );
 
-        if (collectionName == null || collectionName.isEmpty || !context.mounted) {
+        if (collectionName == null ||
+            collectionName.isEmpty ||
+            !context.mounted) {
           return;
         }
 
@@ -800,7 +809,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
             break;
         }
 
-        appLogger.d('Creating collection "$collectionName" with type $collectionType');
+        appLogger.d(
+          'Creating collection "$collectionName" with type $collectionType',
+        );
         final newCollectionId = await client.createCollection(
           sectionId: sectionId.toString(),
           title: collectionName,
@@ -810,10 +821,14 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
 
         if (context.mounted) {
           if (newCollectionId != null) {
-            appLogger.d('Successfully created collection with ID: $newCollectionId');
+            appLogger.d(
+              'Successfully created collection with ID: $newCollectionId',
+            );
 
             // Now add the item to the newly created collection
-            appLogger.d('Adding item to new collection $newCollectionId with URI: $itemUri');
+            appLogger.d(
+              'Adding item to new collection $newCollectionId with URI: $itemUri',
+            );
             final addSuccess = await client.addToCollection(
               collectionId: newCollectionId,
               uri: itemUri,
@@ -828,15 +843,15 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
               LibraryRefreshNotifier().notifyCollectionsChanged();
             } else {
               appLogger.e('Failed to add item to new collection');
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(t.collections.errorAddingToCollection)));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(t.collections.errorAddingToCollection)),
+              );
             }
           } else {
             appLogger.e('Failed to create collection - API returned null');
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(t.collections.errorAddingToCollection)));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(t.collections.errorAddingToCollection)),
+            );
           }
         }
       } else {
@@ -850,18 +865,18 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         if (context.mounted) {
           if (success) {
             appLogger.d('Successfully added item(s) to collection $result');
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(t.collections.addedToCollection)));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(t.collections.addedToCollection)),
+            );
             // Trigger refresh of collections tab
             LibraryRefreshNotifier().notifyCollectionsChanged();
           } else {
             appLogger.e(
               'Failed to add item(s) to collection $result - API returned false',
             );
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(t.collections.errorAddingToCollection)));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(t.collections.errorAddingToCollection)),
+            );
           }
         }
       }
@@ -874,7 +889,9 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${t.collections.errorAddingToCollection}: ${e.toString()}'),
+            content: Text(
+              '${t.collections.errorAddingToCollection}: ${e.toString()}',
+            ),
             duration: const Duration(seconds: 5),
           ),
         );
@@ -883,7 +900,10 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Handle remove from collection action
-  Future<void> _handleRemoveFromCollection(BuildContext context, PlexMetadata metadata) async {
+  Future<void> _handleRemoveFromCollection(
+    BuildContext context,
+    PlexMetadata metadata,
+  ) async {
     final client = context.client;
     if (client == null) return;
 
@@ -928,9 +948,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(t.collections.removedFromCollection),
-            ),
+            SnackBar(content: Text(t.collections.removedFromCollection)),
           );
           // Trigger refresh of collections tab
           LibraryRefreshNotifier().notifyCollectionsChanged();
@@ -938,9 +956,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           widget.onListRefresh?.call();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(t.collections.removeFromCollectionFailed),
-            ),
+            SnackBar(content: Text(t.collections.removeFromCollectionFailed)),
           );
         }
       }
@@ -959,7 +975,11 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Handle play action for collections and playlists
-  Future<void> _handlePlay(BuildContext context, bool isCollection, bool isPlaylist) async {
+  Future<void> _handlePlay(
+    BuildContext context,
+    bool isCollection,
+    bool isPlaylist,
+  ) async {
     final client = context.client;
     if (client == null) return;
 
@@ -972,7 +992,11 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Handle shuffle action for collections and playlists
-  Future<void> _handleShuffle(BuildContext context, bool isCollection, bool isPlaylist) async {
+  Future<void> _handleShuffle(
+    BuildContext context,
+    bool isCollection,
+    bool isPlaylist,
+  ) async {
     final client = context.client;
     if (client == null) return;
 
@@ -985,13 +1009,18 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Handle delete action for collections and playlists
-  Future<void> _handleDelete(BuildContext context, bool isCollection, bool isPlaylist) async {
+  Future<void> _handleDelete(
+    BuildContext context,
+    bool isCollection,
+    bool isPlaylist,
+  ) async {
     final client = context.client;
     if (client == null) return;
 
     final itemTitle = widget.item.title;
-    final itemTypeLabel =
-        isCollection ? t.collections.collection : t.playlists.playlist;
+    final itemTypeLabel = isCollection
+        ? t.collections.collection
+        : t.playlists.playlist;
 
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
@@ -1241,7 +1270,8 @@ class _CollectionSelectionDialog extends StatelessWidget {
 /// Dialog to create a new collection
 class _CreateCollectionDialog extends StatefulWidget {
   @override
-  State<_CreateCollectionDialog> createState() => _CreateCollectionDialogState();
+  State<_CreateCollectionDialog> createState() =>
+      _CreateCollectionDialogState();
 }
 
 class _CreateCollectionDialogState extends State<_CreateCollectionDialog> {

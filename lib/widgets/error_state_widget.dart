@@ -31,19 +31,15 @@ class ErrorStateWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (icon != null) ...[
-              Icon(
-                icon,
-                size: 64,
-                color: Theme.of(context).colorScheme.error,
-              ),
+              Icon(icon, size: 64, color: Theme.of(context).colorScheme.error),
               const SizedBox(height: 16),
             ],
             Text(
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                color: Theme.of(context).colorScheme.error,
+              ),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 24),

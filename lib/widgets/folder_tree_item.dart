@@ -113,7 +113,9 @@ class FolderTreeItem extends StatelessWidget {
                 item.year.toString(),
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
           ],

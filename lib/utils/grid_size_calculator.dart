@@ -17,7 +17,8 @@ class GridSizeCalculator {
   ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > desktopBreakpoint;
-    final isTablet = screenWidth > tabletBreakpoint && screenWidth <= desktopBreakpoint;
+    final isTablet =
+        screenWidth > tabletBreakpoint && screenWidth <= desktopBreakpoint;
 
     switch (density) {
       case LibraryDensity.comfortable:

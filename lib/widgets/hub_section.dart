@@ -45,10 +45,7 @@ class HubSection extends StatelessWidget {
                 : null,
             borderRadius: BorderRadius.circular(8),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
                 children: [
                   Icon(icon),
@@ -76,10 +73,10 @@ class HubSection extends StatelessWidget {
               final cardWidth = screenWidth > 1600
                   ? 220.0
                   : screenWidth > 1200
-                      ? 200.0
-                      : screenWidth > 800
-                          ? 190.0
-                          : 160.0;
+                  ? 200.0
+                  : screenWidth > 800
+                  ? 190.0
+                  : 160.0;
 
               // MediaCard has 8px padding on all sides (16px total horizontally)
               // So actual poster width is cardWidth - 16
@@ -125,9 +122,9 @@ class HubSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               t.messages.noItemsAvailable,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
             ),
           ),
       ],
