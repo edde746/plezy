@@ -90,6 +90,11 @@ struct PlexConnection: Codable, Identifiable, Equatable {
         URL(string: uri)
     }
 
+    /// Direct URL using IP address (fallback when .plex.direct DNS fails)
+    var directURL: URL? {
+        URL(string: "\(`protocol`)://\(address):\(port)")
+    }
+
     var connectionType: ConnectionType {
         if relay { return .relay }
         if local { return .local }

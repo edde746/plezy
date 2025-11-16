@@ -161,19 +161,14 @@ class PlexAuthService: ObservableObject {
         isLoading = true
         error = nil
 
-        // Find best connection
+        // Find best connection and get working URL
         print("🟢 [PlexAuth] Starting findBestConnection...")
-        if let bestConnection = await findBestConnection(for: server) {
+        if let (bestConnection, workingURL) = await findBestConnectionWithURL(for: server) {
             print("🟢 [PlexAuth] Best connection found: \(bestConnection.uri)")
-            guard let url = bestConnection.url else {
-                print("🔴 [PlexAuth] Invalid server URL")
-                error = "Invalid server URL"
-                isLoading = false
-                return
-            }
+            print("🟢 [PlexAuth] Working URL: \(workingURL)")
 
-            print("🟢 [PlexAuth] Creating client with URL: \(url)")
-            let client = PlexAPIClient(baseURL: url, accessToken: server.accessToken ?? plexToken)
+            print("🟢 [PlexAuth] Creating client with URL: \(workingURL)")
+            let client = PlexAPIClient(baseURL: workingURL, accessToken: server.accessToken ?? plexToken)
             self.currentClient = client
             self.selectedServer = server
             print("🟢 [PlexAuth] Client and server set successfully")
@@ -201,7 +196,7 @@ class PlexAuthService: ObservableObject {
         }
     }
 
-    private func findBestConnection(for server: PlexServer) async -> PlexConnection? {
+    private func findBestConnectionWithURL(for server: PlexServer) async -> (PlexConnection, URL)? {
         print("🟡 [findBestConnection] Starting with \(server.connections.count) connections")
         // Sort connections: HTTPS > HTTP, Local > Remote > Relay
         let sortedConnections = server.connections.sorted { conn1, conn2 in
@@ -221,9 +216,9 @@ class PlexAuthService: ObservableObject {
         // Test each connection
         for (index, connection) in sortedConnections.enumerated() {
             print("🟡 [findBestConnection] Testing connection [\(index)]: \(connection.uri)")
-            if await testConnection(connection, token: server.accessToken ?? plexToken) {
+            if let workingURL = await testConnectionAndGetURL(connection, token: server.accessToken ?? plexToken) {
                 print("🟢 [findBestConnection] Connection [\(index)] succeeded!")
-                return connection
+                return (connection, workingURL)
             }
             print("🔴 [findBestConnection] Connection [\(index)] failed")
         }
@@ -232,13 +227,38 @@ class PlexAuthService: ObservableObject {
         return nil
     }
 
-    private func testConnection(_ connection: PlexConnection, token: String?) async -> Bool {
+    private func findBestConnection(for server: PlexServer) async -> PlexConnection? {
+        let result = await findBestConnectionWithURL(for: server)
+        return result?.0
+    }
+
+    private func testConnectionAndGetURL(_ connection: PlexConnection, token: String?) async -> URL? {
         print("🔵 [testConnection] Starting test for: \(connection.uri)")
-        guard let url = connection.url else {
-            print("🔴 [testConnection] Failed to parse URL from uri: \(connection.uri)")
-            return false
+
+        // Try .plex.direct URL first (secure DNS)
+        if let url = connection.url {
+            if await tryURL(url, token: token, label: "Plex.direct") {
+                return url
+            }
         }
 
+        // Fallback to direct IP address if .plex.direct fails (DNS issues)
+        if let directURL = connection.directURL {
+            print("⚠️ [testConnection] Plex.direct failed, trying direct IP: \(directURL)")
+            if await tryURL(directURL, token: token, label: "Direct IP") {
+                return directURL
+            }
+        }
+
+        print("🔴 [testConnection] All connection attempts failed")
+        return nil
+    }
+
+    private func testConnection(_ connection: PlexConnection, token: String?) async -> Bool {
+        return await testConnectionAndGetURL(connection, token: token) != nil
+    }
+
+    private func tryURL(_ baseURL: URL, token: String?, label: String) async -> Bool {
         do {
             // Create a client with shorter timeout for connection testing
             let configuration = URLSessionConfiguration.default
@@ -246,40 +266,28 @@ class PlexAuthService: ObservableObject {
             configuration.timeoutIntervalForResource = 10
 
             let session = URLSession(configuration: configuration)
-            let testURL = url.appendingPathComponent("/library/sections")
-            print("🔵 [testConnection] Testing URL: \(testURL)")
+            let testURL = baseURL.appendingPathComponent("/library/sections")
+            print("🔵 [tryURL-\(label)] Testing: \(testURL)")
 
             var request = URLRequest(url: testURL)
             request.httpMethod = "GET"
             request.setValue("application/json", forHTTPHeaderField: "Accept")
             if let token = token {
                 request.setValue(token, forHTTPHeaderField: "X-Plex-Token")
-                print("🔵 [testConnection] Token added to request")
-            } else {
-                print("⚠️ [testConnection] No token available")
             }
 
-            print("🔵 [testConnection] Sending request...")
             let (_, response) = try await session.data(for: request)
-            print("🔵 [testConnection] Response received")
 
-            guard let httpResponse = response as? HTTPURLResponse else {
-                print("🔴 [testConnection] Response is not HTTPURLResponse")
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                print("🔴 [tryURL-\(label)] Invalid response")
                 return false
             }
 
-            print("🔵 [testConnection] Status code: \(httpResponse.statusCode)")
-
-            guard (200...299).contains(httpResponse.statusCode) else {
-                print("🔴 [testConnection] Invalid status code: \(httpResponse.statusCode)")
-                return false
-            }
-
-            print("✅ [testConnection] Connected successfully via \(connection.uri)")
+            print("✅ [tryURL-\(label)] Connected successfully!")
             return true
         } catch {
-            print("🔴 [testConnection] Exception: \(error.localizedDescription)")
-            print("🔴 [testConnection] Error details: \(error)")
+            print("🔴 [tryURL-\(label)] Failed: \(error.localizedDescription)")
             return false
         }
     }
