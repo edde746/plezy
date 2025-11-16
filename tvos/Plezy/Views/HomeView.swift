@@ -100,7 +100,7 @@ struct HomeView: View {
                         // Hero Banner
                         if !onDeck.isEmpty {
                             HeroBanner(
-                                focusNamespace: _focusNamespace,
+                                focusNamespace: focusNamespace,
                                 items: onDeck,
                                 currentIndex: $currentHeroIndex,
                                 progress: $heroProgress,
