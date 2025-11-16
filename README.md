@@ -19,6 +19,14 @@ Plezy is a modern Plex media client that provides a seamless streaming experienc
 
 > Google Play version is in closed testing ([required by Google](https://support.google.com/googleplay/android-developer/answer/14151465#overview)). Join the [Google Group](https://groups.google.com/g/plezy-testers-2) to get access.
 
+### Android TV
+Plezy now supports Android TV! The app can be sideloaded on Android TV devices and will appear in your TV launcher. To install:
+1. Download the latest APK from the [Releases page](https://github.com/edde746/plezy/releases)
+2. Transfer it to your Android TV device
+3. Install using a file manager or sideloading tool
+
+The app includes a custom TV banner and is optimized to work with TV remote controls.
+
 ### Desktop
 - [Windows (x64)](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe)
 - [macOS (Universal)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.zip)
@@ -76,6 +84,25 @@ flutter run
 ```
 
 ## Development
+
+### Code Quality
+
+Before submitting changes, ensure your code passes all quality checks:
+
+```bash
+# Format code (including generated files)
+dart format .
+
+# Analyze code for issues
+flutter analyze
+
+# Run tests (if available)
+flutter test
+```
+
+**Note**: CI checks exclude generated files (`.g.dart`, `.freezed.dart`) from formatting and analysis checks. You can run `dart format .` locally to format everything, but only your hand-written code will be validated in CI.
+
+These checks are automatically run in CI for all pull requests.
 
 ### Code Generation
 

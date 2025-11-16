@@ -28,6 +28,7 @@ class MediaContextMenu extends StatefulWidget {
   final VoidCallback? onTap;
   final Widget child;
   final bool isInContinueWatching;
+  final void Function(VoidCallback showMenu)? onMenuReady;
 
   const MediaContextMenu({
     super.key,
@@ -37,6 +38,7 @@ class MediaContextMenu extends StatefulWidget {
     this.onTap,
     required this.child,
     this.isInContinueWatching = false,
+    this.onMenuReady,
   });
 
   @override
@@ -45,6 +47,13 @@ class MediaContextMenu extends StatefulWidget {
 
 class _MediaContextMenuState extends State<MediaContextMenu> {
   Offset? _tapPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pass the showMenu callback to parent if requested
+    widget.onMenuReady?.call(() => _showContextMenu(context));
+  }
 
   void _storeTapPosition(TapDownDetails details) {
     _tapPosition = details.globalPosition;
@@ -170,7 +179,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 8.0),
                 child: Text(
                   widget.metadata.title,
                   style: Theme.of(context).textTheme.titleMedium,
@@ -183,6 +192,12 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
                   leading: Icon(action.icon),
                   title: Text(action.label),
                   onTap: () => Navigator.pop(context, action.value),
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 4.0,
+                  ),
                 ),
               ),
             ],

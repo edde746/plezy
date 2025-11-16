@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/plex_metadata.dart';
@@ -8,6 +9,8 @@ import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
+import '../utils/platform_detector.dart';
+import '../utils/tv_ui_helper.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../theme/theme_helper.dart';
@@ -39,6 +42,8 @@ class MediaCard extends StatefulWidget {
 }
 
 class _MediaCardState extends State<MediaCard> {
+  VoidCallback? _showContextMenu;
+
   void _handleTap(BuildContext context) async {
     final client = context.client;
     if (client == null) return;
@@ -106,12 +111,14 @@ class _MediaCardState extends State<MediaCard> {
       onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
       onTap: () => _handleTap(context),
       isInContinueWatching: widget.isInContinueWatching,
+      onMenuReady: (showMenu) => _showContextMenu = showMenu,
       child: viewMode == ViewMode.grid
           ? _MediaCardGrid(
               item: widget.item,
               width: widget.width,
               height: widget.height,
               onTap: () => _handleTap(context),
+              showContextMenu: () => _showContextMenu?.call(),
             )
           : _MediaCardList(
               item: widget.item,
@@ -123,93 +130,186 @@ class _MediaCardState extends State<MediaCard> {
 }
 
 /// Grid layout for media cards
-class _MediaCardGrid extends StatelessWidget {
+class _MediaCardGrid extends StatefulWidget {
   final PlexMetadata item;
   final double? width;
   final double? height;
   final VoidCallback onTap;
+  final VoidCallback? showContextMenu;
 
   const _MediaCardGrid({
     required this.item,
     this.width,
     this.height,
     required this.onTap,
+    this.showContextMenu,
   });
 
   @override
+  State<_MediaCardGrid> createState() => _MediaCardGridState();
+}
+
+class _MediaCardGridState extends State<_MediaCardGrid> {
+  final FocusNode _focusNode = FocusNode();
+  bool _isFocused = false;
+  bool _isLongPressTriggered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
+    });
+    
+    // Ensure the focused card is visible on TV
+    if (_isFocused && PlatformDetector.isTVSync() && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.5, // Center the item
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isTV = PlatformDetector.isTVSync();
+
     return SizedBox(
-      width: width,
+      width: widget.width,
       child: Semantics(
-        label: "media-card-${item.ratingKey}",
-        identifier: "media-card-${item.ratingKey}",
+        label: "media-card-${widget.item.ratingKey}",
+        identifier: "media-card-${widget.item.ratingKey}",
         button: true,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Poster
-                if (height != null)
-                  SizedBox(
-                    width: double.infinity,
-                    height: height,
-                    child: _buildPosterWithOverlay(context),
-                  )
-                else
-                  Expanded(child: _buildPosterWithOverlay(context)),
-                const SizedBox(height: 4),
-                // Text content
-                Column(
+        child: Focus(
+          focusNode: _focusNode,
+          onKeyEvent: (node, event) {
+            if (!isTV) return KeyEventResult.ignored;
+
+            final isOkButton =
+                event.logicalKey == LogicalKeyboardKey.select ||
+                event.logicalKey == LogicalKeyboardKey.enter;
+
+            if (isOkButton) {
+              if (event is KeyDownEvent) {
+                // Reset flag on initial key down
+                _isLongPressTriggered = false;
+                return KeyEventResult.handled;
+              } else if (event is KeyRepeatEvent) {
+                // Key is being held down - trigger long press action once
+                if (!_isLongPressTriggered) {
+                  _isLongPressTriggered = true;
+                  widget.showContextMenu?.call();
+                }
+                return KeyEventResult.handled;
+              } else if (event is KeyUpEvent) {
+                // Key released - if no long press was triggered, do short press
+                if (!_isLongPressTriggered) {
+                  widget.onTap();
+                }
+                // Reset for next interaction
+                _isLongPressTriggered = false;
+                return KeyEventResult.handled;
+              }
+            }
+
+            return KeyEventResult.ignored;
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: _isFocused && isTV
+                  ? [
+                      BoxShadow(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withValues(alpha: 0.3)
+                            : Theme.of(context).colorScheme.primary,
+                        spreadRadius: 2,
+                        blurRadius: 0,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: widget.onTap,
+              child: Padding(
+                padding: TVUIHelper.getCardPadding(),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Poster
+                    if (widget.height != null)
+                      SizedBox(
+                        width: double.infinity,
+                        height: widget.height,
+                        child: _buildPosterWithOverlay(context),
+                      )
+                    else
+                      Expanded(child: _buildPosterWithOverlay(context)),
+                    // Text content
                     Text(
-                      item.displayTitle,
+                      widget.item.displayTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        height: 1.1,
+                        fontSize: TVUIHelper.getFontSize(12),
+                        height: 1.0,
                       ),
                     ),
-                    if (item.displaySubtitle != null)
+                    if (widget.item.displaySubtitle != null)
                       Text(
-                        item.displaySubtitle!,
+                        widget.item.displaySubtitle!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: tokens(context).textMuted,
-                          fontSize: 11,
-                          height: 1.1,
+                          fontSize: TVUIHelper.getFontSize(10),
+                          height: 1.0,
                         ),
                       )
-                    else if (item.parentTitle != null)
+                    else if (widget.item.parentTitle != null)
                       Text(
-                        item.parentTitle!,
+                        widget.item.parentTitle!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: tokens(context).textMuted,
-                          fontSize: 11,
-                          height: 1.1,
+                          fontSize: TVUIHelper.getFontSize(10),
+                          height: 1.0,
                         ),
                       )
-                    else if (item.year != null)
+                    else if (widget.item.year != null)
                       Text(
-                        '${item.year}',
+                        '${widget.item.year}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: tokens(context).textMuted,
-                          fontSize: 11,
-                          height: 1.1,
+                          fontSize: TVUIHelper.getFontSize(10),
+                          height: 1.0,
                         ),
                       ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -224,14 +324,14 @@ class _MediaCardGrid extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           child: _buildPosterImage(context),
         ),
-        _PosterOverlay(item: item),
+        _PosterOverlay(item: widget.item),
       ],
     );
   }
 
   Widget _buildPosterImage(BuildContext context) {
     final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
-    final posterUrl = item.posterThumb(useSeasonPoster: useSeasonPoster);
+    final posterUrl = widget.item.posterThumb(useSeasonPoster: useSeasonPoster);
     if (posterUrl != null) {
       return Consumer<PlexClientProvider>(
         builder: (context, clientProvider, child) {

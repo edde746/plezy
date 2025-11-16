@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../utils/platform_detector.dart';
+import '../../utils/tv_ui_helper.dart';
 
 /// A standardized button for video player controls with improved tap targets.
 ///
 /// This widget ensures consistent tap target sizing across all video control
 /// buttons without changing their visual appearance. The larger tap area makes
-/// buttons easier to interact with, especially on mobile devices.
-class VideoControlButton extends StatelessWidget {
+/// buttons easier to interact with, especially on mobile devices and TV remotes.
+/// On TV, buttons have enhanced focus indicators and larger touch targets.
+class VideoControlButton extends StatefulWidget {
   /// The icon to display in the button.
   final IconData icon;
 
@@ -32,15 +36,72 @@ class VideoControlButton extends StatelessWidget {
   });
 
   @override
+  State<VideoControlButton> createState() => _VideoControlButtonState();
+}
+
+class _VideoControlButtonState extends State<VideoControlButton> {
+  late final FocusNode _focusNode;
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final isTV = PlatformDetector.isTVSync();
+    _focusNode = FocusNode(skipTraversal: isTV);
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Determine the effective color: explicit color > active amber > default white
-    final effectiveColor = color ?? (isActive ? Colors.amber : Colors.white);
+    final effectiveColor =
+        widget.color ?? (widget.isActive ? Colors.amber : Colors.white);
+    final isTV = PlatformDetector.isTVSync();
+    final minSize = isTV ? TVUIHelper.getMinTouchTarget() : 40.0;
 
-    return IconButton(
-      icon: Icon(icon, color: effectiveColor),
-      onPressed: onPressed,
-      tooltip: tooltip,
-      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+    return Focus(
+      focusNode: _focusNode,
+      onKeyEvent: (node, event) {
+        // Handle Enter/Select key on TV
+        if (isTV && event is KeyDownEvent && widget.onPressed != null) {
+          if (event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.enter) {
+            widget.onPressed!();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: _isFocused && isTV
+              ? Border.all(color: Colors.white, width: 2)
+              : null,
+        ),
+        child: IconButton(
+          icon: Icon(widget.icon, color: effectiveColor),
+          onPressed: widget.onPressed,
+          tooltip: widget.tooltip,
+          constraints: BoxConstraints(minWidth: minSize, minHeight: minSize),
+          iconSize: isTV ? 28 : 24,
+          autofocus: false,
+        ),
+      ),
     );
   }
 }

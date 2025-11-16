@@ -21,10 +21,13 @@ import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
+import '../utils/platform_detector.dart';
 import 'playlists_screen.dart';
 
 class LibrariesScreen extends StatefulWidget {
-  const LibrariesScreen({super.key});
+  final String? initialLibraryType; // 'movie' or 'show'
+
+  const LibrariesScreen({super.key, this.initialLibraryType});
 
   @override
   State<LibrariesScreen> createState() => _LibrariesScreenState();
@@ -32,6 +35,14 @@ class LibrariesScreen extends StatefulWidget {
 
 class _LibrariesScreenState extends State<LibrariesScreen>
     with Refreshable, ItemUpdatable {
+  // TV grid sizing constants
+  static const double _tvComfortableDivisor = 4.0;
+  static const double _tvComfortableMaxWidth = 350.0;
+  static const double _tvNormalDivisor = 5.0;
+  static const double _tvNormalMaxWidth = 280.0;
+  static const double _tvCompactDivisor = 6.5;
+  static const double _tvCompactMaxWidth = 220.0;
+  
   @override
   PlexClient get client => context.clientSafe;
 
@@ -142,7 +153,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
         // Find the library by key in visible libraries
         String? libraryKeyToLoad;
-        if (savedLibraryKey != null) {
+
+        // If initialLibraryType is specified, select first library of that type
+        if (widget.initialLibraryType != null && visibleLibraries.isNotEmpty) {
+          final matchingLibrary = visibleLibraries.firstWhere(
+            (lib) =>
+                lib.type.toLowerCase() ==
+                widget.initialLibraryType!.toLowerCase(),
+            orElse: () => visibleLibraries.first,
+          );
+          libraryKeyToLoad = matchingLibrary.key;
+        } else if (savedLibraryKey != null) {
           // Check if saved library exists and is visible
           final libraryExists = visibleLibraries.any(
             (lib) => lib.key == savedLibraryKey,
@@ -956,64 +977,65 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               ),
             )
           else ...[
-            // Library selector chips
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: List.generate(visibleLibraries.length, (index) {
-                      final library = visibleLibraries[index];
-                      final isSelected = library.key == _selectedLibraryKey;
-                      final t = tokens(context);
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ContextMenuWrapper(
-                          menuItems: _getLibraryMenuItems(library),
-                          onMenuItemSelected: (value) =>
-                              _handleLibraryMenuAction(value, library),
-                          onTap: () => _loadLibraryContent(library.key),
-                          child: ChoiceChip(
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _getLibraryIcon(library.type),
-                                  size: 16,
-                                  color: isSelected ? t.bg : t.text,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(library.title),
-                              ],
+            // Library selector chips (hidden on TV since we have separate nav buttons)
+            if (!PlatformDetector.isTVSync())
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: List.generate(visibleLibraries.length, (index) {
+                        final library = visibleLibraries[index];
+                        final isSelected = library.key == _selectedLibraryKey;
+                        final t = tokens(context);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ContextMenuWrapper(
+                            menuItems: _getLibraryMenuItems(library),
+                            onMenuItemSelected: (value) =>
+                                _handleLibraryMenuAction(value, library),
+                            onTap: () => _loadLibraryContent(library.key),
+                            child: ChoiceChip(
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _getLibraryIcon(library.type),
+                                    size: 16,
+                                    color: isSelected ? t.bg : t.text,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(library.title),
+                                ],
+                              ),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  _loadLibraryContent(library.key);
+                                }
+                              },
+                              backgroundColor: t.surface,
+                              selectedColor: t.text,
+                              side: BorderSide(color: t.outline),
+                              labelStyle: TextStyle(
+                                color: isSelected ? t.bg : t.text,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                              showCheckmark: false,
                             ),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) {
-                                _loadLibraryContent(library.key);
-                              }
-                            },
-                            backgroundColor: t.surface,
-                            selectedColor: t.text,
-                            side: BorderSide(color: t.outline),
-                            labelStyle: TextStyle(
-                              color: isSelected ? t.bg : t.text,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                            ),
-                            showCheckmark: false,
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      }),
+                    ),
                   ),
                 ),
               ),
-            ),
 
             // Content grid
             if (_isLoadingItems && _items.isEmpty)
@@ -1158,6 +1180,30 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     final padding = 16.0; // 8px left + 8px right
     final availableWidth = screenWidth - padding;
+    final isTV = PlatformDetector.isTVSync();
+
+    // On TV, use larger card sizes for better visibility with D-pad navigation
+    if (isTV) {
+      double divisor;
+      double maxItemWidth;
+
+      switch (density) {
+        case LibraryDensity.comfortable:
+          divisor = _tvComfortableDivisor;
+          maxItemWidth = _tvComfortableMaxWidth;
+          break;
+        case LibraryDensity.normal:
+          divisor = _tvNormalDivisor;
+          maxItemWidth = _tvNormalMaxWidth;
+          break;
+        case LibraryDensity.compact:
+          divisor = _tvCompactDivisor;
+          maxItemWidth = _tvCompactMaxWidth;
+          break;
+      }
+
+      return (availableWidth / divisor).clamp(0, maxItemWidth);
+    }
 
     if (screenWidth >= 900) {
       // Wide screens (desktop/large tablet landscape): Responsive division

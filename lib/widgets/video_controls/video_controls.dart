@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
+import 'package:flutter/services.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
@@ -1088,68 +1088,79 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  _getReplayIcon(_seekTimeSmall),
-                  color: Colors.white,
-                  size: 48,
-                ),
-                iconSize: 48,
-                onPressed: () {
-                  _seekWithClamping(Duration(seconds: -_seekTimeSmall));
-                },
-              ),
+            _buildFocusableIconButton(
+              icon: _getReplayIcon(_seekTimeSmall),
+              size: 48,
+              onPressed: () {
+                _seekWithClamping(Duration(seconds: -_seekTimeSmall));
+              },
             ),
             const SizedBox(width: 48),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                  size: 72,
-                ),
-                iconSize: 72,
-                onPressed: () {
-                  if (isPlaying) {
-                    widget.player.pause();
-                    _hideTimer?.cancel(); // Cancel auto-hide when paused
-                  } else {
-                    widget.player.play();
-                    _startHideTimer(); // Start auto-hide when playing
-                  }
-                },
-              ),
+            _buildFocusableIconButton(
+              icon: isPlaying ? Icons.pause : Icons.play_arrow,
+              size: 72,
+              onPressed: () {
+                if (isPlaying) {
+                  widget.player.pause();
+                  _hideTimer?.cancel();
+                } else {
+                  widget.player.play();
+                  _startHideTimer();
+                }
+              },
             ),
             const SizedBox(width: 48),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  _getForwardIcon(_seekTimeSmall),
-                  color: Colors.white,
-                  size: 48,
-                ),
-                iconSize: 48,
-                onPressed: () {
-                  _seekWithClamping(Duration(seconds: _seekTimeSmall));
-                },
-              ),
+            _buildFocusableIconButton(
+              icon: _getForwardIcon(_seekTimeSmall),
+              size: 48,
+              onPressed: () {
+                _seekWithClamping(Duration(seconds: _seekTimeSmall));
+              },
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildFocusableIconButton({
+    required IconData icon,
+    required double size,
+    required VoidCallback onPressed,
+  }) {
+    final isTV = PlatformDetector.isTVSync();
+
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (isTV && event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.enter) {
+            onPressed();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+              border: isFocused && isTV
+                  ? Border.all(color: Colors.white, width: 3)
+                  : null,
+            ),
+            child: IconButton(
+              icon: Icon(icon, color: Colors.white, size: size),
+              iconSize: size,
+              onPressed: onPressed,
+              autofocus: false,
+            ),
+          );
+        },
+      ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
@@ -24,6 +25,7 @@ import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
+import '../utils/platform_detector.dart';
 import 'auth_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -212,9 +214,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       appLogger.d(
         'Received ${onDeck.length} on deck items and ${allHubs.length} hubs',
       );
+
+      // On TV, prioritize specific hubs for better UX
+      final hubsToDisplay = PlatformDetector.isTVSync()
+          ? _selectTVHubs(allHubs)
+          : allHubs;
+
       setState(() {
         _onDeck = onDeck;
-        _hubs = allHubs;
+        _hubs = hubsToDisplay;
         _isLoading = false;
 
         // Reset hero index to avoid sync issues
@@ -283,6 +291,59 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     appLogger.d('DiscoverScreen.fullRefresh() called - reloading all content');
     // Reload all content including On Deck and content hubs
     _loadContent();
+  }
+
+  /// Select and prioritize hubs for TV display
+  /// Prioritizes: Recently Released Movies, Recently Added Movies,
+  /// Recently Released Shows, Recently Added Shows
+  List<PlexHub> _selectTVHubs(List<PlexHub> allHubs) {
+    final selectedHubs = <PlexHub>[];
+
+    // Helper function to check if hub matches criteria
+    bool matchesHub(PlexHub h, String action, List<String> types) {
+      final title = h.title.toLowerCase();
+      return title.contains(action) &&
+          types.any((type) => title.contains(type));
+    }
+
+    // Priority checks for TV (in order of preference)
+    final priorities = [
+      (PlexHub h) => matchesHub(h, 'recently released', ['movie', 'film']),
+      (PlexHub h) => matchesHub(h, 'recently added', ['movie', 'film']),
+      (PlexHub h) =>
+          matchesHub(h, 'recently released', ['show', 'tv', 'series']),
+      (PlexHub h) => matchesHub(h, 'recently added', ['show', 'tv', 'series']),
+    ];
+
+    // Try to find hubs matching priorities
+    for (final priorityCheck in priorities) {
+      if (selectedHubs.length >= 4) break;
+
+      try {
+        final hub = allHubs.firstWhere(priorityCheck);
+
+        // Only add if hub has items and wasn't already added
+        if (hub.items.isNotEmpty &&
+            !selectedHubs.any((h) => h.hubKey == hub.hubKey)) {
+          selectedHubs.add(hub);
+        }
+      } catch (e) {
+        // Hub not found, continue to next priority
+      }
+    }
+
+    // If we don't have 4 hubs, fill with other non-empty hubs
+    if (selectedHubs.length < 4) {
+      for (final hub in allHubs) {
+        if (selectedHubs.length >= 4) break;
+        if (hub.items.isNotEmpty &&
+            !selectedHubs.any((h) => h.hubKey == hub.hubKey)) {
+          selectedHubs.add(hub);
+        }
+      }
+    }
+
+    return selectedHubs;
   }
 
   /// Get icon for hub based on its title
@@ -598,10 +659,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ),
               ),
             if (!_isLoading && _errorMessage == null) ...[
-              // Hero Section (Continue Watching)
+              // Hero Section (Continue Watching) - Hidden on TV for now
               Consumer<SettingsProvider>(
                 builder: (context, settingsProvider, child) {
-                  if (_onDeck.isNotEmpty && settingsProvider.showHeroSection) {
+                  final isTV = PlatformDetector.isTVSync();
+                  if (_onDeck.isNotEmpty &&
+                      settingsProvider.showHeroSection &&
+                      !isTV) {
                     return _buildHeroSection();
                   }
                   return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -633,6 +697,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ],
 
               // Recommendation Hubs (Trending, Top in Genre, etc.)
+              // On TV, hubs are pre-filtered by _selectTVHubs to show relevant content
               for (final hub in _hubs) ...[
                 SliverToBoxAdapter(
                   child: Padding(
@@ -703,6 +768,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildHeroSection() {
+    final isTV = PlatformDetector.isTVSync();
+
     return SliverToBoxAdapter(
       child: SizedBox(
         height: 500,
@@ -724,6 +791,63 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 return _buildHeroItem(_onDeck[index]);
               },
             ),
+            // Navigation arrows for TV (non-focusable, visual only)
+            if (isTV && _onDeck.length > 1) ...[
+              // Left arrow
+              if (_currentHeroIndex > 0)
+                Positioned(
+                  left: 16,
+                  top: 0,
+                  bottom: 80,
+                  child: Center(
+                    child: Focus(
+                      canRequestFocus: false,
+                      child: IconButton(
+                        icon: const Icon(Icons.chevron_left, size: 48),
+                        color: Colors.white,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.black.withValues(alpha: 0.5),
+                        ),
+                        onPressed: () {
+                          if (_currentHeroIndex > 0) {
+                            _heroController.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              // Right arrow
+              if (_currentHeroIndex < _onDeck.length - 1)
+                Positioned(
+                  right: 16,
+                  top: 0,
+                  bottom: 80,
+                  child: Center(
+                    child: Focus(
+                      canRequestFocus: false,
+                      child: IconButton(
+                        icon: const Icon(Icons.chevron_right, size: 48),
+                        color: Colors.white,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.black.withValues(alpha: 0.5),
+                        ),
+                        onPressed: () {
+                          if (_currentHeroIndex < _onDeck.length - 1) {
+                            _heroController.nextPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+            ],
             // Page indicators with animated progress and pause/play button
             Positioned(
               bottom: 16,
@@ -833,187 +957,183 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showName = heroItem.grandparentTitle ?? heroItem.title;
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 800;
+    final isTV = PlatformDetector.isTVSync();
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.type.toLowerCase() == 'movie'
         ? t.discover.movie
         : t.discover.tvShow;
 
-    return Semantics(
-      label: "media-hero-${heroItem.ratingKey}",
-      identifier: "media-hero-${heroItem.ratingKey}",
-      button: true,
-      hint: "Tap to play ${heroItem.title}",
-      child: GestureDetector(
-        onTap: () {
-          final clientProvider = context.plexClient;
-          final client = clientProvider.client;
-          if (client == null) return;
+    return Focus(
+      onKeyEvent: isTV
+          ? (node, event) {
+              if (event is KeyDownEvent) {
+                if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                  if (_currentHeroIndex > 0) {
+                    _heroController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                    return KeyEventResult.handled;
+                  }
+                } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                  if (_currentHeroIndex < _onDeck.length - 1) {
+                    _heroController.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                    return KeyEventResult.handled;
+                  }
+                }
+              }
+              return KeyEventResult.ignored;
+            }
+          : null,
+      child: Semantics(
+        label: "media-hero-${heroItem.ratingKey}",
+        identifier: "media-hero-${heroItem.ratingKey}",
+        button: true,
+        hint: "Tap to play ${heroItem.title}",
+        child: GestureDetector(
+          onTap: () {
+            final clientProvider = context.plexClient;
+            final client = clientProvider.client;
+            if (client == null) return;
 
-          appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
-          navigateToVideoPlayer(context, metadata: heroItem);
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Background Image with fade/zoom animation and parallax
-                if (heroItem.art != null || heroItem.grandparentArt != null)
-                  AnimatedBuilder(
-                    animation: _scrollController,
-                    builder: (context, child) {
-                      final scrollOffset = _scrollController.hasClients
-                          ? _scrollController.offset
-                          : 0.0;
-                      return Transform.translate(
-                        offset: Offset(0, scrollOffset * 0.3),
-                        child: child,
-                      );
-                    },
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.easeOut,
-                      builder: (context, value, child) {
-                        return Transform.scale(
-                          scale: 1.0 + (0.1 * (1 - value)),
-                          child: Opacity(opacity: value, child: child),
+            appLogger.d(
+              'Navigating to VideoPlayerScreen for: ${heroItem.title}',
+            );
+            navigateToVideoPlayer(context, metadata: heroItem);
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Background Image with fade/zoom animation and parallax
+                  if (heroItem.art != null || heroItem.grandparentArt != null)
+                    AnimatedBuilder(
+                      animation: _scrollController,
+                      builder: (context, child) {
+                        final scrollOffset = _scrollController.hasClients
+                            ? _scrollController.offset
+                            : 0.0;
+                        return Transform.translate(
+                          offset: Offset(0, scrollOffset * 0.3),
+                          child: child,
                         );
                       },
-                      child: Consumer<PlexClientProvider>(
-                        builder: (context, clientProvider, child) {
-                          final client = clientProvider.client;
-                          if (client == null) {
-                            return Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                            );
-                          }
-                          return CachedNetworkImage(
-                            imageUrl: client.getThumbnailUrl(
-                              heroItem.art ?? heroItem.grandparentArt,
-                            ),
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                            ),
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 800),
+                        curve: Curves.easeOut,
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: 1.0 + (0.1 * (1 - value)),
+                            child: Opacity(opacity: value, child: child),
                           );
                         },
+                        child: Consumer<PlexClientProvider>(
+                          builder: (context, clientProvider, child) {
+                            final client = clientProvider.client;
+                            if (client == null) {
+                              return Container(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                              );
+                            }
+                            return CachedNetworkImage(
+                              imageUrl: client.getThumbnailUrl(
+                                heroItem.art ?? heroItem.grandparentArt,
+                              ),
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                    ),
+
+                  // Gradient Overlay
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.7),
+                          Colors.black.withValues(alpha: 0.9),
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
                       ),
                     ),
-                  )
-                else
-                  Container(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
                   ),
 
-                // Gradient Overlay
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.7),
-                        Colors.black.withValues(alpha: 0.9),
-                      ],
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
-                  ),
-                ),
-
-                // Content with responsive alignment
-                Positioned(
-                  bottom: isLargeScreen ? 80 : 50,
-                  left: 0,
-                  right: isLargeScreen ? 200 : 0,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isLargeScreen ? 40 : 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: isLargeScreen
-                          ? CrossAxisAlignment.start
-                          : CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Show logo or name/title
-                        if (heroItem.clearLogo != null)
-                          SizedBox(
-                            height: 120,
-                            width: 400,
-                            child: Consumer<PlexClientProvider>(
-                              builder: (context, clientProvider, child) {
-                                final client = clientProvider.client;
-                                if (client == null) {
-                                  return Container();
-                                }
-                                return CachedNetworkImage(
-                                  imageUrl: client.getThumbnailUrl(
-                                    heroItem.clearLogo,
-                                  ),
-                                  filterQuality: FilterQuality.medium,
-                                  fit: BoxFit.contain,
-                                  alignment: isLargeScreen
-                                      ? Alignment.bottomLeft
-                                      : Alignment.bottomCenter,
-                                  placeholder: (context, url) => Align(
-                                    alignment: isLargeScreen
-                                        ? Alignment.centerLeft
-                                        : Alignment.center,
-                                    child: Text(
-                                      showName,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .displaySmall
-                                          ?.copyWith(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.3,
-                                            ),
-                                            fontWeight: FontWeight.bold,
-                                            shadows: [
-                                              Shadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.5,
-                                                ),
-                                                blurRadius: 8,
-                                              ),
-                                            ],
-                                          ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: isLargeScreen
-                                          ? TextAlign.left
-                                          : TextAlign.center,
+                  // Content with responsive alignment
+                  Positioned(
+                    bottom: isLargeScreen ? 80 : 50,
+                    left: 0,
+                    right: isLargeScreen ? 200 : 0,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isLargeScreen ? 40 : 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: isLargeScreen
+                            ? CrossAxisAlignment.start
+                            : CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Show logo or name/title
+                          if (heroItem.clearLogo != null)
+                            SizedBox(
+                              height: 120,
+                              width: 400,
+                              child: Consumer<PlexClientProvider>(
+                                builder: (context, clientProvider, child) {
+                                  final client = clientProvider.client;
+                                  if (client == null) {
+                                    return Container();
+                                  }
+                                  return CachedNetworkImage(
+                                    imageUrl: client.getThumbnailUrl(
+                                      heroItem.clearLogo,
                                     ),
-                                  ),
-                                  errorWidget: (context, url, error) {
-                                    // Fallback to text if logo fails to load
-                                    return Align(
+                                    filterQuality: FilterQuality.medium,
+                                    fit: BoxFit.contain,
+                                    alignment: isLargeScreen
+                                        ? Alignment.bottomLeft
+                                        : Alignment.bottomCenter,
+                                    placeholder: (context, url) => Align(
                                       alignment: isLargeScreen
                                           ? Alignment.centerLeft
                                           : Alignment.center,
@@ -1023,7 +1143,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                             .textTheme
                                             .displaySmall
                                             ?.copyWith(
-                                              color: Colors.white,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.3,
+                                              ),
                                               fontWeight: FontWeight.bold,
                                               shadows: [
                                                 Shadow(
@@ -1039,114 +1161,144 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                             ? TextAlign.left
                                             : TextAlign.center,
                                       ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          )
-                        else
-                          Text(
-                            showName,
-                            style: Theme.of(context).textTheme.displaySmall
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                      blurRadius: 8,
                                     ),
-                                  ],
-                                ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: isLargeScreen
-                                ? TextAlign.left
-                                : TextAlign.center,
-                          ),
-
-                        // Metadata as dot-separated text with content type
-                        if (heroItem.year != null ||
-                            heroItem.contentRating != null ||
-                            heroItem.rating != null) ...[
-                          const SizedBox(height: 16),
-                          Text(
-                            [
-                              contentTypeLabel,
-                              if (heroItem.rating != null)
-                                '★ ${heroItem.rating!.toStringAsFixed(1)}',
-                              if (heroItem.contentRating != null)
-                                formatContentRating(heroItem.contentRating!),
-                              if (heroItem.year != null)
-                                heroItem.year.toString(),
-                            ].join(' • '),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: isLargeScreen
-                                ? TextAlign.left
-                                : TextAlign.center,
-                          ),
-                        ],
-
-                        // On small screens: show button before summary
-                        if (!isLargeScreen) ...[
-                          const SizedBox(height: 20),
-                          _buildSmartPlayButton(heroItem),
-                        ],
-
-                        // Summary with episode info (Apple TV style)
-                        if (heroItem.summary != null) ...[
-                          const SizedBox(height: 12),
-                          RichText(
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: isLargeScreen
-                                ? TextAlign.left
-                                : TextAlign.center,
-                            text: TextSpan(
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                                height: 1.4,
+                                    errorWidget: (context, url, error) {
+                                      // Fallback to text if logo fails to load
+                                      return Align(
+                                        alignment: isLargeScreen
+                                            ? Alignment.centerLeft
+                                            : Alignment.center,
+                                        child: Text(
+                                          showName,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displaySmall
+                                              ?.copyWith(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                shadows: [
+                                                  Shadow(
+                                                    color: Colors.black
+                                                        .withValues(alpha: 0.5),
+                                                    blurRadius: 8,
+                                                  ),
+                                                ],
+                                              ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: isLargeScreen
+                                              ? TextAlign.left
+                                              : TextAlign.center,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
                               ),
-                              children: [
-                                if (isEpisode &&
-                                    heroItem.parentIndex != null &&
-                                    heroItem.index != null)
-                                  TextSpan(
-                                    text:
-                                        'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
+                            )
+                          else
+                            Text(
+                              showName,
+                              style: Theme.of(context).textTheme.displaySmall
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
                                   ),
-                                TextSpan(
-                                  text: heroItem.summary?.isNotEmpty == true
-                                      ? heroItem.summary!
-                                      : 'No description available',
-                                ),
-                              ],
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: isLargeScreen
+                                  ? TextAlign.left
+                                  : TextAlign.center,
                             ),
-                          ),
-                        ],
 
-                        // On large screens: show button after summary
-                        if (isLargeScreen) ...[
-                          const SizedBox(height: 20),
-                          _buildSmartPlayButton(heroItem),
+                          // Metadata as dot-separated text with content type
+                          if (heroItem.year != null ||
+                              heroItem.contentRating != null ||
+                              heroItem.rating != null) ...[
+                            const SizedBox(height: 16),
+                            Text(
+                              [
+                                contentTypeLabel,
+                                if (heroItem.rating != null)
+                                  '★ ${heroItem.rating!.toStringAsFixed(1)}',
+                                if (heroItem.contentRating != null)
+                                  formatContentRating(heroItem.contentRating!),
+                                if (heroItem.year != null)
+                                  heroItem.year.toString(),
+                              ].join(' • '),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: isLargeScreen
+                                  ? TextAlign.left
+                                  : TextAlign.center,
+                            ),
+                          ],
+
+                          // On small screens: show button before summary
+                          if (!isLargeScreen) ...[
+                            const SizedBox(height: 20),
+                            _buildSmartPlayButton(heroItem),
+                          ],
+
+                          // Summary with episode info (Apple TV style)
+                          if (heroItem.summary != null) ...[
+                            const SizedBox(height: 12),
+                            RichText(
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: isLargeScreen
+                                  ? TextAlign.left
+                                  : TextAlign.center,
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                                children: [
+                                  if (isEpisode &&
+                                      heroItem.parentIndex != null &&
+                                      heroItem.index != null)
+                                    TextSpan(
+                                      text:
+                                          'S${heroItem.parentIndex}, E${heroItem.index}: ',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  TextSpan(
+                                    text: heroItem.summary?.isNotEmpty == true
+                                        ? heroItem.summary!
+                                        : 'No description available',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
+                          // On large screens: show button after summary
+                          if (isLargeScreen) ...[
+                            const SizedBox(height: 20),
+                            _buildSmartPlayButton(heroItem),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
