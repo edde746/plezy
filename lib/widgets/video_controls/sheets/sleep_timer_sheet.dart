@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import 'base_video_control_sheet.dart';
@@ -37,7 +38,7 @@ class SleepTimerSheet extends StatelessWidget {
       listenable: sleepTimer,
       builder: (context, _) {
         return BaseVideoControlSheet(
-          title: 'Sleep Timer',
+          title: t.videoControls.sleepTimer,
           icon: sleepTimer.isActive ? Icons.bedtime : Icons.bedtime_outlined,
           iconColor: sleepTimer.isActive ? Colors.amber : null,
           child: SleepTimerContent(

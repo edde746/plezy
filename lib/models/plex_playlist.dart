@@ -45,17 +45,6 @@ class PlexPlaylist {
   /// Helper to get display image (composite or thumb)
   String? get displayImage => composite ?? thumb;
 
-  /// Helper to get formatted duration
-  String? get formattedDuration {
-    if (duration == null) return null;
-    final hours = duration! ~/ 3600000;
-    final minutes = (duration! % 3600000) ~/ 60000;
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    }
-    return '${minutes}m';
-  }
-
   /// Helper to determine if playlist is editable
   bool get isEditable => !smart;
 

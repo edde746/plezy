@@ -202,7 +202,11 @@
     "fillScreen": "Vul scherm",
     "stretch": "Uitrekken",
     "lockRotation": "Vergrendel rotatie",
-    "unlockRotation": "Ontgrendel rotatie"
+    "unlockRotation": "Ontgrendel rotatie",
+    "sleepTimer": "Slaaptimer",
+    "timerActive": "Timer actief",
+    "playbackWillPauseIn": "Afspelen wordt gepauzeerd over ${duration}",
+    "sleepTimerCompleted": "Slaaptimer voltooid - afspelen gepauzeerd"
   },
   "userStatus": {
     "admin": "Beheerder",

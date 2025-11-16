@@ -50,7 +50,9 @@ class _LibraryCollectionsTabState extends State<LibraryCollectionsTab>
     _loadCollections();
 
     // Listen for refresh notifications
-    _refreshSubscription = LibraryRefreshNotifier().collectionsStream.listen((_) {
+    _refreshSubscription = LibraryRefreshNotifier().collectionsStream.listen((
+      _,
+    ) {
       if (mounted) {
         _loadCollections();
       }
@@ -84,7 +86,9 @@ class _LibraryCollectionsTabState extends State<LibraryCollectionsTab>
         throw Exception(t.errors.noClientAvailable);
       }
 
-      final collections = await client.getLibraryCollections(widget.library.key);
+      final collections = await client.getLibraryCollections(
+        widget.library.key,
+      );
 
       if (!mounted) return;
 
@@ -106,7 +110,6 @@ class _LibraryCollectionsTabState extends State<LibraryCollectionsTab>
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
@@ -120,10 +123,7 @@ class _LibraryCollectionsTabState extends State<LibraryCollectionsTab>
       onRetry: _loadCollections,
       builder: (items) => RefreshIndicator(
         onRefresh: _loadCollections,
-        child: AdaptiveMediaGrid(
-          items: items,
-          onRefresh: _loadCollections,
-        ),
+        child: AdaptiveMediaGrid(items: items, onRefresh: _loadCollections),
       ),
     );
   }

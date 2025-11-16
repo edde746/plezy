@@ -9,7 +9,8 @@ import '../mixins/item_updatable.dart';
 /// Abstract base class for screens displaying media lists (collections/playlists)
 /// Provides common state management and playback functionality
 abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
-    extends State<T> with Refreshable, ItemUpdatable {
+    extends State<T>
+    with Refreshable, ItemUpdatable {
   // State properties - concrete implementations to avoid duplication
   List<PlexMetadata> _items = [];
   bool _isLoading = false;
@@ -55,9 +56,9 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
   Future<void> _playWithShuffle(bool shuffle) async {
     if (items.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(emptyMessage)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(emptyMessage)));
       }
       return;
     }

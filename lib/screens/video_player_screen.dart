@@ -320,7 +320,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           widget.metadata.ratingKey,
           loopQueue: false, // Don't loop playlists by default
         );
-        previous = await playbackState.getPreviousEpisode(widget.metadata.ratingKey);
+        previous = await playbackState.getPreviousEpisode(
+          widget.metadata.ratingKey,
+        );
       }
       // Check if shuffle mode is active
       else if (playbackState.isShuffleActive) {

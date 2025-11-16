@@ -68,7 +68,8 @@ class PlaybackStateProvider with ChangeNotifier {
 
   /// Update the current play queue item when playing a new item
   void setCurrentItem(PlexMetadata metadata) {
-    if (_playbackMode == PlaybackMode.playQueue && metadata.playQueueItemID != null) {
+    if (_playbackMode == PlaybackMode.playQueue &&
+        metadata.playQueueItemID != null) {
       _currentPlayQueueItemID = metadata.playQueueItemID;
       notifyListeners();
     }
@@ -82,9 +83,10 @@ class PlaybackStateProvider with ChangeNotifier {
   ) async {
     _playQueueId = playQueue.playQueueID;
     // Use size or items length as fallback if totalCount is null
-    _playQueueTotalCount = playQueue.playQueueTotalCount ??
-                           playQueue.size ??
-                           (playQueue.items?.length ?? 0);
+    _playQueueTotalCount =
+        playQueue.playQueueTotalCount ??
+        playQueue.size ??
+        (playQueue.items?.length ?? 0);
     _playQueueShuffled = playQueue.playQueueShuffled;
     _currentPlayQueueItemID = playQueue.playQueueSelectedItemID;
     _loadedItems = playQueue.items ?? [];
@@ -140,9 +142,10 @@ class PlaybackStateProvider with ChangeNotifier {
       if (response != null && response.items != null) {
         _loadedItems = response.items!;
         // Use size or items length as fallback if totalCount is null
-        _playQueueTotalCount = response.playQueueTotalCount ??
-                               response.size ??
-                               response.items!.length;
+        _playQueueTotalCount =
+            response.playQueueTotalCount ??
+            response.size ??
+            response.items!.length;
         _playQueueShuffled = response.playQueueShuffled;
         notifyListeners();
         return true;
@@ -198,7 +201,9 @@ class PlaybackStateProvider with ChangeNotifier {
         // Loop back to beginning - load first item
         if (_client != null && _playQueueId != null) {
           final response = await _client!.getPlayQueue(_playQueueId!);
-          if (response != null && response.items != null && response.items!.isNotEmpty) {
+          if (response != null &&
+              response.items != null &&
+              response.items!.isNotEmpty) {
             _loadedItems = response.items!;
             final firstItem = _loadedItems.first;
             // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts

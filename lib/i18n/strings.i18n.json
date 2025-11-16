@@ -202,7 +202,11 @@
     "fillScreen": "Fill screen",
     "stretch": "Stretch",
     "lockRotation": "Lock rotation",
-    "unlockRotation": "Unlock rotation"
+    "unlockRotation": "Unlock rotation",
+    "sleepTimer": "Sleep Timer",
+    "timerActive": "Timer Active",
+    "playbackWillPauseIn": "Playback will pause in ${duration}",
+    "sleepTimerCompleted": "Sleep timer completed - playback paused"
   },
   "userStatus": {
     "admin": "Admin",

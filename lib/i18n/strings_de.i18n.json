@@ -202,7 +202,11 @@
     "fillScreen": "Bild füllen",
     "stretch": "Strecken",
     "lockRotation": "Rotation sperren",
-    "unlockRotation": "Rotation entsperren"
+    "unlockRotation": "Rotation entsperren",
+    "sleepTimer": "Schlaf-Timer",
+    "timerActive": "Timer aktiv",
+    "playbackWillPauseIn": "Wiedergabe wird pausiert in ${duration}",
+    "sleepTimerCompleted": "Schlaf-Timer abgelaufen - Wiedergabe pausiert"
   },
   "userStatus": {
     "admin": "Eigentümer",

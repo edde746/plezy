@@ -14,10 +14,7 @@ import '../../widgets/content_state_builder.dart';
 class LibraryRecommendedTab extends StatefulWidget {
   final PlexLibrary library;
 
-  const LibraryRecommendedTab({
-    super.key,
-    required this.library,
-  });
+  const LibraryRecommendedTab({super.key, required this.library});
 
   @override
   State<LibraryRecommendedTab> createState() => _LibraryRecommendedTabState();
@@ -124,10 +121,7 @@ class _LibraryRecommendedTabState extends State<LibraryRecommendedTab>
           itemCount: items.length,
           itemBuilder: (context, index) {
             final hub = items[index];
-            return HubSection(
-              hub: hub,
-              icon: _getHubIcon(hub),
-            );
+            return HubSection(hub: hub, icon: _getHubIcon(hub));
           },
         ),
       ),

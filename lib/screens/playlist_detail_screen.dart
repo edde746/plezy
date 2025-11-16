@@ -217,7 +217,6 @@ class _PlaylistDetailScreenState
     }
   }
 
-
   Future<void> _playFromItem(int index) async {
     if (items.isEmpty || index < 0 || index >= items.length) return;
 
@@ -235,7 +234,9 @@ class _PlaylistDetailScreenState
         key: selectedItem.key,
       );
 
-      if (playQueue == null || playQueue.items == null || playQueue.items!.isEmpty) {
+      if (playQueue == null ||
+          playQueue.items == null ||
+          playQueue.items!.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(t.messages.failedToCreatePlayQueue)),

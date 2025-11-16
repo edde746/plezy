@@ -167,8 +167,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         }
 
         if (libraryKeyToLoad != null && mounted) {
-          final savedFilters =
-              storage.getLibraryFilters(sectionId: libraryKeyToLoad);
+          final savedFilters = storage.getLibraryFilters(
+            sectionId: libraryKeyToLoad,
+          );
           if (savedFilters.isNotEmpty) {
             _selectedFilters = Map.from(savedFilters);
           }
@@ -280,10 +281,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Clear filters in storage when changing library
     if (isChangingLibrary) {
-      await storage.saveLibraryFilters(
-        {},
-        sectionId: libraryKey,
-      );
+      await storage.saveLibraryFilters({}, sectionId: libraryKey);
     }
 
     // Cancel any existing requests
@@ -863,25 +861,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildTabChip(
-                          t.libraries.tabs.recommended,
-                          0,
-                        ),
+                        _buildTabChip(t.libraries.tabs.recommended, 0),
                         const SizedBox(width: 8),
-                        _buildTabChip(
-                          t.libraries.tabs.browse,
-                          1,
-                        ),
+                        _buildTabChip(t.libraries.tabs.browse, 1),
                         const SizedBox(width: 8),
-                        _buildTabChip(
-                          t.libraries.tabs.collections,
-                          2,
-                        ),
+                        _buildTabChip(t.libraries.tabs.collections, 2),
                         const SizedBox(width: 8),
-                        _buildTabChip(
-                          t.libraries.tabs.playlists,
-                          3,
-                        ),
+                        _buildTabChip(t.libraries.tabs.playlists, 3),
                       ],
                     ),
                   ),

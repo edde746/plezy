@@ -202,7 +202,11 @@
     "fillScreen": "Riempi schermo",
     "stretch": "Allunga",
     "lockRotation": "Blocca rotazione",
-    "unlockRotation": "Sblocca rotazione"
+    "unlockRotation": "Sblocca rotazione",
+    "sleepTimer": "Timer di spegnimento",
+    "timerActive": "Timer attivo",
+    "playbackWillPauseIn": "La riproduzione si interromperà tra ${duration}",
+    "sleepTimerCompleted": "Timer di spegnimento completato - riproduzione in pausa"
   },
   "userStatus": {
     "admin": "Admin",

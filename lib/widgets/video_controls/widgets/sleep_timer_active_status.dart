@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../utils/duration_formatter.dart';
 
 /// Widget displaying active sleep timer status with extend/cancel actions
 class SleepTimerActiveStatus extends StatelessWidget {
@@ -15,20 +16,6 @@ class SleepTimerActiveStatus extends StatelessWidget {
     this.onCancel,
   });
 
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    } else {
-      return '${seconds}s';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -36,9 +23,9 @@ class SleepTimerActiveStatus extends StatelessWidget {
       color: Colors.amber.withValues(alpha: 0.1),
       child: Column(
         children: [
-          const Text(
-            'Timer Active',
-            style: TextStyle(
+          Text(
+            t.videoControls.timerActive,
+            style: const TextStyle(
               color: Colors.amber,
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -46,11 +33,10 @@ class SleepTimerActiveStatus extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Playback will pause in ${_formatDuration(remainingTime)}',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
+            t.videoControls.playbackWillPauseIn(
+              duration: formatDurationWithSeconds(remainingTime),
             ),
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 16),
           Row(
@@ -59,28 +45,21 @@ class SleepTimerActiveStatus extends StatelessWidget {
               OutlinedButton.icon(
                 icon: const Icon(Icons.add),
                 label: Text(
-                  t.videoControls.addTime(
-                    amount: "15",
-                    unit: " min",
-                  ),
+                  t.videoControls.addTime(amount: "15", unit: " min"),
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white54),
                 ),
                 onPressed: () {
-                  sleepTimer.extendTimer(
-                    const Duration(minutes: 15),
-                  );
+                  sleepTimer.extendTimer(const Duration(minutes: 15));
                 },
               ),
               const SizedBox(width: 12),
               FilledButton.icon(
                 icon: const Icon(Icons.cancel),
                 label: Text(t.common.cancel),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red,
-                ),
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () {
                   sleepTimer.cancelTimer();
                   onCancel?.call();

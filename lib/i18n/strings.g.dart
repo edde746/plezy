@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2424 (404 per locale)
+/// Strings: 2448 (408 per locale)
 ///
-/// Built on 2025-11-16 at 19:45 UTC
+/// Built on 2025-11-16 at 22:35 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -477,6 +477,10 @@ class _StringsVideoControlsEn {
 	String get stretch => 'Stretch';
 	String get lockRotation => 'Lock rotation';
 	String get unlockRotation => 'Unlock rotation';
+	String get sleepTimer => 'Sleep Timer';
+	String get timerActive => 'Timer Active';
+	String playbackWillPauseIn({required Object duration}) => 'Playback will pause in ${duration}';
+	String get sleepTimerCompleted => 'Sleep timer completed - playback paused';
 }
 
 // Path: userStatus
@@ -1217,6 +1221,10 @@ class _StringsVideoControlsDe implements _StringsVideoControlsEn {
 	@override String get stretch => 'Strecken';
 	@override String get lockRotation => 'Rotation sperren';
 	@override String get unlockRotation => 'Rotation entsperren';
+	@override String get sleepTimer => 'Schlaf-Timer';
+	@override String get timerActive => 'Timer aktiv';
+	@override String playbackWillPauseIn({required Object duration}) => 'Wiedergabe wird pausiert in ${duration}';
+	@override String get sleepTimerCompleted => 'Schlaf-Timer abgelaufen - Wiedergabe pausiert';
 }
 
 // Path: userStatus
@@ -1957,6 +1965,10 @@ class _StringsVideoControlsIt implements _StringsVideoControlsEn {
 	@override String get stretch => 'Allunga';
 	@override String get lockRotation => 'Blocca rotazione';
 	@override String get unlockRotation => 'Sblocca rotazione';
+	@override String get sleepTimer => 'Timer di spegnimento';
+	@override String get timerActive => 'Timer attivo';
+	@override String playbackWillPauseIn({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
+	@override String get sleepTimerCompleted => 'Timer di spegnimento completato - riproduzione in pausa';
 }
 
 // Path: userStatus
@@ -2697,6 +2709,10 @@ class _StringsVideoControlsNl implements _StringsVideoControlsEn {
 	@override String get stretch => 'Uitrekken';
 	@override String get lockRotation => 'Vergrendel rotatie';
 	@override String get unlockRotation => 'Ontgrendel rotatie';
+	@override String get sleepTimer => 'Slaaptimer';
+	@override String get timerActive => 'Timer actief';
+	@override String playbackWillPauseIn({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
+	@override String get sleepTimerCompleted => 'Slaaptimer voltooid - afspelen gepauzeerd';
 }
 
 // Path: userStatus
@@ -3437,6 +3453,10 @@ class _StringsVideoControlsSv implements _StringsVideoControlsEn {
 	@override String get stretch => 'Sträck';
 	@override String get lockRotation => 'Lås rotation';
 	@override String get unlockRotation => 'Lås upp rotation';
+	@override String get sleepTimer => 'Sovtimer';
+	@override String get timerActive => 'Timer aktiv';
+	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
+	@override String get sleepTimerCompleted => 'Sovtimer slutförd - uppspelning pausad';
 }
 
 // Path: userStatus
@@ -4177,6 +4197,10 @@ class _StringsVideoControlsZh implements _StringsVideoControlsEn {
 	@override String get stretch => '拉伸';
 	@override String get lockRotation => '锁定旋转';
 	@override String get unlockRotation => '解锁旋转';
+	@override String get sleepTimer => '睡眠定时器';
+	@override String get timerActive => '定时器已激活';
+	@override String playbackWillPauseIn({required Object duration}) => '播放将在 ${duration} 后暂停';
+	@override String get sleepTimerCompleted => '睡眠定时器已完成 - 播放已暂停';
 }
 
 // Path: userStatus
@@ -4753,6 +4777,10 @@ extension on Translations {
 			case 'videoControls.stretch': return 'Stretch';
 			case 'videoControls.lockRotation': return 'Lock rotation';
 			case 'videoControls.unlockRotation': return 'Unlock rotation';
+			case 'videoControls.sleepTimer': return 'Sleep Timer';
+			case 'videoControls.timerActive': return 'Timer Active';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Playback will pause in ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Sleep timer completed - playback paused';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Restricted';
 			case 'userStatus.protected': return 'Protected';
@@ -5165,6 +5193,10 @@ extension on _StringsDe {
 			case 'videoControls.stretch': return 'Strecken';
 			case 'videoControls.lockRotation': return 'Rotation sperren';
 			case 'videoControls.unlockRotation': return 'Rotation entsperren';
+			case 'videoControls.sleepTimer': return 'Schlaf-Timer';
+			case 'videoControls.timerActive': return 'Timer aktiv';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Wiedergabe wird pausiert in ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Schlaf-Timer abgelaufen - Wiedergabe pausiert';
 			case 'userStatus.admin': return 'Eigentümer';
 			case 'userStatus.restricted': return 'Eingeschränkt';
 			case 'userStatus.protected': return 'Geschützt';
@@ -5577,6 +5609,10 @@ extension on _StringsIt {
 			case 'videoControls.stretch': return 'Allunga';
 			case 'videoControls.lockRotation': return 'Blocca rotazione';
 			case 'videoControls.unlockRotation': return 'Sblocca rotazione';
+			case 'videoControls.sleepTimer': return 'Timer di spegnimento';
+			case 'videoControls.timerActive': return 'Timer attivo';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Timer di spegnimento completato - riproduzione in pausa';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Limitato';
 			case 'userStatus.protected': return 'Protetto';
@@ -5989,6 +6025,10 @@ extension on _StringsNl {
 			case 'videoControls.stretch': return 'Uitrekken';
 			case 'videoControls.lockRotation': return 'Vergrendel rotatie';
 			case 'videoControls.unlockRotation': return 'Ontgrendel rotatie';
+			case 'videoControls.sleepTimer': return 'Slaaptimer';
+			case 'videoControls.timerActive': return 'Timer actief';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Slaaptimer voltooid - afspelen gepauzeerd';
 			case 'userStatus.admin': return 'Beheerder';
 			case 'userStatus.restricted': return 'Beperkt';
 			case 'userStatus.protected': return 'Beschermd';
@@ -6401,6 +6441,10 @@ extension on _StringsSv {
 			case 'videoControls.stretch': return 'Sträck';
 			case 'videoControls.lockRotation': return 'Lås rotation';
 			case 'videoControls.unlockRotation': return 'Lås upp rotation';
+			case 'videoControls.sleepTimer': return 'Sovtimer';
+			case 'videoControls.timerActive': return 'Timer aktiv';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Uppspelningen pausas om ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Sovtimer slutförd - uppspelning pausad';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Begränsad';
 			case 'userStatus.protected': return 'Skyddad';
@@ -6813,6 +6857,10 @@ extension on _StringsZh {
 			case 'videoControls.stretch': return '拉伸';
 			case 'videoControls.lockRotation': return '锁定旋转';
 			case 'videoControls.unlockRotation': return '解锁旋转';
+			case 'videoControls.sleepTimer': return '睡眠定时器';
+			case 'videoControls.timerActive': return '定时器已激活';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => '播放将在 ${duration} 后暂停';
+			case 'videoControls.sleepTimerCompleted': return '睡眠定时器已完成 - 播放已暂停';
 			case 'userStatus.admin': return '管理员';
 			case 'userStatus.restricted': return '受限';
 			case 'userStatus.protected': return '受保护';

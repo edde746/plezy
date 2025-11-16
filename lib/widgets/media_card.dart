@@ -9,6 +9,7 @@ import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
+import '../utils/duration_formatter.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../screens/playlist_detail_screen.dart';
@@ -23,10 +24,12 @@ class MediaCard extends StatefulWidget {
   final double? height;
   final void Function(String ratingKey)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
-  final VoidCallback? onListRefresh; // Callback to refresh the entire parent list
+  final VoidCallback?
+  onListRefresh; // Callback to refresh the entire parent list
   final bool forceGridMode;
   final bool isInContinueWatching;
-  final String? collectionId; // The collection ID if displaying within a collection
+  final String?
+  collectionId; // The collection ID if displaying within a collection
 
   const MediaCard({
     super.key,
@@ -55,9 +58,8 @@ class _MediaCardState extends State<MediaCard> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PlaylistDetailScreen(
-            playlist: widget.item as PlexPlaylist,
-          ),
+          builder: (context) =>
+              PlaylistDetailScreen(playlist: widget.item as PlexPlaylist),
         ),
       );
       return;
@@ -70,9 +72,7 @@ class _MediaCardState extends State<MediaCard> {
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => CollectionDetailScreen(
-            collection: widget.item,
-          ),
+          builder: (context) => CollectionDetailScreen(collection: widget.item),
         ),
       );
 
@@ -226,16 +226,18 @@ class _MediaCardGrid extends StatelessWidget {
                       Builder(
                         builder: (context) {
                           final playlist = item as PlexPlaylist;
-                          if (playlist.leafCount != null && playlist.leafCount! > 0) {
+                          if (playlist.leafCount != null &&
+                              playlist.leafCount! > 0) {
                             return Text(
                               t.playlists.itemCount(count: playlist.leafCount!),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: tokens(context).textMuted,
-                                fontSize: 11,
-                                height: 1.1,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: tokens(context).textMuted,
+                                    fontSize: 11,
+                                    height: 1.1,
+                                  ),
                             );
                           }
                           return const SizedBox.shrink();
@@ -248,17 +250,19 @@ class _MediaCardGrid extends StatelessWidget {
 
                           // For collections, show item count
                           if (metadata.type.toLowerCase() == 'collection') {
-                            final count = metadata.childCount ?? metadata.leafCount;
+                            final count =
+                                metadata.childCount ?? metadata.leafCount;
                             if (count != null && count > 0) {
                               return Text(
                                 t.playlists.itemCount(count: count),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: tokens(context).textMuted,
-                                  fontSize: 11,
-                                  height: 1.1,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: tokens(context).textMuted,
+                                      fontSize: 11,
+                                      height: 1.1,
+                                    ),
                               );
                             }
                           }
@@ -269,31 +273,34 @@ class _MediaCardGrid extends StatelessWidget {
                               metadata.displaySubtitle!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: tokens(context).textMuted,
-                                fontSize: 11,
-                                height: 1.1,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: tokens(context).textMuted,
+                                    fontSize: 11,
+                                    height: 1.1,
+                                  ),
                             );
                           } else if (metadata.parentTitle != null) {
                             return Text(
                               metadata.parentTitle!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: tokens(context).textMuted,
-                                fontSize: 11,
-                                height: 1.1,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: tokens(context).textMuted,
+                                    fontSize: 11,
+                                    height: 1.1,
+                                  ),
                             );
                           } else if (metadata.year != null) {
                             return Text(
                               '${metadata.year}',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: tokens(context).textMuted,
-                                fontSize: 11,
-                                height: 1.1,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: tokens(context).textMuted,
+                                    fontSize: 11,
+                                    height: 1.1,
+                                  ),
                             );
                           }
 
@@ -332,7 +339,9 @@ class _MediaCardGrid extends StatelessWidget {
       fallbackIcon = Icons.playlist_play;
     } else if (item is PlexMetadata) {
       final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
-      posterUrl = (item as PlexMetadata).posterThumb(useSeasonPoster: useSeasonPoster);
+      posterUrl = (item as PlexMetadata).posterThumb(
+        useSeasonPoster: useSeasonPoster,
+      );
     }
 
     if (posterUrl != null) {
@@ -454,18 +463,6 @@ class _MediaCardList extends StatelessWidget {
     }
   }
 
-  String _formatDuration(int milliseconds) {
-    final duration = Duration(milliseconds: milliseconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    } else {
-      return '${minutes}m';
-    }
-  }
-
   String _buildMetadataLine() {
     final parts = <String>[];
 
@@ -477,8 +474,8 @@ class _MediaCardList extends StatelessWidget {
       }
 
       // Add duration
-      if (playlist.formattedDuration != null) {
-        parts.add(playlist.formattedDuration!);
+      if (playlist.duration != null) {
+        parts.add(formatDurationTextual(playlist.duration!));
       }
 
       // Add smart playlist badge
@@ -489,15 +486,16 @@ class _MediaCardList extends StatelessWidget {
       final metadata = item as PlexMetadata;
 
       // For collections, show item count
-        if (metadata.type.toLowerCase() == 'collection') {
-          final count = metadata.childCount ?? metadata.leafCount;
-          if (count != null && count > 0) {
-            parts.add(t.playlists.itemCount(count: count));
-          }
-        } else {
+      if (metadata.type.toLowerCase() == 'collection') {
+        final count = metadata.childCount ?? metadata.leafCount;
+        if (count != null && count > 0) {
+          parts.add(t.playlists.itemCount(count: count));
+        }
+      } else {
         // For other media types, show standard metadata
         // Add content rating
-        if (metadata.contentRating != null && metadata.contentRating!.isNotEmpty) {
+        if (metadata.contentRating != null &&
+            metadata.contentRating!.isNotEmpty) {
           final rating = formatContentRating(metadata.contentRating);
           if (rating.isNotEmpty) {
             parts.add(rating);
@@ -511,7 +509,7 @@ class _MediaCardList extends StatelessWidget {
 
         // Add duration
         if (metadata.duration != null) {
-          parts.add(_formatDuration(metadata.duration!));
+          parts.add(formatDurationTextual(metadata.duration!));
         }
 
         // Add user rating
@@ -668,7 +666,9 @@ class _MediaCardList extends StatelessWidget {
       fallbackIcon = Icons.playlist_play;
     } else if (item is PlexMetadata) {
       final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
-      posterUrl = (item as PlexMetadata).posterThumb(useSeasonPoster: useSeasonPoster);
+      posterUrl = (item as PlexMetadata).posterThumb(
+        useSeasonPoster: useSeasonPoster,
+      );
     }
 
     if (posterUrl != null) {

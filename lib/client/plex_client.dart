@@ -1498,9 +1498,7 @@ class PlexClient {
     try {
       final response = await _dio.get(
         '/library/sections/$sectionId/collections',
-        queryParameters: {
-          'includeGuids': 1,
-        },
+        queryParameters: {'includeGuids': 1},
       );
       final allItems = _extractMetadataList(response);
 
@@ -1518,7 +1516,9 @@ class PlexClient {
   /// Returns the list of metadata items in the collection
   Future<List<PlexMetadata>> getCollectionItems(String collectionId) async {
     try {
-      final response = await _dio.get('/library/collections/$collectionId/children');
+      final response = await _dio.get(
+        '/library/collections/$collectionId/children',
+      );
       return _extractMetadataList(response);
     } catch (e) {
       appLogger.e('Failed to get collection items: $e');
@@ -1530,7 +1530,9 @@ class PlexClient {
   /// Deletes a library collection from the server
   Future<bool> deleteCollection(String sectionId, String collectionId) async {
     try {
-      appLogger.d('Deleting collection: sectionId=$sectionId, collectionId=$collectionId');
+      appLogger.d(
+        'Deleting collection: sectionId=$sectionId, collectionId=$collectionId',
+      );
       final response = await _dio.delete('/library/collections/$collectionId');
       appLogger.d('Delete collection response: ${response.statusCode}');
       return true;
@@ -1550,7 +1552,9 @@ class PlexClient {
     int? type,
   }) async {
     try {
-      appLogger.d('Creating collection: sectionId=$sectionId, title=$title, type=$type');
+      appLogger.d(
+        'Creating collection: sectionId=$sectionId, title=$title, type=$type',
+      );
       final response = await _dio.post(
         '/library/collections',
         queryParameters: {
@@ -1591,9 +1595,7 @@ class PlexClient {
       appLogger.d('Adding items to collection: collectionId=$collectionId');
       final response = await _dio.put(
         '/library/collections/$collectionId/items',
-        queryParameters: {
-          'uri': uri,
-        },
+        queryParameters: {'uri': uri},
       );
       appLogger.d('Add to collection response: ${response.statusCode}');
       return true;
@@ -1610,7 +1612,9 @@ class PlexClient {
     required String itemId,
   }) async {
     try {
-      appLogger.d('Removing item from collection: collectionId=$collectionId, itemId=$itemId');
+      appLogger.d(
+        'Removing item from collection: collectionId=$collectionId, itemId=$itemId',
+      );
       final response = await _dio.delete(
         '/library/collections/$collectionId/items/$itemId',
       );
@@ -1739,15 +1743,17 @@ class PlexClient {
             // If full parsing fails, use minimal safe parsing
             appLogger.d('Using minimal parsing for metadata item: $e');
             try {
-              items.add(PlexMetadata(
-                ratingKey: json['key'] ?? json['ratingKey'] ?? '',
-                key: json['key'] ?? '',
-                type: json['type'] ?? 'folder',
-                title: json['title'] ?? 'Untitled',
-                thumb: json['thumb'],
-                art: json['art'],
-                year: json['year'],
-              ));
+              items.add(
+                PlexMetadata(
+                  ratingKey: json['key'] ?? json['ratingKey'] ?? '',
+                  key: json['key'] ?? '',
+                  type: json['type'] ?? 'folder',
+                  title: json['title'] ?? 'Untitled',
+                  thumb: json['thumb'],
+                  art: json['art'],
+                  year: json['year'],
+                ),
+              );
             } catch (e2) {
               appLogger.e('Failed to parse metadata item: $e2');
             }
@@ -1764,14 +1770,16 @@ class PlexClient {
           } catch (e) {
             // If that fails, use minimal folder representation
             try {
-              items.add(PlexMetadata(
-                ratingKey: json['key'] ?? json['ratingKey'] ?? '',
-                key: json['key'] ?? '',
-                type: json['type'] ?? 'folder',
-                title: json['title'] ?? 'Untitled',
-                thumb: json['thumb'],
-                art: json['art'],
-              ));
+              items.add(
+                PlexMetadata(
+                  ratingKey: json['key'] ?? json['ratingKey'] ?? '',
+                  key: json['key'] ?? '',
+                  type: json['type'] ?? 'folder',
+                  title: json['title'] ?? 'Untitled',
+                  thumb: json['thumb'],
+                  art: json['art'],
+                ),
+              );
             } catch (e2) {
               appLogger.e('Failed to parse directory item: $e2');
             }
@@ -1789,9 +1797,7 @@ class PlexClient {
     try {
       final response = await _dio.get(
         '/library/sections/$sectionId/folder',
-        queryParameters: {
-          'includeCollections': 0,
-        },
+        queryParameters: {'includeCollections': 0},
       );
       return _extractMetadataAndDirectories(response);
     } catch (e) {

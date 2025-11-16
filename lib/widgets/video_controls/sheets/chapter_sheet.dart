@@ -3,6 +3,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 import '../../../models/plex_media_info.dart';
 import '../../../providers/plex_client_provider.dart';
+import '../../../utils/duration_formatter.dart';
 import 'base_video_control_sheet.dart';
 
 /// Bottom sheet for selecting chapters
@@ -32,18 +33,6 @@ class ChapterSheet extends StatelessWidget {
         chaptersLoaded: chaptersLoaded,
       ),
     );
-  }
-
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    } else {
-      return '$minutes:${seconds.toString().padLeft(2, '0')}';
-    }
   }
 
   @override
@@ -152,7 +141,7 @@ class ChapterSheet extends StatelessWidget {
                   ),
                 ),
                 subtitle: Text(
-                  _formatDuration(chapter.startTime),
+                  formatDurationTimestamp(chapter.startTime),
                   style: TextStyle(
                     color: isCurrentChapter
                         ? Colors.blue.withValues(alpha: 0.7)

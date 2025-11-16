@@ -113,7 +113,6 @@ class _LibraryPlaylistsTabState extends State<LibraryPlaylistsTab>
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin

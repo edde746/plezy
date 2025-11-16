@@ -302,10 +302,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     if (error is DioException) {
       return mapDioErrorToMessage(error, context: t.libraries.content);
     }
-    return mapUnexpectedErrorToMessage(
-      error,
-      context: t.libraries.content,
-    );
+    return mapUnexpectedErrorToMessage(error, context: t.libraries.content);
   }
 
   void _showGroupingBottomSheet() {
@@ -451,7 +448,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
                 ),
                 const SizedBox(width: 8),
                 // Filters chip
-                if (_filters.isNotEmpty)
+                if (_filters.isNotEmpty && _selectedGrouping != 'folders')
                   _buildFilterChip(
                     icon: Icons.filter_alt,
                     label: _selectedFilters.isEmpty
@@ -461,9 +458,10 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
                           ),
                     onPressed: _showFiltersBottomSheet,
                   ),
-                if (_filters.isNotEmpty) const SizedBox(width: 8),
+                if (_filters.isNotEmpty && _selectedGrouping != 'folders')
+                  const SizedBox(width: 8),
                 // Sort chip
-                if (_sortOptions.isNotEmpty)
+                if (_sortOptions.isNotEmpty && _selectedGrouping != 'folders')
                   _buildFilterChip(
                     icon: Icons.sort,
                     label: _selectedSort?.title ?? t.libraries.sort,

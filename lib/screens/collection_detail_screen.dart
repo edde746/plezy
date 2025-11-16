@@ -43,7 +43,9 @@ class _CollectionDetailScreenState
 
     try {
       final client = this.client;
-      final newItems = await client.getCollectionItems(widget.collection.ratingKey);
+      final newItems = await client.getCollectionItems(
+        widget.collection.ratingKey,
+      );
 
       if (mounted) {
         setState(() {
@@ -108,14 +110,17 @@ class _CollectionDetailScreenState
 
       if (mounted) {
         if (success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.collections.deleted)),
-            );
-          Navigator.pop(context, true); // Return true to indicate refresh needed
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.collections.deleted)));
+          Navigator.pop(
+            context,
+            true,
+          ); // Return true to indicate refresh needed
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.collections.deleteFailed)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.collections.deleteFailed)));
         }
       }
     } catch (e) {
@@ -131,7 +136,6 @@ class _CollectionDetailScreenState
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -193,9 +197,7 @@ class _CollectionDetailScreenState
             )
           else if (items.isEmpty)
             SliverFillRemaining(
-              child: Center(
-                child: Text(t.collections.noItems),
-              ),
+              child: Center(child: Text(t.collections.noItems)),
             )
           else
             SliverPadding(
@@ -204,27 +206,25 @@ class _CollectionDetailScreenState
                 builder: (context, settingsProvider, child) {
                   return SliverGrid(
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-                        context,
-                        settingsProvider.libraryDensity,
-                      ),
+                      maxCrossAxisExtent:
+                          GridSizeCalculator.getMaxCrossAxisExtent(
+                            context,
+                            settingsProvider.libraryDensity,
+                          ),
                       childAspectRatio: 2 / 3.3,
                       crossAxisSpacing: 0,
                       mainAxisSpacing: 0,
                     ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final item = items[index];
-                        return MediaCard(
-                          key: Key(item.ratingKey),
-                          item: item,
-                          onRefresh: updateItem,
-                          collectionId: widget.collection.ratingKey,
-                          onListRefresh: loadItems,
-                        );
-                      },
-                      childCount: items.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final item = items[index];
+                      return MediaCard(
+                        key: Key(item.ratingKey),
+                        item: item,
+                        onRefresh: updateItem,
+                        collectionId: widget.collection.ratingKey,
+                        onListRefresh: loadItems,
+                      );
+                    }, childCount: items.length),
                   );
                 },
               ),
