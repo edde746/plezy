@@ -37,7 +37,10 @@
     "refresh": "Refresh",
     "yes": "Yes",
     "no": "No",
-    "server": "Server"
+    "server": "Server",
+    "delete": "Delete",
+    "shuffle": "Shuffle",
+    "addTo": "Add to..."
   },
   "screens": {
     "licenses": "Licenses",
@@ -233,7 +236,11 @@
     "noEpisodesFoundGeneral": "No episodes found",
     "noResultsFound": "No results found",
     "sleepTimerSet": "Sleep timer set for ${label}",
-    "failedToSwitchProfile": "Failed to switch to ${displayName}"
+    "failedToSwitchProfile": "Failed to switch to ${displayName}",
+    "noItemsAvailable": "No items available",
+    "failedToCreatePlayQueue": "Failed to create play queue",
+    "failedToCreatePlayQueueNoItems": "Failed to create play queue - no items",
+    "failedPlayback": "Failed to ${action}: ${error}"
   },
   "profile": {
     "noUsersAvailable": "No users available"
@@ -323,7 +330,28 @@
     "confirmActionMessage": "Are you sure you want to perform this action?",
     "showLibrary": "Show library",
     "hideLibrary": "Hide library",
-    "libraryOptions": "Library options"
+    "libraryOptions": "Library options",
+    "content": "library content",
+    "selectLibrary": "Select library",
+    "filtersWithCount": "Filters (${count})",
+    "noRecommendations": "No recommendations available",
+    "noCollections": "No collections in this library",
+    "noFoldersFound": "No folders found",
+    "folders": "folders",
+    "tabs": {
+      "recommended": "Recommended",
+      "browse": "Browse",
+      "collections": "Collections",
+      "playlists": "Playlists"
+    },
+    "groupings": {
+      "all": "All",
+      "movies": "Movies",
+      "shows": "TV Shows",
+      "seasons": "Seasons",
+      "episodes": "Episodes",
+      "folders": "Folders"
+    }
   },
   "about": {
     "title": "About",
@@ -374,8 +402,35 @@
     "libraries": "Libraries",
     "settings": "Settings"
   },
+  "collections": {
+    "title": "Collections",
+    "collection": "Collection",
+    "empty": "Collection is empty",
+    "noItems": "No items in this collection",
+    "unknownLibrarySection": "Cannot delete: Unknown library section",
+    "deleteCollection": "Delete Collection",
+    "deleteConfirm": "Are you sure you want to delete \"${title}\"? This action cannot be undone.",
+    "deleted": "Collection deleted",
+    "deleteFailed": "Failed to delete collection",
+    "deleteFailedWithError": "Failed to delete collection: ${error}",
+    "failedToLoadItems": "Failed to load collection items: ${error}",
+    "addTo": "Add to collection",
+    "selectCollection": "Select Collection",
+    "createNewCollection": "Create New Collection",
+    "collectionName": "Collection Name",
+    "enterCollectionName": "Enter collection name",
+    "addedToCollection": "Added to collection",
+    "errorAddingToCollection": "Failed to add to collection",
+    "created": "Collection created",
+    "removeFromCollection": "Remove from collection",
+    "removeFromCollectionConfirm": "Remove \"${title}\" from this collection?",
+    "removedFromCollection": "Removed from collection",
+    "removeFromCollectionFailed": "Failed to remove from collection",
+    "removeFromCollectionError": "Error removing from collection: ${error}"
+  },
   "playlists": {
     "title": "Playlists",
+    "playlist": "Playlist",
     "noPlaylists": "No playlists found",
     "create": "Create Playlist",
     "newPlaylist": "New Playlist",

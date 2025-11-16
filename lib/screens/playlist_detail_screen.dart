@@ -8,6 +8,7 @@ import '../providers/playback_state_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
+import '../utils/collection_playlist_play_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/media_card.dart';
 import '../widgets/playlist_item_card.dart';
@@ -51,7 +52,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
-        throw Exception('No client available');
+        throw Exception(t.errors.noClientAvailable);
       }
 
       final items = await client.getPlaylist(widget.playlist.ratingKey);
@@ -257,15 +258,16 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
       return;
     }
 
-    final playbackState = context.read<PlaybackStateProvider>();
+    final clientProvider = context.plexClient;
+    final client = clientProvider.client;
+    if (client == null) return;
 
-    // Set the playlist items as the playback queue (in order, not shuffled)
-    playbackState.setPlaybackQueue(_items, widget.playlist.ratingKey);
-
-    // Navigate to the first item
-    if (mounted) {
-      await navigateToVideoPlayer(context, metadata: _items.first);
-    }
+    await playCollectionOrPlaylist(
+      context: context,
+      client: client,
+      item: widget.playlist,
+      shuffle: false,
+    );
   }
 
   Future<void> _shufflePlayPlaylist() async {
@@ -278,31 +280,70 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
       return;
     }
 
-    final playbackState = context.read<PlaybackStateProvider>();
+    final clientProvider = context.plexClient;
+    final client = clientProvider.client;
+    if (client == null) return;
 
-    // Shuffle the items
-    final shuffledItems = List<PlexMetadata>.from(_items)..shuffle();
-
-    // Set the shuffled playlist items as the playback queue (playlist mode, not shuffle mode)
-    playbackState.setPlaybackQueue(shuffledItems, widget.playlist.ratingKey);
-
-    // Navigate to the first shuffled item
-    if (mounted) {
-      await navigateToVideoPlayer(context, metadata: shuffledItems.first);
-    }
+    await playCollectionOrPlaylist(
+      context: context,
+      client: client,
+      item: widget.playlist,
+      shuffle: true,
+    );
   }
 
   Future<void> _playFromItem(int index) async {
     if (_items.isEmpty || index < 0 || index >= _items.length) return;
 
-    final playbackState = context.read<PlaybackStateProvider>();
+    try {
+      final clientProvider = context.plexClient;
+      final client = clientProvider.client;
+      if (client == null) return;
 
-    // Set the full playlist as playback queue (in order)
-    playbackState.setPlaybackQueue(_items, widget.playlist.ratingKey);
+      final selectedItem = _items[index];
 
-    // Start playing from the clicked item
-    if (mounted) {
-      await navigateToVideoPlayer(context, metadata: _items[index]);
+      // Create play queue from playlist, starting at the selected item
+      final playQueue = await client.createPlayQueue(
+        playlistID: int.parse(widget.playlist.ratingKey),
+        type: 'video',
+        key: selectedItem.key,
+      );
+
+      if (playQueue == null || playQueue.items == null || playQueue.items!.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(t.messages.failedToCreatePlayQueue)),
+          );
+        }
+        return;
+      }
+
+      // Set play queue in provider
+      final playbackState = context.read<PlaybackStateProvider>();
+      playbackState.setClient(client);
+      await playbackState.setPlaybackFromPlayQueue(
+        playQueue,
+        widget.playlist.ratingKey,
+      );
+
+      // Navigate to selected item (should be first in the queue response)
+      if (mounted) {
+        await navigateToVideoPlayer(context, metadata: playQueue.items!.first);
+      }
+    } catch (e) {
+      appLogger.e('Failed to play from item', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              t.messages.failedPlayback(
+                action: t.discover.play,
+                error: e.toString(),
+              ),
+            ),
+          ),
+        );
+      }
     }
   }
 

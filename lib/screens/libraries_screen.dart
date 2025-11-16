@@ -15,13 +15,17 @@ import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/context_menu_wrapper.dart';
+import '../widgets/filters_bottom_sheet.dart';
+import '../widgets/sort_bottom_sheet.dart';
 import '../services/storage_service.dart';
-import '../services/settings_service.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
-import 'playlists_screen.dart';
+import 'library_tabs/library_browse_tab.dart';
+import 'library_tabs/library_recommended_tab.dart';
+import 'library_tabs/library_collections_tab.dart';
+import 'library_tabs/library_playlists_tab.dart';
 
 class LibrariesScreen extends StatefulWidget {
   const LibrariesScreen({super.key});
@@ -31,24 +35,33 @@ class LibrariesScreen extends StatefulWidget {
 }
 
 class _LibrariesScreenState extends State<LibrariesScreen>
-    with Refreshable, ItemUpdatable {
+    with Refreshable, ItemUpdatable, SingleTickerProviderStateMixin {
   @override
   PlexClient get client => context.clientSafe;
 
+  late TabController _tabController;
+
+  // GlobalKeys for tabs to enable refresh
+  final _recommendedTabKey = GlobalKey<State<LibraryRecommendedTab>>();
+  final _browseTabKey = GlobalKey<State<LibraryBrowseTab>>();
+  final _collectionsTabKey = GlobalKey<State<LibraryCollectionsTab>>();
+  final _playlistsTabKey = GlobalKey<State<LibraryPlaylistsTab>>();
+
   List<PlexLibrary> _allLibraries = []; // All libraries from API (unfiltered)
-  List<PlexMetadata> _items = [];
-  List<PlexFilter> _filters = [];
-  List<PlexSort> _sortOptions = [];
   bool _isLoadingLibraries = true;
-  bool _isLoadingItems = false;
   String? _errorMessage;
   String? _selectedLibraryKey;
+  bool _isInitialLoad = true;
+
+  // Legacy fields kept for compatibility with existing methods
+  // TODO: Clean up after refactoring _loadLibraryContent
+  List<PlexFilter> _filters = [];
+  List<PlexSort> _sortOptions = [];
   Map<String, String> _selectedFilters = {};
   PlexSort? _selectedSort;
   bool _isSortDescending = false;
-  bool _isInitialLoad = true;
-
-  // Pagination state
+  bool _isLoadingItems = false;
+  List<PlexMetadata> _items = [];
   int _currentPage = 0;
   bool _hasMoreItems = true;
   CancelToken? _cancelToken;
@@ -58,7 +71,28 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_onTabChanged);
     _loadLibraries();
+  }
+
+  void _onTabChanged() {
+    // Save tab index when changed
+    if (_selectedLibraryKey != null && !_tabController.indexIsChanging) {
+      StorageService.getInstance().then((storage) {
+        storage.saveLibraryTab(_selectedLibraryKey!, _tabController.index);
+      });
+    }
+    // Rebuild to update chip selection state
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    _cancelToken?.cancel();
+    super.dispose();
   }
 
   /// Helper method to get user-friendly error message from exception
@@ -87,10 +121,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   Future<void> _loadLibraries() async {
     // Extract context dependencies before async gap
-    final clientProvider = Provider.of<PlexClientProvider>(
-      context,
-      listen: false,
-    );
+    final clientProvider = context.plexClient;
     final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
       context,
       listen: false,
@@ -138,7 +169,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
         // Load saved preferences
         final savedLibraryKey = storage.getSelectedLibraryKey();
-        final savedFilters = storage.getLibraryFilters();
 
         // Find the library by key in visible libraries
         String? libraryKeyToLoad;
@@ -157,12 +187,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           libraryKeyToLoad = visibleLibraries.first.key;
         }
 
-        // Restore filters BEFORE loading content
-        if (savedFilters.isNotEmpty) {
-          _selectedFilters = Map.from(savedFilters);
-        }
-
         if (libraryKeyToLoad != null) {
+          final savedFilters =
+              storage.getLibraryFilters(sectionId: libraryKeyToLoad);
+          if (savedFilters.isNotEmpty) {
+            _selectedFilters = Map.from(savedFilters);
+          }
           _loadLibraryContent(libraryKeyToLoad);
         }
       }
@@ -259,13 +289,24 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       _isInitialLoad = false;
     }
 
-    // Save selected library key
+    // Save selected library key and restore saved tab
     final storage = await StorageService.getInstance();
     await storage.saveSelectedLibraryKey(libraryKey);
 
+    // Restore saved tab index for this library
+    final savedTabIndex = storage.getLibraryTab(libraryKey);
+    if (savedTabIndex != null && savedTabIndex >= 0 && savedTabIndex < 4) {
+      setState(() {
+        _tabController.index = savedTabIndex;
+      });
+    }
+
     // Clear filters in storage when changing library
     if (isChangingLibrary) {
-      await storage.saveLibraryFilters({});
+      await storage.saveLibraryFilters(
+        {},
+        sectionId: libraryKey,
+      );
     }
 
     // Cancel any existing requests
@@ -363,10 +404,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   Future<void> _loadFilters(String libraryKey) async {
     try {
-      final clientProvider = Provider.of<PlexClientProvider>(
-        context,
-        listen: false,
-      );
+      final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
         throw Exception(t.errors.noClientAvailable);
@@ -386,10 +424,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   Future<void> _loadSortOptions(String libraryKey) async {
     try {
-      final clientProvider = Provider.of<PlexClientProvider>(
-        context,
-        listen: false,
-      );
+      final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
         throw Exception(t.errors.noClientAvailable);
@@ -399,24 +434,25 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
       // Load saved sort preference for this library
       final storage = await StorageService.getInstance();
-      final savedSortKey = storage.getLibrarySort(libraryKey);
+      final savedSortData = storage.getLibrarySort(libraryKey);
 
       // Find the saved sort in the options
       PlexSort? savedSort;
       bool descending = false;
 
-      if (savedSortKey.endsWith(':desc')) {
-        descending = true;
-        final baseKey = savedSortKey.replaceAll(':desc', '');
-        savedSort = sortOptions.firstWhere(
-          (s) => s.key == baseKey,
-          orElse: () => sortOptions.first,
-        );
+      if (savedSortData != null) {
+        final sortKey = savedSortData['key'] as String?;
+        if (sortKey != null) {
+          savedSort = sortOptions.firstWhere(
+            (s) => s.key == sortKey,
+            orElse: () => sortOptions.first,
+          );
+          descending = (savedSortData['descending'] as bool?) ?? false;
+        } else {
+          savedSort = sortOptions.first;
+        }
       } else {
-        savedSort = sortOptions.firstWhere(
-          (s) => s.key == savedSortKey,
-          orElse: () => sortOptions.first,
-        );
+        savedSort = sortOptions.first;
       }
 
       setState(() {
@@ -448,10 +484,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     });
 
     try {
-      final clientProvider = Provider.of<PlexClientProvider>(
-        context,
-        listen: false,
-      );
+      final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) {
         throw Exception(t.errors.noClientAvailable);
@@ -493,8 +526,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Save sort preference for this library
     final storage = await StorageService.getInstance();
-    final sortKey = sort.getSortKey(descending: descending);
-    await storage.saveLibrarySort(_selectedLibraryKey!, sortKey);
+    await storage.saveLibrarySort(
+      _selectedLibraryKey!,
+      sort.key,
+      descending: descending,
+    );
 
     // Reload content with new sort
     _applyFilters();
@@ -512,6 +548,36 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   void refresh() {
     _loadLibraries();
+  }
+
+  // Refresh the currently active tab
+  void _refreshCurrentTab() {
+    switch (_tabController.index) {
+      case 0: // Recommended tab
+        final state = _recommendedTabKey.currentState;
+        if (state is Refreshable) {
+          (state as Refreshable).refresh();
+        }
+        break;
+      case 1: // Browse tab
+        final state = _browseTabKey.currentState;
+        if (state is Refreshable) {
+          (state as Refreshable).refresh();
+        }
+        break;
+      case 2: // Collections tab
+        final state = _collectionsTabKey.currentState;
+        if (state is Refreshable) {
+          (state as Refreshable).refresh();
+        }
+        break;
+      case 3: // Playlists tab
+        final state = _playlistsTabKey.currentState;
+        if (state is Refreshable) {
+          (state as Refreshable).refresh();
+        }
+        break;
+    }
   }
 
   // Public method to fully reload all content (for profile switches)
@@ -556,45 +622,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         }
       }
     }
-  }
-
-  void _showFiltersBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _FiltersBottomSheet(
-        filters: _filters,
-        selectedFilters: _selectedFilters,
-        onFiltersChanged: (filters) async {
-          setState(() {
-            _selectedFilters.clear();
-            _selectedFilters.addAll(filters);
-          });
-
-          // Save filters to storage
-          final storage = await StorageService.getInstance();
-          await storage.saveLibraryFilters(filters);
-
-          _applyFilters();
-        },
-      ),
-    );
-  }
-
-  void _showSortBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _SortBottomSheet(
-        sortOptions: _sortOptions,
-        selectedSort: _selectedSort,
-        isSortDescending: _isSortDescending,
-        onSortChanged: (sort, descending) {
-          Navigator.pop(context);
-          _applySort(sort, descending);
-        },
-      ),
-    );
   }
 
   List<ContextMenuItem> _getLibraryMenuItems(PlexLibrary library) {
@@ -858,6 +885,88 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
   }
 
+  Widget _buildTabChip(String label, int index) {
+    final isSelected = _tabController.index == index;
+    final t = tokens(context);
+
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _tabController.index = index;
+          });
+        }
+      },
+      backgroundColor: t.surface,
+      selectedColor: t.text,
+      side: BorderSide(color: t.outline),
+      labelStyle: TextStyle(
+        color: isSelected ? t.bg : t.text,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+      ),
+      showCheckmark: false,
+    );
+  }
+
+  Widget _buildLibraryDropdownTitle(List<PlexLibrary> visibleLibraries) {
+    final selectedLibrary = visibleLibraries.firstWhere(
+      (lib) => lib.key == _selectedLibraryKey,
+      orElse: () => visibleLibraries.first,
+    );
+
+    return PopupMenuButton<String>(
+      offset: const Offset(0, 48),
+      tooltip: t.libraries.selectLibrary,
+      onSelected: (libraryKey) {
+        _loadLibraryContent(libraryKey);
+      },
+      itemBuilder: (context) {
+        return visibleLibraries.map((library) {
+          final isSelected = library.key == _selectedLibraryKey;
+          return PopupMenuItem<String>(
+            value: library.key,
+            child: Row(
+              children: [
+                Icon(
+                  _getLibraryIcon(library.type),
+                  size: 20,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  library.title,
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList();
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_getLibraryIcon(selectedLibrary.type), size: 20),
+          const SizedBox(width: 8),
+          Text(
+            selectedLibrary.title,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.arrow_drop_down, size: 24),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watch for hidden libraries changes to trigger rebuild
@@ -873,7 +982,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       body: CustomScrollView(
         slivers: [
           DesktopSliverAppBar(
-            title: Text(t.libraries.title),
+            title: visibleLibraries.isNotEmpty && _selectedLibraryKey != null
+                ? _buildLibraryDropdownTitle(visibleLibraries)
+                : Text(t.libraries.title),
             floating: true,
             pinned: true,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -889,26 +1000,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   ),
                   onPressed: _showLibraryManagementSheet,
                 ),
-              if (_sortOptions.isNotEmpty)
-                IconButton(
-                  icon: Icon(Icons.swap_vert, semanticLabel: t.libraries.sort),
-                  onPressed: _showSortBottomSheet,
-                ),
-              if (_filters.isNotEmpty)
-                IconButton(
-                  icon: Badge(
-                    label: Text('${_selectedFilters.length}'),
-                    isLabelVisible: _selectedFilters.isNotEmpty,
-                    child: Icon(
-                      Icons.filter_list,
-                      semanticLabel: t.libraries.filters,
-                    ),
-                  ),
-                  onPressed: _showFiltersBottomSheet,
-                ),
               IconButton(
                 icon: Icon(Icons.refresh, semanticLabel: t.common.refresh),
-                onPressed: () => _loadLibraryContent(_selectedLibraryKey!),
+                onPressed: _refreshCurrentTab,
               ),
             ],
           ),
@@ -956,185 +1050,78 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               ),
             )
           else ...[
-            // Library selector chips
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: List.generate(visibleLibraries.length, (index) {
-                      final library = visibleLibraries[index];
-                      final isSelected = library.key == _selectedLibraryKey;
-                      final t = tokens(context);
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ContextMenuWrapper(
-                          menuItems: _getLibraryMenuItems(library),
-                          onMenuItemSelected: (value) =>
-                              _handleLibraryMenuAction(value, library),
-                          onTap: () => _loadLibraryContent(library.key),
-                          child: ChoiceChip(
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _getLibraryIcon(library.type),
-                                  size: 16,
-                                  color: isSelected ? t.bg : t.text,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(library.title),
-                              ],
-                            ),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) {
-                                _loadLibraryContent(library.key);
-                              }
-                            },
-                            backgroundColor: t.surface,
-                            selectedColor: t.text,
-                            side: BorderSide(color: t.outline),
-                            labelStyle: TextStyle(
-                              color: isSelected ? t.bg : t.text,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                            ),
-                            showCheckmark: false,
-                          ),
-                        ),
-                      );
-                    }),
+            // Tab selector chips
+            if (_selectedLibraryKey != null)
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                ),
-              ),
-            ),
-
-            // Content grid
-            if (_isLoadingItems && _items.isEmpty)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_errorMessage != null)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: Colors.red,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(_errorMessage!),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () =>
-                            _loadLibraryContent(_selectedLibraryKey!),
-                        child: Text(t.common.retry),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else if (_items.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.folder_open,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(t.libraries.thisLibraryIsEmpty),
-                    ],
-                  ),
-                ),
-              )
-            else ...[
-              Consumer<SettingsProvider>(
-                builder: (context, settingsProvider, child) {
-                  if (settingsProvider.viewMode == ViewMode.list) {
-                    return SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final item = _items[index];
-                          return MediaCard(
-                            key: Key(item.ratingKey),
-                            item: item,
-                            onRefresh: updateItem,
-                          );
-                        }, childCount: _items.length),
-                      ),
-                    );
-                  } else {
-                    return SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                      sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: _getMaxCrossAxisExtent(
-                            context,
-                            settingsProvider.libraryDensity,
-                          ),
-                          childAspectRatio: 2 / 3.3,
-                          crossAxisSpacing: 0,
-                          mainAxisSpacing: 0,
-                        ),
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final item = _items[index];
-                          return MediaCard(
-                            key: Key(item.ratingKey),
-                            item: item,
-                            onRefresh: updateItem,
-                          );
-                        }, childCount: _items.length),
-                      ),
-                    );
-                  }
-                },
-              ),
-              // Show loading indicator if there are more items to load
-              if (_hasMoreItems && _isLoadingItems)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
                       children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 8),
-                        Text(
-                          t.libraries.loadingLibraryWithCount(
-                            count: _items.length,
-                          ),
-                          style: Theme.of(context).textTheme.bodySmall,
+                        _buildTabChip(
+                          t.libraries.tabs.recommended,
+                          0,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildTabChip(
+                          t.libraries.tabs.browse,
+                          1,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildTabChip(
+                          t.libraries.tabs.collections,
+                          2,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildTabChip(
+                          t.libraries.tabs.playlists,
+                          3,
                         ),
                       ],
                     ),
                   ),
                 ),
-            ],
+              ),
+
+            // Tab content
+            if (_selectedLibraryKey != null)
+              SliverFillRemaining(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    LibraryRecommendedTab(
+                      key: _recommendedTabKey,
+                      library: _allLibraries.firstWhere(
+                        (lib) => lib.key == _selectedLibraryKey,
+                      ),
+                    ),
+                    LibraryBrowseTab(
+                      key: _browseTabKey,
+                      library: _allLibraries.firstWhere(
+                        (lib) => lib.key == _selectedLibraryKey,
+                      ),
+                    ),
+                    LibraryCollectionsTab(
+                      key: _collectionsTabKey,
+                      library: _allLibraries.firstWhere(
+                        (lib) => lib.key == _selectedLibraryKey,
+                      ),
+                    ),
+                    LibraryPlaylistsTab(
+                      key: _playlistsTabKey,
+                      library: _allLibraries.firstWhere(
+                        (lib) => lib.key == _selectedLibraryKey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PlaylistsScreen()),
-          );
-        },
-        tooltip: t.playlists.title,
-        child: const Icon(Icons.playlist_play),
       ),
     );
   }
@@ -1152,513 +1139,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       default:
         return Icons.folder;
     }
-  }
-
-  double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = 16.0; // 8px left + 8px right
-    final availableWidth = screenWidth - padding;
-
-    if (screenWidth >= 900) {
-      // Wide screens (desktop/large tablet landscape): Responsive division
-      double divisor;
-      double maxItemWidth;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 6.5;
-          maxItemWidth = 280;
-          break;
-        case LibraryDensity.normal:
-          divisor = 8.0;
-          maxItemWidth = 200;
-          break;
-        case LibraryDensity.compact:
-          divisor = 10.0;
-          maxItemWidth = 160;
-          break;
-      }
-
-      return (availableWidth / divisor).clamp(0, maxItemWidth);
-    } else if (screenWidth >= 600) {
-      // Medium screens (tablets): Fixed 4-5-6 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 4,
-        LibraryDensity.normal => 5,
-        LibraryDensity.compact => 6,
-      };
-      return availableWidth / targetItemCount;
-    } else {
-      // Small screens (phones): Fixed 2-3-4 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 2,
-        LibraryDensity.normal => 3,
-        LibraryDensity.compact => 4,
-      };
-      return availableWidth / targetItemCount;
-    }
-  }
-}
-
-class _FiltersBottomSheet extends StatefulWidget {
-  final List<PlexFilter> filters;
-  final Map<String, String> selectedFilters;
-  final Function(Map<String, String>) onFiltersChanged;
-
-  const _FiltersBottomSheet({
-    required this.filters,
-    required this.selectedFilters,
-    required this.onFiltersChanged,
-  });
-
-  @override
-  State<_FiltersBottomSheet> createState() => _FiltersBottomSheetState();
-}
-
-class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
-  PlexFilter? _currentFilter;
-  List<PlexFilterValue> _filterValues = [];
-  bool _isLoadingValues = false;
-  final Map<String, String> _tempSelectedFilters = {};
-  final Map<String, String> _filterDisplayNames = {}; // Cache for display names
-  late List<PlexFilter> _sortedFilters;
-
-  @override
-  void initState() {
-    super.initState();
-    _tempSelectedFilters.addAll(widget.selectedFilters);
-    _sortFilters();
-  }
-
-  void _sortFilters() {
-    // Separate boolean filters (toggles) from regular filters
-    final booleanFilters = widget.filters
-        .where((f) => f.filterType == 'boolean')
-        .toList();
-    final regularFilters = widget.filters
-        .where((f) => f.filterType != 'boolean')
-        .toList();
-
-    // Combine with boolean filters first
-    _sortedFilters = [...booleanFilters, ...regularFilters];
-  }
-
-  bool _isBooleanFilter(PlexFilter filter) {
-    return filter.filterType == 'boolean';
-  }
-
-  Future<void> _loadFilterValues(PlexFilter filter) async {
-    setState(() {
-      _currentFilter = filter;
-      _isLoadingValues = true;
-    });
-
-    try {
-      final clientProvider = Provider.of<PlexClientProvider>(
-        context,
-        listen: false,
-      );
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      final values = await client.getFilterValues(filter.key);
-      setState(() {
-        _filterValues = values;
-        _isLoadingValues = false;
-      });
-    } catch (e) {
-      setState(() {
-        _filterValues = [];
-        _isLoadingValues = false;
-      });
-    }
-  }
-
-  void _goBack() {
-    setState(() {
-      _currentFilter = null;
-      _filterValues = [];
-    });
-  }
-
-  void _applyFilters() {
-    widget.onFiltersChanged(_tempSelectedFilters);
-    Navigator.pop(context);
-  }
-
-  String _extractFilterValue(String key, String filterName) {
-    if (key.contains('?')) {
-      final queryStart = key.indexOf('?');
-      final queryString = key.substring(queryStart + 1);
-      final params = Uri.splitQueryString(queryString);
-      return params[filterName] ?? key;
-    } else if (key.startsWith('/')) {
-      return key.split('/').last;
-    }
-    return key;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        if (_currentFilter != null) {
-          // Show filter options view
-          return Column(
-            children: [
-              // Header with back button
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Theme.of(context).dividerColor),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    AppBarBackButton(
-                      style: BackButtonStyle.plain,
-                      onPressed: _goBack,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _currentFilter!.title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Filter options list
-              if (_isLoadingValues)
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _filterValues.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        final isSelected = !_tempSelectedFilters.containsKey(
-                          _currentFilter!.filter,
-                        );
-                        return ListTile(
-                          title: Text(t.libraries.all),
-                          selected: isSelected,
-                          onTap: () {
-                            setState(() {
-                              _tempSelectedFilters.remove(
-                                _currentFilter!.filter,
-                              );
-                            });
-                            _applyFilters();
-                          },
-                        );
-                      }
-
-                      final value = _filterValues[index - 1];
-                      final filterValue = _extractFilterValue(
-                        value.key,
-                        _currentFilter!.filter,
-                      );
-                      final isSelected =
-                          _tempSelectedFilters[_currentFilter!.filter] ==
-                          filterValue;
-
-                      return ListTile(
-                        title: Text(value.title),
-                        selected: isSelected,
-                        onTap: () {
-                          setState(() {
-                            _tempSelectedFilters[_currentFilter!.filter] =
-                                filterValue;
-                            // Cache the display name for this filter value
-                            _filterDisplayNames['${_currentFilter!.filter}:$filterValue'] =
-                                value.title;
-                          });
-                          _applyFilters();
-                        },
-                      );
-                    },
-                  ),
-                ),
-            ],
-          );
-        }
-
-        // Show main filters view
-        return Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.filter_list),
-                  const SizedBox(width: 12),
-                  Text(
-                    t.libraries.filters,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (_tempSelectedFilters.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _tempSelectedFilters.clear();
-                        });
-                        _applyFilters();
-                      },
-                      icon: const Icon(Icons.clear_all),
-                      label: Text(t.libraries.clearAll),
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-
-            // All Filters (boolean toggles first, then regular filters)
-            Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: _sortedFilters.length,
-                itemBuilder: (context, index) {
-                  final filter = _sortedFilters[index];
-
-                  // Handle boolean filters as switches (unwatched, inProgress, unmatched, hdr, etc.)
-                  if (_isBooleanFilter(filter)) {
-                    final isActive =
-                        _tempSelectedFilters.containsKey(filter.filter) &&
-                        _tempSelectedFilters[filter.filter] == '1';
-                    return SwitchListTile(
-                      value: isActive,
-                      onChanged: (value) {
-                        setState(() {
-                          if (value) {
-                            _tempSelectedFilters[filter.filter] = '1';
-                          } else {
-                            _tempSelectedFilters.remove(filter.filter);
-                          }
-                        });
-                        _applyFilters();
-                      },
-                      title: Text(filter.title),
-                    );
-                  }
-
-                  // Regular navigable filters - show selected value instead of checkmark
-                  final selectedValue = _tempSelectedFilters[filter.filter];
-                  String? displayValue;
-                  if (selectedValue != null) {
-                    // Try to get the cached display name, fall back to the value itself
-                    displayValue =
-                        _filterDisplayNames['${filter.filter}:$selectedValue'] ??
-                        selectedValue;
-                  }
-
-                  return ListTile(
-                    title: Text(filter.title),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (displayValue != null)
-                          Flexible(
-                            child: Text(
-                              displayValue,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        if (displayValue != null) const SizedBox(width: 8),
-                        const Icon(Icons.chevron_right),
-                      ],
-                    ),
-                    onTap: () => _loadFilterValues(filter),
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _SortBottomSheet extends StatefulWidget {
-  final List<PlexSort> sortOptions;
-  final PlexSort? selectedSort;
-  final bool isSortDescending;
-  final Function(PlexSort, bool) onSortChanged;
-
-  const _SortBottomSheet({
-    required this.sortOptions,
-    required this.selectedSort,
-    required this.isSortDescending,
-    required this.onSortChanged,
-  });
-
-  @override
-  State<_SortBottomSheet> createState() => _SortBottomSheetState();
-}
-
-class _SortBottomSheetState extends State<_SortBottomSheet> {
-  late PlexSort? _tempSelectedSort;
-  late bool _tempDescending;
-
-  @override
-  void initState() {
-    super.initState();
-    _tempSelectedSort = widget.selectedSort;
-    _tempDescending = widget.isSortDescending;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.4,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      t.libraries.sortBy,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-
-            // Sort options list
-            Expanded(
-              child: RadioGroup<String>(
-                groupValue: _tempSelectedSort?.key,
-                onChanged: (value) {
-                  final sort = widget.sortOptions.firstWhere(
-                    (s) => s.key == value,
-                  );
-                  setState(() {
-                    _tempSelectedSort = sort;
-                    // Use default direction for newly selected sort
-                    _tempDescending = sort.isDefaultDescending;
-                  });
-                  // Apply sort immediately with default direction
-                  widget.onSortChanged(sort, sort.isDefaultDescending);
-                },
-                child: ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: widget.sortOptions.length,
-                  itemBuilder: (context, index) {
-                    final sort = widget.sortOptions[index];
-                    final isSelected = _tempSelectedSort?.key == sort.key;
-
-                    return ListTile(
-                      title: Text(sort.title),
-                      trailing: isSelected
-                          ? Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Direction toggle buttons
-                                SegmentedButton<bool>(
-                                  showSelectedIcon: false,
-                                  segments: const [
-                                    ButtonSegment(
-                                      value: false,
-                                      icon: Icon(Icons.arrow_upward, size: 16),
-                                    ),
-                                    ButtonSegment(
-                                      value: true,
-                                      icon: Icon(
-                                        Icons.arrow_downward,
-                                        size: 16,
-                                      ),
-                                    ),
-                                  ],
-                                  selected: {_tempDescending},
-                                  onSelectionChanged: (Set<bool> selected) {
-                                    widget.onSortChanged(sort, selected.first);
-                                  },
-                                ),
-                              ],
-                            )
-                          : null,
-                      leading: Radio<String>(
-                        value: sort.key,
-                        toggleable: false,
-                      ),
-                      onTap: () {
-                        setState(() {
-                          _tempSelectedSort = sort;
-                          // Use default direction for newly selected sort
-                          _tempDescending = sort.isDefaultDescending;
-                        });
-                        // Apply sort immediately with default direction
-                        widget.onSortChanged(sort, sort.isDefaultDescending);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 }
 

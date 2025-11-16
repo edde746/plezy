@@ -92,6 +92,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       appLogger.d('Preferred subtitle track: $subtitleDesc');
     }
 
+    // Update current item in playback state provider
+    try {
+      final playbackState = context.read<PlaybackStateProvider>();
+
+      // If this item doesn't have a playQueueItemID, it's a standalone item
+      // Clear any existing queue so next/previous work correctly for this content
+      if (widget.metadata.playQueueItemID == null) {
+        playbackState.clearShuffle();
+      } else {
+        playbackState.setCurrentItem(widget.metadata);
+      }
+    } catch (e) {
+      // Provider might not be available yet
+    }
+
     // Register app lifecycle observer
     WidgetsBinding.instance.addObserver(this);
 
@@ -301,11 +316,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (playbackState.isPlaylistActive) {
         // For playlists, always use the queue regardless of item type
         // Playlists can contain both movies and episodes
-        next = playbackState.getNextEpisode(
+        next = await playbackState.getNextEpisode(
           widget.metadata.ratingKey,
           loopQueue: false, // Don't loop playlists by default
         );
-        previous = playbackState.getPreviousEpisode(widget.metadata.ratingKey);
+        previous = await playbackState.getPreviousEpisode(widget.metadata.ratingKey);
       }
       // Check if shuffle mode is active
       else if (playbackState.isShuffleActive) {
@@ -320,11 +335,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
         if (shuffleOrderNavigation) {
           // Use shuffled order for next/previous
-          next = playbackState.getNextEpisode(
+          next = await playbackState.getNextEpisode(
             widget.metadata.ratingKey,
             loopQueue: loopQueue,
           );
-          previous = playbackState.getPreviousEpisode(
+          previous = await playbackState.getPreviousEpisode(
             widget.metadata.ratingKey,
           );
         } else {

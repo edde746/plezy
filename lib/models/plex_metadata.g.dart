@@ -37,12 +37,15 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   viewCount: (json['viewCount'] as num?)?.toInt(),
   leafCount: (json['leafCount'] as num?)?.toInt(),
   viewedLeafCount: (json['viewedLeafCount'] as num?)?.toInt(),
+  childCount: (json['childCount'] as num?)?.toInt(),
   role: (json['Role'] as List<dynamic>?)
       ?.map((e) => PlexRole.fromJson(e as Map<String, dynamic>))
       .toList(),
   audioLanguage: json['audioLanguage'] as String?,
   subtitleLanguage: json['subtitleLanguage'] as String?,
   playlistItemID: (json['playlistItemID'] as num?)?.toInt(),
+  playQueueItemID: (json['playQueueItemID'] as num?)?.toInt(),
+  librarySectionID: (json['librarySectionID'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
@@ -77,8 +80,11 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
       'viewCount': instance.viewCount,
       'leafCount': instance.leafCount,
       'viewedLeafCount': instance.viewedLeafCount,
+      'childCount': instance.childCount,
       'Role': instance.role,
       'audioLanguage': instance.audioLanguage,
       'subtitleLanguage': instance.subtitleLanguage,
       'playlistItemID': instance.playlistItemID,
+      'playQueueItemID': instance.playQueueItemID,
+      'librarySectionID': instance.librarySectionID,
     };

@@ -132,7 +132,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
         : 0.0;
 
     return MediaContextMenu(
-      metadata: episode,
+      item: episode,
       onRefresh: updateItem,
       onTap: () async {
         await navigateToVideoPlayer(context, metadata: episode);

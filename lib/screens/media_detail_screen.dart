@@ -953,7 +953,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: MediaContextMenu(
-        metadata: season,
+        item: season,
         onRefresh: (ratingKey) {
           _watchStateChanged = true;
           _updateWatchState();
