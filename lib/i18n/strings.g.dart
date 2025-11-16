@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2160 (360 per locale)
+/// Strings: 2310 (385 per locale)
 ///
-/// Built on 2025-11-16 at 03:49 UTC
+/// Built on 2025-11-16 at 04:20 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -864,6 +864,7 @@ class _StringsDe implements Translations {
 	@override late final _StringsPinEntryDe pinEntry = _StringsPinEntryDe._(_root);
 	@override late final _StringsFileInfoDe fileInfo = _StringsFileInfoDe._(_root);
 	@override late final _StringsMediaMenuDe mediaMenu = _StringsMediaMenuDe._(_root);
+	@override late final _StringsAccessibilityDe accessibility = _StringsAccessibilityDe._(_root);
 	@override late final _StringsTooltipsDe tooltips = _StringsTooltipsDe._(_root);
 	@override late final _StringsVideoControlsDe videoControls = _StringsVideoControlsDe._(_root);
 	@override late final _StringsUserStatusDe userStatus = _StringsUserStatusDe._(_root);
@@ -1142,6 +1143,22 @@ class _StringsMediaMenuDe implements _StringsMediaMenuEn {
 	@override String get fileInfo => 'Dateiinfo';
 }
 
+// Path: accessibility
+class _StringsAccessibilityDe implements _StringsAccessibilityEn {
+	_StringsAccessibilityDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, movie';
+	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'watched';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	@override String get mediaCardUnwatched => 'unwatched';
+}
+
 // Path: tooltips
 class _StringsTooltipsDe implements _StringsTooltipsEn {
 	_StringsTooltipsDe._(this._root);
@@ -1174,6 +1191,29 @@ class _StringsVideoControlsDe implements _StringsVideoControlsEn {
 	@override String get stretch => 'Strecken';
 	@override String get lockRotation => 'Rotation sperren';
 	@override String get unlockRotation => 'Rotation entsperren';
+	@override String get playButton => 'Play';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	@override String get previousButton => 'Previous episode';
+	@override String get nextButton => 'Next episode';
+	@override String get previousChapterButton => 'Previous chapter';
+	@override String get nextChapterButton => 'Next chapter';
+	@override String get volumeButton => 'Volume';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Unmute';
+	@override String get settingsButton => 'Video settings';
+	@override String get audioTrackButton => 'Audio tracks';
+	@override String get subtitlesButton => 'Subtitles';
+	@override String get chaptersButton => 'Chapters';
+	@override String get versionsButton => 'Video versions';
+	@override String get aspectRatioButton => 'Aspect ratio';
+	@override String get fullscreenButton => 'Enter fullscreen';
+	@override String get exitFullscreenButton => 'Exit fullscreen';
+	@override String get rotationLockButton => 'Rotation lock';
+	@override String get timelineSlider => 'Video timeline';
+	@override String get volumeSlider => 'Volume level';
+	@override String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -1525,6 +1565,7 @@ class _StringsIt implements Translations {
 	@override late final _StringsPinEntryIt pinEntry = _StringsPinEntryIt._(_root);
 	@override late final _StringsFileInfoIt fileInfo = _StringsFileInfoIt._(_root);
 	@override late final _StringsMediaMenuIt mediaMenu = _StringsMediaMenuIt._(_root);
+	@override late final _StringsAccessibilityIt accessibility = _StringsAccessibilityIt._(_root);
 	@override late final _StringsTooltipsIt tooltips = _StringsTooltipsIt._(_root);
 	@override late final _StringsVideoControlsIt videoControls = _StringsVideoControlsIt._(_root);
 	@override late final _StringsUserStatusIt userStatus = _StringsUserStatusIt._(_root);
@@ -1803,6 +1844,22 @@ class _StringsMediaMenuIt implements _StringsMediaMenuEn {
 	@override String get fileInfo => 'Info sul file';
 }
 
+// Path: accessibility
+class _StringsAccessibilityIt implements _StringsAccessibilityEn {
+	_StringsAccessibilityIt._(this._root);
+
+	@override final _StringsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, movie';
+	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'watched';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	@override String get mediaCardUnwatched => 'unwatched';
+}
+
 // Path: tooltips
 class _StringsTooltipsIt implements _StringsTooltipsEn {
 	_StringsTooltipsIt._(this._root);
@@ -1835,6 +1892,29 @@ class _StringsVideoControlsIt implements _StringsVideoControlsEn {
 	@override String get stretch => 'Allunga';
 	@override String get lockRotation => 'Blocca rotazione';
 	@override String get unlockRotation => 'Sblocca rotazione';
+	@override String get playButton => 'Play';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	@override String get previousButton => 'Previous episode';
+	@override String get nextButton => 'Next episode';
+	@override String get previousChapterButton => 'Previous chapter';
+	@override String get nextChapterButton => 'Next chapter';
+	@override String get volumeButton => 'Volume';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Unmute';
+	@override String get settingsButton => 'Video settings';
+	@override String get audioTrackButton => 'Audio tracks';
+	@override String get subtitlesButton => 'Subtitles';
+	@override String get chaptersButton => 'Chapters';
+	@override String get versionsButton => 'Video versions';
+	@override String get aspectRatioButton => 'Aspect ratio';
+	@override String get fullscreenButton => 'Enter fullscreen';
+	@override String get exitFullscreenButton => 'Exit fullscreen';
+	@override String get rotationLockButton => 'Rotation lock';
+	@override String get timelineSlider => 'Video timeline';
+	@override String get volumeSlider => 'Volume level';
+	@override String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -2186,6 +2266,7 @@ class _StringsNl implements Translations {
 	@override late final _StringsPinEntryNl pinEntry = _StringsPinEntryNl._(_root);
 	@override late final _StringsFileInfoNl fileInfo = _StringsFileInfoNl._(_root);
 	@override late final _StringsMediaMenuNl mediaMenu = _StringsMediaMenuNl._(_root);
+	@override late final _StringsAccessibilityNl accessibility = _StringsAccessibilityNl._(_root);
 	@override late final _StringsTooltipsNl tooltips = _StringsTooltipsNl._(_root);
 	@override late final _StringsVideoControlsNl videoControls = _StringsVideoControlsNl._(_root);
 	@override late final _StringsUserStatusNl userStatus = _StringsUserStatusNl._(_root);
@@ -2464,6 +2545,22 @@ class _StringsMediaMenuNl implements _StringsMediaMenuEn {
 	@override String get fileInfo => 'Bestand info';
 }
 
+// Path: accessibility
+class _StringsAccessibilityNl implements _StringsAccessibilityEn {
+	_StringsAccessibilityNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, movie';
+	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'watched';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	@override String get mediaCardUnwatched => 'unwatched';
+}
+
 // Path: tooltips
 class _StringsTooltipsNl implements _StringsTooltipsEn {
 	_StringsTooltipsNl._(this._root);
@@ -2496,6 +2593,29 @@ class _StringsVideoControlsNl implements _StringsVideoControlsEn {
 	@override String get stretch => 'Uitrekken';
 	@override String get lockRotation => 'Vergrendel rotatie';
 	@override String get unlockRotation => 'Ontgrendel rotatie';
+	@override String get playButton => 'Play';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	@override String get previousButton => 'Previous episode';
+	@override String get nextButton => 'Next episode';
+	@override String get previousChapterButton => 'Previous chapter';
+	@override String get nextChapterButton => 'Next chapter';
+	@override String get volumeButton => 'Volume';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Unmute';
+	@override String get settingsButton => 'Video settings';
+	@override String get audioTrackButton => 'Audio tracks';
+	@override String get subtitlesButton => 'Subtitles';
+	@override String get chaptersButton => 'Chapters';
+	@override String get versionsButton => 'Video versions';
+	@override String get aspectRatioButton => 'Aspect ratio';
+	@override String get fullscreenButton => 'Enter fullscreen';
+	@override String get exitFullscreenButton => 'Exit fullscreen';
+	@override String get rotationLockButton => 'Rotation lock';
+	@override String get timelineSlider => 'Video timeline';
+	@override String get volumeSlider => 'Volume level';
+	@override String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -2847,6 +2967,7 @@ class _StringsSv implements Translations {
 	@override late final _StringsPinEntrySv pinEntry = _StringsPinEntrySv._(_root);
 	@override late final _StringsFileInfoSv fileInfo = _StringsFileInfoSv._(_root);
 	@override late final _StringsMediaMenuSv mediaMenu = _StringsMediaMenuSv._(_root);
+	@override late final _StringsAccessibilitySv accessibility = _StringsAccessibilitySv._(_root);
 	@override late final _StringsTooltipsSv tooltips = _StringsTooltipsSv._(_root);
 	@override late final _StringsVideoControlsSv videoControls = _StringsVideoControlsSv._(_root);
 	@override late final _StringsUserStatusSv userStatus = _StringsUserStatusSv._(_root);
@@ -3125,6 +3246,22 @@ class _StringsMediaMenuSv implements _StringsMediaMenuEn {
 	@override String get fileInfo => 'Filinformation';
 }
 
+// Path: accessibility
+class _StringsAccessibilitySv implements _StringsAccessibilityEn {
+	_StringsAccessibilitySv._(this._root);
+
+	@override final _StringsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, movie';
+	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'watched';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	@override String get mediaCardUnwatched => 'unwatched';
+}
+
 // Path: tooltips
 class _StringsTooltipsSv implements _StringsTooltipsEn {
 	_StringsTooltipsSv._(this._root);
@@ -3157,6 +3294,29 @@ class _StringsVideoControlsSv implements _StringsVideoControlsEn {
 	@override String get stretch => 'Sträck';
 	@override String get lockRotation => 'Lås rotation';
 	@override String get unlockRotation => 'Lås upp rotation';
+	@override String get playButton => 'Play';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	@override String get previousButton => 'Previous episode';
+	@override String get nextButton => 'Next episode';
+	@override String get previousChapterButton => 'Previous chapter';
+	@override String get nextChapterButton => 'Next chapter';
+	@override String get volumeButton => 'Volume';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Unmute';
+	@override String get settingsButton => 'Video settings';
+	@override String get audioTrackButton => 'Audio tracks';
+	@override String get subtitlesButton => 'Subtitles';
+	@override String get chaptersButton => 'Chapters';
+	@override String get versionsButton => 'Video versions';
+	@override String get aspectRatioButton => 'Aspect ratio';
+	@override String get fullscreenButton => 'Enter fullscreen';
+	@override String get exitFullscreenButton => 'Exit fullscreen';
+	@override String get rotationLockButton => 'Rotation lock';
+	@override String get timelineSlider => 'Video timeline';
+	@override String get volumeSlider => 'Volume level';
+	@override String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -3508,6 +3668,7 @@ class _StringsZh implements Translations {
 	@override late final _StringsPinEntryZh pinEntry = _StringsPinEntryZh._(_root);
 	@override late final _StringsFileInfoZh fileInfo = _StringsFileInfoZh._(_root);
 	@override late final _StringsMediaMenuZh mediaMenu = _StringsMediaMenuZh._(_root);
+	@override late final _StringsAccessibilityZh accessibility = _StringsAccessibilityZh._(_root);
 	@override late final _StringsTooltipsZh tooltips = _StringsTooltipsZh._(_root);
 	@override late final _StringsVideoControlsZh videoControls = _StringsVideoControlsZh._(_root);
 	@override late final _StringsUserStatusZh userStatus = _StringsUserStatusZh._(_root);
@@ -3786,6 +3947,22 @@ class _StringsMediaMenuZh implements _StringsMediaMenuEn {
 	@override String get fileInfo => '文件信息';
 }
 
+// Path: accessibility
+class _StringsAccessibilityZh implements _StringsAccessibilityEn {
+	_StringsAccessibilityZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, movie';
+	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'watched';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	@override String get mediaCardUnwatched => 'unwatched';
+}
+
 // Path: tooltips
 class _StringsTooltipsZh implements _StringsTooltipsEn {
 	_StringsTooltipsZh._(this._root);
@@ -3818,6 +3995,29 @@ class _StringsVideoControlsZh implements _StringsVideoControlsEn {
 	@override String get stretch => '拉伸';
 	@override String get lockRotation => '锁定旋转';
 	@override String get unlockRotation => '解锁旋转';
+	@override String get playButton => 'Play';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	@override String get previousButton => 'Previous episode';
+	@override String get nextButton => 'Next episode';
+	@override String get previousChapterButton => 'Previous chapter';
+	@override String get nextChapterButton => 'Next chapter';
+	@override String get volumeButton => 'Volume';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Unmute';
+	@override String get settingsButton => 'Video settings';
+	@override String get audioTrackButton => 'Audio tracks';
+	@override String get subtitlesButton => 'Subtitles';
+	@override String get chaptersButton => 'Chapters';
+	@override String get versionsButton => 'Video versions';
+	@override String get aspectRatioButton => 'Aspect ratio';
+	@override String get fullscreenButton => 'Enter fullscreen';
+	@override String get exitFullscreenButton => 'Exit fullscreen';
+	@override String get rotationLockButton => 'Rotation lock';
+	@override String get timelineSlider => 'Video timeline';
+	@override String get volumeSlider => 'Volume level';
+	@override String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -4693,6 +4893,13 @@ extension on _StringsDe {
 			case 'mediaMenu.goToSeason': return 'Zur Staffel';
 			case 'mediaMenu.shufflePlay': return 'Zufallswiedergabe';
 			case 'mediaMenu.fileInfo': return 'Dateiinfo';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
 			case 'tooltips.shufflePlay': return 'Zufallswiedergabe';
 			case 'tooltips.markAsWatched': return 'Als gesehen markieren';
 			case 'tooltips.markAsUnwatched': return 'Als ungesehen markieren';
@@ -4709,6 +4916,29 @@ extension on _StringsDe {
 			case 'videoControls.stretch': return 'Strecken';
 			case 'videoControls.lockRotation': return 'Rotation sperren';
 			case 'videoControls.unlockRotation': return 'Rotation entsperren';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return 'Eigentümer';
 			case 'userStatus.restricted': return 'Eingeschränkt';
 			case 'userStatus.protected': return 'Geschützt';
@@ -5056,6 +5286,13 @@ extension on _StringsIt {
 			case 'mediaMenu.goToSeason': return 'Vai alla stagione';
 			case 'mediaMenu.shufflePlay': return 'Riproduzione casuale';
 			case 'mediaMenu.fileInfo': return 'Info sul file';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
 			case 'tooltips.shufflePlay': return 'Riproduzione casuale';
 			case 'tooltips.markAsWatched': return 'Segna come visto';
 			case 'tooltips.markAsUnwatched': return 'Segna come non visto';
@@ -5072,6 +5309,29 @@ extension on _StringsIt {
 			case 'videoControls.stretch': return 'Allunga';
 			case 'videoControls.lockRotation': return 'Blocca rotazione';
 			case 'videoControls.unlockRotation': return 'Sblocca rotazione';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Limitato';
 			case 'userStatus.protected': return 'Protetto';
@@ -5419,6 +5679,13 @@ extension on _StringsNl {
 			case 'mediaMenu.goToSeason': return 'Ga naar seizoen';
 			case 'mediaMenu.shufflePlay': return 'Willekeurig afspelen';
 			case 'mediaMenu.fileInfo': return 'Bestand info';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
 			case 'tooltips.shufflePlay': return 'Willekeurig afspelen';
 			case 'tooltips.markAsWatched': return 'Markeer als gekeken';
 			case 'tooltips.markAsUnwatched': return 'Markeer als ongekeken';
@@ -5435,6 +5702,29 @@ extension on _StringsNl {
 			case 'videoControls.stretch': return 'Uitrekken';
 			case 'videoControls.lockRotation': return 'Vergrendel rotatie';
 			case 'videoControls.unlockRotation': return 'Ontgrendel rotatie';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return 'Beheerder';
 			case 'userStatus.restricted': return 'Beperkt';
 			case 'userStatus.protected': return 'Beschermd';
@@ -5782,6 +6072,13 @@ extension on _StringsSv {
 			case 'mediaMenu.goToSeason': return 'Gå till säsong';
 			case 'mediaMenu.shufflePlay': return 'Blanda uppspelning';
 			case 'mediaMenu.fileInfo': return 'Filinformation';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
 			case 'tooltips.shufflePlay': return 'Blanda uppspelning';
 			case 'tooltips.markAsWatched': return 'Markera som sedd';
 			case 'tooltips.markAsUnwatched': return 'Markera som osedd';
@@ -5798,6 +6095,29 @@ extension on _StringsSv {
 			case 'videoControls.stretch': return 'Sträck';
 			case 'videoControls.lockRotation': return 'Lås rotation';
 			case 'videoControls.unlockRotation': return 'Lås upp rotation';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Begränsad';
 			case 'userStatus.protected': return 'Skyddad';
@@ -6145,6 +6465,13 @@ extension on _StringsZh {
 			case 'mediaMenu.goToSeason': return '转到季';
 			case 'mediaMenu.shufflePlay': return '随机播放';
 			case 'mediaMenu.fileInfo': return '文件信息';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
 			case 'tooltips.shufflePlay': return '随机播放';
 			case 'tooltips.markAsWatched': return '标记为已观看';
 			case 'tooltips.markAsUnwatched': return '标记为未观看';
@@ -6161,6 +6488,29 @@ extension on _StringsZh {
 			case 'videoControls.stretch': return '拉伸';
 			case 'videoControls.lockRotation': return '锁定旋转';
 			case 'videoControls.unlockRotation': return '解锁旋转';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return '管理员';
 			case 'userStatus.restricted': return '受限';
 			case 'userStatus.protected': return '受保护';
