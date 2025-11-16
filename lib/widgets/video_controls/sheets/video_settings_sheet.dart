@@ -4,9 +4,64 @@ import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/platform_detector.dart';
 import '../widgets/sync_offset_control.dart';
+import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
 
 enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice }
+
+/// Reusable menu item widget for settings sheet
+class _SettingsMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String valueText;
+  final VoidCallback onTap;
+  final bool isHighlighted;
+  final bool allowValueOverflow;
+
+  const _SettingsMenuItem({
+    required this.icon,
+    required this.title,
+    required this.valueText,
+    required this.onTap,
+    this.isHighlighted = false,
+    this.allowValueOverflow = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final valueWidget = Text(
+      valueText,
+      style: TextStyle(
+        color: isHighlighted ? Colors.amber : Colors.white70,
+        fontSize: 14,
+      ),
+      overflow: allowValueOverflow ? TextOverflow.ellipsis : null,
+    );
+
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isHighlighted ? Colors.amber : Colors.white70,
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(color: Colors.white),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (allowValueOverflow)
+            Flexible(child: valueWidget)
+          else
+            valueWidget,
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right, color: Colors.white70),
+        ],
+      ),
+      onTap: onTap,
+    );
+  }
+}
 
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
@@ -139,19 +194,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     }
   }
 
-  String _formatSleepTimerDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    } else {
-      return '${seconds}s';
-    }
-  }
 
   Widget _buildHeader() {
     final sleepTimer = SleepTimerService();
@@ -204,23 +246,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           initialData: widget.player.state.rate,
           builder: (context, snapshot) {
             final currentRate = snapshot.data ?? 1.0;
-            return ListTile(
-              leading: const Icon(Icons.speed, color: Colors.white70),
-              title: const Text(
-                'Playback Speed',
-                style: TextStyle(color: Colors.white),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatSpeed(currentRate),
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right, color: Colors.white70),
-                ],
-              ),
+            return _SettingsMenuItem(
+              icon: Icons.speed,
+              title: 'Playback Speed',
+              valueText: _formatSpeed(currentRate),
               onTap: () => _navigateTo(_SettingsView.speed),
             );
           },
@@ -231,87 +260,31 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           listenable: sleepTimer,
           builder: (context, _) {
             final isActive = sleepTimer.isActive;
-            return ListTile(
-              leading: Icon(
-                isActive ? Icons.bedtime : Icons.bedtime_outlined,
-                color: isActive ? Colors.amber : Colors.white70,
-              ),
-              title: const Text(
-                'Sleep Timer',
-                style: TextStyle(color: Colors.white),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatSleepTimer(sleepTimer),
-                    style: TextStyle(
-                      color: isActive ? Colors.amber : Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right, color: Colors.white70),
-                ],
-              ),
+            return _SettingsMenuItem(
+              icon: isActive ? Icons.bedtime : Icons.bedtime_outlined,
+              title: 'Sleep Timer',
+              valueText: _formatSleepTimer(sleepTimer),
+              isHighlighted: isActive,
               onTap: () => _navigateTo(_SettingsView.sleep),
             );
           },
         ),
 
         // Audio Sync
-        ListTile(
-          leading: Icon(
-            Icons.sync,
-            color: _audioSyncOffset != 0 ? Colors.amber : Colors.white70,
-          ),
-          title: const Text(
-            'Audio Sync',
-            style: TextStyle(color: Colors.white),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _formatAudioSync(_audioSyncOffset),
-                style: TextStyle(
-                  color: _audioSyncOffset != 0 ? Colors.amber : Colors.white70,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.white70),
-            ],
-          ),
+        _SettingsMenuItem(
+          icon: Icons.sync,
+          title: 'Audio Sync',
+          valueText: _formatAudioSync(_audioSyncOffset),
+          isHighlighted: _audioSyncOffset != 0,
           onTap: () => _navigateTo(_SettingsView.audioSync),
         ),
 
         // Subtitle Sync
-        ListTile(
-          leading: Icon(
-            Icons.subtitles,
-            color: _subtitleSyncOffset != 0 ? Colors.amber : Colors.white70,
-          ),
-          title: const Text(
-            'Subtitle Sync',
-            style: TextStyle(color: Colors.white),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _formatAudioSync(_subtitleSyncOffset),
-                style: TextStyle(
-                  color: _subtitleSyncOffset != 0
-                      ? Colors.amber
-                      : Colors.white70,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.white70),
-            ],
-          ),
+        _SettingsMenuItem(
+          icon: Icons.subtitles,
+          title: 'Subtitle Sync',
+          valueText: _formatAudioSync(_subtitleSyncOffset),
+          isHighlighted: _subtitleSyncOffset != 0,
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),
 
@@ -327,29 +300,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                   ? currentDevice.name
                   : currentDevice.description;
 
-              return ListTile(
-                leading: const Icon(Icons.speaker, color: Colors.white70),
-                title: const Text(
-                  'Audio Output',
-                  style: TextStyle(color: Colors.white),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        deviceLabel,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right, color: Colors.white70),
-                  ],
-                ),
+              return _SettingsMenuItem(
+                icon: Icons.speaker,
+                title: 'Audio Output',
+                valueText: deviceLabel,
+                allowValueOverflow: true,
                 onTap: () => _navigateTo(_SettingsView.audioDevice),
               );
             },
@@ -399,119 +354,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget _buildSleepView() {
     final sleepTimer = SleepTimerService();
 
-    return ListenableBuilder(
-      listenable: sleepTimer,
-      builder: (context, _) {
-        final durations = [5, 10, 15, 30, 45, 60, 90, 120];
-        final remainingTime = sleepTimer.remainingTime;
-
-        return Column(
-          children: [
-            // Active timer status
-            if (sleepTimer.isActive && remainingTime != null) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.amber.withValues(alpha: 0.1),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Timer Active',
-                      style: TextStyle(
-                        color: Colors.amber,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Playback will pause in ${_formatSleepTimerDuration(remainingTime)}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.add),
-                          label: Text(
-                            t.videoControls.addTime(amount: "15", unit: " min"),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white54),
-                          ),
-                          onPressed: () {
-                            sleepTimer.extendTimer(const Duration(minutes: 15));
-                          },
-                        ),
-                        const SizedBox(width: 12),
-                        FilledButton.icon(
-                          icon: const Icon(Icons.cancel),
-                          label: Text(t.common.cancel),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.red,
-                          ),
-                          onPressed: () {
-                            sleepTimer.cancelTimer();
-                            Navigator.pop(context); // Close after cancel
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(color: Colors.white24, height: 1),
-            ],
-
-            // Duration list
-            Expanded(
-              child: ListView.builder(
-                itemCount: durations.length,
-                itemBuilder: (context, index) {
-                  final minutes = durations[index];
-                  final label = minutes < 60
-                      ? '$minutes minutes'
-                      : '${(minutes / 60).toStringAsFixed(minutes % 60 == 0 ? 0 : 1)} ${minutes == 60 ? 'hour' : 'hours'}';
-
-                  return ListTile(
-                    leading: const Icon(Icons.timer, color: Colors.white70),
-                    title: Text(
-                      label,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    onTap: () {
-                      sleepTimer.startTimer(Duration(minutes: minutes), () {
-                        widget.player.pause();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Sleep timer completed - playback paused',
-                              ),
-                              duration: Duration(seconds: 3),
-                            ),
-                          );
-                        }
-                      });
-                      Navigator.pop(context); // Close after selection
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(t.messages.sleepTimerSet(label: label)),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
+    return SleepTimerContent(
+      player: widget.player,
+      sleepTimer: sleepTimer,
+      onCancel: () => Navigator.pop(context),
     );
   }
 

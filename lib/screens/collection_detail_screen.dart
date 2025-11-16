@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/settings_provider.dart';
-import '../services/settings_service.dart';
-import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
-import '../utils/collection_playlist_play_helper.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../mixins/refreshable.dart';
-import '../mixins/item_updatable.dart';
 import '../i18n/strings.g.dart';
 import '../utils/grid_size_calculator.dart';
+import '../utils/dialogs.dart';
+import '../utils/provider_extensions.dart';
+import 'base_media_list_detail_screen.dart';
 
 /// Screen to display the contents of a collection
 class CollectionDetailScreen extends StatefulWidget {
@@ -24,112 +21,49 @@ class CollectionDetailScreen extends StatefulWidget {
   State<CollectionDetailScreen> createState() => _CollectionDetailScreenState();
 }
 
-class _CollectionDetailScreenState extends State<CollectionDetailScreen>
-    with Refreshable, ItemUpdatable {
+class _CollectionDetailScreenState
+    extends BaseMediaListDetailScreen<CollectionDetailScreen> {
   @override
-  PlexClient get client => context.clientSafe;
-
-  List<PlexMetadata> _items = [];
-  bool _isLoading = false;
-  String? _errorMessage;
+  PlexMetadata get mediaItem => widget.collection;
 
   @override
-  void initState() {
-    super.initState();
-    _loadCollectionItems();
-  }
+  String get title => widget.collection.title;
 
-  Future<void> _loadCollectionItems() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  @override
+  String get emptyMessage => t.collections.empty;
+
+  @override
+  Future<void> loadItems() async {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+    }
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
+      final client = this.client;
+      final newItems = await client.getCollectionItems(widget.collection.ratingKey);
+
+      if (mounted) {
+        setState(() {
+          items = newItems;
+          isLoading = false;
+        });
       }
 
-      final items = await client.getCollectionItems(widget.collection.ratingKey);
-
-      setState(() {
-        _items = items;
-        _isLoading = false;
-      });
-
       appLogger.d(
-        'Loaded ${items.length} items for collection: ${widget.collection.title}',
+        'Loaded ${newItems.length} items for collection: ${widget.collection.title}',
       );
     } catch (e) {
       appLogger.e('Failed to load collection items', error: e);
-      setState(() {
-        _errorMessage = t.collections.failedToLoadItems(
-          error: e.toString(),
-        );
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  void refresh() {
-    _loadCollectionItems();
-  }
-
-  @override
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
-    setState(() {
-      final index = _items.indexWhere((item) => item.ratingKey == ratingKey);
-      if (index != -1) {
-        _items[index] = updatedMetadata;
-      }
-    });
-  }
-
-  Future<void> _playCollection() async {
-    if (_items.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.collections.empty)),
-        );
+        setState(() {
+          errorMessage = t.collections.failedToLoadItems(error: e.toString());
+          isLoading = false;
+        });
       }
-      return;
     }
-
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
-    if (client == null) return;
-
-    await playCollectionOrPlaylist(
-      context: context,
-      client: client,
-      item: widget.collection,
-      shuffle: false,
-    );
-  }
-
-  Future<void> _shufflePlayCollection() async {
-    if (_items.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.collections.empty)),
-        );
-      }
-      return;
-    }
-
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
-    if (client == null) return;
-
-    await playCollectionOrPlaylist(
-      context: context,
-      client: client,
-      item: widget.collection,
-      shuffle: true,
-    );
   }
 
   Future<void> _deleteCollection() async {
@@ -137,8 +71,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     int? sectionId = widget.collection.librarySectionID;
 
     // If collection doesn't have it, try to get it from loaded items
-    if (sectionId == null && _items.isNotEmpty) {
-      sectionId = _items.first.librarySectionID;
+    if (sectionId == null && items.isNotEmpty) {
+      sectionId = items.first.librarySectionID;
     }
 
     if (sectionId == null) {
@@ -151,28 +85,14 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     }
 
     // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.collections.deleteCollection),
-        content: Text(
-          t.collections.deleteConfirm(title: widget.collection.title),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(t.common.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(t.common.delete),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: t.collections.deleteCollection,
+      message: t.collections.deleteConfirm(title: widget.collection.title),
     );
 
     if (confirmed != true) return;
+    if (!mounted) return;
 
     try {
       final clientProvider = context.plexClient;
@@ -183,6 +103,8 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
         sectionId.toString(),
         widget.collection.ratingKey,
       );
+
+      if (!mounted) return;
 
       if (mounted) {
         if (success) {
@@ -221,18 +143,18 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
             pinned: true,
             actions: [
               // Play button
-              if (_items.isNotEmpty)
+              if (items.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.play_arrow),
                   tooltip: t.discover.play,
-                  onPressed: _playCollection,
+                  onPressed: playItems,
                 ),
               // Shuffle button
-              if (_items.isNotEmpty)
+              if (items.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.shuffle),
                   tooltip: t.common.shuffle,
-                  onPressed: _shufflePlayCollection,
+                  onPressed: shufflePlayItems,
                 ),
               // Delete button
               IconButton(
@@ -243,7 +165,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
               ),
             ],
           ),
-          if (_errorMessage != null)
+          if (errorMessage != null)
             SliverFillRemaining(
               child: Center(
                 child: Column(
@@ -255,21 +177,21 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                       color: Colors.red,
                     ),
                     const SizedBox(height: 16),
-                    Text(_errorMessage!),
+                    Text(errorMessage!),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: _loadCollectionItems,
+                      onPressed: loadItems,
                       child: Text(t.common.retry),
                     ),
                   ],
                 ),
               ),
             )
-          else if (_items.isEmpty && _isLoading)
+          else if (items.isEmpty && isLoading)
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (_items.isEmpty)
+          else if (items.isEmpty)
             SliverFillRemaining(
               child: Center(
                 child: Text(t.collections.noItems),
@@ -292,16 +214,16 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        final item = _items[index];
+                        final item = items[index];
                         return MediaCard(
                           key: Key(item.ratingKey),
                           item: item,
                           onRefresh: updateItem,
                           collectionId: widget.collection.ratingKey,
-                          onListRefresh: _loadCollectionItems,
+                          onListRefresh: loadItems,
                         );
                       },
-                      childCount: _items.length,
+                      childCount: items.length,
                     ),
                   );
                 },

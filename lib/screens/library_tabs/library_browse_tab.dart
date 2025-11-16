@@ -9,15 +9,14 @@ import '../../models/plex_sort.dart';
 import '../../providers/plex_client_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/provider_extensions.dart';
-import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../widgets/media_card.dart';
-import '../../widgets/app_bar_back_button.dart';
 import '../../widgets/folder_tree_view.dart';
 import '../../widgets/filters_bottom_sheet.dart';
 import '../../widgets/sort_bottom_sheet.dart';
 import '../../services/storage_service.dart';
-import '../../services/settings_service.dart' show LibraryDensity, ViewMode;
+import '../../services/settings_service.dart' show ViewMode;
 import '../../mixins/item_updatable.dart';
 import '../../mixins/refreshable.dart';
 import '../../i18n/strings.g.dart';
@@ -301,24 +300,11 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
 
   String _getErrorMessage(dynamic error) {
     if (error is DioException) {
-      switch (error.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.receiveTimeout:
-          return t.errors.connectionTimeout(context: t.libraries.content);
-        case DioExceptionType.connectionError:
-          return t.errors.connectionFailed;
-        default:
-          appLogger.e('Error loading library content', error: error);
-          return t.errors.failedToLoad(
-            context: t.libraries.content,
-            error: error.message ?? t.common.unknown,
-          );
-      }
+      return mapDioErrorToMessage(error, context: t.libraries.content);
     }
-    appLogger.e('Unexpected error loading library content', error: error);
-    return t.errors.failedToLoad(
+    return mapUnexpectedErrorToMessage(
+      error,
       context: t.libraries.content,
-      error: error.toString(),
     );
   }
 

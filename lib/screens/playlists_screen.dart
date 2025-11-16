@@ -3,9 +3,10 @@ import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_playlist.dart';
 import '../providers/settings_provider.dart';
-import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
+import '../utils/grid_size_calculator.dart';
+import '../utils/dialogs.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
@@ -141,7 +142,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> with Refreshable {
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: _getMaxCrossAxisExtent(
+                  maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
                     context,
                     context.watch<SettingsProvider>().libraryDensity,
                   ),
@@ -170,70 +171,6 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> with Refreshable {
       ),
     );
   }
-
-  double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = 16.0;
-    final availableWidth = screenWidth - padding;
-
-    if (screenWidth >= 900) {
-      double divisor;
-      double maxItemWidth;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 6.5;
-          maxItemWidth = 280;
-          break;
-        case LibraryDensity.normal:
-          divisor = 8.0;
-          maxItemWidth = 200;
-          break;
-        case LibraryDensity.compact:
-          divisor = 10.0;
-          maxItemWidth = 160;
-          break;
-      }
-
-      return (availableWidth / divisor).clamp(120, maxItemWidth);
-    } else if (screenWidth >= 600) {
-      double divisor;
-      double maxItemWidth;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 4.5;
-          maxItemWidth = 220;
-          break;
-        case LibraryDensity.normal:
-          divisor = 5.5;
-          maxItemWidth = 180;
-          break;
-        case LibraryDensity.compact:
-          divisor = 7.0;
-          maxItemWidth = 140;
-          break;
-      }
-
-      return (availableWidth / divisor).clamp(100, maxItemWidth);
-    } else {
-      double divisor;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 2.2;
-          break;
-        case LibraryDensity.normal:
-          divisor = 2.8;
-          break;
-        case LibraryDensity.compact:
-          divisor = 3.5;
-          break;
-      }
-
-      return availableWidth / divisor;
-    }
-  }
 }
 
 /// Widget to display a single playlist card
@@ -249,23 +186,10 @@ class _PlaylistCard extends StatelessWidget {
   });
 
   Future<void> _showDeleteDialog(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.playlists.deleteConfirm),
-        content: Text(t.playlists.deleteMessage(name: playlist.title)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(t.common.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(t.playlists.delete),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: t.playlists.deleteConfirm,
+      message: t.playlists.deleteMessage(name: playlist.title),
     );
 
     if (confirmed == true && context.mounted) {

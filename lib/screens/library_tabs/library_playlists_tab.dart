@@ -7,11 +7,12 @@ import '../../providers/plex_client_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/library_refresh_notifier.dart';
-import '../../services/settings_service.dart' show LibraryDensity, ViewMode;
+import '../../services/settings_service.dart' show ViewMode;
 import '../../utils/grid_size_calculator.dart';
 import '../../widgets/media_card.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/refreshable.dart';
+import '../../widgets/content_state_builder.dart';
 
 /// Playlists tab for library screen
 /// Shows playlists that contain items from the current library
@@ -117,82 +118,55 @@ class _LibraryPlaylistsTabState extends State<LibraryPlaylistsTab>
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
-    if (_isLoading && _playlists.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_errorMessage != null && _playlists.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_errorMessage!),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadPlaylists,
-              child: Text(t.common.retry),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_playlists.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.playlist_play, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(t.playlists.noPlaylists),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadPlaylists,
-      child: Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, child) {
-          if (settingsProvider.viewMode == ViewMode.list) {
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              itemCount: _playlists.length,
-              itemBuilder: (context, index) {
-                final playlist = _playlists[index];
-                return MediaCard(
-                  key: Key(playlist.ratingKey),
-                  item: playlist,
-                  onListRefresh: _loadPlaylists,
-                );
-              },
-            );
-          } else {
-            return GridView.builder(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-                  context,
-                  settingsProvider.libraryDensity,
+    return ContentStateBuilder<PlexPlaylist>(
+      isLoading: _isLoading,
+      errorMessage: _errorMessage,
+      items: _playlists,
+      emptyIcon: Icons.playlist_play,
+      emptyMessage: t.playlists.noPlaylists,
+      onRetry: _loadPlaylists,
+      builder: (items) => RefreshIndicator(
+        onRefresh: _loadPlaylists,
+        child: Consumer<SettingsProvider>(
+          builder: (context, settingsProvider, child) {
+            if (settingsProvider.viewMode == ViewMode.list) {
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final playlist = items[index];
+                  return MediaCard(
+                    key: Key(playlist.ratingKey),
+                    item: playlist,
+                    onListRefresh: _loadPlaylists,
+                  );
+                },
+              );
+            } else {
+              return GridView.builder(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
+                    context,
+                    settingsProvider.libraryDensity,
+                  ),
+                  childAspectRatio: 2 / 3.3,
+                  crossAxisSpacing: 0,
+                  mainAxisSpacing: 0,
                 ),
-                childAspectRatio: 2 / 3.3,
-                crossAxisSpacing: 0,
-                mainAxisSpacing: 0,
-              ),
-              itemCount: _playlists.length,
-              itemBuilder: (context, index) {
-                final playlist = _playlists[index];
-                return MediaCard(
-                  key: Key(playlist.ratingKey),
-                  item: playlist,
-                  onListRefresh: _loadPlaylists,
-                );
-              },
-            );
-          }
-        },
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final playlist = items[index];
+                  return MediaCard(
+                    key: Key(playlist.ratingKey),
+                    item: playlist,
+                    onListRefresh: _loadPlaylists,
+                  );
+                },
+              );
+            }
+          },
+        ),
       ),
     );
   }

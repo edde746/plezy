@@ -7,6 +7,7 @@ import '../../utils/app_logger.dart';
 import '../../widgets/hub_section.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/refreshable.dart';
+import '../../widgets/content_state_builder.dart';
 
 /// Recommended tab for library screen
 /// Shows library-specific hubs and recommendations
@@ -109,53 +110,26 @@ class _LibraryRecommendedTabState extends State<LibraryRecommendedTab>
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
-    if (_isLoading && _hubs.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_errorMessage != null && _hubs.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_errorMessage!),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadHubs,
-              child: Text(t.common.retry),
-            ),
-          ],
+    return ContentStateBuilder<PlexHub>(
+      isLoading: _isLoading,
+      errorMessage: _errorMessage,
+      items: _hubs,
+      emptyIcon: Icons.recommend,
+      emptyMessage: t.libraries.noRecommendations,
+      onRetry: _loadHubs,
+      builder: (items) => RefreshIndicator(
+        onRefresh: _loadHubs,
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final hub = items[index];
+            return HubSection(
+              hub: hub,
+              icon: _getHubIcon(hub),
+            );
+          },
         ),
-      );
-    }
-
-    if (_hubs.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.recommend, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(t.libraries.noRecommendations),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadHubs,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _hubs.length,
-        itemBuilder: (context, index) {
-          final hub = _hubs[index];
-          return HubSection(
-            hub: hub,
-            icon: _getHubIcon(hub),
-          );
-        },
       ),
     );
   }

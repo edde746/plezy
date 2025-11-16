@@ -4,14 +4,12 @@ import 'package:provider/provider.dart';
 import '../../models/plex_library.dart';
 import '../../models/plex_metadata.dart';
 import '../../providers/plex_client_provider.dart';
-import '../../providers/settings_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/library_refresh_notifier.dart';
-import '../../widgets/media_card.dart';
-import '../../services/settings_service.dart' show LibraryDensity, ViewMode;
-import '../../utils/grid_size_calculator.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/refreshable.dart';
+import '../../widgets/content_state_builder.dart';
+import '../../widgets/adaptive_media_grid.dart';
 
 /// Collections tab for library screen
 /// Shows collections for the current library
@@ -113,82 +111,19 @@ class _LibraryCollectionsTabState extends State<LibraryCollectionsTab>
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
-    if (_isLoading && _collections.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_errorMessage != null && _collections.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_errorMessage!),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadCollections,
-              child: Text(t.common.retry),
-            ),
-          ],
+    return ContentStateBuilder<PlexMetadata>(
+      isLoading: _isLoading,
+      errorMessage: _errorMessage,
+      items: _collections,
+      emptyIcon: Icons.collections,
+      emptyMessage: t.libraries.noCollections,
+      onRetry: _loadCollections,
+      builder: (items) => RefreshIndicator(
+        onRefresh: _loadCollections,
+        child: AdaptiveMediaGrid(
+          items: items,
+          onRefresh: _loadCollections,
         ),
-      );
-    }
-
-    if (_collections.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.collections, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(t.libraries.noCollections),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadCollections,
-      child: Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, child) {
-          if (settingsProvider.viewMode == ViewMode.list) {
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              itemCount: _collections.length,
-              itemBuilder: (context, index) {
-                final collection = _collections[index];
-                return MediaCard(
-                  key: Key(collection.ratingKey),
-                  item: collection,
-                  onListRefresh: _loadCollections,
-                );
-              },
-            );
-          } else {
-            return GridView.builder(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-                  context,
-                  settingsProvider.libraryDensity,
-                ),
-                childAspectRatio: 2 / 3.3,
-                crossAxisSpacing: 0,
-                mainAxisSpacing: 0,
-              ),
-              itemCount: _collections.length,
-              itemBuilder: (context, index) {
-                final collection = _collections[index];
-                return MediaCard(
-                  key: Key(collection.ratingKey),
-                  item: collection,
-                  onListRefresh: _loadCollections,
-                );
-              },
-            );
-          }
-        },
       ),
     );
   }

@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../client/plex_client.dart';
 import '../models/plex_playlist.dart';
-import '../models/plex_metadata.dart';
 import '../providers/settings_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../services/settings_service.dart';
-import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
-import '../utils/collection_playlist_play_helper.dart';
+import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/grid_size_calculator.dart';
 import '../widgets/media_card.dart';
 import '../widgets/playlist_item_card.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../mixins/refreshable.dart';
-import '../mixins/item_updatable.dart';
 import '../i18n/strings.g.dart';
+import '../utils/dialogs.dart';
+import 'base_media_list_detail_screen.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -27,71 +24,56 @@ class PlaylistDetailScreen extends StatefulWidget {
   State<PlaylistDetailScreen> createState() => _PlaylistDetailScreenState();
 }
 
-class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
-    with Refreshable, ItemUpdatable {
+class _PlaylistDetailScreenState
+    extends BaseMediaListDetailScreen<PlaylistDetailScreen> {
   @override
-  PlexClient get client => context.clientSafe;
-
-  List<PlexMetadata> _items = [];
-  bool _isLoading = false;
-  String? _errorMessage;
+  dynamic get mediaItem => widget.playlist;
 
   @override
-  void initState() {
-    super.initState();
-    _loadPlaylistItems();
-  }
+  String get title => widget.playlist.title;
 
-  Future<void> _loadPlaylistItems() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  @override
+  String get emptyMessage => t.playlists.emptyPlaylist;
+
+  @override
+  Future<void> loadItems() async {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+    }
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
+      final client = this.client;
+      final newItems = await client.getPlaylist(widget.playlist.ratingKey);
+
+      if (mounted) {
+        setState(() {
+          items = newItems;
+          isLoading = false;
+        });
       }
 
-      final items = await client.getPlaylist(widget.playlist.ratingKey);
-
-      setState(() {
-        _items = items;
-        _isLoading = false;
-      });
-
       appLogger.d(
-        'Loaded ${items.length} items for playlist: ${widget.playlist.title}',
+        'Loaded ${newItems.length} items for playlist: ${widget.playlist.title}',
       );
     } catch (e) {
       appLogger.e('Failed to load playlist items', error: e);
-      setState(() {
-        _errorMessage = 'Failed to load playlist items: ${e.toString()}';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          errorMessage = 'Failed to load playlist items: ${e.toString()}';
+          isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _deletePlaylist() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.playlists.deleteConfirm),
-        content: Text(t.playlists.deleteMessage(name: widget.playlist.title)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(t.common.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(t.playlists.delete),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: t.playlists.deleteConfirm,
+      message: t.playlists.deleteMessage(name: widget.playlist.title),
     );
 
     if (confirmed == true && mounted) {
@@ -121,7 +103,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
     // Can't reorder if indices are the same
     if (oldIndex == newIndex) return;
 
-    final movedItem = _items[oldIndex];
+    final movedItem = items[oldIndex];
 
     // Check if item has playlistItemID (required for reordering)
     if (movedItem.playlistItemID == null) {
@@ -141,7 +123,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
     if (newIndex == 0) {
       afterPlaylistItemId = 0; // Move to top
     } else {
-      final afterItem = _items[newIndex - 1];
+      final afterItem = items[newIndex - 1];
       if (afterItem.playlistItemID == null) {
         appLogger.e('Cannot reorder: after item missing playlistItemID');
         if (mounted) {
@@ -160,8 +142,8 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
 
     // Optimistically update UI
     setState(() {
-      final item = _items.removeAt(oldIndex);
-      _items.insert(newIndex, item);
+      final item = items.removeAt(oldIndex);
+      items.insert(newIndex, item);
     });
 
     // Call API to persist the change
@@ -176,8 +158,8 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
       appLogger.e('Failed to reorder playlist item, reverting UI');
       if (mounted) {
         setState(() {
-          final item = _items.removeAt(newIndex);
-          _items.insert(oldIndex, item);
+          final item = items.removeAt(newIndex);
+          items.insert(oldIndex, item);
         });
 
         ScaffoldMessenger.of(
@@ -188,7 +170,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
   }
 
   Future<void> _removeItem(int index) async {
-    final item = _items[index];
+    final item = items[index];
 
     // Check if item has playlistItemID (required for removal)
     if (item.playlistItemID == null) {
@@ -207,7 +189,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
 
     // Optimistically update UI
     setState(() {
-      _items.removeAt(index);
+      items.removeAt(index);
     });
 
     // Call API to persist the change
@@ -225,7 +207,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
         // Revert on failure
         appLogger.e('Failed to remove playlist item, reverting UI');
         setState(() {
-          _items.insert(index, item);
+          items.insert(index, item);
         });
 
         ScaffoldMessenger.of(
@@ -235,72 +217,16 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
     }
   }
 
-  @override
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
-    final index = _items.indexWhere((item) => item.ratingKey == ratingKey);
-    if (index != -1) {
-      _items[index] = updatedMetadata;
-    }
-  }
-
-  @override
-  void refresh() {
-    _loadPlaylistItems();
-  }
-
-  Future<void> _playPlaylist() async {
-    if (_items.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.playlists.emptyPlaylist)));
-      }
-      return;
-    }
-
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
-    if (client == null) return;
-
-    await playCollectionOrPlaylist(
-      context: context,
-      client: client,
-      item: widget.playlist,
-      shuffle: false,
-    );
-  }
-
-  Future<void> _shufflePlayPlaylist() async {
-    if (_items.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.playlists.emptyPlaylist)));
-      }
-      return;
-    }
-
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
-    if (client == null) return;
-
-    await playCollectionOrPlaylist(
-      context: context,
-      client: client,
-      item: widget.playlist,
-      shuffle: true,
-    );
-  }
 
   Future<void> _playFromItem(int index) async {
-    if (_items.isEmpty || index < 0 || index >= _items.length) return;
+    if (items.isEmpty || index < 0 || index >= items.length) return;
 
     try {
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
       if (client == null) return;
 
-      final selectedItem = _items[index];
+      final selectedItem = items[index];
 
       // Create play queue from playlist, starting at the selected item
       final playQueue = await client.createPlayQueue(
@@ -385,18 +311,18 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
             pinned: true,
             actions: [
               // Play button
-              if (_items.isNotEmpty)
+              if (items.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.play_arrow),
                   tooltip: t.discover.play,
-                  onPressed: _playPlaylist,
+                  onPressed: playItems,
                 ),
               // Shuffle button
-              if (_items.isNotEmpty)
+              if (items.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.shuffle),
                   tooltip: t.playlists.shuffle,
-                  onPressed: _shufflePlayPlaylist,
+                  onPressed: shufflePlayItems,
                 ),
               // Delete button for non-smart playlists
               if (!widget.playlist.smart)
@@ -408,7 +334,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
                 ),
             ],
           ),
-          if (_errorMessage != null)
+          if (errorMessage != null)
             SliverFillRemaining(
               child: Center(
                 child: Column(
@@ -420,21 +346,21 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
                       color: Colors.red,
                     ),
                     const SizedBox(height: 16),
-                    Text(_errorMessage!),
+                    Text(errorMessage!),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: _loadPlaylistItems,
+                      onPressed: loadItems,
                       child: Text(t.common.retry),
                     ),
                   ],
                 ),
               ),
             )
-          else if (_items.isEmpty && _isLoading)
+          else if (items.isEmpty && isLoading)
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (_items.isEmpty)
+          else if (items.isEmpty)
             SliverFillRemaining(
               child: Center(
                 child: Column(
@@ -460,7 +386,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: _getMaxCrossAxisExtent(
+                  maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
                     context,
                     context.watch<SettingsProvider>().libraryDensity,
                   ),
@@ -469,15 +395,15 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
                   mainAxisSpacing: 0,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  return MediaCard(item: _items[index], onRefresh: updateItem);
-                }, childCount: _items.length),
+                  return MediaCard(item: items[index], onRefresh: updateItem);
+                }, childCount: items.length),
               ),
             )
           else
             // Regular playlists: Use reorderable list view
             SliverReorderableList(
               itemBuilder: (context, index) {
-                final item = _items[index];
+                final item = items[index];
                 return PlaylistItemCard(
                   key: ValueKey(item.playlistItemID ?? item.ratingKey),
                   item: item,
@@ -487,75 +413,11 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen>
                   canReorder: !widget.playlist.smart,
                 );
               },
-              itemCount: _items.length,
+              itemCount: items.length,
               onReorder: _onReorder,
             ),
         ],
       ),
     );
-  }
-
-  double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = 16.0;
-    final availableWidth = screenWidth - padding;
-
-    if (screenWidth >= 900) {
-      double divisor;
-      double maxItemWidth;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 6.5;
-          maxItemWidth = 280;
-          break;
-        case LibraryDensity.normal:
-          divisor = 8.0;
-          maxItemWidth = 200;
-          break;
-        case LibraryDensity.compact:
-          divisor = 10.0;
-          maxItemWidth = 160;
-          break;
-      }
-
-      return (availableWidth / divisor).clamp(120, maxItemWidth);
-    } else if (screenWidth >= 600) {
-      double divisor;
-      double maxItemWidth;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 4.5;
-          maxItemWidth = 220;
-          break;
-        case LibraryDensity.normal:
-          divisor = 5.5;
-          maxItemWidth = 180;
-          break;
-        case LibraryDensity.compact:
-          divisor = 7.0;
-          maxItemWidth = 140;
-          break;
-      }
-
-      return (availableWidth / divisor).clamp(100, maxItemWidth);
-    } else {
-      double divisor;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 2.2;
-          break;
-        case LibraryDensity.normal:
-          divisor = 2.8;
-          break;
-        case LibraryDensity.compact:
-          divisor = 3.5;
-          break;
-      }
-
-      return availableWidth / divisor;
-    }
   }
 }

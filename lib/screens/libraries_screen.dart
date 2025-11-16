@@ -4,24 +4,18 @@ import 'package:dio/dio.dart';
 import '../client/plex_client.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_filter.dart';
 import '../models/plex_sort.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/settings_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
-import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../widgets/app_bar_back_button.dart';
 import '../widgets/context_menu_wrapper.dart';
-import '../widgets/filters_bottom_sheet.dart';
-import '../widgets/sort_bottom_sheet.dart';
 import '../services/storage_service.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
+import '../utils/error_message_utils.dart';
 import 'library_tabs/library_browse_tab.dart';
 import 'library_tabs/library_recommended_tab.dart';
 import 'library_tabs/library_collections_tab.dart';
@@ -53,14 +47,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   String? _selectedLibraryKey;
   bool _isInitialLoad = true;
 
-  // Legacy fields kept for compatibility with existing methods
-  // TODO: Clean up after refactoring _loadLibraryContent
-  List<PlexFilter> _filters = [];
-  List<PlexSort> _sortOptions = [];
   Map<String, String> _selectedFilters = {};
   PlexSort? _selectedSort;
   bool _isSortDescending = false;
-  bool _isLoadingItems = false;
   List<PlexMetadata> _items = [];
   int _currentPage = 0;
   bool _hasMoreItems = true;
@@ -95,28 +84,18 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     super.dispose();
   }
 
+  void _updateState(VoidCallback fn) {
+    if (!mounted) return;
+    setState(fn);
+  }
+
   /// Helper method to get user-friendly error message from exception
   String _getErrorMessage(dynamic error, String context) {
     if (error is DioException) {
-      // Other Dio errors
-      switch (error.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.receiveTimeout:
-          return t.errors.connectionTimeout(context: context);
-        case DioExceptionType.connectionError:
-          return t.errors.connectionFailed;
-        default:
-          appLogger.e('Error loading $context', error: error);
-          return t.errors.failedToLoad(
-            context: context,
-            error: error.message ?? 'Unknown error',
-          );
-      }
+      return mapDioErrorToMessage(error, context: context);
     }
 
-    // Generic error
-    appLogger.e('Unexpected error in $context', error: error);
-    return t.errors.failedToLoad(context: context, error: error.toString());
+    return mapUnexpectedErrorToMessage(error, context: context);
   }
 
   Future<void> _loadLibraries() async {
@@ -154,7 +133,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         savedOrder,
       );
 
-      setState(() {
+      _updateState(() {
         _allLibraries =
             orderedLibraries; // Store all libraries with ordering applied
         _isLoadingLibraries = false;
@@ -187,7 +166,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           libraryKeyToLoad = visibleLibraries.first.key;
         }
 
-        if (libraryKeyToLoad != null) {
+        if (libraryKeyToLoad != null && mounted) {
           final savedFilters =
               storage.getLibraryFilters(sectionId: libraryKeyToLoad);
           if (savedFilters.isNotEmpty) {
@@ -197,7 +176,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         }
       }
     } catch (e) {
-      setState(() {
+      _updateState(() {
         _errorMessage = _getErrorMessage(e, 'libraries');
         _isLoadingLibraries = false;
       });
@@ -267,16 +246,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final clientProvider = context.plexClient;
     final client = clientProvider.client;
     if (client == null) {
-      setState(() {
+      _updateState(() {
         _errorMessage = t.errors.noClientAvailable;
-        _isLoadingItems = false;
       });
       return;
     }
 
-    setState(() {
+    _updateState(() {
       _selectedLibraryKey = libraryKey;
-      _isLoadingItems = true;
       _errorMessage = null;
       // Only clear filters when explicitly changing library (not on initial load)
       if (isChangingLibrary) {
@@ -296,7 +273,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // Restore saved tab index for this library
     final savedTabIndex = storage.getLibraryTab(libraryKey);
     if (savedTabIndex != null && savedTabIndex >= 0 && savedTabIndex < 4) {
-      setState(() {
+      _updateState(() {
         _tabController.index = savedTabIndex;
       });
     }
@@ -315,24 +292,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final currentRequestId = ++_requestId;
 
     // Reset pagination state
-    setState(() {
+    _updateState(() {
       _currentPage = 0;
       _hasMoreItems = true;
       _items = [];
     });
 
     try {
-      // Load filters and sort options for the new library
-      _loadFilters(libraryKey);
+      // Load sort options for the new library
       await _loadSortOptions(libraryKey);
 
-      // Add sort parameter to filters if selected
-      final filtersWithSort = Map<String, String>.from(_selectedFilters);
-      if (_selectedSort != null) {
-        filtersWithSort['sort'] = _selectedSort!.getSortKey(
-          descending: _isSortDescending,
-        );
-      }
+      final filtersWithSort = _buildFiltersWithSort();
 
       // Load pages sequentially
       await _loadAllPagesSequentially(
@@ -347,9 +317,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         return;
       }
 
-      setState(() {
+      _updateState(() {
         _errorMessage = _getErrorMessage(e, 'library content');
-        _isLoadingItems = false;
       });
     }
   }
@@ -376,15 +345,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           return; // Request was superseded
         }
 
-        setState(() {
+        _updateState(() {
           _items.addAll(items);
           _currentPage++;
           _hasMoreItems = items.length >= _pageSize;
-
-          // Mark as not loading if this is the last page
-          if (!_hasMoreItems) {
-            _isLoadingItems = false;
-          }
         });
       } catch (e) {
         // Check if it's a cancellation
@@ -393,32 +357,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         }
 
         // For other errors, update state and rethrow
-        setState(() {
-          _isLoadingItems = false;
+        _updateState(() {
           _hasMoreItems = false;
         });
         rethrow;
       }
-    }
-  }
-
-  Future<void> _loadFilters(String libraryKey) async {
-    try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      final filters = await client.getLibraryFilters(libraryKey);
-      setState(() {
-        _filters = filters;
-      });
-    } catch (e) {
-      appLogger.w('Failed to load filters', error: e);
-      setState(() {
-        _filters = [];
-      });
     }
   }
 
@@ -455,85 +398,26 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         savedSort = sortOptions.first;
       }
 
-      setState(() {
-        _sortOptions = sortOptions;
+      _updateState(() {
         _selectedSort = savedSort;
         _isSortDescending = descending;
       });
     } catch (e) {
-      setState(() {
-        _sortOptions = [];
+      _updateState(() {
         _selectedSort = null;
         _isSortDescending = false;
       });
     }
   }
 
-  Future<void> _applyFilters() async {
-    // Cancel any existing requests
-    _cancelToken?.cancel();
-    _cancelToken = CancelToken();
-    final currentRequestId = ++_requestId;
-
-    setState(() {
-      _isLoadingItems = true;
-      _errorMessage = null;
-      _currentPage = 0;
-      _hasMoreItems = true;
-      _items = [];
-    });
-
-    try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      // Add sort parameter to filters if selected
-      final filtersWithSort = Map<String, String>.from(_selectedFilters);
-      if (_selectedSort != null) {
-        filtersWithSort['sort'] = _selectedSort!.getSortKey(
-          descending: _isSortDescending,
-        );
-      }
-
-      // Load pages sequentially
-      await _loadAllPagesSequentially(
-        _selectedLibraryKey!,
-        filtersWithSort,
-        currentRequestId,
-        client,
+  Map<String, String> _buildFiltersWithSort() {
+    final filtersWithSort = Map<String, String>.from(_selectedFilters);
+    if (_selectedSort != null) {
+      filtersWithSort['sort'] = _selectedSort!.getSortKey(
+        descending: _isSortDescending,
       );
-    } catch (e) {
-      // Ignore cancellation errors
-      if (e is DioException && e.type == DioExceptionType.cancel) {
-        return;
-      }
-
-      setState(() {
-        _errorMessage = t.messages.errorLoading(error: e.toString());
-        _isLoadingItems = false;
-      });
     }
-  }
-
-  Future<void> _applySort(PlexSort sort, bool descending) async {
-    setState(() {
-      _selectedSort = sort;
-      _isSortDescending = descending;
-    });
-
-    // Save sort preference for this library
-    final storage = await StorageService.getInstance();
-    await storage.saveLibrarySort(
-      _selectedLibraryKey!,
-      sort.key,
-      descending: descending,
-    );
-
-    // Reload content with new sort
-    _applyFilters();
+    return filtersWithSort;
   }
 
   @override
@@ -554,27 +438,27 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void _refreshCurrentTab() {
     switch (_tabController.index) {
       case 0: // Recommended tab
-        final state = _recommendedTabKey.currentState;
-        if (state is Refreshable) {
-          (state as Refreshable).refresh();
+        final refreshable = _recommendedTabKey.currentState;
+        if (refreshable is Refreshable) {
+          (refreshable as Refreshable).refresh();
         }
         break;
       case 1: // Browse tab
-        final state = _browseTabKey.currentState;
-        if (state is Refreshable) {
-          (state as Refreshable).refresh();
+        final refreshable = _browseTabKey.currentState;
+        if (refreshable is Refreshable) {
+          (refreshable as Refreshable).refresh();
         }
         break;
       case 2: // Collections tab
-        final state = _collectionsTabKey.currentState;
-        if (state is Refreshable) {
-          (state as Refreshable).refresh();
+        final refreshable = _collectionsTabKey.currentState;
+        if (refreshable is Refreshable) {
+          (refreshable as Refreshable).refresh();
         }
         break;
       case 3: // Playlists tab
-        final state = _playlistsTabKey.currentState;
-        if (state is Refreshable) {
-          (state as Refreshable).refresh();
+        final refreshable = _playlistsTabKey.currentState;
+        if (refreshable is Refreshable) {
+          (refreshable as Refreshable).refresh();
         }
         break;
     }
@@ -713,7 +597,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
-  Future<void> _scanLibrary(PlexLibrary library) async {
+  Future<void> _performLibraryAction({
+    required PlexLibrary library,
+    required Future<void> Function(PlexClient client) action,
+    required String progressMessage,
+    required String successMessage,
+    required String Function(Object error) failureMessage,
+  }) async {
     try {
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
@@ -721,168 +611,79 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         throw Exception(t.errors.noClientAvailable);
       }
 
-      // Show progress indicator
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(t.messages.libraryScanning(title: library.title)),
+            content: Text(progressMessage),
             duration: const Duration(seconds: 2),
           ),
         );
       }
 
-      await client.scanLibrary(library.key);
+      await action(client);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(t.messages.libraryScanStarted(title: library.title)),
+            content: Text(successMessage),
             duration: const Duration(seconds: 3),
           ),
         );
       }
     } catch (e) {
-      appLogger.e('Failed to scan library', error: e);
+      appLogger.e('Library action failed', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(t.messages.libraryScanFailed(error: e.toString())),
+            content: Text(failureMessage(e)),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
         );
       }
     }
+  }
+
+  Future<void> _scanLibrary(PlexLibrary library) async {
+    return _performLibraryAction(
+      library: library,
+      action: (client) => client.scanLibrary(library.key),
+      progressMessage: t.messages.libraryScanning(title: library.title),
+      successMessage: t.messages.libraryScanStarted(title: library.title),
+      failureMessage: (error) =>
+          t.messages.libraryScanFailed(error: error.toString()),
+    );
   }
 
   Future<void> _refreshLibraryMetadata(PlexLibrary library) async {
-    try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      // Show progress indicator
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.messages.metadataRefreshing(title: library.title)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-
-      await client.refreshLibraryMetadata(library.key);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t.messages.metadataRefreshStarted(title: library.title),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      appLogger.e('Failed to refresh library metadata', error: e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t.messages.metadataRefreshFailed(error: e.toString()),
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
+    return _performLibraryAction(
+      library: library,
+      action: (client) => client.refreshLibraryMetadata(library.key),
+      progressMessage: t.messages.metadataRefreshing(title: library.title),
+      successMessage: t.messages.metadataRefreshStarted(title: library.title),
+      failureMessage: (error) =>
+          t.messages.metadataRefreshFailed(error: error.toString()),
+    );
   }
 
   Future<void> _emptyLibraryTrash(PlexLibrary library) async {
-    try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      // Show progress indicator
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.libraries.emptyingTrash(title: library.title)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-
-      await client.emptyLibraryTrash(library.key);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.libraries.trashEmptied(title: library.title)),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      appLogger.e('Failed to empty library trash', error: e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.libraries.failedToEmptyTrash(error: e)),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
+    return _performLibraryAction(
+      library: library,
+      action: (client) => client.emptyLibraryTrash(library.key),
+      progressMessage: t.libraries.emptyingTrash(title: library.title),
+      successMessage: t.libraries.trashEmptied(title: library.title),
+      failureMessage: (error) => t.libraries.failedToEmptyTrash(error: error),
+    );
   }
 
   Future<void> _analyzeLibrary(PlexLibrary library) async {
-    try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      // Show progress indicator
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.libraries.analyzing(title: library.title)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-
-      await client.analyzeLibrary(library.key);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.libraries.analysisStarted(title: library.title)),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      appLogger.e('Failed to analyze library', error: e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.libraries.failedToAnalyze(error: e)),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
+    return _performLibraryAction(
+      library: library,
+      action: (client) => client.analyzeLibrary(library.key),
+      progressMessage: t.libraries.analyzing(title: library.title),
+      successMessage: t.libraries.analysisStarted(title: library.title),
+      failureMessage: (error) => t.libraries.failedToAnalyze(error: error),
+    );
   }
 
   Widget _buildTabChip(String label, int index) {
