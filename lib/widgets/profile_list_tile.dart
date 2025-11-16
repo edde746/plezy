@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../i18n/strings.g.dart';
 import '../models/plex_home_user.dart';
 import 'user_avatar_widget.dart';
+
+enum UserAttribute { admin, restricted, protected }
 
 class ProfileListTile extends StatelessWidget {
   final PlexHomeUser user;
@@ -34,7 +37,7 @@ class ProfileListTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'CURRENT',
+                t.userStatus.current,
                 style: TextStyle(
                   fontSize: 10,
                   color: theme.colorScheme.onPrimary,
@@ -55,21 +58,21 @@ class ProfileListTile extends StatelessWidget {
 
   List<Widget> _buildUserAttributes(ThemeData theme) {
     final attributes = <Widget>[];
-    final labels = <String>[];
+    final List<UserAttribute> userAttributes = [];
 
     if (user.isAdminUser) {
-      labels.add('Admin');
+      userAttributes.add(UserAttribute.admin);
     }
 
     if (user.isRestrictedUser && !user.isAdminUser) {
-      labels.add('Restricted');
+      userAttributes.add(UserAttribute.restricted);
     }
 
     if (user.requiresPassword) {
-      labels.add('Protected');
+      userAttributes.add(UserAttribute.protected);
     }
 
-    for (int i = 0; i < labels.length; i++) {
+    for (int i = 0; i < userAttributes.length; i++) {
       if (i > 0) {
         attributes.addAll([
           const SizedBox(width: 8),
@@ -84,12 +87,14 @@ class ProfileListTile extends StatelessWidget {
         ]);
       }
 
+      final attribute = userAttributes[i];
+
       attributes.add(
         Text(
-          labels[i],
+          _getAttributeLabel(attribute),
           style: TextStyle(
             fontSize: 12,
-            color: _getAttributeColor(labels[i], theme),
+            color: _getAttributeColor(attribute, theme),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -99,16 +104,25 @@ class ProfileListTile extends StatelessWidget {
     return attributes;
   }
 
-  Color _getAttributeColor(String attribute, ThemeData theme) {
+  String _getAttributeLabel(UserAttribute attribute) {
     switch (attribute) {
-      case 'Admin':
+      case UserAttribute.admin:
+        return t.userStatus.admin;
+      case UserAttribute.restricted:
+        return t.userStatus.restricted;
+      case UserAttribute.protected:
+        return t.userStatus.protected;
+    }
+  }
+
+  Color _getAttributeColor(UserAttribute attribute, ThemeData theme) {
+    switch (attribute) {
+      case UserAttribute.admin:
         return theme.colorScheme.primary;
-      case 'Restricted':
+      case UserAttribute.restricted:
         return theme.colorScheme.warning ?? Colors.orange;
-      case 'Protected':
+      case UserAttribute.protected:
         return theme.colorScheme.secondary;
-      default:
-        return theme.colorScheme.onSurface;
     }
   }
 }

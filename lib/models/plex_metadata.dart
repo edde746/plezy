@@ -36,8 +36,14 @@ class PlexMetadata {
   final int? viewCount;
   final int? leafCount; // Total number of episodes in a series/season
   final int? viewedLeafCount; // Number of watched episodes in a series/season
+  final int? childCount; // Number of items in a collection or playlist
   @JsonKey(name: 'Role')
   final List<PlexRole>? role; // Cast members
+  final String? audioLanguage; // Per-media preferred audio language
+  final String? subtitleLanguage; // Per-media preferred subtitle language
+  final int? playlistItemID; // Playlist item ID (for dumb playlists only)
+  final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
+  final int? librarySectionID; // Library section ID this item belongs to
 
   // Transient field for clear logo (extracted from Image array)
   String? _clearLogo;
@@ -74,7 +80,13 @@ class PlexMetadata {
     this.viewCount,
     this.leafCount,
     this.viewedLeafCount,
+    this.childCount,
     this.role,
+    this.audioLanguage,
+    this.subtitleLanguage,
+    this.playlistItemID,
+    this.playQueueItemID,
+    this.librarySectionID,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -109,7 +121,13 @@ class PlexMetadata {
     int? viewCount,
     int? leafCount,
     int? viewedLeafCount,
+    int? childCount,
     List<PlexRole>? role,
+    String? audioLanguage,
+    String? subtitleLanguage,
+    int? playlistItemID,
+    int? playQueueItemID,
+    int? librarySectionID,
   }) {
     final copy = PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -142,7 +160,13 @@ class PlexMetadata {
       viewCount: viewCount ?? this.viewCount,
       leafCount: leafCount ?? this.leafCount,
       viewedLeafCount: viewedLeafCount ?? this.viewedLeafCount,
+      childCount: childCount ?? this.childCount,
       role: role ?? this.role,
+      audioLanguage: audioLanguage ?? this.audioLanguage,
+      subtitleLanguage: subtitleLanguage ?? this.subtitleLanguage,
+      playlistItemID: playlistItemID ?? this.playlistItemID,
+      playQueueItemID: playQueueItemID ?? this.playQueueItemID,
+      librarySectionID: librarySectionID ?? this.librarySectionID,
     );
     // Preserve clearLogo
     copy._clearLogo = _clearLogo;

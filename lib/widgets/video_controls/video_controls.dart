@@ -16,6 +16,7 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/sleep_timer_service.dart';
 import '../../utils/desktop_window_padding.dart';
+import '../../utils/duration_formatter.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
@@ -38,6 +39,8 @@ Widget plexVideoControlsBuilder(
   int? selectedMediaIndex,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
+  Function(AudioTrack)? onAudioTrackChanged,
+  Function(SubtitleTrack)? onSubtitleTrackChanged,
 }) {
   return PlexVideoControls(
     player: player,
@@ -48,6 +51,8 @@ Widget plexVideoControlsBuilder(
     selectedMediaIndex: selectedMediaIndex ?? 0,
     boxFitMode: boxFitMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
+    onAudioTrackChanged: onAudioTrackChanged,
+    onSubtitleTrackChanged: onSubtitleTrackChanged,
   );
 }
 
@@ -60,6 +65,8 @@ class PlexVideoControls extends StatefulWidget {
   final int selectedMediaIndex;
   final int boxFitMode;
   final VoidCallback? onCycleBoxFitMode;
+  final Function(AudioTrack)? onAudioTrackChanged;
+  final Function(SubtitleTrack)? onSubtitleTrackChanged;
 
   const PlexVideoControls({
     super.key,
@@ -71,6 +78,8 @@ class PlexVideoControls extends StatefulWidget {
     this.selectedMediaIndex = 0,
     this.boxFitMode = 0,
     this.onCycleBoxFitMode,
+    this.onAudioTrackChanged,
+    this.onSubtitleTrackChanged,
   });
 
   @override
@@ -464,13 +473,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               if (_hasMultipleAudioTracks(tracks))
                 VideoControlButton(
                   icon: Icons.audiotrack,
-                  onPressed: () => AudioTrackSheet.show(context, widget.player),
+                  onPressed: () => AudioTrackSheet.show(
+                    context,
+                    widget.player,
+                    onTrackChanged: widget.onAudioTrackChanged,
+                  ),
                 ),
               if (_hasSubtitles(tracks))
                 VideoControlButton(
                   icon: Icons.subtitles,
-                  onPressed: () =>
-                      SubtitleTrackSheet.show(context, widget.player),
+                  onPressed: () => SubtitleTrackSheet.show(
+                    context,
+                    widget.player,
+                    onTrackChanged: widget.onSubtitleTrackChanged,
+                  ),
                 ),
               if (_chapters.isNotEmpty)
                 VideoControlButton(
@@ -1166,14 +1182,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            _formatDuration(position),
+                            formatDurationTimestamp(position),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                             ),
                           ),
                           Text(
-                            _formatDuration(duration),
+                            formatDurationTimestamp(duration),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -1312,7 +1328,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   return Row(
                     children: [
                       Text(
-                        _formatDuration(position),
+                        formatDurationTimestamp(position),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -1327,7 +1343,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        _formatDuration(duration),
+                        formatDurationTimestamp(duration),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -1606,18 +1622,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
         );
       }
-    }
-  }
-
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    } else {
-      return '$minutes:${seconds.toString().padLeft(2, '0')}';
     }
   }
 }

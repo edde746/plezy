@@ -6,6 +6,7 @@ import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/duration_formatter.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
 import '../mixins/item_updatable.dart';
@@ -132,7 +133,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
         : 0.0;
 
     return MediaContextMenu(
-      metadata: episode,
+      item: episode,
       onRefresh: updateItem,
       onTap: () async {
         await navigateToVideoPlayer(context, metadata: episode);
@@ -330,7 +331,9 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                       children: [
                         if (episode.duration != null)
                           Text(
-                            _formatDuration(episode.duration!),
+                            formatDurationTimestamp(
+                              Duration(milliseconds: episode.duration!),
+                            ),
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: tokens(context).textMuted,
@@ -350,7 +353,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                             ),
                           ),
                           Text(
-                            'Watched ✓',
+                            '${t.discover.watched} ✓',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: tokens(context).textMuted,
@@ -368,18 +371,5 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
         ),
       ),
     );
-  }
-
-  String _formatDuration(int milliseconds) {
-    final duration = Duration(milliseconds: milliseconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    } else {
-      return '$minutes:${seconds.toString().padLeft(2, '0')}';
-    }
   }
 }

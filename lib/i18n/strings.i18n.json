@@ -37,7 +37,10 @@
     "refresh": "Refresh",
     "yes": "Yes",
     "no": "No",
-    "server": "Server"
+    "server": "Server",
+    "delete": "Delete",
+    "shuffle": "Shuffle",
+    "addTo": "Add to..."
   },
   "screens": {
     "licenses": "Licenses",
@@ -100,6 +103,8 @@
     "secondsUnit": "${seconds} seconds",
     "defaultSleepTimer": "Default Sleep Timer",
     "minutesUnit": "${minutes} minutes",
+    "rememberTrackSelections": "Remember track selections per show/movie",
+    "rememberTrackSelectionsDescription": "Automatically save audio and subtitle language preferences when you change tracks during playback",
     "unwatchedOnly": "Unwatched Only",
     "unwatchedOnlyDescription": "Only include unwatched episodes in shuffle queue",
     "shuffleOrderNavigation": "Shuffle Order Navigation",
@@ -197,12 +202,17 @@
     "fillScreen": "Fill screen",
     "stretch": "Stretch",
     "lockRotation": "Lock rotation",
-    "unlockRotation": "Unlock rotation"
+    "unlockRotation": "Unlock rotation",
+    "sleepTimer": "Sleep Timer",
+    "timerActive": "Timer Active",
+    "playbackWillPauseIn": "Playback will pause in ${duration}",
+    "sleepTimerCompleted": "Sleep timer completed - playback paused"
   },
   "userStatus": {
     "admin": "Admin",
     "restricted": "Restricted",
-    "protected": "Protected"
+    "protected": "Protected",
+    "current": "CURRENT"
   },
   "messages": {
     "markedAsWatched": "Marked as watched",
@@ -230,7 +240,11 @@
     "noEpisodesFoundGeneral": "No episodes found",
     "noResultsFound": "No results found",
     "sleepTimerSet": "Sleep timer set for ${label}",
-    "failedToSwitchProfile": "Failed to switch to ${displayName}"
+    "failedToSwitchProfile": "Failed to switch to ${displayName}",
+    "noItemsAvailable": "No items available",
+    "failedToCreatePlayQueue": "Failed to create play queue",
+    "failedToCreatePlayQueueNoItems": "Failed to create play queue - no items",
+    "failedPlayback": "Failed to ${action}: ${error}"
   },
   "profile": {
     "noUsersAvailable": "No users available"
@@ -266,6 +280,10 @@
     "pause": "Pause",
     "overview": "Overview",
     "cast": "Cast",
+    "seasons": "Seasons",
+    "studio": "Studio",
+    "rating": "Rating",
+    "watched": "Watched",
     "episodeCount": "${count} episodes",
     "watchedProgress": "${watched}/${total} watched",
     "movie": "Movie",
@@ -316,7 +334,28 @@
     "confirmActionMessage": "Are you sure you want to perform this action?",
     "showLibrary": "Show library",
     "hideLibrary": "Hide library",
-    "libraryOptions": "Library options"
+    "libraryOptions": "Library options",
+    "content": "library content",
+    "selectLibrary": "Select library",
+    "filtersWithCount": "Filters (${count})",
+    "noRecommendations": "No recommendations available",
+    "noCollections": "No collections in this library",
+    "noFoldersFound": "No folders found",
+    "folders": "folders",
+    "tabs": {
+      "recommended": "Recommended",
+      "browse": "Browse",
+      "collections": "Collections",
+      "playlists": "Playlists"
+    },
+    "groupings": {
+      "all": "All",
+      "movies": "Movies",
+      "shows": "TV Shows",
+      "seasons": "Seasons",
+      "episodes": "Episodes",
+      "folders": "Folders"
+    }
   },
   "about": {
     "title": "About",
@@ -366,5 +405,68 @@
     "search": "Search",
     "libraries": "Libraries",
     "settings": "Settings"
+  },
+  "collections": {
+    "title": "Collections",
+    "collection": "Collection",
+    "empty": "Collection is empty",
+    "noItems": "No items in this collection",
+    "unknownLibrarySection": "Cannot delete: Unknown library section",
+    "deleteCollection": "Delete Collection",
+    "deleteConfirm": "Are you sure you want to delete \"${title}\"? This action cannot be undone.",
+    "deleted": "Collection deleted",
+    "deleteFailed": "Failed to delete collection",
+    "deleteFailedWithError": "Failed to delete collection: ${error}",
+    "failedToLoadItems": "Failed to load collection items: ${error}",
+    "addTo": "Add to collection",
+    "selectCollection": "Select Collection",
+    "createNewCollection": "Create New Collection",
+    "collectionName": "Collection Name",
+    "enterCollectionName": "Enter collection name",
+    "addedToCollection": "Added to collection",
+    "errorAddingToCollection": "Failed to add to collection",
+    "created": "Collection created",
+    "removeFromCollection": "Remove from collection",
+    "removeFromCollectionConfirm": "Remove \"${title}\" from this collection?",
+    "removedFromCollection": "Removed from collection",
+    "removeFromCollectionFailed": "Failed to remove from collection",
+    "removeFromCollectionError": "Error removing from collection: ${error}"
+  },
+  "playlists": {
+    "title": "Playlists",
+    "playlist": "Playlist",
+    "noPlaylists": "No playlists found",
+    "create": "Create Playlist",
+    "newPlaylist": "New Playlist",
+    "playlistName": "Playlist Name",
+    "enterPlaylistName": "Enter playlist name",
+    "edit": "Edit Playlist",
+    "delete": "Delete Playlist",
+    "addTo": "Add to Playlist",
+    "addItems": "Add Items",
+    "removeItem": "Remove from Playlist",
+    "clearPlaylist": "Clear Playlist",
+    "playAll": "Play All",
+    "shuffle": "Shuffle",
+    "smartPlaylist": "Smart Playlist",
+    "regularPlaylist": "Regular Playlist",
+    "itemCount": "${count} items",
+    "oneItem": "1 item",
+    "emptyPlaylist": "This playlist is empty",
+    "deleteConfirm": "Delete Playlist?",
+    "deleteMessage": "Are you sure you want to delete \"${name}\"?",
+    "created": "Playlist created",
+    "updated": "Playlist updated",
+    "deleted": "Playlist deleted",
+    "itemAdded": "Added to playlist",
+    "itemRemoved": "Removed from playlist",
+    "selectPlaylist": "Select Playlist",
+    "createNewPlaylist": "Create New Playlist",
+    "errorCreating": "Failed to create playlist",
+    "errorDeleting": "Failed to delete playlist",
+    "errorLoading": "Failed to load playlists",
+    "errorAdding": "Failed to add to playlist",
+    "errorReordering": "Failed to reorder playlist item",
+    "errorRemoving": "Failed to remove from playlist"
   }
 }

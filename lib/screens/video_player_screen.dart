@@ -7,6 +7,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
 
+import '../client/plex_client.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
@@ -43,7 +44,8 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => VideoPlayerScreenState();
 }
 
-class VideoPlayerScreenState extends State<VideoPlayerScreen> {
+class VideoPlayerScreenState extends State<VideoPlayerScreen>
+    with WidgetsBindingObserver {
   Player? player;
   VideoController? controller;
   bool _isPlayerInitialized = false;
@@ -70,6 +72,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   bool _isPinching = false; // Track if a pinch gesture is occurring
   bool _isBuffering = false; // Track if video is currently buffering
 
+  // Video cropping state for fill screen mode
+  Size? _playerSize;
+  Size? _videoSize;
+  Timer? _resizeDebounceTimer;
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +93,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           : "${widget.preferredSubtitleTrack!.title ?? widget.preferredSubtitleTrack!.id} (${widget.preferredSubtitleTrack!.language ?? "unknown"})";
       appLogger.d('Preferred subtitle track: $subtitleDesc');
     }
+
+    // Update current item in playback state provider
+    try {
+      final playbackState = context.read<PlaybackStateProvider>();
+
+      // If this item doesn't have a playQueueItemID, it's a standalone item
+      // Clear any existing queue so next/previous work correctly for this content
+      if (widget.metadata.playQueueItemID == null) {
+        playbackState.clearShuffle();
+      } else {
+        playbackState.setCurrentItem(widget.metadata);
+      }
+    } catch (e) {
+      // Provider might not be available yet
+    }
+
+    // Register app lifecycle observer
+    WidgetsBinding.instance.addObserver(this);
 
     // Initialize player asynchronously with buffer size from settings
     _initializePlayer();
@@ -109,6 +134,40 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     } catch (e) {
       appLogger.w('Failed to determine device type', error: e);
       _isPhone = false; // Default to tablet/desktop (all orientations)
+    }
+
+    // Update video filter when dependencies change (orientation, screen size, etc.)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _debouncedUpdateVideoFilter();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+        // Clear media controls when app goes to background or screen locks
+        // (we don't support background playback)
+        OsMediaControls.clear();
+        appLogger.d(
+          'Media controls cleared due to app lifecycle state: $state',
+        );
+        break;
+      case AppLifecycleState.resumed:
+        // Restore media controls when app is resumed
+        if (_isPlayerInitialized && mounted) {
+          _updateMediaMetadata();
+          _updateMediaControlsPlaybackState();
+          appLogger.d('Media controls restored on app resume');
+        }
+        break;
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        // No action needed for these states
+        break;
     }
   }
 
@@ -139,6 +198,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
             'sub-border-color': settingsService.getSubtitleBorderColor(),
             'sub-back-color':
                 '#${(settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt().toRadixString(16).padLeft(2, '0').toUpperCase()}${settingsService.getSubtitleBackgroundColor().replaceFirst('#', '')}',
+            'sub-ass-override': 'no',
           },
         ),
       );
@@ -252,10 +312,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Future<void> _loadAdjacentEpisodes() async {
-    if (widget.metadata.type.toLowerCase() != 'episode') {
-      return;
-    }
-
     try {
       final clientProvider = context.plexClient;
       final client = clientProvider.client;
@@ -267,19 +323,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       PlexMetadata? next;
       PlexMetadata? previous;
 
+      // Check if playlist mode is active (takes priority)
+      if (playbackState.isPlaylistActive) {
+        // For playlists, always use the queue regardless of item type
+        // Playlists can contain both movies and episodes
+        next = await playbackState.getNextEpisode(
+          widget.metadata.ratingKey,
+          loopQueue: false, // Don't loop playlists by default
+        );
+        previous = await playbackState.getPreviousEpisode(
+          widget.metadata.ratingKey,
+        );
+      }
       // Check if shuffle mode is active
-      if (playbackState.isShuffleActive) {
+      else if (playbackState.isShuffleActive) {
+        // Only works for episodes in shuffle mode
+        if (widget.metadata.type.toLowerCase() != 'episode') {
+          return;
+        }
+
         // Get settings
         final shuffleOrderNavigation = settingsProvider.shuffleOrderNavigation;
         final loopQueue = settingsProvider.shuffleLoopQueue;
 
         if (shuffleOrderNavigation) {
           // Use shuffled order for next/previous
-          next = playbackState.getNextEpisode(
+          next = await playbackState.getNextEpisode(
             widget.metadata.ratingKey,
             loopQueue: loopQueue,
           );
-          previous = playbackState.getPreviousEpisode(
+          previous = await playbackState.getPreviousEpisode(
             widget.metadata.ratingKey,
           );
         } else {
@@ -287,7 +360,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           next = await client.findAdjacentEpisode(widget.metadata, 1);
           previous = await client.findAdjacentEpisode(widget.metadata, -1);
         }
-      } else {
+      }
+      // Normal sequential playback
+      else {
+        // Only works for episodes in sequential mode
+        if (widget.metadata.type.toLowerCase() != 'episode') {
+          return;
+        }
+
         // Use normal sequential episode loading
         next = await client.findAdjacentEpisode(widget.metadata, 1);
         previous = await client.findAdjacentEpisode(widget.metadata, -1);
@@ -327,6 +407,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           setState(() {
             _availableVersions = playbackData.availableVersions;
           });
+          // Update video filter once dimensions are available
+          _updateVideoFilter();
         }
 
         // Build list of external subtitle tracks for media_kit
@@ -451,6 +533,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     setState(() {
       _boxFitMode = (_boxFitMode + 1) % 3;
     });
+    _updateVideoFilter();
   }
 
   /// Toggle between contain and cover modes only (for pinch gesture)
@@ -458,6 +541,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     setState(() {
       _boxFitMode = _boxFitMode == 0 ? 1 : 0;
     });
+    _updateVideoFilter();
   }
 
   /// Get current BoxFit based on mode
@@ -474,10 +558,185 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
+  /// Calculate crop parameters to match what BoxFit.cover will show
+  Map<String, dynamic>? _calculateCropParameters() {
+    if (_boxFitMode != 1 || _playerSize == null || _videoSize == null) {
+      return null;
+    }
+
+    final playerAspectRatio = _playerSize!.width / _playerSize!.height;
+    final videoAspectRatio = _videoSize!.width / _videoSize!.height;
+
+    // No cropping needed if aspect ratios are very similar
+    if ((playerAspectRatio - videoAspectRatio).abs() < 0.01) {
+      return null;
+    }
+
+    int cropWidth, cropHeight, cropX, cropY;
+
+    // BoxFit.cover scales the video to fill the container, cropping the excess
+    // We need to crop the video to match what will actually be visible
+    if (videoAspectRatio > playerAspectRatio) {
+      // Video is wider than player - BoxFit.cover will crop horizontally
+      // Scale video height to match player height, then crop the width
+      final scale = _playerSize!.height / _videoSize!.height;
+
+      cropHeight = _videoSize!.height.toInt();
+      cropWidth = (_playerSize!.width / scale).toInt();
+      cropX = ((_videoSize!.width - cropWidth) / 2).toInt();
+      cropY = 0;
+    } else {
+      // Video is taller than player - BoxFit.cover will crop vertically
+      // Scale video width to match player width, then crop the height
+      final scale = _playerSize!.width / _videoSize!.width;
+
+      cropWidth = _videoSize!.width.toInt();
+      cropHeight = (_playerSize!.height / scale).toInt();
+      cropX = 0;
+      cropY = ((_videoSize!.height - cropHeight) / 2).toInt();
+    }
+
+    // Calculate subtitle margins to prevent text subtitles from appearing in cropped areas
+    // MPV subtitle coordinates use a normalized system where video height = 720
+    const double subCoordinateHeight = 720.0;
+    const double baseMarginY =
+        40.0; // Base margin from bottom edge (subtitle coordinates)
+    const double baseMarginX =
+        20.0; // Base margin from sides (subtitle coordinates)
+
+    double subMarginX = baseMarginX;
+    double subMarginY = baseMarginY;
+    double subScale = 1.0; // Default scale
+
+    if (videoAspectRatio > playerAspectRatio) {
+      // Horizontal crop - need additional horizontal margins and scaling
+      // Convert pixel margin to subtitle coordinate system
+      final subCoordinateWidth = subCoordinateHeight * videoAspectRatio;
+      final cropMarginX = (cropX / _videoSize!.width) * subCoordinateWidth;
+
+      // Calculate scale factor first
+      subScale = cropWidth / _videoSize!.width;
+
+      // Apply margin accounting for scaling (scaled margins are effectively larger)
+      subMarginX = (baseMarginX + cropMarginX) / subScale;
+    } else {
+      // Vertical crop - need additional vertical margins and scaling
+      // Convert pixel margin to subtitle coordinate system
+      final cropMarginY = (cropY / _videoSize!.height) * subCoordinateHeight;
+
+      // Calculate scale factor first
+      subScale = cropHeight / _videoSize!.height;
+
+      // Apply margin accounting for scaling (scaled margins are effectively larger)
+      subMarginY = (baseMarginY + cropMarginY) / subScale;
+    }
+
+    return {
+      'width': cropWidth,
+      'height': cropHeight,
+      'x': cropX,
+      'y': cropY,
+      'subMarginX': subMarginX.round(),
+      'subMarginY': subMarginY.round(),
+      'subScale': subScale,
+    };
+  }
+
+  /// Get video dimensions from the currently selected media version
+  Size? _getCurrentVideoSize() {
+    if (_availableVersions.isEmpty ||
+        widget.selectedMediaIndex >= _availableVersions.length) {
+      return null;
+    }
+
+    final currentVersion = _availableVersions[widget.selectedMediaIndex];
+    if (currentVersion.width != null && currentVersion.height != null) {
+      return Size(
+        currentVersion.width!.toDouble(),
+        currentVersion.height!.toDouble(),
+      );
+    }
+
+    return null;
+  }
+
+  /// Update the video filter based on current crop mode
+  void _updateVideoFilter() async {
+    if (player == null) return;
+
+    try {
+      final nativePlayer = player!.platform as dynamic;
+
+      if (_boxFitMode == 1) {
+        // Fill screen mode - apply crop filter
+        _videoSize = _getCurrentVideoSize();
+        final cropParams = _calculateCropParameters();
+
+        if (cropParams != null) {
+          final cropFilter =
+              'crop=${cropParams['width']}:${cropParams['height']}:${cropParams['x']}:${cropParams['y']}';
+          appLogger.d(
+            'Applying video filter: $cropFilter (player: $_playerSize, video: $_videoSize)',
+          );
+
+          // Apply crop filter
+          await nativePlayer.setProperty('vf', cropFilter);
+
+          // Apply subtitle margins and scaling to compensate for crop zoom
+          final subMarginX = cropParams['subMarginX']!;
+          final subMarginY = cropParams['subMarginY']!;
+          final subScale = cropParams['subScale']!;
+
+          appLogger.d(
+            'Applying subtitle properties - margins: x=$subMarginX, y=$subMarginY, scale=$subScale',
+          );
+
+          await nativePlayer.setProperty('sub-margin-x', subMarginX.toString());
+          await nativePlayer.setProperty('sub-margin-y', subMarginY.toString());
+          await nativePlayer.setProperty('sub-scale', subScale.toString());
+        } else {
+          // Clear filter but apply base margins if no cropping needed
+          appLogger.d(
+            'Clearing video filter - aspect ratios similar, applying base margins (player: $_playerSize, video: $_videoSize)',
+          );
+          await nativePlayer.setProperty('vf', '');
+          await nativePlayer.setProperty('sub-margin-x', '20'); // Base margin
+          await nativePlayer.setProperty('sub-margin-y', '40'); // Base margin
+          await nativePlayer.setProperty('sub-scale', '1.0'); // Reset scale
+        }
+      } else {
+        // Other modes - clear video filter but apply base margins
+        appLogger.d(
+          'Clearing video filter, applying base margins - BoxFit mode $_boxFitMode',
+        );
+        await nativePlayer.setProperty('vf', '');
+        await nativePlayer.setProperty('sub-margin-x', '20'); // Base margin
+        await nativePlayer.setProperty('sub-margin-y', '40'); // Base margin
+        await nativePlayer.setProperty('sub-scale', '1.0'); // Reset scale
+      }
+    } catch (e) {
+      appLogger.w('Failed to update video filter', error: e);
+    }
+  }
+
+  /// Debounced version of _updateVideoFilter for resize events
+  void _debouncedUpdateVideoFilter() {
+    _resizeDebounceTimer?.cancel();
+    _resizeDebounceTimer = Timer(const Duration(milliseconds: 50), () {
+      _updateVideoFilter();
+    });
+  }
+
   @override
   void dispose() {
+    // Unregister app lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
+
     // Stop progress tracking
     _progressTimer?.cancel();
+
+    // Cancel debounce timer
+    _resizeDebounceTimer?.cancel();
 
     // Cancel stream subscriptions
     _playingSubscription?.cancel();
@@ -493,6 +752,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Send final stopped state
     _sendProgress('stopped');
+
+    // Clear video filter and reset subtitle margins before disposing player
+    try {
+      if (player != null) {
+        final nativePlayer = player!.platform as dynamic;
+        nativePlayer.setProperty('vf', '');
+        nativePlayer.setProperty('sub-margin-x', '0');
+        nativePlayer.setProperty('sub-margin-y', '0');
+        nativePlayer.setProperty('sub-scale', '1.0');
+      }
+    } catch (e) {
+      // Ignore errors during cleanup
+    }
 
     // Restore system UI and orientation preferences (skip if navigating to another video)
     if (!_isReplacingWithVideo) {
@@ -885,6 +1157,34 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     return title.contains('forced');
   }
 
+  /// Checks if a track language matches a preferred language
+  ///
+  /// Handles both 2-letter (ISO 639-1) and 3-letter (ISO 639-2) codes
+  /// Also handles bibliographic variants and region codes (e.g., "en-US")
+  bool _languageMatches(String? trackLanguage, String? preferredLanguage) {
+    if (trackLanguage == null || preferredLanguage == null) {
+      return false;
+    }
+
+    final track = trackLanguage.toLowerCase();
+    final preferred = preferredLanguage.toLowerCase();
+
+    // Direct match
+    if (track == preferred) return true;
+
+    // Extract base language codes (handle region codes like "en-US")
+    final trackBase = track.split('-').first;
+    final preferredBase = preferred.split('-').first;
+
+    if (trackBase == preferredBase) return true;
+
+    // Get all variations of the preferred language (e.g., "en" → ["en", "eng"])
+    final variations = LanguageCodes.getVariations(preferredBase);
+
+    // Check if track's base code matches any variation
+    return variations.contains(trackBase);
+  }
+
   void _waitForTracksAndApply() async {
     // Helper function to process tracks
     Future<void> processTracks(Tracks tracks) async {
@@ -914,7 +1214,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         );
       }
 
-      // Select audio track with priority: preferred > user profile > default > first
+      // Select audio track with priority: preferred > per-media > user profile > default > first
       appLogger.d('Audio track selection');
       if (realAudioTracks.isNotEmpty) {
         AudioTrack? trackToSelect;
@@ -938,20 +1238,46 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           appLogger.d('Priority 1: No preferred track from navigation');
         }
 
-        // Priority 2: If no preferred track matched, try user profile preferences
+        // Priority 2: If no preferred track matched, try per-media language preference
+        if (trackToSelect == null && widget.metadata.audioLanguage != null) {
+          appLogger.d(
+            'Priority 2: Checking per-media audio language preference',
+          );
+          appLogger.d(
+            '  Per-media audio language: ${widget.metadata.audioLanguage}',
+          );
+          trackToSelect = realAudioTracks.firstWhere(
+            (track) =>
+                _languageMatches(track.language, widget.metadata.audioLanguage),
+            orElse: () => realAudioTracks.first,
+          );
+          if (_languageMatches(
+            trackToSelect.language,
+            widget.metadata.audioLanguage,
+          )) {
+            appLogger.d('  Matched per-media audio language preference');
+          } else {
+            appLogger.d('  No match found for per-media audio language');
+            trackToSelect = null;
+          }
+        } else if (trackToSelect == null) {
+          appLogger.d('Priority 2: No per-media audio language preference');
+        }
+
+        // Priority 3: If no preferred track matched, try user profile preferences
         if (trackToSelect == null && profileSettings != null) {
-          appLogger.d('Priority 2: Checking user profile preferences');
+          appLogger.d('Priority 3: Checking user profile preferences');
           trackToSelect = _findAudioTrackByProfile(
             realAudioTracks,
             profileSettings,
           );
         } else if (trackToSelect == null) {
-          appLogger.d('Priority 2: No user profile available');
+          appLogger.d('Priority 3: No user profile available');
         }
 
-        // Priority 3: If no match, use default or first track
+        // Priority 4: If no match, use default or first track
         if (trackToSelect == null) {
-          appLogger.d('Priority 3: Using default or first available track');
+          appLogger.d('Priority 4: Using default or first available track');
           trackToSelect = realAudioTracks.firstWhere(
             (t) => t.isDefault == true,
             orElse: () => realAudioTracks.first,
@@ -970,7 +1296,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         appLogger.d('No audio tracks available');
       }
 
-      // Select subtitle track with priority: preferred > user profile > default > off
+      // Select subtitle track with priority: preferred > per-media > user profile > default > off
       appLogger.d('Subtitle track selection');
       SubtitleTrack? subtitleToSelect;
 
@@ -999,11 +1325,47 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
         appLogger.d('Priority 1: No preferred track from navigation');
       }
 
-      // Priority 2: If no preferred match, apply user profile preferences
+      // Priority 2: If no preferred match, try per-media language preference
+      if (subtitleToSelect == null &&
+          widget.metadata.subtitleLanguage != null) {
+        appLogger.d(
+          'Priority 2: Checking per-media subtitle language preference',
+        );
+        appLogger.d(
+          '  Per-media subtitle language: ${widget.metadata.subtitleLanguage}',
+        );
+        // Check if subtitle should be disabled
+        if (widget.metadata.subtitleLanguage == 'none' ||
+            widget.metadata.subtitleLanguage!.isEmpty) {
+          appLogger.d('  Per-media preference: Subtitles OFF');
+          subtitleToSelect = SubtitleTrack.no();
+        } else if (realSubtitleTracks.isNotEmpty) {
+          final matchedTrack = realSubtitleTracks.firstWhere(
+            (track) => _languageMatches(
+              track.language,
+              widget.metadata.subtitleLanguage,
+            ),
+            orElse: () => realSubtitleTracks.first,
+          );
+          if (_languageMatches(
+            matchedTrack.language,
+            widget.metadata.subtitleLanguage,
+          )) {
+            subtitleToSelect = matchedTrack;
+            appLogger.d('  Matched per-media subtitle language preference');
+          } else {
+            appLogger.d('  No match found for per-media subtitle language');
+          }
+        }
+      } else if (subtitleToSelect == null) {
+        appLogger.d('Priority 2: No per-media subtitle language preference');
+      }
+
+      // Priority 3: If no preferred match, apply user profile preferences
       if (subtitleToSelect == null &&
           profileSettings != null &&
           realSubtitleTracks.isNotEmpty) {
-        appLogger.d('Priority 2: Checking user profile preferences');
+        appLogger.d('Priority 3: Checking user profile preferences');
         // Get the currently selected audio track
         final currentAudioTrack = realAudioTracks.firstWhere(
           (t) => t.id == player!.state.track.audio.id,
@@ -1015,12 +1377,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
           selectedAudioTrack: currentAudioTrack,
         );
       } else if (subtitleToSelect == null && realSubtitleTracks.isNotEmpty) {
-        appLogger.d('Priority 2: No user profile available');
+        appLogger.d('Priority 3: No user profile available');
       }
 
-      // Priority 3: If no profile match, check for default subtitle
+      // Priority 4: If no profile match, check for default subtitle
       if (subtitleToSelect == null && realSubtitleTracks.isNotEmpty) {
-        appLogger.d('Priority 3: Checking for default subtitle track');
+        appLogger.d('Priority 4: Checking for default subtitle track');
         final defaultTrackIndex = realSubtitleTracks.indexWhere(
           (t) => t.isDefault == true,
         );
@@ -1036,7 +1398,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       // If still no subtitle selected, turn off
       if (subtitleToSelect == null) {
-        appLogger.d('Priority 4: No subtitle selected - Subtitles OFF');
+        appLogger.d('Priority 5: No subtitle selected - Subtitles OFF');
         subtitleToSelect = SubtitleTrack.no();
       }
 
@@ -1170,16 +1532,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
       }
     });
 
-    // Enable/disable next/previous track controls based on content type
+    // Enable/disable next/previous track controls based on content type and playback mode
+    final playbackState = context.read<PlaybackStateProvider>();
     final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
-    if (isEpisode) {
-      // Enable next/previous track controls for episodes
+    final isInPlaylist = playbackState.isPlaylistActive;
+
+    // Enable controls for episodes OR playlist items
+    if (isEpisode || isInPlaylist) {
+      // Enable next/previous track controls for episodes and playlist items
       await OsMediaControls.enableControls([
         MediaControl.next,
         MediaControl.previous,
       ]);
     } else {
-      // Disable next/previous track controls for movies
+      // Disable next/previous track controls for standalone movies
       await OsMediaControls.disableControls([
         MediaControl.next,
         MediaControl.previous,
@@ -1297,6 +1663,94 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
     await _navigateToEpisode(_previousEpisode!);
   }
 
+  /// Handle audio track changes from the user - save as per-media preference if enabled
+  Future<void> _onAudioTrackChanged(AudioTrack track) async {
+    final settings = await SettingsService.getInstance();
+
+    // Only save if remember track selections is enabled
+    if (!settings.getRememberTrackSelections()) {
+      return;
+    }
+
+    // Extract language code from the track
+    final languageCode = track.language;
+    if (languageCode == null || languageCode.isEmpty) {
+      appLogger.d('Audio track has no language code, not saving preference');
+      return;
+    }
+
+    // Determine which ratingKey to use
+    // For TV shows: use grandparentRatingKey (series level)
+    // For movies: use ratingKey (movie level)
+    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    final targetRatingKey = isEpisode
+        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
+        : widget.metadata.ratingKey;
+
+    appLogger.i(
+      'Saving audio language preference: $languageCode for ${isEpisode ? "series" : "movie"} (ratingKey: $targetRatingKey)',
+    );
+
+    try {
+      if (!mounted) return;
+      final client = context.read<PlexClient>();
+      await client.setMetadataPreferences(
+        targetRatingKey,
+        audioLanguage: languageCode,
+      );
+      appLogger.d('Successfully saved audio language preference');
+    } catch (e) {
+      appLogger.e('Failed to save audio language preference', error: e);
+    }
+  }
+
+  /// Handle subtitle track changes from the user - save as per-media preference if enabled
+  Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async {
+    final settings = await SettingsService.getInstance();
+
+    // Only save if remember track selections is enabled
+    if (!settings.getRememberTrackSelections()) {
+      return;
+    }
+
+    // Handle "Off" selection
+    String? languageCode;
+    if (track.id == 'no') {
+      languageCode = 'none';
+      appLogger.i('User turned subtitles off, saving preference');
+    } else {
+      languageCode = track.language;
+      if (languageCode == null || languageCode.isEmpty) {
+        appLogger.d(
+          'Subtitle track has no language code, not saving preference',
+        );
+        return;
+      }
+    }
+
+    // Determine which ratingKey to use
+    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    final targetRatingKey = isEpisode
+        ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
+        : widget.metadata.ratingKey;
+
+    appLogger.i(
+      'Saving subtitle language preference: $languageCode for ${isEpisode ? "series" : "movie"} (ratingKey: $targetRatingKey)',
+    );
+
+    try {
+      if (!mounted) return;
+      final client = context.read<PlexClient>();
+      await client.setMetadataPreferences(
+        targetRatingKey,
+        subtitleLanguage: languageCode,
+      );
+      appLogger.d('Successfully saved subtitle language preference');
+    } catch (e) {
+      appLogger.e('Failed to save subtitle language preference', error: e);
+    }
+  }
+
   /// Set flag to skip orientation restoration when replacing with another video
   void setReplacingWithVideo() {
     _isReplacingWithVideo = true;
@@ -1390,19 +1844,48 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
             children: [
               // Video player
               Center(
-                child: Video(
-                  controller: controller!,
-                  fit: _getCurrentBoxFit,
-                  controls: (state) => plexVideoControlsBuilder(
-                    player!,
-                    widget.metadata,
-                    onNext: _nextEpisode != null ? _playNext : null,
-                    onPrevious: _previousEpisode != null ? _playPrevious : null,
-                    availableVersions: _availableVersions,
-                    selectedMediaIndex: widget.selectedMediaIndex,
-                    boxFitMode: _boxFitMode,
-                    onCycleBoxFitMode: _cycleBoxFitMode,
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Update player size when layout changes
+                    final newSize = Size(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
+
+                    // Check if size actually changed to avoid unnecessary updates
+                    if (_playerSize == null ||
+                        (_playerSize!.width - newSize.width).abs() > 0.1 ||
+                        (_playerSize!.height - newSize.height).abs() > 0.1) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          setState(() {
+                            _playerSize = newSize;
+                          });
+                          // Use debounced update for resize events
+                          _debouncedUpdateVideoFilter();
+                        }
+                      });
+                    }
+
+                    return Video(
+                      controller: controller!,
+                      fit: _getCurrentBoxFit,
+                      controls: (state) => plexVideoControlsBuilder(
+                        player!,
+                        widget.metadata,
+                        onNext: _nextEpisode != null ? _playNext : null,
+                        onPrevious: _previousEpisode != null
+                            ? _playPrevious
+                            : null,
+                        availableVersions: _availableVersions,
+                        selectedMediaIndex: widget.selectedMediaIndex,
+                        boxFitMode: _boxFitMode,
+                        onCycleBoxFitMode: _cycleBoxFitMode,
+                        onAudioTrackChanged: _onAudioTrackChanged,
+                        onSubtitleTrackChanged: _onSubtitleTrackChanged,
+                      ),
+                    );
+                  },
                 ),
               ),
               // Play Next Dialog

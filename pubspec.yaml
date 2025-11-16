@@ -28,22 +28,44 @@ dependencies:
   qr_flutter: ^4.1.0
   slang: ^3.31.2
   slang_flutter: ^3.31.0
+  duration: ^4.0.3
+  connectivity_plus: ^6.0.5
   os_media_controls:
     git:
       url: https://github.com/edde746/os-media-controls
-      ref: 53d803e1c228eb7eab9ca642119d404c21f4a52f
+      ref: a196b022dcbcc3433bae9233be179f02062327e7
 
 dependency_overrides:
   media_kit:
     git:
       url: https://github.com/edde746/media-kit
-      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
       path: media_kit
+  media_kit_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
+      path: media_kit_video
   media_kit_libs_video:
     git:
       url: https://github.com/edde746/media-kit
-      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
       path: libs/universal/media_kit_libs_video
+  media_kit_libs_macos_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
+      path: libs/macos/media_kit_libs_macos_video
+  media_kit_libs_ios_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
+      path: libs/ios/media_kit_libs_ios_video
+  media_kit_libs_android_video:
+    git:
+      url: https://github.com/edde746/media-kit
+      ref: 6077829fa6705f30f85c1393a36008d5f66c06f4
+      path: libs/android/media_kit_libs_android_video
 
 dev_dependencies:
   flutter_test:

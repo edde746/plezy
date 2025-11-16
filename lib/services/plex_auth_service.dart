@@ -6,6 +6,7 @@ import '../client/plex_client.dart';
 import '../models/plex_user_profile.dart';
 import '../models/plex_home.dart';
 import '../models/user_switch_response.dart';
+import '../utils/app_logger.dart';
 
 class PlexAuthService {
   static const String _appName = 'Plezy';
@@ -240,8 +241,14 @@ class _ConnectionCandidate {
   final PlexConnection connection;
   final String url;
   final bool isPlexDirectUri;
+  final bool isHttps;
 
-  _ConnectionCandidate(this.connection, this.url, this.isPlexDirectUri);
+  _ConnectionCandidate(
+    this.connection,
+    this.url,
+    this.isPlexDirectUri,
+    this.isHttps,
+  );
 }
 
 /// Represents a Plex Media Server
@@ -391,74 +398,111 @@ class PlexServer {
   /// Priority: local > remote > relay, then HTTPS > HTTP, then lowest latency
   /// Tests both plex.direct URI and direct IP for each connection
   /// HTTPS connections are tested first, with HTTP as fallback
-  Stream<PlexConnection> findBestWorkingConnection() async* {
-    if (connections.isEmpty) return;
+  Stream<PlexConnection> findBestWorkingConnection({
+    String? preferredUri,
+  }) async* {
+    if (connections.isEmpty) {
+      appLogger.w('No connections available for server discovery');
+      return;
+    }
 
-    // Create candidates: test both uri and directUrl for each connection
-    // Separate HTTPS and HTTP candidates to prioritize HTTPS first
-    final httpsCandidates = <_ConnectionCandidate>[];
-    final httpCandidates = <_ConnectionCandidate>[];
+    const preferredTimeout = Duration(seconds: 2);
+    const raceTimeout = Duration(seconds: 4);
 
-    for (final connection in connections) {
-      final uriCandidate = _ConnectionCandidate(
-        connection,
-        connection.uri,
-        true,
-      );
-      final directCandidate = _ConnectionCandidate(
-        connection,
-        connection.directUrl,
-        false,
-      );
+    final candidates = _buildPrioritizedCandidates();
+    if (candidates.isEmpty) {
+      appLogger.w('No connection candidates generated for server discovery');
+      return;
+    }
 
-      if (connection.protocol == 'https') {
-        httpsCandidates.add(uriCandidate);
-        httpsCandidates.add(directCandidate);
-      } else {
-        httpCandidates.add(uriCandidate);
-        httpCandidates.add(directCandidate);
+    final totalCandidates = candidates.length;
+    appLogger.d(
+      'Starting server connection discovery',
+      error: {'preferred': preferredUri, 'candidateCount': totalCandidates},
+    );
+
+    _ConnectionCandidate? firstCandidate;
+
+    // Fast-path: if we have a cached working URI, probe it with a short timeout
+    if (preferredUri != null) {
+      final cachedCandidate = _candidateForUrl(preferredUri);
+      if (cachedCandidate != null) {
+        appLogger.d(
+          'Testing cached endpoint before running full race',
+          error: {'uri': preferredUri},
+        );
+        final result = await PlexClient.testConnectionWithLatency(
+          cachedCandidate.url,
+          accessToken,
+          timeout: preferredTimeout,
+        );
+
+        if (result.success) {
+          appLogger.i(
+            'Cached endpoint succeeded, using immediately',
+            error: {'uri': preferredUri},
+          );
+          firstCandidate = cachedCandidate;
+        } else {
+          appLogger.w(
+            'Cached endpoint failed, falling back to candidate race',
+            error: {'uri': preferredUri},
+          );
+        }
       }
     }
 
-    // Combine candidates with HTTPS first, then HTTP
-    final candidates = [...httpsCandidates, ...httpCandidates];
-
-    // Phase 1: Race to find first working connection
-    final completer = Completer<_ConnectionCandidate?>();
-    _ConnectionCandidate? firstCandidate;
-    int completedTests = 0;
-
-    // Start testing all candidates simultaneously
-    for (final candidate in candidates) {
-      PlexClient.testConnectionWithLatency(candidate.url, accessToken).then((
-        result,
-      ) {
-        completedTests++;
-
-        // If this is the first successful connection, emit it immediately
-        if (result.success && !completer.isCompleted) {
-          completer.complete(candidate);
-        }
-
-        // If all tests complete without success, complete with null
-        if (completedTests == candidates.length && !completer.isCompleted) {
-          completer.complete(null);
-        }
-      });
-    }
-
-    // Wait for and emit the first successful connection
-    firstCandidate = await completer.future;
+    // If no cached candidate or it failed, race candidates to find first success
     if (firstCandidate == null) {
-      return; // No working connections found
+      final completer = Completer<_ConnectionCandidate?>();
+      int completedTests = 0;
+
+      appLogger.d(
+        'Running connection race to find first working endpoint',
+        error: {'candidateCount': totalCandidates},
+      );
+
+      for (final candidate in candidates) {
+        PlexClient.testConnectionWithLatency(
+          candidate.url,
+          accessToken,
+          timeout: raceTimeout,
+        ).then((result) {
+          completedTests++;
+
+          if (result.success && !completer.isCompleted) {
+            completer.complete(candidate);
+          }
+
+          if (completedTests == candidates.length && !completer.isCompleted) {
+            completer.complete(null);
+          }
+        });
+      }
+
+      firstCandidate = await completer.future;
+      if (firstCandidate == null) {
+        appLogger.e('No working server connections after race');
+        return; // No working connections found
+      }
+      appLogger.i(
+        'Connection race found first working endpoint',
+        error: {
+          'uri': firstCandidate.url,
+          'type': firstCandidate.connection.displayType,
+        },
+      );
     }
 
-    // Update the connection object to use the working URL
     final firstConnection = _updateConnectionUrl(
       firstCandidate.connection,
       firstCandidate.url,
     );
     yield firstConnection;
+    appLogger.d(
+      'Emitted first working connection, continuing latency tests in background',
+      error: {'uri': firstConnection.uri},
+    );
 
     // Phase 2: Continue testing in background to find best connection
     // Test each candidate 2-3 times and average the latency
@@ -480,20 +524,39 @@ class PlexServer {
 
     // If no connections succeeded, we're done
     if (candidateResults.isEmpty) {
+      appLogger.w('Latency sweep found no additional working endpoints');
       return;
     }
+
+    appLogger.d(
+      'Completed latency sweep for server connections',
+      error: {'successfulCandidates': candidateResults.length},
+    );
 
     // Find the best connection considering priority, latency, and URL type
     final bestCandidate = _selectBestCandidateWithLatency(candidateResults);
 
     // Emit the best connection if it's different from the first one
     if (bestCandidate != null) {
+      final upgradedCandidate =
+          await _upgradeCandidateToHttpsIfPossible(bestCandidate) ??
+          bestCandidate;
+
       final bestConnection = _updateConnectionUrl(
-        bestCandidate.connection,
-        bestCandidate.url,
+        upgradedCandidate.connection,
+        upgradedCandidate.url,
       );
       if (bestConnection.uri != firstConnection.uri) {
+        appLogger.i(
+          'Latency sweep selected better endpoint',
+          error: {'uri': bestConnection.uri},
+        );
         yield bestConnection;
+      } else {
+        appLogger.d(
+          'Latency sweep confirmed initial endpoint is optimal',
+          error: {'uri': bestConnection.uri},
+        );
       }
     }
   }
@@ -515,6 +578,230 @@ class PlexServer {
       relay: connection.relay,
       ipv6: connection.ipv6,
     );
+  }
+
+  _ConnectionCandidate? _candidateForUrl(String url) {
+    for (final connection in connections) {
+      final httpUrl = connection.httpDirectUrl;
+      if (httpUrl == url) {
+        return _ConnectionCandidate(connection, httpUrl, false, false);
+      }
+
+      final uri = connection.uri;
+      if (uri == url) {
+        final isHttps = uri.startsWith('https://');
+        final parsedHost = Uri.tryParse(uri)?.host ?? '';
+        final isPlexDirect = parsedHost.toLowerCase().contains('plex.direct');
+        return _ConnectionCandidate(connection, uri, isPlexDirect, isHttps);
+      }
+    }
+    return null;
+  }
+
+  List<_ConnectionCandidate> _buildPrioritizedCandidates({
+    Set<String>? excludeUrls,
+  }) {
+    final seen = <String>{};
+    if (excludeUrls != null) {
+      seen.addAll(excludeUrls);
+    }
+
+    final httpsLocal = <_ConnectionCandidate>[];
+    final httpsRemote = <_ConnectionCandidate>[];
+    final httpsRelay = <_ConnectionCandidate>[];
+    final httpLocal = <_ConnectionCandidate>[];
+    final httpRemote = <_ConnectionCandidate>[];
+    final httpRelay = <_ConnectionCandidate>[];
+
+    List<_ConnectionCandidate> bucketFor(
+      PlexConnection connection,
+      bool isHttps,
+    ) {
+      if (isHttps) {
+        if (connection.relay) return httpsRelay;
+        if (connection.local) return httpsLocal;
+        return httpsRemote;
+      } else {
+        if (connection.relay) return httpRelay;
+        if (connection.local) return httpLocal;
+        return httpRemote;
+      }
+    }
+
+    void addCandidate(
+      PlexConnection connection,
+      String url,
+      bool isPlexDirectUri,
+      bool isHttps,
+    ) {
+      if (url.isEmpty || seen.contains(url)) {
+        return;
+      }
+      seen.add(url);
+      bucketFor(
+        connection,
+        isHttps,
+      ).add(_ConnectionCandidate(connection, url, isPlexDirectUri, isHttps));
+    }
+
+    for (final connection in connections) {
+      addCandidate(connection, connection.httpDirectUrl, false, false);
+    }
+
+    return [
+      ...httpsLocal,
+      ...httpsRemote,
+      ...httpsRelay,
+      ...httpLocal,
+      ...httpRemote,
+      ...httpRelay,
+    ];
+  }
+
+  List<String> prioritizedEndpointUrls({String? preferredFirst}) {
+    final urls = <String>[];
+    final exclude = <String>{};
+
+    if (preferredFirst != null && preferredFirst.isNotEmpty) {
+      urls.add(preferredFirst);
+      exclude.add(preferredFirst);
+    }
+
+    final candidates = _buildPrioritizedCandidates(excludeUrls: exclude);
+    urls.addAll(candidates.map((candidate) => candidate.url));
+    return urls;
+  }
+
+  Future<_ConnectionCandidate?> _upgradeCandidateToHttpsIfPossible(
+    _ConnectionCandidate candidate,
+  ) async {
+    final currentUrl = candidate.url;
+    if (currentUrl.startsWith('https://')) {
+      return null;
+    }
+
+    late final String httpsUrl;
+    bool resultingIsPlexDirect = candidate.isPlexDirectUri;
+
+    if (candidate.isPlexDirectUri) {
+      if (!currentUrl.startsWith('http://')) {
+        return null;
+      }
+      httpsUrl = currentUrl.replaceFirst('http://', 'https://');
+    } else {
+      // Raw IP endpoints can't present HTTPS certificates—prefer their plex.direct alias.
+      final plexDirectUri = candidate.connection.uri;
+      if (plexDirectUri.isEmpty) {
+        return null;
+      }
+
+      if (plexDirectUri.startsWith('https://')) {
+        httpsUrl = plexDirectUri;
+      } else if (plexDirectUri.startsWith('http://')) {
+        httpsUrl = plexDirectUri.replaceFirst('http://', 'https://');
+      } else {
+        return null;
+      }
+
+      final upgradedHost = Uri.tryParse(httpsUrl)?.host;
+      if (upgradedHost == null ||
+          !upgradedHost.toLowerCase().endsWith('.plex.direct')) {
+        appLogger.d(
+          'Skipping HTTPS upgrade for raw IP candidate: no plex.direct alias available',
+          error: {'candidate': currentUrl, 'target': httpsUrl},
+        );
+        return null;
+      }
+      resultingIsPlexDirect = true;
+    }
+
+    if (httpsUrl == currentUrl) {
+      return null;
+    }
+
+    appLogger.d(
+      'Attempting HTTPS upgrade for candidate endpoint',
+      error: {'from': currentUrl, 'to': httpsUrl},
+    );
+
+    final result = await PlexClient.testConnectionWithLatency(
+      httpsUrl,
+      accessToken,
+      timeout: const Duration(seconds: 4),
+    );
+
+    if (!result.success) {
+      appLogger.w(
+        'HTTPS upgrade failed, staying on HTTP candidate',
+        error: {'url': currentUrl},
+      );
+      return null;
+    }
+
+    appLogger.i(
+      'HTTPS upgrade succeeded for candidate endpoint',
+      error: {'httpsUrl': httpsUrl},
+    );
+
+    final httpsConnection = PlexConnection(
+      protocol: 'https',
+      address: candidate.connection.address,
+      port: candidate.connection.port,
+      uri: httpsUrl,
+      local: candidate.connection.local,
+      relay: candidate.connection.relay,
+      ipv6: candidate.connection.ipv6,
+    );
+
+    return _ConnectionCandidate(
+      httpsConnection,
+      httpsUrl,
+      resultingIsPlexDirect,
+      true,
+    );
+  }
+
+  Future<PlexConnection?> upgradeConnectionToHttps(
+    PlexConnection current,
+  ) async {
+    if (current.uri.startsWith('https://')) {
+      return current;
+    }
+
+    final baseConnection = _findMatchingBaseConnection(current);
+    if (baseConnection == null) {
+      return null;
+    }
+
+    final candidate = _ConnectionCandidate(
+      baseConnection,
+      current.uri,
+      current.uri.contains('.plex.direct'),
+      current.uri.startsWith('https://'),
+    );
+    final upgradedCandidate = await _upgradeCandidateToHttpsIfPossible(
+      candidate,
+    );
+    if (upgradedCandidate == null) {
+      return null;
+    }
+    return _updateConnectionUrl(
+      upgradedCandidate.connection,
+      upgradedCandidate.url,
+    );
+  }
+
+  PlexConnection? _findMatchingBaseConnection(PlexConnection connection) {
+    for (final base in connections) {
+      final sameAddress = base.address == connection.address;
+      final samePort = base.port == connection.port;
+      final sameLocal = base.local == connection.local;
+      final sameRelay = base.relay == connection.relay;
+      if (sameAddress && samePort && sameLocal && sameRelay) {
+        return base;
+      }
+    }
+    return null;
   }
 
   /// Select the best candidate considering priority, latency, and URL type preference
@@ -550,8 +837,8 @@ class PlexServer {
       if (latencyCompare != 0) return latencyCompare;
 
       // If latencies are equal, prefer HTTPS over HTTP
-      final aIsHttps = a.key.connection.protocol == 'https';
-      final bIsHttps = b.key.connection.protocol == 'https';
+      final aIsHttps = a.key.isHttps;
+      final bIsHttps = b.key.isHttps;
       if (aIsHttps && !bIsHttps) return -1;
       if (!aIsHttps && bIsHttps) return 1;
 
@@ -640,6 +927,13 @@ class PlexConnection {
   /// Get the direct URL constructed from address and port
   /// This bypasses plex.direct DNS and connects directly to the IP
   String get directUrl => '$protocol://$address:$port';
+
+  /// Always return an HTTP URL that points directly at the IP/port combo.
+  String get httpDirectUrl {
+    final needsBrackets = address.contains(':') && !address.startsWith('[');
+    final safeAddress = needsBrackets ? '[$address]' : address;
+    return 'http://$safeAddress:$port';
+  }
 
   String get displayType {
     if (relay) return 'Relay';

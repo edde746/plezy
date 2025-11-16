@@ -43,6 +43,7 @@ class SettingsService {
   static const String _keyShuffleOrderNavigation = 'shuffle_order_navigation';
   static const String _keyShuffleLoopQueue = 'shuffle_loop_queue';
   static const String _keyAppLocale = 'app_locale';
+  static const String _keyRememberTrackSelections = 'remember_track_selections';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -828,6 +829,17 @@ class SettingsService {
     return _prefs.getBool(_keyShuffleLoopQueue) ?? false; // Default: false
   }
 
+  // Track Selection Settings
+
+  /// Remember Track Selections - Save per-media audio/subtitle language preferences
+  Future<void> setRememberTrackSelections(bool enabled) async {
+    await _prefs.setBool(_keyRememberTrackSelections, enabled);
+  }
+
+  bool getRememberTrackSelections() {
+    return _prefs.getBool(_keyRememberTrackSelections) ?? true; // Default: true
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -860,6 +872,7 @@ class SettingsService {
       _prefs.remove(_keyShuffleOrderNavigation),
       _prefs.remove(_keyShuffleLoopQueue),
       _prefs.remove(_keyAppLocale),
+      _prefs.remove(_keyRememberTrackSelections),
     ]);
   }
 
@@ -891,6 +904,7 @@ class SettingsService {
       'keyboardHotkeys': hotkeys.map(
         (key, value) => MapEntry(key, _serializeHotKey(value)),
       ),
+      'rememberTrackSelections': getRememberTrackSelections(),
     };
   }
 }

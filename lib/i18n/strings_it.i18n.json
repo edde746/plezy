@@ -37,7 +37,10 @@
     "refresh": "Aggiorna",
     "yes": "Sì",
     "no": "No",
-    "server": "Server"
+    "server": "Server",
+    "delete": "Elimina",
+    "shuffle": "Casuale",
+    "addTo": "Aggiungi a..."
   },
   "screens": {
     "licenses": "Licenze",
@@ -100,6 +103,8 @@
     "secondsUnit": "${seconds} secondi",
     "defaultSleepTimer": "Timer spegnimento predefinito",
     "minutesUnit": "${minutes} minuti",
+    "rememberTrackSelections": "Ricorda selezioni tracce per serie/film",
+    "rememberTrackSelectionsDescription": "Salva automaticamente le preferenze delle lingue audio e sottotitoli quando cambi tracce durante la riproduzione",
     "unwatchedOnly": "Solo non guardati",
     "unwatchedOnlyDescription": "Includi solo gli episodi non guardati nella coda di riproduzione casuale",
     "shuffleOrderNavigation": "Navigazione in ordine casuale",
@@ -197,12 +202,17 @@
     "fillScreen": "Riempi schermo",
     "stretch": "Allunga",
     "lockRotation": "Blocca rotazione",
-    "unlockRotation": "Sblocca rotazione"
+    "unlockRotation": "Sblocca rotazione",
+    "sleepTimer": "Timer di spegnimento",
+    "timerActive": "Timer attivo",
+    "playbackWillPauseIn": "La riproduzione si interromperà tra ${duration}",
+    "sleepTimerCompleted": "Timer di spegnimento completato - riproduzione in pausa"
   },
   "userStatus": {
     "admin": "Admin",
     "restricted": "Limitato",
-    "protected": "Protetto"
+    "protected": "Protetto",
+    "current": "ATTUALE"
   },
   "messages": {
     "markedAsWatched": "Segna come visto",
@@ -230,7 +240,11 @@
     "noEpisodesFoundGeneral": "Nessun episodio trovato",
     "noResultsFound": "Nessun risultato",
     "sleepTimerSet": "Imposta timer spegnimento per ${label}",
-    "failedToSwitchProfile": "Impossibile passare a ${displayName}"
+    "failedToSwitchProfile": "Impossibile passare a ${displayName}",
+    "noItemsAvailable": "Nessun elemento disponibile",
+    "failedToCreatePlayQueue": "Impossibile creare la coda di riproduzione",
+    "failedToCreatePlayQueueNoItems": "Impossibile creare la coda di riproduzione - nessun elemento",
+    "failedPlayback": "Impossibile ${action}: ${error}"
   },
   "profile": {
     "noUsersAvailable": "Nessun utente disponibile"
@@ -266,6 +280,10 @@
     "pause": "Pausa",
     "overview": "Panoramica",
     "cast": "Cast",
+    "seasons": "Stagioni",
+    "studio": "Studio",
+    "rating": "Classificazione",
+    "watched": "Guardato",
     "episodeCount": "${count} episodi",
     "watchedProgress": "${watched}/${total} guardati",
     "movie": "Film",
@@ -316,7 +334,28 @@
     "confirmActionMessage": "Sei sicuro di voler eseguire questa azione?",
     "showLibrary": "Mostra libreria",
     "hideLibrary": "Nascondi libreria",
-    "libraryOptions": "Opzioni libreria"
+    "libraryOptions": "Opzioni libreria",
+    "content": "contenuto della libreria",
+    "selectLibrary": "Seleziona libreria",
+    "filtersWithCount": "Filtri (${count})",
+    "noRecommendations": "Nessun consiglio disponibile",
+    "noCollections": "Nessuna raccolta in questa libreria",
+    "noFoldersFound": "Nessuna cartella trovata",
+    "folders": "cartelle",
+    "tabs": {
+      "recommended": "Consigliati",
+      "browse": "Esplora",
+      "collections": "Raccolte",
+      "playlists": "Playlist"
+    },
+    "groupings": {
+      "all": "Tutti",
+      "movies": "Film",
+      "shows": "Serie TV",
+      "seasons": "Stagioni",
+      "episodes": "Episodi",
+      "folders": "Cartelle"
+    }
   },
   "about": {
     "title": "Informazioni",
@@ -366,5 +405,68 @@
     "search": "Cerca",
     "libraries": "Librerie",
     "settings": "Impostazioni"
+  },
+  "playlists": {
+    "title": "Playlist",
+    "noPlaylists": "Nessuna playlist trovata",
+    "create": "Crea playlist",
+    "newPlaylist": "Nuova playlist",
+    "playlistName": "Nome playlist",
+    "enterPlaylistName": "Inserisci nome playlist",
+    "edit": "Modifica playlist",
+    "delete": "Elimina playlist",
+    "addTo": "Aggiungi a playlist",
+    "addItems": "Aggiungi elementi",
+    "removeItem": "Rimuovi da playlist",
+    "clearPlaylist": "Svuota playlist",
+    "playAll": "Riproduci tutto",
+    "shuffle": "Casuale",
+    "smartPlaylist": "Playlist intelligente",
+    "regularPlaylist": "Playlist normale",
+    "itemCount": "${count} elementi",
+    "oneItem": "1 elemento",
+    "emptyPlaylist": "Questa playlist è vuota",
+    "deleteConfirm": "Eliminare playlist?",
+    "deleteMessage": "Sei sicuro di voler eliminare \"${name}\"?",
+    "created": "Playlist creata",
+    "updated": "Playlist aggiornata",
+    "deleted": "Playlist eliminata",
+    "itemAdded": "Aggiunto alla playlist",
+    "itemRemoved": "Rimosso dalla playlist",
+    "selectPlaylist": "Seleziona playlist",
+    "createNewPlaylist": "Crea nuova playlist",
+    "errorCreating": "Errore durante la creazione della playlist",
+    "errorDeleting": "Errore durante l'eliminazione della playlist",
+    "errorLoading": "Errore durante il caricamento delle playlist",
+    "errorAdding": "Errore durante l'aggiunta alla playlist",
+    "errorReordering": "Errore durante il riordino dell'elemento della playlist",
+    "errorRemoving": "Errore durante la rimozione dalla playlist",
+    "playlist": "Playlist"
+  },
+  "collections": {
+    "title": "Raccolte",
+    "collection": "Raccolta",
+    "empty": "La raccolta è vuota",
+    "noItems": "Nessun elemento in questa raccolta",
+    "unknownLibrarySection": "Impossibile eliminare: sezione libreria sconosciuta",
+    "deleteCollection": "Elimina raccolta",
+    "deleteConfirm": "Sei sicuro di voler eliminare \"${title}\"? Questa azione non può essere annullata.",
+    "deleted": "Raccolta eliminata",
+    "deleteFailed": "Impossibile eliminare la raccolta",
+    "deleteFailedWithError": "Impossibile eliminare la raccolta: ${error}",
+    "failedToLoadItems": "Impossibile caricare gli elementi della raccolta: ${error}",
+    "addTo": "Aggiungi alla raccolta",
+    "selectCollection": "Seleziona raccolta",
+    "createNewCollection": "Crea nuova raccolta",
+    "collectionName": "Nome raccolta",
+    "enterCollectionName": "Inserisci nome raccolta",
+    "addedToCollection": "Aggiunto alla raccolta",
+    "errorAddingToCollection": "Errore nell'aggiunta alla raccolta",
+    "created": "Raccolta creata",
+    "removeFromCollection": "Rimuovi dalla raccolta",
+    "removeFromCollectionConfirm": "Rimuovere \"${title}\" da questa raccolta?",
+    "removedFromCollection": "Rimosso dalla raccolta",
+    "removeFromCollectionFailed": "Impossibile rimuovere dalla raccolta",
+    "removeFromCollectionError": "Errore durante la rimozione dalla raccolta: ${error}"
   }
 }

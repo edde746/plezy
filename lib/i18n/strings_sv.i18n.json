@@ -37,7 +37,10 @@
     "refresh": "Uppdatera",
     "yes": "Ja",
     "no": "Nej",
-    "server": "Server"
+    "server": "Server",
+    "delete": "Ta bort",
+    "shuffle": "Blanda",
+    "addTo": "Lägg till i..."
   },
   "screens": {
     "licenses": "Licenser",
@@ -100,6 +103,8 @@
     "secondsUnit": "${seconds} sekunder",
     "defaultSleepTimer": "Standard sovtimer",
     "minutesUnit": "${minutes} minuter",
+    "rememberTrackSelections": "Kom ihåg spårval per serie/film",
+    "rememberTrackSelectionsDescription": "Spara automatiskt ljud- och undertextspråkpreferenser när du ändrar spår under uppspelning",
     "unwatchedOnly": "Endast osedda",
     "unwatchedOnlyDescription": "Inkludera endast osedda avsnitt i blandningskön",
     "shuffleOrderNavigation": "Blandningsordning-navigation",
@@ -197,12 +202,17 @@
     "fillScreen": "Fyll skärm",
     "stretch": "Sträck",
     "lockRotation": "Lås rotation",
-    "unlockRotation": "Lås upp rotation"
+    "unlockRotation": "Lås upp rotation",
+    "sleepTimer": "Sovtimer",
+    "timerActive": "Timer aktiv",
+    "playbackWillPauseIn": "Uppspelningen pausas om ${duration}",
+    "sleepTimerCompleted": "Sovtimer slutförd - uppspelning pausad"
   },
   "userStatus": {
     "admin": "Admin",
     "restricted": "Begränsad",
-    "protected": "Skyddad"
+    "protected": "Skyddad",
+    "current": "NUVARANDE"
   },
   "messages": {
     "markedAsWatched": "Markerad som sedd",
@@ -230,7 +240,11 @@
     "noEpisodesFoundGeneral": "Inga avsnitt hittades",
     "noResultsFound": "Inga resultat hittades",
     "sleepTimerSet": "Sovtimer inställd för ${label}",
-    "failedToSwitchProfile": "Misslyckades att byta till ${displayName}"
+    "failedToSwitchProfile": "Misslyckades att byta till ${displayName}",
+    "noItemsAvailable": "Inga objekt tillgängliga",
+    "failedToCreatePlayQueue": "Det gick inte att skapa uppspelningskö",
+    "failedToCreatePlayQueueNoItems": "Det gick inte att skapa uppspelningskö – inga objekt",
+    "failedPlayback": "Kunde inte ${action}: ${error}"
   },
   "profile": {
     "noUsersAvailable": "Inga användare tillgängliga"
@@ -266,6 +280,10 @@
     "pause": "Pausa",
     "overview": "Översikt",
     "cast": "Rollbesättning",
+    "seasons": "Säsonger",
+    "studio": "Studio",
+    "rating": "Åldersgräns",
+    "watched": "Tittad",
     "episodeCount": "${count} avsnitt",
     "watchedProgress": "${watched}/${total} sedda",
     "movie": "Film",
@@ -316,7 +334,28 @@
     "confirmActionMessage": "Är du säker på att du vill utföra denna åtgärd?",
     "showLibrary": "Visa bibliotek",
     "hideLibrary": "Dölj bibliotek",
-    "libraryOptions": "Biblioteksalternativ"
+    "libraryOptions": "Biblioteksalternativ",
+    "content": "bibliotekets innehåll",
+    "selectLibrary": "Välj bibliotek",
+    "filtersWithCount": "Filter (${count})",
+    "noRecommendations": "Inga rekommendationer tillgängliga",
+    "noCollections": "Inga samlingar i det här biblioteket",
+    "noFoldersFound": "Inga mappar hittades",
+    "folders": "mappar",
+    "tabs": {
+      "recommended": "Rekommenderat",
+      "browse": "Bläddra",
+      "collections": "Samlingar",
+      "playlists": "Spellistor"
+    },
+    "groupings": {
+      "all": "Alla",
+      "movies": "Filmer",
+      "shows": "Serier",
+      "seasons": "Säsonger",
+      "episodes": "Avsnitt",
+      "folders": "Mappar"
+    }
   },
   "about": {
     "title": "Om",
@@ -366,5 +405,68 @@
     "search": "Sök",
     "libraries": "Bibliotek",
     "settings": "Inställningar"
+  },
+  "playlists": {
+    "title": "Spellistor",
+    "noPlaylists": "Inga spellistor hittades",
+    "create": "Skapa spellista",
+    "newPlaylist": "Ny spellista",
+    "playlistName": "Spellistans namn",
+    "enterPlaylistName": "Ange spellistans namn",
+    "edit": "Redigera spellista",
+    "delete": "Ta bort spellista",
+    "addTo": "Lägg till i spellista",
+    "addItems": "Lägg till objekt",
+    "removeItem": "Ta bort från spellista",
+    "clearPlaylist": "Rensa spellista",
+    "playAll": "Spela alla",
+    "shuffle": "Blanda",
+    "smartPlaylist": "Smart spellista",
+    "regularPlaylist": "Vanlig spellista",
+    "itemCount": "${count} objekt",
+    "oneItem": "1 objekt",
+    "emptyPlaylist": "Denna spellista är tom",
+    "deleteConfirm": "Ta bort spellista?",
+    "deleteMessage": "Är du säker på att du vill ta bort \"${name}\"?",
+    "created": "Spellista skapad",
+    "updated": "Spellista uppdaterad",
+    "deleted": "Spellista borttagen",
+    "itemAdded": "Tillagd i spellista",
+    "itemRemoved": "Borttagen från spellista",
+    "selectPlaylist": "Välj spellista",
+    "createNewPlaylist": "Skapa ny spellista",
+    "errorCreating": "Det gick inte att skapa spellista",
+    "errorDeleting": "Det gick inte att ta bort spellista",
+    "errorLoading": "Det gick inte att ladda spellistor",
+    "errorAdding": "Det gick inte att lägga till i spellista",
+    "errorReordering": "Det gick inte att omordna spellisteobjekt",
+    "errorRemoving": "Det gick inte att ta bort från spellista",
+    "playlist": "Spellista"
+  },
+  "collections": {
+    "title": "Samlingar",
+    "collection": "Samling",
+    "empty": "Samlingen är tom",
+    "noItems": "Inga objekt i den här samlingen",
+    "unknownLibrarySection": "Kan inte ta bort: okänd bibliotekssektion",
+    "deleteCollection": "Ta bort samling",
+    "deleteConfirm": "Är du säker på att du vill ta bort \"${title}\"? Detta går inte att ångra.",
+    "deleted": "Samling borttagen",
+    "deleteFailed": "Det gick inte att ta bort samlingen",
+    "deleteFailedWithError": "Det gick inte att ta bort samlingen: ${error}",
+    "failedToLoadItems": "Det gick inte att läsa in samlingsobjekt: ${error}",
+    "addTo": "Lägg till i samling",
+    "selectCollection": "Välj samling",
+    "createNewCollection": "Skapa ny samling",
+    "collectionName": "Samlingsnamn",
+    "enterCollectionName": "Ange samlingsnamn",
+    "addedToCollection": "Tillagd i samling",
+    "errorAddingToCollection": "Fel vid tillägg i samling",
+    "created": "Samling skapad",
+    "removeFromCollection": "Ta bort från samling",
+    "removeFromCollectionConfirm": "Ta bort \"${title}\" från denna samling?",
+    "removedFromCollection": "Borttagen från samling",
+    "removeFromCollectionFailed": "Misslyckades med att ta bort från samling",
+    "removeFromCollectionError": "Fel vid borttagning från samling: ${error}"
   }
 }

@@ -8,6 +8,7 @@ import '../providers/plex_client_provider.dart';
 import '../theme/theme_helper.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_rating_formatter.dart';
+import '../utils/duration_formatter.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/shuffle_play_helper.dart';
 import '../utils/video_player_navigation.dart';
@@ -489,7 +490,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      _formatDuration(metadata.duration!),
+                                      formatDurationTextual(metadata.duration!),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 13,
@@ -768,7 +769,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                   // Seasons (for TV shows)
                   if (isShow) ...[
                     Text(
-                      'Seasons',
+                      t.discover.seasons,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -930,12 +931,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
                   // Additional info
                   if (metadata.studio != null) ...[
-                    _buildInfoRow('Studio', metadata.studio!),
+                    _buildInfoRow(t.discover.studio, metadata.studio!),
                     const SizedBox(height: 12),
                   ],
                   if (metadata.contentRating != null) ...[
                     _buildInfoRow(
-                      'Rating',
+                      t.discover.rating,
                       formatContentRating(metadata.contentRating!),
                     ),
                     const SizedBox(height: 12),
@@ -953,7 +954,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: MediaContextMenu(
-        metadata: season,
+        item: season,
         onRefresh: (ratingKey) {
           _watchStateChanged = true;
           _updateWatchState();
@@ -1120,18 +1121,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         ),
       ],
     );
-  }
-
-  String _formatDuration(int milliseconds) {
-    final duration = Duration(milliseconds: milliseconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    } else {
-      return '${minutes}m';
-    }
   }
 
   String _getPlayButtonLabel(PlexMetadata metadata) {

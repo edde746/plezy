@@ -1,18 +1,43 @@
 import '../models/plex_media_info.dart';
+import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
+import '../utils/language_codes.dart';
 
 /// Service for selecting audio and subtitle tracks based on user preferences
 class TrackSelectionService {
   /// Selects the best audio track based on user preferences
   ///
+  /// Priority order:
+  /// 1. Per-media preferred audio language (from metadata.audioLanguage)
+  /// 2. Profile-wide language preferences (if auto-select is enabled)
+  /// 3. Plex's selected track (if auto-select is disabled)
+  /// 4. First track
+  ///
   /// Returns the selected audio track, or null if no suitable track is found
   static PlexAudioTrack? selectAudioTrack(
     List<PlexAudioTrack> tracks,
-    PlexUserProfile profile,
-  ) {
+    PlexUserProfile profile, {
+    PlexMetadata? metadata,
+  }) {
     if (tracks.isEmpty) return null;
 
-    // If auto-select is disabled, use Plex's selected track
+    // Priority 1: Check for per-media audio language preference
+    if (metadata?.audioLanguage != null) {
+      final perMediaTrack = tracks.firstWhere(
+        (track) =>
+            _matchesLanguage(track.languageCode, metadata!.audioLanguage),
+        orElse: () => tracks.first,
+      );
+      // Only use it if we actually found a matching track
+      if (_matchesLanguage(
+        perMediaTrack.languageCode,
+        metadata!.audioLanguage,
+      )) {
+        return perMediaTrack;
+      }
+    }
+
+    // Priority 2: If auto-select is disabled, use Plex's selected track
     if (!profile.autoSelectAudio) {
       return tracks.firstWhere(
         (track) => track.selected,
@@ -20,7 +45,7 @@ class TrackSelectionService {
       );
     }
 
-    // Build list of preferred language codes
+    // Priority 3: Use profile-wide language preferences
     final preferredLanguages = <String>[];
     if (profile.defaultAudioLanguage != null) {
       preferredLanguages.add(profile.defaultAudioLanguage!);
@@ -52,14 +77,44 @@ class TrackSelectionService {
 
   /// Selects the best subtitle track based on user preferences
   ///
+  /// Priority order:
+  /// 1. Per-media preferred subtitle language (from metadata.subtitleLanguage)
+  /// 2. Profile-wide subtitle preferences (based on auto-select mode)
+  /// 3. Disabled (null)
+  ///
   /// Returns the selected subtitle track, or null if subtitles should be disabled
   static PlexSubtitleTrack? selectSubtitleTrack(
     List<PlexSubtitleTrack> tracks,
     PlexUserProfile profile,
-    PlexAudioTrack? selectedAudioTrack,
-  ) {
+    PlexAudioTrack? selectedAudioTrack, {
+    PlexMetadata? metadata,
+  }) {
     if (tracks.isEmpty) return null;
 
+    // Priority 1: Check for per-media subtitle language preference
+    if (metadata?.subtitleLanguage != null &&
+        metadata!.subtitleLanguage!.isNotEmpty) {
+      // Check if subtitle should be disabled (empty string or "none")
+      if (metadata.subtitleLanguage == 'none' ||
+          metadata.subtitleLanguage == '') {
+        return null;
+      }
+
+      final perMediaTrack = tracks.firstWhere(
+        (track) =>
+            _matchesLanguage(track.languageCode, metadata.subtitleLanguage),
+        orElse: () => tracks.first,
+      );
+      // Only use it if we actually found a matching track
+      if (_matchesLanguage(
+        perMediaTrack.languageCode,
+        metadata.subtitleLanguage,
+      )) {
+        return perMediaTrack;
+      }
+    }
+
+    // Priority 2: Use profile-wide subtitle preferences
     // Mode 0: Manually selected - return null to disable subtitles
     if (profile.autoSelectSubtitle == 0) {
       return null;
@@ -217,6 +272,7 @@ class TrackSelectionService {
   /// Checks if a language code matches a preferred language
   ///
   /// Handles both 2-letter (ISO 639-1) and 3-letter (ISO 639-2) codes
+  /// Also handles bibliographic variants and region codes (e.g., "en-US")
   static bool _matchesLanguage(
     String? trackLanguage,
     String? preferredLanguage,
@@ -231,49 +287,16 @@ class TrackSelectionService {
     // Direct match
     if (track == preferred) return true;
 
-    // Handle common 2-letter to 3-letter mappings
-    final languageMap = {
-      'en': 'eng',
-      'es': 'spa',
-      'fr': 'fra',
-      'de': 'deu',
-      'it': 'ita',
-      'pt': 'por',
-      'ja': 'jpn',
-      'ko': 'kor',
-      'zh': 'zho',
-      'ru': 'rus',
-      'ar': 'ara',
-      'hi': 'hin',
-      'nl': 'nld',
-      'pl': 'pol',
-      'tr': 'tur',
-      'sv': 'swe',
-      'no': 'nor',
-      'da': 'dan',
-      'fi': 'fin',
-      'cs': 'ces',
-      'hu': 'hun',
-      'ro': 'ron',
-      'th': 'tha',
-      'vi': 'vie',
-      'id': 'ind',
-      'uk': 'ukr',
-      'el': 'ell',
-      'he': 'heb',
-    };
+    // Extract base language codes (handle region codes like "en-US")
+    final trackBase = track.split('-').first;
+    final preferredBase = preferred.split('-').first;
 
-    // Try mapping preferred to 3-letter and compare
-    if (languageMap[preferred] == track) return true;
+    if (trackBase == preferredBase) return true;
 
-    // Try mapping track to 3-letter and compare with preferred 3-letter
-    if (languageMap[track] == preferred) return true;
+    // Get all variations of the preferred language (e.g., "en" → ["en", "eng"])
+    final variations = LanguageCodes.getVariations(preferredBase);
 
-    // Try reverse mapping (3-letter to 2-letter)
-    final reverseMap = languageMap.map((k, v) => MapEntry(v, k));
-    if (reverseMap[preferred] == track) return true;
-    if (reverseMap[track] == preferred) return true;
-
-    return false;
+    // Check if track's base code matches any variation
+    return variations.contains(trackBase);
   }
 }
