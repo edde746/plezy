@@ -38,6 +38,9 @@ class PlexMetadata {
   final int? viewedLeafCount; // Number of watched episodes in a series/season
   @JsonKey(name: 'Role')
   final List<PlexRole>? role; // Cast members
+  final String? audioLanguage; // Per-media preferred audio language
+  final String? subtitleLanguage; // Per-media preferred subtitle language
+  final int? playlistItemID; // Playlist item ID (for dumb playlists only)
 
   // Transient field for clear logo (extracted from Image array)
   String? _clearLogo;
@@ -75,6 +78,9 @@ class PlexMetadata {
     this.leafCount,
     this.viewedLeafCount,
     this.role,
+    this.audioLanguage,
+    this.subtitleLanguage,
+    this.playlistItemID,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -110,6 +116,9 @@ class PlexMetadata {
     int? leafCount,
     int? viewedLeafCount,
     List<PlexRole>? role,
+    String? audioLanguage,
+    String? subtitleLanguage,
+    int? playlistItemID,
   }) {
     final copy = PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -143,6 +152,9 @@ class PlexMetadata {
       leafCount: leafCount ?? this.leafCount,
       viewedLeafCount: viewedLeafCount ?? this.viewedLeafCount,
       role: role ?? this.role,
+      audioLanguage: audioLanguage ?? this.audioLanguage,
+      subtitleLanguage: subtitleLanguage ?? this.subtitleLanguage,
+      playlistItemID: playlistItemID ?? this.playlistItemID,
     );
     // Preserve clearLogo
     copy._clearLogo = _clearLogo;

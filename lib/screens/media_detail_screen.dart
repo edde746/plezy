@@ -768,7 +768,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                   // Seasons (for TV shows)
                   if (isShow) ...[
                     Text(
-                      'Seasons',
+                      t.discover.seasons,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -930,12 +930,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
                   // Additional info
                   if (metadata.studio != null) ...[
-                    _buildInfoRow('Studio', metadata.studio!),
+                    _buildInfoRow(t.discover.studio, metadata.studio!),
                     const SizedBox(height: 12),
                   ],
                   if (metadata.contentRating != null) ...[
                     _buildInfoRow(
-                      'Rating',
+                      t.discover.rating,
                       formatContentRating(metadata.contentRating!),
                     ),
                     const SizedBox(height: 12),

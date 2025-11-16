@@ -1,98 +1,127 @@
 import 'package:flutter/foundation.dart';
 import '../models/plex_metadata.dart';
 
-/// Manages shuffle playback state for TV shows and seasons.
+/// Playback mode types
+enum PlaybackMode {
+  none, // No active playback queue
+  sequential, // Normal episode-to-episode playback (uses Plex API)
+  shufflePlay, // Shuffle play for shows/seasons
+  playlist, // Playlist playback (ordered or shuffled)
+}
+
+/// Manages playback state for TV shows, seasons, and playlists.
 /// This provider is session-only and does not persist across app restarts.
 class PlaybackStateProvider with ChangeNotifier {
-  List<PlexMetadata> _shuffleQueue = [];
-  String?
-  _shuffleContextKey; // The show/season ratingKey for this shuffle session
+  List<PlexMetadata> _queue = [];
+  String? _contextKey; // The show/season/playlist ratingKey for this session
   int _currentIndex = 0;
+  PlaybackMode _playbackMode = PlaybackMode.none;
+
+  /// Current playback mode
+  PlaybackMode get playbackMode => _playbackMode;
 
   /// Whether shuffle mode is currently active
-  bool get isShuffleActive => _shuffleQueue.isNotEmpty;
+  bool get isShuffleActive => _playbackMode == PlaybackMode.shufflePlay;
 
-  /// The context key (show or season ratingKey) for the current shuffle session
-  String? get shuffleContextKey => _shuffleContextKey;
+  /// Whether playlist mode is currently active
+  bool get isPlaylistActive => _playbackMode == PlaybackMode.playlist;
+
+  /// Whether any queue-based playback is active
+  bool get isQueueActive =>
+      _queue.isNotEmpty && _playbackMode != PlaybackMode.none;
+
+  /// The context key (show/season/playlist ratingKey) for the current session
+  String? get shuffleContextKey => _contextKey;
 
   /// Sets a new shuffle queue and starts shuffle mode
   void setShuffleQueue(List<PlexMetadata> episodes, String contextKey) {
-    _shuffleQueue = List.from(episodes);
-    _shuffleContextKey = contextKey;
+    _queue = List.from(episodes);
+    _contextKey = contextKey;
     _currentIndex = 0;
+    _playbackMode = PlaybackMode.shufflePlay;
     notifyListeners();
   }
 
-  /// Gets the next episode in the shuffle queue.
-  /// Returns null if queue is exhausted or current episode is not in queue.
+  /// Sets a playback queue for playlist playback (ordered, not shuffled)
+  void setPlaybackQueue(List<PlexMetadata> items, String contextKey) {
+    _queue = List.from(items);
+    _contextKey = contextKey;
+    _currentIndex = 0;
+    _playbackMode = PlaybackMode.playlist;
+    notifyListeners();
+  }
+
+  /// Gets the next item in the playback queue.
+  /// Returns null if queue is exhausted or current item is not in queue.
   /// [loopQueue] - If true, restart from beginning when queue is exhausted
   PlexMetadata? getNextEpisode(
-    String currentEpisodeKey, {
+    String currentItemKey, {
     bool loopQueue = false,
   }) {
-    if (_shuffleQueue.isEmpty) return null;
+    if (_queue.isEmpty) return null;
 
-    // Find current episode in queue
-    final currentIndex = _shuffleQueue.indexWhere(
-      (ep) => ep.ratingKey == currentEpisodeKey,
+    // Find current item in queue
+    final currentIndex = _queue.indexWhere(
+      (item) => item.ratingKey == currentItemKey,
     );
 
     if (currentIndex == -1) {
-      // Current episode not in queue, clear shuffle
+      // Current item not in queue, clear queue
       clearShuffle();
       return null;
     }
 
-    // Check if there's a next episode
-    if (currentIndex + 1 >= _shuffleQueue.length) {
+    // Check if there's a next item
+    if (currentIndex + 1 >= _queue.length) {
       // Queue exhausted
-      if (loopQueue && _shuffleQueue.isNotEmpty) {
+      if (loopQueue && _queue.isNotEmpty) {
         // Loop back to beginning
         _currentIndex = 0;
-        return _shuffleQueue[_currentIndex];
+        return _queue[_currentIndex];
       }
       return null;
     }
 
     _currentIndex = currentIndex + 1;
-    return _shuffleQueue[_currentIndex];
+    return _queue[_currentIndex];
   }
 
-  /// Gets the previous episode in the shuffle queue.
-  /// Returns null if at the beginning of the queue or current episode is not in queue.
-  PlexMetadata? getPreviousEpisode(String currentEpisodeKey) {
-    if (_shuffleQueue.isEmpty) return null;
+  /// Gets the previous item in the playback queue.
+  /// Returns null if at the beginning of the queue or current item is not in queue.
+  PlexMetadata? getPreviousEpisode(String currentItemKey) {
+    if (_queue.isEmpty) return null;
 
-    // Find current episode in queue
-    final currentIndex = _shuffleQueue.indexWhere(
-      (ep) => ep.ratingKey == currentEpisodeKey,
+    // Find current item in queue
+    final currentIndex = _queue.indexWhere(
+      (item) => item.ratingKey == currentItemKey,
     );
 
     if (currentIndex == -1) {
-      // Current episode not in queue
+      // Current item not in queue
       return null;
     }
 
-    // Check if there's a previous episode
+    // Check if there's a previous item
     if (currentIndex <= 0) {
       // At the beginning of queue
       return null;
     }
 
     _currentIndex = currentIndex - 1;
-    return _shuffleQueue[_currentIndex];
+    return _queue[_currentIndex];
   }
 
-  /// Clears the shuffle queue and exits shuffle mode
+  /// Clears the playback queue and exits queue mode
   void clearShuffle() {
-    _shuffleQueue = [];
-    _shuffleContextKey = null;
+    _queue = [];
+    _contextKey = null;
     _currentIndex = 0;
+    _playbackMode = PlaybackMode.none;
     notifyListeners();
   }
 
-  /// Gets the total number of episodes in the current shuffle queue
-  int get queueLength => _shuffleQueue.length;
+  /// Gets the total number of items in the current playback queue
+  int get queueLength => _queue.length;
 
   /// Gets the current position in the queue (1-indexed)
   int get currentPosition => _currentIndex + 1;

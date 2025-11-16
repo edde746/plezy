@@ -5,8 +5,9 @@ import '../../../i18n/strings.g.dart';
 /// Bottom sheet for selecting audio tracks
 class AudioTrackSheet extends StatelessWidget {
   final Player player;
+  final Function(AudioTrack)? onTrackChanged;
 
-  const AudioTrackSheet({super.key, required this.player});
+  const AudioTrackSheet({super.key, required this.player, this.onTrackChanged});
 
   static BoxConstraints getBottomSheetConstraints(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -19,13 +20,18 @@ class AudioTrackSheet extends StatelessWidget {
     );
   }
 
-  static void show(BuildContext context, Player player) {
+  static void show(
+    BuildContext context,
+    Player player, {
+    Function(AudioTrack)? onTrackChanged,
+  }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
       isScrollControlled: true,
       constraints: getBottomSheetConstraints(context),
-      builder: (context) => AudioTrackSheet(player: player),
+      builder: (context) =>
+          AudioTrackSheet(player: player, onTrackChanged: onTrackChanged),
     );
   }
 
@@ -130,6 +136,7 @@ class AudioTrackSheet extends StatelessWidget {
                                   : null,
                               onTap: () {
                                 player.setAudioTrack(audioTrack);
+                                onTrackChanged?.call(audioTrack);
                                 Navigator.pop(context);
                               },
                             );

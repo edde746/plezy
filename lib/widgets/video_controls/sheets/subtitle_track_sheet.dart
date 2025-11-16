@@ -5,8 +5,13 @@ import '../../../i18n/strings.g.dart';
 /// Bottom sheet for selecting subtitle tracks
 class SubtitleTrackSheet extends StatelessWidget {
   final Player player;
+  final Function(SubtitleTrack)? onTrackChanged;
 
-  const SubtitleTrackSheet({super.key, required this.player});
+  const SubtitleTrackSheet({
+    super.key,
+    required this.player,
+    this.onTrackChanged,
+  });
 
   static BoxConstraints getBottomSheetConstraints(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -19,13 +24,18 @@ class SubtitleTrackSheet extends StatelessWidget {
     );
   }
 
-  static void show(BuildContext context, Player player) {
+  static void show(
+    BuildContext context,
+    Player player, {
+    Function(SubtitleTrack)? onTrackChanged,
+  }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
       isScrollControlled: true,
       constraints: getBottomSheetConstraints(context),
-      builder: (context) => SubtitleTrackSheet(player: player),
+      builder: (context) =>
+          SubtitleTrackSheet(player: player, onTrackChanged: onTrackChanged),
     );
   }
 
@@ -113,6 +123,7 @@ class SubtitleTrackSheet extends StatelessWidget {
                                     : null,
                                 onTap: () {
                                   player.setSubtitleTrack(SubtitleTrack.no());
+                                  onTrackChanged?.call(SubtitleTrack.no());
                                   Navigator.pop(context);
                                 },
                               );
@@ -167,6 +178,7 @@ class SubtitleTrackSheet extends StatelessWidget {
                                   : null,
                               onTap: () {
                                 player.setSubtitleTrack(subtitle);
+                                onTrackChanged?.call(subtitle);
                                 Navigator.pop(context);
                               },
                             );

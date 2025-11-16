@@ -350,7 +350,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                             ),
                           ),
                           Text(
-                            'Watched ✓',
+                            '${t.discover.watched} ✓',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: tokens(context).textMuted,
