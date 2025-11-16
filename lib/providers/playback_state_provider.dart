@@ -10,6 +10,19 @@ enum PlaybackMode {
   playQueue, // Play queue-based playback (playlists, collections, shuffle)
 }
 
+/// Result of trying to locate the current queue index.
+class _IndexLookupResult {
+  final int? index;
+  final bool attemptedLoad;
+  final bool loadFailed;
+
+  const _IndexLookupResult({
+    this.index,
+    this.attemptedLoad = false,
+    this.loadFailed = false,
+  });
+}
+
 /// Manages playback state using Plex's play queue API.
 /// This provider is session-only and does not persist across app restarts.
 class PlaybackStateProvider with ChangeNotifier {
@@ -158,6 +171,43 @@ class PlaybackStateProvider with ChangeNotifier {
     return false;
   }
 
+  Future<_IndexLookupResult> _getCurrentIndex({
+    bool loadIfMissing = false,
+  }) async {
+    if (_playbackMode != PlaybackMode.playQueue ||
+        _loadedItems.isEmpty ||
+        _currentPlayQueueItemID == null) {
+      return const _IndexLookupResult();
+    }
+
+    var currentIndex = _loadedItems.indexWhere(
+      (item) => item.playQueueItemID == _currentPlayQueueItemID,
+    );
+
+    if (currentIndex != -1) {
+      return _IndexLookupResult(index: currentIndex);
+    }
+
+    if (!loadIfMissing || _client == null || _playQueueId == null) {
+      return const _IndexLookupResult();
+    }
+
+    final loaded = await _ensureItemsLoaded(_currentPlayQueueItemID!);
+    if (!loaded) {
+      return const _IndexLookupResult(attemptedLoad: true, loadFailed: true);
+    }
+
+    currentIndex = _loadedItems.indexWhere(
+      (item) => item.playQueueItemID == _currentPlayQueueItemID,
+    );
+
+    if (currentIndex == -1) {
+      return const _IndexLookupResult(attemptedLoad: true, loadFailed: true);
+    }
+
+    return _IndexLookupResult(index: currentIndex, attemptedLoad: true);
+  }
+
   /// Gets the next item in the playback queue.
   /// Returns null if queue is exhausted or current item is not in queue.
   /// [loopQueue] - If true, restart from beginning when queue is exhausted
@@ -170,23 +220,14 @@ class PlaybackStateProvider with ChangeNotifier {
       return null;
     }
 
-    if (_loadedItems.isEmpty || _currentPlayQueueItemID == null) return null;
-
-    // Find current item in loaded items
-    final currentIndex = _loadedItems.indexWhere(
-      (item) => item.playQueueItemID == _currentPlayQueueItemID,
-    );
-
-    if (currentIndex == -1) {
-      // Current item not in loaded window, try to load it
-      final loaded = await _ensureItemsLoaded(_currentPlayQueueItemID!);
-      if (!loaded) {
+    final indexResult = await _getCurrentIndex(loadIfMissing: true);
+    if (indexResult.index == null) {
+      if (indexResult.loadFailed) {
         clearShuffle();
-        return null;
       }
-      // Try again after loading
-      return getNextEpisode(currentItemKey, loopQueue: loopQueue);
+      return null;
     }
+    final currentIndex = indexResult.index!;
 
     // Check if there's a next item in the loaded window
     if (currentIndex + 1 < _loadedItems.length) {
@@ -240,17 +281,8 @@ class PlaybackStateProvider with ChangeNotifier {
       return null;
     }
 
-    if (_loadedItems.isEmpty || _currentPlayQueueItemID == null) return null;
-
-    // Find current item in loaded items
-    final currentIndex = _loadedItems.indexWhere(
-      (item) => item.playQueueItemID == _currentPlayQueueItemID,
-    );
-
-    if (currentIndex == -1) {
-      // Current item not in loaded window
-      return null;
-    }
+    final currentIndex = (await _getCurrentIndex()).index;
+    if (currentIndex == null) return null;
 
     // Check if there's a previous item in the loaded window
     if (currentIndex > 0) {

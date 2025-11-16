@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:plezy/services/settings_service.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../utils/duration_formatter.dart';
 import 'base_video_control_sheet.dart';
 
 /// Bottom sheet for adjusting audio sync offset
@@ -61,11 +62,6 @@ class _AudioSyncSheetState extends State<AudioSyncSheet> {
     _applyOffset(0);
   }
 
-  String _formatOffset(double offsetMs) {
-    final sign = offsetMs >= 0 ? '+' : '';
-    return '$sign${offsetMs.round()}ms';
-  }
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -104,7 +100,7 @@ class _AudioSyncSheetState extends State<AudioSyncSheet> {
                   children: [
                     // Current offset display
                     Text(
-                      _formatOffset(_currentOffset),
+                      formatSyncOffset(_currentOffset),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 48,

@@ -323,61 +323,11 @@ class _MediaCardGrid extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: _buildPosterImage(context),
+          child: _buildPosterImage(context, item),
         ),
         _PosterOverlay(item: item),
       ],
     );
-  }
-
-  Widget _buildPosterImage(BuildContext context) {
-    String? posterUrl;
-    IconData fallbackIcon = Icons.movie;
-
-    if (item is PlexPlaylist) {
-      posterUrl = (item as PlexPlaylist).displayImage;
-      fallbackIcon = Icons.playlist_play;
-    } else if (item is PlexMetadata) {
-      final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
-      posterUrl = (item as PlexMetadata).posterThumb(
-        useSeasonPoster: useSeasonPoster,
-      );
-    }
-
-    if (posterUrl != null) {
-      return Consumer<PlexClientProvider>(
-        builder: (context, clientProvider, child) {
-          final client = clientProvider.client;
-          if (client == null) {
-            return SkeletonLoader(
-              child: Center(
-                child: Icon(fallbackIcon, size: 40, color: Colors.white54),
-              ),
-            );
-          }
-
-          return CachedNetworkImage(
-            imageUrl: client.getThumbnailUrl(posterUrl!),
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-            filterQuality: FilterQuality.medium,
-            fadeInDuration: const Duration(milliseconds: 300),
-            placeholder: (context, url) => const SkeletonLoader(),
-            errorWidget: (context, url, error) => Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Center(child: Icon(fallbackIcon, size: 40)),
-            ),
-          );
-        },
-      );
-    } else {
-      return SkeletonLoader(
-        child: Center(
-          child: Icon(fallbackIcon, size: 40, color: Colors.white54),
-        ),
-      );
-    }
   }
 }
 
@@ -442,14 +392,8 @@ class _MediaCardList extends StatelessWidget {
   }
 
   double get _summaryFontSize {
-    switch (density) {
-      case LibraryDensity.compact:
-        return 11;
-      case LibraryDensity.normal:
-        return 12;
-      case LibraryDensity.comfortable:
-        return 13;
-    }
+    // Summary uses the same sizing as metadata text
+    return _metadataFontSize;
   }
 
   int get _summaryMaxLines {
@@ -576,7 +520,7 @@ class _MediaCardList extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: _buildPosterImage(context),
+                      child: _buildPosterImage(context, item),
                     ),
                     _PosterOverlay(item: item),
                   ],
@@ -656,55 +600,53 @@ class _MediaCardList extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildPosterImage(BuildContext context) {
-    String? posterUrl;
-    IconData fallbackIcon = Icons.movie;
+Widget _buildPosterImage(BuildContext context, dynamic item) {
+  String? posterUrl;
+  IconData fallbackIcon = Icons.movie;
 
-    if (item is PlexPlaylist) {
-      posterUrl = (item as PlexPlaylist).displayImage;
-      fallbackIcon = Icons.playlist_play;
-    } else if (item is PlexMetadata) {
-      final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
-      posterUrl = (item as PlexMetadata).posterThumb(
-        useSeasonPoster: useSeasonPoster,
-      );
-    }
+  if (item is PlexPlaylist) {
+    posterUrl = (item as PlexPlaylist).displayImage;
+    fallbackIcon = Icons.playlist_play;
+  } else if (item is PlexMetadata) {
+    final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
+    posterUrl = (item as PlexMetadata).posterThumb(
+      useSeasonPoster: useSeasonPoster,
+    );
+  }
 
-    if (posterUrl != null) {
-      return Consumer<PlexClientProvider>(
-        builder: (context, clientProvider, child) {
-          final client = clientProvider.client;
-          if (client == null) {
-            return SkeletonLoader(
-              child: Center(
-                child: Icon(fallbackIcon, size: 40, color: Colors.white54),
-              ),
-            );
-          }
-
-          return CachedNetworkImage(
-            imageUrl: client.getThumbnailUrl(posterUrl!),
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-            filterQuality: FilterQuality.medium,
-            fadeInDuration: const Duration(milliseconds: 300),
-            placeholder: (context, url) => const SkeletonLoader(),
-            errorWidget: (context, url, error) => Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Center(child: Icon(fallbackIcon, size: 40)),
+  if (posterUrl != null) {
+    return Consumer<PlexClientProvider>(
+      builder: (context, clientProvider, child) {
+        final client = clientProvider.client;
+        if (client == null) {
+          return SkeletonLoader(
+            child: Center(
+              child: Icon(fallbackIcon, size: 40, color: Colors.white54),
             ),
           );
-        },
-      );
-    } else {
-      return SkeletonLoader(
-        child: Center(
-          child: Icon(fallbackIcon, size: 40, color: Colors.white54),
-        ),
-      );
-    }
+        }
+
+        return CachedNetworkImage(
+          imageUrl: client.getThumbnailUrl(posterUrl!),
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          filterQuality: FilterQuality.medium,
+          fadeInDuration: const Duration(milliseconds: 300),
+          placeholder: (context, url) => const SkeletonLoader(),
+          errorWidget: (context, url, error) => Container(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: Center(child: Icon(fallbackIcon, size: 40)),
+          ),
+        );
+      },
+    );
+  } else {
+    return SkeletonLoader(
+      child: Center(child: Icon(fallbackIcon, size: 40, color: Colors.white54)),
+    );
   }
 }
 

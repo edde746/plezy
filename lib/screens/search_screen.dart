@@ -11,6 +11,7 @@ import '../models/plex_metadata.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/grid_cross_axis_extent.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_card.dart';
@@ -253,9 +254,10 @@ class _SearchScreenState extends State<SearchScreen>
                       padding: const EdgeInsets.all(16),
                       sliver: SliverGrid(
                         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: _getMaxCrossAxisExtent(
+                          maxCrossAxisExtent: getMaxCrossAxisExtentWithPadding(
                             context,
                             settingsProvider.libraryDensity,
+                            32,
                           ),
                           childAspectRatio: 2 / 3.3,
                           crossAxisSpacing: 8,
@@ -278,50 +280,5 @@ class _SearchScreenState extends State<SearchScreen>
         ),
       ),
     );
-  }
-
-  double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = 32.0; // 16px left + 16px right from SliverPadding
-    final availableWidth = screenWidth - padding;
-
-    if (screenWidth >= 900) {
-      // Wide screens (desktop/large tablet landscape): Responsive division
-      double divisor;
-      double maxItemWidth;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 6.5;
-          maxItemWidth = 280;
-          break;
-        case LibraryDensity.normal:
-          divisor = 8.0;
-          maxItemWidth = 200;
-          break;
-        case LibraryDensity.compact:
-          divisor = 10.0;
-          maxItemWidth = 160;
-          break;
-      }
-
-      return (availableWidth / divisor).clamp(0, maxItemWidth);
-    } else if (screenWidth >= 600) {
-      // Medium screens (tablets): Fixed 4-5-6 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 4,
-        LibraryDensity.normal => 5,
-        LibraryDensity.compact => 6,
-      };
-      return availableWidth / targetItemCount;
-    } else {
-      // Small screens (phones): Fixed 2-3-4 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 2,
-        LibraryDensity.normal => 3,
-        LibraryDensity.compact => 4,
-      };
-      return availableWidth / targetItemCount;
-    }
   }
 }

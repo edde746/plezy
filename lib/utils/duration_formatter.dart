@@ -63,6 +63,15 @@ String formatDurationTimestamp(Duration duration) {
   }
 }
 
+/// Formats a sync offset in milliseconds with sign indicator (e.g., "+150ms", "-250ms").
+/// This format is used for audio/subtitle synchronization adjustments.
+///
+/// Used for: audio sync sheet, sync offset controls.
+String formatSyncOffset(double offsetMs) {
+  final sign = offsetMs >= 0 ? '+' : '';
+  return '$sign${offsetMs.round()}ms';
+}
+
 /// Gets the duration package locale based on the current app locale.
 /// Falls back to English if the locale is not supported by the duration package.
 DurationLocale _getDurationLocale() {

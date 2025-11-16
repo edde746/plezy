@@ -8,6 +8,7 @@ import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
+import '../utils/grid_cross_axis_extent.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/sort_bottom_sheet.dart';
@@ -293,9 +294,10 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: _getMaxCrossAxisExtent(
+                  maxCrossAxisExtent: getMaxCrossAxisExtentWithPadding(
                     context,
                     context.watch<SettingsProvider>().libraryDensity,
+                    16,
                   ),
                   childAspectRatio: 2 / 3.3,
                   crossAxisSpacing: 0,
@@ -312,50 +314,5 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
         ],
       ),
     );
-  }
-
-  double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = 16.0; // 8px left + 8px right
-    final availableWidth = screenWidth - padding;
-
-    if (screenWidth >= 900) {
-      // Wide screens (desktop/large tablet landscape): Responsive division
-      double divisor;
-      double maxItemWidth;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 6.5;
-          maxItemWidth = 280;
-          break;
-        case LibraryDensity.normal:
-          divisor = 8.0;
-          maxItemWidth = 200;
-          break;
-        case LibraryDensity.compact:
-          divisor = 10.0;
-          maxItemWidth = 160;
-          break;
-      }
-
-      return (availableWidth / divisor).clamp(0, maxItemWidth);
-    } else if (screenWidth >= 600) {
-      // Medium screens (tablets): Fixed 4-5-6 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 4,
-        LibraryDensity.normal => 5,
-        LibraryDensity.compact => 6,
-      };
-      return availableWidth / targetItemCount;
-    } else {
-      // Small screens (phones): Fixed 2-3-4 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 2,
-        LibraryDensity.normal => 3,
-        LibraryDensity.compact => 4,
-      };
-      return availableWidth / targetItemCount;
-    }
   }
 }
