@@ -329,94 +329,106 @@ struct MediaCard: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 0) {
-                // Poster image
+                // Poster image with Liquid Glass container
                 ZStack(alignment: .bottomLeading) {
                     CachedAsyncImage(url: posterURL) { image in
                         image
                             .resizable()
-                            .scaledToFit()
+                            .scaledToFill()
                     } placeholder: {
                         Rectangle()
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(.regularMaterial.opacity(0.3))
                             .aspectRatio(2/3, contentMode: .fit)
                             .overlay(
                                 Image(systemName: "photo")
-                                    .font(.largeTitle)
-                                    .foregroundColor(.gray)
+                                    .font(.system(size: 48))
+                                    .foregroundStyle(.tertiary)
                             )
                     }
                     .frame(width: 300, height: 450)
+                    .clipped()
 
                     // Progress indicator with Liquid Glass styling
                     if media.progress > 0 && media.progress < 0.98 {
                         VStack(spacing: 0) {
+                            Spacer()
                             GeometryReader { geometry in
                                 ZStack(alignment: .leading) {
+                                    // Background track
                                     Capsule()
-                                        .fill(.ultraThinMaterial)
-                                        .opacity(0.3)
+                                        .fill(.regularMaterial)
+                                        .opacity(0.4)
 
+                                    // Progress fill with vibrancy
                                     Capsule()
                                         .fill(
                                             LinearGradient(
-                                                colors: [.white, .white.opacity(0.95)],
+                                                colors: [.white.opacity(0.95), .white.opacity(0.85)],
                                                 startPoint: .leading,
                                                 endPoint: .trailing
                                             )
                                         )
                                         .frame(width: geometry.size.width * media.progress)
-                                        .shadow(color: .white.opacity(0.3), radius: 1)
+                                        .shadow(color: .white.opacity(0.5), radius: 2, x: 0, y: 0)
                                 }
                             }
-                            .frame(height: 4)
+                            .frame(height: 5)
+                            .padding(.horizontal, 12)
+                            .padding(.bottom, 12)
                         }
                     }
 
-                    // Watched indicator
+                    // Watched indicator with Liquid Glass
                     if media.isWatched {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.title)
-                            .foregroundColor(.green)
-                            .padding(15)
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(.green)
+                                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                    .padding(12)
+                            }
+                            Spacer()
+                        }
                     }
                 }
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .strokeBorder(
                             LinearGradient(
-                                colors: isFocused ? [.white.opacity(0.6), .white.opacity(0.3)] : [.clear, .clear],
+                                colors: isFocused ? [.white.opacity(0.8), .white.opacity(0.4)] : [.clear],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: isFocused ? 3 : 0
+                            lineWidth: isFocused ? 4 : 0
                         )
                 )
-                .shadow(color: .black.opacity(isFocused ? 0.6 : 0.4), radius: isFocused ? 30 : 15, x: 0, y: isFocused ? 15 : 8)
+                .shadow(color: .black.opacity(isFocused ? 0.7 : 0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
 
-                // Title
+                // Title with vibrancy
                 Text(media.title)
-                    .font(.system(size: 22, weight: .medium, design: .default))
-                    .foregroundColor(.white)
+                    .font(.system(size: 22, weight: .semibold, design: .default))
+                    .foregroundStyle(.primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                     .frame(width: 300, alignment: .leading)
-                    .padding(.top, 10)
+                    .padding(.top, 12)
 
                 // Metadata
                 if let year = media.year {
                     Text(String(year))
                         .font(.system(size: 20, weight: .regular, design: .default))
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.secondary)
                         .frame(width: 300, alignment: .leading)
+                        .padding(.top, 2)
                 }
             }
         }
-        .buttonStyle(.plain)
-        .focused($isFocused)
-        .focusable()
-        .scaleEffect(isFocused ? 1.04 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+        .buttonStyle(MediaCardButtonStyle(isFocused: $isFocused))
+        .scaleEffect(isFocused ? 1.05 : 1.0)
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(accessibilityHint)
         .accessibilityAddTraits(.isButton)
@@ -731,7 +743,7 @@ struct LandscapeMediaCard: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 0) {
-                // Background art
+                // Background art with Liquid Glass overlay
                 ZStack(alignment: .bottomLeading) {
                     CachedAsyncImage(url: artURL) { image in
                         image
@@ -739,19 +751,19 @@ struct LandscapeMediaCard: View {
                             .scaledToFill()
                     } placeholder: {
                         Rectangle()
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(.regularMaterial.opacity(0.3))
                             .overlay(
                                 Image(systemName: "photo")
-                                    .font(.largeTitle)
-                                    .foregroundColor(.gray)
+                                    .font(.system(size: 56))
+                                    .foregroundStyle(.tertiary)
                             )
                     }
                     .frame(width: 500, height: 280)
                     .clipped()
 
-                    // Gradient overlay
+                    // Enhanced gradient overlay with vibrancy
                     LinearGradient(
-                        gradient: Gradient(colors: [.clear, .black.opacity(0.7)]),
+                        gradient: Gradient(colors: [.clear, .black.opacity(0.75)]),
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -769,74 +781,76 @@ struct LandscapeMediaCard: View {
                                     } placeholder: {
                                         EmptyView()
                                     }
-                                    .frame(maxWidth: 180, maxHeight: 60)
+                                    .frame(maxWidth: 200, maxHeight: 70)
+                                    .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
                                 }
                                 Spacer()
                             }
-                            .padding(.leading, 20)
-                            .padding(.bottom, 20)
+                            .padding(.leading, 24)
+                            .padding(.bottom, 24)
                         }
                     }
                 }
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .strokeBorder(
                             LinearGradient(
-                                colors: isFocused ? [.white.opacity(0.7), .white.opacity(0.4)] : [.clear, .clear],
+                                colors: isFocused ? [.white.opacity(0.85), .white.opacity(0.5)] : [.clear],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: isFocused ? 3 : 0
+                            lineWidth: isFocused ? 4 : 0
                         )
                 )
-                .shadow(color: .black.opacity(isFocused ? 0.7 : 0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
+                .shadow(color: .black.opacity(isFocused ? 0.75 : 0.55), radius: isFocused ? 40 : 20, x: 0, y: isFocused ? 20 : 12)
 
-                // Progress bar below card with Liquid Glass styling
+                // Progress bar below card with enhanced Liquid Glass styling
                 if media.progress > 0 && media.progress < 0.98 {
                     ZStack(alignment: .leading) {
+                        // Background track
                         Capsule()
-                            .fill(.ultraThinMaterial)
-                            .opacity(0.3)
-                            .frame(width: 500, height: 4)
+                            .fill(.regularMaterial)
+                            .opacity(0.4)
+                            .frame(width: 500, height: 5)
 
+                        // Progress fill with vibrancy
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [.white, .white.opacity(0.95)],
+                                    colors: [.white.opacity(0.95), .white.opacity(0.85)],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
-                            .frame(width: 500 * media.progress, height: 4)
-                            .shadow(color: .white.opacity(0.3), radius: 1)
+                            .frame(width: 500 * media.progress, height: 5)
+                            .shadow(color: .white.opacity(0.5), radius: 2, x: 0, y: 0)
                     }
+                    .padding(.top, 8)
                 }
 
-                // Episode info below card
+                // Episode info below card with vibrancy
                 if media.type == "episode" {
                     Text(media.episodeInfo)
-                        .font(.system(size: 24, weight: .medium, design: .default))
-                        .foregroundColor(.white.opacity(0.9))
+                        .font(.system(size: 24, weight: .semibold, design: .default))
+                        .foregroundStyle(.primary)
                         .frame(width: 500, alignment: .leading)
-                        .padding(.top, 10)
+                        .padding(.top, 12)
                 } else {
                     // Title for movies
                     Text(media.title)
-                        .font(.system(size: 24, weight: .medium, design: .default))
-                        .foregroundColor(.white)
+                        .font(.system(size: 24, weight: .semibold, design: .default))
+                        .foregroundStyle(.primary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                         .frame(width: 500, alignment: .leading)
-                        .padding(.top, 10)
+                        .padding(.top, 12)
                 }
             }
         }
-        .buttonStyle(.plain)
-        .focused($isFocused)
-        .focusable()
-        .scaleEffect(isFocused ? 1.05 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+        .buttonStyle(MediaCardButtonStyle(isFocused: $isFocused))
+        .scaleEffect(isFocused ? 1.06 : 1.0)
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("In progress. Double tap to continue watching")
         .accessibilityAddTraits(.isButton)

@@ -45,26 +45,30 @@ struct LibraryContentView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 // Header with title - only show back button if presented as sheet
-                HStack {
+                HStack(spacing: 20) {
                     if dismiss != nil {
                         Button {
                             dismiss()
                         } label: {
                             Image(systemName: "chevron.left")
-                                .font(.title2)
+                                .font(.system(size: 28, weight: .semibold))
+                                .foregroundStyle(.primary)
+                                .padding(12)
+                                .background(.regularMaterial.opacity(0.3))
+                                .clipShape(Circle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.card)
                     }
 
                     Text(library.title)
-                        .font(.system(size: 42, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 48, weight: .bold, design: .default))
+                        .foregroundStyle(.primary)
 
                     Spacer()
                 }
                 .padding(.horizontal, 80)
-                .padding(.top, 30)
-                .padding(.bottom, 20)
+                .padding(.top, 35)
+                .padding(.bottom, 25)
 
                 // Filters
                 HStack(spacing: 30) {
@@ -85,7 +89,7 @@ struct LibraryContentView: View {
 
                     Spacer()
 
-                    // Sort Menu
+                    // Sort Menu with Liquid Glass
                     Menu {
                         ForEach(SortOption.allCases, id: \.self) { option in
                             Button {
@@ -100,18 +104,20 @@ struct LibraryContentView: View {
                             }
                         }
                     } label: {
-                        HStack {
+                        HStack(spacing: 12) {
                             Image(systemName: "arrow.up.arrow.down")
+                                .font(.system(size: 20))
                             Text(sortOption.rawValue)
+                                .font(.system(size: 20, weight: .semibold, design: .default))
                         }
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(8)
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 28)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(.regularMaterial.opacity(0.3))
+                        )
                     }
-                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 80)
                 .padding(.bottom, 20)
@@ -370,25 +376,54 @@ struct FilterButton: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
-    @State private var isFocused = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.headline)
-                .foregroundColor(isSelected ? .black : .white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(isSelected ? Color.white : Color.white.opacity(0.1))
-                .cornerRadius(8)
+                .font(.system(size: 20, weight: .semibold, design: .default))
+                .foregroundStyle(isSelected ? .black : .white)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 14)
+                .background(
+                    ZStack {
+                        if isSelected {
+                            // Selected state with Liquid Glass
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(.white)
+                        } else {
+                            // Unselected state with subtle material
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(.regularMaterial.opacity(0.15))
+                        }
+                    }
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(
+                            isFocused && !isSelected ? Color.white.opacity(0.5) : Color.clear,
+                            lineWidth: 2
+                        )
+                )
         }
-        .buttonStyle(.plain)
-        .scaleEffect(isFocused ? 1.05 : 1.0)
-        .onFocusChange(true) { focused in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isFocused = focused
-            }
-        }
+        .buttonStyle(FilterButtonStyle(isFocused: $isFocused, isSelected: isSelected))
+        .scaleEffect(isFocused ? 1.07 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+    }
+}
+
+/// Button style for filter buttons with focus handling
+struct FilterButtonStyle: ButtonStyle {
+    @Binding var isFocused: Bool
+    let isSelected: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .focusEffectDisabled()
+            .focused($isFocused)
+            .focusable()
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 
