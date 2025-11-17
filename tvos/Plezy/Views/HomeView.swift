@@ -111,6 +111,7 @@ struct HomeView: View {
                                 playingMedia = media
                                 print("🎯 [HomeView] playingMedia set to: \(String(describing: playingMedia?.title))")
                             }
+                            .focusSection()
                         }
 
                         // Continue Watching
@@ -121,6 +122,7 @@ struct HomeView: View {
                                 playingMedia = media
                                 print("🎯 [HomeView] playingMedia set to: \(String(describing: playingMedia?.title))")
                             }
+                            .focusSection()
                         }
 
                         // Hubs
@@ -132,6 +134,7 @@ struct HomeView: View {
                                     selectedMedia = media
                                     print("🎯 [HomeView] selectedMedia set to: \(String(describing: selectedMedia?.title))")
                                 }
+                                .focusSection()
                             } else {
                                 // Debug: Show why hub is not displaying
                                 let _ = print("🏠 [HomeView] Skipping hub '\(hub.title)' - has metadata: \(hub.metadata != nil), count: \(hub.metadata?.count ?? 0)")
@@ -194,9 +197,9 @@ struct HomeView: View {
                 heroProgress += heroTimerInterval / heroDisplayDuration
 
                 if heroProgress >= 1.0 {
-                    // Move to next item with smooth transition
+                    // Move to next item with smooth transition (no limit on items)
                     withAnimation(.easeInOut(duration: 0.6)) {
-                        currentHeroIndex = (currentHeroIndex + 1) % min(onDeck.count, 5)
+                        currentHeroIndex = (currentHeroIndex + 1) % onDeck.count
                     }
                     heroProgress = 0.0
                 }
@@ -214,7 +217,7 @@ struct HomeView: View {
     }
 
     private func navigateHero(to index: Int) {
-        guard index >= 0 && index < min(onDeck.count, 5) else { return }
+        guard index >= 0 && index < onDeck.count else { return }
         withAnimation(.easeInOut(duration: 0.6)) {
             currentHeroIndex = index
         }
@@ -500,18 +503,57 @@ struct HeroBanner: View {
     let onNavigate: (Int) -> Void
     let onSelect: (PlexMetadata) -> Void
     @EnvironmentObject var authService: PlexAuthService
+    @FocusState private var isHeroFocused: Bool
+
+    // Calculate visible dot range (max 5 dots at a time)
+    private func getVisibleDotRange() -> (start: Int, end: Int) {
+        let totalItems = items.count
+        if totalItems <= 5 {
+            return (0, totalItems - 1)
+        }
+
+        // Center the active dot in a 5-dot window
+        let halfWindow = 2
+        var start = currentIndex - halfWindow
+        var end = currentIndex + halfWindow
+
+        // Adjust if we're near the edges
+        if start < 0 {
+            start = 0
+            end = 4
+        } else if end >= totalItems {
+            end = totalItems - 1
+            start = totalItems - 5
+        }
+
+        return (start, end)
+    }
+
+    // Get dot size based on position (smaller dots at edges when windowing)
+    private func getDotSize(for index: Int, range: (start: Int, end: Int)) -> CGFloat {
+        let totalItems = items.count
+        if totalItems <= 5 {
+            return 8.0
+        }
+
+        // Make edge dots smaller if there are more items beyond
+        if (index == range.start && range.start > 0) ||
+           (index == range.end && range.end < totalItems - 1) {
+            return 5.0
+        }
+
+        return 8.0
+    }
 
     var body: some View {
-        let heroItems = Array(items.prefix(5))
-
-        if currentIndex < heroItems.count {
-            let item = heroItems[currentIndex]
+        if currentIndex < items.count {
+            let item = items[currentIndex]
 
             ZStack(alignment: .top) {
-                // Background art with transition
+                // Background art with transition and swipe gesture support
                 TabView(selection: $currentIndex) {
-                    ForEach(0..<heroItems.count, id: \.self) { index in
-                        CachedAsyncImage(url: artURL(for: heroItems[index])) { image in
+                    ForEach(0..<items.count, id: \.self) { index in
+                        CachedAsyncImage(url: artURL(for: items[index])) { image in
                             image
                                 .resizable()
                                 .scaledToFill()
@@ -528,6 +570,10 @@ struct HeroBanner: View {
                 .frame(height: 600)
                 .ignoresSafeArea()
                 .focusEffectDisabled()
+                .onChange(of: currentIndex) { _, _ in
+                    // Reset progress when manually navigating
+                    progress = 0.0
+                }
 
                 // Gradient overlay
                 LinearGradient(
@@ -646,34 +692,35 @@ struct HeroBanner: View {
                 .padding(.bottom, 120)
                 .frame(height: 600, alignment: .bottom)
 
-                // Pagination dots at bottom with expanding countdown
-                HStack(spacing: 12) {
-                    ForEach(0..<heroItems.count, id: \.self) { index in
-                        ZStack {
-                            // Background dot
-                            Circle()
-                                .fill(Color.white.opacity(0.3))
-                                .frame(width: 8, height: 8)
+                // macOS-style pagination indicators at bottom
+                HStack(spacing: 8) {
+                    let range = getVisibleDotRange()
+                    ForEach(range.start...range.end, id: \.self) { index in
+                        let isActive = index == currentIndex
+                        let dotSize = getDotSize(for: index, range: range)
 
-                            // Expanding progress ring for current item
-                            if index == currentIndex {
-                                Circle()
-                                    .trim(from: 0, to: progress)
-                                    .stroke(
-                                        Color.white,
-                                        style: StrokeStyle(lineWidth: 2, lineCap: .round)
-                                    )
-                                    .frame(width: 14, height: 14)
-                                    .rotationEffect(.degrees(-90))
-                                    .shadow(color: .white.opacity(0.5), radius: 2)
-                            }
+                        if isActive {
+                            // Animated horizontal expanding bar for active page (macOS style)
+                            let maxWidth = dotSize * 3.0 // 24px for normal, 15px for small
+                            let fillWidth = dotSize + ((maxWidth - dotSize) * progress)
 
-                            // Filled dot for completed items
-                            if index < currentIndex {
-                                Circle()
+                            ZStack(alignment: .leading) {
+                                // Background capsule
+                                Capsule()
+                                    .fill(Color.white.opacity(0.4))
+                                    .frame(width: maxWidth, height: dotSize)
+
+                                // Animated fill
+                                Capsule()
                                     .fill(Color.white)
-                                    .frame(width: 8, height: 8)
+                                    .frame(width: fillWidth, height: dotSize)
                             }
+                            .animation(.linear(duration: 0.05), value: progress)
+                        } else {
+                            // Static dot for inactive pages
+                            Capsule()
+                                .fill(Color.white.opacity(0.4))
+                                .frame(width: dotSize, height: dotSize)
                         }
                     }
                 }
@@ -681,6 +728,10 @@ struct HeroBanner: View {
                 .padding(.bottom, 40)
             }
             .frame(height: 600)
+            .scaleEffect(isHeroFocused ? 1.03 : 1.0)
+            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isHeroFocused)
+            .focusable(true)
+            .focused($isHeroFocused)
         }
     }
 
