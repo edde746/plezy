@@ -244,6 +244,11 @@ class PlexAPIClient {
         return response.MediaContainer.items
     }
 
+    func getExtras(ratingKey: String) async throws -> [PlexMetadata] {
+        let response: PlexResponse<PlexMetadata> = try await request(path: "/library/metadata/\(ratingKey)/extras")
+        return response.MediaContainer.items
+    }
+
     func getOnDeck() async throws -> [PlexMetadata] {
         print("📚 [API] Requesting OnDeck from /library/onDeck")
         let queryItems = [

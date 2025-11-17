@@ -108,7 +108,14 @@ struct EpisodeRow: View {
     let episode: PlexMetadata
     let action: () -> Void
     @State private var isFocused = false
+    @State private var isWatched: Bool
     @EnvironmentObject var authService: PlexAuthService
+
+    init(episode: PlexMetadata, action: @escaping () -> Void) {
+        self.episode = episode
+        self.action = action
+        self._isWatched = State(initialValue: episode.isWatched)
+    }
 
     var body: some View {
         Button(action: action) {
@@ -150,7 +157,7 @@ struct EpisodeRow: View {
                         }
 
                         // Watched indicator
-                        if episode.isWatched {
+                        if isWatched {
                             VStack {
                                 HStack {
                                     Spacer()
@@ -158,6 +165,32 @@ struct EpisodeRow: View {
                                         .font(.title)
                                         .foregroundColor(.green)
                                         .padding(15)
+                                }
+                                Spacer()
+                            }
+                        }
+
+                        // Watch/Unwatch button (visible on focus)
+                        if isFocused {
+                            VStack {
+                                HStack {
+                                    Button {
+                                        Task {
+                                            await toggleWatched()
+                                        }
+                                    } label: {
+                                        Image(systemName: isWatched ? "eye.slash.fill" : "eye.fill")
+                                            .font(.system(size: 28))
+                                            .foregroundColor(.white)
+                                            .padding(12)
+                                            .background(
+                                                Circle()
+                                                    .fill(Color.black.opacity(0.6))
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(15)
+                                    Spacer()
                                 }
                                 Spacer()
                             }
@@ -242,6 +275,25 @@ struct EpisodeRow: View {
         let seconds = milliseconds / 1000
         let minutes = seconds / 60
         return "\(minutes) min"
+    }
+
+    private func toggleWatched() async {
+        guard let client = authService.currentClient,
+              let ratingKey = episode.ratingKey else {
+            return
+        }
+
+        do {
+            if isWatched {
+                try await client.unscrobble(ratingKey: ratingKey)
+            } else {
+                try await client.scrobble(ratingKey: ratingKey)
+            }
+            // Toggle the state
+            isWatched.toggle()
+        } catch {
+            print("Error toggling watched status: \(error)")
+        }
     }
 }
 

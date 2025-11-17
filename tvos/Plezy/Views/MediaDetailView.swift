@@ -20,6 +20,7 @@ struct MediaDetailView: View {
     @State private var selectedEpisode: PlexMetadata?
     @State private var showVideoPlayer = false
     @State private var playMedia: PlexMetadata?
+    @State private var trailers: [PlexMetadata] = []
 
     var body: some View {
         let _ = print("📄 [MediaDetailView] body evaluated for: \(media.title)")
@@ -94,8 +95,8 @@ struct MediaDetailView: View {
                                 }
                             }
 
-                            // Summary
-                            if let summary = displayMedia.summary, !summary.isEmpty {
+                            // Summary (show episode synopsis for on-deck shows)
+                            if let summary = summaryText, !summary.isEmpty {
                                 Text(summary)
                                     .font(.system(size: 26, weight: .regular))
                                     .foregroundColor(.white.opacity(0.85))
@@ -131,6 +132,22 @@ struct MediaDetailView: View {
                                     .buttonStyle(CardButtonStyle())
                                 }
 
+                                // Trailer button (movies only)
+                                if displayMedia.type == "movie" && !trailers.isEmpty {
+                                    Button {
+                                        handleTrailerPlay()
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "play.rectangle")
+                                                .font(.system(size: 20))
+                                            Text("Trailer")
+                                                .font(.system(size: 22, weight: .medium))
+                                        }
+                                        .foregroundColor(.white)
+                                    }
+                                    .buttonStyle(CardButtonStyle())
+                                }
+
                                 // Mark as watched/unwatched
                                 Button {
                                     Task {
@@ -143,6 +160,7 @@ struct MediaDetailView: View {
                                 }
                                 .buttonStyle(CardButtonStyle())
                             }
+                            .focusSection()
                         }
                         .padding(.horizontal, 60)
                         .padding(.bottom, 80)
@@ -228,6 +246,7 @@ struct MediaDetailView: View {
                                         }
                                     }
                                 }
+                                .focusSection()
                             } else {
                                 // Show season cards for multi-season shows
                                 VStack(alignment: .leading, spacing: 20) {
@@ -246,6 +265,7 @@ struct MediaDetailView: View {
                                         }
                                     }
                                 }
+                                .focusSection()
                             }
                         }
                     }
@@ -279,6 +299,15 @@ struct MediaDetailView: View {
 
     private var displayMedia: PlexMetadata {
         detailedMedia ?? media
+    }
+
+    private var summaryText: String? {
+        // For TV shows with on-deck episodes, show episode synopsis
+        if displayMedia.type == "show", let episode = onDeckEpisode {
+            // Use episode summary if available, otherwise fall back to show summary
+            return episode.summary ?? displayMedia.summary
+        }
+        return displayMedia.summary
     }
 
     private var playButtonLabel: String {
@@ -373,6 +402,12 @@ struct MediaDetailView: View {
         print("🔀 [MediaDetailView] Shuffle play requested for: \(displayMedia.title)")
     }
 
+    private func handleTrailerPlay() {
+        if let trailer = trailers.first {
+            playMedia = trailer
+        }
+    }
+
     private func loadDetails() async {
         guard let client = authService.currentClient,
               let ratingKey = media.ratingKey else {
@@ -402,6 +437,21 @@ struct MediaDetailView: View {
                 }
 
                 print("📺 [MediaDetailView] OnDeck episode for show: \(onDeckEpisode?.title ?? "none")")
+            }
+
+            // If it's a movie, load trailers
+            if media.type == "movie" {
+                do {
+                    let extras = try await client.getExtras(ratingKey: ratingKey)
+                    // Filter for trailers only (Plex uses "1" for trailer extra type)
+                    trailers = extras.filter { extra in
+                        extra.type == "clip" && (extra.title.lowercased().contains("trailer") || extra.summary?.lowercased().contains("trailer") == true)
+                    }
+                    print("🎬 [MediaDetailView] Found \(trailers.count) trailer(s) for movie")
+                } catch {
+                    print("Error loading trailers: \(error)")
+                    trailers = []
+                }
             }
         } catch {
             print("Error loading details: \(error)")
