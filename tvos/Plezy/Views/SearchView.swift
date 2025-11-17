@@ -22,18 +22,47 @@ struct SearchView: View {
                 // Header
                 Text("Search")
                     .font(.system(size: 48, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.white, Color.beaconTextSecondary],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .padding(.horizontal, 80)
                     .padding(.top, 40)
 
-                // Search field
+                // Search field with Liquid Glass
                 TextField("Search for movies, shows, and more...", text: $searchQuery)
                     .textFieldStyle(.plain)
                     .font(.title2)
                     .padding(20)
                     .background(
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(.regularMaterial)
+                                .opacity(0.5)
+
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.beaconBlue.opacity(0.1),
+                                            Color.beaconPurple.opacity(0.08)
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .blendMode(.plusLighter)
+                        }
+                    )
+                    .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.white.opacity(0.1))
+                            .strokeBorder(
+                                Color.beaconPurple.opacity(0.3),
+                                lineWidth: 1.5
+                            )
                     )
                     .foregroundColor(.white)
                     .padding(.horizontal, 80)

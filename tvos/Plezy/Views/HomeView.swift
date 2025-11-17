@@ -304,7 +304,13 @@ struct MediaShelf: View {
         VStack(alignment: .leading, spacing: 20) {
             Text(title)
                 .font(.system(size: 38, weight: .bold, design: .default))
-                .foregroundColor(.white)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.white, Color.beaconTextSecondary],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
                 .padding(.horizontal, 60)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -563,9 +569,13 @@ struct HeroBanner: View {
                     progress = 0.0
                 }
 
-                // Gradient overlay
+                // Enhanced gradient overlay with beacon accent
                 LinearGradient(
-                    gradient: Gradient(colors: [.clear, .black.opacity(0.8)]),
+                    gradient: Gradient(colors: [
+                        Color.beaconBlue.opacity(0.15),
+                        Color.black.opacity(0.7),
+                        Color.black.opacity(0.9)
+                    ]),
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -682,7 +692,7 @@ struct HeroBanner: View {
                 .padding(.bottom, 120)
                 .frame(height: 750, alignment: .bottom)
 
-                // macOS-style pagination indicators at bottom
+                // Enhanced pagination indicators with beacon gradient
                 HStack(spacing: 8) {
                     let range = getVisibleDotRange()
                     ForEach(range.start...range.end, id: \.self) { index in
@@ -690,26 +700,35 @@ struct HeroBanner: View {
                         let dotSize = getDotSize(for: index, range: range)
 
                         if isActive {
-                            // Animated horizontal expanding bar for active page (macOS style)
+                            // Animated horizontal expanding bar with beacon gradient
                             let maxWidth = dotSize * 3.0 // 24px for normal, 15px for small
                             let fillWidth = dotSize + ((maxWidth - dotSize) * progress)
 
                             ZStack(alignment: .leading) {
-                                // Background capsule
+                                // Background capsule with glass effect
                                 Capsule()
-                                    .fill(Color.white.opacity(0.4))
+                                    .fill(.ultraThinMaterial)
+                                    .opacity(0.6)
                                     .frame(width: maxWidth, height: dotSize)
 
-                                // Animated fill
+                                // Animated fill with beacon gradient
                                 Capsule()
-                                    .fill(Color.white)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.beaconBlue, Color.beaconPurple],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
                                     .frame(width: fillWidth, height: dotSize)
+                                    .shadow(color: Color.beaconPurple.opacity(0.6), radius: 6, x: 0, y: 0)
                             }
                             .animation(.linear(duration: 0.05), value: progress)
                         } else {
-                            // Static dot for inactive pages
+                            // Static dot for inactive pages with glass
                             Capsule()
-                                .fill(Color.white.opacity(0.4))
+                                .fill(.ultraThinMaterial)
+                                .opacity(0.5)
                                 .frame(width: dotSize, height: dotSize)
                         }
                     }
@@ -816,7 +835,13 @@ struct ContinueWatchingShelf: View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Continue Watching")
                 .font(.system(size: 38, weight: .bold, design: .default))
-                .foregroundColor(.white)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.white, Color.beaconTextSecondary],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
                 .padding(.horizontal, 60)
 
             ScrollView(.horizontal, showsIndicators: false) {

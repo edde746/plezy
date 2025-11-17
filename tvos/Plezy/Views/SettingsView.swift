@@ -22,7 +22,13 @@ struct SettingsView: View {
                     // Header
                     Text("Settings")
                         .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, Color.beaconTextSecondary],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .padding(.top, 40)
 
                     // Server Info
@@ -79,7 +85,13 @@ struct SettingsView: View {
                         HStack(spacing: 20) {
                             Image(systemName: "textformat.size")
                                 .font(.title2)
-                                .foregroundColor(.orange)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color.beaconOrange, Color.beaconMagenta],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
                                 .frame(width: 40)
 
                             Text("Subtitle size")
@@ -125,7 +137,13 @@ struct SettingsView: View {
                         HStack {
                             Image(systemName: "moon.fill")
                                 .font(.title2)
-                                .foregroundColor(.orange)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color.beaconOrange, Color.beaconMagenta],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
                                 .frame(width: 40)
 
                             Text("Theme")
@@ -220,7 +238,13 @@ struct SettingsRow: View {
         HStack(spacing: 20) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.orange)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.beaconOrange, Color.beaconMagenta],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .frame(width: 40)
 
             VStack(alignment: .leading, spacing: 5) {
@@ -249,7 +273,13 @@ struct SettingsToggle: View {
         HStack(spacing: 20) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.orange)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.beaconOrange, Color.beaconMagenta],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .frame(width: 40)
 
             Text(title)
@@ -260,6 +290,7 @@ struct SettingsToggle: View {
 
             Toggle("", isOn: $isOn)
                 .labelsHidden()
+                .tint(Color.beaconPurple)
         }
     }
 }

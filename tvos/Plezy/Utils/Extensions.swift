@@ -164,6 +164,92 @@ extension ButtonStyle where Self == ClearGlassButtonStyle {
     }
 }
 
+// MARK: - Liquid Glass View Modifiers
+
+extension View {
+    /// Applies a Liquid Glass background effect with beacon gradient accent
+    /// Perfect for cards, panels, and elevated UI elements
+    func liquidGlassBackground(cornerRadius: CGFloat = 16, opacity: Double = 0.95) -> some View {
+        self.background(
+            ZStack {
+                // Base glass material
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.regularMaterial)
+                    .opacity(opacity)
+
+                // Beacon gradient vibrancy overlay
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.beaconBlue.opacity(0.12),
+                                Color.beaconPurple.opacity(0.10),
+                                Color.beaconMagenta.opacity(0.08)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .blendMode(.plusLighter)
+            }
+        )
+    }
+
+    /// Applies an ultra-thin Liquid Glass effect for overlays
+    /// Ideal for navigation bars, toolbars, and floating panels
+    func thinLiquidGlass(cornerRadius: CGFloat = 12) -> some View {
+        self.background(
+            ZStack {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+
+                // Subtle beacon accent
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.15),
+                                Color.beaconPurple.opacity(0.08)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .blendMode(.overlay)
+            }
+        )
+    }
+
+    /// Applies a beacon gradient border
+    func beaconBorder(cornerRadius: CGFloat = 14, lineWidth: CGFloat = 2) -> some View {
+        self.overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            Color.beaconBlue,
+                            Color.beaconPurple,
+                            Color.beaconMagenta
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: lineWidth
+                )
+        )
+    }
+
+    /// Applies a subtle beacon glow shadow
+    func beaconGlow(radius: CGFloat = 20, opacity: Double = 0.4) -> some View {
+        self.shadow(
+            color: Color.beaconPurple.opacity(opacity),
+            radius: radius,
+            x: 0,
+            y: 8
+        )
+    }
+}
+
 // MARK: - Color Extensions
 
 extension Color {

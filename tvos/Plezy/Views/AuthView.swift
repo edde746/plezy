@@ -14,9 +14,14 @@ struct AuthView: View {
 
     var body: some View {
         ZStack {
-            // Background
+            // Enhanced background with beacon colors
             LinearGradient(
-                colors: [Color.black, Color(red: 0.1, green: 0.1, blue: 0.15)],
+                colors: [
+                    Color.beaconBackground,
+                    Color.beaconSurface,
+                    Color.beaconBlue.opacity(0.08),
+                    Color.beaconPurple.opacity(0.05)
+                ],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -27,11 +32,24 @@ struct AuthView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "tv.fill")
                         .font(.system(size: 100))
-                        .foregroundColor(.white)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.beaconBlue, Color.beaconPurple, Color.beaconMagenta],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: Color.beaconPurple.opacity(0.5), radius: 20, x: 0, y: 10)
 
                     Text("Plezy")
                         .font(.system(size: 60, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, Color.beaconTextSecondary],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
 
                     Text("for Apple TV")
                         .font(.system(size: 24, weight: .medium))
@@ -138,7 +156,7 @@ struct PINDisplayView: View {
                     .foregroundColor(.gray)
             }
 
-            // PIN code display
+            // PIN code display with Liquid Glass
             HStack(spacing: 15) {
                 ForEach(Array(pin.code.enumerated()), id: \.offset) { index, character in
                     Text(String(character))
@@ -146,17 +164,44 @@ struct PINDisplayView: View {
                         .foregroundColor(.white)
                         .frame(width: 70, height: 90)
                         .background(
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(Color.white.opacity(0.1))
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 15)
+                                    .fill(.regularMaterial)
+                                    .opacity(0.5)
+
+                                RoundedRectangle(cornerRadius: 15)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.beaconBlue.opacity(0.15),
+                                                Color.beaconPurple.opacity(0.12)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .blendMode(.plusLighter)
+                            }
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 15)
-                                .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.beaconBlue.opacity(0.6),
+                                            Color.beaconPurple.opacity(0.5)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 2
+                                )
                         )
+                        .shadow(color: Color.beaconPurple.opacity(0.3), radius: 10, x: 0, y: 5)
                 }
             }
 
-            // URL
+            // URL with enhanced beacon styling
             VStack(spacing: 10) {
                 Text("plex.tv/link")
                     .font(.system(size: 36, weight: .semibold, design: .monospaced))
@@ -164,20 +209,44 @@ struct PINDisplayView: View {
                     .padding(.horizontal, 40)
                     .padding(.vertical, 15)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white.opacity(0.05))
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.ultraThinMaterial)
+                                .opacity(0.4)
+
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.beaconOrange.opacity(0.1),
+                                            Color.beaconMagenta.opacity(0.08)
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .blendMode(.plusLighter)
+                        }
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.orange, lineWidth: 3)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.beaconOrange, Color.beaconMagenta],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ),
+                                lineWidth: 3
+                            )
                     )
+                    .shadow(color: Color.beaconOrange.opacity(0.4), radius: 15, x: 0, y: 5)
             }
 
-            // Waiting indicator
+            // Waiting indicator with beacon colors
             HStack(spacing: 15) {
                 ProgressView()
                     .scaleEffect(1.2)
-                    .tint(.orange)
+                    .tint(Color.beaconPurple)
 
                 Text("Waiting for authentication...")
                     .font(.title3)

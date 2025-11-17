@@ -45,9 +45,13 @@ struct MediaDetailView: View {
                             .clipped()
                         }
 
-                        // Gradient overlay
+                        // Enhanced gradient overlay with beacon accent
                         LinearGradient(
-                            gradient: Gradient(colors: [.clear, .black.opacity(0.8), .black]),
+                            gradient: Gradient(colors: [
+                                Color.beaconPurple.opacity(0.12),
+                                Color.black.opacity(0.75),
+                                Color.black
+                            ]),
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -169,7 +173,7 @@ struct MediaDetailView: View {
 
                     // Content sections below hero
                     VStack(alignment: .leading, spacing: 40) {
-                        // Genres
+                        // Genres with Liquid Glass
                         if let genres = displayMedia.genre, !genres.isEmpty {
                             HStack(spacing: 12) {
                                 ForEach(genres.prefix(5), id: \.tag) { genre in
@@ -179,8 +183,31 @@ struct MediaDetailView: View {
                                         .padding(.horizontal, 20)
                                         .padding(.vertical, 10)
                                         .background(
+                                            ZStack {
+                                                Capsule()
+                                                    .fill(.ultraThinMaterial)
+                                                    .opacity(0.8)
+
+                                                Capsule()
+                                                    .fill(
+                                                        LinearGradient(
+                                                            colors: [
+                                                                Color.beaconBlue.opacity(0.15),
+                                                                Color.beaconPurple.opacity(0.12)
+                                                            ],
+                                                            startPoint: .leading,
+                                                            endPoint: .trailing
+                                                        )
+                                                    )
+                                                    .blendMode(.plusLighter)
+                                            }
+                                        )
+                                        .overlay(
                                             Capsule()
-                                                .fill(Color.white.opacity(0.15))
+                                                .strokeBorder(
+                                                    Color.white.opacity(0.25),
+                                                    lineWidth: 1
+                                                )
                                         )
                                 }
                             }
@@ -191,21 +218,42 @@ struct MediaDetailView: View {
                             VStack(alignment: .leading, spacing: 15) {
                                 Text("Cast")
                                     .font(.system(size: 32, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.white, Color.beaconTextSecondary],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
 
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     LazyHStack(spacing: 24) {
                                         ForEach(cast.prefix(10), id: \.tag) { actor in
                                             VStack(alignment: .leading, spacing: 8) {
-                                                // Cast photo placeholder (Plex role doesn't include thumb in tvOS model)
+                                                // Cast photo with Liquid Glass
                                                 Circle()
-                                                    .fill(Color.white.opacity(0.15))
-                                                    .frame(width: 140, height: 140)
+                                                    .fill(.regularMaterial)
+                                                    .opacity(0.4)
+                                                    .overlay(
+                                                        Circle()
+                                                            .fill(
+                                                                LinearGradient(
+                                                                    colors: [
+                                                                        Color.beaconBlue.opacity(0.08),
+                                                                        Color.beaconPurple.opacity(0.06)
+                                                                    ],
+                                                                    startPoint: .topLeading,
+                                                                    endPoint: .bottomTrailing
+                                                                )
+                                                            )
+                                                            .blendMode(.plusLighter)
+                                                    )
                                                     .overlay(
                                                         Image(systemName: "person.fill")
                                                             .font(.system(size: 50))
                                                             .foregroundColor(.white.opacity(0.5))
                                                     )
+                                                    .frame(width: 140, height: 140)
 
                                                 Text(actor.tag)
                                                     .font(.system(size: 20, weight: .semibold))
@@ -235,7 +283,13 @@ struct MediaDetailView: View {
                                 VStack(alignment: .leading, spacing: 20) {
                                     Text("Episodes")
                                         .font(.system(size: 32, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [.white, Color.beaconTextSecondary],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
 
                                     LazyVStack(spacing: 20) {
                                         ForEach(episodes) { episode in
@@ -252,7 +306,13 @@ struct MediaDetailView: View {
                                 VStack(alignment: .leading, spacing: 20) {
                                     Text("Seasons")
                                         .font(.system(size: 32, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [.white, Color.beaconTextSecondary],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
 
                                     ScrollView(.horizontal, showsIndicators: false) {
                                         LazyHStack(spacing: 30) {
@@ -522,14 +582,17 @@ struct SeasonCard: View {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .strokeBorder(
                             LinearGradient(
-                                colors: isFocused ? [.white.opacity(0.8), .white.opacity(0.4)] : [.clear],
+                                colors: isFocused ? [
+                                    Color.beaconBlue.opacity(0.9),
+                                    Color.beaconPurple.opacity(0.7)
+                                ] : [.clear],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
                             lineWidth: isFocused ? 4 : 0
                         )
                 )
-                .shadow(color: .black.opacity(isFocused ? 0.7 : 0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
+                .shadow(color: isFocused ? Color.beaconPurple.opacity(0.5) : .black.opacity(0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
 
                 Text(season.title)
                     .font(.system(size: 22, weight: .semibold))

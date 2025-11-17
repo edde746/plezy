@@ -38,11 +38,17 @@ struct SeasonDetailView: View {
                     VStack(alignment: .leading, spacing: 5) {
                         Text(show.title)
                             .font(.title3)
-                            .foregroundColor(.gray)
+                            .foregroundColor(Color.beaconTextTertiary)
 
                         Text(season.title)
                             .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.white, Color.beaconTextSecondary],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                     }
 
                     Spacer()
@@ -139,20 +145,27 @@ struct EpisodeRow: View {
                 .cornerRadius(10)
                 .overlay(
                     ZStack {
-                        // Progress bar
+                        // Progress bar with beacon gradient
                         if episode.progress > 0 && episode.progress < 0.98 {
                             VStack {
                                 Spacer()
                                 GeometryReader { geometry in
-                                    HStack(spacing: 0) {
-                                        Rectangle()
-                                            .fill(Color.orange)
-                                            .frame(width: geometry.size.width * episode.progress)
+                                    ZStack(alignment: .leading) {
+                                        // Background track
+                                        Capsule()
+                                            .fill(.regularMaterial)
+                                            .opacity(0.4)
 
-                                        Spacer(minLength: 0)
+                                        // Progress fill with beacon gradient
+                                        Capsule()
+                                            .fill(Color.beaconGradient)
+                                            .frame(width: geometry.size.width * episode.progress)
+                                            .shadow(color: Color.beaconMagenta.opacity(0.5), radius: 4, x: 0, y: 0)
                                     }
                                 }
                                 .frame(height: 6)
+                                .padding(.horizontal, 8)
+                                .padding(.bottom, 8)
                             }
                         }
 
@@ -184,8 +197,24 @@ struct EpisodeRow: View {
                                             .foregroundColor(.white)
                                             .padding(12)
                                             .background(
-                                                Circle()
-                                                    .fill(Color.black.opacity(0.6))
+                                                ZStack {
+                                                    Circle()
+                                                        .fill(.regularMaterial)
+                                                        .opacity(0.8)
+
+                                                    Circle()
+                                                        .fill(
+                                                            LinearGradient(
+                                                                colors: [
+                                                                    Color.beaconBlue.opacity(0.2),
+                                                                    Color.beaconPurple.opacity(0.15)
+                                                                ],
+                                                                startPoint: .topLeading,
+                                                                endPoint: .bottomTrailing
+                                                            )
+                                                        )
+                                                        .blendMode(.plusLighter)
+                                                }
                                             )
                                     }
                                     .buttonStyle(.plain)
@@ -239,13 +268,42 @@ struct EpisodeRow: View {
             }
             .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(Color.white.opacity(isFocused ? 0.15 : 0.05))
+                ZStack {
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(.regularMaterial)
+                        .opacity(isFocused ? 0.35 : 0.15)
+
+                    if isFocused {
+                        RoundedRectangle(cornerRadius: 15)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.beaconBlue.opacity(0.12),
+                                        Color.beaconPurple.opacity(0.08)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .blendMode(.plusLighter)
+                    }
+                }
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 15)
-                    .stroke(isFocused ? Color.orange : Color.clear, lineWidth: 4)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: isFocused ? [
+                                Color.beaconBlue,
+                                Color.beaconPurple
+                            ] : [.clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: isFocused ? 4 : 0
+                    )
             )
+            .shadow(color: isFocused ? Color.beaconPurple.opacity(0.4) : .clear, radius: isFocused ? 15 : 0, x: 0, y: isFocused ? 8 : 0)
         }
         .buttonStyle(.plain)
         .onFocusChange(true) { focused in
