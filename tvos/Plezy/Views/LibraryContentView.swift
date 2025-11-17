@@ -44,32 +44,6 @@ struct LibraryContentView: View {
             Color.black.ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 0) {
-                // Header with title - only show back button if presented as sheet
-                HStack(spacing: 20) {
-                    if dismiss != nil {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 28, weight: .semibold))
-                                .foregroundStyle(.primary)
-                                .padding(12)
-                                .background(.regularMaterial.opacity(0.3))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(CardButtonStyle())
-                    }
-
-                    Text(library.title)
-                        .font(.system(size: 48, weight: .bold, design: .default))
-                        .foregroundStyle(.primary)
-
-                    Spacer()
-                }
-                .padding(.horizontal, 80)
-                .padding(.top, 35)
-                .padding(.bottom, 25)
-
                 // Filters
                 HStack(spacing: 30) {
                     // Status Filter
@@ -113,14 +87,12 @@ struct LibraryContentView: View {
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 28)
                         .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(.regularMaterial.opacity(0.3))
-                        )
                     }
                 }
+                .focusSection()
                 .padding(.horizontal, 80)
-                .padding(.bottom, 20)
+                .padding(.top, 40)
+                .padding(.bottom, 30)
 
                 if isLoading {
                     ScrollView {
@@ -202,8 +174,11 @@ struct LibraryContentView: View {
                                 }
                             }
                         }
-                        .padding(80)
+                        .padding(.horizontal, 80)
+                        .padding(.top, 20)
+                        .padding(.bottom, 80)
                     }
+                    .focusSection()
                 }
             }
         }
