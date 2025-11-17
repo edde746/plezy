@@ -541,14 +541,14 @@ struct HeroBanner: View {
                 VStack(alignment: .leading, spacing: 20) {
                     Spacer()
 
-                    // Show logo or title
-                    if item.type == "episode", let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
+                    // Show logo or title (for both movies and TV shows)
+                    if let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
                         CachedAsyncImage(url: logoURL) { image in
                             image
                                 .resizable()
                                 .scaledToFit()
                         } placeholder: {
-                            Text(item.grandparentTitle ?? item.title)
+                            Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
                                 .font(.system(size: 72, weight: .heavy, design: .default))
                                 .foregroundColor(.white)
                         }
@@ -561,31 +561,47 @@ struct HeroBanner: View {
                             .frame(maxWidth: 700, alignment: .leading)
                     }
 
-                    // Episode info for TV shows
-                    if item.type == "episode" {
-                        HStack(spacing: 10) {
-                            Text(item.formatSeasonEpisode())
-                                .font(.system(size: 28, weight: .medium, design: .default))
-                                .foregroundColor(.white)
-                            Text("·")
-                                .foregroundColor(.white.opacity(0.7))
-                            Text(item.title)
-                                .font(.system(size: 28, weight: .medium, design: .default))
-                                .foregroundColor(.white.opacity(0.9))
-                                .lineLimit(1)
+                    // Metadata line (content type, rating, content rating, year)
+                    HStack(spacing: 10) {
+                        // Content type
+                        Text(item.type == "movie" ? "Movie" : "TV Show")
+                            .font(.system(size: 24, weight: .medium, design: .default))
+                            .foregroundColor(.white)
+
+                        if item.audienceRating != nil || item.contentRating != nil || item.year != nil {
+                            ForEach(metadataComponents(for: item), id: \.self) { component in
+                                Text("·")
+                                    .foregroundColor(.white.opacity(0.7))
+                                Text(component)
+                                    .font(.system(size: 24, weight: .medium, design: .default))
+                                    .foregroundColor(.white)
+                            }
                         }
                     }
 
-                    // Synopsis with maxWidth
+                    // Synopsis with episode info inline (Apple TV style)
                     if let summary = item.summary {
-                        Text(summary)
-                            .font(.system(size: 24, weight: .regular, design: .default))
-                            .foregroundColor(.white.opacity(0.85))
-                            .lineLimit(3)
-                            .frame(maxWidth: 900, alignment: .leading)
+                        if item.type == "episode", let parentIndex = item.parentIndex, let index = item.index {
+                            // Episode: Show "S1, E2: description"
+                            (Text("S\(parentIndex), E\(index): ")
+                                .font(.system(size: 24, weight: .semibold, design: .default))
+                                .foregroundColor(.white) +
+                            Text(summary)
+                                .font(.system(size: 24, weight: .regular, design: .default))
+                                .foregroundColor(.white.opacity(0.85)))
+                                .lineLimit(3)
+                                .frame(maxWidth: 900, alignment: .leading)
+                        } else {
+                            // Movie: Just show description
+                            Text(summary)
+                                .font(.system(size: 24, weight: .regular, design: .default))
+                                .foregroundColor(.white.opacity(0.85))
+                                .lineLimit(3)
+                                .frame(maxWidth: 900, alignment: .leading)
+                        }
                     }
 
-                    // Pill-shaped play button with clear Liquid Glass (fixed position)
+                    // Smart play button with progress indicator (macOS style)
                     HStack {
                         Button {
                             onSelect(item)
@@ -593,8 +609,28 @@ struct HeroBanner: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 20, weight: .semibold))
-                                Text(item.progress > 0 ? "Resume" : "Play")
-                                    .font(.system(size: 24, weight: .semibold))
+
+                                if item.progress > 0 && item.progress < 0.98 {
+                                    // Show progress indicator and time left
+                                    ZStack(alignment: .leading) {
+                                        Capsule()
+                                            .fill(Color.white.opacity(0.3))
+                                            .frame(width: 50, height: 6)
+
+                                        Capsule()
+                                            .fill(Color.white)
+                                            .frame(width: 50 * item.progress, height: 6)
+                                    }
+
+                                    if let duration = item.duration, let viewOffset = item.viewOffset {
+                                        let minutesLeft = Int((Double(duration - viewOffset) / 60000.0).rounded())
+                                        Text("\(minutesLeft) min left")
+                                            .font(.system(size: 24, weight: .semibold))
+                                    }
+                                } else {
+                                    Text("Play")
+                                        .font(.system(size: 24, weight: .semibold))
+                                }
                             }
                             .foregroundColor(.white)
                         }
@@ -605,28 +641,6 @@ struct HeroBanner: View {
                     }
                     .padding(.top, 10)
 
-                    // Watch progress indicator with Liquid Glass (for media in progress)
-                    if item.progress > 0 && item.progress < 0.98 {
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(.ultraThinMaterial)
-                                .opacity(0.3)
-                                .frame(height: 4)
-
-                            Capsule()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [.white, .white.opacity(0.95)],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .frame(width: 800 * item.progress, height: 4)
-                                .shadow(color: .white.opacity(0.4), radius: 2)
-                        }
-                        .frame(width: 800)
-                        .padding(.top, 5)
-                    }
                 }
                 .padding(.horizontal, 80)
                 .padding(.bottom, 120)
@@ -705,6 +719,27 @@ struct HeroBanner: View {
         }
 
         return URL(string: urlString)
+    }
+
+    private func metadataComponents(for item: PlexMetadata) -> [String] {
+        var components: [String] = []
+
+        // Add rating with star
+        if let rating = item.audienceRating {
+            components.append("★ \(String(format: "%.1f", rating))")
+        }
+
+        // Add content rating
+        if let contentRating = item.contentRating {
+            components.append(contentRating)
+        }
+
+        // Add year
+        if let year = item.year {
+            components.append(String(year))
+        }
+
+        return components
     }
 }
 
