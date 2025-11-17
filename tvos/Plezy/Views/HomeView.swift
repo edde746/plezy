@@ -430,7 +430,7 @@ struct MediaCard: View {
             }
         }
         .buttonStyle(MediaCardButtonStyle(isFocused: $isFocused))
-        .scaleEffect(isFocused ? 1.09 : 1.0)
+        .scaleEffect(isFocused ? 1.08 : 1.0)
         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(accessibilityHint)
@@ -564,7 +564,6 @@ struct HeroBanner: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .frame(height: 600)
                 .ignoresSafeArea()
-                .focusEffectDisabled()
                 .onChange(of: currentIndex) { _, _ in
                     // Reset progress when manually navigating
                     progress = 0.0
@@ -724,10 +723,30 @@ struct HeroBanner: View {
                 .padding(.bottom, 40)
             }
             .frame(height: 600)
-            .scaleEffect(isHeroFocused ? 1.03 : 1.0)
+            .scaleEffect(isHeroFocused ? 1.08 : 1.0)
             .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isHeroFocused)
             .focusable(true)
             .focused($isHeroFocused)
+            .onKeyPress(.leftArrow) {
+                // Navigate to previous page
+                if currentIndex > 0 {
+                    onNavigate(currentIndex - 1)
+                } else {
+                    // Wrap around to last page
+                    onNavigate(items.count - 1)
+                }
+                return .handled
+            }
+            .onKeyPress(.rightArrow) {
+                // Navigate to next page
+                if currentIndex < items.count - 1 {
+                    onNavigate(currentIndex + 1)
+                } else {
+                    // Wrap around to first page
+                    onNavigate(0)
+                }
+                return .handled
+            }
         }
     }
 
@@ -865,24 +884,24 @@ struct LandscapeMediaCard: View {
                                         .resizable()
                                         .scaledToFit()
                                 } placeholder: {
-                                    EmptyView()
+                                    // Show title while logo loads
+                                    Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
+                                        .font(.system(size: 28, weight: .bold, design: .default))
+                                        .foregroundColor(.white)
+                                        .lineLimit(2)
+                                        .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
                                 }
                                 .frame(maxWidth: 200, maxHeight: 70)
                                 .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
                                 .id("\(media.id)-\(clearLogo)") // Force view recreation when logo changes
-                                .onAppear {
-                                    print("🖼️ [Card] Logo loaded for '\(media.title)' from URL: \(logoURL)")
-                                }
                             } else {
-                                // Debug: Show when logo is missing
-                                Text("NO LOGO")
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                    .onAppear {
-                                        print("🖼️ [Card] NO LOGO for '\(media.title)' (type: \(media.type ?? "unknown"))")
-                                        print("🖼️ [Card] - media.clearLogo: \(media.clearLogo ?? "nil")")
-                                        print("🖼️ [Card] - media.Image count: \(media.Image?.count ?? 0)")
-                                    }
+                                // Show title when logo is not available
+                                Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
+                                    .font(.system(size: 28, weight: .bold, design: .default))
+                                    .foregroundColor(.white)
+                                    .lineLimit(2)
+                                    .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
+                                    .frame(maxWidth: 200, alignment: .leading)
                             }
                             Spacer()
                         }
@@ -948,7 +967,7 @@ struct LandscapeMediaCard: View {
             }
         }
         .buttonStyle(MediaCardButtonStyle(isFocused: $isFocused))
-        .scaleEffect(isFocused ? 1.06 : 1.0)
+        .scaleEffect(isFocused ? 1.08 : 1.0)
         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("In progress. Double tap to continue watching")

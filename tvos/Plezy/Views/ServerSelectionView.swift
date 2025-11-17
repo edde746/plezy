@@ -158,7 +158,7 @@ struct ServerCard: View {
                     .stroke(isFocused ? Color.orange : Color.white.opacity(0.2), lineWidth: isFocused ? 4 : 2)
             )
         }
-        .scaleEffect(isFocused ? 1.09 : 1.0)
+        .scaleEffect(isFocused ? 1.08 : 1.0)
         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .onFocusChange(true) { focused in
             isFocused = focused

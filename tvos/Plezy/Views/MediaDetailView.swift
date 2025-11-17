@@ -402,7 +402,7 @@ struct SeasonCard: View {
                         .frame(width: 250, alignment: .leading)
                 }
             }
-            .scaleEffect(isFocused ? 1.09 : 1.0)
+            .scaleEffect(isFocused ? 1.08 : 1.0)
             .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         }
         .buttonStyle(.plain)
