@@ -126,7 +126,7 @@ struct MediaDetailView: View {
                                             .font(.system(size: 24))
                                             .foregroundColor(.white)
                                     }
-                                    .buttonStyle(.card)
+                                    .buttonStyle(CardButtonStyle())
                                 }
 
                                 // Mark as watched/unwatched
@@ -139,7 +139,7 @@ struct MediaDetailView: View {
                                         .font(.system(size: 24))
                                         .foregroundColor(.white)
                                 }
-                                .buttonStyle(.card)
+                                .buttonStyle(CardButtonStyle())
                             }
                         }
                         .padding(.horizontal, 80)
