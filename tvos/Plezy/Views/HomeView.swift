@@ -768,27 +768,25 @@ struct LandscapeMediaCard: View {
                         endPoint: .bottom
                     )
 
-                    // Show logo in bottom left corner
-                    if media.type == "episode" {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Spacer()
-                            HStack {
-                                if let logoURL = showLogoURL {
-                                    CachedAsyncImage(url: logoURL) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFit()
-                                    } placeholder: {
-                                        EmptyView()
-                                    }
-                                    .frame(maxWidth: 200, maxHeight: 70)
-                                    .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
+                    // Show logo in bottom left corner (for both TV shows and movies)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Spacer()
+                        HStack {
+                            if let logoURL = logoURL {
+                                CachedAsyncImage(url: logoURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFit()
+                                } placeholder: {
+                                    EmptyView()
                                 }
-                                Spacer()
+                                .frame(maxWidth: 200, maxHeight: 70)
+                                .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
                             }
-                            .padding(.leading, 24)
-                            .padding(.bottom, 24)
+                            Spacer()
                         }
+                        .padding(.leading, 24)
+                        .padding(.bottom, 24)
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -891,9 +889,8 @@ struct LandscapeMediaCard: View {
         return URL(string: urlString)
     }
 
-    private var showLogoURL: URL? {
-        guard media.type == "episode",
-              let server = authService.selectedServer,
+    private var logoURL: URL? {
+        guard let server = authService.selectedServer,
               let connection = server.connections.first,
               let baseURL = connection.url,
               let clearLogo = media.clearLogo else {

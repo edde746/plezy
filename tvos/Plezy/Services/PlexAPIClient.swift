@@ -258,6 +258,12 @@ class PlexAPIClient {
         let container = response.MediaContainer
         print("📚 [API] OnDeck response - size: \(container.size), items: \(container.items.count)")
 
+        // Debug: Check which items have clearLogos in the initial response
+        for item in container.items {
+            let hasLogo = item.clearLogo != nil
+            print("📚 [API] Item '\(item.title)' (type: \(item.type ?? "unknown")) - has clearLogo: \(hasLogo)")
+        }
+
         // Enrich episodes with show logos
         // The onDeck endpoint returns episode metadata, but clearLogos belong to the show (grandparent) level.
         // For episodes without clearLogos, we fetch the show metadata to get the show's logo.
@@ -266,6 +272,7 @@ class PlexAPIClient {
         var showLogoCache: [String: String?] = [:] // Cache show logos by grandparentRatingKey to avoid duplicate API calls
 
         for (index, item) in enrichedItems.enumerated() {
+            // For episodes: fetch show (grandparent) metadata to get the show's logo
             if item.type == "episode" && item.clearLogo == nil, let grandparentKey = item.grandparentRatingKey {
                 // Check cache first to avoid duplicate API calls for the same show
                 if let cachedLogo = showLogoCache[grandparentKey] {
@@ -284,7 +291,6 @@ class PlexAPIClient {
 
                         if let showLogo = showMetadata.clearLogo {
                             print("📚 [API] Found clearLogo for show: \(showMetadata.title)")
-                            // Create a new metadata with the show's clearLogo in the Image array
                             var updatedItem = item
                             let logoImage = PlexImage(type: "clearLogo", url: showLogo)
                             updatedItem.Image = (item.Image ?? []) + [logoImage]
@@ -296,6 +302,25 @@ class PlexAPIClient {
                         print("📚 [API] Failed to fetch show metadata: \(error)")
                         showLogoCache[grandparentKey] = nil // Cache the failure
                     }
+                }
+            }
+
+            // For movies: fetch movie metadata if clearLogo is missing
+            else if item.type == "movie" && item.clearLogo == nil, let ratingKey = item.ratingKey {
+                print("📚 [API] Movie '\(item.title)' missing clearLogo, fetching full metadata from ratingKey: \(ratingKey)")
+                do {
+                    let movieMetadata = try await getMetadata(ratingKey: ratingKey)
+                    if let movieLogo = movieMetadata.clearLogo {
+                        print("📚 [API] Found clearLogo for movie: \(movieMetadata.title)")
+                        var updatedItem = item
+                        let logoImage = PlexImage(type: "clearLogo", url: movieLogo)
+                        updatedItem.Image = (item.Image ?? []) + [logoImage]
+                        enrichedItems[index] = updatedItem
+                    } else {
+                        print("📚 [API] Movie \(movieMetadata.title) has no clearLogo available")
+                    }
+                } catch {
+                    print("📚 [API] Failed to fetch movie metadata: \(error)")
                 }
             }
         }
