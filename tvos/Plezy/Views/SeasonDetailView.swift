@@ -47,7 +47,7 @@ struct SeasonDetailView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, 80)
+                .padding(.horizontal, 60)
                 .padding(.vertical, 30)
 
                 if isLoading {
@@ -70,7 +70,7 @@ struct SeasonDetailView: View {
                                 }
                             }
                         }
-                        .padding(80)
+                        .padding(60)
                     }
                 }
             }

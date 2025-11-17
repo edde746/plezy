@@ -305,7 +305,7 @@ struct MediaShelf: View {
             Text(title)
                 .font(.system(size: 38, weight: .bold, design: .default))
                 .foregroundColor(.white)
-                .padding(.horizontal, 80)
+                .padding(.horizontal, 60)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 30) {
@@ -316,7 +316,7 @@ struct MediaShelf: View {
                         .padding(.vertical, 30) // Padding for focus scale
                     }
                 }
-                .padding(.horizontal, 80)
+                .padding(.horizontal, 60)
             }
             .clipped()
         }
@@ -550,13 +550,13 @@ struct HeroBanner: View {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.3))
                         }
-                        .frame(height: 600)
+                        .frame(height: 750)
                         .clipped()
                         .tag(index)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: 600)
+                .frame(height: 750)
                 .ignoresSafeArea()
                 .onChange(of: currentIndex) { _, _ in
                     // Reset progress when manually navigating
@@ -569,7 +569,7 @@ struct HeroBanner: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 600)
+                .frame(height: 750)
 
                 // Content
                 VStack(alignment: .leading, spacing: 20) {
@@ -678,9 +678,9 @@ struct HeroBanner: View {
                     .padding(.top, 10)
 
                 }
-                .padding(.horizontal, 80)
+                .padding(.horizontal, 60)
                 .padding(.bottom, 120)
-                .frame(height: 600, alignment: .bottom)
+                .frame(height: 750, alignment: .bottom)
 
                 // macOS-style pagination indicators at bottom
                 HStack(spacing: 8) {
@@ -717,8 +717,10 @@ struct HeroBanner: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding(.bottom, 40)
             }
-            .frame(height: 600)
-            .scaleEffect(isHeroFocused ? 1.08 : 1.0)
+            .frame(height: 750)
+            .padding(.horizontal, 60)
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .scaleEffect(isHeroFocused ? 1.03 : 1.0)
             .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isHeroFocused)
             .focusable(true)
             .focused($isHeroFocused)
@@ -815,7 +817,7 @@ struct ContinueWatchingShelf: View {
             Text("Continue Watching")
                 .font(.system(size: 38, weight: .bold, design: .default))
                 .foregroundColor(.white)
-                .padding(.horizontal, 80)
+                .padding(.horizontal, 60)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 30) {
@@ -826,7 +828,7 @@ struct ContinueWatchingShelf: View {
                         .padding(.vertical, 40) // Padding for focus scale
                     }
                 }
-                .padding(.horizontal, 80)
+                .padding(.horizontal, 60)
             }
             .clipped()
         }

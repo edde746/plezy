@@ -13,9 +13,11 @@ struct MediaDetailView: View {
     @Environment(\.dismiss) var dismiss
     @State private var detailedMedia: PlexMetadata?
     @State private var seasons: [PlexMetadata] = []
+    @State private var episodes: [PlexMetadata] = []
     @State private var onDeckEpisode: PlexMetadata?
     @State private var isLoading = true
     @State private var selectedSeason: PlexMetadata?
+    @State private var selectedEpisode: PlexMetadata?
     @State private var showVideoPlayer = false
     @State private var playMedia: PlexMetadata?
 
@@ -38,7 +40,7 @@ struct MediaDetailView: View {
                                 Rectangle()
                                     .fill(Color.gray.opacity(0.3))
                             }
-                            .frame(height: 700)
+                            .frame(height: 850)
                             .clipped()
                         }
 
@@ -48,7 +50,7 @@ struct MediaDetailView: View {
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                        .frame(height: 700)
+                        .frame(height: 850)
 
                         // Content overlay
                         VStack(alignment: .leading, spacing: 20) {
@@ -142,10 +144,10 @@ struct MediaDetailView: View {
                                 .buttonStyle(CardButtonStyle())
                             }
                         }
-                        .padding(.horizontal, 80)
+                        .padding(.horizontal, 60)
                         .padding(.bottom, 80)
                     }
-                    .frame(height: 700)
+                    .frame(height: 850)
 
                     // Content sections below hero
                     VStack(alignment: .leading, spacing: 40) {
@@ -208,27 +210,46 @@ struct MediaDetailView: View {
                             }
                         }
 
-                        // TV Show seasons
+                        // TV Show seasons or episodes
                         if media.type == "show" && !seasons.isEmpty {
-                            VStack(alignment: .leading, spacing: 20) {
-                                Text("Seasons")
-                                    .font(.system(size: 32, weight: .bold))
-                                    .foregroundColor(.white)
+                            // Show episodes directly for single-season shows
+                            if seasons.count == 1 && !episodes.isEmpty {
+                                VStack(alignment: .leading, spacing: 20) {
+                                    Text("Episodes")
+                                        .font(.system(size: 32, weight: .bold))
+                                        .foregroundColor(.white)
 
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    LazyHStack(spacing: 30) {
-                                        ForEach(seasons) { season in
-                                            SeasonCard(season: season) {
-                                                selectedSeason = season
+                                    LazyVStack(spacing: 20) {
+                                        ForEach(episodes) { episode in
+                                            EpisodeRow(episode: episode) {
+                                                selectedEpisode = episode
+                                                playMedia = episode
                                             }
-                                            .padding(.vertical, 40)
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Show season cards for multi-season shows
+                                VStack(alignment: .leading, spacing: 20) {
+                                    Text("Seasons")
+                                        .font(.system(size: 32, weight: .bold))
+                                        .foregroundColor(.white)
+
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        LazyHStack(spacing: 30) {
+                                            ForEach(seasons) { season in
+                                                SeasonCard(season: season) {
+                                                    selectedSeason = season
+                                                }
+                                                .padding(.vertical, 40)
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    .padding(.horizontal, 80)
+                    .padding(.horizontal, 60)
                     .padding(.top, 40)
                     .padding(.bottom, 40)
                 }
@@ -368,6 +389,12 @@ struct MediaDetailView: View {
             if media.type == "show" {
                 seasons = try await client.getChildren(ratingKey: ratingKey)
 
+                // If there's only one season, load episodes directly
+                if seasons.count == 1, let season = seasons.first, let seasonRatingKey = season.ratingKey {
+                    episodes = try await client.getChildren(ratingKey: seasonRatingKey)
+                    print("📺 [MediaDetailView] Loaded \(episodes.count) episodes for single-season show")
+                }
+
                 // Try to get the onDeck episode for this show
                 let onDeckItems = try await client.getOnDeck()
                 onDeckEpisode = onDeckItems.first { episode in
@@ -419,7 +446,7 @@ struct MediaDetailView: View {
 struct SeasonCard: View {
     let season: PlexMetadata
     let action: () -> Void
-    @State private var isFocused = false
+    @FocusState private var isFocused: Bool
     @EnvironmentObject var authService: PlexAuthService
 
     var body: some View {
@@ -440,16 +467,29 @@ struct SeasonCard: View {
                         )
                 }
                 .frame(width: 250, height: 375)
-                .cornerRadius(10)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: isFocused ? [.white.opacity(0.8), .white.opacity(0.4)] : [.clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isFocused ? 4 : 0
+                        )
+                )
+                .shadow(color: .black.opacity(isFocused ? 0.7 : 0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
 
                 Text(season.title)
-                    .font(.headline)
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(.white)
+                    .lineLimit(2)
                     .frame(width: 250, alignment: .leading)
 
                 if let leafCount = season.leafCount {
                     Text("\(leafCount) episode\(leafCount == 1 ? "" : "s")")
-                        .font(.subheadline)
+                        .font(.system(size: 20))
                         .foregroundColor(.gray)
                         .frame(width: 250, alignment: .leading)
                 }
@@ -458,9 +498,7 @@ struct SeasonCard: View {
             .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         }
         .buttonStyle(.plain)
-        .onFocusChange(true) { focused in
-            isFocused = focused
-        }
+        .focused($isFocused)
     }
 
     private var posterURL: URL? {
