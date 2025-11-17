@@ -306,6 +306,8 @@ struct EpisodeRow: View {
             .shadow(color: isFocused ? Color.beaconPurple.opacity(0.4) : .clear, radius: isFocused ? 15 : 0, x: 0, y: isFocused ? 8 : 0)
         }
         .buttonStyle(.plain)
+        .scaleEffect(isFocused ? 1.08 : 1.0)
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .onFocusChange(true) { focused in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isFocused = focused

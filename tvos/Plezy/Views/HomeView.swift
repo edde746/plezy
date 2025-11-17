@@ -597,7 +597,6 @@ struct HeroBanner: View {
                                 .foregroundColor(.white)
                         }
                         .frame(maxWidth: 500, maxHeight: 140, alignment: .leading)
-                        .id("\(item.id)-\(clearLogo)") // Force view recreation when item or logo changes
                     } else {
                         Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
                             .font(.system(size: 72, weight: .heavy, design: .default))
@@ -691,6 +690,7 @@ struct HeroBanner: View {
                 .padding(.horizontal, 60)
                 .padding(.bottom, 120)
                 .frame(height: 750, alignment: .bottom)
+                .id(currentIndex) // Force view recreation when hero index changes
 
                 // Enhanced pagination indicators with beacon gradient
                 HStack(spacing: 8) {
