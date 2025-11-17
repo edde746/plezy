@@ -210,7 +210,7 @@ struct PlexMetadata: Codable, Identifiable, Equatable {
     let country: [PlexTag]?
 
     // Images (for clearLogo, etc.)
-    let Image: [PlexImage]?
+    var Image: [PlexImage]?
 
     var id: String { ratingKey ?? key }
 

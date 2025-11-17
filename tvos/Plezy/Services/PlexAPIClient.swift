@@ -222,7 +222,8 @@ class PlexAPIClient {
         // Based on official Plex API docs: https://plexapi.dev/api-reference/library/get-metadata-by-ratingkey
         let queryItems = [
             URLQueryItem(name: "includeChapters", value: "1"),
-            URLQueryItem(name: "includeExtras", value: "0")
+            URLQueryItem(name: "includeExtras", value: "0"),
+            URLQueryItem(name: "includeImages", value: "1")
         ]
         print("📡 [API] getMetadata for ratingKey: \(ratingKey)")
         let response: PlexResponse<PlexMetadata> = try await request(
@@ -246,7 +247,9 @@ class PlexAPIClient {
     func getOnDeck() async throws -> [PlexMetadata] {
         print("📚 [API] Requesting OnDeck from /library/onDeck")
         let queryItems = [
-            URLQueryItem(name: "includeImages", value: "1")
+            URLQueryItem(name: "includeImages", value: "1"),
+            URLQueryItem(name: "includeExtras", value: "1"),
+            URLQueryItem(name: "includeCollections", value: "1")
         ]
         let response: PlexResponse<PlexMetadata> = try await request(
             path: "/library/onDeck",
@@ -254,7 +257,50 @@ class PlexAPIClient {
         )
         let container = response.MediaContainer
         print("📚 [API] OnDeck response - size: \(container.size), items: \(container.items.count)")
-        return container.items
+
+        // Enrich episodes with show logos
+        // The onDeck endpoint returns episode metadata, but clearLogos belong to the show (grandparent) level.
+        // For episodes without clearLogos, we fetch the show metadata to get the show's logo.
+        // This ensures logos display correctly in the Continue Watching row.
+        var enrichedItems = container.items
+        var showLogoCache: [String: String?] = [:] // Cache show logos by grandparentRatingKey to avoid duplicate API calls
+
+        for (index, item) in enrichedItems.enumerated() {
+            if item.type == "episode" && item.clearLogo == nil, let grandparentKey = item.grandparentRatingKey {
+                // Check cache first to avoid duplicate API calls for the same show
+                if let cachedLogo = showLogoCache[grandparentKey] {
+                    if let logo = cachedLogo {
+                        print("📚 [API] Using cached clearLogo for episode: \(item.title)")
+                        var updatedItem = item
+                        let logoImage = PlexImage(type: "clearLogo", url: logo)
+                        updatedItem.Image = (item.Image ?? []) + [logoImage]
+                        enrichedItems[index] = updatedItem
+                    }
+                } else {
+                    print("📚 [API] Episode \(item.title) missing clearLogo, fetching show metadata from ratingKey: \(grandparentKey)")
+                    do {
+                        let showMetadata = try await getMetadata(ratingKey: grandparentKey)
+                        showLogoCache[grandparentKey] = showMetadata.clearLogo
+
+                        if let showLogo = showMetadata.clearLogo {
+                            print("📚 [API] Found clearLogo for show: \(showMetadata.title)")
+                            // Create a new metadata with the show's clearLogo in the Image array
+                            var updatedItem = item
+                            let logoImage = PlexImage(type: "clearLogo", url: showLogo)
+                            updatedItem.Image = (item.Image ?? []) + [logoImage]
+                            enrichedItems[index] = updatedItem
+                        } else {
+                            print("📚 [API] Show \(showMetadata.title) has no clearLogo")
+                        }
+                    } catch {
+                        print("📚 [API] Failed to fetch show metadata: \(error)")
+                        showLogoCache[grandparentKey] = nil // Cache the failure
+                    }
+                }
+            }
+        }
+
+        return enrichedItems
     }
 
     func getRecentlyAdded(sectionKey: String? = nil) async throws -> [PlexMetadata] {
