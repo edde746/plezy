@@ -1,6 +1,6 @@
 //
 //  VideoPlayerView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Video player with AVKit
 //

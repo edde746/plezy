@@ -1,6 +1,6 @@
 //
 //  SettingsService.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Manages app settings and preferences
 //

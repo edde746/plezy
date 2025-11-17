@@ -1,6 +1,6 @@
 //
 //  LibraryContentView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Content browser for a specific library
 //

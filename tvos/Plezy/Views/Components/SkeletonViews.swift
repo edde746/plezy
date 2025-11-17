@@ -1,6 +1,6 @@
 //
 //  SkeletonViews.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Skeleton loading views for better perceived performance
 //

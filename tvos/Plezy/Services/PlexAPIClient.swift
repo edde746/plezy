@@ -1,6 +1,6 @@
 //
 //  PlexAPIClient.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Plex API HTTP client
 //
@@ -25,7 +25,7 @@ class PlexAPIClient {
             return newIdentifier
         }
     }()
-    static let plexProduct = "Plezy tvOS"
+    static let plexProduct = "Beacon tvOS"
     static let plexVersion = "1.0.0"
     static let plexPlatform = "tvOS"
     static let plexDevice = "Apple TV"

@@ -1,6 +1,6 @@
 //
 //  PlexAuthService.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Handles Plex authentication, server discovery, and connection management
 //

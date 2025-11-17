@@ -1,6 +1,6 @@
 //
 //  MoviesLibraryView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Movies library tab
 //

@@ -1,6 +1,6 @@
 //
 //  SearchView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Global search across all libraries
 //

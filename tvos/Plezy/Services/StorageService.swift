@@ -1,6 +1,6 @@
 //
 //  StorageService.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Handles persistent storage using UserDefaults and Keychain
 //

@@ -1,6 +1,6 @@
 //
 //  TVShowsLibraryView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  TV Shows library tab
 //

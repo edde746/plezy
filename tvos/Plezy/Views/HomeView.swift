@@ -1,6 +1,6 @@
 //
 //  HomeView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Home screen with featured content and continue watching
 //
@@ -362,17 +362,11 @@ struct MediaCard: View {
                                         .fill(.regularMaterial)
                                         .opacity(0.4)
 
-                                    // Progress fill with vibrancy
+                                    // Progress fill with Beacon gradient
                                     Capsule()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [.white.opacity(0.95), .white.opacity(0.85)],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
+                                        .fill(Color.beaconGradient)
                                         .frame(width: geometry.size.width * media.progress)
-                                        .shadow(color: .white.opacity(0.5), radius: 2, x: 0, y: 0)
+                                        .shadow(color: Color.beaconMagenta.opacity(0.5), radius: 4, x: 0, y: 0)
                                 }
                             }
                             .frame(height: 5)
@@ -652,15 +646,16 @@ struct HeroBanner: View {
                                     .font(.system(size: 20, weight: .semibold))
 
                                 if item.progress > 0 && item.progress < 0.98 {
-                                    // Show progress indicator and time left
+                                    // Show progress indicator with Beacon gradient
                                     ZStack(alignment: .leading) {
                                         Capsule()
                                             .fill(Color.white.opacity(0.3))
                                             .frame(width: 50, height: 6)
 
                                         Capsule()
-                                            .fill(Color.white)
+                                            .fill(Color.beaconGradient)
                                             .frame(width: 50 * item.progress, height: 6)
+                                            .shadow(color: Color.beaconMagenta.opacity(0.6), radius: 3, x: 0, y: 0)
                                     }
 
                                     if let duration = item.duration, let viewOffset = item.viewOffset {
@@ -932,17 +927,11 @@ struct LandscapeMediaCard: View {
                             .opacity(0.4)
                             .frame(width: 500, height: 5)
 
-                        // Progress fill with vibrancy
+                        // Progress fill with Beacon gradient
                         Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.95), .white.opacity(0.85)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .fill(Color.beaconGradient)
                             .frame(width: 500 * media.progress, height: 5)
-                            .shadow(color: .white.opacity(0.5), radius: 2, x: 0, y: 0)
+                            .shadow(color: Color.beaconMagenta.opacity(0.5), radius: 4, x: 0, y: 0)
                     }
                     .padding(.top, 8)
                 }

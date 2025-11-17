@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Main content view with navigation logic
 //

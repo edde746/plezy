@@ -1,6 +1,6 @@
 //
 //  MainTabView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Main navigation with tabs
 //

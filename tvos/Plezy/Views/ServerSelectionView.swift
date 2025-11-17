@@ -1,6 +1,6 @@
 //
 //  ServerSelectionView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Server selection screen
 //

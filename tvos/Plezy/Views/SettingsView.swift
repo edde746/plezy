@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  App settings and preferences
 //

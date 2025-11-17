@@ -1,6 +1,6 @@
 //
 //  CacheService.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Cache service to store API responses and reduce unnecessary network calls
 //

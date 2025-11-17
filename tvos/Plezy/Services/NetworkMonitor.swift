@@ -1,6 +1,6 @@
 //
 //  NetworkMonitor.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Network reachability monitoring service
 //

@@ -1,6 +1,6 @@
 //
 //  PlexModels.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Plex API data models
 //

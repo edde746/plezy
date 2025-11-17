@@ -1,6 +1,6 @@
 //
 //  LibrariesView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Library browser
 //

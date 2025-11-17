@@ -1,6 +1,6 @@
 //
 //  ImageCacheService.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Image caching service to reduce network usage and improve performance
 //

@@ -1,6 +1,6 @@
 //
 //  MediaDetailView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Detailed view for movies and TV shows
 //
@@ -13,155 +13,121 @@ struct MediaDetailView: View {
     @Environment(\.dismiss) var dismiss
     @State private var detailedMedia: PlexMetadata?
     @State private var seasons: [PlexMetadata] = []
+    @State private var onDeckEpisode: PlexMetadata?
     @State private var isLoading = true
     @State private var selectedSeason: PlexMetadata?
     @State private var showVideoPlayer = false
+    @State private var playMedia: PlexMetadata?
 
     var body: some View {
         let _ = print("📄 [MediaDetailView] body evaluated for: \(media.title)")
         ZStack {
-            // Background with backdrop
-            if let artURL = artworkURL {
-                CachedAsyncImage(url: artURL) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .blur(radius: 50)
-                        .opacity(0.3)
-                } placeholder: {
-                    Color.black
-                }
-                .ignoresSafeArea()
-            } else {
-                Color.black.ignoresSafeArea()
-            }
+            Color.black.ignoresSafeArea()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 30) {
-                    // Back button
-                    Button {
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
+                VStack(alignment: .leading, spacing: 0) {
+                    // Hero Banner Section
+                    ZStack(alignment: .bottomLeading) {
+                        // Background art
+                        if let artURL = artworkURL {
+                            CachedAsyncImage(url: artURL) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.3))
+                            }
+                            .frame(height: 700)
+                            .clipped()
                         }
-                        .font(.title3)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, 40)
 
-                    // Main content
-                    HStack(alignment: .top, spacing: 40) {
-                        // Poster
-                        CachedAsyncImage(url: posterURL) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(2/3, contentMode: .fill)
-                        } placeholder: {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
-                                .aspectRatio(2/3, contentMode: .fill)
-                                .overlay(
-                                    Image(systemName: "photo")
-                                        .font(.system(size: 60))
-                                        .foregroundColor(.gray)
-                                )
-                        }
-                        .frame(width: 400, height: 600)
-                        .cornerRadius(15)
-                        .shadow(radius: 20)
+                        // Gradient overlay
+                        LinearGradient(
+                            gradient: Gradient(colors: [.clear, .black.opacity(0.8), .black]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 700)
 
-                        // Info
+                        // Content overlay
                         VStack(alignment: .leading, spacing: 20) {
-                            Text(displayMedia.title)
-                                .font(.system(size: 48, weight: .bold))
-                                .foregroundColor(.white)
+                            Spacer()
 
-                            // Metadata
-                            HStack(spacing: 15) {
-                                if let year = displayMedia.year {
-                                    Text(String(year))
-                                        .font(.title3)
-                                        .foregroundColor(.gray)
+                            // Clear logo or title
+                            if let clearLogo = displayMedia.clearLogo, let logoURL = logoURL(for: clearLogo) {
+                                CachedAsyncImage(url: logoURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFit()
+                                } placeholder: {
+                                    Text(displayMedia.title)
+                                        .font(.system(size: 60, weight: .heavy, design: .default))
+                                        .foregroundColor(.white)
                                 }
+                                .frame(maxWidth: 600, maxHeight: 180, alignment: .leading)
+                            } else {
+                                Text(displayMedia.title)
+                                    .font(.system(size: 60, weight: .heavy, design: .default))
+                                    .foregroundColor(.white)
+                                    .lineLimit(2)
+                                    .frame(maxWidth: 1000, alignment: .leading)
+                            }
 
-                                if let rating = displayMedia.contentRating {
-                                    Text(rating)
-                                        .font(.title3)
-                                        .foregroundColor(.gray)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 4)
-                                        .background(
-                                            Capsule()
-                                                .stroke(Color.gray, lineWidth: 2)
-                                        )
-                                }
+                            // Metadata chips
+                            HStack(spacing: 12) {
+                                // Content type
+                                Text(displayMedia.type == "movie" ? "Movie" : "TV Show")
+                                    .font(.system(size: 24, weight: .medium))
+                                    .foregroundColor(.white)
 
-                                if let duration = displayMedia.duration {
-                                    Text(formatDuration(duration))
-                                        .font(.title3)
-                                        .foregroundColor(.gray)
-                                }
-
-                                if let audienceRating = displayMedia.audienceRating {
-                                    HStack(spacing: 5) {
-                                        Image(systemName: "star.fill")
-                                            .foregroundColor(.yellow)
-                                        Text(String(format: "%.1f", audienceRating))
+                                if displayMedia.audienceRating != nil || displayMedia.contentRating != nil || displayMedia.year != nil || displayMedia.duration != nil {
+                                    ForEach(metadataComponents, id: \.self) { component in
+                                        Text("·")
+                                            .foregroundColor(.white.opacity(0.7))
+                                        Text(component)
+                                            .font(.system(size: 24, weight: .medium))
                                             .foregroundColor(.white)
                                     }
-                                    .font(.title3)
                                 }
                             }
 
                             // Summary
                             if let summary = displayMedia.summary, !summary.isEmpty {
                                 Text(summary)
-                                    .font(.title3)
-                                    .foregroundColor(.white.opacity(0.9))
-                                    .lineLimit(5)
-                                    .padding(.top, 10)
+                                    .font(.system(size: 26, weight: .regular))
+                                    .foregroundColor(.white.opacity(0.85))
+                                    .lineLimit(4)
+                                    .frame(maxWidth: 1200, alignment: .leading)
                             }
 
-                            // Genres
-                            if let genres = displayMedia.genre, !genres.isEmpty {
-                                HStack {
-                                    ForEach(genres.prefix(4), id: \.tag) { genre in
-                                        Text(genre.tag)
-                                            .font(.headline)
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 15)
-                                            .padding(.vertical, 8)
-                                            .background(
-                                                Capsule()
-                                                    .fill(Color.white.opacity(0.2))
-                                            )
-                                    }
-                                }
-                                .padding(.top, 10)
-                            }
-
-                            // Actions
+                            // Action buttons
                             HStack(spacing: 20) {
-                                // Play button
+                                // Play button (primary)
                                 Button {
-                                    print("▶️ [MediaDetailView] Play button tapped for: \(displayMedia.title)")
-                                    print("▶️ [MediaDetailView] Setting showVideoPlayer = true")
-                                    showVideoPlayer = true
-                                    print("▶️ [MediaDetailView] showVideoPlayer is now: \(showVideoPlayer)")
+                                    handlePlayButton()
                                 } label: {
                                     HStack(spacing: 12) {
-                                        Image(systemName: displayMedia.progress > 0 ? "play.fill" : "play.fill")
+                                        Image(systemName: "play.fill")
                                             .font(.system(size: 20, weight: .semibold))
-                                        Text(displayMedia.progress > 0 ? "Resume" : "Play")
+                                        Text(playButtonLabel)
                                             .font(.system(size: 24, weight: .semibold))
                                     }
                                     .foregroundColor(.white)
                                 }
-                                .buttonStyle(ClearGlassButtonStyle())
-                                .accessibilityLabel(displayMedia.progress > 0 ? "Resume" : "Play")
-                                .accessibilityHint(displayMedia.progress > 0 ? "Continue watching from where you left off" : "Start watching \(displayMedia.title)")
+                                .buttonStyle(.clearGlass)
+
+                                // Shuffle button (shows/seasons only)
+                                if displayMedia.type == "show" && !seasons.isEmpty {
+                                    Button {
+                                        handleShufflePlay()
+                                    } label: {
+                                        Image(systemName: "shuffle")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(.white)
+                                    }
+                                    .buttonStyle(.card)
+                                }
 
                                 // Mark as watched/unwatched
                                 Button {
@@ -169,69 +135,103 @@ struct MediaDetailView: View {
                                         await toggleWatched()
                                     }
                                 } label: {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: displayMedia.isWatched ? "checkmark.circle.fill" : "checkmark.circle")
-                                            .font(.system(size: 20))
-                                        Text(displayMedia.isWatched ? "Watched" : "Mark Watched")
-                                            .font(.system(size: 18, weight: .medium))
-                                    }
-                                    .foregroundColor(.white)
-                                }
-                                .buttonStyle(CardButtonStyle())
-                                .accessibilityLabel(displayMedia.isWatched ? "Watched" : "Mark as watched")
-                                .accessibilityHint(displayMedia.isWatched ? "Mark this as unwatched" : "Mark this as watched")
-                            }
-                            .padding(.top, 20)
-
-                            // Cast
-                            if let cast = displayMedia.role?.prefix(5), !cast.isEmpty {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    Text("Cast")
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
+                                    Image(systemName: displayMedia.isWatched ? "checkmark.circle.fill" : "checkmark.circle")
+                                        .font(.system(size: 24))
                                         .foregroundColor(.white)
-                                        .padding(.top, 20)
+                                }
+                                .buttonStyle(.card)
+                            }
+                        }
+                        .padding(.horizontal, 80)
+                        .padding(.bottom, 80)
+                    }
+                    .frame(height: 700)
 
-                                    ForEach(Array(cast), id: \.tag) { actor in
-                                        HStack {
-                                            Text(actor.tag)
-                                                .foregroundColor(.white)
-                                            if let role = actor.role {
-                                                Text("as \(role)")
-                                                    .foregroundColor(.gray)
+                    // Content sections below hero
+                    VStack(alignment: .leading, spacing: 40) {
+                        // Genres
+                        if let genres = displayMedia.genre, !genres.isEmpty {
+                            HStack(spacing: 12) {
+                                ForEach(genres.prefix(5), id: \.tag) { genre in
+                                    Text(genre.tag)
+                                        .font(.system(size: 22, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 10)
+                                        .background(
+                                            Capsule()
+                                                .fill(Color.white.opacity(0.15))
+                                        )
+                                }
+                            }
+                        }
+
+                        // Cast
+                        if let cast = displayMedia.role, !cast.isEmpty {
+                            VStack(alignment: .leading, spacing: 15) {
+                                Text("Cast")
+                                    .font(.system(size: 32, weight: .bold))
+                                    .foregroundColor(.white)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 24) {
+                                        ForEach(cast.prefix(10), id: \.tag) { actor in
+                                            VStack(alignment: .leading, spacing: 8) {
+                                                // Cast photo placeholder (Plex role doesn't include thumb in tvOS model)
+                                                Circle()
+                                                    .fill(Color.white.opacity(0.15))
+                                                    .frame(width: 140, height: 140)
+                                                    .overlay(
+                                                        Image(systemName: "person.fill")
+                                                            .font(.system(size: 50))
+                                                            .foregroundColor(.white.opacity(0.5))
+                                                    )
+
+                                                Text(actor.tag)
+                                                    .font(.system(size: 20, weight: .semibold))
+                                                    .foregroundColor(.white)
+                                                    .lineLimit(2)
+                                                    .frame(width: 140, alignment: .leading)
+
+                                                if let role = actor.role {
+                                                    Text(role)
+                                                        .font(.system(size: 18, weight: .regular))
+                                                        .foregroundColor(.gray)
+                                                        .lineLimit(2)
+                                                        .frame(width: 140, alignment: .leading)
+                                                }
                                             }
                                         }
-                                        .font(.headline)
                                     }
+                                    .padding(.vertical, 20)
                                 }
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
 
-                    // TV Show seasons
-                    if media.type == "show" && !seasons.isEmpty {
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Seasons")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
+                        // TV Show seasons
+                        if media.type == "show" && !seasons.isEmpty {
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text("Seasons")
+                                    .font(.system(size: 32, weight: .bold))
+                                    .foregroundColor(.white)
 
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                LazyHStack(spacing: 20) {
-                                    ForEach(seasons) { season in
-                                        SeasonCard(season: season) {
-                                            selectedSeason = season
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 30) {
+                                        ForEach(seasons) { season in
+                                            SeasonCard(season: season) {
+                                                selectedSeason = season
+                                            }
+                                            .padding(.vertical, 40)
                                         }
                                     }
                                 }
                             }
                         }
-                        .padding(.top, 20)
                     }
+                    .padding(.horizontal, 80)
+                    .padding(.top, 40)
+                    .padding(.bottom, 40)
                 }
-                .padding(.horizontal, 80)
-                .padding(.bottom, 40)
             }
         }
         .onAppear {
@@ -249,26 +249,10 @@ struct MediaDetailView: View {
             SeasonDetailView(season: season, show: displayMedia)
                 .environmentObject(authService)
         }
-        .fullScreenCover(isPresented: $showVideoPlayer) {
-            let _ = print("🎬 [MediaDetailView] FullScreenCover triggered. showVideoPlayer: \(showVideoPlayer), media type: \(media.type ?? "unknown")")
-            if media.type == "show" {
-                // For shows, need to pick an episode first
-                if let season = seasons.first {
-                    let _ = print("🎬 [MediaDetailView] Presenting SeasonDetailView for first season: \(season.title)")
-                    SeasonDetailView(season: season, show: displayMedia)
-                        .environmentObject(authService)
-                } else {
-                    let _ = print("❌ [MediaDetailView] No seasons available for show: \(media.title)")
-                    EmptyView()
-                }
-            } else {
-                let _ = print("🎬 [MediaDetailView] Presenting VideoPlayerView for: \(displayMedia.title)")
-                VideoPlayerView(media: displayMedia)
-                    .environmentObject(authService)
-            }
-        }
-        .onChange(of: showVideoPlayer) { oldValue, newValue in
-            print("🔄 [MediaDetailView] showVideoPlayer changed from \(oldValue) to \(newValue)")
+        .fullScreenCover(item: $playMedia) { mediaToPlay in
+            let _ = print("🎬 [MediaDetailView] Playing: \(mediaToPlay.title)")
+            VideoPlayerView(media: mediaToPlay)
+                .environmentObject(authService)
         }
     }
 
@@ -276,20 +260,42 @@ struct MediaDetailView: View {
         detailedMedia ?? media
     }
 
-    private var posterURL: URL? {
-        guard let server = authService.selectedServer,
-              let connection = server.connections.first,
-              let baseURL = connection.url,
-              let thumb = displayMedia.thumb else {
-            return nil
+    private var playButtonLabel: String {
+        if displayMedia.type == "show" {
+            if let episode = onDeckEpisode {
+                let seasonNum = episode.parentIndex ?? 1
+                let episodeNum = episode.index ?? 1
+                if episode.progress > 0 {
+                    return "Resume S\(seasonNum)E\(episodeNum)"
+                } else {
+                    return "Play S\(seasonNum)E\(episodeNum)"
+                }
+            }
+            return "Play S1E1"
+        }
+        return displayMedia.progress > 0 ? "Resume" : "Play"
+    }
+
+    private var metadataComponents: [String] {
+        var components: [String] = []
+
+        if let rating = displayMedia.audienceRating {
+            components.append("★ \(String(format: "%.1f", rating))")
         }
 
-        var urlString = baseURL.absoluteString + thumb
-        if let token = server.accessToken {
-            urlString += "?X-Plex-Token=\(token)"
+        if let contentRating = displayMedia.contentRating {
+            components.append(contentRating)
         }
 
-        return URL(string: urlString)
+        if let year = displayMedia.year {
+            components.append(String(year))
+        }
+
+        if let duration = displayMedia.duration {
+            components.append(formatDuration(duration))
+        }
+
+        return components
     }
 
     private var artworkURL: URL? {
@@ -308,6 +314,44 @@ struct MediaDetailView: View {
         return URL(string: urlString)
     }
 
+    private func logoURL(for clearLogo: String) -> URL? {
+        // clearLogo already includes the full URL from the Image array
+        if clearLogo.starts(with: "http") {
+            return URL(string: clearLogo)
+        }
+
+        // Fallback to building URL if it's a relative path
+        guard let server = authService.selectedServer,
+              let connection = server.connections.first,
+              let baseURL = connection.url else {
+            return nil
+        }
+
+        var urlString = baseURL.absoluteString + clearLogo
+        if let token = server.accessToken {
+            urlString += "?X-Plex-Token=\(token)"
+        }
+
+        return URL(string: urlString)
+    }
+
+    private func handlePlayButton() {
+        if displayMedia.type == "show" {
+            if let episode = onDeckEpisode {
+                playMedia = episode
+            } else if let firstSeason = seasons.first {
+                selectedSeason = firstSeason
+            }
+        } else {
+            playMedia = displayMedia
+        }
+    }
+
+    private func handleShufflePlay() {
+        // For future implementation: shuffle play
+        print("🔀 [MediaDetailView] Shuffle play requested for: \(displayMedia.title)")
+    }
+
     private func loadDetails() async {
         guard let client = authService.currentClient,
               let ratingKey = media.ratingKey else {
@@ -320,9 +364,17 @@ struct MediaDetailView: View {
             let detailed = try await client.getMetadata(ratingKey: ratingKey)
             detailedMedia = detailed
 
-            // If it's a TV show, load seasons
+            // If it's a TV show, load seasons and onDeck episode
             if media.type == "show" {
                 seasons = try await client.getChildren(ratingKey: ratingKey)
+
+                // Try to get the onDeck episode for this show
+                let onDeckItems = try await client.getOnDeck()
+                onDeckEpisode = onDeckItems.first { episode in
+                    episode.grandparentRatingKey == ratingKey
+                }
+
+                print("📺 [MediaDetailView] OnDeck episode for show: \(onDeckEpisode?.title ?? "none")")
             }
         } catch {
             print("Error loading details: \(error)")

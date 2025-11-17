@@ -1,6 +1,6 @@
 //
 //  Extensions.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Useful extensions and helpers
 //
@@ -167,8 +167,85 @@ extension ButtonStyle where Self == ClearGlassButtonStyle {
 // MARK: - Color Extensions
 
 extension Color {
-    static let plexOrange = Color(red: 0.9, green: 0.6, blue: 0.0)
-    static let plexYellow = Color(red: 1.0, green: 0.8, blue: 0.0)
+    // MARK: - Beacon Design System Colors
+
+    // Background Colors
+    static let beaconBackground = Color(hex: "#0f0f0f")
+    static let beaconSurface = Color(hex: "#1a1a1a")
+    static let beaconSurfaceHover = Color(hex: "#242424")
+    static let beaconSurfaceSecondary = Color(hex: "#2a2a2a")
+
+    // Gradient Colors (Individual Stops)
+    static let beaconBlue = Color(hex: "#2962ff")
+    static let beaconPurple = Color(hex: "#7c4dff")
+    static let beaconMagenta = Color(hex: "#e91e63")
+    static let beaconRed = Color(hex: "#f44336")
+    static let beaconOrange = Color(hex: "#ff6b35")
+
+    // Text Colors
+    static let beaconTextPrimary = Color(hex: "#ffffff")
+    static let beaconTextSecondary = Color(hex: "#e0e0e0")
+    static let beaconTextTertiary = Color(hex: "#a0a0a0")
+    static let beaconTextDisabled = Color(hex: "#666666")
+
+    // Primary Gradient (for buttons, CTAs, progress bars)
+    static var beaconGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                beaconBlue,
+                beaconPurple,
+                beaconMagenta,
+                beaconRed,
+                beaconOrange
+            ]),
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    // Gradient overlay at 60% opacity (for hover effects)
+    static func beaconGradientOverlay(opacity: Double = 0.6) -> LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                beaconBlue.opacity(opacity),
+                beaconPurple.opacity(opacity),
+                beaconMagenta.opacity(opacity),
+                beaconRed.opacity(opacity),
+                beaconOrange.opacity(opacity)
+            ]),
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    // Helper to create Color from hex string
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue:  Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+
+    // Legacy colors for backward compatibility
+    static let plexOrange = beaconOrange
+    static let plexYellow = beaconOrange
 }
 
 // MARK: - Date Extensions

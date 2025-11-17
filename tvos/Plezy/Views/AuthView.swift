@@ -1,6 +1,6 @@
 //
 //  AuthView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Authentication screen with PIN flow
 //

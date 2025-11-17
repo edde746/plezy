@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Plezy</string>
+	<string>Beacon</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -46,7 +46,7 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Plezy needs to connect to your Plex Media Server on your local network.</string>
+	<string>Beacon needs to connect to your Plex Media Server on your local network.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_plexmediasvr._tcp</string>

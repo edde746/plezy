@@ -1,6 +1,6 @@
 //
 //  SeasonDetailView.swift
-//  Plezy tvOS
+//  Beacon tvOS
 //
 //  Episode list for a TV season
 //

@@ -1,8 +1,8 @@
 //
-//  PlezyApp.swift
-//  Plezy tvOS
+//  BeaconApp.swift
+//  Beacon tvOS
 //
-//  Main application entry point for Plezy tvOS client
+//  Main application entry point for Beacon tvOS client
 //
 
 import SwiftUI
@@ -10,13 +10,13 @@ import AVFoundation
 import Combine
 
 @main
-struct PlezyApp: App {
+struct BeaconApp: App {
     @StateObject private var authService = PlexAuthService()
     @StateObject private var settingsService = SettingsService()
     @StateObject private var storageService = StorageService()
 
     init() {
-        print("🚀🚀🚀 [APP] Plezy app is starting up! 🚀🚀🚀")
+        print("🚀🚀🚀 [APP] Beacon app is starting up! 🚀🚀🚀")
         // Configure audio session for media playback
         configureAudioSession()
         print("🚀🚀🚀 [APP] Audio session configured 🚀🚀🚀")
