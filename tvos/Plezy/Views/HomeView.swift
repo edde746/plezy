@@ -235,6 +235,11 @@ struct HomeView: View {
 
         let cacheKey = CacheService.homeKey(serverID: serverID)
 
+        // TEMPORARY: Invalidate cache to ensure logo enrichment runs
+        // This can be removed after users have loaded fresh data
+        cache.invalidate(cacheKey)
+        print("🏠 [HomeView] Cache invalidated to fetch enriched data with logos")
+
         // Check cache first
         if let cached: (onDeck: [PlexMetadata], hubs: [PlexHub]) = cache.get(cacheKey) {
             print("🏠 [HomeView] Using cached content")
@@ -782,6 +787,19 @@ struct LandscapeMediaCard: View {
                                 }
                                 .frame(maxWidth: 200, maxHeight: 70)
                                 .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
+                                .onAppear {
+                                    print("🖼️ [Card] Logo loaded for '\(media.title)' from URL: \(logoURL)")
+                                }
+                            } else {
+                                // Debug: Show when logo is missing
+                                Text("NO LOGO")
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .onAppear {
+                                        print("🖼️ [Card] NO LOGO for '\(media.title)' (type: \(media.type ?? "unknown"))")
+                                        print("🖼️ [Card] - media.clearLogo: \(media.clearLogo ?? "nil")")
+                                        print("🖼️ [Card] - media.Image count: \(media.Image?.count ?? 0)")
+                                    }
                             }
                             Spacer()
                         }

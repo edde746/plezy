@@ -325,6 +325,13 @@ class PlexAPIClient {
             }
         }
 
+        // Debug: Summary of enrichment results
+        print("📚 [API] Enrichment complete. Summary:")
+        for item in enrichedItems {
+            let hasLogo = item.clearLogo != nil
+            print("📚 [API]   - '\(item.title)' (type: \(item.type ?? "unknown")) - has clearLogo after enrichment: \(hasLogo)")
+        }
+
         return enrichedItems
     }
 
