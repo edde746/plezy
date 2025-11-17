@@ -26,7 +26,7 @@ struct MediaDetailView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 0) {
                     // Hero Banner Section
                     ZStack(alignment: .bottomLeading) {
@@ -251,7 +251,7 @@ struct MediaDetailView: View {
                     }
                     .padding(.horizontal, 60)
                     .padding(.top, 40)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 200) // Increased bottom padding to ensure content is scrollable
                 }
             }
         }
@@ -466,7 +466,7 @@ struct SeasonCard: View {
                                 .foregroundColor(.gray)
                         )
                 }
-                .frame(width: 250, height: 375)
+                .frame(width: 400, height: 600)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -485,13 +485,13 @@ struct SeasonCard: View {
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(.white)
                     .lineLimit(2)
-                    .frame(width: 250, alignment: .leading)
+                    .frame(width: 400, alignment: .leading)
 
                 if let leafCount = season.leafCount {
                     Text("\(leafCount) episode\(leafCount == 1 ? "" : "s")")
                         .font(.system(size: 20))
                         .foregroundColor(.gray)
-                        .frame(width: 250, alignment: .leading)
+                        .frame(width: 400, alignment: .leading)
                 }
             }
             .scaleEffect(isFocused ? 1.08 : 1.0)
