@@ -407,8 +407,8 @@ struct FilterButton: View {
                 )
         }
         .buttonStyle(FilterButtonStyle(isFocused: $isFocused, isSelected: isSelected))
-        .scaleEffect(isFocused ? 1.07 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+        .scaleEffect(isFocused ? 1.09 : 1.0)
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
     }
 }
 

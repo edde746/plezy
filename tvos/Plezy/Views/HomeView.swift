@@ -238,12 +238,7 @@ struct HomeView: View {
 
         let cacheKey = CacheService.homeKey(serverID: serverID)
 
-        // TEMPORARY: Invalidate cache to ensure logo enrichment runs
-        // This can be removed after users have loaded fresh data
-        cache.invalidate(cacheKey)
-        print("🏠 [HomeView] Cache invalidated to fetch enriched data with logos")
-
-        // Check cache first
+        // Check cache first - enriched data with logos is cached
         if let cached: (onDeck: [PlexMetadata], hubs: [PlexHub]) = cache.get(cacheKey) {
             print("🏠 [HomeView] Using cached content")
             self.onDeck = cached.onDeck
@@ -435,7 +430,7 @@ struct MediaCard: View {
             }
         }
         .buttonStyle(MediaCardButtonStyle(isFocused: $isFocused))
-        .scaleEffect(isFocused ? 1.05 : 1.0)
+        .scaleEffect(isFocused ? 1.09 : 1.0)
         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(accessibilityHint)
@@ -599,6 +594,7 @@ struct HeroBanner: View {
                                 .foregroundColor(.white)
                         }
                         .frame(maxWidth: 500, maxHeight: 140, alignment: .leading)
+                        .id("\(item.id)-\(clearLogo)") // Force view recreation when item or logo changes
                     } else {
                         Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
                             .font(.system(size: 72, weight: .heavy, design: .default))
@@ -863,7 +859,7 @@ struct LandscapeMediaCard: View {
                     VStack(alignment: .leading, spacing: 0) {
                         Spacer()
                         HStack {
-                            if let logoURL = logoURL {
+                            if let logoURL = logoURL, let clearLogo = media.clearLogo {
                                 CachedAsyncImage(url: logoURL) { image in
                                     image
                                         .resizable()
@@ -873,6 +869,7 @@ struct LandscapeMediaCard: View {
                                 }
                                 .frame(maxWidth: 200, maxHeight: 70)
                                 .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
+                                .id("\(media.id)-\(clearLogo)") // Force view recreation when logo changes
                                 .onAppear {
                                     print("🖼️ [Card] Logo loaded for '\(media.title)' from URL: \(logoURL)")
                                 }

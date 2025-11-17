@@ -138,11 +138,10 @@ struct TabButton: View {
             }
         }
         .buttonStyle(.plain)
-        .scaleEffect(isFocused ? 1.05 : 1.0)
+        .scaleEffect(isFocused ? 1.09 : 1.0)
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .onFocusChange(true) { focused in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isFocused = focused
-            }
+            isFocused = focused
         }
     }
 }
@@ -188,10 +187,10 @@ struct LibraryCard: View {
             )
         }
         .buttonStyle(.plain)
+        .scaleEffect(isFocused ? 1.09 : 1.0)
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .onFocusChange(true) { focused in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isFocused = focused
-            }
+            isFocused = focused
         }
     }
 
