@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2310 (385 per locale)
+/// Strings: 2316 (386 per locale)
 ///
-/// Built on 2025-11-16 at 04:20 UTC
+/// Built on 2025-11-17 at 03:47 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -456,6 +456,7 @@ class _StringsAccessibilityEn {
 	String get mediaCardWatched => 'watched';
 	String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
 	String get mediaCardUnwatched => 'unwatched';
+	String get tapToPlay => 'Tap to play';
 }
 
 // Path: tooltips
@@ -1157,6 +1158,7 @@ class _StringsAccessibilityDe implements _StringsAccessibilityEn {
 	@override String get mediaCardWatched => 'watched';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
 	@override String get mediaCardUnwatched => 'unwatched';
+	@override String get tapToPlay => 'Tap to play';
 }
 
 // Path: tooltips
@@ -1858,6 +1860,7 @@ class _StringsAccessibilityIt implements _StringsAccessibilityEn {
 	@override String get mediaCardWatched => 'watched';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
 	@override String get mediaCardUnwatched => 'unwatched';
+	@override String get tapToPlay => 'Tap to play';
 }
 
 // Path: tooltips
@@ -2559,6 +2562,7 @@ class _StringsAccessibilityNl implements _StringsAccessibilityEn {
 	@override String get mediaCardWatched => 'watched';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
 	@override String get mediaCardUnwatched => 'unwatched';
+	@override String get tapToPlay => 'Tap to play';
 }
 
 // Path: tooltips
@@ -3260,6 +3264,7 @@ class _StringsAccessibilitySv implements _StringsAccessibilityEn {
 	@override String get mediaCardWatched => 'watched';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
 	@override String get mediaCardUnwatched => 'unwatched';
+	@override String get tapToPlay => 'Tap to play';
 }
 
 // Path: tooltips
@@ -3961,6 +3966,7 @@ class _StringsAccessibilityZh implements _StringsAccessibilityEn {
 	@override String get mediaCardWatched => 'watched';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
 	@override String get mediaCardUnwatched => 'unwatched';
+	@override String get tapToPlay => 'Tap to play';
 }
 
 // Path: tooltips
@@ -4507,6 +4513,7 @@ extension on Translations {
 			case 'accessibility.mediaCardWatched': return 'watched';
 			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
 			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return 'Shuffle play';
 			case 'tooltips.markAsWatched': return 'Mark as watched';
 			case 'tooltips.markAsUnwatched': return 'Mark as unwatched';
@@ -4900,6 +4907,7 @@ extension on _StringsDe {
 			case 'accessibility.mediaCardWatched': return 'watched';
 			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
 			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return 'Zufallswiedergabe';
 			case 'tooltips.markAsWatched': return 'Als gesehen markieren';
 			case 'tooltips.markAsUnwatched': return 'Als ungesehen markieren';
@@ -5293,6 +5301,7 @@ extension on _StringsIt {
 			case 'accessibility.mediaCardWatched': return 'watched';
 			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
 			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return 'Riproduzione casuale';
 			case 'tooltips.markAsWatched': return 'Segna come visto';
 			case 'tooltips.markAsUnwatched': return 'Segna come non visto';
@@ -5686,6 +5695,7 @@ extension on _StringsNl {
 			case 'accessibility.mediaCardWatched': return 'watched';
 			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
 			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return 'Willekeurig afspelen';
 			case 'tooltips.markAsWatched': return 'Markeer als gekeken';
 			case 'tooltips.markAsUnwatched': return 'Markeer als ongekeken';
@@ -6079,6 +6089,7 @@ extension on _StringsSv {
 			case 'accessibility.mediaCardWatched': return 'watched';
 			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
 			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return 'Blanda uppspelning';
 			case 'tooltips.markAsWatched': return 'Markera som sedd';
 			case 'tooltips.markAsUnwatched': return 'Markera som osedd';
@@ -6472,6 +6483,7 @@ extension on _StringsZh {
 			case 'accessibility.mediaCardWatched': return 'watched';
 			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
 			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return '随机播放';
 			case 'tooltips.markAsWatched': return '标记为已观看';
 			case 'tooltips.markAsUnwatched': return '标记为未观看';

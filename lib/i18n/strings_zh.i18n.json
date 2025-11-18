@@ -188,7 +188,8 @@
     "mediaCardSeason": "${title}, ${seasonInfo}",
     "mediaCardWatched": "watched",
     "mediaCardPartiallyWatched": "${percent} percent watched",
-    "mediaCardUnwatched": "unwatched"
+    "mediaCardUnwatched": "unwatched",
+    "tapToPlay": "Tap to play"
   },
   "tooltips": {
     "shufflePlay": "随机播放",
