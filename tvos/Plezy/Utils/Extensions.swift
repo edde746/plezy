@@ -246,6 +246,33 @@ extension View {
     }
 }
 
+// MARK: - Responsive Scaling
+
+/// Helper for responsive scaling based on screen size
+enum ResponsiveScale {
+    /// Base width for 1080p Apple TV (1920px)
+    static let baseWidth: CGFloat = 1920
+
+    /// Get scaling factor for current screen
+    static func factor(for width: CGFloat) -> CGFloat {
+        return width / baseWidth
+    }
+
+    /// Scale a value based on screen width
+    static func scaled(_ value: CGFloat, for width: CGFloat) -> CGFloat {
+        return value * factor(for: width)
+    }
+}
+
+extension View {
+    /// Get the current screen width for responsive scaling
+    func withResponsiveScale<Content: View>(@ViewBuilder content: @escaping (CGFloat) -> Content) -> some View {
+        GeometryReader { geometry in
+            content(ResponsiveScale.factor(for: geometry.size.width))
+        }
+    }
+}
+
 // MARK: - Design Tokens
 
 /// Liquid Glass Design System Tokens

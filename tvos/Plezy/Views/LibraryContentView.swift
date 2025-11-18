@@ -90,7 +90,7 @@ struct LibraryContentView: View {
                     }
                 }
                 .focusSection()
-                .padding(.horizontal, 80)
+                .padding(.horizontal, 40)
                 .padding(.top, 40)
                 .padding(.bottom, 30)
 
@@ -159,7 +159,7 @@ struct LibraryContentView: View {
                                             .padding(.vertical, 40) // Padding for focus scale
                                         }
                                     }
-                                    .padding(.horizontal, 80)
+                                    .padding(.horizontal, 40)
                                 }
                                 .clipped()
                             }

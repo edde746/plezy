@@ -302,116 +302,31 @@ struct MediaShelf: View {
     let title: String
     let items: [PlexMetadata]
     let onSelect: (PlexMetadata) -> Void
-    @State private var focusedIndex: Int = 0
     @Namespace private var shelfFocusNamespace
-
-    // Calculate the number of pages (4 cards per page)
-    private var pageCount: Int {
-        return (items.count + 3) / 4 // Round up
-    }
-
-    // Calculate current page based on focused index
-    private var currentPage: Int {
-        return focusedIndex / 4
-    }
-
-    // Get visible dot range (max 5 dots)
-    private func getVisibleDotRange() -> (start: Int, end: Int) {
-        if pageCount <= 5 {
-            return (0, pageCount - 1)
-        }
-
-        let halfWindow = 2
-        var start = currentPage - halfWindow
-        var end = currentPage + halfWindow
-
-        if start < 0 {
-            start = 0
-            end = 4
-        } else if end >= pageCount {
-            end = pageCount - 1
-            start = pageCount - 5
-        }
-
-        return (start, end)
-    }
-
-    // Get dot size (smaller at edges)
-    private func getDotSize(for page: Int, range: (start: Int, end: Int)) -> CGFloat {
-        if pageCount <= 5 {
-            return 8.0
-        }
-
-        if (page == range.start && range.start > 0) ||
-           (page == range.end && range.end < pageCount - 1) {
-            return 5.0
-        }
-
-        return 8.0
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .center) {
-                Text(title)
-                    .font(.system(size: 38, weight: .bold, design: .default))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.white, Color.beaconTextSecondary],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+            Text(title)
+                .font(.system(size: 38, weight: .bold, design: .default))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.white, Color.beaconTextSecondary],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
-
-                Spacer()
-
-                // Pagination dots
-                if pageCount > 1 {
-                    HStack(spacing: 8) {
-                        let range = getVisibleDotRange()
-                        ForEach(range.start...range.end, id: \.self) { page in
-                            let isActive = page == currentPage
-                            let dotSize = getDotSize(for: page, range: range)
-
-                            if isActive {
-                                // Active page indicator
-                                Capsule()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.beaconBlue, Color.beaconPurple],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .frame(width: dotSize * 3.0, height: dotSize)
-                                    .shadow(color: Color.beaconPurple.opacity(0.6), radius: 6, x: 0, y: 0)
-                            } else {
-                                // Inactive page indicator
-                                Capsule()
-                                    .fill(.ultraThinMaterial)
-                                    .opacity(0.5)
-                                    .frame(width: dotSize, height: dotSize)
-                            }
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 60)
+                )
+                .padding(.horizontal, 30)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 24) {
-                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        LandscapeMediaCard(media: item, onFocusChange: { focused in
-                            if focused {
-                                focusedIndex = index
-                            }
-                        }) {
+                    ForEach(items) { item in
+                        LandscapeMediaCard(media: item) {
                             onSelect(item)
                         }
                         .padding(.vertical, 40) // Padding for focus scale
                     }
                 }
-                .padding(.horizontal, 60)
+                .padding(.horizontal, 30)
             }
             .clipped()
         }
@@ -627,25 +542,28 @@ struct HeroBanner: View {
             let item = items[currentIndex]
 
             ZStack(alignment: .top) {
-                // Background art with transition and swipe gesture support
-                TabView(selection: $currentIndex) {
-                    ForEach(0..<items.count, id: \.self) { index in
-                        CachedAsyncImage(url: artURL(for: items[index])) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        } placeholder: {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.3))
+                // Background art with slide transition
+                GeometryReader { geometry in
+                    HStack(spacing: 0) {
+                        ForEach(0..<items.count, id: \.self) { index in
+                            CachedAsyncImage(url: artURL(for: items[index])) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.3))
+                            }
+                            .frame(width: geometry.size.width, height: 750)
+                            .clipped()
                         }
-                        .frame(height: 750)
-                        .clipped()
-                        .tag(index)
                     }
+                    .offset(x: -CGFloat(currentIndex) * geometry.size.width)
+                    .animation(.easeInOut(duration: 0.6), value: currentIndex)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
                 .frame(height: 750)
                 .ignoresSafeArea()
+                .clipped()
                 .onChange(of: currentIndex) { _, _ in
                     // Reset progress when manually navigating
                     progress = 0.0
@@ -769,7 +687,7 @@ struct HeroBanner: View {
                     .padding(.top, 10)
 
                 }
-                .padding(.horizontal, 60)
+                .padding(.horizontal, 30)
                 .padding(.bottom, 120)
                 .frame(height: 750, alignment: .bottom)
                 .id(currentIndex) // Force view recreation when hero index changes
@@ -819,7 +737,7 @@ struct HeroBanner: View {
                 .padding(.bottom, 40)
             }
             .frame(height: 750)
-            .padding(.horizontal, 60)
+            .padding(.horizontal, 30)
             .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusHero, style: .continuous))
             .scaleEffect(isHeroFocused ? 1.03 : 1.0)
             .animation(DesignTokens.Animation.focus.spring(), value: isHeroFocused)
