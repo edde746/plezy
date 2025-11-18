@@ -558,87 +558,56 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
-  /// Calculate crop parameters to match what BoxFit.cover will show
   Map<String, dynamic>? _calculateCropParameters() {
     if (_boxFitMode != 1 || _playerSize == null || _videoSize == null) {
       return null;
     }
 
-    final playerAspectRatio = _playerSize!.width / _playerSize!.height;
-    final videoAspectRatio = _videoSize!.width / _videoSize!.height;
+    final playerAspect = _playerSize!.width / _playerSize!.height;
+    final videoAspect = _videoSize!.width / _videoSize!.height;
 
-    // No cropping needed if aspect ratios are very similar
-    if ((playerAspectRatio - videoAspectRatio).abs() < 0.01) {
-      return null;
-    }
+    if ((playerAspect - videoAspect).abs() < 0.01) return null;
 
-    int cropWidth, cropHeight, cropX, cropY;
+    late final int cropW, cropH, cropX, cropY;
 
-    // BoxFit.cover scales the video to fill the container, cropping the excess
-    // We need to crop the video to match what will actually be visible
-    if (videoAspectRatio > playerAspectRatio) {
-      // Video is wider than player - BoxFit.cover will crop horizontally
-      // Scale video height to match player height, then crop the width
+    if (videoAspect > playerAspect) {
+      // crop sides
       final scale = _playerSize!.height / _videoSize!.height;
-
-      cropHeight = _videoSize!.height.toInt();
-      cropWidth = (_playerSize!.width / scale).toInt();
-      cropX = ((_videoSize!.width - cropWidth) / 2).toInt();
+      cropH = _videoSize!.height.toInt();
+      cropW = (_playerSize!.width / scale).toInt();
+      cropX = ((_videoSize!.width - cropW) ~/ 2);
       cropY = 0;
     } else {
-      // Video is taller than player - BoxFit.cover will crop vertically
-      // Scale video width to match player width, then crop the height
+      // crop top/bottom — your case
       final scale = _playerSize!.width / _videoSize!.width;
-
-      cropWidth = _videoSize!.width.toInt();
-      cropHeight = (_playerSize!.height / scale).toInt();
+      cropW = _videoSize!.width.toInt();
+      cropH = (_playerSize!.height / scale).toInt();
       cropX = 0;
-      cropY = ((_videoSize!.height - cropHeight) / 2).toInt();
+      cropY = ((_videoSize!.height - cropH) ~/ 2);
     }
 
-    // Calculate subtitle margins to prevent text subtitles from appearing in cropped areas
-    // MPV subtitle coordinates use a normalized system where video height = 720
-    const double subCoordinateHeight = 720.0;
-    const double baseMarginY =
-        40.0; // Base margin from bottom edge (subtitle coordinates)
-    const double baseMarginX =
-        20.0; // Base margin from sides (subtitle coordinates)
+    const double kSubCoord = 720.0;
+    const double baseX = 20.0;
+    const double baseY =
+        45.0; // slightly larger than 40 looks better in practice
 
-    double subMarginX = baseMarginX;
-    double subMarginY = baseMarginY;
-    double subScale = 1.0; // Default scale
+    double extraX = cropX > 0
+        ? (cropX / _videoSize!.width) * kSubCoord * videoAspect
+        : 0.0;
+    double extraY = cropY > 0 ? (cropY / _videoSize!.height) * kSubCoord : 0.0;
 
-    if (videoAspectRatio > playerAspectRatio) {
-      // Horizontal crop - need additional horizontal margins and scaling
-      // Convert pixel margin to subtitle coordinate system
-      final subCoordinateWidth = subCoordinateHeight * videoAspectRatio;
-      final cropMarginX = (cropX / _videoSize!.width) * subCoordinateWidth;
-
-      // Calculate scale factor first
-      subScale = cropWidth / _videoSize!.width;
-
-      // Apply margin accounting for scaling (scaled margins are effectively larger)
-      subMarginX = (baseMarginX + cropMarginX) / subScale;
-    } else {
-      // Vertical crop - need additional vertical margins and scaling
-      // Convert pixel margin to subtitle coordinate system
-      final cropMarginY = (cropY / _videoSize!.height) * subCoordinateHeight;
-
-      // Calculate scale factor first
-      subScale = cropHeight / _videoSize!.height;
-
-      // Apply margin accounting for scaling (scaled margins are effectively larger)
-      subMarginY = (baseMarginY + cropMarginY) / subScale;
-    }
+    // Only increase the margin — never shrink it
+    int marginX = (baseX + extraX).round();
+    int marginY = (baseY + extraY).round();
 
     return {
-      'width': cropWidth,
-      'height': cropHeight,
+      'width': cropW,
+      'height': cropH,
       'x': cropX,
       'y': cropY,
-      'subMarginX': subMarginX.round(),
-      'subMarginY': subMarginY.round(),
-      'subScale': subScale,
+      'subMarginX': marginX,
+      'subMarginY': marginY,
+      'subScale': 1.0,
     };
   }
 
