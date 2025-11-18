@@ -114,28 +114,28 @@ struct HomeView: View {
                             .focusSection()
                         }
 
-                        // Continue Watching
-                        if !onDeck.isEmpty {
-                            ContinueWatchingShelf(items: onDeck) { media in
-                                print("🎯 [HomeView] Continue Watching item tapped for: \(media.title)")
-                                print("🎯 [HomeView] Setting playingMedia to trigger fullScreenCover")
-                                playingMedia = media
-                                print("🎯 [HomeView] playingMedia set to: \(String(describing: playingMedia?.title))")
-                            }
-                            .focusSection()
-                        }
-
-                        // Hubs (excluding default Plex continue watching/on deck)
+                        // Hubs (excluding default Plex continue watching only, keeping on deck but relabeling it)
                         ForEach(hubs.filter { hub in
                             let lowercaseTitle = hub.title.lowercased()
-                            return !lowercaseTitle.contains("continue watching") && !lowercaseTitle.contains("on deck")
+                            return !lowercaseTitle.contains("continue watching")
                         }) { hub in
                             if let items = hub.metadata, !items.isEmpty {
-                                MediaShelf(title: hub.title, items: items) { media in
+                                // Relabel "On Deck" as "Continue Watching"
+                                let displayTitle = hub.title.lowercased().contains("on deck") ? "Continue Watching" : hub.title
+
+                                MediaShelf(title: displayTitle, items: items) { media in
                                     print("🎯 [HomeView] Hub '\(hub.title)' item tapped for: \(media.title)")
-                                    print("🎯 [HomeView] Setting selectedMedia to trigger sheet")
-                                    selectedMedia = media
-                                    print("🎯 [HomeView] selectedMedia set to: \(String(describing: selectedMedia?.title))")
+
+                                    // For on deck items, play directly
+                                    if hub.title.lowercased().contains("on deck") {
+                                        print("🎯 [HomeView] Setting playingMedia to trigger fullScreenCover")
+                                        playingMedia = media
+                                        print("🎯 [HomeView] playingMedia set to: \(String(describing: playingMedia?.title))")
+                                    } else {
+                                        print("🎯 [HomeView] Setting selectedMedia to trigger sheet")
+                                        selectedMedia = media
+                                        print("🎯 [HomeView] selectedMedia set to: \(String(describing: selectedMedia?.title))")
+                                    }
                                 }
                                 .focusSection()
                             } else {
@@ -829,40 +829,6 @@ struct HeroBanner: View {
     }
 }
 
-// MARK: - Continue Watching Shelf
-
-struct ContinueWatchingShelf: View {
-    let items: [PlexMetadata]
-    let onSelect: (PlexMetadata) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Continue Watching")
-                .font(.system(size: 38, weight: .bold, design: .default))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.white, Color.beaconTextSecondary],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .padding(.horizontal, 60)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 30) {
-                    ForEach(items) { item in
-                        LandscapeMediaCard(media: item) {
-                            onSelect(item)
-                        }
-                        .padding(.vertical, 40) // Padding for focus scale
-                    }
-                }
-                .padding(.horizontal, 60)
-            }
-            .clipped()
-        }
-    }
-}
 
 // MARK: - Landscape Media Card
 
