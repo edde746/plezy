@@ -41,11 +41,20 @@ class VideoControlButton extends StatelessWidget {
     // Determine the effective color: explicit color > active amber > default white
     final effectiveColor = color ?? (isActive ? Colors.amber : Colors.white);
 
-    return IconButton(
-      icon: Icon(icon, color: effectiveColor, semanticLabel: semanticLabel),
+    final button = IconButton(
+      icon: Icon(icon, color: effectiveColor),
       onPressed: onPressed,
       tooltip: tooltip,
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
     );
+
+    return semanticLabel != null
+        ? Semantics(
+            label: semanticLabel,
+            button: true,
+            excludeSemantics: true,
+            child: button,
+          )
+        : button;
   }
 }

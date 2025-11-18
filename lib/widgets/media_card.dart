@@ -80,9 +80,12 @@ class _MediaCardState extends State<MediaCard> {
     // Add watched status
     if (item.isWatched) {
       baseLabel = '$baseLabel, ${t.accessibility.mediaCardWatched}';
-    } else if (item.viewOffset != null && item.duration != null && item.viewOffset! > 0) {
+    } else if (item.viewOffset != null &&
+        item.duration != null &&
+        item.viewOffset! > 0) {
       final percent = ((item.viewOffset! / item.duration!) * 100).round();
-      baseLabel = '$baseLabel, ${t.accessibility.mediaCardPartiallyWatched(percent: percent)}';
+      baseLabel =
+          '$baseLabel, ${t.accessibility.mediaCardPartiallyWatched(percent: percent)}';
     } else {
       baseLabel = '$baseLabel, ${t.accessibility.mediaCardUnwatched}';
     }

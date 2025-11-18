@@ -1105,18 +1105,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
-              child: IconButton(
+              child: Semantics(
+                label: t.videoControls.seekBackwardButton(
+                  seconds: _seekTimeSmall,
+                ),
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
                   icon: Icon(
                     _getReplayIcon(_seekTimeSmall),
                     color: Colors.white,
                     size: 48,
-                    semanticLabel: t.videoControls.seekBackwardButton(seconds: _seekTimeSmall),
                   ),
                   iconSize: 48,
                   onPressed: () {
                     _seekWithClamping(Duration(seconds: -_seekTimeSmall));
                   },
                 ),
+              ),
             ),
             const SizedBox(width: 48),
             Container(
@@ -1124,12 +1130,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
-              child: IconButton(
+              child: Semantics(
+                label: isPlaying
+                    ? t.videoControls.pauseButton
+                    : t.videoControls.playButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
                   icon: Icon(
                     isPlaying ? Icons.pause : Icons.play_arrow,
                     color: Colors.white,
                     size: 72,
-                    semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
                   ),
                   iconSize: 72,
                   onPressed: () {
@@ -1142,6 +1153,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     }
                   },
                 ),
+              ),
             ),
             const SizedBox(width: 48),
             Container(
@@ -1149,18 +1161,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
-              child: IconButton(
+              child: Semantics(
+                label: t.videoControls.seekForwardButton(
+                  seconds: _seekTimeSmall,
+                ),
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
                   icon: Icon(
                     _getForwardIcon(_seekTimeSmall),
                     color: Colors.white,
                     size: 48,
-                    semanticLabel: t.videoControls.seekForwardButton(seconds: _seekTimeSmall),
                   ),
                   iconSize: 48,
                   onPressed: () {
                     _seekWithClamping(Duration(seconds: _seekTimeSmall));
                   },
                 ),
+              ),
             ),
           ],
         );
@@ -1375,41 +1393,56 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           Row(
             children: [
               // Previous item
-              IconButton(
+              Semantics(
+                label: t.videoControls.previousButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
                   icon: Icon(
                     Icons.skip_previous,
                     color: widget.onPrevious != null
                         ? Colors.white
                         : Colors.white54,
-                        semanticLabel: t.videoControls.previousButton,
                   ),
                   onPressed: widget.onPrevious,
                 ),
+              ),
               // Previous chapter (or skip backward if no chapters)
-              IconButton(
+              Semantics(
+                label: _chapters.isEmpty
+                    ? t.videoControls.seekBackwardButton(
+                        seconds: _seekTimeSmall,
+                      )
+                    : t.videoControls.previousChapterButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
                   icon: Icon(
                     _chapters.isEmpty
                         ? _getReplayIcon(_seekTimeSmall)
                         : Icons.fast_rewind,
                     color: Colors.white,
-                    semanticLabel: _chapters.isEmpty
-                    ? t.videoControls.seekBackwardButton(seconds: _seekTimeSmall)
-                    : t.videoControls.previousChapterButton,
                   ),
                   onPressed: _seekToPreviousChapter,
                 ),
+              ),
               // Play/Pause
               StreamBuilder<bool>(
                 stream: widget.player.stream.playing,
                 initialData: widget.player.state.playing,
                 builder: (context, snapshot) {
                   final isPlaying = snapshot.data ?? false;
-                  return IconButton(
+                  return Semantics(
+                    label: isPlaying
+                        ? t.videoControls.pauseButton
+                        : t.videoControls.playButton,
+                    button: true,
+                    excludeSemantics: true,
+                    child: IconButton(
                       icon: Icon(
                         isPlaying ? Icons.pause : Icons.play_arrow,
                         color: Colors.white,
                         size: 32,
-                        semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
                       ),
                       iconSize: 32,
                       onPressed: () {
@@ -1421,30 +1454,41 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                           _startHideTimer(); // Start auto-hide when playing
                         }
                       },
+                    ),
                   );
                 },
               ),
               // Next chapter (or skip forward if no chapters)
-              IconButton(
+              Semantics(
+                label: _chapters.isEmpty
+                    ? t.videoControls.seekForwardButton(seconds: _seekTimeSmall)
+                    : t.videoControls.nextChapterButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
                   icon: Icon(
                     _chapters.isEmpty
                         ? _getForwardIcon(_seekTimeSmall)
                         : Icons.fast_forward,
                     color: Colors.white,
-                    semanticLabel: _chapters.isEmpty
-                    ? t.videoControls.seekForwardButton(seconds: _seekTimeSmall)
-                    : t.videoControls.nextChapterButton,
                   ),
                   onPressed: _seekToNextChapter,
                 ),
+              ),
               // Next item
-              IconButton(
+              Semantics(
+                label: t.videoControls.nextButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
                   icon: Icon(
                     Icons.skip_next,
-                    semanticLabel: t.videoControls.nextButton,
-                    color: widget.onNext != null ? Colors.white : Colors.white54,
+                    color: widget.onNext != null
+                        ? Colors.white
+                        : Colors.white54,
                   ),
                   onPressed: widget.onNext,
+                ),
               ),
               const Spacer(),
               // Volume control
@@ -1554,20 +1598,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: Icon(
-                isMuted ? Icons.volume_off : Icons.volume_up,
-                color: Colors.white,
-                semanticLabel: isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton,
+            Semantics(
+              label: isMuted
+                  ? t.videoControls.unmuteButton
+                  : t.videoControls.muteButton,
+              button: true,
+              excludeSemantics: true,
+              child: IconButton(
+                icon: Icon(
+                  isMuted ? Icons.volume_off : Icons.volume_up,
+                  color: Colors.white,
+                ),
+                onPressed: () async {
+                  final newVolume = isMuted ? 100.0 : 0.0;
+                  widget.player.setVolume(newVolume);
+                  final settings = await SettingsService.getInstance();
+                  await settings.setVolume(newVolume);
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
-              onPressed: () async {
-                final newVolume = isMuted ? 100.0 : 0.0;
-                widget.player.setVolume(newVolume);
-                final settings = await SettingsService.getInstance();
-                await settings.setVolume(newVolume);
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
             ),
             const SizedBox(width: 8),
             SizedBox(
