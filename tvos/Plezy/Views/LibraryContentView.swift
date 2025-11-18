@@ -143,12 +143,12 @@ struct LibraryContentView: View {
                 } else {
                     ScrollView {
                         // Group items into rows of 5
-                        LazyVStack(alignment: .leading, spacing: 40) {
+                        LazyVStack(alignment: .leading, spacing: 20) {
                             ForEach(Array(stride(from: 0, to: filteredItems.count, by: 5)), id: \.self) { rowIndex in
                                 let rowItems = Array(filteredItems[rowIndex..<min(rowIndex + 5, filteredItems.count)])
 
                                 ScrollView(.horizontal, showsIndicators: false) {
-                                    LazyHStack(spacing: 24) {
+                                    LazyHStack(spacing: 12) {
                                         ForEach(rowItems) { item in
                                             LibraryLandscapeCard(media: item) {
                                                 print("🎯 [LibraryContent] Item tapped in \(library.title): \(item.title)")

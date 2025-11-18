@@ -96,7 +96,7 @@ struct HomeView: View {
                 }
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 40) {
+                    VStack(alignment: .leading, spacing: 20) {
                         // Hero Banner
                         if !onDeck.isEmpty {
                             HeroBanner(
@@ -305,7 +305,7 @@ struct MediaShelf: View {
     @Namespace private var shelfFocusNamespace
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.system(size: 38, weight: .bold, design: .default))
                 .foregroundStyle(
@@ -318,7 +318,7 @@ struct MediaShelf: View {
                 .padding(.horizontal, 30)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 24) {
+                LazyHStack(spacing: 12) {
                     ForEach(items) { item in
                         LandscapeMediaCard(media: item) {
                             onSelect(item)
