@@ -45,8 +45,39 @@ class PlexPlaylist {
   /// Helper to get display image (composite or thumb)
   String? get displayImage => composite ?? thumb;
 
+  /// Helper to get display title (consistent with PlexMetadata)
+  String get displayTitle => title;
+
   /// Helper to determine if playlist is editable
   bool get isEditable => !smart;
+
+  // Properties for MediaCard compatibility with PlexMetadata interface
+
+  /// Playlists are not "watched" in the traditional sense
+  bool get isWatched => false;
+
+  /// Playlists don't have resume positions
+  int? get viewOffset => null;
+
+  /// Playlists don't have parent/episode indices
+  int? get parentIndex => null;
+  int? get index => null;
+
+  /// Playlists don't have parent titles or subtitles
+  String? get parentTitle => null;
+  String? get displaySubtitle => null;
+
+  /// Playlists don't have year, rating, or content metadata
+  int? get year => null;
+  String? get contentRating => null;
+  double? get rating => null;
+  String? get studio => null;
+
+  /// Use leafCount as the equivalent of childCount
+  int? get childCount => leafCount;
+
+  /// Playlists don't track viewed leaf count
+  int? get viewedLeafCount => null;
 
   factory PlexPlaylist.fromJson(Map<String, dynamic> json) =>
       _$PlexPlaylistFromJson(json);
