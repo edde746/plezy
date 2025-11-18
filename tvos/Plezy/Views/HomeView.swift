@@ -125,8 +125,11 @@ struct HomeView: View {
                             .focusSection()
                         }
 
-                        // Hubs
-                        ForEach(hubs) { hub in
+                        // Hubs (excluding default Plex continue watching/on deck)
+                        ForEach(hubs.filter { hub in
+                            let lowercaseTitle = hub.title.lowercased()
+                            return !lowercaseTitle.contains("continue watching") && !lowercaseTitle.contains("on deck")
+                        }) { hub in
                             if let items = hub.metadata, !items.isEmpty {
                                 MediaShelf(title: hub.title, items: items) { media in
                                     print("🎯 [HomeView] Hub '\(hub.title)' item tapped for: \(media.title)")
