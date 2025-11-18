@@ -335,8 +335,8 @@ struct MediaShelf: View {
 struct MediaCard: View {
     let media: PlexMetadata
     let action: () -> Void
-    @FocusState private var isFocused: Bool
     @EnvironmentObject var authService: PlexAuthService
+    @State private var isFocused: Bool = false
 
     var body: some View {
         Button(action: action) {
@@ -432,9 +432,10 @@ struct MediaCard: View {
                 }
             }
         }
-        .buttonStyle(MediaCardButtonStyle(isFocused: $isFocused))
-        .scaleEffect(isFocused ? 1.08 : 1.0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
+        .buttonStyle(MediaCardButtonStyle())
+        .onFocusChange { focused in
+            isFocused = focused
+        }
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(accessibilityHint)
         .accessibilityAddTraits(.isButton)
@@ -868,8 +869,8 @@ struct ContinueWatchingShelf: View {
 struct LandscapeMediaCard: View {
     let media: PlexMetadata
     let action: () -> Void
-    @FocusState private var isFocused: Bool
     @EnvironmentObject var authService: PlexAuthService
+    @State private var isFocused: Bool = false
 
     var body: some View {
         Button(action: action) {
@@ -985,9 +986,10 @@ struct LandscapeMediaCard: View {
                 }
             }
         }
-        .buttonStyle(MediaCardButtonStyle(isFocused: $isFocused))
-        .scaleEffect(isFocused ? 1.08 : 1.0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
+        .buttonStyle(MediaCardButtonStyle())
+        .onFocusChange { focused in
+            isFocused = focused
+        }
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("In progress. Double tap to continue watching")
         .accessibilityAddTraits(.isButton)
