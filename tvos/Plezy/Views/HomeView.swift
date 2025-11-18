@@ -302,24 +302,110 @@ struct MediaShelf: View {
     let title: String
     let items: [PlexMetadata]
     let onSelect: (PlexMetadata) -> Void
+    @State private var focusedIndex: Int = 0
+    @Namespace private var shelfFocusNamespace
+
+    // Calculate the number of pages (4 cards per page)
+    private var pageCount: Int {
+        return (items.count + 3) / 4 // Round up
+    }
+
+    // Calculate current page based on focused index
+    private var currentPage: Int {
+        return focusedIndex / 4
+    }
+
+    // Get visible dot range (max 5 dots)
+    private func getVisibleDotRange() -> (start: Int, end: Int) {
+        if pageCount <= 5 {
+            return (0, pageCount - 1)
+        }
+
+        let halfWindow = 2
+        var start = currentPage - halfWindow
+        var end = currentPage + halfWindow
+
+        if start < 0 {
+            start = 0
+            end = 4
+        } else if end >= pageCount {
+            end = pageCount - 1
+            start = pageCount - 5
+        }
+
+        return (start, end)
+    }
+
+    // Get dot size (smaller at edges)
+    private func getDotSize(for page: Int, range: (start: Int, end: Int)) -> CGFloat {
+        if pageCount <= 5 {
+            return 8.0
+        }
+
+        if (page == range.start && range.start > 0) ||
+           (page == range.end && range.end < pageCount - 1) {
+            return 5.0
+        }
+
+        return 8.0
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text(title)
-                .font(.system(size: 38, weight: .bold, design: .default))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.white, Color.beaconTextSecondary],
-                        startPoint: .leading,
-                        endPoint: .trailing
+            HStack(alignment: .center) {
+                Text(title)
+                    .font(.system(size: 38, weight: .bold, design: .default))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.white, Color.beaconTextSecondary],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
                     )
-                )
-                .padding(.horizontal, 60)
+
+                Spacer()
+
+                // Pagination dots
+                if pageCount > 1 {
+                    HStack(spacing: 8) {
+                        let range = getVisibleDotRange()
+                        ForEach(range.start...range.end, id: \.self) { page in
+                            let isActive = page == currentPage
+                            let dotSize = getDotSize(for: page, range: range)
+
+                            if isActive {
+                                // Active page indicator
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.beaconBlue, Color.beaconPurple],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .frame(width: dotSize * 3.0, height: dotSize)
+                                    .shadow(color: Color.beaconPurple.opacity(0.6), radius: 6, x: 0, y: 0)
+                            } else {
+                                // Inactive page indicator
+                                Capsule()
+                                    .fill(.ultraThinMaterial)
+                                    .opacity(0.5)
+                                    .frame(width: dotSize, height: dotSize)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 60)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 30) {
-                    ForEach(items) { item in
-                        LandscapeMediaCard(media: item) {
+                LazyHStack(spacing: 24) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        LandscapeMediaCard(media: item, onFocusChange: { focused in
+                            if focused {
+                                focusedIndex = index
+                            }
+                        }) {
                             onSelect(item)
                         }
                         .padding(.vertical, 40) // Padding for focus scale
@@ -400,17 +486,6 @@ struct MediaCard: View {
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: isFocused ? [.white.opacity(0.8), .white.opacity(0.4)] : [.clear],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: isFocused ? 4 : 0
-                        )
-                )
                 .shadow(color: .black.opacity(isFocused ? 0.7 : 0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
 
                 // Title with vibrancy
@@ -435,6 +510,9 @@ struct MediaCard: View {
         .buttonStyle(MediaCardButtonStyle())
         .onFocusChange { focused in
             isFocused = focused
+        }
+        .onPlayPauseCommand {
+            action()
         }
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(accessibilityHint)
@@ -834,6 +912,7 @@ struct HeroBanner: View {
 
 struct LandscapeMediaCard: View {
     let media: PlexMetadata
+    var onFocusChange: ((Bool) -> Void)? = nil
     let action: () -> Void
     @EnvironmentObject var authService: PlexAuthService
     @State private var isFocused: Bool = false
@@ -856,7 +935,7 @@ struct LandscapeMediaCard: View {
                                     .foregroundStyle(.tertiary)
                             )
                     }
-                    .frame(width: 500, height: 280)
+                    .frame(width: 432, height: 243)
 
                     // Enhanced gradient overlay with vibrancy
                     LinearGradient(
@@ -901,17 +980,6 @@ struct LandscapeMediaCard: View {
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: isFocused ? [.white.opacity(0.85), .white.opacity(0.5)] : [.clear],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: isFocused ? 4 : 0
-                        )
-                )
                 .shadow(color: .black.opacity(isFocused ? 0.75 : 0.55), radius: isFocused ? 40 : 20, x: 0, y: isFocused ? 20 : 12)
 
                 // Progress bar below card with enhanced Liquid Glass styling
@@ -921,12 +989,12 @@ struct LandscapeMediaCard: View {
                         Capsule()
                             .fill(.regularMaterial)
                             .opacity(0.4)
-                            .frame(width: 500, height: 5)
+                            .frame(width: 432, height: 5)
 
                         // Progress fill with Beacon gradient
                         Capsule()
                             .fill(Color.beaconGradient)
-                            .frame(width: 500 * media.progress, height: 5)
+                            .frame(width: 432 * media.progress, height: 5)
                             .shadow(color: Color.beaconMagenta.opacity(0.5), radius: 4, x: 0, y: 0)
                     }
                     .padding(.top, 8)
@@ -937,7 +1005,7 @@ struct LandscapeMediaCard: View {
                     Text(media.episodeInfo)
                         .font(.system(size: 24, weight: .semibold, design: .default))
                         .foregroundStyle(.primary)
-                        .frame(width: 500, alignment: .leading)
+                        .frame(width: 432, alignment: .leading)
                         .padding(.top, 12)
                 } else {
                     // Title for movies
@@ -946,7 +1014,7 @@ struct LandscapeMediaCard: View {
                         .foregroundStyle(.primary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                        .frame(width: 500, alignment: .leading)
+                        .frame(width: 432, alignment: .leading)
                         .padding(.top, 12)
                 }
             }
@@ -954,6 +1022,10 @@ struct LandscapeMediaCard: View {
         .buttonStyle(MediaCardButtonStyle())
         .onFocusChange { focused in
             isFocused = focused
+            onFocusChange?(focused)
+        }
+        .onPlayPauseCommand {
+            action()
         }
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("In progress. Double tap to continue watching")

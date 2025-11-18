@@ -142,16 +142,26 @@ struct LibraryContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
-                        LazyVGrid(columns: [
-                            GridItem(.adaptive(minimum: 300, maximum: 350), spacing: 30)
-                        ], spacing: 40) {
-                            ForEach(filteredItems) { item in
-                                MediaCard(media: item) {
-                                    print("🎯 [LibraryContent] Item tapped in \(library.title): \(item.title)")
-                                    print("🎯 [LibraryContent] Setting selectedMedia to trigger sheet")
-                                    selectedMedia = item
-                                    print("🎯 [LibraryContent] selectedMedia set to: \(String(describing: selectedMedia?.title))")
+                        // Group items into rows of 5
+                        LazyVStack(alignment: .leading, spacing: 40) {
+                            ForEach(Array(stride(from: 0, to: filteredItems.count, by: 5)), id: \.self) { rowIndex in
+                                let rowItems = Array(filteredItems[rowIndex..<min(rowIndex + 5, filteredItems.count)])
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 24) {
+                                        ForEach(rowItems) { item in
+                                            LibraryLandscapeCard(media: item) {
+                                                print("🎯 [LibraryContent] Item tapped in \(library.title): \(item.title)")
+                                                print("🎯 [LibraryContent] Setting selectedMedia to trigger sheet")
+                                                selectedMedia = item
+                                                print("🎯 [LibraryContent] selectedMedia set to: \(String(describing: selectedMedia?.title))")
+                                            }
+                                            .padding(.vertical, 40) // Padding for focus scale
+                                        }
+                                    }
+                                    .padding(.horizontal, 80)
                                 }
+                                .clipped()
                             }
 
                             // Load more indicator
@@ -174,7 +184,6 @@ struct LibraryContentView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 80)
                         .padding(.top, 20)
                         .padding(.bottom, 80)
                     }
@@ -399,6 +408,186 @@ struct FilterButtonStyle: ButtonStyle {
             .focusable()
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
             .animation(DesignTokens.Animation.quick.spring(), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Library Landscape Card
+
+struct LibraryLandscapeCard: View {
+    let media: PlexMetadata
+    let action: () -> Void
+    @EnvironmentObject var authService: PlexAuthService
+    @State private var isFocused: Bool = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 0) {
+                // Background art with Liquid Glass overlay
+                ZStack(alignment: .bottomLeading) {
+                    CachedAsyncImage(url: artURL) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        Rectangle()
+                            .fill(.regularMaterial.opacity(0.3))
+                            .overlay(
+                                Image(systemName: "photo")
+                                    .font(.system(size: 40))
+                                    .foregroundStyle(.tertiary)
+                            )
+                    }
+                    .frame(width: 336, height: 189)
+
+                    // Enhanced gradient overlay with vibrancy
+                    LinearGradient(
+                        gradient: Gradient(colors: [.clear, .black.opacity(0.75)]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+
+                    // Show logo in bottom left corner (for both TV shows and movies)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Spacer()
+                        HStack {
+                            if let logoURL = logoURL, let clearLogo = media.clearLogo {
+                                CachedAsyncImage(url: logoURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFit()
+                                } placeholder: {
+                                    // Show title while logo loads
+                                    Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
+                                        .font(.system(size: 20, weight: .bold, design: .default))
+                                        .foregroundColor(.white)
+                                        .lineLimit(2)
+                                        .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
+                                }
+                                .frame(maxWidth: 150, maxHeight: 50)
+                                .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
+                                .id("\(media.id)-\(clearLogo)") // Force view recreation when logo changes
+                            } else {
+                                // Show title when logo is not available
+                                Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
+                                    .font(.system(size: 20, weight: .bold, design: .default))
+                                    .foregroundColor(.white)
+                                    .lineLimit(2)
+                                    .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
+                                    .frame(maxWidth: 150, alignment: .leading)
+                            }
+                            Spacer()
+                        }
+                        .padding(.leading, 16)
+                        .padding(.bottom, 16)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
+                .shadow(color: .black.opacity(isFocused ? 0.75 : 0.55), radius: isFocused ? 40 : 20, x: 0, y: isFocused ? 20 : 12)
+
+                // Progress bar below card with enhanced Liquid Glass styling
+                if media.progress > 0 && media.progress < 0.98 {
+                    ZStack(alignment: .leading) {
+                        // Background track
+                        Capsule()
+                            .fill(.regularMaterial)
+                            .opacity(0.4)
+                            .frame(width: 336, height: 5)
+
+                        // Progress fill with Beacon gradient
+                        Capsule()
+                            .fill(Color.beaconGradient)
+                            .frame(width: 336 * media.progress, height: 5)
+                            .shadow(color: Color.beaconMagenta.opacity(0.5), radius: 4, x: 0, y: 0)
+                    }
+                    .padding(.top, 8)
+                }
+
+                // Episode info below card with vibrancy
+                if media.type == "episode" {
+                    Text(media.episodeInfo)
+                        .font(.system(size: 20, weight: .semibold, design: .default))
+                        .foregroundStyle(.primary)
+                        .frame(width: 336, alignment: .leading)
+                        .padding(.top, 12)
+                } else {
+                    // Title for movies
+                    Text(media.title)
+                        .font(.system(size: 20, weight: .semibold, design: .default))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .frame(width: 336, alignment: .leading)
+                        .padding(.top, 12)
+                }
+            }
+        }
+        .buttonStyle(MediaCardButtonStyle())
+        .onFocusChange { focused in
+            isFocused = focused
+        }
+        .onPlayPauseCommand {
+            action()
+        }
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Double tap to view details")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var accessibilityLabel: String {
+        if media.type == "episode", let show = media.grandparentTitle {
+            var label = "\(show), \(media.title)"
+            label += " \(media.formatSeasonEpisode())"
+            if media.progress > 0 {
+                let percent = Int(media.progress * 100)
+                label += ", \(percent)% watched"
+            }
+            return label
+        } else {
+            var label = media.title
+            if media.progress > 0 {
+                let percent = Int(media.progress * 100)
+                label += ", \(percent)% watched"
+            }
+            return label
+        }
+    }
+
+    private var artURL: URL? {
+        guard let server = authService.selectedServer,
+              let connection = server.connections.first,
+              let baseURL = connection.url,
+              let art = media.art else {
+            return nil
+        }
+
+        var urlString = baseURL.absoluteString + art
+        if let token = server.accessToken {
+            urlString += "?X-Plex-Token=\(token)"
+        }
+
+        return URL(string: urlString)
+    }
+
+    private var logoURL: URL? {
+        guard let server = authService.selectedServer,
+              let connection = server.connections.first,
+              let baseURL = connection.url,
+              let clearLogo = media.clearLogo else {
+            return nil
+        }
+
+        // clearLogo already includes the full URL from the Image array
+        if clearLogo.starts(with: "http") {
+            return URL(string: clearLogo)
+        }
+
+        // Fallback to building URL if it's a relative path
+        var urlString = baseURL.absoluteString + clearLogo
+        if let token = server.accessToken {
+            urlString += "?X-Plex-Token=\(token)"
+        }
+
+        return URL(string: urlString)
     }
 }
 

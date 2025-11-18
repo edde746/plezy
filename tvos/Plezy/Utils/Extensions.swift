@@ -125,32 +125,16 @@ struct ClearGlassButtonStyle: ButtonStyle {
                         .fill(.ultraThinMaterial)
                         .opacity(configuration.isPressed ? 0.65 : (isFocused ? 1.0 : 0.88))
 
-                    // Additional vibrancy overlay when focused
+                    // Beacon gradient fill when focused
                     if isFocused {
                         Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.18), .white.opacity(0.10)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
+                            .fill(Color.beaconGradient)
+                            .opacity(0.4)
                     }
                 }
             )
-            .overlay(
-                Capsule()
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: isFocused ? [.white.opacity(0.7), .white.opacity(0.4)] : [.white.opacity(0.35)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: isFocused ? DesignTokens.borderWidthFocused : DesignTokens.borderWidthUnfocused
-                    )
-            )
             .shadow(
-                color: DesignTokens.Shadow.buttonFocused.color,
+                color: isFocused ? Color.beaconPurple.opacity(0.5) : DesignTokens.Shadow.buttonFocused.color,
                 radius: isFocused ? DesignTokens.Shadow.buttonFocused.radius : DesignTokens.Shadow.buttonUnfocused.radius,
                 x: 0,
                 y: isFocused ? DesignTokens.Shadow.buttonFocused.y : DesignTokens.Shadow.buttonUnfocused.y
@@ -399,8 +383,8 @@ enum DesignTokens {
     }
 
     // MARK: - Focus Scale
-    /// Standard focus scale (1.08) - Applied to most interactive elements
-    static let focusScale: CGFloat = 1.08
+    /// Standard focus scale (1.12) - Applied to most interactive elements
+    static let focusScale: CGFloat = 1.12
 
     /// Press scale (0.94) - Applied when button is pressed
     static let pressScale: CGFloat = 0.94
