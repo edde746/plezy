@@ -455,6 +455,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   return VideoControlButton(
                     icon: Icons.tune,
                     isActive: isActive,
+                    semanticLabel: t.videoControls.settingsButton,
                     onPressed: () async {
                       await VideoSettingsSheet.show(
                         context,
@@ -473,6 +474,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               if (_hasMultipleAudioTracks(tracks))
                 VideoControlButton(
                   icon: Icons.audiotrack,
+                  semanticLabel: t.videoControls.audioTrackButton,
                   onPressed: () => AudioTrackSheet.show(
                     context,
                     widget.player,
@@ -482,6 +484,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               if (_hasSubtitles(tracks))
                 VideoControlButton(
                   icon: Icons.subtitles,
+                  semanticLabel: t.videoControls.subtitlesButton,
                   onPressed: () => SubtitleTrackSheet.show(
                     context,
                     widget.player,
@@ -491,6 +494,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               if (_chapters.isNotEmpty)
                 VideoControlButton(
                   icon: Icons.video_library,
+                  semanticLabel: t.videoControls.chaptersButton,
                   onPressed: () => ChapterSheet.show(
                     context,
                     widget.player,
@@ -501,6 +505,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               if (widget.availableVersions.length > 1)
                 VideoControlButton(
                   icon: Icons.video_file,
+                  semanticLabel: t.videoControls.versionsButton,
                   onPressed: () => VersionSheet.show(
                     context,
                     widget.availableVersions,
@@ -513,6 +518,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 VideoControlButton(
                   icon: _getBoxFitIcon(widget.boxFitMode),
                   tooltip: _getBoxFitTooltip(widget.boxFitMode),
+                  semanticLabel: t.videoControls.aspectRatioButton,
                   onPressed: widget.onCycleBoxFitMode,
                 ),
               // Rotation lock toggle (mobile only)
@@ -524,6 +530,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   tooltip: _isRotationLocked
                       ? t.videoControls.unlockRotation
                       : t.videoControls.lockRotation,
+                  semanticLabel: t.videoControls.rotationLockButton,
                   onPressed: _toggleRotationLock,
                 ),
               // Fullscreen toggle (desktop only)
@@ -532,6 +539,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   icon: _isFullscreen
                       ? Icons.fullscreen_exit
                       : Icons.fullscreen,
+                  semanticLabel: _isFullscreen
+                      ? t.videoControls.exitFullscreenButton
+                      : t.videoControls.fullscreenButton,
                   onPressed: _toggleFullscreen,
                 ),
             ],
@@ -1030,6 +1040,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           children: [
             AppBarBackButton(
               style: BackButtonStyle.video,
+              semanticLabel: t.videoControls.backButton,
               onPressed: () => Navigator.of(context).pop(true),
             ),
             const SizedBox(width: 16),
@@ -1094,16 +1105,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
-              child: IconButton(
-                icon: Icon(
-                  _getReplayIcon(_seekTimeSmall),
-                  color: Colors.white,
-                  size: 48,
+              child: Semantics(
+                label: t.videoControls.seekBackwardButton(
+                  seconds: _seekTimeSmall,
                 ),
-                iconSize: 48,
-                onPressed: () {
-                  _seekWithClamping(Duration(seconds: -_seekTimeSmall));
-                },
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    _getReplayIcon(_seekTimeSmall),
+                    color: Colors.white,
+                    size: 48,
+                  ),
+                  iconSize: 48,
+                  onPressed: () {
+                    _seekWithClamping(Duration(seconds: -_seekTimeSmall));
+                  },
+                ),
               ),
             ),
             const SizedBox(width: 48),
@@ -1112,22 +1130,29 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
-              child: IconButton(
-                icon: Icon(
-                  isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                  size: 72,
+              child: Semantics(
+                label: isPlaying
+                    ? t.videoControls.pauseButton
+                    : t.videoControls.playButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: Colors.white,
+                    size: 72,
+                  ),
+                  iconSize: 72,
+                  onPressed: () {
+                    if (isPlaying) {
+                      widget.player.pause();
+                      _hideTimer?.cancel(); // Cancel auto-hide when paused
+                    } else {
+                      widget.player.play();
+                      _startHideTimer(); // Start auto-hide when playing
+                    }
+                  },
                 ),
-                iconSize: 72,
-                onPressed: () {
-                  if (isPlaying) {
-                    widget.player.pause();
-                    _hideTimer?.cancel(); // Cancel auto-hide when paused
-                  } else {
-                    widget.player.play();
-                    _startHideTimer(); // Start auto-hide when playing
-                  }
-                },
               ),
             ),
             const SizedBox(width: 48),
@@ -1136,16 +1161,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 color: Colors.black.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
-              child: IconButton(
-                icon: Icon(
-                  _getForwardIcon(_seekTimeSmall),
-                  color: Colors.white,
-                  size: 48,
+              child: Semantics(
+                label: t.videoControls.seekForwardButton(
+                  seconds: _seekTimeSmall,
                 ),
-                iconSize: 48,
-                onPressed: () {
-                  _seekWithClamping(Duration(seconds: _seekTimeSmall));
-                },
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    _getForwardIcon(_seekTimeSmall),
+                    color: Colors.white,
+                    size: 48,
+                  ),
+                  iconSize: 48,
+                  onPressed: () {
+                    _seekWithClamping(Duration(seconds: _seekTimeSmall));
+                  },
+                ),
               ),
             ),
           ],
@@ -1235,6 +1267,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         children: [
           AppBarBackButton(
             style: BackButtonStyle.video,
+            semanticLabel: t.videoControls.backButton,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(width: 16),
@@ -1360,24 +1393,38 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           Row(
             children: [
               // Previous item
-              IconButton(
-                icon: Icon(
-                  Icons.skip_previous,
-                  color: widget.onPrevious != null
-                      ? Colors.white
-                      : Colors.white54,
+              Semantics(
+                label: t.videoControls.previousButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.skip_previous,
+                    color: widget.onPrevious != null
+                        ? Colors.white
+                        : Colors.white54,
+                  ),
+                  onPressed: widget.onPrevious,
                 ),
-                onPressed: widget.onPrevious,
               ),
               // Previous chapter (or skip backward if no chapters)
-              IconButton(
-                icon: Icon(
-                  _chapters.isEmpty
-                      ? _getReplayIcon(_seekTimeSmall)
-                      : Icons.fast_rewind,
-                  color: Colors.white,
+              Semantics(
+                label: _chapters.isEmpty
+                    ? t.videoControls.seekBackwardButton(
+                        seconds: _seekTimeSmall,
+                      )
+                    : t.videoControls.previousChapterButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    _chapters.isEmpty
+                        ? _getReplayIcon(_seekTimeSmall)
+                        : Icons.fast_rewind,
+                    color: Colors.white,
+                  ),
+                  onPressed: _seekToPreviousChapter,
                 ),
-                onPressed: _seekToPreviousChapter,
               ),
               // Play/Pause
               StreamBuilder<bool>(
@@ -1385,42 +1432,63 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 initialData: widget.player.state.playing,
                 builder: (context, snapshot) {
                   final isPlaying = snapshot.data ?? false;
-                  return IconButton(
-                    icon: Icon(
-                      isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.white,
-                      size: 32,
+                  return Semantics(
+                    label: isPlaying
+                        ? t.videoControls.pauseButton
+                        : t.videoControls.playButton,
+                    button: true,
+                    excludeSemantics: true,
+                    child: IconButton(
+                      icon: Icon(
+                        isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                      iconSize: 32,
+                      onPressed: () {
+                        if (isPlaying) {
+                          widget.player.pause();
+                          _hideTimer?.cancel(); // Cancel auto-hide when paused
+                        } else {
+                          widget.player.play();
+                          _startHideTimer(); // Start auto-hide when playing
+                        }
+                      },
                     ),
-                    iconSize: 32,
-                    onPressed: () {
-                      if (isPlaying) {
-                        widget.player.pause();
-                        _hideTimer?.cancel(); // Cancel auto-hide when paused
-                      } else {
-                        widget.player.play();
-                        _startHideTimer(); // Start auto-hide when playing
-                      }
-                    },
                   );
                 },
               ),
               // Next chapter (or skip forward if no chapters)
-              IconButton(
-                icon: Icon(
-                  _chapters.isEmpty
-                      ? _getForwardIcon(_seekTimeSmall)
-                      : Icons.fast_forward,
-                  color: Colors.white,
+              Semantics(
+                label: _chapters.isEmpty
+                    ? t.videoControls.seekForwardButton(seconds: _seekTimeSmall)
+                    : t.videoControls.nextChapterButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    _chapters.isEmpty
+                        ? _getForwardIcon(_seekTimeSmall)
+                        : Icons.fast_forward,
+                    color: Colors.white,
+                  ),
+                  onPressed: _seekToNextChapter,
                 ),
-                onPressed: _seekToNextChapter,
               ),
               // Next item
-              IconButton(
-                icon: Icon(
-                  Icons.skip_next,
-                  color: widget.onNext != null ? Colors.white : Colors.white54,
+              Semantics(
+                label: t.videoControls.nextButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.skip_next,
+                    color: widget.onNext != null
+                        ? Colors.white
+                        : Colors.white54,
+                  ),
+                  onPressed: widget.onNext,
                 ),
-                onPressed: widget.onNext,
               ),
               const Spacer(),
               // Volume control
@@ -1479,20 +1547,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             ),
           ),
         // Slider
-        Slider(
-          value: duration.inMilliseconds > 0
-              ? position.inMilliseconds.toDouble()
-              : 0.0,
-          min: 0.0,
-          max: duration.inMilliseconds.toDouble(),
-          onChanged: (value) {
-            _throttledSeek(Duration(milliseconds: value.toInt()));
-          },
-          onChangeEnd: (value) {
-            _finalizeSeek(Duration(milliseconds: value.toInt()));
-          },
-          activeColor: Colors.white,
-          inactiveColor: Colors.white.withValues(alpha: 0.3),
+        Semantics(
+          label: t.videoControls.timelineSlider,
+          slider: true,
+          child: Slider(
+            value: duration.inMilliseconds > 0
+                ? position.inMilliseconds.toDouble()
+                : 0.0,
+            min: 0.0,
+            max: duration.inMilliseconds.toDouble(),
+            onChanged: (value) {
+              _throttledSeek(Duration(milliseconds: value.toInt()));
+            },
+            onChangeEnd: (value) {
+              _finalizeSeek(Duration(milliseconds: value.toInt()));
+            },
+            activeColor: Colors.white,
+            inactiveColor: Colors.white.withValues(alpha: 0.3),
+          ),
         ),
         // Chapter marker indicators
         if (_chaptersLoaded &&
@@ -1526,19 +1598,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: Icon(
-                isMuted ? Icons.volume_off : Icons.volume_up,
-                color: Colors.white,
+            Semantics(
+              label: isMuted
+                  ? t.videoControls.unmuteButton
+                  : t.videoControls.muteButton,
+              button: true,
+              excludeSemantics: true,
+              child: IconButton(
+                icon: Icon(
+                  isMuted ? Icons.volume_off : Icons.volume_up,
+                  color: Colors.white,
+                ),
+                onPressed: () async {
+                  final newVolume = isMuted ? 100.0 : 0.0;
+                  widget.player.setVolume(newVolume);
+                  final settings = await SettingsService.getInstance();
+                  await settings.setVolume(newVolume);
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
-              onPressed: () async {
-                final newVolume = isMuted ? 100.0 : 0.0;
-                widget.player.setVolume(newVolume);
-                final settings = await SettingsService.getInstance();
-                await settings.setVolume(newVolume);
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
             ),
             const SizedBox(width: 8),
             SizedBox(
@@ -1553,19 +1632,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     overlayRadius: 12,
                   ),
                 ),
-                child: Slider(
-                  value: volume,
-                  min: 0.0,
-                  max: 100.0,
-                  onChanged: (value) {
-                    widget.player.setVolume(value);
-                  },
-                  onChangeEnd: (value) async {
-                    final settings = await SettingsService.getInstance();
-                    await settings.setVolume(value);
-                  },
-                  activeColor: Colors.white,
-                  inactiveColor: Colors.white.withValues(alpha: 0.3),
+                child: Semantics(
+                  label: t.videoControls.volumeSlider,
+                  slider: true,
+                  child: Slider(
+                    value: volume,
+                    min: 0.0,
+                    max: 100.0,
+                    onChanged: (value) {
+                      widget.player.setVolume(value);
+                    },
+                    onChangeEnd: (value) async {
+                      final settings = await SettingsService.getInstance();
+                      await settings.setVolume(value);
+                    },
+                    activeColor: Colors.white,
+                    inactiveColor: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
               ),
             ),

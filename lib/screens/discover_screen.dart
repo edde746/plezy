@@ -807,11 +807,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ? t.discover.movie
         : t.discover.tvShow;
 
+    // Build semantic label for hero item
+    final heroLabel = isEpisode
+        ? "${heroItem.grandparentTitle}, ${heroItem.title}"
+        : heroItem.title;
+
     return Semantics(
-      label: "media-hero-${heroItem.ratingKey}",
-      identifier: "media-hero-${heroItem.ratingKey}",
+      label: heroLabel,
       button: true,
-      hint: "Tap to play ${heroItem.title}",
+      hint: t.accessibility.tapToPlay,
       child: GestureDetector(
         onTap: () {
           final clientProvider = context.plexClient;

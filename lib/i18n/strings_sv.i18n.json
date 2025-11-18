@@ -184,6 +184,16 @@
     "shufflePlay": "Blanda uppspelning",
     "fileInfo": "Filinformation"
   },
+  "accessibility": {
+    "mediaCardMovie": "${title}, movie",
+    "mediaCardShow": "${title}, TV show",
+    "mediaCardEpisode": "${title}, ${episodeInfo}",
+    "mediaCardSeason": "${title}, ${seasonInfo}",
+    "mediaCardWatched": "watched",
+    "mediaCardPartiallyWatched": "${percent} percent watched",
+    "mediaCardUnwatched": "unwatched",
+    "tapToPlay": "Tap to play"
+  },
   "tooltips": {
     "shufflePlay": "Blanda uppspelning",
     "markAsWatched": "Markera som sedd",
@@ -206,7 +216,30 @@
     "sleepTimer": "Sovtimer",
     "timerActive": "Timer aktiv",
     "playbackWillPauseIn": "Uppspelningen pausas om ${duration}",
-    "sleepTimerCompleted": "Sovtimer slutförd - uppspelning pausad"
+    "sleepTimerCompleted": "Sovtimer slutförd - uppspelning pausad",
+    "playButton": "Play",
+    "pauseButton": "Pause",
+    "seekBackwardButton": "Seek backward ${seconds} seconds",
+    "seekForwardButton": "Seek forward ${seconds} seconds",
+    "previousButton": "Previous episode",
+    "nextButton": "Next episode",
+    "previousChapterButton": "Previous chapter",
+    "nextChapterButton": "Next chapter",
+    "volumeButton": "Volume",
+    "muteButton": "Mute",
+    "unmuteButton": "Unmute",
+    "settingsButton": "Video settings",
+    "audioTrackButton": "Audio tracks",
+    "subtitlesButton": "Subtitles",
+    "chaptersButton": "Chapters",
+    "versionsButton": "Video versions",
+    "aspectRatioButton": "Aspect ratio",
+    "fullscreenButton": "Enter fullscreen",
+    "exitFullscreenButton": "Exit fullscreen",
+    "rotationLockButton": "Rotation lock",
+    "timelineSlider": "Video timeline",
+    "volumeSlider": "Volume level",
+    "backButton": "Back"
   },
   "userStatus": {
     "admin": "Admin",
