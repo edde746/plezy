@@ -12,6 +12,7 @@ import Combine
 
 extension View {
     /// Makes a view focusable with a focus change callback
+    /// Uses Apple's focus engine with proper state tracking
     func onFocusChange(_ isFocusable: Bool = true, perform action: @escaping (Bool) -> Void) -> some View {
         self.modifier(FocusableModifier(isFocusable: isFocusable, onFocusChange: action))
     }
@@ -35,22 +36,18 @@ struct FocusableModifier: ViewModifier {
 // MARK: - Button Styles
 
 /// Media Card button style for tvOS focus engine
-/// Designed for poster/card-based media browsing with proper focus indication
+/// Designed for poster/card-based media browsing with Apple's automatic focus behavior
+/// The system handles scale, animation, and parallax effects automatically
 struct MediaCardButtonStyle: ButtonStyle {
-    @FocusState private var isFocused: Bool
-
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
-            .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
             .focusable()
-            .focused($isFocused)
-            .focusEffectDisabled()
     }
 }
 
 /// Card button style with Liquid Glass design for tvOS
 /// Uses regularMaterial for depth and vibrancy
+/// Focus state is tracked for visual styling only - Apple handles focus behavior
 struct CardButtonStyle: ButtonStyle {
     @FocusState private var isFocused: Bool
 
@@ -96,10 +93,8 @@ struct CardButtonStyle: ButtonStyle {
                 x: 0,
                 y: isFocused ? DesignTokens.Shadow.cardFocused.y : DesignTokens.Shadow.cardUnfocused.y
             )
-            .scaleEffect(configuration.isPressed ? DesignTokens.pressScale : (isFocused ? DesignTokens.focusScale : 1.0))
-            .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
+            .scaleEffect(configuration.isPressed ? DesignTokens.pressScale : 1.0)
             .animation(DesignTokens.Animation.press.spring(), value: configuration.isPressed)
-            .focusEffectDisabled()
             .focused($isFocused)
             .focusable()
     }
@@ -107,6 +102,7 @@ struct CardButtonStyle: ButtonStyle {
 
 /// Clear Liquid Glass button style for media overlays
 /// Uses highly translucent material ideal for rich media backgrounds with strong vibrancy
+/// Focus state is tracked for visual styling only - Apple handles focus behavior
 struct ClearGlassButtonStyle: ButtonStyle {
     @FocusState private var isFocused: Bool
 
@@ -139,10 +135,8 @@ struct ClearGlassButtonStyle: ButtonStyle {
                 x: 0,
                 y: isFocused ? DesignTokens.Shadow.buttonFocused.y : DesignTokens.Shadow.buttonUnfocused.y
             )
-            .scaleEffect(configuration.isPressed ? DesignTokens.pressScale : (isFocused ? DesignTokens.focusScale : 1.0))
-            .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
+            .scaleEffect(configuration.isPressed ? DesignTokens.pressScale : 1.0)
             .animation(DesignTokens.Animation.press.spring(), value: configuration.isPressed)
-            .focusEffectDisabled()
             .focused($isFocused)
             .focusable()
     }

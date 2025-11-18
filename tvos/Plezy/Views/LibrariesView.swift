@@ -138,8 +138,6 @@ struct TabButton: View {
             }
         }
         .buttonStyle(.plain)
-        .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
-        .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
         .onFocusChange(true) { focused in
             isFocused = focused
         }
@@ -198,8 +196,6 @@ struct LibraryCard: View {
             )
         }
         .buttonStyle(.plain)
-        .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
-        .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
         .onFocusChange(true) { focused in
             isFocused = focused
         }

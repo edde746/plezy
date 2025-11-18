@@ -607,8 +607,6 @@ struct SeasonCard: View {
                         .frame(width: 400, alignment: .leading)
                 }
             }
-            .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
-            .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
         }
         .buttonStyle(.plain)
         .focused($isFocused)

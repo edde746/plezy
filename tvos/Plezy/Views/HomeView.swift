@@ -739,8 +739,6 @@ struct HeroBanner: View {
             .frame(height: 750)
             .padding(.horizontal, 30)
             .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusHero, style: .continuous))
-            .scaleEffect(isHeroFocused ? 1.03 : 1.0)
-            .animation(DesignTokens.Animation.focus.spring(), value: isHeroFocused)
             .focusable(true)
             .focused($isHeroFocused)
             .onKeyPress(.leftArrow) {

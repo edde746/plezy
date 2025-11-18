@@ -391,19 +391,17 @@ struct FilterButton: View {
                 )
         }
         .buttonStyle(FilterButtonStyle(isFocused: $isFocused, isSelected: isSelected))
-        .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
-        .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
     }
 }
 
-/// Button style for filter buttons with focus handling
+/// Button style for filter buttons with Apple's focus handling
+/// Focus state is tracked for visual styling only - Apple handles focus behavior
 struct FilterButtonStyle: ButtonStyle {
     let isFocused: FocusState<Bool>.Binding
     let isSelected: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .focusEffectDisabled()
             .focused(isFocused)
             .focusable()
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)

@@ -169,8 +169,6 @@ struct ServerCard: View {
                     )
             )
         }
-        .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
-        .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
         .onFocusChange(true) { focused in
             isFocused = focused
         }
