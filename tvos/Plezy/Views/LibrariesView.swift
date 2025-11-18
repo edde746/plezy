@@ -133,7 +133,7 @@ struct TabButton: View {
                     .foregroundColor(isSelected ? .white : .gray)
 
                 Rectangle()
-                    .fill(isSelected ? Color.beaconGradient : Color.clear)
+                    .fill(isSelected ? Color.beaconGradient : LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing))
                     .frame(height: 4)
             }
         }
