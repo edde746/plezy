@@ -12,13 +12,40 @@ class PlexMediaInfo {
   });
 }
 
-class PlexAudioTrack {
+/// Mixin for building track labels with a consistent pattern
+mixin TrackLabelBuilder {
+  int get id;
+  int? get index;
+  String? get displayTitle;
+  String? get language;
+
+  /// Builds a label from the given parts
+  /// If displayTitle is present, returns it
+  /// Otherwise, combines language and additional parts
+  String buildLabel(List<String> additionalParts) {
+    if (displayTitle != null && displayTitle!.isNotEmpty) {
+      return displayTitle!;
+    }
+    final parts = <String>[];
+    if (language != null && language!.isNotEmpty) {
+      parts.add(language!);
+    }
+    parts.addAll(additionalParts);
+    return parts.isEmpty ? 'Track ${index ?? id}' : parts.join(' · ');
+  }
+}
+
+class PlexAudioTrack with TrackLabelBuilder {
+  @override
   final int id;
+  @override
   final int? index;
   final String? codec;
+  @override
   final String? language;
   final String? languageCode;
   final String? title;
+  @override
   final String? displayTitle;
   final int? channels;
   final bool selected;
@@ -36,22 +63,24 @@ class PlexAudioTrack {
   });
 
   String get label {
-    if (displayTitle != null) return displayTitle!;
-    final parts = <String>[];
-    if (language != null) parts.add(language!);
-    if (codec != null) parts.add(codec!.toUpperCase());
-    if (channels != null) parts.add('${channels!}ch');
-    return parts.isEmpty ? 'Track ${index ?? id}' : parts.join(' · ');
+    final additionalParts = <String>[];
+    if (codec != null) additionalParts.add(codec!.toUpperCase());
+    if (channels != null) additionalParts.add('${channels!}ch');
+    return buildLabel(additionalParts);
   }
 }
 
-class PlexSubtitleTrack {
+class PlexSubtitleTrack with TrackLabelBuilder {
+  @override
   final int id;
+  @override
   final int? index;
   final String? codec;
+  @override
   final String? language;
   final String? languageCode;
   final String? title;
+  @override
   final String? displayTitle;
   final bool selected;
   final bool forced;
@@ -71,11 +100,9 @@ class PlexSubtitleTrack {
   });
 
   String get label {
-    if (displayTitle != null) return displayTitle!;
-    final parts = <String>[];
-    if (language != null) parts.add(language!);
-    if (forced) parts.add('Forced');
-    return parts.isEmpty ? 'Track ${index ?? id}' : parts.join(' · ');
+    final additionalParts = <String>[];
+    if (forced) additionalParts.add('Forced');
+    return buildLabel(additionalParts);
   }
 
   /// Returns true if this subtitle track is an external file (sidecar subtitle)

@@ -138,11 +138,6 @@ class EndpointFailoverInterceptor extends Interceptor {
       return true;
     }
 
-    if (error.type == DioExceptionType.badResponse) {
-      final statusCode = error.response?.statusCode ?? 0;
-      return statusCode >= 500;
-    }
-
     return false;
   }
 

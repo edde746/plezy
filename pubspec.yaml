@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex client for Flutter"
 publish_to: "none"
-version: 1.6.1+15
+version: 1.7.0+16
 
 environment:
   sdk: ^3.8.1
@@ -28,6 +28,7 @@ dependencies:
   qr_flutter: ^4.1.0
   slang: ^3.31.2
   slang_flutter: ^3.31.0
+  duration: ^4.0.3
   connectivity_plus: ^6.0.5
   os_media_controls:
     git:

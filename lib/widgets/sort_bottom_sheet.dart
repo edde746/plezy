@@ -39,6 +39,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
       _currentDescending = descending;
     });
     widget.onSortChanged(sort, descending);
+    Navigator.pop(context);
   }
 
   void _handleClear() {
@@ -69,10 +70,10 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
               ),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Sort By',
-                      style: TextStyle(
+                      t.libraries.sortBy,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -95,7 +96,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                 groupValue: _currentSort,
                 onChanged: (PlexSort? value) {
                   if (value != null) {
-                    _handleSortChange(value, value.defaultDirection == 'desc');
+                    _handleSortChange(value, value.isDefaultDescending);
                   }
                 },
                 child: ListView.builder(
@@ -137,10 +138,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                           : null,
                       leading: Radio<PlexSort>(value: sort, toggleable: false),
                       onTap: () {
-                        _handleSortChange(
-                          sort,
-                          sort.defaultDirection == 'desc',
-                        );
+                        _handleSortChange(sort, sort.isDefaultDescending);
                       },
                     );
                   },

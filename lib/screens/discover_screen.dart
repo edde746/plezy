@@ -12,9 +12,9 @@ import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/user_avatar_widget.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
+import '../widgets/hub_section.dart';
 import 'profile_switch_screen.dart';
 import 'server_selection_screen.dart';
-import 'hub_detail_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/settings_provider.dart';
 import '../mixins/refreshable.dart';
@@ -468,10 +468,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         context,
         listen: false,
       );
-      final plexClientProvider = Provider.of<PlexClientProvider>(
-        context,
-        listen: false,
-      );
+      final plexClientProvider = context.plexClient;
 
       // Clear all user data and provider states
       await userProfileProvider.logout();
@@ -633,43 +630,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ],
 
               // Recommendation Hubs (Trending, Top in Genre, etc.)
-              for (final hub in _hubs) ...[
+              for (final hub in _hubs)
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HubDetailScreen(hub: hub),
-                          ),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(_getHubIcon(hub.title)),
-                            const SizedBox(width: 8),
-                            Text(
-                              hub.title,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.chevron_right, size: 20),
-                          ],
-                        ),
-                      ),
-                    ),
+                  child: HubSection(
+                    hub: hub,
+                    icon: _getHubIcon(hub.title),
+                    onRefresh: updateItem,
                   ),
                 ),
-                _buildHorizontalList(hub.items, isLarge: false),
-              ],
 
               if (_onDeck.isEmpty && _hubs.isEmpty)
                 SliverFillRemaining(

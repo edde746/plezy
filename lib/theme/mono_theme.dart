@@ -19,6 +19,16 @@ ThemeData monoTheme({required bool dark}) {
           textMuted: const Color(0x99111111),
         );
 
+  final buttonStyle = ButtonStyle(
+    padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+    ),
+    elevation: const WidgetStatePropertyAll(0),
+    backgroundColor: WidgetStatePropertyAll(c.text),
+    foregroundColor: WidgetStatePropertyAll(dark ? c.bg : Colors.white),
+    shape: const WidgetStatePropertyAll(StadiumBorder()),
+  );
+
   final base = ThemeData(
     useMaterial3: true,
     brightness: dark ? Brightness.dark : Brightness.light,
@@ -103,28 +113,8 @@ ThemeData monoTheme({required bool dark}) {
       ),
       hintStyle: TextStyle(color: c.textMuted),
     ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ButtonStyle(
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        ),
-        elevation: const WidgetStatePropertyAll(0),
-        backgroundColor: WidgetStatePropertyAll(c.text),
-        foregroundColor: WidgetStatePropertyAll(dark ? c.bg : Colors.white),
-        shape: const WidgetStatePropertyAll(StadiumBorder()),
-      ),
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: ButtonStyle(
-        padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        ),
-        elevation: const WidgetStatePropertyAll(0),
-        backgroundColor: WidgetStatePropertyAll(c.text),
-        foregroundColor: WidgetStatePropertyAll(dark ? c.bg : Colors.white),
-        shape: const WidgetStatePropertyAll(StadiumBorder()),
-      ),
-    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(style: buttonStyle),
+    filledButtonTheme: FilledButtonThemeData(style: buttonStyle),
     dividerTheme: DividerThemeData(space: 0, thickness: 1, color: c.outline),
     listTileTheme: ListTileThemeData(
       dense: true,

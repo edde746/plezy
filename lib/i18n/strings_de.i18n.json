@@ -37,7 +37,10 @@
     "refresh": "Aktualisieren",
     "yes": "Ja",
     "no": "Nein",
-    "server": "Server"
+    "server": "Server",
+    "delete": "Löschen",
+    "shuffle": "Zufall",
+    "addTo": "Hinzufügen zu..."
   },
   "screens": {
     "licenses": "Lizenzen",
@@ -210,6 +213,10 @@
     "stretch": "Strecken",
     "lockRotation": "Rotation sperren",
     "unlockRotation": "Rotation entsperren",
+    "sleepTimer": "Schlaf-Timer",
+    "timerActive": "Timer aktiv",
+    "playbackWillPauseIn": "Wiedergabe wird pausiert in ${duration}",
+    "sleepTimerCompleted": "Schlaf-Timer abgelaufen - Wiedergabe pausiert",
     "playButton": "Play",
     "pauseButton": "Pause",
     "seekBackwardButton": "Seek backward ${seconds} seconds",
@@ -266,7 +273,11 @@
     "noEpisodesFoundGeneral": "Keine Episoden gefunden",
     "noResultsFound": "Keine Ergebnisse gefunden",
     "sleepTimerSet": "Sleep-Timer gesetzt auf ${label}",
-    "failedToSwitchProfile": "Profilwechsel zu ${displayName} fehlgeschlagen"
+    "failedToSwitchProfile": "Profilwechsel zu ${displayName} fehlgeschlagen",
+    "noItemsAvailable": "Keine Elemente verfügbar",
+    "failedToCreatePlayQueue": "Wiedergabewarteschlange konnte nicht erstellt werden",
+    "failedToCreatePlayQueueNoItems": "Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente",
+    "failedPlayback": "Wiedergabe für ${action} fehlgeschlagen: ${error}"
   },
   "profile": {
     "noUsersAvailable": "Keine Benutzer verfügbar"
@@ -356,7 +367,28 @@
     "confirmActionMessage": "Aktion wirklich durchführen?",
     "showLibrary": "Mediathek anzeigen",
     "hideLibrary": "Mediathek ausblenden",
-    "libraryOptions": "Mediatheksoptionen"
+    "libraryOptions": "Mediatheksoptionen",
+    "content": "Bibliotheksinhalt",
+    "selectLibrary": "Bibliothek auswählen",
+    "filtersWithCount": "Filter (${count})",
+    "noRecommendations": "Keine Empfehlungen verfügbar",
+    "noCollections": "Keine Sammlungen in dieser Mediathek",
+    "noFoldersFound": "Keine Ordner gefunden",
+    "folders": "Ordner",
+    "tabs": {
+      "recommended": "Empfohlen",
+      "browse": "Durchsuchen",
+      "collections": "Sammlungen",
+      "playlists": "Wiedergabelisten"
+    },
+    "groupings": {
+      "all": "Alle",
+      "movies": "Filme",
+      "shows": "Serien",
+      "seasons": "Staffeln",
+      "episodes": "Episoden",
+      "folders": "Ordner"
+    }
   },
   "about": {
     "title": "Über",
@@ -441,6 +473,33 @@
     "errorLoading": "Wiedergabelisten konnten nicht geladen werden",
     "errorAdding": "Konnte nicht zur Wiedergabeliste hinzugefügt werden",
     "errorReordering": "Element der Wiedergabeliste konnte nicht neu geordnet werden",
-    "errorRemoving": "Konnte nicht aus der Wiedergabeliste entfernt werden"
+    "errorRemoving": "Konnte nicht aus der Wiedergabeliste entfernt werden",
+    "playlist": "Wiedergabeliste"
+  },
+  "collections": {
+    "title": "Sammlungen",
+    "collection": "Sammlung",
+    "empty": "Sammlung ist leer",
+    "noItems": "Keine Elemente in dieser Sammlung",
+    "unknownLibrarySection": "Löschen nicht möglich: Unbekannte Bibliothekssektion",
+    "deleteCollection": "Sammlung löschen",
+    "deleteConfirm": "Sind Sie sicher, dass Sie \"${title}\" löschen möchten? Dies kann nicht rückgängig gemacht werden.",
+    "deleted": "Sammlung gelöscht",
+    "deleteFailed": "Sammlung konnte nicht gelöscht werden",
+    "deleteFailedWithError": "Sammlung konnte nicht gelöscht werden: ${error}",
+    "failedToLoadItems": "Sammlungselemente konnten nicht geladen werden: ${error}",
+    "addTo": "Zur Sammlung hinzufügen",
+    "selectCollection": "Sammlung auswählen",
+    "createNewCollection": "Neue Sammlung erstellen",
+    "collectionName": "Sammlungsname",
+    "enterCollectionName": "Sammlungsnamen eingeben",
+    "addedToCollection": "Zur Sammlung hinzugefügt",
+    "errorAddingToCollection": "Fehler beim Hinzufügen zur Sammlung",
+    "created": "Sammlung erstellt",
+    "removeFromCollection": "Aus Sammlung entfernen",
+    "removeFromCollectionConfirm": "\"${title}\" aus dieser Sammlung entfernen?",
+    "removedFromCollection": "Aus Sammlung entfernt",
+    "removeFromCollectionFailed": "Entfernen aus Sammlung fehlgeschlagen",
+    "removeFromCollectionError": "Fehler beim Entfernen aus der Sammlung: ${error}"
   }
 }

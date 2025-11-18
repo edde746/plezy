@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
+import '../utils/duration_formatter.dart';
 import '../i18n/strings.g.dart';
 
 /// Custom list item widget for playlist items
@@ -97,7 +98,7 @@ class PlaylistItemCard extends StatelessWidget {
               // Duration
               if (item.duration != null)
                 Text(
-                  _formatDuration(item.duration!),
+                  formatDurationTextual(item.duration!),
                   style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                 ),
 
@@ -174,17 +175,5 @@ class PlaylistItemCard extends StatelessWidget {
 
     // Default to type
     return item.type;
-  }
-
-  String _formatDuration(int milliseconds) {
-    final duration = Duration(milliseconds: milliseconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m';
-    } else {
-      return '${minutes}m';
-    }
   }
 }

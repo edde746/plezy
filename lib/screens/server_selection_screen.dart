@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:dio/dio.dart';
 import '../i18n/strings.g.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
@@ -9,6 +10,7 @@ import '../widgets/server_list_tile.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/error_message_utils.dart';
 import 'main_screen.dart';
 
 class ServerSelectionScreen extends StatefulWidget {
@@ -74,6 +76,12 @@ class _ServerSelectionScreenState extends State<ServerSelectionScreen> {
   }
 
   String _getErrorMessage(dynamic error) {
+    if (error is DioException) {
+      return mapDioErrorToMessage(
+        error,
+        context: t.serverSelection.noServersFound,
+      );
+    }
     if (error is ServerParsingException) {
       return t.serverSelection.malformedServerData(
         count: error.invalidServerData.length,

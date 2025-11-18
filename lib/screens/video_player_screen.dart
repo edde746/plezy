@@ -63,12 +63,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   StreamSubscription<bool>? _completedSubscription;
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<dynamic>? _mediaControlSubscription;
+  StreamSubscription<bool>? _bufferingSubscription;
   bool _isReplacingWithVideo =
       false; // Flag to skip orientation restoration during video-to-video navigation
 
   // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode = 0;
   bool _isPinching = false; // Track if a pinch gesture is occurring
+  bool _isBuffering = false; // Track if video is currently buffering
 
   // Video cropping state for fill screen mode
   Size? _playerSize;
@@ -90,6 +92,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           ? "OFF"
           : "${widget.preferredSubtitleTrack!.title ?? widget.preferredSubtitleTrack!.id} (${widget.preferredSubtitleTrack!.language ?? "unknown"})";
       appLogger.d('Preferred subtitle track: $subtitleDesc');
+    }
+
+    // Update current item in playback state provider
+    try {
+      final playbackState = context.read<PlaybackStateProvider>();
+
+      // If this item doesn't have a playQueueItemID, it's a standalone item
+      // Clear any existing queue so next/previous work correctly for this content
+      if (widget.metadata.playQueueItemID == null) {
+        playbackState.clearShuffle();
+      } else {
+        playbackState.setCurrentItem(widget.metadata);
+      }
+    } catch (e) {
+      // Provider might not be available yet
     }
 
     // Register app lifecycle observer
@@ -267,6 +284,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         _updateMediaControlsPosition();
       });
 
+      // Listen to buffering state
+      _bufferingSubscription = player!.stream.buffering.listen((isBuffering) {
+        if (mounted) {
+          setState(() {
+            _isBuffering = isBuffering;
+          });
+        }
+      });
+
       // Initialize OS media controls
       _initializeMediaControls();
 
@@ -301,11 +327,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (playbackState.isPlaylistActive) {
         // For playlists, always use the queue regardless of item type
         // Playlists can contain both movies and episodes
-        next = playbackState.getNextEpisode(
+        next = await playbackState.getNextEpisode(
           widget.metadata.ratingKey,
           loopQueue: false, // Don't loop playlists by default
         );
-        previous = playbackState.getPreviousEpisode(widget.metadata.ratingKey);
+        previous = await playbackState.getPreviousEpisode(
+          widget.metadata.ratingKey,
+        );
       }
       // Check if shuffle mode is active
       else if (playbackState.isShuffleActive) {
@@ -320,11 +348,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
         if (shuffleOrderNavigation) {
           // Use shuffled order for next/previous
-          next = playbackState.getNextEpisode(
+          next = await playbackState.getNextEpisode(
             widget.metadata.ratingKey,
             loopQueue: loopQueue,
           );
-          previous = playbackState.getPreviousEpisode(
+          previous = await playbackState.getPreviousEpisode(
             widget.metadata.ratingKey,
           );
         } else {
@@ -717,6 +745,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _errorSubscription?.cancel();
     _positionSubscription?.cancel();
     _mediaControlSubscription?.cancel();
+    _bufferingSubscription?.cancel();
 
     // Clear OS media controls completely
     OsMediaControls.clear();
@@ -1966,6 +1995,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                  ),
+                ),
+              // Buffering indicator
+              if (_isBuffering)
+                Positioned.fill(
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
                       ),
                     ),
                   ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:plezy/services/settings_service.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../utils/duration_formatter.dart';
+import 'base_video_control_sheet.dart';
 
 /// Bottom sheet for adjusting audio sync offset
 class AudioSyncSheet extends StatefulWidget {
@@ -14,23 +16,12 @@ class AudioSyncSheet extends StatefulWidget {
     required this.initialOffset,
   });
 
-  static BoxConstraints getBottomSheetConstraints(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 600;
-
-    return BoxConstraints(
-      maxWidth: isDesktop ? 700 : double.infinity,
-      maxHeight: isDesktop ? 400 : size.height * 0.75,
-      minHeight: isDesktop ? 300 : size.height * 0.5,
-    );
-  }
-
   static void show(BuildContext context, Player player, int initialOffset) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
       isScrollControlled: true,
-      constraints: getBottomSheetConstraints(context),
+      constraints: BaseVideoControlSheet.getBottomSheetConstraints(context),
       builder: (context) =>
           AudioSyncSheet(player: player, initialOffset: initialOffset),
     );
@@ -71,11 +62,6 @@ class _AudioSyncSheetState extends State<AudioSyncSheet> {
     _applyOffset(0);
   }
 
-  String _formatOffset(double offsetMs) {
-    final sign = offsetMs >= 0 ? '+' : '';
-    return '$sign${offsetMs.round()}ms';
-  }
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -114,7 +100,7 @@ class _AudioSyncSheetState extends State<AudioSyncSheet> {
                   children: [
                     // Current offset display
                     Text(
-                      _formatOffset(_currentOffset),
+                      formatSyncOffset(_currentOffset),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 48,
