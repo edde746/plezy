@@ -577,9 +577,9 @@ struct SeasonCard: View {
                         )
                 }
                 .frame(width: 400, height: 600)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous)
                         .strokeBorder(
                             LinearGradient(
                                 colors: isFocused ? [
@@ -589,7 +589,7 @@ struct SeasonCard: View {
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: isFocused ? 4 : 0
+                            lineWidth: isFocused ? DesignTokens.borderWidthFocusedThick : 0
                         )
                 )
                 .shadow(color: isFocused ? Color.beaconPurple.opacity(0.5) : .black.opacity(0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
@@ -607,8 +607,8 @@ struct SeasonCard: View {
                         .frame(width: 400, alignment: .leading)
                 }
             }
-            .scaleEffect(isFocused ? 1.08 : 1.0)
-            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
+            .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
+            .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
         }
         .buttonStyle(.plain)
         .focused($isFocused)

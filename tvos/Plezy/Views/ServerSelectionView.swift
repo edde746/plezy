@@ -99,7 +99,7 @@ struct ServerCard: View {
                 HStack {
                     Image(systemName: "server.rack")
                         .font(.system(size: 40))
-                        .foregroundColor(.orange)
+                        .foregroundColor(.beaconPurple)
 
                     Spacer()
 
@@ -139,10 +139,10 @@ struct ServerCard: View {
                             ConnectionBadge(text: "Local", color: .green)
                         }
                         if server.connections.contains(where: { !$0.local && !$0.relay }) {
-                            ConnectionBadge(text: "Remote", color: .blue)
+                            ConnectionBadge(text: "Remote", color: .beaconBlue)
                         }
                         if server.connections.contains(where: { $0.relay }) {
-                            ConnectionBadge(text: "Relay", color: .orange)
+                            ConnectionBadge(text: "Relay", color: .beaconMagenta)
                         }
                     }
                 }
@@ -150,16 +150,27 @@ struct ServerCard: View {
             .padding(30)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(Color.white.opacity(isFocused ? 0.15 : 0.05))
+                RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
+                    .fill(Color.white.opacity(isFocused ? DesignTokens.materialOpacitySubtle : 0.05))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 15)
-                    .stroke(isFocused ? Color.orange : Color.white.opacity(0.2), lineWidth: isFocused ? 4 : 2)
+                RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: isFocused ? [
+                                Color.beaconBlue,
+                                Color.beaconPurple,
+                                Color.beaconMagenta
+                            ] : [Color.white.opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: isFocused ? DesignTokens.borderWidthFocusedThick : 2
+                    )
             )
         }
-        .scaleEffect(isFocused ? 1.08 : 1.0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
+        .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
+        .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
         .onFocusChange(true) { focused in
             isFocused = focused
         }

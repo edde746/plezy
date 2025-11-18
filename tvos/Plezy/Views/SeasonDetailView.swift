@@ -142,7 +142,7 @@ struct EpisodeRow: View {
                         )
                 }
                 .frame(width: 450, height: 253)
-                .cornerRadius(10)
+                .cornerRadius(DesignTokens.cornerRadiusMedium)
                 .overlay(
                     ZStack {
                         // Progress bar with beacon gradient
@@ -269,12 +269,12 @@ struct EpisodeRow: View {
             .padding(20)
             .background(
                 ZStack {
-                    RoundedRectangle(cornerRadius: 15)
+                    RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
                         .fill(.regularMaterial)
-                        .opacity(isFocused ? 0.35 : 0.15)
+                        .opacity(isFocused ? 0.35 : DesignTokens.materialOpacitySubtle)
 
                     if isFocused {
-                        RoundedRectangle(cornerRadius: 15)
+                        RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
                             .fill(
                                 LinearGradient(
                                     colors: [
@@ -290,7 +290,7 @@ struct EpisodeRow: View {
                 }
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 15)
+                RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
                     .strokeBorder(
                         LinearGradient(
                             colors: isFocused ? [

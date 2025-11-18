@@ -165,11 +165,11 @@ struct PINDisplayView: View {
                         .frame(width: 70, height: 90)
                         .background(
                             ZStack {
-                                RoundedRectangle(cornerRadius: 15)
+                                RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
                                     .fill(.regularMaterial)
                                     .opacity(0.5)
 
-                                RoundedRectangle(cornerRadius: 15)
+                                RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
                                     .fill(
                                         LinearGradient(
                                             colors: [
@@ -184,7 +184,7 @@ struct PINDisplayView: View {
                             }
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 15)
+                            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
                                 .strokeBorder(
                                     LinearGradient(
                                         colors: [
@@ -210,11 +210,11 @@ struct PINDisplayView: View {
                     .padding(.vertical, 15)
                     .background(
                         ZStack {
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium)
                                 .fill(.ultraThinMaterial)
                                 .opacity(0.4)
 
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium)
                                 .fill(
                                     LinearGradient(
                                         colors: [
@@ -229,7 +229,7 @@ struct PINDisplayView: View {
                         }
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium)
                             .strokeBorder(
                                 LinearGradient(
                                     colors: [Color.beaconOrange, Color.beaconMagenta],

@@ -39,11 +39,11 @@ struct SearchView: View {
                     .padding(20)
                     .background(
                         ZStack {
-                            RoundedRectangle(cornerRadius: 10)
+                            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium)
                                 .fill(.regularMaterial)
                                 .opacity(0.5)
 
-                            RoundedRectangle(cornerRadius: 10)
+                            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium)
                                 .fill(
                                     LinearGradient(
                                         colors: [
@@ -58,10 +58,10 @@ struct SearchView: View {
                         }
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium)
                             .strokeBorder(
                                 Color.beaconPurple.opacity(0.3),
-                                lineWidth: 1.5
+                                lineWidth: DesignTokens.borderWidthUnfocused
                             )
                     )
                     .foregroundColor(.white)

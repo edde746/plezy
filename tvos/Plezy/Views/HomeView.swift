@@ -399,9 +399,9 @@ struct MediaCard: View {
                         }
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous)
                         .strokeBorder(
                             LinearGradient(
                                 colors: isFocused ? [.white.opacity(0.8), .white.opacity(0.4)] : [.clear],
@@ -742,9 +742,9 @@ struct HeroBanner: View {
             }
             .frame(height: 750)
             .padding(.horizontal, 60)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusHero, style: .continuous))
             .scaleEffect(isHeroFocused ? 1.03 : 1.0)
-            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isHeroFocused)
+            .animation(DesignTokens.Animation.focus.spring(), value: isHeroFocused)
             .focusable(true)
             .focused($isHeroFocused)
             .onKeyPress(.leftArrow) {
@@ -900,9 +900,9 @@ struct LandscapeMediaCard: View {
                         .padding(.bottom, 24)
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous)
                         .strokeBorder(
                             LinearGradient(
                                 colors: isFocused ? [.white.opacity(0.85), .white.opacity(0.5)] : [.clear],

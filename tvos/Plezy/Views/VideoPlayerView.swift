@@ -845,7 +845,7 @@ struct NextEpisodeOverlay: View {
                         )
                 }
                 .frame(width: 280, height: 158)
-                .cornerRadius(8)
+                .cornerRadius(DesignTokens.cornerRadiusSmall)
 
                 // Info
                 VStack(alignment: .leading, spacing: 8) {
@@ -897,7 +897,7 @@ struct NextEpisodeOverlay: View {
             }
             .padding(40)
             .background(.ultraThinMaterial)
-            .cornerRadius(15)
+            .cornerRadius(DesignTokens.cornerRadiusXLarge)
             .shadow(radius: 20)
             .padding(60)
         }

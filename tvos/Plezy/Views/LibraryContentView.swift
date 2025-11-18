@@ -364,17 +364,17 @@ struct FilterButton: View {
                     ZStack {
                         if isSelected {
                             // Selected state with Liquid Glass
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium, style: .continuous)
                                 .fill(.white)
                         } else {
                             // Unselected state with subtle material
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(.regularMaterial.opacity(0.15))
+                            RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium, style: .continuous)
+                                .fill(.regularMaterial.opacity(DesignTokens.materialOpacitySubtle))
                         }
                     }
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusMedium, style: .continuous)
                         .strokeBorder(
                             isFocused && !isSelected ? Color.white.opacity(0.5) : Color.clear,
                             lineWidth: 2
@@ -382,8 +382,8 @@ struct FilterButton: View {
                 )
         }
         .buttonStyle(FilterButtonStyle(isFocused: $isFocused, isSelected: isSelected))
-        .scaleEffect(isFocused ? 1.08 : 1.0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
+        .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
+        .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
     }
 }
 
@@ -398,7 +398,7 @@ struct FilterButtonStyle: ButtonStyle {
             .focused(isFocused)
             .focusable()
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
-            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+            .animation(DesignTokens.Animation.quick.spring(), value: configuration.isPressed)
     }
 }
 

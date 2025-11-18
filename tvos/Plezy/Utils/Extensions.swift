@@ -41,8 +41,8 @@ struct MediaCardButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(isFocused ? 1.08 : 1.0)
-            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
+            .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
+            .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
             .focusable()
             .focused($isFocused)
             .focusEffectDisabled()
@@ -57,16 +57,16 @@ struct CardButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(.horizontal, 40)
-            .padding(.vertical, 24) // Ensures minimum 44pt touch target
+            .padding(.vertical, DesignTokens.spacingXLarge) // Ensures minimum 44pt touch target
             .background(
                 ZStack {
                     // Liquid Glass background
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusLarge, style: .continuous)
                         .fill(.regularMaterial)
-                        .opacity(configuration.isPressed ? 0.7 : (isFocused ? 1.0 : 0.85))
+                        .opacity(configuration.isPressed ? 0.7 : (isFocused ? 1.0 : DesignTokens.materialOpacityButton))
 
                     // Vibrancy layer
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusLarge, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [
@@ -80,20 +80,25 @@ struct CardButtonStyle: ButtonStyle {
                 }
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusLarge, style: .continuous)
                     .strokeBorder(
                         LinearGradient(
                             colors: isFocused ? [.white.opacity(0.5), .white.opacity(0.25)] : [.clear],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: isFocused ? 2.5 : 0
+                        lineWidth: isFocused ? DesignTokens.borderWidthFocused : 0
                     )
             )
-            .shadow(color: .black.opacity(0.35), radius: isFocused ? 25 : 12, x: 0, y: isFocused ? 12 : 6)
-            .scaleEffect(configuration.isPressed ? 0.94 : (isFocused ? 1.08 : 1.0))
-            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
-            .animation(.spring(response: 0.2, dampingFraction: 0.65), value: configuration.isPressed)
+            .shadow(
+                color: DesignTokens.Shadow.cardFocused.color,
+                radius: isFocused ? DesignTokens.Shadow.cardFocused.radius : DesignTokens.Shadow.cardUnfocused.radius,
+                x: 0,
+                y: isFocused ? DesignTokens.Shadow.cardFocused.y : DesignTokens.Shadow.cardUnfocused.y
+            )
+            .scaleEffect(configuration.isPressed ? DesignTokens.pressScale : (isFocused ? DesignTokens.focusScale : 1.0))
+            .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
+            .animation(DesignTokens.Animation.press.spring(), value: configuration.isPressed)
             .focusEffectDisabled()
             .focused($isFocused)
             .focusable()
@@ -108,12 +113,12 @@ struct ClearGlassButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(.horizontal, 48)
-            .padding(.vertical, 24) // Ensures minimum 44pt touch target
+            .padding(.vertical, DesignTokens.spacingXLarge) // Ensures minimum 44pt touch target
             .background(
                 ZStack {
                     // Dark dimming layer for contrast over bright content
                     Capsule()
-                        .fill(Color.black.opacity(0.4))
+                        .fill(Color.black.opacity(DesignTokens.materialOpacityDimming))
 
                     // Clear Liquid Glass material with vibrancy
                     Capsule()
@@ -141,13 +146,18 @@ struct ClearGlassButtonStyle: ButtonStyle {
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: isFocused ? 2.5 : 1.5
+                        lineWidth: isFocused ? DesignTokens.borderWidthFocused : DesignTokens.borderWidthUnfocused
                     )
             )
-            .shadow(color: .black.opacity(0.55), radius: isFocused ? 30 : 15, x: 0, y: isFocused ? 14 : 7)
-            .scaleEffect(configuration.isPressed ? 0.94 : (isFocused ? 1.08 : 1.0))
-            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
-            .animation(.spring(response: 0.2, dampingFraction: 0.65), value: configuration.isPressed)
+            .shadow(
+                color: DesignTokens.Shadow.buttonFocused.color,
+                radius: isFocused ? DesignTokens.Shadow.buttonFocused.radius : DesignTokens.Shadow.buttonUnfocused.radius,
+                x: 0,
+                y: isFocused ? DesignTokens.Shadow.buttonFocused.y : DesignTokens.Shadow.buttonUnfocused.y
+            )
+            .scaleEffect(configuration.isPressed ? DesignTokens.pressScale : (isFocused ? DesignTokens.focusScale : 1.0))
+            .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
+            .animation(DesignTokens.Animation.press.spring(), value: configuration.isPressed)
             .focusEffectDisabled()
             .focused($isFocused)
             .focusable()
@@ -171,7 +181,7 @@ extension ButtonStyle where Self == ClearGlassButtonStyle {
 extension View {
     /// Applies a Liquid Glass background effect with beacon gradient accent
     /// Perfect for cards, panels, and elevated UI elements
-    func liquidGlassBackground(cornerRadius: CGFloat = 16, opacity: Double = 0.95) -> some View {
+    func liquidGlassBackground(cornerRadius: CGFloat = DesignTokens.cornerRadiusXLarge, opacity: Double = DesignTokens.materialOpacityFull) -> some View {
         self.background(
             ZStack {
                 // Base glass material
@@ -199,7 +209,7 @@ extension View {
 
     /// Applies an ultra-thin Liquid Glass effect for overlays
     /// Ideal for navigation bars, toolbars, and floating panels
-    func thinLiquidGlass(cornerRadius: CGFloat = 12) -> some View {
+    func thinLiquidGlass(cornerRadius: CGFloat = DesignTokens.cornerRadiusMedium) -> some View {
         self.background(
             ZStack {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -210,7 +220,7 @@ extension View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.15),
+                                Color.white.opacity(DesignTokens.materialOpacitySubtle),
                                 Color.beaconPurple.opacity(0.08)
                             ],
                             startPoint: .top,
@@ -223,7 +233,7 @@ extension View {
     }
 
     /// Applies a beacon gradient border
-    func beaconBorder(cornerRadius: CGFloat = 14, lineWidth: CGFloat = 2) -> some View {
+    func beaconBorder(cornerRadius: CGFloat = DesignTokens.cornerRadiusLarge, lineWidth: CGFloat = 2) -> some View {
         self.overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(
@@ -247,9 +257,176 @@ extension View {
             color: Color.beaconPurple.opacity(opacity),
             radius: radius,
             x: 0,
-            y: 8
+            y: DesignTokens.spacingXSmall
         )
     }
+}
+
+// MARK: - Design Tokens
+
+/// Liquid Glass Design System Tokens
+/// Centralized constants for consistent UI implementation across tvOS app
+enum DesignTokens {
+    // MARK: - Corner Radius
+    /// Small corner radius (8pt) - For compact elements, small buttons
+    static let cornerRadiusSmall: CGFloat = 8
+
+    /// Medium corner radius (12pt) - For standard buttons, controls
+    static let cornerRadiusMedium: CGFloat = 12
+
+    /// Large corner radius (14pt) - For cards, panels, primary buttons
+    static let cornerRadiusLarge: CGFloat = 14
+
+    /// Extra large corner radius (16pt) - For media cards, containers
+    static let cornerRadiusXLarge: CGFloat = 16
+
+    /// Hero corner radius (20pt) - For hero banners, large featured content
+    static let cornerRadiusHero: CGFloat = 20
+
+    // MARK: - Material Opacity
+    /// Full material opacity (0.95) - Primary cards and containers
+    static let materialOpacityFull: Double = 0.95
+
+    /// Button material opacity (0.85) - Interactive elements
+    static let materialOpacityButton: Double = 0.85
+
+    /// Hero material opacity (0.30) - Progress indicators on hero content
+    static let materialOpacityHero: Double = 0.30
+
+    /// Subtle material opacity (0.15) - Background tints, subtle overlays
+    static let materialOpacitySubtle: Double = 0.15
+
+    /// Dimming overlay opacity (0.40) - Dark overlays for contrast
+    static let materialOpacityDimming: Double = 0.40
+
+    // MARK: - Spacing Scale
+    /// 4pt - Minimum spacing
+    static let spacingXXSmall: CGFloat = 4
+
+    /// 8pt - Compact spacing
+    static let spacingXSmall: CGFloat = 8
+
+    /// 12pt - Standard small spacing
+    static let spacingSmall: CGFloat = 12
+
+    /// 16pt - Medium spacing
+    static let spacingMedium: CGFloat = 16
+
+    /// 20pt - Standard large spacing
+    static let spacingLarge: CGFloat = 20
+
+    /// 24pt - Extra large spacing
+    static let spacingXLarge: CGFloat = 24
+
+    /// 32pt - Section spacing
+    static let spacingXXLarge: CGFloat = 32
+
+    /// 40pt - Major section spacing
+    static let spacingXXXLarge: CGFloat = 40
+
+    /// 60pt - Hero spacing
+    static let spacingHero: CGFloat = 60
+
+    // MARK: - Shadow Presets
+    struct Shadow {
+        let color: Color
+        let radius: CGFloat
+        let x: CGFloat
+        let y: CGFloat
+
+        /// Standard unfocused shadow for cards
+        static let cardUnfocused = Shadow(
+            color: Color.black.opacity(0.35),
+            radius: 12,
+            x: 0,
+            y: 6
+        )
+
+        /// Focused shadow for cards with enhanced depth
+        static let cardFocused = Shadow(
+            color: Color.black.opacity(0.35),
+            radius: 25,
+            x: 0,
+            y: 12
+        )
+
+        /// Unfocused shadow for buttons
+        static let buttonUnfocused = Shadow(
+            color: Color.black.opacity(0.55),
+            radius: 15,
+            x: 0,
+            y: 7
+        )
+
+        /// Focused shadow for buttons with maximum depth
+        static let buttonFocused = Shadow(
+            color: Color.black.opacity(0.55),
+            radius: 30,
+            x: 0,
+            y: 14
+        )
+
+        /// Subtle shadow for overlays
+        static let overlay = Shadow(
+            color: Color.black.opacity(0.25),
+            radius: 10,
+            x: 0,
+            y: 4
+        )
+    }
+
+    // MARK: - Animation Presets
+    struct Animation {
+        let response: Double
+        let dampingFraction: Double
+
+        /// Standard focus animation (response: 0.35, damping: 0.75)
+        static let focus = Animation(response: 0.35, dampingFraction: 0.75)
+
+        /// Press animation (response: 0.2, damping: 0.65)
+        static let press = Animation(response: 0.2, dampingFraction: 0.65)
+
+        /// Quick animation for filters (response: 0.2, damping: 0.7)
+        static let quick = Animation(response: 0.2, dampingFraction: 0.7)
+
+        /// Smooth transition (response: 0.4, damping: 0.8)
+        static let smooth = Animation(response: 0.4, dampingFraction: 0.8)
+
+        /// Create SwiftUI spring animation
+        func spring() -> SwiftUI.Animation {
+            .spring(response: response, dampingFraction: dampingFraction)
+        }
+    }
+
+    // MARK: - Focus Scale
+    /// Standard focus scale (1.08) - Applied to most interactive elements
+    static let focusScale: CGFloat = 1.08
+
+    /// Press scale (0.94) - Applied when button is pressed
+    static let pressScale: CGFloat = 0.94
+
+    // MARK: - Border Width
+    /// Standard border width for unfocused elements
+    static let borderWidthUnfocused: CGFloat = 1.5
+
+    /// Border width for focused elements
+    static let borderWidthFocused: CGFloat = 2.5
+
+    /// Thick border for emphasized focus states
+    static let borderWidthFocusedThick: CGFloat = 4.0
+
+    // MARK: - Icon Sizes
+    /// Small icon size (20pt)
+    static let iconSizeSmall: CGFloat = 20
+
+    /// Medium icon size (24pt)
+    static let iconSizeMedium: CGFloat = 24
+
+    /// Large icon size (28pt)
+    static let iconSizeLarge: CGFloat = 28
+
+    /// Extra large icon size (32pt)
+    static let iconSizeXLarge: CGFloat = 32
 }
 
 // MARK: - Color Extensions

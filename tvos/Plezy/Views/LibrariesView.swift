@@ -133,13 +133,13 @@ struct TabButton: View {
                     .foregroundColor(isSelected ? .white : .gray)
 
                 Rectangle()
-                    .fill(isSelected ? Color.orange : Color.clear)
+                    .fill(isSelected ? Color.beaconGradient : Color.clear)
                     .frame(height: 4)
             }
         }
         .buttonStyle(.plain)
-        .scaleEffect(isFocused ? 1.08 : 1.0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
+        .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
+        .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
         .onFocusChange(true) { focused in
             isFocused = focused
         }
@@ -156,7 +156,7 @@ struct LibraryCard: View {
             HStack(spacing: 20) {
                 Image(systemName: libraryIcon)
                     .font(.system(size: 50))
-                    .foregroundColor(.orange)
+                    .foregroundColor(.beaconPurple)
                     .frame(width: 80)
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -178,17 +178,28 @@ struct LibraryCard: View {
             }
             .padding(30)
             .background(
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(Color.white.opacity(isFocused ? 0.15 : 0.05))
+                RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
+                    .fill(Color.white.opacity(isFocused ? DesignTokens.materialOpacitySubtle : 0.05))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 15)
-                    .stroke(isFocused ? Color.orange : Color.white.opacity(0.2), lineWidth: isFocused ? 4 : 2)
+                RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: isFocused ? [
+                                Color.beaconBlue,
+                                Color.beaconPurple,
+                                Color.beaconMagenta
+                            ] : [Color.white.opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: isFocused ? DesignTokens.borderWidthFocusedThick : 2
+                    )
             )
         }
         .buttonStyle(.plain)
-        .scaleEffect(isFocused ? 1.08 : 1.0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
+        .scaleEffect(isFocused ? DesignTokens.focusScale : 1.0)
+        .animation(DesignTokens.Animation.focus.spring(), value: isFocused)
         .onFocusChange(true) { focused in
             isFocused = focused
         }
