@@ -316,10 +316,10 @@ struct MediaShelf: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 30) {
                     ForEach(items) { item in
-                        MediaCard(media: item) {
+                        LandscapeMediaCard(media: item) {
                             onSelect(item)
                         }
-                        .padding(.vertical, 30) // Padding for focus scale
+                        .padding(.vertical, 40) // Padding for focus scale
                     }
                 }
                 .padding(.horizontal, 60)
