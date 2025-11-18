@@ -39,6 +39,47 @@ class MediaCard extends StatefulWidget {
 }
 
 class _MediaCardState extends State<MediaCard> {
+  String _buildSemanticLabel() {
+    final item = widget.item;
+    final itemType = item.type.toLowerCase();
+
+    // Build base label based on type
+    String baseLabel;
+    if (itemType == 'episode') {
+      final episodeInfo = item.parentIndex != null && item.index != null
+          ? 'S${item.parentIndex} E${item.index}'
+          : '';
+      baseLabel = t.accessibility.mediaCardEpisode(
+        title: item.displayTitle,
+        episodeInfo: episodeInfo,
+      );
+    } else if (itemType == 'season') {
+      final seasonInfo = item.parentIndex != null
+          ? 'Season ${item.parentIndex}'
+          : '';
+      baseLabel = t.accessibility.mediaCardSeason(
+        title: item.displayTitle,
+        seasonInfo: seasonInfo,
+      );
+    } else if (itemType == 'movie') {
+      baseLabel = t.accessibility.mediaCardMovie(title: item.displayTitle);
+    } else {
+      baseLabel = t.accessibility.mediaCardShow(title: item.displayTitle);
+    }
+
+    // Add watched status
+    if (item.isWatched) {
+      baseLabel = '$baseLabel, ${t.accessibility.mediaCardWatched}';
+    } else if (item.viewOffset != null && item.duration != null && item.viewOffset! > 0) {
+      final percent = ((item.viewOffset! / item.duration!) * 100).round();
+      baseLabel = '$baseLabel, ${t.accessibility.mediaCardPartiallyWatched(percent: percent)}';
+    } else {
+      baseLabel = '$baseLabel, ${t.accessibility.mediaCardUnwatched}';
+    }
+
+    return baseLabel;
+  }
+
   void _handleTap(BuildContext context) async {
     final client = context.client;
     if (client == null) return;
@@ -100,6 +141,8 @@ class _MediaCardState extends State<MediaCard> {
         ? ViewMode.grid
         : settingsProvider.viewMode;
 
+    final semanticLabel = _buildSemanticLabel();
+
     return MediaContextMenu(
       metadata: widget.item,
       onRefresh: widget.onRefresh,
@@ -111,10 +154,12 @@ class _MediaCardState extends State<MediaCard> {
               item: widget.item,
               width: widget.width,
               height: widget.height,
+              semanticLabel: semanticLabel,
               onTap: () => _handleTap(context),
             )
           : _MediaCardList(
               item: widget.item,
+              semanticLabel: semanticLabel,
               onTap: () => _handleTap(context),
               density: settingsProvider.libraryDensity,
             ),
@@ -127,12 +172,14 @@ class _MediaCardGrid extends StatelessWidget {
   final PlexMetadata item;
   final double? width;
   final double? height;
+  final String semanticLabel;
   final VoidCallback onTap;
 
   const _MediaCardGrid({
     required this.item,
     this.width,
     this.height,
+    required this.semanticLabel,
     required this.onTap,
   });
 
@@ -141,8 +188,7 @@ class _MediaCardGrid extends StatelessWidget {
     return SizedBox(
       width: width,
       child: Semantics(
-        label: "media-card-${item.ratingKey}",
-        identifier: "media-card-${item.ratingKey}",
+        label: semanticLabel,
         button: true,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
@@ -272,11 +318,13 @@ class _MediaCardGrid extends StatelessWidget {
 /// List layout for media cards
 class _MediaCardList extends StatelessWidget {
   final PlexMetadata item;
+  final String semanticLabel;
   final VoidCallback onTap;
   final LibraryDensity density;
 
   const _MediaCardList({
     required this.item,
+    required this.semanticLabel,
     required this.onTap,
     required this.density,
   });
@@ -420,8 +468,7 @@ class _MediaCardList extends StatelessWidget {
     final subtitle = _buildSubtitleText();
 
     return Semantics(
-      label: "media-card-${item.ratingKey}",
-      identifier: "media-card-${item.ratingKey}",
+      label: semanticLabel,
       button: true,
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
