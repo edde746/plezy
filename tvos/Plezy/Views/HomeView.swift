@@ -901,6 +901,19 @@ struct LandscapeMediaCard: View {
                         .padding(.bottom, 24)
                     }
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: isFocused ? [.white.opacity(0.85), .white.opacity(0.5)] : [.clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isFocused ? 4 : 0
+                        )
+                )
+                .shadow(color: .black.opacity(isFocused ? 0.75 : 0.55), radius: isFocused ? 40 : 20, x: 0, y: isFocused ? 20 : 12)
 
                 // Progress bar below card with enhanced Liquid Glass styling
                 if media.progress > 0 && media.progress < 0.98 {
@@ -940,20 +953,6 @@ struct LandscapeMediaCard: View {
             }
         }
         .buttonStyle(MediaCardButtonStyle())
-        // Apply clipping and overlay AFTER scale effect from button style
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: isFocused ? [.white.opacity(0.85), .white.opacity(0.5)] : [.clear],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: isFocused ? 4 : 0
-                )
-        )
-        .shadow(color: .black.opacity(isFocused ? 0.75 : 0.55), radius: isFocused ? 40 : 20, x: 0, y: isFocused ? 20 : 12)
         .onFocusChange { focused in
             isFocused = focused
         }
