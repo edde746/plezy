@@ -857,7 +857,6 @@ struct LandscapeMediaCard: View {
                             )
                     }
                     .frame(width: 500, height: 280)
-                    .clipped()
 
                     // Enhanced gradient overlay with vibrancy
                     LinearGradient(
