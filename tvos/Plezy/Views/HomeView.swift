@@ -414,8 +414,8 @@ struct FullScreenHeroBackground: View {
                     LinearGradient(
                         gradient: Gradient(colors: [
                             Color.clear,
-                            Color.black.opacity(0.3),
-                            Color.black.opacity(0.6)
+                            Color.black.opacity(0.5),
+                            Color.black.opacity(0.85)
                         ]),
                         startPoint: .top,
                         endPoint: .bottom
