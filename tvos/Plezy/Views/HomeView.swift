@@ -123,7 +123,7 @@ struct HomeView: View {
                         Color.clear
                             .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
                     }
-                    .frame(height: 650)
+                    .frame(height: 620)
 
                     // Continue Watching section
                     if !onDeck.isEmpty {
@@ -186,7 +186,7 @@ struct HomeView: View {
                 scrollOffset = value
                 // Hide hero when scrolled past the spacer (approximately when Continue Watching becomes visible)
                 withAnimation(.easeInOut(duration: 0.3)) {
-                    shouldShowHero = value > -450
+                    shouldShowHero = value > -400
                 }
             }
         }
