@@ -49,7 +49,7 @@ struct MediaCardButtonStyle: ButtonStyle {
 /// Uses regularMaterial for depth and vibrancy
 /// Focus state is tracked for visual styling only - Apple handles focus behavior
 struct CardButtonStyle: ButtonStyle {
-    @FocusState private var isFocused: Bool
+    @Environment(\.isFocused) private var isFocused: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -87,6 +87,7 @@ struct CardButtonStyle: ButtonStyle {
                         lineWidth: isFocused ? DesignTokens.borderWidthFocused : 0
                     )
             )
+            .contentShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusLarge, style: .continuous))
             .shadow(
                 color: DesignTokens.Shadow.cardFocused.color,
                 radius: isFocused ? DesignTokens.Shadow.cardFocused.radius : DesignTokens.Shadow.cardUnfocused.radius,
@@ -95,8 +96,6 @@ struct CardButtonStyle: ButtonStyle {
             )
             .scaleEffect(configuration.isPressed ? DesignTokens.pressScale : 1.0)
             .animation(DesignTokens.Animation.press.spring(), value: configuration.isPressed)
-            .focused($isFocused)
-            .focusable()
     }
 }
 
@@ -104,7 +103,7 @@ struct CardButtonStyle: ButtonStyle {
 /// Uses highly translucent material ideal for rich media backgrounds with strong vibrancy
 /// Focus state is tracked for visual styling only - Apple handles focus behavior
 struct ClearGlassButtonStyle: ButtonStyle {
-    @FocusState private var isFocused: Bool
+    @Environment(\.isFocused) private var isFocused: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -129,6 +128,7 @@ struct ClearGlassButtonStyle: ButtonStyle {
                     }
                 }
             )
+            .contentShape(Capsule())
             .shadow(
                 color: isFocused ? Color.beaconPurple.opacity(0.5) : DesignTokens.Shadow.buttonFocused.color,
                 radius: isFocused ? DesignTokens.Shadow.buttonFocused.radius : DesignTokens.Shadow.buttonUnfocused.radius,
@@ -137,8 +137,6 @@ struct ClearGlassButtonStyle: ButtonStyle {
             )
             .scaleEffect(configuration.isPressed ? DesignTokens.pressScale : 1.0)
             .animation(DesignTokens.Animation.press.spring(), value: configuration.isPressed)
-            .focused($isFocused)
-            .focusable()
     }
 }
 
@@ -160,56 +158,99 @@ extension View {
     /// Applies a Liquid Glass background effect with beacon gradient accent
     /// Perfect for cards, panels, and elevated UI elements
     func liquidGlassBackground(cornerRadius: CGFloat = DesignTokens.cornerRadiusXLarge, opacity: Double = DesignTokens.materialOpacityFull) -> some View {
-        self.background(
-            ZStack {
-                // Base glass material
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.regularMaterial)
-                    .opacity(opacity)
-
-                // Beacon gradient vibrancy overlay
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.beaconBlue.opacity(0.12),
-                                Color.beaconPurple.opacity(0.10),
-                                Color.beaconMagenta.opacity(0.08)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .blendMode(.plusLighter)
-            }
-        )
+        LiquidGlassBackgroundModifier(cornerRadius: cornerRadius, opacity: opacity, content: self)
     }
+}
 
+struct LiquidGlassBackgroundModifier<Content: View>: View {
+    let cornerRadius: CGFloat
+    let opacity: Double
+    let content: Content
+
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        content
+            .background(
+                ZStack {
+                    if reduceTransparency {
+                        // Solid color fallback for Reduce Transparency
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(Color.beaconSurface)
+                    } else {
+                        // Base glass material
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(.regularMaterial)
+                            .opacity(opacity)
+
+                        // Beacon gradient vibrancy overlay
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.beaconBlue.opacity(0.12),
+                                        Color.beaconPurple.opacity(0.10),
+                                        Color.beaconMagenta.opacity(0.08)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .blendMode(.plusLighter)
+                    }
+                }
+            )
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+}
+
+extension View {
     /// Applies an ultra-thin Liquid Glass effect for overlays
     /// Ideal for navigation bars, toolbars, and floating panels
     func thinLiquidGlass(cornerRadius: CGFloat = DesignTokens.cornerRadiusMedium) -> some View {
-        self.background(
-            ZStack {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-
-                // Subtle beacon accent
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(DesignTokens.materialOpacitySubtle),
-                                Color.beaconPurple.opacity(0.08)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .blendMode(.overlay)
-            }
-        )
+        ThinLiquidGlassModifier(cornerRadius: cornerRadius, content: self)
     }
+}
 
+struct ThinLiquidGlassModifier<Content: View>: View {
+    let cornerRadius: CGFloat
+    let content: Content
+
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        content
+            .background(
+                ZStack {
+                    if reduceTransparency {
+                        // Solid color fallback for Reduce Transparency
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(Color.beaconSurface.opacity(0.7))
+                    } else {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(.ultraThinMaterial)
+
+                        // Subtle beacon accent
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(DesignTokens.materialOpacitySubtle),
+                                        Color.beaconPurple.opacity(0.08)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .blendMode(.overlay)
+                    }
+                }
+            )
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+}
+
+extension View {
     /// Applies a beacon gradient border
     func beaconBorder(cornerRadius: CGFloat = DesignTokens.cornerRadiusLarge, lineWidth: CGFloat = 2) -> some View {
         self.overlay(
