@@ -128,13 +128,6 @@ struct SearchView: View {
                     }
                 }
             }
-
-            // Top navigation overlay
-            VStack {
-                TopNavigationMenu()
-                    .padding(.top, 60)
-                Spacer()
-            }
         }
         .sheet(item: $selectedMedia) { media in
             MediaDetailView(media: media)

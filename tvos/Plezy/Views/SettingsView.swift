@@ -201,13 +201,6 @@ struct SettingsView: View {
                 .padding(.horizontal, 80)
                 .padding(.bottom, 40)
             }
-
-            // Top navigation overlay
-            VStack {
-                TopNavigationMenu()
-                    .padding(.top, 60)
-                Spacer()
-            }
         }
         .alert("Sign Out", isPresented: $showLogoutConfirmation) {
             Button("Cancel", role: .cancel) {}

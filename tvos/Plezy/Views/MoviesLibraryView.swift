@@ -41,13 +41,6 @@ struct MoviesLibraryView: View {
                         .foregroundColor(.gray)
                 }
             }
-
-            // Top navigation overlay
-            VStack {
-                TopNavigationMenu()
-                    .padding(.top, 60)
-                Spacer()
-            }
         }
         .task {
             await loadLibraries()

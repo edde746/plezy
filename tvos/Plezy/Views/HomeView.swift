@@ -12,6 +12,7 @@ struct HomeView: View {
     @EnvironmentObject var tabCoordinator: TabCoordinator
     @StateObject private var networkMonitor = NetworkMonitor.shared
     @State private var onDeck: [PlexMetadata] = []
+    @State private var recentlyAdded: [PlexMetadata] = []
     @State private var hubs: [PlexHub] = []
     @State private var isLoading = true
     @State private var selectedMedia: PlexMetadata?
@@ -92,28 +93,21 @@ struct HomeView: View {
 
     private var fullScreenHeroLayout: some View {
         ZStack {
-            // Layer 1: Full-screen hero background
-            if !onDeck.isEmpty {
+            // Layer 1: Full-screen hero background (recently added)
+            if !recentlyAdded.isEmpty {
                 FullScreenHeroBackground(
-                    items: onDeck,
+                    items: recentlyAdded,
                     currentIndex: $currentHeroIndex
                 )
             }
 
-            // Layer 2: Overlaid UI (top menu + continue watching)
+            // Layer 2: Overlaid UI (continue watching)
             VStack(spacing: 0) {
-                // Top navigation menu
-                TopNavigationMenu()
-                    .focusSection()
-                    .padding(.top, 60)
-
                 Spacer()
 
                 // Continue Watching row overlay
-                if let continueWatchingHub = hubs.first(where: { $0.title.lowercased().contains("on deck") }),
-                   let items = continueWatchingHub.metadata,
-                   !items.isEmpty {
-                    ContinueWatchingOverlay(items: items) { media in
+                if !onDeck.isEmpty {
+                    ContinueWatchingOverlay(items: onDeck) { media in
                         print("🎯 [HomeView] Continue watching item tapped: \(media.title)")
                         playingMedia = media
                     }
@@ -122,25 +116,14 @@ struct HomeView: View {
                 }
             }
 
-            // Layer 3: Hero overlay with Play button
-            if !onDeck.isEmpty {
+            // Layer 3: Hero overlay with metadata (recently added)
+            if !recentlyAdded.isEmpty {
                 VStack {
                     Spacer()
 
                     FullScreenHeroOverlay(
-                        item: onDeck[currentHeroIndex],
-                        onPlay: {
-                            print("🎯 [HomeView] Hero play button tapped")
-                            playingMedia = onDeck[currentHeroIndex]
-                        },
-                        onNext: {
-                            navigateHero(to: (currentHeroIndex + 1) % onDeck.count)
-                        },
-                        onPrevious: {
-                            navigateHero(to: currentHeroIndex > 0 ? currentHeroIndex - 1 : onDeck.count - 1)
-                        }
+                        item: recentlyAdded[currentHeroIndex]
                     )
-                    .focusSection()
                     .padding(.bottom, 280)
                 }
             }
@@ -219,12 +202,12 @@ struct HomeView: View {
 
     private func startHeroTimer() {
         heroTimer = Timer.scheduledTimer(withTimeInterval: heroTimerInterval, repeats: true) { _ in
-            if !onDeck.isEmpty {
+            if !recentlyAdded.isEmpty {
                 heroProgress += heroTimerInterval / heroDisplayDuration
 
                 if heroProgress >= 1.0 {
                     withAnimation(.easeInOut(duration: 0.6)) {
-                        currentHeroIndex = (currentHeroIndex + 1) % onDeck.count
+                        currentHeroIndex = (currentHeroIndex + 1) % recentlyAdded.count
                     }
                     heroProgress = 0.0
                 }
@@ -242,7 +225,7 @@ struct HomeView: View {
     }
 
     private func navigateHero(to index: Int) {
-        guard index >= 0 && index < onDeck.count else { return }
+        guard index >= 0 && index < recentlyAdded.count else { return }
         withAnimation(.easeInOut(duration: 0.6)) {
             currentHeroIndex = index
         }
@@ -270,6 +253,13 @@ struct HomeView: View {
             print("🏠 [HomeView] Using cached content")
             self.onDeck = cached.onDeck
             self.hubs = cached.hubs
+
+            // Extract recently added from hubs
+            if let recentlyAddedHub = cached.hubs.first(where: { $0.title.lowercased().contains("recently added") || $0.title.lowercased().contains("recent") }),
+               let items = recentlyAddedHub.metadata {
+                self.recentlyAdded = items
+            }
+
             isLoading = false
             noServerSelected = false
             return
@@ -291,10 +281,17 @@ struct HomeView: View {
             self.onDeck = fetchedOnDeck
             self.hubs = fetchedHubs
 
+            // Extract recently added from hubs
+            if let recentlyAddedHub = fetchedHubs.first(where: { $0.title.lowercased().contains("recently added") || $0.title.lowercased().contains("recent") }),
+               let items = recentlyAddedHub.metadata {
+                self.recentlyAdded = items
+                print("🏠 [HomeView] Recently Added items: \(items.count)")
+            }
+
             // Cache the results
             cache.set(cacheKey, value: (onDeck: fetchedOnDeck, hubs: fetchedHubs))
 
-            print("🏠 [HomeView] Content loaded successfully. OnDeck: \(self.onDeck.count), Hubs: \(self.hubs.count)")
+            print("🏠 [HomeView] Content loaded successfully. OnDeck: \(self.onDeck.count), Hubs: \(self.hubs.count), RecentlyAdded: \(self.recentlyAdded.count)")
             errorMessage = nil
         } catch {
             print("🔴 [HomeView] Error loading content: \(error)")
@@ -387,15 +384,7 @@ struct FullScreenHeroBackground: View {
 
 struct FullScreenHeroOverlay: View {
     let item: PlexMetadata
-    let onPlay: () -> Void
-    let onNext: () -> Void
-    let onPrevious: () -> Void
     @EnvironmentObject var authService: PlexAuthService
-
-    @FocusState private var isPlayButtonFocused: Bool
-    @FocusState private var isPreviousButtonFocused: Bool
-    @FocusState private var isNextButtonFocused: Bool
-    @Namespace private var localFocusNamespace
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -460,68 +449,6 @@ struct FullScreenHeroOverlay: View {
                 }
             }
 
-            // Buttons row
-            HStack(spacing: 20) {
-                // Previous button
-                Button(action: onPrevious) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 20, weight: .semibold))
-                        Text("Previous")
-                            .font(.system(size: 24, weight: .semibold))
-                    }
-                    .foregroundColor(.white)
-                }
-                .buttonStyle(.clearGlass)
-                .focused($isPreviousButtonFocused)
-
-                // Play button
-                Button(action: onPlay) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 20, weight: .semibold))
-
-                        if item.progress > 0 && item.progress < 0.98 {
-                            ZStack(alignment: .leading) {
-                                Capsule()
-                                    .fill(Color.white.opacity(0.3))
-                                    .frame(width: 50, height: 6)
-
-                                Capsule()
-                                    .fill(Color.beaconGradient)
-                                    .frame(width: 50 * item.progress, height: 6)
-                            }
-
-                            if let duration = item.duration, let viewOffset = item.viewOffset {
-                                let minutesLeft = Int((Double(duration - viewOffset) / 60000.0).rounded())
-                                Text("\(minutesLeft) min left")
-                                    .font(.system(size: 24, weight: .semibold))
-                            }
-                        } else {
-                            Text("Play")
-                                .font(.system(size: 24, weight: .semibold))
-                        }
-                    }
-                    .foregroundColor(.white)
-                }
-                .buttonStyle(.clearGlass)
-                .focused($isPlayButtonFocused)
-                .prefersDefaultFocus(in: localFocusNamespace)
-
-                // Next button
-                Button(action: onNext) {
-                    HStack(spacing: 12) {
-                        Text("Next")
-                            .font(.system(size: 24, weight: .semibold))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 20, weight: .semibold))
-                    }
-                    .foregroundColor(.white)
-                }
-                .buttonStyle(.clearGlass)
-                .focused($isNextButtonFocused)
-            }
-            .padding(.top, 12)
         }
         .padding(.horizontal, 90)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -636,7 +563,7 @@ struct ContinueWatchingOverlay: View {
     let onSelect: (PlexMetadata) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 20) {
             Text("Continue Watching")
                 .font(.system(size: 40, weight: .bold, design: .default))
                 .foregroundColor(.white)
@@ -722,10 +649,10 @@ struct ContinueWatchingOverlayCard: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
                 .shadow(
-                    color: .black.opacity(isFocused ? 0.8 : 0.6),
-                    radius: isFocused ? 40 : 20,
+                    color: .black.opacity(isFocused ? 0.5 : 0.3),
+                    radius: isFocused ? 25 : 12,
                     x: 0,
-                    y: isFocused ? 20 : 10
+                    y: isFocused ? 12 : 6
                 )
 
                 if media.progress > 0 && media.progress < 0.98 {
