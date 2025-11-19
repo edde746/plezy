@@ -10,7 +10,7 @@
     "authenticate": "Authenticeren",
     "retry": "Opnieuw proberen",
     "debugEnterToken": "Debug: Voer Plex Token in",
-    "plexTokenLabel": "Plex Auth Token",
+    "plexTokenLabel": "Plex Authenticatietoken",
     "plexTokenHint": "Voer je Plex.tv token in",
     "authenticationTimeout": "Authenticatie verlopen. Probeer opnieuw.",
     "scanQRCodeInstruction": "Scan deze QR-code met een apparaat dat is ingelogd op Plex om te authenticeren.",
@@ -39,7 +39,7 @@
     "no": "Nee",
     "server": "Server",
     "delete": "Verwijderen",
-    "shuffle": "Shuffle",
+    "shuffle": "Willekeurig",
     "addTo": "Toevoegen aan..."
   },
   "screens": {
@@ -48,7 +48,7 @@
     "switchProfile": "Wissel van profiel",
     "subtitleStyling": "Ondertitel opmaak",
     "search": "Zoeken",
-    "logs": "Logs"
+    "logs": "Logbestanden"
   },
   "update": {
     "available": "Update beschikbaar",
@@ -185,14 +185,14 @@
     "fileInfo": "Bestand info"
   },
   "accessibility": {
-    "mediaCardMovie": "${title}, movie",
-    "mediaCardShow": "${title}, TV show",
+    "mediaCardMovie": "${title}, film",
+    "mediaCardShow": "${title}, TV-serie",
     "mediaCardEpisode": "${title}, ${episodeInfo}",
     "mediaCardSeason": "${title}, ${seasonInfo}",
-    "mediaCardWatched": "watched",
-    "mediaCardPartiallyWatched": "${percent} percent watched",
-    "mediaCardUnwatched": "unwatched",
-    "tapToPlay": "Tap to play"
+    "mediaCardWatched": "bekeken",
+    "mediaCardPartiallyWatched": "${percent} procent bekeken",
+    "mediaCardUnwatched": "niet bekeken",
+    "tapToPlay": "Tik om af te spelen"
   },
   "tooltips": {
     "shufflePlay": "Willekeurig afspelen",
@@ -217,29 +217,29 @@
     "timerActive": "Timer actief",
     "playbackWillPauseIn": "Afspelen wordt gepauzeerd over ${duration}",
     "sleepTimerCompleted": "Slaaptimer voltooid - afspelen gepauzeerd",
-    "playButton": "Play",
-    "pauseButton": "Pause",
-    "seekBackwardButton": "Seek backward ${seconds} seconds",
-    "seekForwardButton": "Seek forward ${seconds} seconds",
-    "previousButton": "Previous episode",
-    "nextButton": "Next episode",
-    "previousChapterButton": "Previous chapter",
-    "nextChapterButton": "Next chapter",
+    "playButton": "Afspelen",
+    "pauseButton": "Pauzeren",
+    "seekBackwardButton": "Terugspoelen ${seconds} seconden",
+    "seekForwardButton": "Vooruitspoelen ${seconds} seconden",
+    "previousButton": "Vorige aflevering",
+    "nextButton": "Volgende aflevering",
+    "previousChapterButton": "Vorig hoofdstuk",
+    "nextChapterButton": "Volgend hoofdstuk",
     "volumeButton": "Volume",
-    "muteButton": "Mute",
-    "unmuteButton": "Unmute",
-    "settingsButton": "Video settings",
-    "audioTrackButton": "Audio tracks",
-    "subtitlesButton": "Subtitles",
-    "chaptersButton": "Chapters",
-    "versionsButton": "Video versions",
-    "aspectRatioButton": "Aspect ratio",
-    "fullscreenButton": "Enter fullscreen",
-    "exitFullscreenButton": "Exit fullscreen",
-    "rotationLockButton": "Rotation lock",
-    "timelineSlider": "Video timeline",
-    "volumeSlider": "Volume level",
-    "backButton": "Back"
+    "muteButton": "Dempen",
+    "unmuteButton": "Dempen opheffen",
+    "settingsButton": "Video-instellingen",
+    "audioTrackButton": "Audiosporen",
+    "subtitlesButton": "Ondertitels",
+    "chaptersButton": "Hoofdstukken",
+    "versionsButton": "Videoversies",
+    "aspectRatioButton": "Beeldverhouding",
+    "fullscreenButton": "Volledig scherm activeren",
+    "exitFullscreenButton": "Volledig scherm verlaten",
+    "rotationLockButton": "Rotatievergrendeling",
+    "timelineSlider": "Videotijdlijn",
+    "volumeSlider": "Volumeniveau",
+    "backButton": "Terug"
   },
   "userStatus": {
     "admin": "Beheerder",
@@ -312,7 +312,7 @@
     "resumeEpisode": "Hervat S${season}, E${episode}",
     "pause": "Pauzeren",
     "overview": "Overzicht",
-    "cast": "Cast",
+    "cast": "Acteurs",
     "seasons": "Seizoenen",
     "studio": "Studio",
     "rating": "Leeftijd",
@@ -419,13 +419,13 @@
     "noItemsFound": "Geen items gevonden"
   },
   "logs": {
-    "title": "Logs",
+    "title": "Logbestanden",
     "clearLogs": "Wis logs",
     "copyLogs": "Kopieer logs",
     "exportLogs": "Exporteer logs",
     "noLogsToShow": "Geen logs om te tonen",
     "error": "Fout:",
-    "stackTrace": "Stack Trace:"
+    "stackTrace": "Stacktracering:"
   },
   "licenses": {
     "relatedPackages": "Gerelateerde pakketten",
@@ -434,7 +434,7 @@
     "licensesCount": "${count} licenties"
   },
   "navigation": {
-    "home": "Home",
+    "home": "Thuis",
     "search": "Zoeken",
     "libraries": "Bibliotheken",
     "settings": "Instellingen"
@@ -453,7 +453,7 @@
     "removeItem": "Verwijderen uit afspeellijst",
     "clearPlaylist": "Afspeellijst wissen",
     "playAll": "Alles afspelen",
-    "shuffle": "Shuffle",
+    "shuffle": "Willekeurig",
     "smartPlaylist": "Slimme afspeellijst",
     "regularPlaylist": "Normale afspeellijst",
     "itemCount": "${count} items",
