@@ -312,6 +312,7 @@ struct ContinueWatchingRow: View {
                 }
                 .padding(.horizontal, 90)
             }
+            .tvOSScrollClipDisabled()
         }
     }
 }

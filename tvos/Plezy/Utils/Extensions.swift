@@ -16,6 +16,17 @@ extension View {
     func onFocusChange(_ isFocusable: Bool = true, perform action: @escaping (Bool) -> Void) -> some View {
         self.modifier(FocusableModifier(isFocusable: isFocusable, onFocusChange: action))
     }
+
+    /// Disables ScrollView clipping on tvOS when the API is available.
+    /// Keeps focus-scaled content (like cards) from having their corners cut off.
+    @ViewBuilder
+    func tvOSScrollClipDisabled() -> some View {
+        if #available(tvOS 17.0, *) {
+            self.scrollClipDisabled()
+        } else {
+            self
+        }
+    }
 }
 
 struct FocusableModifier: ViewModifier {

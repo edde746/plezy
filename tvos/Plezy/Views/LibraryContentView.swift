@@ -147,6 +147,8 @@ struct LibraryContentView: View {
                             ForEach(Array(stride(from: 0, to: filteredItems.count, by: 5)), id: \.self) { rowIndex in
                                 let rowItems = Array(filteredItems[rowIndex..<min(rowIndex + 5, filteredItems.count)])
 
+                                // Keep the horizontal rows un-clipped so rounded corners and
+                                // focus scaling aren't flattened along the top edge
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     LazyHStack(spacing: 12) {
                                         ForEach(rowItems) { item in
@@ -161,6 +163,7 @@ struct LibraryContentView: View {
                                     }
                                     .padding(.horizontal, 40)
                                 }
+                                .tvOSScrollClipDisabled()
                                 // NOTE: Do not add .clipped() here - it cuts off the rounded corners
                                 // when cards scale up on focus. Cards need to extend beyond their
                                 // bounds to maintain their rounded appearance when focused.

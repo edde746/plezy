@@ -145,6 +145,7 @@ struct HomeView: View {
                                 }
                                 .padding(.horizontal, 90)
                             }
+                            .tvOSScrollClipDisabled()
                         }
                         .padding(.bottom, 60)
                     }
@@ -631,7 +632,7 @@ struct ContinueWatchingCard: View {
     let media: PlexMetadata
     let action: () -> Void
     @EnvironmentObject var authService: PlexAuthService
-    @FocusState private var isFocused: Bool
+    @State private var isFocused = false
 
     var body: some View {
         Button(action: action) {
@@ -701,7 +702,6 @@ struct ContinueWatchingCard: View {
                     x: 0,
                     y: isFocused ? 12 : 6
                 )
-                .scaleEffect(isFocused ? 1.08 : 1.0)
                 .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
 
                 // Progress bar below card (outside the clipped ZStack)
@@ -738,9 +738,10 @@ struct ContinueWatchingCard: View {
                 }
             }
         }
-        .buttonStyle(PlainButtonStyle())
-        .focusable()
-        .focused($isFocused)
+        .buttonStyle(MediaCardButtonStyle())
+        .onFocusChange { focused in
+            isFocused = focused
+        }
         .onPlayPauseCommand {
             action()
         }

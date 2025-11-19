@@ -271,6 +271,9 @@ struct MediaDetailView: View {
                                             }
                                         }
                                     }
+                                }
+                                .tvOSScrollClipDisabled()
+                            }
                                     .padding(.vertical, 20)
                                 }
                             }
@@ -324,6 +327,7 @@ struct MediaDetailView: View {
                                             }
                                         }
                                     }
+                                    .tvOSScrollClipDisabled()
                                 }
                                 .focusSection()
                             }
