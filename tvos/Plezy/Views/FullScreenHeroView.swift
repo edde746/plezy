@@ -66,11 +66,12 @@ struct MockMediaItem: Identifiable {
     ]
 }
 
-// MARK: - Main Full-Screen Hero View
+// MARK: - Main Full-Screen Hero View (Demo)
+// NOTE: This is a demo/reference file showing the full-screen hero pattern.
+// The actual implementation is in HomeView.swift
 
 struct FullScreenHeroView: View {
     @State private var currentHeroIndex = 0
-    @State private var selectedTab = "Home"
     @Namespace private var focusNamespace
 
     var body: some View {
@@ -83,10 +84,9 @@ struct FullScreenHeroView: View {
 
             // Layer 2: Overlaid content (navigation + continue watching)
             VStack(spacing: 0) {
-                // Top navigation menu
-                TopMenuView(selectedTab: $selectedTab)
-                    .focusSection()
-                    .padding(.top, 60)
+                // NOTE: Top navigation would go here in real implementation
+                // Using TopNavigationMenu from HomeView.swift with TabCoordinator
+                Color.clear.frame(height: 100)
 
                 Spacer()
 
@@ -284,73 +284,9 @@ struct HeroOverlayView: View {
     @Namespace private var focusNamespace
 }
 
-// MARK: - Top Menu View
-
-/// Top navigation menu overlaid on hero background
-struct TopMenuView: View {
-    @Binding var selectedTab: String
-
-    private let menuItems = ["Home", "Movies", "TV Shows", "Search", "Settings"]
-
-    var body: some View {
-        HStack(spacing: 40) {
-            ForEach(menuItems, id: \.self) { item in
-                TopMenuItem(
-                    title: item,
-                    isSelected: selectedTab == item,
-                    action: {
-                        selectedTab = item
-                    }
-                )
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, 90)
-        .padding(.vertical, 20)
-    }
-}
-
-struct TopMenuItem: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    @FocusState private var isFocused: Bool
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Text(title)
-                    .font(.system(size: 28, weight: isSelected ? .bold : .semibold, design: .default))
-                    .foregroundColor(.white)
-
-                // Selection indicator
-                if isSelected {
-                    Capsule()
-                        .fill(Color.beaconGradient)
-                        .frame(height: 4)
-                        .shadow(color: Color.beaconPurple.opacity(0.8), radius: 8, x: 0, y: 0)
-                } else {
-                    Capsule()
-                        .fill(Color.clear)
-                        .frame(height: 4)
-                }
-            }
-        }
-        .buttonStyle(PlainButtonStyle())
-        .focusable()
-        .focused($isFocused)
-        .scaleEffect(isFocused ? 1.1 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
-        .shadow(
-            color: isFocused ? Color.white.opacity(0.5) : Color.clear,
-            radius: isFocused ? 20 : 0,
-            x: 0,
-            y: 0
-        )
-    }
-}
+// MARK: - Top Menu View (Demo Version)
+// NOTE: This is a demo file. The actual TopNavigationMenu and TopMenuItem
+// are defined in HomeView.swift and use TabCoordinator for real navigation.
 
 // MARK: - Continue Watching Row
 
