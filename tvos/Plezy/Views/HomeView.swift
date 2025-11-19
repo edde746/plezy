@@ -407,6 +407,21 @@ struct FullScreenHeroBackground: View {
                 }
                 .offset(x: -CGFloat(currentIndex) * geometry.size.width)
                 .animation(.easeInOut(duration: 0.6), value: currentIndex)
+
+                // Subtle gradient at bottom to help Continue Watching row stand out
+                VStack {
+                    Spacer()
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.clear,
+                            Color.black.opacity(0.3),
+                            Color.black.opacity(0.6)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 400)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
