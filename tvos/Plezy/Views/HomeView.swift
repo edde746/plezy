@@ -420,7 +420,7 @@ struct FullScreenHeroBackground: View {
                         startPoint: .top,
                         endPoint: .bottom
                     )
-                    .frame(height: 400)
+                    .frame(height: geometry.size.height / 3)
                 }
             }
         }
