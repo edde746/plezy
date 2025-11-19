@@ -123,7 +123,7 @@ struct HomeView: View {
                         Color.clear
                             .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
                     }
-                    .frame(height: 580)
+                    .frame(height: 650)
 
                     // Continue Watching section
                     if !onDeck.isEmpty {
