@@ -526,16 +526,18 @@ struct PlexMediaContainer<T: Codable>: Codable {
     let metadata: [T]?
     let hub: [PlexHub]?
     let directory: [T]?
+    let device: [T]?
 
     enum CodingKeys: String, CodingKey {
         case size, allowSync, identifier, mediaTagPrefix, mediaTagVersion
         case metadata = "Metadata"
         case hub = "Hub"
         case directory = "Directory"
+        case device = "Device"
     }
 
     var items: [T] {
-        metadata ?? directory ?? []
+        metadata ?? directory ?? device ?? []
     }
 }
 

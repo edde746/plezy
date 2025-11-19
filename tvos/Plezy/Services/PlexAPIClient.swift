@@ -514,17 +514,17 @@ extension PlexAPIClient {
     // MARK: - Server Discovery
 
     func getServers() async throws -> [PlexServer] {
-        // The /api/v2/resources endpoint returns servers with query parameters
+        // The /api/v2/resources endpoint returns servers wrapped in MediaContainer.Device
         let queryItems = [
             URLQueryItem(name: "includeHttps", value: "1"),
             URLQueryItem(name: "includeRelay", value: "1")
         ]
 
-        let servers: [PlexServer] = try await request(
+        let response: PlexResponse<PlexServer> = try await request(
             path: "/api/v2/resources",
             queryItems: queryItems
         )
-        return servers
+        return response.MediaContainer.items
     }
 
     // MARK: - Home Users
