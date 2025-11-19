@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MoviesLibraryView: View {
     @EnvironmentObject var authService: PlexAuthService
+    @EnvironmentObject var tabCoordinator: TabCoordinator
     @State private var libraries: [PlexLibrary] = []
     @State private var isLoading = true
 
@@ -39,6 +40,13 @@ struct MoviesLibraryView: View {
                         .font(.title2)
                         .foregroundColor(.gray)
                 }
+            }
+
+            // Top navigation overlay
+            VStack {
+                TopNavigationMenu()
+                    .padding(.top, 60)
+                Spacer()
             }
         }
         .task {

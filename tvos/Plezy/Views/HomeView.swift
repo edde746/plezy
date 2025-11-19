@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var authService: PlexAuthService
+    @EnvironmentObject var tabCoordinator: TabCoordinator
     @StateObject private var networkMonitor = NetworkMonitor.shared
     @State private var onDeck: [PlexMetadata] = []
     @State private var hubs: [PlexHub] = []
@@ -21,7 +22,6 @@ struct HomeView: View {
     @State private var currentHeroIndex = 0
     @State private var heroProgress: Double = 0.0
     @State private var heroTimer: Timer?
-    @State private var selectedTopTab = "Home"
     @Namespace private var focusNamespace
 
     private let heroDisplayDuration: TimeInterval = 7.0
@@ -103,7 +103,7 @@ struct HomeView: View {
             // Layer 2: Overlaid UI (top menu + continue watching)
             VStack(spacing: 0) {
                 // Top navigation menu
-                TopNavigationMenu(selectedTab: $selectedTopTab)
+                TopNavigationMenu()
                     .focusSection()
                     .padding(.top, 60)
 
@@ -568,20 +568,16 @@ struct FullScreenHeroOverlay: View {
 // MARK: - Top Navigation Menu
 
 struct TopNavigationMenu: View {
-    @Binding var selectedTab: String
-    @EnvironmentObject var authService: PlexAuthService
-
-    private let menuItems = ["Home", "Movies", "TV Shows", "Search", "Settings"]
+    @EnvironmentObject var tabCoordinator: TabCoordinator
 
     var body: some View {
         HStack(spacing: 40) {
-            ForEach(menuItems, id: \.self) { item in
+            ForEach(TabSelection.allCases, id: \.self) { tab in
                 TopMenuItem(
-                    title: item,
-                    isSelected: selectedTab == item,
+                    tab: tab,
+                    isSelected: tabCoordinator.selectedTab == tab,
                     action: {
-                        selectedTab = item
-                        print("🔝 [TopMenu] Selected: \(item)")
+                        tabCoordinator.select(tab)
                     }
                 )
             }
@@ -594,7 +590,7 @@ struct TopNavigationMenu: View {
 }
 
 struct TopMenuItem: View {
-    let title: String
+    let tab: TabSelection
     let isSelected: Bool
     let action: () -> Void
 
@@ -603,7 +599,7 @@ struct TopMenuItem: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                Text(title)
+                Text(tab.rawValue)
                     .font(.system(size: 28, weight: isSelected ? .bold : .semibold, design: .default))
                     .foregroundColor(.white)
 

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SearchView: View {
     @EnvironmentObject var authService: PlexAuthService
+    @EnvironmentObject var tabCoordinator: TabCoordinator
     @State private var searchQuery = ""
     @State private var searchResults: [PlexMetadata] = []
     @State private var isSearching = false
@@ -19,6 +20,9 @@ struct SearchView: View {
             Color.black.ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 30) {
+                // Spacer for top navigation
+                Color.clear.frame(height: 100)
+
                 // Header
                 Text("Search")
                     .font(.system(size: 48, weight: .bold))
@@ -30,7 +34,6 @@ struct SearchView: View {
                         )
                     )
                     .padding(.horizontal, 80)
-                    .padding(.top, 40)
 
                 // Search field with Liquid Glass
                 TextField("Search for movies, shows, and more...", text: $searchQuery)
@@ -123,6 +126,13 @@ struct SearchView: View {
                         .padding(80)
                     }
                 }
+            }
+
+            // Top navigation overlay
+            VStack {
+                TopNavigationMenu()
+                    .padding(.top, 60)
+                Spacer()
             }
         }
         .sheet(item: $selectedMedia) { media in

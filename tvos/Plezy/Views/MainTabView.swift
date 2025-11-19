@@ -2,54 +2,55 @@
 //  MainTabView.swift
 //  Beacon tvOS
 //
-//  Main navigation with tabs
+//  Main navigation with tabs coordinated via TabCoordinator
 //
 
 import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject var authService: PlexAuthService
-    @State private var selectedTab = 0
+    @StateObject private var tabCoordinator = TabCoordinator.shared
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $tabCoordinator.selectedTab) {
             HomeView()
                 .tabItem {
-                    Label("Home", systemImage: "house.fill")
+                    Label(TabSelection.home.rawValue, systemImage: TabSelection.home.systemImage)
                 }
-                .tag(0)
+                .tag(TabSelection.home)
                 .onAppear {
                     print("📱 [MainTabView] Home tab appeared")
                 }
 
-            TVShowsLibraryView()
-                .tabItem {
-                    Label("TV Shows", systemImage: "tv.fill")
-                }
-                .tag(1)
-
             MoviesLibraryView()
                 .tabItem {
-                    Label("Movies", systemImage: "film.fill")
+                    Label(TabSelection.movies.rawValue, systemImage: TabSelection.movies.systemImage)
                 }
-                .tag(2)
+                .tag(TabSelection.movies)
+
+            TVShowsLibraryView()
+                .tabItem {
+                    Label(TabSelection.tvShows.rawValue, systemImage: TabSelection.tvShows.systemImage)
+                }
+                .tag(TabSelection.tvShows)
 
             SearchView()
                 .tabItem {
-                    Label("Search", systemImage: "magnifyingglass")
+                    Label(TabSelection.search.rawValue, systemImage: TabSelection.search.systemImage)
                 }
-                .tag(3)
+                .tag(TabSelection.search)
 
             SettingsView()
                 .tabItem {
-                    Label("Settings", systemImage: "gear")
+                    Label(TabSelection.settings.rawValue, systemImage: TabSelection.settings.systemImage)
                 }
-                .tag(4)
+                .tag(TabSelection.settings)
         }
         .tabViewStyle(.automatic)
         .onAppear {
             print("📱 [MainTabView] MainTabView appeared")
         }
+        .environmentObject(tabCoordinator)
     }
 }
 

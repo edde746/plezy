@@ -11,6 +11,7 @@ struct SettingsView: View {
     @EnvironmentObject var authService: PlexAuthService
     @EnvironmentObject var settingsService: SettingsService
     @EnvironmentObject var storageService: StorageService
+    @EnvironmentObject var tabCoordinator: TabCoordinator
     @State private var showLogoutConfirmation = false
 
     var body: some View {
@@ -19,6 +20,9 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 40) {
+                    // Spacer for top navigation
+                    Color.clear.frame(height: 100)
+
                     // Header
                     Text("Settings")
                         .font(.system(size: 48, weight: .bold))
@@ -29,7 +33,6 @@ struct SettingsView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .padding(.top, 40)
 
                     // Server Info
                     SettingsSection(title: "Server") {
@@ -197,6 +200,13 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, 80)
                 .padding(.bottom, 40)
+            }
+
+            // Top navigation overlay
+            VStack {
+                TopNavigationMenu()
+                    .padding(.top, 60)
+                Spacer()
             }
         }
         .alert("Sign Out", isPresented: $showLogoutConfirmation) {
