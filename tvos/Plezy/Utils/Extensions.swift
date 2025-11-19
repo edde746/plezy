@@ -11,12 +11,6 @@ import Combine
 // MARK: - View Extensions
 
 extension View {
-    /// Makes a view focusable with a focus change callback
-    /// Uses Apple's focus engine with proper state tracking
-    func onFocusChange(_ isFocusable: Bool = true, perform action: @escaping (Bool) -> Void) -> some View {
-        self.modifier(FocusableModifier(isFocusable: isFocusable, onFocusChange: action))
-    }
-
     /// Disables ScrollView clipping on tvOS when the API is available.
     /// Keeps focus-scaled content (like cards) from having their corners cut off.
     @ViewBuilder
@@ -26,21 +20,6 @@ extension View {
         } else {
             self
         }
-    }
-}
-
-struct FocusableModifier: ViewModifier {
-    let isFocusable: Bool
-    let onFocusChange: (Bool) -> Void
-    @FocusState private var isFocused: Bool
-
-    func body(content: Content) -> some View {
-        content
-            .focusable(isFocusable)
-            .focused($isFocused)
-            .onChange(of: isFocused) { _, newValue in
-                onFocusChange(newValue)
-            }
     }
 }
 

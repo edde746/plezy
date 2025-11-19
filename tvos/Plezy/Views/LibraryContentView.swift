@@ -89,7 +89,6 @@ struct LibraryContentView: View {
                         .padding(.vertical, 14)
                     }
                 }
-                .focusSection()
                 .padding(.horizontal, 40)
                 .padding(.top, 40)
                 .padding(.bottom, 30)
@@ -192,7 +191,6 @@ struct LibraryContentView: View {
                         .padding(.top, 20)
                         .padding(.bottom, 80)
                     }
-                    .focusSection()
                 }
             }
         }
@@ -420,7 +418,7 @@ struct LibraryLandscapeCard: View {
     let media: PlexMetadata
     let action: () -> Void
     @EnvironmentObject var authService: PlexAuthService
-    @State private var isFocused: Bool = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         Button(action: action) {
@@ -505,9 +503,7 @@ struct LibraryLandscapeCard: View {
             .shadow(color: .black.opacity(isFocused ? 0.75 : 0.55), radius: isFocused ? 40 : 20, x: 0, y: isFocused ? 20 : 12)
         }
         .buttonStyle(MediaCardButtonStyle())
-        .onFocusChange { focused in
-            isFocused = focused
-        }
+        .focused($isFocused)
         .onPlayPauseCommand {
             action()
         }

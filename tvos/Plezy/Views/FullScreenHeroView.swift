@@ -72,7 +72,6 @@ struct MockMediaItem: Identifiable {
 
 struct FullScreenHeroView: View {
     @State private var currentHeroIndex = 0
-    @Namespace private var focusNamespace
 
     var body: some View {
         ZStack {
@@ -92,7 +91,6 @@ struct FullScreenHeroView: View {
 
                 // Continue Watching row near bottom
                 ContinueWatchingRow(items: MockMediaItem.continueWatchingItems)
-                    .focusSection()
                     .padding(.bottom, 80)
             }
 
@@ -116,12 +114,10 @@ struct FullScreenHeroView: View {
                         }
                     }
                 )
-                .focusSection()
                 .padding(.bottom, 280) // Position above Continue Watching
             }
         }
         .ignoresSafeArea()
-        .focusScope(focusNamespace)
     }
 }
 
@@ -194,10 +190,6 @@ struct HeroOverlayView: View {
     let onNext: () -> Void
     let onPrevious: () -> Void
 
-    @FocusState private var isPlayButtonFocused: Bool
-    @FocusState private var isPreviousButtonFocused: Bool
-    @FocusState private var isNextButtonFocused: Bool
-
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             // Title
@@ -228,7 +220,6 @@ struct HeroOverlayView: View {
                     .foregroundColor(.white)
                 }
                 .buttonStyle(.clearGlass)
-                .focused($isPreviousButtonFocused)
 
                 // Play button (primary focus)
                 Button(action: onPlay) {
@@ -259,8 +250,6 @@ struct HeroOverlayView: View {
                     .foregroundColor(.white)
                 }
                 .buttonStyle(.clearGlass)
-                .focused($isPlayButtonFocused)
-                .prefersDefaultFocus(in: focusNamespace)
 
                 // Next button
                 Button(action: onNext) {
@@ -273,15 +262,12 @@ struct HeroOverlayView: View {
                     .foregroundColor(.white)
                 }
                 .buttonStyle(.clearGlass)
-                .focused($isNextButtonFocused)
             }
             .padding(.top, 12)
         }
         .padding(.horizontal, 90)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-
-    @Namespace private var focusNamespace
 }
 
 // MARK: - Top Menu View (Demo Version)
@@ -319,7 +305,6 @@ struct ContinueWatchingRow: View {
 
 struct DemoContinueWatchingCard: View {
     let item: MockMediaItem
-
     @FocusState private var isFocused: Bool
 
     var body: some View {

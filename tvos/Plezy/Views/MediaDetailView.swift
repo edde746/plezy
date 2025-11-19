@@ -164,7 +164,6 @@ struct MediaDetailView: View {
                                 }
                                 .buttonStyle(CardButtonStyle())
                             }
-                            .focusSection()
                         }
                         .padding(.horizontal, 60)
                         .padding(.bottom, 80)
@@ -301,7 +300,6 @@ struct MediaDetailView: View {
                                         }
                                     }
                                 }
-                                .focusSection()
                             } else {
                                 // Show season cards for multi-season shows
                                 VStack(alignment: .leading, spacing: 20) {
@@ -327,7 +325,6 @@ struct MediaDetailView: View {
                                     }
                                     .tvOSScrollClipDisabled()
                                 }
-                                .focusSection()
                             }
                         }
                     }

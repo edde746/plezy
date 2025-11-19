@@ -122,7 +122,6 @@ struct TabButton: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
-    @State private var isFocused = false
 
     var body: some View {
         Button(action: action) {
@@ -138,16 +137,13 @@ struct TabButton: View {
             }
         }
         .buttonStyle(.plain)
-        .onFocusChange(true) { focused in
-            isFocused = focused
-        }
     }
 }
 
 struct LibraryCard: View {
     let library: PlexLibrary
     let action: () -> Void
-    @State private var isFocused = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         Button(action: action) {
@@ -196,9 +192,7 @@ struct LibraryCard: View {
             )
         }
         .buttonStyle(.plain)
-        .onFocusChange(true) { focused in
-            isFocused = focused
-        }
+        .focused($isFocused)
     }
 
     private var libraryIcon: String {

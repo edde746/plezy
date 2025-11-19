@@ -25,7 +25,6 @@ struct HomeView: View {
     @State private var heroTimer: Timer?
     @State private var scrollOffset: CGFloat = 0
     @State private var shouldShowHero = true
-    @Namespace private var focusNamespace
 
     private let heroDisplayDuration: TimeInterval = 7.0
     private let heroTimerInterval: TimeInterval = 0.05
@@ -171,8 +170,8 @@ struct HomeView: View {
                                     }
                                     .padding(.horizontal, 90)
                                 }
+                                .tvOSScrollClipDisabled()
                             }
-                            .focusSection()
                             .padding(.bottom, 60)
                         }
                     }
@@ -191,7 +190,6 @@ struct HomeView: View {
             }
         }
         .ignoresSafeArea()
-        .focusScope(focusNamespace)
     }
 
     // MARK: - Error & No Server Views
@@ -632,7 +630,7 @@ struct ContinueWatchingCard: View {
     let media: PlexMetadata
     let action: () -> Void
     @EnvironmentObject var authService: PlexAuthService
-    @State private var isFocused = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         Button(action: action) {
@@ -739,9 +737,7 @@ struct ContinueWatchingCard: View {
             }
         }
         .buttonStyle(MediaCardButtonStyle())
-        .onFocusChange { focused in
-            isFocused = focused
-        }
+        .focused($isFocused)
         .onPlayPauseCommand {
             action()
         }

@@ -88,7 +88,7 @@ struct ServerSelectionView: View {
 struct ServerCard: View {
     let server: PlexServer
     let action: () -> Void
-    @State private var isFocused = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         Button {
@@ -169,9 +169,7 @@ struct ServerCard: View {
                     )
             )
         }
-        .onFocusChange(true) { focused in
-            isFocused = focused
-        }
+        .focused($isFocused)
     }
 }
 
