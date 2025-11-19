@@ -112,6 +112,7 @@ struct HomeView: View {
                         playingMedia = media
                     }
                     .focusSection()
+                    .padding(.top, 80)
                     .padding(.bottom, 40)
                 }
             }
@@ -124,7 +125,7 @@ struct HomeView: View {
                     FullScreenHeroOverlay(
                         item: recentlyAdded[currentHeroIndex]
                     )
-                    .padding(.bottom, 280)
+                    .padding(.bottom, 450)
                 }
             }
         }
@@ -346,17 +347,6 @@ struct FullScreenHeroBackground: View {
                 }
                 .offset(x: -CGFloat(currentIndex) * geometry.size.width)
                 .animation(.easeInOut(duration: 0.6), value: currentIndex)
-
-                // Dark gradient overlay for readability
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.black.opacity(0.3),
-                        Color.black.opacity(0.6),
-                        Color.black.opacity(0.85)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
