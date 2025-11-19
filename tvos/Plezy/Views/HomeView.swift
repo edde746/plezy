@@ -146,36 +146,35 @@ struct HomeView: View {
                                 .padding(.horizontal, 90)
                             }
                         }
-                        .focusSection()
                         .padding(.bottom, 60)
                     }
 
-                    // Other hub rows - hidden per user request
-                    // ForEach(hubs.filter { !$0.title.lowercased().contains("recently added") && !$0.title.lowercased().contains("on deck") }) { hub in
-                    //     if let items = hub.metadata, !items.isEmpty {
-                    //         VStack(alignment: .leading, spacing: 20) {
-                    //             Text(hub.title)
-                    //                 .font(.system(size: 40, weight: .bold, design: .default))
-                    //                 .foregroundColor(.white)
-                    //                 .padding(.horizontal, 90)
-                    //                 .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
-                    //
-                    //             ScrollView(.horizontal, showsIndicators: false) {
-                    //                 LazyHStack(spacing: 30) {
-                    //                     ForEach(items) { item in
-                    //                         ContinueWatchingCard(media: item) {
-                    //                             print("🎯 [HomeView] Hub item tapped: \(item.title)")
-                    //                             selectedMedia = item
-                    //                         }
-                    //                     }
-                    //                 }
-                    //                 .padding(.horizontal, 90)
-                    //             }
-                    //         }
-                    //         .focusSection()
-                    //         .padding(.bottom, 60)
-                    //     }
-                    // }
+                    // Other hub rows
+                    ForEach(hubs.filter { !$0.title.lowercased().contains("recently added") && !$0.title.lowercased().contains("on deck") }) { hub in
+                        if let items = hub.metadata, !items.isEmpty {
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text(hub.title)
+                                    .font(.system(size: 40, weight: .bold, design: .default))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 90)
+                                    .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 30) {
+                                        ForEach(items) { item in
+                                            ContinueWatchingCard(media: item) {
+                                                print("🎯 [HomeView] Hub item tapped: \(item.title)")
+                                                selectedMedia = item
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 90)
+                                }
+                            }
+                            .focusSection()
+                            .padding(.bottom, 60)
+                        }
+                    }
 
                     // Bottom padding - add extra space to allow scrolling past Continue Watching
                     Color.clear.frame(height: 600)
