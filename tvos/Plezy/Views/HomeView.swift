@@ -112,7 +112,7 @@ struct HomeView: View {
                         playingMedia = media
                     }
                     .focusSection()
-                    .padding(.bottom, 80)
+                    .padding(.bottom, 40)
                 }
             }
 
@@ -388,27 +388,31 @@ struct FullScreenHeroOverlay: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            // Show logo or title
-            if let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
-                CachedAsyncImage(url: logoURL) { image in
-                    image
-                        .resizable()
-                        .scaledToFit()
-                } placeholder: {
+            // Show logo or title in fixed-height container
+            VStack(alignment: .leading) {
+                if let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
+                    CachedAsyncImage(url: logoURL) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    } placeholder: {
+                        Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
+                            .font(.system(size: 76, weight: .bold, design: .default))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 10, x: 0, y: 4)
+                    }
+                    .frame(maxWidth: 600, maxHeight: 180, alignment: .leading)
+                    .id("\(item.id)-\(clearLogo)") // Force refresh when item changes
+                } else {
                     Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
                         .font(.system(size: 76, weight: .bold, design: .default))
                         .foregroundColor(.white)
+                        .lineLimit(2)
                         .shadow(color: .black.opacity(0.8), radius: 10, x: 0, y: 4)
+                        .frame(maxWidth: 900, alignment: .leading)
                 }
-                .frame(maxWidth: 600, maxHeight: 180, alignment: .leading)
-            } else {
-                Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
-                    .font(.system(size: 76, weight: .bold, design: .default))
-                    .foregroundColor(.white)
-                    .lineLimit(2)
-                    .shadow(color: .black.opacity(0.8), radius: 10, x: 0, y: 4)
-                    .frame(maxWidth: 900, alignment: .leading)
             }
+            .frame(height: 180, alignment: .leading) // Fixed height for logo
 
             // Metadata line
             HStack(spacing: 10) {
@@ -654,6 +658,8 @@ struct ContinueWatchingOverlayCard: View {
                     x: 0,
                     y: isFocused ? 12 : 6
                 )
+                .scaleEffect(isFocused ? 1.08 : 1.0) // Scale only the card image
+                .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
 
                 if media.progress > 0 && media.progress < 0.98 {
                     ZStack(alignment: .leading) {
@@ -667,7 +673,7 @@ struct ContinueWatchingOverlayCard: View {
                             .frame(width: 400 * media.progress, height: 5)
                             .shadow(color: Color.beaconMagenta.opacity(0.6), radius: 4, x: 0, y: 0)
                     }
-                    .padding(.top, 8)
+                    .padding(.top, isFocused ? 18 : 8) // Adjust spacing for scaled card
                 }
 
                 if media.type == "episode" {
@@ -675,7 +681,7 @@ struct ContinueWatchingOverlayCard: View {
                         .font(.system(size: 20, weight: .semibold, design: .default))
                         .foregroundColor(.white.opacity(0.9))
                         .frame(width: 400, alignment: .leading)
-                        .padding(.top, 12)
+                        .padding(.top, media.progress > 0 && media.progress < 0.98 ? 12 : (isFocused ? 22 : 12))
                 } else {
                     Text(media.title)
                         .font(.system(size: 20, weight: .semibold, design: .default))
@@ -683,15 +689,13 @@ struct ContinueWatchingOverlayCard: View {
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                         .frame(width: 400, alignment: .leading)
-                        .padding(.top, 12)
+                        .padding(.top, media.progress > 0 && media.progress < 0.98 ? 12 : (isFocused ? 22 : 12))
                 }
             }
         }
         .buttonStyle(PlainButtonStyle())
         .focusable()
         .focused($isFocused)
-        .scaleEffect(isFocused ? 1.08 : 1.0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .onPlayPauseCommand {
             action()
         }
