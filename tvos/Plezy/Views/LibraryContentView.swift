@@ -143,7 +143,7 @@ struct LibraryContentView: View {
                 } else {
                     ScrollView {
                         // Group items into rows of 5
-                        LazyVStack(alignment: .leading, spacing: 20) {
+                        LazyVStack(alignment: .leading, spacing: 10) {
                             ForEach(Array(stride(from: 0, to: filteredItems.count, by: 5)), id: \.self) { rowIndex in
                                 let rowItems = Array(filteredItems[rowIndex..<min(rowIndex + 5, filteredItems.count)])
 
@@ -156,7 +156,7 @@ struct LibraryContentView: View {
                                                 selectedMedia = item
                                                 print("🎯 [LibraryContent] selectedMedia set to: \(String(describing: selectedMedia?.title))")
                                             }
-                                            .padding(.vertical, 40) // Padding for focus scale
+                                            .padding(.vertical, 20) // Padding for focus scale
                                         }
                                     }
                                     .padding(.horizontal, 40)
@@ -419,105 +419,85 @@ struct LibraryLandscapeCard: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 0) {
-                // Background art with Liquid Glass overlay
-                ZStack(alignment: .bottomLeading) {
-                    CachedAsyncImage(url: artURL) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Rectangle()
-                            .fill(.regularMaterial.opacity(0.3))
-                            .overlay(
-                                Image(systemName: "photo")
-                                    .font(.system(size: 40))
-                                    .foregroundStyle(.tertiary)
-                            )
-                    }
-                    .frame(width: 336, height: 189)
+            // Entire card wrapped in a single ZStack with consistent clipping on all corners
+            ZStack(alignment: .bottomLeading) {
+                // Background image
+                CachedAsyncImage(url: artURL) { image in
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } placeholder: {
+                    Rectangle()
+                        .fill(.regularMaterial.opacity(0.3))
+                        .overlay(
+                            Image(systemName: "photo")
+                                .font(.system(size: 40))
+                                .foregroundStyle(.tertiary)
+                        )
+                }
+                .frame(width: 358, height: 201)
 
-                    // Enhanced gradient overlay with vibrancy
-                    LinearGradient(
-                        gradient: Gradient(colors: [.clear, .black.opacity(0.75)]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                // Gradient overlay
+                LinearGradient(
+                    gradient: Gradient(colors: [.clear, .black.opacity(0.75)]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
 
-                    // Show logo in bottom left corner (for both TV shows and movies)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Spacer()
-                        HStack {
-                            if let logoURL = logoURL, let clearLogo = media.clearLogo {
-                                CachedAsyncImage(url: logoURL) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFit()
-                                } placeholder: {
-                                    // Show title while logo loads
-                                    Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
-                                        .font(.system(size: 20, weight: .bold, design: .default))
-                                        .foregroundColor(.white)
-                                        .lineLimit(2)
-                                        .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
-                                }
-                                .frame(maxWidth: 150, maxHeight: 50)
-                                .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
-                                .id("\(media.id)-\(clearLogo)") // Force view recreation when logo changes
-                            } else {
-                                // Show title when logo is not available
+                // Logo/Title overlay
+                VStack(alignment: .leading, spacing: 0) {
+                    Spacer()
+                    HStack {
+                        if let logoURL = logoURL, let clearLogo = media.clearLogo {
+                            CachedAsyncImage(url: logoURL) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFit()
+                            } placeholder: {
                                 Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
                                     .font(.system(size: 20, weight: .bold, design: .default))
                                     .foregroundColor(.white)
                                     .lineLimit(2)
                                     .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
-                                    .frame(maxWidth: 150, alignment: .leading)
                             }
-                            Spacer()
+                            .frame(maxWidth: 150, maxHeight: 50)
+                            .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
+                            .id("\(media.id)-\(clearLogo)")
+                        } else {
+                            Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
+                                .font(.system(size: 20, weight: .bold, design: .default))
+                                .foregroundColor(.white)
+                                .lineLimit(2)
+                                .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
+                                .frame(maxWidth: 150, alignment: .leading)
                         }
-                        .padding(.leading, 16)
-                        .padding(.bottom, 16)
+                        Spacer()
                     }
+                    .padding(.leading, 16)
+                    .padding(.bottom, 16)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
-                .shadow(color: .black.opacity(isFocused ? 0.75 : 0.55), radius: isFocused ? 40 : 20, x: 0, y: isFocused ? 20 : 12)
 
-                // Progress bar below card with enhanced Liquid Glass styling
+                // Progress bar overlay (if applicable)
                 if media.progress > 0 && media.progress < 0.98 {
-                    ZStack(alignment: .leading) {
-                        // Background track
-                        Capsule()
-                            .fill(.regularMaterial)
-                            .opacity(0.4)
-                            .frame(width: 336, height: 5)
+                    VStack {
+                        Spacer()
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(.regularMaterial)
+                                .opacity(0.4)
+                                .frame(width: 358, height: 5)
 
-                        // Progress fill with Beacon gradient
-                        Capsule()
-                            .fill(Color.beaconGradient)
-                            .frame(width: 336 * media.progress, height: 5)
-                            .shadow(color: Color.beaconMagenta.opacity(0.5), radius: 4, x: 0, y: 0)
+                            Capsule()
+                                .fill(Color.beaconGradient)
+                                .frame(width: 358 * media.progress, height: 5)
+                                .shadow(color: Color.beaconMagenta.opacity(0.5), radius: 4, x: 0, y: 0)
+                        }
+                        .padding(.bottom, 8)
                     }
-                    .padding(.top, 8)
-                }
-
-                // Episode info below card with vibrancy
-                if media.type == "episode" {
-                    Text(media.episodeInfo)
-                        .font(.system(size: 20, weight: .semibold, design: .default))
-                        .foregroundStyle(.primary)
-                        .frame(width: 336, alignment: .leading)
-                        .padding(.top, 12)
-                } else {
-                    // Title for movies
-                    Text(media.title)
-                        .font(.system(size: 20, weight: .semibold, design: .default))
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                        .frame(width: 336, alignment: .leading)
-                        .padding(.top, 12)
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
+            .shadow(color: .black.opacity(isFocused ? 0.75 : 0.55), radius: isFocused ? 40 : 20, x: 0, y: isFocused ? 20 : 12)
         }
         .buttonStyle(MediaCardButtonStyle())
         .onFocusChange { focused in
