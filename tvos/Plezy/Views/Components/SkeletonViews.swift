@@ -164,6 +164,7 @@ struct ContentRowSkeleton: View {
                 }
                 .padding(.horizontal, 80)
             }
+            .tvOSScrollClipDisabled()
         }
     }
 }

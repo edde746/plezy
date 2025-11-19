@@ -333,6 +333,57 @@ timeObserver = player.addPeriodicTimeObserver(...) { [weak self] time in
 
 ---
 
+## 🔍 Additional Findings – 2024-06-01 (gpt-5-codex)
+
+### 1. Playback Ignores the Vetted Connection
+**Location:** `PlexAuthService.selectServer` & `VideoPlayerView.setupPlayer`
+
+`selectServer(_:)` puts a lot of work into finding a working connection/URL, but the information is never persisted. `VideoPlayerView.setupPlayer` simply grabs `server.connections.first` and tries to stream through whatever happens to be first in the original list, which may be the very connection that just failed (relay/local ordering is not guaranteed). On shared servers this frequently produces 401/timeout errors right before playback.
+
+**Fix:** Persist the `workingURL` returned by `findBestConnectionWithURL` (either by storing it on `selectedServer`, or by exposing it through `authService.currentClient?.baseURL`) and reuse that exact URL inside `setupPlayer`. Alternatively, reuse `authService.currentClient` instead of re-deriving URLs from `server`.
+
+### 2. Playback Token Falls Back to Empty String
+**Location:** `VideoPlayerView.setupPlayer` (`tvos/Plezy/Views/VideoPlayerView.swift` lines 249-266)
+
+When constructing the playback URL the code appends `X-Plex-Token=\(server.accessToken ?? "")`. Shared/remote servers frequently omit `accessToken`, so the request is sent without a token even though the authenticated account token already lives on `authService.currentClient`. This causes the stream to fail for any server that requires authentication (most of them).
+
+**Fix:** Reuse the token that authenticated the current client (e.g., pass the token down from `authService.currentClient`), and only fall back to `server.accessToken` if the server actually provides one.
+
+### 3. PIN Polling Updates Published State Off the Main Actor
+**Location:** `PlexAuthService.startPinPolling` (`tvos/Plezy/Services/PlexAuthService.swift` lines 82-120)
+
+`startPinPolling` launches a detached `Task` that runs on a background executor and directly mutates `@Published` properties (`plexToken`, `isAuthenticated`, `currentUser`). SwiftUI requires these mutations to happen on the main actor; running them off-thread can trigger runtime warnings (“Publishing changes from background threads is not allowed”) and racy UI state.
+
+**Fix:** Mark `startPinPolling` as `@MainActor` and wrap the polling loop in `Task { @MainActor in ... }`, or call `await MainActor.run { ... }` before mutating published properties. Also ensure `completion` is invoked on the main actor.
+
+### 4. `getServers()` Still Assumes a Flat Array
+**Location:** `PlexAPIClient.getServers` (`tvos/Plezy/Services/PlexAPIClient.swift` lines 520-531)
+
+The current implementation decodes `/api/v2/resources` directly into `[PlexServer]`, but Plex still wraps those objects inside `MediaContainer.Device`. The method will continue to throw `keyNotFound`/`typeMismatch` as soon as it hits the first response, preventing server discovery altogether.
+
+**Fix:** Decode the documented envelope (`{ "MediaContainer": { "Device": [...] } }`) or reuse the existing `PlexMediaContainer<PlexServer>` helper so that `availableServers` actually gets populated.
+
+---
+
 **Review Date:** 2024-11-13
 **Reviewer:** Claude Code
 **Status:** Ready for fixes
+
+---
+
+## 🔍 Additional Findings – tvOS26 Liquid Glass Review (gpt-5-codex)
+
+### 1. Liquid Glass button styles never observe focus state
+**Location:** `tvos/Plezy/Utils/Extensions.swift` (`CardButtonStyle` and `ClearGlassButtonStyle`)
+
+Both button styles try to drive their glass gradients off `@FocusState private var isFocused`, but property wrappers such as `@FocusState` only work inside `View`/`DynamicProperty` types. Inside a `ButtonStyle` they are re‑initialized every render and never bound to the system focus engine, so `isFocused` never flips to `true`. The end result is that the "focused" Liquid Glass look (thicker border, brighter gradient, beacon glow) never appears, so focused buttons remain visually identical to unfocused ones. Use the pattern already adopted by `FilterButton` (keep the `@FocusState` on the view that applies the style and pass a binding into the style) or query `Environment(\.isFocused)` from a wrapper view so the style actually knows when it is focused.
+
+### 2. No Reduce Transparency fallback for Liquid Glass materials
+**Location:** `tvos/Plezy/Utils/Extensions.swift` (`liquidGlassBackground`, `thinLiquidGlass`, and both button styles)
+
+Every Liquid Glass layer unconditionally renders `regularMaterial`/`ultraThinMaterial` plus a translucent gradient (e.g. lines 160‑210). When "Reduce Transparency" is enabled in Settings ▸ Accessibility, tvOS expects apps to drop translucency and render solid colors for readability, but the code never checks `Environment(\.accessibilityReduceTransparency)` nor provides a fallback. You should read that environment value once per view and swap in a solid `Color` fill (or at least bump the opacity to 1.0) so text and icons remain legible for users who disable transparency.
+
+### 3. Focus/Hit testing area stays rectangular despite rounded Liquid Glass visuals
+**Location:** `tvos/Plezy/Utils/Extensions.swift` (`liquidGlassBackground`/`thinLiquidGlass`) and any button that uses them
+
+The helpers add rounded `RoundedRectangle` backgrounds, but they never clip the content or set `contentShape`. On tvOS the focus engine operates on the view's layout bounds, not the background shape, so the highlight and touch target remain a big rectangle even though the glass effect is visually rounded. This causes focus rings to bleed outside the faux glass edges and makes neighboring controls overlap while animating. Wrap the content with `.clipShape(RoundedRectangle(...))` (or at least `.contentShape`) inside the modifier so the focus/touch geometry matches the Liquid Glass shape.
