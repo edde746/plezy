@@ -9,8 +9,8 @@ import Foundation
 import Combine
 
 class PlexAPIClient {
-    private let baseURL: URL
-    private let accessToken: String?
+    let baseURL: URL
+    let accessToken: String?
     private let session: URLSession
 
     // Plex.tv API constants
