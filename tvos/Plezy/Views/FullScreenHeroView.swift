@@ -307,7 +307,7 @@ struct ContinueWatchingRow: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 24) {
                     ForEach(items) { item in
-                        ContinueWatchingCard(item: item)
+                        DemoContinueWatchingCard(item: item)
                     }
                 }
                 .padding(.horizontal, 90)
@@ -316,7 +316,7 @@ struct ContinueWatchingRow: View {
     }
 }
 
-struct ContinueWatchingCard: View {
+struct DemoContinueWatchingCard: View {
     let item: MockMediaItem
 
     @FocusState private var isFocused: Bool

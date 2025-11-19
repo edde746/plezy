@@ -113,32 +113,66 @@ struct HomeView: View {
                 }
             }
 
-            // Layer 3: Continue Watching section - bottom-anchored with label and cards together
-            VStack(spacing: 0) {
-                Spacer()
+            // Layer 3: Scrollable content area
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    // Spacer to push content down
+                    Color.clear.frame(height: 600)
 
-                if !onDeck.isEmpty {
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text("Continue Watching")
-                            .font(.system(size: 40, weight: .bold, design: .default))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 90)
-                            .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
+                    // Continue Watching section
+                    if !onDeck.isEmpty {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Continue Watching")
+                                .font(.system(size: 40, weight: .bold, design: .default))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 90)
+                                .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
 
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            LazyHStack(spacing: 24) {
-                                ForEach(onDeck) { item in
-                                    ContinueWatchingCard(media: item) {
-                                        print("🎯 [HomeView] Continue watching item tapped: \(item.title)")
-                                        playingMedia = item
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                LazyHStack(spacing: 30) {
+                                    ForEach(onDeck) { item in
+                                        ContinueWatchingCard(media: item) {
+                                            print("🎯 [HomeView] Continue watching item tapped: \(item.title)")
+                                            playingMedia = item
+                                        }
                                     }
                                 }
+                                .padding(.horizontal, 90)
                             }
-                            .padding(.horizontal, 90)
+                        }
+                        .focusSection()
+                        .padding(.bottom, 60)
+                    }
+
+                    // Other hub rows
+                    ForEach(hubs.filter { !$0.title.lowercased().contains("recently added") && !$0.title.lowercased().contains("on deck") }) { hub in
+                        if let items = hub.metadata, !items.isEmpty {
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text(hub.title)
+                                    .font(.system(size: 40, weight: .bold, design: .default))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 90)
+                                    .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 30) {
+                                        ForEach(items) { item in
+                                            ContinueWatchingCard(media: item) {
+                                                print("🎯 [HomeView] Hub item tapped: \(item.title)")
+                                                selectedMedia = item
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 90)
+                                }
+                            }
+                            .focusSection()
+                            .padding(.bottom, 60)
                         }
                     }
-                    .focusSection()
-                    .padding(.bottom, 40)
+
+                    // Bottom padding
+                    Color.clear.frame(height: 100)
                 }
             }
         }
@@ -573,92 +607,108 @@ struct ContinueWatchingCard: View {
 
     var body: some View {
         Button(action: action) {
-            // Entire card wrapped in a single ZStack with consistent clipping
-            ZStack(alignment: .bottomLeading) {
-                // Background image
-                CachedAsyncImage(url: artURL) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } placeholder: {
-                    Rectangle()
-                        .fill(.regularMaterial.opacity(0.3))
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.system(size: 56))
-                                .foregroundStyle(.tertiary)
-                        )
-                }
-                .frame(width: 417, height: 235)
+            VStack(alignment: .leading, spacing: 0) {
+                // Entire card wrapped in a single ZStack with consistent clipping
+                ZStack(alignment: .bottomLeading) {
+                    // Background image
+                    CachedAsyncImage(url: artURL) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        Rectangle()
+                            .fill(.regularMaterial.opacity(0.3))
+                            .overlay(
+                                Image(systemName: "photo")
+                                    .font(.system(size: 56))
+                                    .foregroundStyle(.tertiary)
+                            )
+                    }
+                    .frame(width: 410, height: 231)
 
-                // Gradient overlay
-                LinearGradient(
-                    gradient: Gradient(colors: [.clear, .black.opacity(0.7)]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+                    // Gradient overlay
+                    LinearGradient(
+                        gradient: Gradient(colors: [.clear, .black.opacity(0.7)]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
 
-                // Logo/Title overlay
-                VStack(alignment: .leading, spacing: 0) {
-                    Spacer()
-                    HStack {
-                        if let logoURL = logoURL, let clearLogo = media.clearLogo {
-                            CachedAsyncImage(url: logoURL) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFit()
-                            } placeholder: {
+                    // Logo/Title overlay
+                    VStack(alignment: .leading, spacing: 0) {
+                        Spacer()
+                        HStack {
+                            if let logoURL = logoURL, let clearLogo = media.clearLogo {
+                                CachedAsyncImage(url: logoURL) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFit()
+                                } placeholder: {
+                                    Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
+                                        .font(.system(size: 22, weight: .bold, design: .default))
+                                        .foregroundColor(.white)
+                                        .lineLimit(2)
+                                        .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
+                                }
+                                .frame(maxWidth: 180, maxHeight: 60)
+                                .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
+                                .id("\(media.id)-\(clearLogo)")
+                            } else {
                                 Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
                                     .font(.system(size: 22, weight: .bold, design: .default))
                                     .foregroundColor(.white)
                                     .lineLimit(2)
                                     .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
+                                    .frame(maxWidth: 180, alignment: .leading)
                             }
-                            .frame(maxWidth: 180, maxHeight: 60)
-                            .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
-                            .id("\(media.id)-\(clearLogo)")
-                        } else {
-                            Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
-                                .font(.system(size: 22, weight: .bold, design: .default))
-                                .foregroundColor(.white)
-                                .lineLimit(2)
-                                .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
-                                .frame(maxWidth: 180, alignment: .leading)
+                            Spacer()
                         }
-                        Spacer()
+                        .padding(.leading, 20)
+                        .padding(.bottom, 20)
                     }
-                    .padding(.leading, 20)
-                    .padding(.bottom, 20)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
+                .shadow(
+                    color: .black.opacity(isFocused ? 0.5 : 0.3),
+                    radius: isFocused ? 25 : 12,
+                    x: 0,
+                    y: isFocused ? 12 : 6
+                )
+                .scaleEffect(isFocused ? 1.08 : 1.0)
+                .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
+
+                // Progress bar below card (outside the clipped ZStack)
+                if media.progress > 0 && media.progress < 0.98 {
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(.regularMaterial)
+                            .opacity(0.4)
+                            .frame(width: 410, height: 5)
+
+                        Capsule()
+                            .fill(Color.beaconGradient)
+                            .frame(width: 410 * media.progress, height: 5)
+                            .shadow(color: Color.beaconMagenta.opacity(0.6), radius: 4, x: 0, y: 0)
+                    }
+                    .padding(.top, isFocused ? 18 : 8)
                 }
 
-                // Progress bar overlay (if applicable)
-                if media.progress > 0 && media.progress < 0.98 {
-                    VStack {
-                        Spacer()
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(.regularMaterial)
-                                .opacity(0.4)
-                                .frame(width: 417, height: 5)
-
-                            Capsule()
-                                .fill(Color.beaconGradient)
-                                .frame(width: 417 * media.progress, height: 5)
-                                .shadow(color: Color.beaconMagenta.opacity(0.6), radius: 4, x: 0, y: 0)
-                        }
-                        .padding(.bottom, 8)
-                    }
+                // Label below card with episode info or title
+                if media.type == "episode" {
+                    Text(media.episodeInfo)
+                        .font(.system(size: 20, weight: .semibold, design: .default))
+                        .foregroundColor(.white.opacity(0.9))
+                        .frame(width: 410, alignment: .leading)
+                        .padding(.top, media.progress > 0 && media.progress < 0.98 ? 12 : (isFocused ? 22 : 12))
+                } else {
+                    Text(media.title)
+                        .font(.system(size: 20, weight: .semibold, design: .default))
+                        .foregroundColor(.white.opacity(0.9))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .frame(width: 410, alignment: .leading)
+                        .padding(.top, media.progress > 0 && media.progress < 0.98 ? 12 : (isFocused ? 22 : 12))
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
-            .shadow(
-                color: .black.opacity(isFocused ? 0.5 : 0.3),
-                radius: isFocused ? 25 : 12,
-                x: 0,
-                y: isFocused ? 12 : 6
-            )
-            .scaleEffect(isFocused ? 1.08 : 1.0)
-            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         }
         .buttonStyle(PlainButtonStyle())
         .focusable()
