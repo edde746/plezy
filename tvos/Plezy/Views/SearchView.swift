@@ -115,12 +115,13 @@ struct SearchView: View {
                 } else {
                     ScrollView {
                         LazyVGrid(columns: [
-                            GridItem(.adaptive(minimum: 300, maximum: 350), spacing: 30)
+                            GridItem(.adaptive(minimum: 336, maximum: 336), spacing: 24)
                         ], spacing: 40) {
                             ForEach(searchResults) { item in
-                                MediaCard(media: item) {
+                                LibraryLandscapeCard(media: item) {
                                     selectedMedia = item
                                 }
+                                .padding(.vertical, 40) // Padding for focus scale
                             }
                         }
                         .padding(80)
