@@ -164,6 +164,9 @@ struct LibraryContentView: View {
                                     .padding(.horizontal, 40)
                                 }
                                 .tvOSScrollClipDisabled()
+                                // NOTE: Do not add .clipped() here - it cuts off the rounded corners
+                                // when cards scale up on focus. Cards need to extend beyond their
+                                // bounds to maintain their rounded appearance when focused.
                             }
 
                             // Load more indicator

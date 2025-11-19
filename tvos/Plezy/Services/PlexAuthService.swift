@@ -94,21 +94,28 @@ class PlexAuthService: ObservableObject {
 
                     if let token = pin.authToken, !token.isEmpty {
                         print("🔑 [PIN] ✅ PIN authenticated! Token received")
-                        self.plexToken = token
-                        self.isAuthenticated = true
-                        print("🔑 [PIN] Set isAuthenticated = true")
 
                         // Load user info
                         let authedClient = PlexAPIClient.createPlexTVClient(token: token)
                         let user = try await authedClient.getUser()
-                        self.currentUser = user
                         print("🔑 [PIN] User info loaded: \(user.username)")
 
                         // Save token
                         await StorageService().savePlexToken(token)
                         print("🔑 [PIN] Token saved to storage")
 
-                        completion(true)
+                        // Update @Published properties on the main actor
+                        await MainActor.run {
+                            self.plexToken = token
+                            self.isAuthenticated = true
+                            self.currentUser = user
+                            print("🔑 [PIN] Set isAuthenticated = true")
+                        }
+
+                        // Call completion handler on the main actor
+                        await MainActor.run {
+                            completion(true)
+                        }
                         return
                     }
                 } catch {

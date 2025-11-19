@@ -246,13 +246,9 @@ class VideoPlayerManager: ObservableObject {
                 return
             }
 
-            guard let connection = server.connections.first,
-                  let baseURL = connection.url else {
-                error = "Invalid server connection"
-                isLoading = false
-                print("❌ [Player] No connection found")
-                return
-            }
+            // Use the vetted baseURL from the authenticated client
+            // This is the URL that was already tested and verified to work in selectServer()
+            let baseURL = client.baseURL
 
             // Build direct play URL with token
             var urlString = baseURL.absoluteString + part.key
@@ -261,7 +257,16 @@ class VideoPlayerManager: ObservableObject {
             } else {
                 urlString += "&"
             }
-            urlString += "X-Plex-Token=\(server.accessToken ?? "")"
+            // Use the authenticated client's token, which is guaranteed to be valid
+            // This is the token that authenticated the current session
+            if let token = client.accessToken {
+                urlString += "X-Plex-Token=\(token)"
+            } else {
+                error = "No authentication token available"
+                isLoading = false
+                print("❌ [Player] No token found")
+                return
+            }
 
             guard let videoURL = URL(string: urlString) else {
                 error = "Invalid video URL"
@@ -280,7 +285,7 @@ class VideoPlayerManager: ObservableObject {
             setupAudioSession()
 
             // Set up metadata for Now Playing
-            setupNowPlayingMetadata(media: detailedMedia, server: server, baseURL: baseURL)
+            setupNowPlayingMetadata(media: detailedMedia, server: server, baseURL: baseURL, token: client.accessToken)
 
             // Create player
             let player = AVPlayer(playerItem: playerItem)
@@ -341,7 +346,7 @@ class VideoPlayerManager: ObservableObject {
         #endif
     }
 
-    private func setupNowPlayingMetadata(media: PlexMetadata, server: PlexServer, baseURL: URL) {
+    private func setupNowPlayingMetadata(media: PlexMetadata, server: PlexServer, baseURL: URL, token: String?) {
         var nowPlayingInfo: [String: Any] = [:]
 
         // Title
@@ -370,7 +375,7 @@ class VideoPlayerManager: ObservableObject {
         // Artwork - load asynchronously
         if let artPath = media.art ?? media.thumb {
             var artURLString = baseURL.absoluteString + artPath
-            if let token = server.accessToken {
+            if let token = token {
                 artURLString += "?X-Plex-Token=\(token)"
             }
             if let artURL = URL(string: artURLString) {
@@ -904,15 +909,14 @@ struct NextEpisodeOverlay: View {
     }
 
     private var thumbnailURL: URL? {
-        guard let server = authService.selectedServer,
-              let connection = server.connections.first,
-              let baseURL = connection.url,
+        guard let client = authService.currentClient,
               let thumb = nextEpisode.thumb else {
             return nil
         }
 
-        var urlString = baseURL.absoluteString + thumb
-        if let token = server.accessToken {
+        // Use the vetted baseURL and token from the authenticated client
+        var urlString = client.baseURL.absoluteString + thumb
+        if let token = client.accessToken {
             urlString += "?X-Plex-Token=\(token)"
         }
 

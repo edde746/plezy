@@ -123,7 +123,7 @@ struct HomeView: View {
                         Color.clear
                             .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
                     }
-                    .frame(height: 650)
+                    .frame(height: 700)
 
                     // Continue Watching section
                     if !onDeck.isEmpty {
@@ -147,36 +147,35 @@ struct HomeView: View {
                             }
                             .tvOSScrollClipDisabled()
                         }
-                        .focusSection()
                         .padding(.bottom, 60)
                     }
 
-                    // Other hub rows - hidden per user request
-                    // ForEach(hubs.filter { !$0.title.lowercased().contains("recently added") && !$0.title.lowercased().contains("on deck") }) { hub in
-                    //     if let items = hub.metadata, !items.isEmpty {
-                    //         VStack(alignment: .leading, spacing: 20) {
-                    //             Text(hub.title)
-                    //                 .font(.system(size: 40, weight: .bold, design: .default))
-                    //                 .foregroundColor(.white)
-                    //                 .padding(.horizontal, 90)
-                    //                 .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
-                    //
-                    //             ScrollView(.horizontal, showsIndicators: false) {
-                    //                 LazyHStack(spacing: 30) {
-                    //                     ForEach(items) { item in
-                    //                         ContinueWatchingCard(media: item) {
-                    //                             print("🎯 [HomeView] Hub item tapped: \(item.title)")
-                    //                             selectedMedia = item
-                    //                         }
-                    //                     }
-                    //                 }
-                    //                 .padding(.horizontal, 90)
-                    //             }
-                    //         }
-                    //         .focusSection()
-                    //         .padding(.bottom, 60)
-                    //     }
-                    // }
+                    // Other hub rows
+                    ForEach(hubs.filter { !$0.title.lowercased().contains("recently added") && !$0.title.lowercased().contains("on deck") }) { hub in
+                        if let items = hub.metadata, !items.isEmpty {
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text(hub.title)
+                                    .font(.system(size: 40, weight: .bold, design: .default))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 90)
+                                    .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 30) {
+                                        ForEach(items) { item in
+                                            ContinueWatchingCard(media: item) {
+                                                print("🎯 [HomeView] Hub item tapped: \(item.title)")
+                                                selectedMedia = item
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 90)
+                                }
+                            }
+                            .focusSection()
+                            .padding(.bottom, 60)
+                        }
+                    }
 
                     // Bottom padding - add extra space to allow scrolling past Continue Watching
                     Color.clear.frame(height: 600)
@@ -187,7 +186,7 @@ struct HomeView: View {
                 scrollOffset = value
                 // Hide hero when scrolled past the spacer (approximately when Continue Watching becomes visible)
                 withAnimation(.easeInOut(duration: 0.3)) {
-                    shouldShowHero = value > -450
+                    shouldShowHero = value > -480
                 }
             }
         }
@@ -409,6 +408,21 @@ struct FullScreenHeroBackground: View {
                 }
                 .offset(x: -CGFloat(currentIndex) * geometry.size.width)
                 .animation(.easeInOut(duration: 0.6), value: currentIndex)
+
+                // Subtle gradient at bottom to help Continue Watching row stand out
+                VStack {
+                    Spacer()
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.clear,
+                            Color.black.opacity(0.5),
+                            Color.black.opacity(0.85)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: geometry.size.height / 3)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
