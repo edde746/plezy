@@ -2,7 +2,7 @@
 //  HomeView.swift
 //  Beacon tvOS
 //
-//  Home screen with featured content and continue watching
+//  Home screen with full-screen hero background and overlaid content
 //
 
 import SwiftUI
@@ -21,10 +21,11 @@ struct HomeView: View {
     @State private var currentHeroIndex = 0
     @State private var heroProgress: Double = 0.0
     @State private var heroTimer: Timer?
+    @State private var selectedTopTab = "Home"
     @Namespace private var focusNamespace
 
-    private let heroDisplayDuration: TimeInterval = 7.0 // 7 seconds per item
-    private let heroTimerInterval: TimeInterval = 0.05 // 50ms updates for smooth progress
+    private let heroDisplayDuration: TimeInterval = 7.0
+    private let heroTimerInterval: TimeInterval = 0.05
 
     private let cache = CacheService.shared
 
@@ -35,118 +36,11 @@ struct HomeView: View {
             if isLoading {
                 HomeViewSkeleton()
             } else if let error = errorMessage {
-                VStack(spacing: 30) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 80))
-                        .foregroundColor(.red)
-
-                    Text("Error Loading Content")
-                        .font(.title)
-                        .foregroundColor(.white)
-
-                    Text(error)
-                        .font(.body)
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 100)
-
-                    HStack(spacing: 20) {
-                        Button {
-                            print("🔄 [HomeView] Retry button tapped")
-                            Task {
-                                await loadContent()
-                            }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "arrow.clockwise")
-                                Text("Retry")
-                            }
-                            .font(.title3)
-                        }
-                        .buttonStyle(ClearGlassButtonStyle())
-                    }
-                }
+                errorView(error: error)
             } else if noServerSelected {
-                VStack(spacing: 30) {
-                    Image(systemName: "server.rack")
-                        .font(.system(size: 80))
-                        .foregroundColor(.gray)
-
-                    Text("No Server Selected")
-                        .font(.title)
-                        .foregroundColor(.white)
-
-                    Text("Please select a Plex server to start watching")
-                        .font(.title3)
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-
-                    Button {
-                        showServerSelection = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "server.rack")
-                            Text("Select Server")
-                        }
-                        .font(.title2)
-                        .padding(.horizontal, 60)
-                        .padding(.vertical, 20)
-                    }
-                    .buttonStyle(CardButtonStyle())
-                }
+                noServerView
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        // Hero Banner
-                        if !onDeck.isEmpty {
-                            HeroBanner(
-                                focusNamespace: focusNamespace,
-                                items: onDeck,
-                                currentIndex: $currentHeroIndex,
-                                progress: $heroProgress,
-                                onNavigate: navigateHero
-                            ) { media in
-                                print("🎯 [HomeView] Hero play button tapped for: \(media.title)")
-                                print("🎯 [HomeView] Setting playingMedia to trigger fullScreenCover")
-                                playingMedia = media
-                                print("🎯 [HomeView] playingMedia set to: \(String(describing: playingMedia?.title))")
-                            }
-                            .focusSection()
-                        }
-
-                        // Hubs (excluding default Plex continue watching only, keeping on deck but relabeling it)
-                        ForEach(hubs.filter { hub in
-                            let lowercaseTitle = hub.title.lowercased()
-                            return !lowercaseTitle.contains("continue watching")
-                        }) { hub in
-                            if let items = hub.metadata, !items.isEmpty {
-                                // Relabel "On Deck" as "Continue Watching"
-                                let displayTitle = hub.title.lowercased().contains("on deck") ? "Continue Watching" : hub.title
-
-                                MediaShelf(title: displayTitle, items: items) { media in
-                                    print("🎯 [HomeView] Hub '\(hub.title)' item tapped for: \(media.title)")
-
-                                    // For on deck items, play directly
-                                    if hub.title.lowercased().contains("on deck") {
-                                        print("🎯 [HomeView] Setting playingMedia to trigger fullScreenCover")
-                                        playingMedia = media
-                                        print("🎯 [HomeView] playingMedia set to: \(String(describing: playingMedia?.title))")
-                                    } else {
-                                        print("🎯 [HomeView] Setting selectedMedia to trigger sheet")
-                                        selectedMedia = media
-                                        print("🎯 [HomeView] selectedMedia set to: \(String(describing: selectedMedia?.title))")
-                                    }
-                                }
-                                .focusSection()
-                            } else {
-                                // Debug: Show why hub is not displaying
-                                let _ = print("🏠 [HomeView] Skipping hub '\(hub.title)' - has metadata: \(hub.metadata != nil), count: \(hub.metadata?.count ?? 0)")
-                            }
-                        }
-                    }
-                    .padding(.bottom, 40)
-                }
-                .focusScope(focusNamespace)
+                fullScreenHeroLayout
             }
 
             // Offline banner overlay
@@ -194,13 +88,141 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Full-Screen Hero Layout
+
+    private var fullScreenHeroLayout: some View {
+        ZStack {
+            // Layer 1: Full-screen hero background
+            if !onDeck.isEmpty {
+                FullScreenHeroBackground(
+                    items: onDeck,
+                    currentIndex: $currentHeroIndex
+                )
+            }
+
+            // Layer 2: Overlaid UI (top menu + continue watching)
+            VStack(spacing: 0) {
+                // Top navigation menu
+                TopNavigationMenu(selectedTab: $selectedTopTab)
+                    .focusSection()
+                    .padding(.top, 60)
+
+                Spacer()
+
+                // Continue Watching row overlay
+                if let continueWatchingHub = hubs.first(where: { $0.title.lowercased().contains("on deck") }),
+                   let items = continueWatchingHub.metadata,
+                   !items.isEmpty {
+                    ContinueWatchingOverlay(items: items) { media in
+                        print("🎯 [HomeView] Continue watching item tapped: \(media.title)")
+                        playingMedia = media
+                    }
+                    .focusSection()
+                    .padding(.bottom, 80)
+                }
+            }
+
+            // Layer 3: Hero overlay with Play button
+            if !onDeck.isEmpty {
+                VStack {
+                    Spacer()
+
+                    FullScreenHeroOverlay(
+                        item: onDeck[currentHeroIndex],
+                        onPlay: {
+                            print("🎯 [HomeView] Hero play button tapped")
+                            playingMedia = onDeck[currentHeroIndex]
+                        },
+                        onNext: {
+                            navigateHero(to: (currentHeroIndex + 1) % onDeck.count)
+                        },
+                        onPrevious: {
+                            navigateHero(to: currentHeroIndex > 0 ? currentHeroIndex - 1 : onDeck.count - 1)
+                        }
+                    )
+                    .focusSection()
+                    .padding(.bottom, 280)
+                }
+            }
+        }
+        .ignoresSafeArea()
+        .focusScope(focusNamespace)
+    }
+
+    // MARK: - Error & No Server Views
+
+    private func errorView(error: String) -> some View {
+        VStack(spacing: 30) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 80))
+                .foregroundColor(.red)
+
+            Text("Error Loading Content")
+                .font(.title)
+                .foregroundColor(.white)
+
+            Text(error)
+                .font(.body)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 100)
+
+            HStack(spacing: 20) {
+                Button {
+                    print("🔄 [HomeView] Retry button tapped")
+                    Task {
+                        await loadContent()
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Retry")
+                    }
+                    .font(.title3)
+                }
+                .buttonStyle(ClearGlassButtonStyle())
+            }
+        }
+    }
+
+    private var noServerView: some View {
+        VStack(spacing: 30) {
+            Image(systemName: "server.rack")
+                .font(.system(size: 80))
+                .foregroundColor(.gray)
+
+            Text("No Server Selected")
+                .font(.title)
+                .foregroundColor(.white)
+
+            Text("Please select a Plex server to start watching")
+                .font(.title3)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+
+            Button {
+                showServerSelection = true
+            } label: {
+                HStack {
+                    Image(systemName: "server.rack")
+                    Text("Select Server")
+                }
+                .font(.title2)
+                .padding(.horizontal, 60)
+                .padding(.vertical, 20)
+            }
+            .buttonStyle(CardButtonStyle())
+        }
+    }
+
+    // MARK: - Hero Timer Management
+
     private func startHeroTimer() {
         heroTimer = Timer.scheduledTimer(withTimeInterval: heroTimerInterval, repeats: true) { _ in
             if !onDeck.isEmpty {
                 heroProgress += heroTimerInterval / heroDisplayDuration
 
                 if heroProgress >= 1.0 {
-                    // Move to next item with smooth transition (no limit on items)
                     withAnimation(.easeInOut(duration: 0.6)) {
                         currentHeroIndex = (currentHeroIndex + 1) % onDeck.count
                     }
@@ -227,6 +249,8 @@ struct HomeView: View {
         resetHeroProgress()
     }
 
+    // MARK: - Content Loading
+
     private func loadContent() async {
         print("🏠 [HomeView] loadContent called")
         print("🏠 [HomeView] currentClient exists: \(authService.currentClient != nil)")
@@ -241,7 +265,7 @@ struct HomeView: View {
 
         let cacheKey = CacheService.homeKey(serverID: serverID)
 
-        // Check cache first - enriched data with logos is cached
+        // Check cache first
         if let cached: (onDeck: [PlexMetadata], hubs: [PlexHub]) = cache.get(cacheKey) {
             print("🏠 [HomeView] Using cached content")
             self.onDeck = cached.onDeck
@@ -298,470 +322,48 @@ struct HomeView: View {
     }
 }
 
-struct MediaShelf: View {
-    let title: String
-    let items: [PlexMetadata]
-    let onSelect: (PlexMetadata) -> Void
-    @Namespace private var shelfFocusNamespace
+// MARK: - Full-Screen Hero Background
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.system(size: 38, weight: .bold, design: .default))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.white, Color.beaconTextSecondary],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .padding(.horizontal, 30)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
-                    ForEach(items) { item in
-                        LandscapeMediaCard(media: item) {
-                            onSelect(item)
-                        }
-                        .padding(.vertical, 40) // Padding for focus scale
-                    }
-                }
-                .padding(.horizontal, 30)
-            }
-            .clipped()
-        }
-    }
-}
-
-struct MediaCard: View {
-    let media: PlexMetadata
-    let action: () -> Void
-    @EnvironmentObject var authService: PlexAuthService
-    @State private var isFocused: Bool = false
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 0) {
-                // Poster image with Liquid Glass container
-                ZStack(alignment: .bottomLeading) {
-                    CachedAsyncImage(url: posterURL) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Rectangle()
-                            .fill(.regularMaterial.opacity(0.3))
-                            .aspectRatio(2/3, contentMode: .fit)
-                            .overlay(
-                                Image(systemName: "photo")
-                                    .font(.system(size: 48))
-                                    .foregroundStyle(.tertiary)
-                            )
-                    }
-                    .frame(width: 300, height: 450)
-                    .clipped()
-
-                    // Progress indicator with Liquid Glass styling
-                    if media.progress > 0 && media.progress < 0.98 {
-                        VStack(spacing: 0) {
-                            Spacer()
-                            GeometryReader { geometry in
-                                ZStack(alignment: .leading) {
-                                    // Background track
-                                    Capsule()
-                                        .fill(.regularMaterial)
-                                        .opacity(0.4)
-
-                                    // Progress fill with Beacon gradient
-                                    Capsule()
-                                        .fill(Color.beaconGradient)
-                                        .frame(width: geometry.size.width * media.progress)
-                                        .shadow(color: Color.beaconMagenta.opacity(0.5), radius: 4, x: 0, y: 0)
-                                }
-                            }
-                            .frame(height: 5)
-                            .padding(.horizontal, 12)
-                            .padding(.bottom, 12)
-                        }
-                    }
-
-                    // Watched indicator with Liquid Glass
-                    if media.isWatched {
-                        VStack {
-                            HStack {
-                                Spacer()
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.title2)
-                                    .foregroundStyle(.green)
-                                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
-                                    .padding(12)
-                            }
-                            Spacer()
-                        }
-                    }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
-                .shadow(color: .black.opacity(isFocused ? 0.7 : 0.5), radius: isFocused ? 35 : 18, x: 0, y: isFocused ? 18 : 10)
-
-                // Title with vibrancy
-                Text(media.title)
-                    .font(.system(size: 22, weight: .semibold, design: .default))
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .frame(width: 300, alignment: .leading)
-                    .padding(.top, 12)
-
-                // Metadata
-                if let year = media.year {
-                    Text(String(year))
-                        .font(.system(size: 20, weight: .regular, design: .default))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 300, alignment: .leading)
-                        .padding(.top, 2)
-                }
-            }
-        }
-        .buttonStyle(MediaCardButtonStyle())
-        .onFocusChange { focused in
-            isFocused = focused
-        }
-        .onPlayPauseCommand {
-            action()
-        }
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint(accessibilityHint)
-        .accessibilityAddTraits(.isButton)
-    }
-
-    private var accessibilityLabel: String {
-        var label = media.title
-        if let year = media.year {
-            label += ", \(year)"
-        }
-        if media.type == "episode", let show = media.grandparentTitle {
-            label = "\(show), \(media.title)"
-            label += " \(media.formatSeasonEpisode())"
-        }
-        return label
-    }
-
-    private var accessibilityHint: String {
-        if media.isWatched {
-            return "Watched. Double tap to view details"
-        } else if media.progress > 0 {
-            let percent = Int(media.progress * 100)
-            return "\(percent)% watched. Double tap to view details"
-        } else {
-            return "Double tap to view details"
-        }
-    }
-
-    private var posterURL: URL? {
-        guard let server = authService.selectedServer,
-              let connection = server.connections.first,
-              let baseURL = connection.url else {
-            return nil
-        }
-
-        // Use grandparentThumb for TV episodes (show poster), otherwise use thumb
-        let imagePath: String?
-        if media.type == "episode", let grandparentThumb = media.grandparentThumb {
-            imagePath = grandparentThumb
-        } else {
-            imagePath = media.thumb
-        }
-
-        guard let thumb = imagePath else {
-            return nil
-        }
-
-        var urlString = baseURL.absoluteString + thumb
-        if let token = server.accessToken {
-            urlString += "?X-Plex-Token=\(token)"
-        }
-
-        return URL(string: urlString)
-    }
-}
-
-// MARK: - Hero Banner
-
-struct HeroBanner: View {
-    var focusNamespace: Namespace.ID
+struct FullScreenHeroBackground: View {
     let items: [PlexMetadata]
     @Binding var currentIndex: Int
-    @Binding var progress: Double
-    let onNavigate: (Int) -> Void
-    let onSelect: (PlexMetadata) -> Void
     @EnvironmentObject var authService: PlexAuthService
-    @FocusState private var isHeroFocused: Bool
-
-    // Calculate visible dot range (max 5 dots at a time)
-    private func getVisibleDotRange() -> (start: Int, end: Int) {
-        let totalItems = items.count
-        if totalItems <= 5 {
-            return (0, totalItems - 1)
-        }
-
-        // Center the active dot in a 5-dot window
-        let halfWindow = 2
-        var start = currentIndex - halfWindow
-        var end = currentIndex + halfWindow
-
-        // Adjust if we're near the edges
-        if start < 0 {
-            start = 0
-            end = 4
-        } else if end >= totalItems {
-            end = totalItems - 1
-            start = totalItems - 5
-        }
-
-        return (start, end)
-    }
-
-    // Get dot size based on position (smaller dots at edges when windowing)
-    private func getDotSize(for index: Int, range: (start: Int, end: Int)) -> CGFloat {
-        let totalItems = items.count
-        if totalItems <= 5 {
-            return 8.0
-        }
-
-        // Make edge dots smaller if there are more items beyond
-        if (index == range.start && range.start > 0) ||
-           (index == range.end && range.end < totalItems - 1) {
-            return 5.0
-        }
-
-        return 8.0
-    }
 
     var body: some View {
-        if currentIndex < items.count {
-            let item = items[currentIndex]
-
-            ZStack(alignment: .top) {
-                // Background art with slide transition
-                GeometryReader { geometry in
-                    HStack(spacing: 0) {
-                        ForEach(0..<items.count, id: \.self) { index in
-                            CachedAsyncImage(url: artURL(for: items[index])) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            } placeholder: {
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.3))
-                            }
-                            .frame(width: geometry.size.width, height: 750)
-                            .clipped()
+        GeometryReader { geometry in
+            ZStack {
+                // Sliding background images
+                HStack(spacing: 0) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        CachedAsyncImage(url: artURL(for: item)) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        } placeholder: {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.3))
                         }
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
                     }
-                    .offset(x: -CGFloat(currentIndex) * geometry.size.width)
-                    .animation(.easeInOut(duration: 0.6), value: currentIndex)
                 }
-                .frame(height: 750)
-                .ignoresSafeArea()
-                .clipped()
-                .onChange(of: currentIndex) { _, _ in
-                    // Reset progress when manually navigating
-                    progress = 0.0
-                }
+                .offset(x: -CGFloat(currentIndex) * geometry.size.width)
+                .animation(.easeInOut(duration: 0.6), value: currentIndex)
 
-                // Enhanced gradient overlay with beacon accent
+                // Dark gradient overlay for readability
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        Color.beaconBlue.opacity(0.15),
-                        Color.black.opacity(0.7),
-                        Color.black.opacity(0.9)
+                        Color.black.opacity(0.3),
+                        Color.black.opacity(0.6),
+                        Color.black.opacity(0.85)
                     ]),
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 750)
-
-                // Content
-                VStack(alignment: .leading, spacing: 20) {
-                    Spacer()
-
-                    // Show logo or title (for both movies and TV shows)
-                    if let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
-                        CachedAsyncImage(url: logoURL) { image in
-                            image
-                                .resizable()
-                                .scaledToFit()
-                        } placeholder: {
-                            Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
-                                .font(.system(size: 72, weight: .heavy, design: .default))
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: 500, maxHeight: 140, alignment: .leading)
-                    } else {
-                        Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
-                            .font(.system(size: 72, weight: .heavy, design: .default))
-                            .foregroundColor(.white)
-                            .lineLimit(2)
-                            .frame(maxWidth: 700, alignment: .leading)
-                    }
-
-                    // Metadata line (content type, rating, content rating, year)
-                    HStack(spacing: 10) {
-                        // Content type
-                        Text(item.type == "movie" ? "Movie" : "TV Show")
-                            .font(.system(size: 24, weight: .medium, design: .default))
-                            .foregroundColor(.white)
-
-                        if item.audienceRating != nil || item.contentRating != nil || item.year != nil {
-                            ForEach(metadataComponents(for: item), id: \.self) { component in
-                                Text("·")
-                                    .foregroundColor(.white.opacity(0.7))
-                                Text(component)
-                                    .font(.system(size: 24, weight: .medium, design: .default))
-                                    .foregroundColor(.white)
-                            }
-                        }
-                    }
-
-                    // Synopsis with episode info inline (Apple TV style)
-                    if let summary = item.summary {
-                        if item.type == "episode", let parentIndex = item.parentIndex, let index = item.index {
-                            // Episode: Show "S1, E2: description"
-                            (Text("S\(parentIndex), E\(index): ")
-                                .font(.system(size: 24, weight: .semibold, design: .default))
-                                .foregroundColor(.white) +
-                            Text(summary)
-                                .font(.system(size: 24, weight: .regular, design: .default))
-                                .foregroundColor(.white.opacity(0.85)))
-                                .lineLimit(3)
-                                .frame(maxWidth: 900, alignment: .leading)
-                        } else {
-                            // Movie: Just show description
-                            Text(summary)
-                                .font(.system(size: 24, weight: .regular, design: .default))
-                                .foregroundColor(.white.opacity(0.85))
-                                .lineLimit(3)
-                                .frame(maxWidth: 900, alignment: .leading)
-                        }
-                    }
-
-                    // Smart play button with progress indicator (macOS style)
-                    HStack {
-                        Button {
-                            onSelect(item)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: "play.fill")
-                                    .font(.system(size: 20, weight: .semibold))
-
-                                if item.progress > 0 && item.progress < 0.98 {
-                                    // Show progress indicator with Beacon gradient
-                                    ZStack(alignment: .leading) {
-                                        Capsule()
-                                            .fill(Color.white.opacity(0.3))
-                                            .frame(width: 50, height: 6)
-
-                                        Capsule()
-                                            .fill(Color.beaconGradient)
-                                            .frame(width: 50 * item.progress, height: 6)
-                                            .shadow(color: Color.beaconMagenta.opacity(0.6), radius: 3, x: 0, y: 0)
-                                    }
-
-                                    if let duration = item.duration, let viewOffset = item.viewOffset {
-                                        let minutesLeft = Int((Double(duration - viewOffset) / 60000.0).rounded())
-                                        Text("\(minutesLeft) min left")
-                                            .font(.system(size: 24, weight: .semibold))
-                                    }
-                                } else {
-                                    Text("Play")
-                                        .font(.system(size: 24, weight: .semibold))
-                                }
-                            }
-                            .foregroundColor(.white)
-                        }
-                        .buttonStyle(.clearGlass)
-                        .prefersDefaultFocus(in: focusNamespace)
-
-                        Spacer()
-                    }
-                    .padding(.top, 10)
-
-                }
-                .padding(.horizontal, 30)
-                .padding(.bottom, 120)
-                .frame(height: 750, alignment: .bottom)
-                .id(currentIndex) // Force view recreation when hero index changes
-
-                // Enhanced pagination indicators with beacon gradient
-                HStack(spacing: 8) {
-                    let range = getVisibleDotRange()
-                    ForEach(range.start...range.end, id: \.self) { index in
-                        let isActive = index == currentIndex
-                        let dotSize = getDotSize(for: index, range: range)
-
-                        if isActive {
-                            // Animated horizontal expanding bar with beacon gradient
-                            let maxWidth = dotSize * 3.0 // 24px for normal, 15px for small
-                            let fillWidth = dotSize + ((maxWidth - dotSize) * progress)
-
-                            ZStack(alignment: .leading) {
-                                // Background capsule with glass effect
-                                Capsule()
-                                    .fill(.ultraThinMaterial)
-                                    .opacity(0.6)
-                                    .frame(width: maxWidth, height: dotSize)
-
-                                // Animated fill with beacon gradient
-                                Capsule()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.beaconBlue, Color.beaconPurple],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .frame(width: fillWidth, height: dotSize)
-                                    .shadow(color: Color.beaconPurple.opacity(0.6), radius: 6, x: 0, y: 0)
-                            }
-                            .animation(.linear(duration: 0.05), value: progress)
-                        } else {
-                            // Static dot for inactive pages with glass
-                            Capsule()
-                                .fill(.ultraThinMaterial)
-                                .opacity(0.5)
-                                .frame(width: dotSize, height: dotSize)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, 40)
-            }
-            .frame(height: 750)
-            .padding(.horizontal, 30)
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusHero, style: .continuous))
-            .focusable(true)
-            .focused($isHeroFocused)
-            .onKeyPress(.leftArrow) {
-                // Navigate to previous page
-                if currentIndex > 0 {
-                    onNavigate(currentIndex - 1)
-                } else {
-                    // Wrap around to last page
-                    onNavigate(items.count - 1)
-                }
-                return .handled
-            }
-            .onKeyPress(.rightArrow) {
-                // Navigate to next page
-                if currentIndex < items.count - 1 {
-                    onNavigate(currentIndex + 1)
-                } else {
-                    // Wrap around to first page
-                    onNavigate(0)
-                }
-                return .handled
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
     }
 
     private func artURL(for media: PlexMetadata) -> URL? {
@@ -779,14 +381,157 @@ struct HeroBanner: View {
 
         return URL(string: urlString)
     }
+}
+
+// MARK: - Full-Screen Hero Overlay
+
+struct FullScreenHeroOverlay: View {
+    let item: PlexMetadata
+    let onPlay: () -> Void
+    let onNext: () -> Void
+    let onPrevious: () -> Void
+    @EnvironmentObject var authService: PlexAuthService
+
+    @FocusState private var isPlayButtonFocused: Bool
+    @FocusState private var isPreviousButtonFocused: Bool
+    @FocusState private var isNextButtonFocused: Bool
+    @Namespace private var localFocusNamespace
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            // Show logo or title
+            if let clearLogo = item.clearLogo, let logoURL = logoURL(for: clearLogo) {
+                CachedAsyncImage(url: logoURL) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                } placeholder: {
+                    Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
+                        .font(.system(size: 76, weight: .bold, design: .default))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 10, x: 0, y: 4)
+                }
+                .frame(maxWidth: 600, maxHeight: 180, alignment: .leading)
+            } else {
+                Text(item.type == "episode" ? (item.grandparentTitle ?? item.title) : item.title)
+                    .font(.system(size: 76, weight: .bold, design: .default))
+                    .foregroundColor(.white)
+                    .lineLimit(2)
+                    .shadow(color: .black.opacity(0.8), radius: 10, x: 0, y: 4)
+                    .frame(maxWidth: 900, alignment: .leading)
+            }
+
+            // Metadata line
+            HStack(spacing: 10) {
+                Text(item.type == "movie" ? "Movie" : "TV Show")
+                    .font(.system(size: 24, weight: .medium, design: .default))
+                    .foregroundColor(.white)
+
+                if item.audienceRating != nil || item.contentRating != nil || item.year != nil {
+                    ForEach(metadataComponents(for: item), id: \.self) { component in
+                        Text("·")
+                            .foregroundColor(.white.opacity(0.7))
+                        Text(component)
+                            .font(.system(size: 24, weight: .medium, design: .default))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+
+            // Description
+            if let summary = item.summary {
+                if item.type == "episode", let parentIndex = item.parentIndex, let index = item.index {
+                    (Text("S\(parentIndex), E\(index): ")
+                        .font(.system(size: 28, weight: .semibold, design: .default))
+                        .foregroundColor(.white) +
+                    Text(summary)
+                        .font(.system(size: 28, weight: .regular, design: .default))
+                        .foregroundColor(.white.opacity(0.9)))
+                        .lineLimit(3)
+                        .frame(maxWidth: 1000, alignment: .leading)
+                        .shadow(color: .black.opacity(0.6), radius: 8, x: 0, y: 2)
+                } else {
+                    Text(summary)
+                        .font(.system(size: 28, weight: .regular, design: .default))
+                        .foregroundColor(.white.opacity(0.9))
+                        .lineLimit(3)
+                        .frame(maxWidth: 1000, alignment: .leading)
+                        .shadow(color: .black.opacity(0.6), radius: 8, x: 0, y: 2)
+                }
+            }
+
+            // Buttons row
+            HStack(spacing: 20) {
+                // Previous button
+                Button(action: onPrevious) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .semibold))
+                        Text("Previous")
+                            .font(.system(size: 24, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                }
+                .buttonStyle(.clearGlass)
+                .focused($isPreviousButtonFocused)
+
+                // Play button
+                Button(action: onPlay) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 20, weight: .semibold))
+
+                        if item.progress > 0 && item.progress < 0.98 {
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.3))
+                                    .frame(width: 50, height: 6)
+
+                                Capsule()
+                                    .fill(Color.beaconGradient)
+                                    .frame(width: 50 * item.progress, height: 6)
+                            }
+
+                            if let duration = item.duration, let viewOffset = item.viewOffset {
+                                let minutesLeft = Int((Double(duration - viewOffset) / 60000.0).rounded())
+                                Text("\(minutesLeft) min left")
+                                    .font(.system(size: 24, weight: .semibold))
+                            }
+                        } else {
+                            Text("Play")
+                                .font(.system(size: 24, weight: .semibold))
+                        }
+                    }
+                    .foregroundColor(.white)
+                }
+                .buttonStyle(.clearGlass)
+                .focused($isPlayButtonFocused)
+                .prefersDefaultFocus(in: localFocusNamespace)
+
+                // Next button
+                Button(action: onNext) {
+                    HStack(spacing: 12) {
+                        Text("Next")
+                            .font(.system(size: 24, weight: .semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 20, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                }
+                .buttonStyle(.clearGlass)
+                .focused($isNextButtonFocused)
+            }
+            .padding(.top, 12)
+        }
+        .padding(.horizontal, 90)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
     private func logoURL(for clearLogo: String) -> URL? {
-        // clearLogo already includes the full URL from the Image array
         if clearLogo.starts(with: "http") {
             return URL(string: clearLogo)
         }
 
-        // Fallback to building URL if it's a relative path
         guard let server = authService.selectedServer,
               let connection = server.connections.first,
               let baseURL = connection.url else {
@@ -804,17 +549,14 @@ struct HeroBanner: View {
     private func metadataComponents(for item: PlexMetadata) -> [String] {
         var components: [String] = []
 
-        // Add rating with star
         if let rating = item.audienceRating {
             components.append("★ \(String(format: "%.1f", rating))")
         }
 
-        // Add content rating
         if let contentRating = item.contentRating {
             components.append(contentRating)
         }
 
-        // Add year
         if let year = item.year {
             components.append(String(year))
         }
@@ -823,20 +565,111 @@ struct HeroBanner: View {
     }
 }
 
+// MARK: - Top Navigation Menu
 
-// MARK: - Landscape Media Card
+struct TopNavigationMenu: View {
+    @Binding var selectedTab: String
+    @EnvironmentObject var authService: PlexAuthService
 
-struct LandscapeMediaCard: View {
+    private let menuItems = ["Home", "Movies", "TV Shows", "Search", "Settings"]
+
+    var body: some View {
+        HStack(spacing: 40) {
+            ForEach(menuItems, id: \.self) { item in
+                TopMenuItem(
+                    title: item,
+                    isSelected: selectedTab == item,
+                    action: {
+                        selectedTab = item
+                        print("🔝 [TopMenu] Selected: \(item)")
+                    }
+                )
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 90)
+        .padding(.vertical, 20)
+    }
+}
+
+struct TopMenuItem: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: 28, weight: isSelected ? .bold : .semibold, design: .default))
+                    .foregroundColor(.white)
+
+                if isSelected {
+                    Capsule()
+                        .fill(Color.beaconGradient)
+                        .frame(height: 4)
+                        .shadow(color: Color.beaconPurple.opacity(0.8), radius: 8, x: 0, y: 0)
+                } else {
+                    Capsule()
+                        .fill(Color.clear)
+                        .frame(height: 4)
+                }
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .focusable()
+        .focused($isFocused)
+        .scaleEffect(isFocused ? 1.1 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
+        .shadow(
+            color: isFocused ? Color.white.opacity(0.5) : Color.clear,
+            radius: isFocused ? 20 : 0,
+            x: 0,
+            y: 0
+        )
+    }
+}
+
+// MARK: - Continue Watching Overlay
+
+struct ContinueWatchingOverlay: View {
+    let items: [PlexMetadata]
+    let onSelect: (PlexMetadata) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Continue Watching")
+                .font(.system(size: 40, weight: .bold, design: .default))
+                .foregroundColor(.white)
+                .padding(.horizontal, 90)
+                .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 24) {
+                    ForEach(items) { item in
+                        ContinueWatchingOverlayCard(media: item) {
+                            onSelect(item)
+                        }
+                    }
+                }
+                .padding(.horizontal, 90)
+            }
+        }
+    }
+}
+
+struct ContinueWatchingOverlayCard: View {
     let media: PlexMetadata
-    var onFocusChange: ((Bool) -> Void)? = nil
     let action: () -> Void
     @EnvironmentObject var authService: PlexAuthService
-    @State private var isFocused: Bool = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 0) {
-                // Background art with Liquid Glass overlay
                 ZStack(alignment: .bottomLeading) {
                     CachedAsyncImage(url: artURL) { image in
                         image
@@ -851,16 +684,14 @@ struct LandscapeMediaCard: View {
                                     .foregroundStyle(.tertiary)
                             )
                     }
-                    .frame(width: 432, height: 243)
+                    .frame(width: 400, height: 225)
 
-                    // Enhanced gradient overlay with vibrancy
                     LinearGradient(
-                        gradient: Gradient(colors: [.clear, .black.opacity(0.75)]),
+                        gradient: Gradient(colors: [.clear, .black.opacity(0.7)]),
                         startPoint: .top,
                         endPoint: .bottom
                     )
 
-                    // Show logo in bottom left corner (for both TV shows and movies)
                     VStack(alignment: .leading, spacing: 0) {
                         Spacer()
                         HStack {
@@ -870,100 +701,76 @@ struct LandscapeMediaCard: View {
                                         .resizable()
                                         .scaledToFit()
                                 } placeholder: {
-                                    // Show title while logo loads
                                     Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
-                                        .font(.system(size: 28, weight: .bold, design: .default))
+                                        .font(.system(size: 22, weight: .bold, design: .default))
                                         .foregroundColor(.white)
                                         .lineLimit(2)
                                         .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
                                 }
-                                .frame(maxWidth: 200, maxHeight: 70)
+                                .frame(maxWidth: 180, maxHeight: 60)
                                 .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
-                                .id("\(media.id)-\(clearLogo)") // Force view recreation when logo changes
+                                .id("\(media.id)-\(clearLogo)")
                             } else {
-                                // Show title when logo is not available
                                 Text(media.type == "episode" ? (media.grandparentTitle ?? media.title) : media.title)
-                                    .font(.system(size: 28, weight: .bold, design: .default))
+                                    .font(.system(size: 22, weight: .bold, design: .default))
                                     .foregroundColor(.white)
                                     .lineLimit(2)
                                     .shadow(color: .black.opacity(0.8), radius: 4, x: 0, y: 2)
-                                    .frame(maxWidth: 200, alignment: .leading)
+                                    .frame(maxWidth: 180, alignment: .leading)
                             }
                             Spacer()
                         }
-                        .padding(.leading, 24)
-                        .padding(.bottom, 24)
+                        .padding(.leading, 20)
+                        .padding(.bottom, 20)
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
-                .shadow(color: .black.opacity(isFocused ? 0.75 : 0.55), radius: isFocused ? 40 : 20, x: 0, y: isFocused ? 20 : 12)
+                .shadow(
+                    color: .black.opacity(isFocused ? 0.8 : 0.6),
+                    radius: isFocused ? 40 : 20,
+                    x: 0,
+                    y: isFocused ? 20 : 10
+                )
 
-                // Progress bar below card with enhanced Liquid Glass styling
                 if media.progress > 0 && media.progress < 0.98 {
                     ZStack(alignment: .leading) {
-                        // Background track
                         Capsule()
                             .fill(.regularMaterial)
                             .opacity(0.4)
-                            .frame(width: 432, height: 5)
+                            .frame(width: 400, height: 5)
 
-                        // Progress fill with Beacon gradient
                         Capsule()
                             .fill(Color.beaconGradient)
-                            .frame(width: 432 * media.progress, height: 5)
-                            .shadow(color: Color.beaconMagenta.opacity(0.5), radius: 4, x: 0, y: 0)
+                            .frame(width: 400 * media.progress, height: 5)
+                            .shadow(color: Color.beaconMagenta.opacity(0.6), radius: 4, x: 0, y: 0)
                     }
                     .padding(.top, 8)
                 }
 
-                // Episode info below card with vibrancy
                 if media.type == "episode" {
                     Text(media.episodeInfo)
-                        .font(.system(size: 24, weight: .semibold, design: .default))
-                        .foregroundStyle(.primary)
-                        .frame(width: 432, alignment: .leading)
+                        .font(.system(size: 20, weight: .semibold, design: .default))
+                        .foregroundColor(.white.opacity(0.9))
+                        .frame(width: 400, alignment: .leading)
                         .padding(.top, 12)
                 } else {
-                    // Title for movies
                     Text(media.title)
-                        .font(.system(size: 24, weight: .semibold, design: .default))
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 20, weight: .semibold, design: .default))
+                        .foregroundColor(.white.opacity(0.9))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                        .frame(width: 432, alignment: .leading)
+                        .frame(width: 400, alignment: .leading)
                         .padding(.top, 12)
                 }
             }
         }
-        .buttonStyle(MediaCardButtonStyle())
-        .onFocusChange { focused in
-            isFocused = focused
-            onFocusChange?(focused)
-        }
+        .buttonStyle(PlainButtonStyle())
+        .focusable()
+        .focused($isFocused)
+        .scaleEffect(isFocused ? 1.08 : 1.0)
+        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isFocused)
         .onPlayPauseCommand {
             action()
-        }
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint("In progress. Double tap to continue watching")
-        .accessibilityAddTraits(.isButton)
-    }
-
-    private var accessibilityLabel: String {
-        if media.type == "episode", let show = media.grandparentTitle {
-            var label = "\(show), \(media.title)"
-            label += " \(media.formatSeasonEpisode())"
-            if media.progress > 0 {
-                let percent = Int(media.progress * 100)
-                label += ", \(percent)% watched"
-            }
-            return label
-        } else {
-            var label = media.title
-            if media.progress > 0 {
-                let percent = Int(media.progress * 100)
-                label += ", \(percent)% watched"
-            }
-            return label
         }
     }
 
@@ -991,12 +798,10 @@ struct LandscapeMediaCard: View {
             return nil
         }
 
-        // clearLogo already includes the full URL from the Image array
         if clearLogo.starts(with: "http") {
             return URL(string: clearLogo)
         }
 
-        // Fallback to building URL if it's a relative path
         var urlString = baseURL.absoluteString + clearLogo
         if let token = server.accessToken {
             urlString += "?X-Plex-Token=\(token)"
