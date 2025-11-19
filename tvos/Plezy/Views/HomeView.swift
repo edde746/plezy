@@ -123,7 +123,7 @@ struct HomeView: View {
                         Color.clear
                             .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
                     }
-                    .frame(height: 800)
+                    .frame(height: 580)
 
                     // Continue Watching section
                     if !onDeck.isEmpty {
@@ -177,16 +177,16 @@ struct HomeView: View {
                     //     }
                     // }
 
-                    // Bottom padding
-                    Color.clear.frame(height: 100)
+                    // Bottom padding - add extra space to allow scrolling past Continue Watching
+                    Color.clear.frame(height: 600)
                 }
             }
             .coordinateSpace(name: "scroll")
             .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
                 scrollOffset = value
-                // Hide hero when scrolled past 600 points (approximately when Continue Watching becomes visible)
+                // Hide hero when scrolled past the spacer (approximately when Continue Watching becomes visible)
                 withAnimation(.easeInOut(duration: 0.3)) {
-                    shouldShowHero = value > -600
+                    shouldShowHero = value > -450
                 }
             }
         }
