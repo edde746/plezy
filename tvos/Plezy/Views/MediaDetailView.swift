@@ -274,9 +274,7 @@ struct MediaDetailView: View {
                                 }
                                 .tvOSScrollClipDisabled()
                             }
-                                    .padding(.vertical, 20)
-                                }
-                            }
+                            .padding(.vertical, 20)
                         }
 
                         // TV Show seasons or episodes
