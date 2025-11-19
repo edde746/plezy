@@ -29,11 +29,13 @@ class AppBarBackButton extends StatefulWidget {
   /// [style] determines the visual appearance of the back button.
   /// [onPressed] is called when the button is tapped. If null, defaults to Navigator.pop.
   /// [color] overrides the default icon color. If null, uses white for circular/video, theme default for plain.
+  /// [semanticLabel] provides accessibility label for screen readers.
   const AppBarBackButton({
     super.key,
     this.style = BackButtonStyle.circular,
     this.onPressed,
     this.color,
+    this.semanticLabel,
   });
 
   /// The visual style of the back button
@@ -44,6 +46,9 @@ class AppBarBackButton extends StatefulWidget {
 
   /// The color of the back arrow icon. If null, uses style-appropriate default.
   final Color? color;
+
+  /// Semantic label for screen readers
+  final String? semanticLabel;
 
   @override
   State<AppBarBackButton> createState() => _AppBarBackButtonState();
@@ -124,7 +129,7 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
         break;
     }
 
-    final button = MouseRegion(
+    final buttonWidget = MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _onHoverChange(true),
       onExit: (_) => _onHoverChange(false),
@@ -153,6 +158,15 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
         ),
       ),
     );
+
+    final button = widget.semanticLabel != null
+        ? Semantics(
+            label: widget.semanticLabel,
+            button: true,
+            excludeSemantics: true,
+            child: buttonWidget,
+          )
+        : buttonWidget;
 
     return widget.style == BackButtonStyle.circular
         ? SafeArea(child: button)

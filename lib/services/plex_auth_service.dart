@@ -645,7 +645,16 @@ class PlexServer {
     }
 
     for (final connection in connections) {
-      addCandidate(connection, connection.httpDirectUrl, false, false);
+      // First, try the actual connection URI (may be HTTPS plex.direct)
+      final isPlexDirect = connection.uri.contains('.plex.direct');
+      final isHttps = connection.protocol == 'https';
+      addCandidate(connection, connection.uri, isPlexDirect, isHttps);
+
+      // For HTTPS connections, also add HTTP direct IP as fallback
+      // This provides backward compatibility and fallback for cert issues
+      if (isHttps) {
+        addCandidate(connection, connection.httpDirectUrl, false, false);
+      }
     }
 
     return [

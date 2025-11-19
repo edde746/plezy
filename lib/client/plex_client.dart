@@ -13,6 +13,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_video_playback_data.dart';
+import '../models/play_queue_response.dart';
 import '../network/endpoint_failover_interceptor.dart';
 import '../utils/app_logger.dart';
 import '../utils/log_redaction_manager.dart';
@@ -546,7 +547,10 @@ class PlexClient {
     // Remove leading slash if present
     final path = thumbPath.startsWith('/') ? thumbPath.substring(1) : thumbPath;
 
-    return '${config.baseUrl}/$path?X-Plex-Token=${config.token}';
+    // Check if path already has query parameters
+    final separator = path.contains('?') ? '&' : '?';
+
+    return '${config.baseUrl}/$path${separator}X-Plex-Token=${config.token}';
   }
 
   /// Get video URL for direct playback
@@ -1482,6 +1486,348 @@ class PlexClient {
       appLogger.e('Failed to update playlist: $e');
       return false;
     }
+  }
+
+  // ============================================================================
+  // Collection Methods
+  // ============================================================================
+
+  /// Get all collections for a library section
+  /// Returns collections as PlexMetadata objects with type="collection"
+  Future<List<PlexMetadata>> getLibraryCollections(String sectionId) async {
+    try {
+      final response = await _dio.get(
+        '/library/sections/$sectionId/collections',
+        queryParameters: {'includeGuids': 1},
+      );
+      final allItems = _extractMetadataList(response);
+
+      // Collections should have type="collection"
+      return allItems.where((item) {
+        return item.type.toLowerCase() == 'collection';
+      }).toList();
+    } catch (e) {
+      appLogger.e('Failed to get library collections: $e');
+      return [];
+    }
+  }
+
+  /// Get items in a collection
+  /// Returns the list of metadata items in the collection
+  Future<List<PlexMetadata>> getCollectionItems(String collectionId) async {
+    try {
+      final response = await _dio.get(
+        '/library/collections/$collectionId/children',
+      );
+      return _extractMetadataList(response);
+    } catch (e) {
+      appLogger.e('Failed to get collection items: $e');
+      return [];
+    }
+  }
+
+  /// Delete a collection
+  /// Deletes a library collection from the server
+  Future<bool> deleteCollection(String sectionId, String collectionId) async {
+    try {
+      appLogger.d(
+        'Deleting collection: sectionId=$sectionId, collectionId=$collectionId',
+      );
+      final response = await _dio.delete('/library/collections/$collectionId');
+      appLogger.d('Delete collection response: ${response.statusCode}');
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to delete collection', error: e);
+      return false;
+    }
+  }
+
+  /// Create a new collection
+  /// Creates a new collection and optionally adds items to it
+  /// Returns the created collection ID or null if failed
+  Future<String?> createCollection({
+    required String sectionId,
+    required String title,
+    required String uri,
+    int? type,
+  }) async {
+    try {
+      appLogger.d(
+        'Creating collection: sectionId=$sectionId, title=$title, type=$type',
+      );
+      final response = await _dio.post(
+        '/library/collections',
+        queryParameters: {
+          if (type != null) 'type': type,
+          'title': title,
+          'smart': 0,
+          'sectionId': sectionId,
+          'uri': uri,
+        },
+      );
+      appLogger.d('Create collection response: ${response.statusCode}');
+
+      // Extract the collection ID from the response
+      // The response should contain the created collection metadata
+      if (response.data != null && response.data['MediaContainer'] != null) {
+        final metadata = response.data['MediaContainer']['Metadata'];
+        if (metadata != null && metadata.isNotEmpty) {
+          final collectionId = metadata[0]['ratingKey']?.toString();
+          appLogger.d('Created collection with ID: $collectionId');
+          return collectionId;
+        }
+      }
+
+      return null;
+    } catch (e) {
+      appLogger.e('Failed to create collection', error: e);
+      return null;
+    }
+  }
+
+  /// Add items to an existing collection
+  /// Adds one or more items (specified by URI) to an existing collection
+  Future<bool> addToCollection({
+    required String collectionId,
+    required String uri,
+  }) async {
+    try {
+      appLogger.d('Adding items to collection: collectionId=$collectionId');
+      final response = await _dio.put(
+        '/library/collections/$collectionId/items',
+        queryParameters: {'uri': uri},
+      );
+      appLogger.d('Add to collection response: ${response.statusCode}');
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to add items to collection', error: e);
+      return false;
+    }
+  }
+
+  /// Remove an item from a collection
+  /// Removes a single item from an existing collection
+  Future<bool> removeFromCollection({
+    required String collectionId,
+    required String itemId,
+  }) async {
+    try {
+      appLogger.d(
+        'Removing item from collection: collectionId=$collectionId, itemId=$itemId',
+      );
+      final response = await _dio.delete(
+        '/library/collections/$collectionId/items/$itemId',
+      );
+      appLogger.d('Remove from collection response: ${response.statusCode}');
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to remove item from collection', error: e);
+      return false;
+    }
+  }
+
+  // ============================================================================
+  // Play Queue Methods
+  // ============================================================================
+
+  /// Create a new play queue
+  /// Either uri or playlistID must be specified
+  Future<PlayQueueResponse?> createPlayQueue({
+    String? uri,
+    int? playlistID,
+    required String type,
+    String? key,
+    int shuffle = 0,
+    int repeat = 0,
+    int continuous = 0,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'type': type,
+        'shuffle': shuffle,
+        'repeat': repeat,
+        'continuous': continuous,
+      };
+
+      if (uri != null) {
+        queryParams['uri'] = uri;
+      }
+      if (playlistID != null) {
+        queryParams['playlistID'] = playlistID;
+      }
+      if (key != null) {
+        queryParams['key'] = key;
+      }
+
+      final response = await _dio.post(
+        '/playQueues',
+        queryParameters: queryParams,
+      );
+
+      return PlayQueueResponse.fromJson(response.data);
+    } catch (e) {
+      appLogger.e('Failed to create play queue', error: e);
+      return null;
+    }
+  }
+
+  /// Get a play queue with optional windowing
+  /// Can request a window of items around a specific item
+  Future<PlayQueueResponse?> getPlayQueue(
+    int playQueueId, {
+    String? center,
+    int window = 50,
+    int includeBefore = 1,
+    int includeAfter = 1,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'window': window,
+        'includeBefore': includeBefore,
+        'includeAfter': includeAfter,
+      };
+
+      if (center != null) {
+        queryParams['center'] = center;
+      }
+
+      final response = await _dio.get(
+        '/playQueues/$playQueueId',
+        queryParameters: queryParams,
+      );
+
+      return PlayQueueResponse.fromJson(response.data);
+    } catch (e) {
+      appLogger.e('Failed to get play queue: $e');
+      return null;
+    }
+  }
+
+  /// Shuffle a play queue
+  /// The currently selected item is maintained
+  Future<PlayQueueResponse?> shufflePlayQueue(int playQueueId) async {
+    try {
+      final response = await _dio.put('/playQueues/$playQueueId/shuffle');
+      return PlayQueueResponse.fromJson(response.data);
+    } catch (e) {
+      appLogger.e('Failed to shuffle play queue: $e');
+      return null;
+    }
+  }
+
+  /// Clear all items from a play queue
+  Future<bool> clearPlayQueue(int playQueueId) async {
+    try {
+      await _dio.delete('/playQueues/$playQueueId/items');
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to clear play queue: $e');
+      return false;
+    }
+  }
+
+  /// Extract both Metadata and Directory entries from response
+  /// Folders can come back as either type
+  List<PlexMetadata> _extractMetadataAndDirectories(Response response) {
+    final List<PlexMetadata> items = [];
+    final container = _getMediaContainer(response);
+
+    if (container != null) {
+      // Extract Metadata entries - try full parsing first
+      if (container['Metadata'] != null) {
+        for (final json in container['Metadata'] as List) {
+          try {
+            // Try to parse with full PlexMetadata.fromJson first
+            items.add(PlexMetadata.fromJson(json));
+          } catch (e) {
+            // If full parsing fails, use minimal safe parsing
+            appLogger.d('Using minimal parsing for metadata item: $e');
+            try {
+              items.add(
+                PlexMetadata(
+                  ratingKey: json['key'] ?? json['ratingKey'] ?? '',
+                  key: json['key'] ?? '',
+                  type: json['type'] ?? 'folder',
+                  title: json['title'] ?? 'Untitled',
+                  thumb: json['thumb'],
+                  art: json['art'],
+                  year: json['year'],
+                ),
+              );
+            } catch (e2) {
+              appLogger.e('Failed to parse metadata item: $e2');
+            }
+          }
+        }
+      }
+
+      // Extract Directory entries (folders)
+      if (container['Directory'] != null) {
+        for (final json in container['Directory'] as List) {
+          try {
+            // Try to parse as PlexMetadata first
+            items.add(PlexMetadata.fromJson(json));
+          } catch (e) {
+            // If that fails, use minimal folder representation
+            try {
+              items.add(
+                PlexMetadata(
+                  ratingKey: json['key'] ?? json['ratingKey'] ?? '',
+                  key: json['key'] ?? '',
+                  type: json['type'] ?? 'folder',
+                  title: json['title'] ?? 'Untitled',
+                  thumb: json['thumb'],
+                  art: json['art'],
+                ),
+              );
+            } catch (e2) {
+              appLogger.e('Failed to parse directory item: $e2');
+            }
+          }
+        }
+      }
+    }
+
+    return items;
+  }
+
+  /// Get root folders for a library section
+  /// Returns the top-level folder structure for filesystem-based browsing
+  Future<List<PlexMetadata>> getLibraryFolders(String sectionId) async {
+    try {
+      final response = await _dio.get(
+        '/library/sections/$sectionId/folder',
+        queryParameters: {'includeCollections': 0},
+      );
+      return _extractMetadataAndDirectories(response);
+    } catch (e) {
+      appLogger.e('Failed to get library folders: $e');
+      return [];
+    }
+  }
+
+  /// Get children of a specific folder
+  /// Returns files and subfolders within the given folder
+  Future<List<PlexMetadata>> getFolderChildren(String folderKey) async {
+    try {
+      final response = await _dio.get(folderKey);
+      return _extractMetadataAndDirectories(response);
+    } catch (e) {
+      appLogger.e('Failed to get folder children: $e');
+      return [];
+    }
+  }
+
+  /// Get library-specific playlists
+  /// Filters playlists by checking if they contain items from the specified library
+  /// This is a client-side filter since the API doesn't support sectionId for playlists
+  Future<List<PlexPlaylist>> getLibraryPlaylists({
+    required String sectionId,
+    String playlistType = 'video',
+  }) async {
+    // For now, return all video playlists
+    // Future enhancement: filter by checking playlist items' library
+    return getPlaylists(playlistType: playlistType);
   }
 
   // ============================================================================

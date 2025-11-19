@@ -168,13 +168,27 @@ class StorageService {
   }
 
   // Library Filters (stored as JSON string)
-  Future<void> saveLibraryFilters(Map<String, String> filters) async {
+  Future<void> saveLibraryFilters(
+    Map<String, String> filters, {
+    String? sectionId,
+  }) async {
     final jsonString = json.encode(filters);
-    await _prefs.setString(_keyLibraryFilters, jsonString);
+    final key = sectionId != null
+        ? 'library_filters_$sectionId'
+        : _keyLibraryFilters;
+    await _prefs.setString(key, jsonString);
   }
 
-  Map<String, String> getLibraryFilters() {
-    final jsonString = _prefs.getString(_keyLibraryFilters);
+  Map<String, String> getLibraryFilters({String? sectionId}) {
+    final scopedKey = sectionId != null
+        ? 'library_filters_$sectionId'
+        : _keyLibraryFilters;
+
+    // Prefer per-library filters when available
+    final jsonString =
+        _prefs.getString(scopedKey) ??
+        // Legacy support: fall back to global filters if present
+        _prefs.getString(_keyLibraryFilters);
     if (jsonString == null) return {};
 
     try {
@@ -185,14 +199,44 @@ class StorageService {
     }
   }
 
-  // Library Sort (per-library, stored individually)
-  Future<void> saveLibrarySort(String sectionId, String sortKey) async {
-    await _prefs.setString('library_sort_$sectionId', sortKey);
+  // Library Sort (per-library, stored individually with descending flag)
+  Future<void> saveLibrarySort(
+    String sectionId,
+    String sortKey, {
+    bool descending = false,
+  }) async {
+    final sortData = {'key': sortKey, 'descending': descending};
+    await _prefs.setString('library_sort_$sectionId', json.encode(sortData));
   }
 
-  String getLibrarySort(String sectionId) {
-    // Return saved sort or default to titleSort (alphabetical)
-    return _prefs.getString('library_sort_$sectionId') ?? 'titleSort';
+  Map<String, dynamic>? getLibrarySort(String sectionId) {
+    final jsonString = _prefs.getString('library_sort_$sectionId');
+    if (jsonString == null) return null;
+
+    try {
+      return json.decode(jsonString) as Map<String, dynamic>;
+    } catch (e) {
+      // Legacy support: if it's just a string, return it as the key
+      return {'key': jsonString, 'descending': false};
+    }
+  }
+
+  // Library Grouping (per-library, e.g., 'movies', 'shows', 'seasons', 'episodes')
+  Future<void> saveLibraryGrouping(String sectionId, String grouping) async {
+    await _prefs.setString('library_grouping_$sectionId', grouping);
+  }
+
+  String? getLibraryGrouping(String sectionId) {
+    return _prefs.getString('library_grouping_$sectionId');
+  }
+
+  // Library Tab (per-library, saves last selected tab index)
+  Future<void> saveLibraryTab(String sectionId, int tabIndex) async {
+    await _prefs.setInt('library_tab_$sectionId', tabIndex);
+  }
+
+  int? getLibraryTab(String sectionId) {
+    return _prefs.getInt('library_tab_$sectionId');
   }
 
   // Hidden Libraries (stored as JSON array of library section IDs)

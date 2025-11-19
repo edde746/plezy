@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2130 (355 per locale)
+/// Strings: 2634 (439 per locale)
 ///
-/// Built on 2025-11-15 at 11:48 UTC
+/// Built on 2025-11-18 at 18:40 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -163,6 +163,7 @@ class Translations implements BaseTranslations<AppLocale, Translations> {
 	late final _StringsPinEntryEn pinEntry = _StringsPinEntryEn._(_root);
 	late final _StringsFileInfoEn fileInfo = _StringsFileInfoEn._(_root);
 	late final _StringsMediaMenuEn mediaMenu = _StringsMediaMenuEn._(_root);
+	late final _StringsAccessibilityEn accessibility = _StringsAccessibilityEn._(_root);
 	late final _StringsTooltipsEn tooltips = _StringsTooltipsEn._(_root);
 	late final _StringsVideoControlsEn videoControls = _StringsVideoControlsEn._(_root);
 	late final _StringsUserStatusEn userStatus = _StringsUserStatusEn._(_root);
@@ -179,6 +180,7 @@ class Translations implements BaseTranslations<AppLocale, Translations> {
 	late final _StringsLogsEn logs = _StringsLogsEn._(_root);
 	late final _StringsLicensesEn licenses = _StringsLicensesEn._(_root);
 	late final _StringsNavigationEn navigation = _StringsNavigationEn._(_root);
+	late final _StringsCollectionsEn collections = _StringsCollectionsEn._(_root);
 	late final _StringsPlaylistsEn playlists = _StringsPlaylistsEn._(_root);
 }
 
@@ -241,6 +243,9 @@ class _StringsCommonEn {
 	String get yes => 'Yes';
 	String get no => 'No';
 	String get server => 'Server';
+	String get delete => 'Delete';
+	String get shuffle => 'Shuffle';
+	String get addTo => 'Add to...';
 }
 
 // Path: screens
@@ -441,6 +446,23 @@ class _StringsMediaMenuEn {
 	String get fileInfo => 'File Info';
 }
 
+// Path: accessibility
+class _StringsAccessibilityEn {
+	_StringsAccessibilityEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String mediaCardMovie({required Object title}) => '${title}, movie';
+	String mediaCardShow({required Object title}) => '${title}, TV show';
+	String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	String get mediaCardWatched => 'watched';
+	String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	String get mediaCardUnwatched => 'unwatched';
+	String get tapToPlay => 'Tap to play';
+}
+
 // Path: tooltips
 class _StringsTooltipsEn {
 	_StringsTooltipsEn._(this._root);
@@ -473,6 +495,33 @@ class _StringsVideoControlsEn {
 	String get stretch => 'Stretch';
 	String get lockRotation => 'Lock rotation';
 	String get unlockRotation => 'Unlock rotation';
+	String get sleepTimer => 'Sleep Timer';
+	String get timerActive => 'Timer Active';
+	String playbackWillPauseIn({required Object duration}) => 'Playback will pause in ${duration}';
+	String get sleepTimerCompleted => 'Sleep timer completed - playback paused';
+	String get playButton => 'Play';
+	String get pauseButton => 'Pause';
+	String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	String get previousButton => 'Previous episode';
+	String get nextButton => 'Next episode';
+	String get previousChapterButton => 'Previous chapter';
+	String get nextChapterButton => 'Next chapter';
+	String get volumeButton => 'Volume';
+	String get muteButton => 'Mute';
+	String get unmuteButton => 'Unmute';
+	String get settingsButton => 'Video settings';
+	String get audioTrackButton => 'Audio tracks';
+	String get subtitlesButton => 'Subtitles';
+	String get chaptersButton => 'Chapters';
+	String get versionsButton => 'Video versions';
+	String get aspectRatioButton => 'Aspect ratio';
+	String get fullscreenButton => 'Enter fullscreen';
+	String get exitFullscreenButton => 'Exit fullscreen';
+	String get rotationLockButton => 'Rotation lock';
+	String get timelineSlider => 'Video timeline';
+	String get volumeSlider => 'Volume level';
+	String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -521,6 +570,10 @@ class _StringsMessagesEn {
 	String get noResultsFound => 'No results found';
 	String sleepTimerSet({required Object label}) => 'Sleep timer set for ${label}';
 	String failedToSwitchProfile({required Object displayName}) => 'Failed to switch to ${displayName}';
+	String get noItemsAvailable => 'No items available';
+	String get failedToCreatePlayQueue => 'Failed to create play queue';
+	String get failedToCreatePlayQueueNoItems => 'Failed to create play queue - no items';
+	String failedPlayback({required Object action, required Object error}) => 'Failed to ${action}: ${error}';
 }
 
 // Path: profile
@@ -653,6 +706,15 @@ class _StringsLibrariesEn {
 	String get showLibrary => 'Show library';
 	String get hideLibrary => 'Hide library';
 	String get libraryOptions => 'Library options';
+	String get content => 'library content';
+	String get selectLibrary => 'Select library';
+	String filtersWithCount({required Object count}) => 'Filters (${count})';
+	String get noRecommendations => 'No recommendations available';
+	String get noCollections => 'No collections in this library';
+	String get noFoldersFound => 'No folders found';
+	String get folders => 'folders';
+	late final _StringsLibrariesTabsEn tabs = _StringsLibrariesTabsEn._(_root);
+	late final _StringsLibrariesGroupingsEn groupings = _StringsLibrariesGroupingsEn._(_root);
 }
 
 // Path: about
@@ -746,6 +808,39 @@ class _StringsNavigationEn {
 	String get settings => 'Settings';
 }
 
+// Path: collections
+class _StringsCollectionsEn {
+	_StringsCollectionsEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get title => 'Collections';
+	String get collection => 'Collection';
+	String get empty => 'Collection is empty';
+	String get noItems => 'No items in this collection';
+	String get unknownLibrarySection => 'Cannot delete: Unknown library section';
+	String get deleteCollection => 'Delete Collection';
+	String deleteConfirm({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.';
+	String get deleted => 'Collection deleted';
+	String get deleteFailed => 'Failed to delete collection';
+	String deleteFailedWithError({required Object error}) => 'Failed to delete collection: ${error}';
+	String failedToLoadItems({required Object error}) => 'Failed to load collection items: ${error}';
+	String get addTo => 'Add to collection';
+	String get selectCollection => 'Select Collection';
+	String get createNewCollection => 'Create New Collection';
+	String get collectionName => 'Collection Name';
+	String get enterCollectionName => 'Enter collection name';
+	String get addedToCollection => 'Added to collection';
+	String get errorAddingToCollection => 'Failed to add to collection';
+	String get created => 'Collection created';
+	String get removeFromCollection => 'Remove from collection';
+	String removeFromCollectionConfirm({required Object title}) => 'Remove "${title}" from this collection?';
+	String get removedFromCollection => 'Removed from collection';
+	String get removeFromCollectionFailed => 'Failed to remove from collection';
+	String removeFromCollectionError({required Object error}) => 'Error removing from collection: ${error}';
+}
+
 // Path: playlists
 class _StringsPlaylistsEn {
 	_StringsPlaylistsEn._(this._root);
@@ -754,6 +849,7 @@ class _StringsPlaylistsEn {
 
 	// Translations
 	String get title => 'Playlists';
+	String get playlist => 'Playlist';
 	String get noPlaylists => 'No playlists found';
 	String get create => 'Create Playlist';
 	String get newPlaylist => 'New Playlist';
@@ -787,6 +883,34 @@ class _StringsPlaylistsEn {
 	String get errorAdding => 'Failed to add to playlist';
 	String get errorReordering => 'Failed to reorder playlist item';
 	String get errorRemoving => 'Failed to remove from playlist';
+}
+
+// Path: libraries.tabs
+class _StringsLibrariesTabsEn {
+	_StringsLibrariesTabsEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get recommended => 'Recommended';
+	String get browse => 'Browse';
+	String get collections => 'Collections';
+	String get playlists => 'Playlists';
+}
+
+// Path: libraries.groupings
+class _StringsLibrariesGroupingsEn {
+	_StringsLibrariesGroupingsEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get all => 'All';
+	String get movies => 'Movies';
+	String get shows => 'TV Shows';
+	String get seasons => 'Seasons';
+	String get episodes => 'Episodes';
+	String get folders => 'Folders';
 }
 
 // Path: <root>
@@ -824,6 +948,7 @@ class _StringsDe implements Translations {
 	@override late final _StringsPinEntryDe pinEntry = _StringsPinEntryDe._(_root);
 	@override late final _StringsFileInfoDe fileInfo = _StringsFileInfoDe._(_root);
 	@override late final _StringsMediaMenuDe mediaMenu = _StringsMediaMenuDe._(_root);
+	@override late final _StringsAccessibilityDe accessibility = _StringsAccessibilityDe._(_root);
 	@override late final _StringsTooltipsDe tooltips = _StringsTooltipsDe._(_root);
 	@override late final _StringsVideoControlsDe videoControls = _StringsVideoControlsDe._(_root);
 	@override late final _StringsUserStatusDe userStatus = _StringsUserStatusDe._(_root);
@@ -841,6 +966,7 @@ class _StringsDe implements Translations {
 	@override late final _StringsLicensesDe licenses = _StringsLicensesDe._(_root);
 	@override late final _StringsNavigationDe navigation = _StringsNavigationDe._(_root);
 	@override late final _StringsPlaylistsDe playlists = _StringsPlaylistsDe._(_root);
+	@override late final _StringsCollectionsDe collections = _StringsCollectionsDe._(_root);
 }
 
 // Path: app
@@ -902,6 +1028,9 @@ class _StringsCommonDe implements _StringsCommonEn {
 	@override String get yes => 'Ja';
 	@override String get no => 'Nein';
 	@override String get server => 'Server';
+	@override String get delete => 'Löschen';
+	@override String get shuffle => 'Zufall';
+	@override String get addTo => 'Hinzufügen zu...';
 }
 
 // Path: screens
@@ -1102,6 +1231,23 @@ class _StringsMediaMenuDe implements _StringsMediaMenuEn {
 	@override String get fileInfo => 'Dateiinfo';
 }
 
+// Path: accessibility
+class _StringsAccessibilityDe implements _StringsAccessibilityEn {
+	_StringsAccessibilityDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, Film';
+	@override String mediaCardShow({required Object title}) => '${title}, Serie';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'angesehen';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} Prozent angesehen';
+	@override String get mediaCardUnwatched => 'ungeschaut';
+	@override String get tapToPlay => 'Zum Abspielen tippen';
+}
+
 // Path: tooltips
 class _StringsTooltipsDe implements _StringsTooltipsEn {
 	_StringsTooltipsDe._(this._root);
@@ -1134,6 +1280,33 @@ class _StringsVideoControlsDe implements _StringsVideoControlsEn {
 	@override String get stretch => 'Strecken';
 	@override String get lockRotation => 'Rotation sperren';
 	@override String get unlockRotation => 'Rotation entsperren';
+	@override String get sleepTimer => 'Schlaftimer';
+	@override String get timerActive => 'Schlaftimer aktiv';
+	@override String playbackWillPauseIn({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert';
+	@override String get sleepTimerCompleted => 'Schlaftimer abgelaufen – Wiedergabe pausiert';
+	@override String get playButton => 'Wiedergeben';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => '${seconds} Sekunden zurück';
+	@override String seekForwardButton({required Object seconds}) => '${seconds} Sekunden vor';
+	@override String get previousButton => 'Vorherige Episode';
+	@override String get nextButton => 'Nächste Episode';
+	@override String get previousChapterButton => 'Vorheriges Kapitel';
+	@override String get nextChapterButton => 'Nächstes Kapitel';
+	@override String get volumeButton => 'Lautstärke';
+	@override String get muteButton => 'Stumm schalten';
+	@override String get unmuteButton => 'Stummschaltung aufheben';
+	@override String get settingsButton => 'Videoeinstellungen';
+	@override String get audioTrackButton => 'Tonspuren';
+	@override String get subtitlesButton => 'Untertitel';
+	@override String get chaptersButton => 'Kapitel';
+	@override String get versionsButton => 'Videoversionen';
+	@override String get aspectRatioButton => 'Seitenverhältnis';
+	@override String get fullscreenButton => 'Vollbild aktivieren';
+	@override String get exitFullscreenButton => 'Vollbild verlassen';
+	@override String get rotationLockButton => 'Dreh­sperre';
+	@override String get timelineSlider => 'Video-Zeitleiste';
+	@override String get volumeSlider => 'Lautstärkepegel';
+	@override String get backButton => 'Zurück';
 }
 
 // Path: userStatus
@@ -1182,6 +1355,10 @@ class _StringsMessagesDe implements _StringsMessagesEn {
 	@override String get noResultsFound => 'Keine Ergebnisse gefunden';
 	@override String sleepTimerSet({required Object label}) => 'Sleep-Timer gesetzt auf ${label}';
 	@override String failedToSwitchProfile({required Object displayName}) => 'Profilwechsel zu ${displayName} fehlgeschlagen';
+	@override String get noItemsAvailable => 'Keine Elemente verfügbar';
+	@override String get failedToCreatePlayQueue => 'Wiedergabewarteschlange konnte nicht erstellt werden';
+	@override String get failedToCreatePlayQueueNoItems => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente';
+	@override String failedPlayback({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}';
 }
 
 // Path: profile
@@ -1314,6 +1491,15 @@ class _StringsLibrariesDe implements _StringsLibrariesEn {
 	@override String get showLibrary => 'Mediathek anzeigen';
 	@override String get hideLibrary => 'Mediathek ausblenden';
 	@override String get libraryOptions => 'Mediatheksoptionen';
+	@override String get content => 'Bibliotheksinhalt';
+	@override String get selectLibrary => 'Bibliothek auswählen';
+	@override String filtersWithCount({required Object count}) => 'Filter (${count})';
+	@override String get noRecommendations => 'Keine Empfehlungen verfügbar';
+	@override String get noCollections => 'Keine Sammlungen in dieser Mediathek';
+	@override String get noFoldersFound => 'Keine Ordner gefunden';
+	@override String get folders => 'Ordner';
+	@override late final _StringsLibrariesTabsDe tabs = _StringsLibrariesTabsDe._(_root);
+	@override late final _StringsLibrariesGroupingsDe groupings = _StringsLibrariesGroupingsDe._(_root);
 }
 
 // Path: about
@@ -1448,6 +1634,68 @@ class _StringsPlaylistsDe implements _StringsPlaylistsEn {
 	@override String get errorAdding => 'Konnte nicht zur Wiedergabeliste hinzugefügt werden';
 	@override String get errorReordering => 'Element der Wiedergabeliste konnte nicht neu geordnet werden';
 	@override String get errorRemoving => 'Konnte nicht aus der Wiedergabeliste entfernt werden';
+	@override String get playlist => 'Wiedergabeliste';
+}
+
+// Path: collections
+class _StringsCollectionsDe implements _StringsCollectionsEn {
+	_StringsCollectionsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Sammlungen';
+	@override String get collection => 'Sammlung';
+	@override String get empty => 'Sammlung ist leer';
+	@override String get noItems => 'Keine Elemente in dieser Sammlung';
+	@override String get unknownLibrarySection => 'Löschen nicht möglich: Unbekannte Bibliothekssektion';
+	@override String get deleteCollection => 'Sammlung löschen';
+	@override String deleteConfirm({required Object title}) => 'Sind Sie sicher, dass Sie "${title}" löschen möchten? Dies kann nicht rückgängig gemacht werden.';
+	@override String get deleted => 'Sammlung gelöscht';
+	@override String get deleteFailed => 'Sammlung konnte nicht gelöscht werden';
+	@override String deleteFailedWithError({required Object error}) => 'Sammlung konnte nicht gelöscht werden: ${error}';
+	@override String failedToLoadItems({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}';
+	@override String get addTo => 'Zur Sammlung hinzufügen';
+	@override String get selectCollection => 'Sammlung auswählen';
+	@override String get createNewCollection => 'Neue Sammlung erstellen';
+	@override String get collectionName => 'Sammlungsname';
+	@override String get enterCollectionName => 'Sammlungsnamen eingeben';
+	@override String get addedToCollection => 'Zur Sammlung hinzugefügt';
+	@override String get errorAddingToCollection => 'Fehler beim Hinzufügen zur Sammlung';
+	@override String get created => 'Sammlung erstellt';
+	@override String get removeFromCollection => 'Aus Sammlung entfernen';
+	@override String removeFromCollectionConfirm({required Object title}) => '"${title}" aus dieser Sammlung entfernen?';
+	@override String get removedFromCollection => 'Aus Sammlung entfernt';
+	@override String get removeFromCollectionFailed => 'Entfernen aus Sammlung fehlgeschlagen';
+	@override String removeFromCollectionError({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}';
+}
+
+// Path: libraries.tabs
+class _StringsLibrariesTabsDe implements _StringsLibrariesTabsEn {
+	_StringsLibrariesTabsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get recommended => 'Empfohlen';
+	@override String get browse => 'Durchsuchen';
+	@override String get collections => 'Sammlungen';
+	@override String get playlists => 'Wiedergabelisten';
+}
+
+// Path: libraries.groupings
+class _StringsLibrariesGroupingsDe implements _StringsLibrariesGroupingsEn {
+	_StringsLibrariesGroupingsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get all => 'Alle';
+	@override String get movies => 'Filme';
+	@override String get shows => 'Serien';
+	@override String get seasons => 'Staffeln';
+	@override String get episodes => 'Episoden';
+	@override String get folders => 'Ordner';
 }
 
 // Path: <root>
@@ -1485,6 +1733,7 @@ class _StringsIt implements Translations {
 	@override late final _StringsPinEntryIt pinEntry = _StringsPinEntryIt._(_root);
 	@override late final _StringsFileInfoIt fileInfo = _StringsFileInfoIt._(_root);
 	@override late final _StringsMediaMenuIt mediaMenu = _StringsMediaMenuIt._(_root);
+	@override late final _StringsAccessibilityIt accessibility = _StringsAccessibilityIt._(_root);
 	@override late final _StringsTooltipsIt tooltips = _StringsTooltipsIt._(_root);
 	@override late final _StringsVideoControlsIt videoControls = _StringsVideoControlsIt._(_root);
 	@override late final _StringsUserStatusIt userStatus = _StringsUserStatusIt._(_root);
@@ -1502,6 +1751,7 @@ class _StringsIt implements Translations {
 	@override late final _StringsLicensesIt licenses = _StringsLicensesIt._(_root);
 	@override late final _StringsNavigationIt navigation = _StringsNavigationIt._(_root);
 	@override late final _StringsPlaylistsIt playlists = _StringsPlaylistsIt._(_root);
+	@override late final _StringsCollectionsIt collections = _StringsCollectionsIt._(_root);
 }
 
 // Path: app
@@ -1563,6 +1813,9 @@ class _StringsCommonIt implements _StringsCommonEn {
 	@override String get yes => 'Sì';
 	@override String get no => 'No';
 	@override String get server => 'Server';
+	@override String get delete => 'Elimina';
+	@override String get shuffle => 'Casuale';
+	@override String get addTo => 'Aggiungi a...';
 }
 
 // Path: screens
@@ -1763,6 +2016,23 @@ class _StringsMediaMenuIt implements _StringsMediaMenuEn {
 	@override String get fileInfo => 'Info sul file';
 }
 
+// Path: accessibility
+class _StringsAccessibilityIt implements _StringsAccessibilityEn {
+	_StringsAccessibilityIt._(this._root);
+
+	@override final _StringsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, movie';
+	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'watched';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	@override String get mediaCardUnwatched => 'unwatched';
+	@override String get tapToPlay => 'Tap to play';
+}
+
 // Path: tooltips
 class _StringsTooltipsIt implements _StringsTooltipsEn {
 	_StringsTooltipsIt._(this._root);
@@ -1795,6 +2065,33 @@ class _StringsVideoControlsIt implements _StringsVideoControlsEn {
 	@override String get stretch => 'Allunga';
 	@override String get lockRotation => 'Blocca rotazione';
 	@override String get unlockRotation => 'Sblocca rotazione';
+	@override String get sleepTimer => 'Timer di spegnimento';
+	@override String get timerActive => 'Timer attivo';
+	@override String playbackWillPauseIn({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
+	@override String get sleepTimerCompleted => 'Timer di spegnimento completato - riproduzione in pausa';
+	@override String get playButton => 'Play';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	@override String get previousButton => 'Previous episode';
+	@override String get nextButton => 'Next episode';
+	@override String get previousChapterButton => 'Previous chapter';
+	@override String get nextChapterButton => 'Next chapter';
+	@override String get volumeButton => 'Volume';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Unmute';
+	@override String get settingsButton => 'Video settings';
+	@override String get audioTrackButton => 'Audio tracks';
+	@override String get subtitlesButton => 'Subtitles';
+	@override String get chaptersButton => 'Chapters';
+	@override String get versionsButton => 'Video versions';
+	@override String get aspectRatioButton => 'Aspect ratio';
+	@override String get fullscreenButton => 'Enter fullscreen';
+	@override String get exitFullscreenButton => 'Exit fullscreen';
+	@override String get rotationLockButton => 'Rotation lock';
+	@override String get timelineSlider => 'Video timeline';
+	@override String get volumeSlider => 'Volume level';
+	@override String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -1843,6 +2140,10 @@ class _StringsMessagesIt implements _StringsMessagesEn {
 	@override String get noResultsFound => 'Nessun risultato';
 	@override String sleepTimerSet({required Object label}) => 'Imposta timer spegnimento per ${label}';
 	@override String failedToSwitchProfile({required Object displayName}) => 'Impossibile passare a ${displayName}';
+	@override String get noItemsAvailable => 'Nessun elemento disponibile';
+	@override String get failedToCreatePlayQueue => 'Impossibile creare la coda di riproduzione';
+	@override String get failedToCreatePlayQueueNoItems => 'Impossibile creare la coda di riproduzione - nessun elemento';
+	@override String failedPlayback({required Object action, required Object error}) => 'Impossibile ${action}: ${error}';
 }
 
 // Path: profile
@@ -1975,6 +2276,15 @@ class _StringsLibrariesIt implements _StringsLibrariesEn {
 	@override String get showLibrary => 'Mostra libreria';
 	@override String get hideLibrary => 'Nascondi libreria';
 	@override String get libraryOptions => 'Opzioni libreria';
+	@override String get content => 'contenuto della libreria';
+	@override String get selectLibrary => 'Seleziona libreria';
+	@override String filtersWithCount({required Object count}) => 'Filtri (${count})';
+	@override String get noRecommendations => 'Nessun consiglio disponibile';
+	@override String get noCollections => 'Nessuna raccolta in questa libreria';
+	@override String get noFoldersFound => 'Nessuna cartella trovata';
+	@override String get folders => 'cartelle';
+	@override late final _StringsLibrariesTabsIt tabs = _StringsLibrariesTabsIt._(_root);
+	@override late final _StringsLibrariesGroupingsIt groupings = _StringsLibrariesGroupingsIt._(_root);
 }
 
 // Path: about
@@ -2109,6 +2419,68 @@ class _StringsPlaylistsIt implements _StringsPlaylistsEn {
 	@override String get errorAdding => 'Errore durante l\'aggiunta alla playlist';
 	@override String get errorReordering => 'Errore durante il riordino dell\'elemento della playlist';
 	@override String get errorRemoving => 'Errore durante la rimozione dalla playlist';
+	@override String get playlist => 'Playlist';
+}
+
+// Path: collections
+class _StringsCollectionsIt implements _StringsCollectionsEn {
+	_StringsCollectionsIt._(this._root);
+
+	@override final _StringsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Raccolte';
+	@override String get collection => 'Raccolta';
+	@override String get empty => 'La raccolta è vuota';
+	@override String get noItems => 'Nessun elemento in questa raccolta';
+	@override String get unknownLibrarySection => 'Impossibile eliminare: sezione libreria sconosciuta';
+	@override String get deleteCollection => 'Elimina raccolta';
+	@override String deleteConfirm({required Object title}) => 'Sei sicuro di voler eliminare "${title}"? Questa azione non può essere annullata.';
+	@override String get deleted => 'Raccolta eliminata';
+	@override String get deleteFailed => 'Impossibile eliminare la raccolta';
+	@override String deleteFailedWithError({required Object error}) => 'Impossibile eliminare la raccolta: ${error}';
+	@override String failedToLoadItems({required Object error}) => 'Impossibile caricare gli elementi della raccolta: ${error}';
+	@override String get addTo => 'Aggiungi alla raccolta';
+	@override String get selectCollection => 'Seleziona raccolta';
+	@override String get createNewCollection => 'Crea nuova raccolta';
+	@override String get collectionName => 'Nome raccolta';
+	@override String get enterCollectionName => 'Inserisci nome raccolta';
+	@override String get addedToCollection => 'Aggiunto alla raccolta';
+	@override String get errorAddingToCollection => 'Errore nell\'aggiunta alla raccolta';
+	@override String get created => 'Raccolta creata';
+	@override String get removeFromCollection => 'Rimuovi dalla raccolta';
+	@override String removeFromCollectionConfirm({required Object title}) => 'Rimuovere "${title}" da questa raccolta?';
+	@override String get removedFromCollection => 'Rimosso dalla raccolta';
+	@override String get removeFromCollectionFailed => 'Impossibile rimuovere dalla raccolta';
+	@override String removeFromCollectionError({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}';
+}
+
+// Path: libraries.tabs
+class _StringsLibrariesTabsIt implements _StringsLibrariesTabsEn {
+	_StringsLibrariesTabsIt._(this._root);
+
+	@override final _StringsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get recommended => 'Consigliati';
+	@override String get browse => 'Esplora';
+	@override String get collections => 'Raccolte';
+	@override String get playlists => 'Playlist';
+}
+
+// Path: libraries.groupings
+class _StringsLibrariesGroupingsIt implements _StringsLibrariesGroupingsEn {
+	_StringsLibrariesGroupingsIt._(this._root);
+
+	@override final _StringsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get all => 'Tutti';
+	@override String get movies => 'Film';
+	@override String get shows => 'Serie TV';
+	@override String get seasons => 'Stagioni';
+	@override String get episodes => 'Episodi';
+	@override String get folders => 'Cartelle';
 }
 
 // Path: <root>
@@ -2146,6 +2518,7 @@ class _StringsNl implements Translations {
 	@override late final _StringsPinEntryNl pinEntry = _StringsPinEntryNl._(_root);
 	@override late final _StringsFileInfoNl fileInfo = _StringsFileInfoNl._(_root);
 	@override late final _StringsMediaMenuNl mediaMenu = _StringsMediaMenuNl._(_root);
+	@override late final _StringsAccessibilityNl accessibility = _StringsAccessibilityNl._(_root);
 	@override late final _StringsTooltipsNl tooltips = _StringsTooltipsNl._(_root);
 	@override late final _StringsVideoControlsNl videoControls = _StringsVideoControlsNl._(_root);
 	@override late final _StringsUserStatusNl userStatus = _StringsUserStatusNl._(_root);
@@ -2163,6 +2536,7 @@ class _StringsNl implements Translations {
 	@override late final _StringsLicensesNl licenses = _StringsLicensesNl._(_root);
 	@override late final _StringsNavigationNl navigation = _StringsNavigationNl._(_root);
 	@override late final _StringsPlaylistsNl playlists = _StringsPlaylistsNl._(_root);
+	@override late final _StringsCollectionsNl collections = _StringsCollectionsNl._(_root);
 }
 
 // Path: app
@@ -2224,6 +2598,9 @@ class _StringsCommonNl implements _StringsCommonEn {
 	@override String get yes => 'Ja';
 	@override String get no => 'Nee';
 	@override String get server => 'Server';
+	@override String get delete => 'Verwijderen';
+	@override String get shuffle => 'Shuffle';
+	@override String get addTo => 'Toevoegen aan...';
 }
 
 // Path: screens
@@ -2424,6 +2801,23 @@ class _StringsMediaMenuNl implements _StringsMediaMenuEn {
 	@override String get fileInfo => 'Bestand info';
 }
 
+// Path: accessibility
+class _StringsAccessibilityNl implements _StringsAccessibilityEn {
+	_StringsAccessibilityNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, movie';
+	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'watched';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	@override String get mediaCardUnwatched => 'unwatched';
+	@override String get tapToPlay => 'Tap to play';
+}
+
 // Path: tooltips
 class _StringsTooltipsNl implements _StringsTooltipsEn {
 	_StringsTooltipsNl._(this._root);
@@ -2456,6 +2850,33 @@ class _StringsVideoControlsNl implements _StringsVideoControlsEn {
 	@override String get stretch => 'Uitrekken';
 	@override String get lockRotation => 'Vergrendel rotatie';
 	@override String get unlockRotation => 'Ontgrendel rotatie';
+	@override String get sleepTimer => 'Slaaptimer';
+	@override String get timerActive => 'Timer actief';
+	@override String playbackWillPauseIn({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
+	@override String get sleepTimerCompleted => 'Slaaptimer voltooid - afspelen gepauzeerd';
+	@override String get playButton => 'Play';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	@override String get previousButton => 'Previous episode';
+	@override String get nextButton => 'Next episode';
+	@override String get previousChapterButton => 'Previous chapter';
+	@override String get nextChapterButton => 'Next chapter';
+	@override String get volumeButton => 'Volume';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Unmute';
+	@override String get settingsButton => 'Video settings';
+	@override String get audioTrackButton => 'Audio tracks';
+	@override String get subtitlesButton => 'Subtitles';
+	@override String get chaptersButton => 'Chapters';
+	@override String get versionsButton => 'Video versions';
+	@override String get aspectRatioButton => 'Aspect ratio';
+	@override String get fullscreenButton => 'Enter fullscreen';
+	@override String get exitFullscreenButton => 'Exit fullscreen';
+	@override String get rotationLockButton => 'Rotation lock';
+	@override String get timelineSlider => 'Video timeline';
+	@override String get volumeSlider => 'Volume level';
+	@override String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -2504,6 +2925,10 @@ class _StringsMessagesNl implements _StringsMessagesEn {
 	@override String get noResultsFound => 'Geen resultaten gevonden';
 	@override String sleepTimerSet({required Object label}) => 'Slaap timer ingesteld voor ${label}';
 	@override String failedToSwitchProfile({required Object displayName}) => 'Kon niet wisselen naar ${displayName}';
+	@override String get noItemsAvailable => 'Geen items beschikbaar';
+	@override String get failedToCreatePlayQueue => 'Kan afspeelwachtrij niet maken';
+	@override String get failedToCreatePlayQueueNoItems => 'Kan afspeelwachtrij niet maken - geen items';
+	@override String failedPlayback({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}';
 }
 
 // Path: profile
@@ -2636,6 +3061,15 @@ class _StringsLibrariesNl implements _StringsLibrariesEn {
 	@override String get showLibrary => 'Toon bibliotheek';
 	@override String get hideLibrary => 'Verberg bibliotheek';
 	@override String get libraryOptions => 'Bibliotheek opties';
+	@override String get content => 'bibliotheekinhoud';
+	@override String get selectLibrary => 'Bibliotheek kiezen';
+	@override String filtersWithCount({required Object count}) => 'Filters (${count})';
+	@override String get noRecommendations => 'Geen aanbevelingen beschikbaar';
+	@override String get noCollections => 'Geen collecties in deze bibliotheek';
+	@override String get noFoldersFound => 'Geen mappen gevonden';
+	@override String get folders => 'mappen';
+	@override late final _StringsLibrariesTabsNl tabs = _StringsLibrariesTabsNl._(_root);
+	@override late final _StringsLibrariesGroupingsNl groupings = _StringsLibrariesGroupingsNl._(_root);
 }
 
 // Path: about
@@ -2770,6 +3204,68 @@ class _StringsPlaylistsNl implements _StringsPlaylistsEn {
 	@override String get errorAdding => 'Fout bij toevoegen aan afspeellijst';
 	@override String get errorReordering => 'Fout bij herschikken van afspeellijstitem';
 	@override String get errorRemoving => 'Fout bij verwijderen uit afspeellijst';
+	@override String get playlist => 'Afspeellijst';
+}
+
+// Path: collections
+class _StringsCollectionsNl implements _StringsCollectionsEn {
+	_StringsCollectionsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Collecties';
+	@override String get collection => 'Collectie';
+	@override String get empty => 'Collectie is leeg';
+	@override String get noItems => 'Geen items in deze collectie';
+	@override String get unknownLibrarySection => 'Kan niet verwijderen: onbekende bibliotheeksectie';
+	@override String get deleteCollection => 'Collectie verwijderen';
+	@override String deleteConfirm({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.';
+	@override String get deleted => 'Collectie verwijderd';
+	@override String get deleteFailed => 'Collectie verwijderen mislukt';
+	@override String deleteFailedWithError({required Object error}) => 'Collectie verwijderen mislukt: ${error}';
+	@override String failedToLoadItems({required Object error}) => 'Collectie-items laden mislukt: ${error}';
+	@override String get addTo => 'Toevoegen aan collectie';
+	@override String get selectCollection => 'Selecteer collectie';
+	@override String get createNewCollection => 'Nieuwe collectie maken';
+	@override String get collectionName => 'Collectienaam';
+	@override String get enterCollectionName => 'Voer collectienaam in';
+	@override String get addedToCollection => 'Toegevoegd aan collectie';
+	@override String get errorAddingToCollection => 'Fout bij toevoegen aan collectie';
+	@override String get created => 'Collectie gemaakt';
+	@override String get removeFromCollection => 'Verwijderen uit collectie';
+	@override String removeFromCollectionConfirm({required Object title}) => '"${title}" uit deze collectie verwijderen?';
+	@override String get removedFromCollection => 'Uit collectie verwijderd';
+	@override String get removeFromCollectionFailed => 'Verwijderen uit collectie mislukt';
+	@override String removeFromCollectionError({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}';
+}
+
+// Path: libraries.tabs
+class _StringsLibrariesTabsNl implements _StringsLibrariesTabsEn {
+	_StringsLibrariesTabsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get recommended => 'Aanbevolen';
+	@override String get browse => 'Bladeren';
+	@override String get collections => 'Collecties';
+	@override String get playlists => 'Afspeellijsten';
+}
+
+// Path: libraries.groupings
+class _StringsLibrariesGroupingsNl implements _StringsLibrariesGroupingsEn {
+	_StringsLibrariesGroupingsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get all => 'Alles';
+	@override String get movies => 'Films';
+	@override String get shows => 'Series';
+	@override String get seasons => 'Seizoenen';
+	@override String get episodes => 'Afleveringen';
+	@override String get folders => 'Mappen';
 }
 
 // Path: <root>
@@ -2807,6 +3303,7 @@ class _StringsSv implements Translations {
 	@override late final _StringsPinEntrySv pinEntry = _StringsPinEntrySv._(_root);
 	@override late final _StringsFileInfoSv fileInfo = _StringsFileInfoSv._(_root);
 	@override late final _StringsMediaMenuSv mediaMenu = _StringsMediaMenuSv._(_root);
+	@override late final _StringsAccessibilitySv accessibility = _StringsAccessibilitySv._(_root);
 	@override late final _StringsTooltipsSv tooltips = _StringsTooltipsSv._(_root);
 	@override late final _StringsVideoControlsSv videoControls = _StringsVideoControlsSv._(_root);
 	@override late final _StringsUserStatusSv userStatus = _StringsUserStatusSv._(_root);
@@ -2824,6 +3321,7 @@ class _StringsSv implements Translations {
 	@override late final _StringsLicensesSv licenses = _StringsLicensesSv._(_root);
 	@override late final _StringsNavigationSv navigation = _StringsNavigationSv._(_root);
 	@override late final _StringsPlaylistsSv playlists = _StringsPlaylistsSv._(_root);
+	@override late final _StringsCollectionsSv collections = _StringsCollectionsSv._(_root);
 }
 
 // Path: app
@@ -2885,6 +3383,9 @@ class _StringsCommonSv implements _StringsCommonEn {
 	@override String get yes => 'Ja';
 	@override String get no => 'Nej';
 	@override String get server => 'Server';
+	@override String get delete => 'Ta bort';
+	@override String get shuffle => 'Blanda';
+	@override String get addTo => 'Lägg till i...';
 }
 
 // Path: screens
@@ -3085,6 +3586,23 @@ class _StringsMediaMenuSv implements _StringsMediaMenuEn {
 	@override String get fileInfo => 'Filinformation';
 }
 
+// Path: accessibility
+class _StringsAccessibilitySv implements _StringsAccessibilityEn {
+	_StringsAccessibilitySv._(this._root);
+
+	@override final _StringsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, movie';
+	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'watched';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	@override String get mediaCardUnwatched => 'unwatched';
+	@override String get tapToPlay => 'Tap to play';
+}
+
 // Path: tooltips
 class _StringsTooltipsSv implements _StringsTooltipsEn {
 	_StringsTooltipsSv._(this._root);
@@ -3117,6 +3635,33 @@ class _StringsVideoControlsSv implements _StringsVideoControlsEn {
 	@override String get stretch => 'Sträck';
 	@override String get lockRotation => 'Lås rotation';
 	@override String get unlockRotation => 'Lås upp rotation';
+	@override String get sleepTimer => 'Sovtimer';
+	@override String get timerActive => 'Timer aktiv';
+	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
+	@override String get sleepTimerCompleted => 'Sovtimer slutförd - uppspelning pausad';
+	@override String get playButton => 'Play';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	@override String get previousButton => 'Previous episode';
+	@override String get nextButton => 'Next episode';
+	@override String get previousChapterButton => 'Previous chapter';
+	@override String get nextChapterButton => 'Next chapter';
+	@override String get volumeButton => 'Volume';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Unmute';
+	@override String get settingsButton => 'Video settings';
+	@override String get audioTrackButton => 'Audio tracks';
+	@override String get subtitlesButton => 'Subtitles';
+	@override String get chaptersButton => 'Chapters';
+	@override String get versionsButton => 'Video versions';
+	@override String get aspectRatioButton => 'Aspect ratio';
+	@override String get fullscreenButton => 'Enter fullscreen';
+	@override String get exitFullscreenButton => 'Exit fullscreen';
+	@override String get rotationLockButton => 'Rotation lock';
+	@override String get timelineSlider => 'Video timeline';
+	@override String get volumeSlider => 'Volume level';
+	@override String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -3165,6 +3710,10 @@ class _StringsMessagesSv implements _StringsMessagesEn {
 	@override String get noResultsFound => 'Inga resultat hittades';
 	@override String sleepTimerSet({required Object label}) => 'Sovtimer inställd för ${label}';
 	@override String failedToSwitchProfile({required Object displayName}) => 'Misslyckades att byta till ${displayName}';
+	@override String get noItemsAvailable => 'Inga objekt tillgängliga';
+	@override String get failedToCreatePlayQueue => 'Det gick inte att skapa uppspelningskö';
+	@override String get failedToCreatePlayQueueNoItems => 'Det gick inte att skapa uppspelningskö – inga objekt';
+	@override String failedPlayback({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}';
 }
 
 // Path: profile
@@ -3297,6 +3846,15 @@ class _StringsLibrariesSv implements _StringsLibrariesEn {
 	@override String get showLibrary => 'Visa bibliotek';
 	@override String get hideLibrary => 'Dölj bibliotek';
 	@override String get libraryOptions => 'Biblioteksalternativ';
+	@override String get content => 'bibliotekets innehåll';
+	@override String get selectLibrary => 'Välj bibliotek';
+	@override String filtersWithCount({required Object count}) => 'Filter (${count})';
+	@override String get noRecommendations => 'Inga rekommendationer tillgängliga';
+	@override String get noCollections => 'Inga samlingar i det här biblioteket';
+	@override String get noFoldersFound => 'Inga mappar hittades';
+	@override String get folders => 'mappar';
+	@override late final _StringsLibrariesTabsSv tabs = _StringsLibrariesTabsSv._(_root);
+	@override late final _StringsLibrariesGroupingsSv groupings = _StringsLibrariesGroupingsSv._(_root);
 }
 
 // Path: about
@@ -3431,6 +3989,68 @@ class _StringsPlaylistsSv implements _StringsPlaylistsEn {
 	@override String get errorAdding => 'Det gick inte att lägga till i spellista';
 	@override String get errorReordering => 'Det gick inte att omordna spellisteobjekt';
 	@override String get errorRemoving => 'Det gick inte att ta bort från spellista';
+	@override String get playlist => 'Spellista';
+}
+
+// Path: collections
+class _StringsCollectionsSv implements _StringsCollectionsEn {
+	_StringsCollectionsSv._(this._root);
+
+	@override final _StringsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Samlingar';
+	@override String get collection => 'Samling';
+	@override String get empty => 'Samlingen är tom';
+	@override String get noItems => 'Inga objekt i den här samlingen';
+	@override String get unknownLibrarySection => 'Kan inte ta bort: okänd bibliotekssektion';
+	@override String get deleteCollection => 'Ta bort samling';
+	@override String deleteConfirm({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Detta går inte att ångra.';
+	@override String get deleted => 'Samling borttagen';
+	@override String get deleteFailed => 'Det gick inte att ta bort samlingen';
+	@override String deleteFailedWithError({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}';
+	@override String failedToLoadItems({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}';
+	@override String get addTo => 'Lägg till i samling';
+	@override String get selectCollection => 'Välj samling';
+	@override String get createNewCollection => 'Skapa ny samling';
+	@override String get collectionName => 'Samlingsnamn';
+	@override String get enterCollectionName => 'Ange samlingsnamn';
+	@override String get addedToCollection => 'Tillagd i samling';
+	@override String get errorAddingToCollection => 'Fel vid tillägg i samling';
+	@override String get created => 'Samling skapad';
+	@override String get removeFromCollection => 'Ta bort från samling';
+	@override String removeFromCollectionConfirm({required Object title}) => 'Ta bort "${title}" från denna samling?';
+	@override String get removedFromCollection => 'Borttagen från samling';
+	@override String get removeFromCollectionFailed => 'Misslyckades med att ta bort från samling';
+	@override String removeFromCollectionError({required Object error}) => 'Fel vid borttagning från samling: ${error}';
+}
+
+// Path: libraries.tabs
+class _StringsLibrariesTabsSv implements _StringsLibrariesTabsEn {
+	_StringsLibrariesTabsSv._(this._root);
+
+	@override final _StringsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get recommended => 'Rekommenderat';
+	@override String get browse => 'Bläddra';
+	@override String get collections => 'Samlingar';
+	@override String get playlists => 'Spellistor';
+}
+
+// Path: libraries.groupings
+class _StringsLibrariesGroupingsSv implements _StringsLibrariesGroupingsEn {
+	_StringsLibrariesGroupingsSv._(this._root);
+
+	@override final _StringsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get all => 'Alla';
+	@override String get movies => 'Filmer';
+	@override String get shows => 'Serier';
+	@override String get seasons => 'Säsonger';
+	@override String get episodes => 'Avsnitt';
+	@override String get folders => 'Mappar';
 }
 
 // Path: <root>
@@ -3468,6 +4088,7 @@ class _StringsZh implements Translations {
 	@override late final _StringsPinEntryZh pinEntry = _StringsPinEntryZh._(_root);
 	@override late final _StringsFileInfoZh fileInfo = _StringsFileInfoZh._(_root);
 	@override late final _StringsMediaMenuZh mediaMenu = _StringsMediaMenuZh._(_root);
+	@override late final _StringsAccessibilityZh accessibility = _StringsAccessibilityZh._(_root);
 	@override late final _StringsTooltipsZh tooltips = _StringsTooltipsZh._(_root);
 	@override late final _StringsVideoControlsZh videoControls = _StringsVideoControlsZh._(_root);
 	@override late final _StringsUserStatusZh userStatus = _StringsUserStatusZh._(_root);
@@ -3485,6 +4106,7 @@ class _StringsZh implements Translations {
 	@override late final _StringsLicensesZh licenses = _StringsLicensesZh._(_root);
 	@override late final _StringsNavigationZh navigation = _StringsNavigationZh._(_root);
 	@override late final _StringsPlaylistsZh playlists = _StringsPlaylistsZh._(_root);
+	@override late final _StringsCollectionsZh collections = _StringsCollectionsZh._(_root);
 }
 
 // Path: app
@@ -3546,6 +4168,9 @@ class _StringsCommonZh implements _StringsCommonEn {
 	@override String get yes => '是';
 	@override String get no => '否';
 	@override String get server => '服务器';
+	@override String get delete => '删除';
+	@override String get shuffle => '随机播放';
+	@override String get addTo => '添加到...';
 }
 
 // Path: screens
@@ -3746,6 +4371,23 @@ class _StringsMediaMenuZh implements _StringsMediaMenuEn {
 	@override String get fileInfo => '文件信息';
 }
 
+// Path: accessibility
+class _StringsAccessibilityZh implements _StringsAccessibilityEn {
+	_StringsAccessibilityZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, movie';
+	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'watched';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
+	@override String get mediaCardUnwatched => 'unwatched';
+	@override String get tapToPlay => 'Tap to play';
+}
+
 // Path: tooltips
 class _StringsTooltipsZh implements _StringsTooltipsEn {
 	_StringsTooltipsZh._(this._root);
@@ -3778,6 +4420,33 @@ class _StringsVideoControlsZh implements _StringsVideoControlsEn {
 	@override String get stretch => '拉伸';
 	@override String get lockRotation => '锁定旋转';
 	@override String get unlockRotation => '解锁旋转';
+	@override String get sleepTimer => '睡眠定时器';
+	@override String get timerActive => '定时器已激活';
+	@override String playbackWillPauseIn({required Object duration}) => '播放将在 ${duration} 后暂停';
+	@override String get sleepTimerCompleted => '睡眠定时器已完成 - 播放已暂停';
+	@override String get playButton => 'Play';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
+	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
+	@override String get previousButton => 'Previous episode';
+	@override String get nextButton => 'Next episode';
+	@override String get previousChapterButton => 'Previous chapter';
+	@override String get nextChapterButton => 'Next chapter';
+	@override String get volumeButton => 'Volume';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Unmute';
+	@override String get settingsButton => 'Video settings';
+	@override String get audioTrackButton => 'Audio tracks';
+	@override String get subtitlesButton => 'Subtitles';
+	@override String get chaptersButton => 'Chapters';
+	@override String get versionsButton => 'Video versions';
+	@override String get aspectRatioButton => 'Aspect ratio';
+	@override String get fullscreenButton => 'Enter fullscreen';
+	@override String get exitFullscreenButton => 'Exit fullscreen';
+	@override String get rotationLockButton => 'Rotation lock';
+	@override String get timelineSlider => 'Video timeline';
+	@override String get volumeSlider => 'Volume level';
+	@override String get backButton => 'Back';
 }
 
 // Path: userStatus
@@ -3826,6 +4495,10 @@ class _StringsMessagesZh implements _StringsMessagesEn {
 	@override String get noResultsFound => '未找到结果';
 	@override String sleepTimerSet({required Object label}) => '睡眠定时器已设置为 ${label}';
 	@override String failedToSwitchProfile({required Object displayName}) => '无法切换到 ${displayName}';
+	@override String get noItemsAvailable => '没有可用的项目';
+	@override String get failedToCreatePlayQueue => '创建播放队列失败';
+	@override String get failedToCreatePlayQueueNoItems => '创建播放队列失败 - 没有项目';
+	@override String failedPlayback({required Object action, required Object error}) => '无法${action}: ${error}';
 }
 
 // Path: profile
@@ -3958,6 +4631,15 @@ class _StringsLibrariesZh implements _StringsLibrariesEn {
 	@override String get showLibrary => '显示媒体库';
 	@override String get hideLibrary => '隐藏媒体库';
 	@override String get libraryOptions => '媒体库选项';
+	@override String get content => '媒体库内容';
+	@override String get selectLibrary => '选择媒体库';
+	@override String filtersWithCount({required Object count}) => '筛选器（${count}）';
+	@override String get noRecommendations => '暂无推荐';
+	@override String get noCollections => '此媒体库中没有合集';
+	@override String get noFoldersFound => '未找到文件夹';
+	@override String get folders => '文件夹';
+	@override late final _StringsLibrariesTabsZh tabs = _StringsLibrariesTabsZh._(_root);
+	@override late final _StringsLibrariesGroupingsZh groupings = _StringsLibrariesGroupingsZh._(_root);
 }
 
 // Path: about
@@ -4092,6 +4774,68 @@ class _StringsPlaylistsZh implements _StringsPlaylistsEn {
 	@override String get errorAdding => '添加到播放列表失败';
 	@override String get errorReordering => '重新排序播放列表项目失败';
 	@override String get errorRemoving => '从播放列表中移除失败';
+	@override String get playlist => '播放列表';
+}
+
+// Path: collections
+class _StringsCollectionsZh implements _StringsCollectionsEn {
+	_StringsCollectionsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '合集';
+	@override String get collection => '合集';
+	@override String get empty => '合集为空';
+	@override String get noItems => '此合集没有项目';
+	@override String get unknownLibrarySection => '无法删除：未知的媒体库分区';
+	@override String get deleteCollection => '删除合集';
+	@override String deleteConfirm({required Object title}) => '确定要删除"${title}"吗？此操作无法撤销。';
+	@override String get deleted => '已删除合集';
+	@override String get deleteFailed => '删除合集失败';
+	@override String deleteFailedWithError({required Object error}) => '删除合集失败：${error}';
+	@override String failedToLoadItems({required Object error}) => '加载合集项目失败：${error}';
+	@override String get addTo => '添加到合集';
+	@override String get selectCollection => '选择合集';
+	@override String get createNewCollection => '创建新合集';
+	@override String get collectionName => '合集名称';
+	@override String get enterCollectionName => '输入合集名称';
+	@override String get addedToCollection => '已添加到合集';
+	@override String get errorAddingToCollection => '添加到合集失败';
+	@override String get created => '已创建合集';
+	@override String get removeFromCollection => '从合集移除';
+	@override String removeFromCollectionConfirm({required Object title}) => '将“${title}”从此合集移除？';
+	@override String get removedFromCollection => '已从合集移除';
+	@override String get removeFromCollectionFailed => '从合集移除失败';
+	@override String removeFromCollectionError({required Object error}) => '从合集移除时出错：${error}';
+}
+
+// Path: libraries.tabs
+class _StringsLibrariesTabsZh implements _StringsLibrariesTabsEn {
+	_StringsLibrariesTabsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get recommended => '推荐';
+	@override String get browse => '浏览';
+	@override String get collections => '合集';
+	@override String get playlists => '播放列表';
+}
+
+// Path: libraries.groupings
+class _StringsLibrariesGroupingsZh implements _StringsLibrariesGroupingsEn {
+	_StringsLibrariesGroupingsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get all => '全部';
+	@override String get movies => '电影';
+	@override String get shows => '剧集';
+	@override String get seasons => '季';
+	@override String get episodes => '集';
+	@override String get folders => '文件夹';
 }
 
 /// Flat map(s) containing all translations.
@@ -4134,6 +4878,9 @@ extension on Translations {
 			case 'common.yes': return 'Yes';
 			case 'common.no': return 'No';
 			case 'common.server': return 'Server';
+			case 'common.delete': return 'Delete';
+			case 'common.shuffle': return 'Shuffle';
+			case 'common.addTo': return 'Add to...';
 			case 'screens.licenses': return 'Licenses';
 			case 'screens.selectServer': return 'Select Server';
 			case 'screens.switchProfile': return 'Switch Profile';
@@ -4260,6 +5007,14 @@ extension on Translations {
 			case 'mediaMenu.goToSeason': return 'Go to season';
 			case 'mediaMenu.shufflePlay': return 'Shuffle Play';
 			case 'mediaMenu.fileInfo': return 'File Info';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return 'Shuffle play';
 			case 'tooltips.markAsWatched': return 'Mark as watched';
 			case 'tooltips.markAsUnwatched': return 'Mark as unwatched';
@@ -4276,6 +5031,33 @@ extension on Translations {
 			case 'videoControls.stretch': return 'Stretch';
 			case 'videoControls.lockRotation': return 'Lock rotation';
 			case 'videoControls.unlockRotation': return 'Unlock rotation';
+			case 'videoControls.sleepTimer': return 'Sleep Timer';
+			case 'videoControls.timerActive': return 'Timer Active';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Playback will pause in ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Sleep timer completed - playback paused';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Restricted';
 			case 'userStatus.protected': return 'Protected';
@@ -4306,6 +5088,10 @@ extension on Translations {
 			case 'messages.noResultsFound': return 'No results found';
 			case 'messages.sleepTimerSet': return ({required Object label}) => 'Sleep timer set for ${label}';
 			case 'messages.failedToSwitchProfile': return ({required Object displayName}) => 'Failed to switch to ${displayName}';
+			case 'messages.noItemsAvailable': return 'No items available';
+			case 'messages.failedToCreatePlayQueue': return 'Failed to create play queue';
+			case 'messages.failedToCreatePlayQueueNoItems': return 'Failed to create play queue - no items';
+			case 'messages.failedPlayback': return ({required Object action, required Object error}) => 'Failed to ${action}: ${error}';
 			case 'profile.noUsersAvailable': return 'No users available';
 			case 'subtitlingStyling.stylingOptions': return 'Styling Options';
 			case 'subtitlingStyling.fontSize': return 'Font Size';
@@ -4384,6 +5170,23 @@ extension on Translations {
 			case 'libraries.showLibrary': return 'Show library';
 			case 'libraries.hideLibrary': return 'Hide library';
 			case 'libraries.libraryOptions': return 'Library options';
+			case 'libraries.content': return 'library content';
+			case 'libraries.selectLibrary': return 'Select library';
+			case 'libraries.filtersWithCount': return ({required Object count}) => 'Filters (${count})';
+			case 'libraries.noRecommendations': return 'No recommendations available';
+			case 'libraries.noCollections': return 'No collections in this library';
+			case 'libraries.noFoldersFound': return 'No folders found';
+			case 'libraries.folders': return 'folders';
+			case 'libraries.tabs.recommended': return 'Recommended';
+			case 'libraries.tabs.browse': return 'Browse';
+			case 'libraries.tabs.collections': return 'Collections';
+			case 'libraries.tabs.playlists': return 'Playlists';
+			case 'libraries.groupings.all': return 'All';
+			case 'libraries.groupings.movies': return 'Movies';
+			case 'libraries.groupings.shows': return 'TV Shows';
+			case 'libraries.groupings.seasons': return 'Seasons';
+			case 'libraries.groupings.episodes': return 'Episodes';
+			case 'libraries.groupings.folders': return 'Folders';
 			case 'about.title': return 'About';
 			case 'about.openSourceLicenses': return 'Open Source Licenses';
 			case 'about.versionLabel': return ({required Object version}) => 'Version ${version}';
@@ -4421,7 +5224,32 @@ extension on Translations {
 			case 'navigation.search': return 'Search';
 			case 'navigation.libraries': return 'Libraries';
 			case 'navigation.settings': return 'Settings';
+			case 'collections.title': return 'Collections';
+			case 'collections.collection': return 'Collection';
+			case 'collections.empty': return 'Collection is empty';
+			case 'collections.noItems': return 'No items in this collection';
+			case 'collections.unknownLibrarySection': return 'Cannot delete: Unknown library section';
+			case 'collections.deleteCollection': return 'Delete Collection';
+			case 'collections.deleteConfirm': return ({required Object title}) => 'Are you sure you want to delete "${title}"? This action cannot be undone.';
+			case 'collections.deleted': return 'Collection deleted';
+			case 'collections.deleteFailed': return 'Failed to delete collection';
+			case 'collections.deleteFailedWithError': return ({required Object error}) => 'Failed to delete collection: ${error}';
+			case 'collections.failedToLoadItems': return ({required Object error}) => 'Failed to load collection items: ${error}';
+			case 'collections.addTo': return 'Add to collection';
+			case 'collections.selectCollection': return 'Select Collection';
+			case 'collections.createNewCollection': return 'Create New Collection';
+			case 'collections.collectionName': return 'Collection Name';
+			case 'collections.enterCollectionName': return 'Enter collection name';
+			case 'collections.addedToCollection': return 'Added to collection';
+			case 'collections.errorAddingToCollection': return 'Failed to add to collection';
+			case 'collections.created': return 'Collection created';
+			case 'collections.removeFromCollection': return 'Remove from collection';
+			case 'collections.removeFromCollectionConfirm': return ({required Object title}) => 'Remove "${title}" from this collection?';
+			case 'collections.removedFromCollection': return 'Removed from collection';
+			case 'collections.removeFromCollectionFailed': return 'Failed to remove from collection';
+			case 'collections.removeFromCollectionError': return ({required Object error}) => 'Error removing from collection: ${error}';
 			case 'playlists.title': return 'Playlists';
+			case 'playlists.playlist': return 'Playlist';
 			case 'playlists.noPlaylists': return 'No playlists found';
 			case 'playlists.create': return 'Create Playlist';
 			case 'playlists.newPlaylist': return 'New Playlist';
@@ -4497,6 +5325,9 @@ extension on _StringsDe {
 			case 'common.yes': return 'Ja';
 			case 'common.no': return 'Nein';
 			case 'common.server': return 'Server';
+			case 'common.delete': return 'Löschen';
+			case 'common.shuffle': return 'Zufall';
+			case 'common.addTo': return 'Hinzufügen zu...';
 			case 'screens.licenses': return 'Lizenzen';
 			case 'screens.selectServer': return 'Server auswählen';
 			case 'screens.switchProfile': return 'Profil wechseln';
@@ -4623,6 +5454,14 @@ extension on _StringsDe {
 			case 'mediaMenu.goToSeason': return 'Zur Staffel';
 			case 'mediaMenu.shufflePlay': return 'Zufallswiedergabe';
 			case 'mediaMenu.fileInfo': return 'Dateiinfo';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, Film';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, Serie';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'angesehen';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} Prozent angesehen';
+			case 'accessibility.mediaCardUnwatched': return 'ungeschaut';
+			case 'accessibility.tapToPlay': return 'Zum Abspielen tippen';
 			case 'tooltips.shufflePlay': return 'Zufallswiedergabe';
 			case 'tooltips.markAsWatched': return 'Als gesehen markieren';
 			case 'tooltips.markAsUnwatched': return 'Als ungesehen markieren';
@@ -4639,6 +5478,33 @@ extension on _StringsDe {
 			case 'videoControls.stretch': return 'Strecken';
 			case 'videoControls.lockRotation': return 'Rotation sperren';
 			case 'videoControls.unlockRotation': return 'Rotation entsperren';
+			case 'videoControls.sleepTimer': return 'Schlaftimer';
+			case 'videoControls.timerActive': return 'Schlaftimer aktiv';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert';
+			case 'videoControls.sleepTimerCompleted': return 'Schlaftimer abgelaufen – Wiedergabe pausiert';
+			case 'videoControls.playButton': return 'Wiedergeben';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => '${seconds} Sekunden zurück';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => '${seconds} Sekunden vor';
+			case 'videoControls.previousButton': return 'Vorherige Episode';
+			case 'videoControls.nextButton': return 'Nächste Episode';
+			case 'videoControls.previousChapterButton': return 'Vorheriges Kapitel';
+			case 'videoControls.nextChapterButton': return 'Nächstes Kapitel';
+			case 'videoControls.volumeButton': return 'Lautstärke';
+			case 'videoControls.muteButton': return 'Stumm schalten';
+			case 'videoControls.unmuteButton': return 'Stummschaltung aufheben';
+			case 'videoControls.settingsButton': return 'Videoeinstellungen';
+			case 'videoControls.audioTrackButton': return 'Tonspuren';
+			case 'videoControls.subtitlesButton': return 'Untertitel';
+			case 'videoControls.chaptersButton': return 'Kapitel';
+			case 'videoControls.versionsButton': return 'Videoversionen';
+			case 'videoControls.aspectRatioButton': return 'Seitenverhältnis';
+			case 'videoControls.fullscreenButton': return 'Vollbild aktivieren';
+			case 'videoControls.exitFullscreenButton': return 'Vollbild verlassen';
+			case 'videoControls.rotationLockButton': return 'Dreh­sperre';
+			case 'videoControls.timelineSlider': return 'Video-Zeitleiste';
+			case 'videoControls.volumeSlider': return 'Lautstärkepegel';
+			case 'videoControls.backButton': return 'Zurück';
 			case 'userStatus.admin': return 'Eigentümer';
 			case 'userStatus.restricted': return 'Eingeschränkt';
 			case 'userStatus.protected': return 'Geschützt';
@@ -4669,6 +5535,10 @@ extension on _StringsDe {
 			case 'messages.noResultsFound': return 'Keine Ergebnisse gefunden';
 			case 'messages.sleepTimerSet': return ({required Object label}) => 'Sleep-Timer gesetzt auf ${label}';
 			case 'messages.failedToSwitchProfile': return ({required Object displayName}) => 'Profilwechsel zu ${displayName} fehlgeschlagen';
+			case 'messages.noItemsAvailable': return 'Keine Elemente verfügbar';
+			case 'messages.failedToCreatePlayQueue': return 'Wiedergabewarteschlange konnte nicht erstellt werden';
+			case 'messages.failedToCreatePlayQueueNoItems': return 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente';
+			case 'messages.failedPlayback': return ({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}';
 			case 'profile.noUsersAvailable': return 'Keine Benutzer verfügbar';
 			case 'subtitlingStyling.stylingOptions': return 'Stiloptionen';
 			case 'subtitlingStyling.fontSize': return 'Schriftgröße';
@@ -4747,6 +5617,23 @@ extension on _StringsDe {
 			case 'libraries.showLibrary': return 'Mediathek anzeigen';
 			case 'libraries.hideLibrary': return 'Mediathek ausblenden';
 			case 'libraries.libraryOptions': return 'Mediatheksoptionen';
+			case 'libraries.content': return 'Bibliotheksinhalt';
+			case 'libraries.selectLibrary': return 'Bibliothek auswählen';
+			case 'libraries.filtersWithCount': return ({required Object count}) => 'Filter (${count})';
+			case 'libraries.noRecommendations': return 'Keine Empfehlungen verfügbar';
+			case 'libraries.noCollections': return 'Keine Sammlungen in dieser Mediathek';
+			case 'libraries.noFoldersFound': return 'Keine Ordner gefunden';
+			case 'libraries.folders': return 'Ordner';
+			case 'libraries.tabs.recommended': return 'Empfohlen';
+			case 'libraries.tabs.browse': return 'Durchsuchen';
+			case 'libraries.tabs.collections': return 'Sammlungen';
+			case 'libraries.tabs.playlists': return 'Wiedergabelisten';
+			case 'libraries.groupings.all': return 'Alle';
+			case 'libraries.groupings.movies': return 'Filme';
+			case 'libraries.groupings.shows': return 'Serien';
+			case 'libraries.groupings.seasons': return 'Staffeln';
+			case 'libraries.groupings.episodes': return 'Episoden';
+			case 'libraries.groupings.folders': return 'Ordner';
 			case 'about.title': return 'Über';
 			case 'about.openSourceLicenses': return 'Open-Source-Lizenzen';
 			case 'about.versionLabel': return ({required Object version}) => 'Version ${version}';
@@ -4818,6 +5705,31 @@ extension on _StringsDe {
 			case 'playlists.errorAdding': return 'Konnte nicht zur Wiedergabeliste hinzugefügt werden';
 			case 'playlists.errorReordering': return 'Element der Wiedergabeliste konnte nicht neu geordnet werden';
 			case 'playlists.errorRemoving': return 'Konnte nicht aus der Wiedergabeliste entfernt werden';
+			case 'playlists.playlist': return 'Wiedergabeliste';
+			case 'collections.title': return 'Sammlungen';
+			case 'collections.collection': return 'Sammlung';
+			case 'collections.empty': return 'Sammlung ist leer';
+			case 'collections.noItems': return 'Keine Elemente in dieser Sammlung';
+			case 'collections.unknownLibrarySection': return 'Löschen nicht möglich: Unbekannte Bibliothekssektion';
+			case 'collections.deleteCollection': return 'Sammlung löschen';
+			case 'collections.deleteConfirm': return ({required Object title}) => 'Sind Sie sicher, dass Sie "${title}" löschen möchten? Dies kann nicht rückgängig gemacht werden.';
+			case 'collections.deleted': return 'Sammlung gelöscht';
+			case 'collections.deleteFailed': return 'Sammlung konnte nicht gelöscht werden';
+			case 'collections.deleteFailedWithError': return ({required Object error}) => 'Sammlung konnte nicht gelöscht werden: ${error}';
+			case 'collections.failedToLoadItems': return ({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}';
+			case 'collections.addTo': return 'Zur Sammlung hinzufügen';
+			case 'collections.selectCollection': return 'Sammlung auswählen';
+			case 'collections.createNewCollection': return 'Neue Sammlung erstellen';
+			case 'collections.collectionName': return 'Sammlungsname';
+			case 'collections.enterCollectionName': return 'Sammlungsnamen eingeben';
+			case 'collections.addedToCollection': return 'Zur Sammlung hinzugefügt';
+			case 'collections.errorAddingToCollection': return 'Fehler beim Hinzufügen zur Sammlung';
+			case 'collections.created': return 'Sammlung erstellt';
+			case 'collections.removeFromCollection': return 'Aus Sammlung entfernen';
+			case 'collections.removeFromCollectionConfirm': return ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?';
+			case 'collections.removedFromCollection': return 'Aus Sammlung entfernt';
+			case 'collections.removeFromCollectionFailed': return 'Entfernen aus Sammlung fehlgeschlagen';
+			case 'collections.removeFromCollectionError': return ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}';
 			default: return null;
 		}
 	}
@@ -4860,6 +5772,9 @@ extension on _StringsIt {
 			case 'common.yes': return 'Sì';
 			case 'common.no': return 'No';
 			case 'common.server': return 'Server';
+			case 'common.delete': return 'Elimina';
+			case 'common.shuffle': return 'Casuale';
+			case 'common.addTo': return 'Aggiungi a...';
 			case 'screens.licenses': return 'Licenze';
 			case 'screens.selectServer': return 'Seleziona server';
 			case 'screens.switchProfile': return 'Cambia profilo';
@@ -4986,6 +5901,14 @@ extension on _StringsIt {
 			case 'mediaMenu.goToSeason': return 'Vai alla stagione';
 			case 'mediaMenu.shufflePlay': return 'Riproduzione casuale';
 			case 'mediaMenu.fileInfo': return 'Info sul file';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return 'Riproduzione casuale';
 			case 'tooltips.markAsWatched': return 'Segna come visto';
 			case 'tooltips.markAsUnwatched': return 'Segna come non visto';
@@ -5002,6 +5925,33 @@ extension on _StringsIt {
 			case 'videoControls.stretch': return 'Allunga';
 			case 'videoControls.lockRotation': return 'Blocca rotazione';
 			case 'videoControls.unlockRotation': return 'Sblocca rotazione';
+			case 'videoControls.sleepTimer': return 'Timer di spegnimento';
+			case 'videoControls.timerActive': return 'Timer attivo';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Timer di spegnimento completato - riproduzione in pausa';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Limitato';
 			case 'userStatus.protected': return 'Protetto';
@@ -5032,6 +5982,10 @@ extension on _StringsIt {
 			case 'messages.noResultsFound': return 'Nessun risultato';
 			case 'messages.sleepTimerSet': return ({required Object label}) => 'Imposta timer spegnimento per ${label}';
 			case 'messages.failedToSwitchProfile': return ({required Object displayName}) => 'Impossibile passare a ${displayName}';
+			case 'messages.noItemsAvailable': return 'Nessun elemento disponibile';
+			case 'messages.failedToCreatePlayQueue': return 'Impossibile creare la coda di riproduzione';
+			case 'messages.failedToCreatePlayQueueNoItems': return 'Impossibile creare la coda di riproduzione - nessun elemento';
+			case 'messages.failedPlayback': return ({required Object action, required Object error}) => 'Impossibile ${action}: ${error}';
 			case 'profile.noUsersAvailable': return 'Nessun utente disponibile';
 			case 'subtitlingStyling.stylingOptions': return 'Opzioni stile';
 			case 'subtitlingStyling.fontSize': return 'Dimensione';
@@ -5110,6 +6064,23 @@ extension on _StringsIt {
 			case 'libraries.showLibrary': return 'Mostra libreria';
 			case 'libraries.hideLibrary': return 'Nascondi libreria';
 			case 'libraries.libraryOptions': return 'Opzioni libreria';
+			case 'libraries.content': return 'contenuto della libreria';
+			case 'libraries.selectLibrary': return 'Seleziona libreria';
+			case 'libraries.filtersWithCount': return ({required Object count}) => 'Filtri (${count})';
+			case 'libraries.noRecommendations': return 'Nessun consiglio disponibile';
+			case 'libraries.noCollections': return 'Nessuna raccolta in questa libreria';
+			case 'libraries.noFoldersFound': return 'Nessuna cartella trovata';
+			case 'libraries.folders': return 'cartelle';
+			case 'libraries.tabs.recommended': return 'Consigliati';
+			case 'libraries.tabs.browse': return 'Esplora';
+			case 'libraries.tabs.collections': return 'Raccolte';
+			case 'libraries.tabs.playlists': return 'Playlist';
+			case 'libraries.groupings.all': return 'Tutti';
+			case 'libraries.groupings.movies': return 'Film';
+			case 'libraries.groupings.shows': return 'Serie TV';
+			case 'libraries.groupings.seasons': return 'Stagioni';
+			case 'libraries.groupings.episodes': return 'Episodi';
+			case 'libraries.groupings.folders': return 'Cartelle';
 			case 'about.title': return 'Informazioni';
 			case 'about.openSourceLicenses': return 'Licenze Open Source';
 			case 'about.versionLabel': return ({required Object version}) => 'Versione ${version}';
@@ -5181,6 +6152,31 @@ extension on _StringsIt {
 			case 'playlists.errorAdding': return 'Errore durante l\'aggiunta alla playlist';
 			case 'playlists.errorReordering': return 'Errore durante il riordino dell\'elemento della playlist';
 			case 'playlists.errorRemoving': return 'Errore durante la rimozione dalla playlist';
+			case 'playlists.playlist': return 'Playlist';
+			case 'collections.title': return 'Raccolte';
+			case 'collections.collection': return 'Raccolta';
+			case 'collections.empty': return 'La raccolta è vuota';
+			case 'collections.noItems': return 'Nessun elemento in questa raccolta';
+			case 'collections.unknownLibrarySection': return 'Impossibile eliminare: sezione libreria sconosciuta';
+			case 'collections.deleteCollection': return 'Elimina raccolta';
+			case 'collections.deleteConfirm': return ({required Object title}) => 'Sei sicuro di voler eliminare "${title}"? Questa azione non può essere annullata.';
+			case 'collections.deleted': return 'Raccolta eliminata';
+			case 'collections.deleteFailed': return 'Impossibile eliminare la raccolta';
+			case 'collections.deleteFailedWithError': return ({required Object error}) => 'Impossibile eliminare la raccolta: ${error}';
+			case 'collections.failedToLoadItems': return ({required Object error}) => 'Impossibile caricare gli elementi della raccolta: ${error}';
+			case 'collections.addTo': return 'Aggiungi alla raccolta';
+			case 'collections.selectCollection': return 'Seleziona raccolta';
+			case 'collections.createNewCollection': return 'Crea nuova raccolta';
+			case 'collections.collectionName': return 'Nome raccolta';
+			case 'collections.enterCollectionName': return 'Inserisci nome raccolta';
+			case 'collections.addedToCollection': return 'Aggiunto alla raccolta';
+			case 'collections.errorAddingToCollection': return 'Errore nell\'aggiunta alla raccolta';
+			case 'collections.created': return 'Raccolta creata';
+			case 'collections.removeFromCollection': return 'Rimuovi dalla raccolta';
+			case 'collections.removeFromCollectionConfirm': return ({required Object title}) => 'Rimuovere "${title}" da questa raccolta?';
+			case 'collections.removedFromCollection': return 'Rimosso dalla raccolta';
+			case 'collections.removeFromCollectionFailed': return 'Impossibile rimuovere dalla raccolta';
+			case 'collections.removeFromCollectionError': return ({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}';
 			default: return null;
 		}
 	}
@@ -5223,6 +6219,9 @@ extension on _StringsNl {
 			case 'common.yes': return 'Ja';
 			case 'common.no': return 'Nee';
 			case 'common.server': return 'Server';
+			case 'common.delete': return 'Verwijderen';
+			case 'common.shuffle': return 'Shuffle';
+			case 'common.addTo': return 'Toevoegen aan...';
 			case 'screens.licenses': return 'Licenties';
 			case 'screens.selectServer': return 'Selecteer server';
 			case 'screens.switchProfile': return 'Wissel van profiel';
@@ -5349,6 +6348,14 @@ extension on _StringsNl {
 			case 'mediaMenu.goToSeason': return 'Ga naar seizoen';
 			case 'mediaMenu.shufflePlay': return 'Willekeurig afspelen';
 			case 'mediaMenu.fileInfo': return 'Bestand info';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return 'Willekeurig afspelen';
 			case 'tooltips.markAsWatched': return 'Markeer als gekeken';
 			case 'tooltips.markAsUnwatched': return 'Markeer als ongekeken';
@@ -5365,6 +6372,33 @@ extension on _StringsNl {
 			case 'videoControls.stretch': return 'Uitrekken';
 			case 'videoControls.lockRotation': return 'Vergrendel rotatie';
 			case 'videoControls.unlockRotation': return 'Ontgrendel rotatie';
+			case 'videoControls.sleepTimer': return 'Slaaptimer';
+			case 'videoControls.timerActive': return 'Timer actief';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Slaaptimer voltooid - afspelen gepauzeerd';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return 'Beheerder';
 			case 'userStatus.restricted': return 'Beperkt';
 			case 'userStatus.protected': return 'Beschermd';
@@ -5395,6 +6429,10 @@ extension on _StringsNl {
 			case 'messages.noResultsFound': return 'Geen resultaten gevonden';
 			case 'messages.sleepTimerSet': return ({required Object label}) => 'Slaap timer ingesteld voor ${label}';
 			case 'messages.failedToSwitchProfile': return ({required Object displayName}) => 'Kon niet wisselen naar ${displayName}';
+			case 'messages.noItemsAvailable': return 'Geen items beschikbaar';
+			case 'messages.failedToCreatePlayQueue': return 'Kan afspeelwachtrij niet maken';
+			case 'messages.failedToCreatePlayQueueNoItems': return 'Kan afspeelwachtrij niet maken - geen items';
+			case 'messages.failedPlayback': return ({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}';
 			case 'profile.noUsersAvailable': return 'Geen gebruikers beschikbaar';
 			case 'subtitlingStyling.stylingOptions': return 'Opmaak opties';
 			case 'subtitlingStyling.fontSize': return 'Lettergrootte';
@@ -5473,6 +6511,23 @@ extension on _StringsNl {
 			case 'libraries.showLibrary': return 'Toon bibliotheek';
 			case 'libraries.hideLibrary': return 'Verberg bibliotheek';
 			case 'libraries.libraryOptions': return 'Bibliotheek opties';
+			case 'libraries.content': return 'bibliotheekinhoud';
+			case 'libraries.selectLibrary': return 'Bibliotheek kiezen';
+			case 'libraries.filtersWithCount': return ({required Object count}) => 'Filters (${count})';
+			case 'libraries.noRecommendations': return 'Geen aanbevelingen beschikbaar';
+			case 'libraries.noCollections': return 'Geen collecties in deze bibliotheek';
+			case 'libraries.noFoldersFound': return 'Geen mappen gevonden';
+			case 'libraries.folders': return 'mappen';
+			case 'libraries.tabs.recommended': return 'Aanbevolen';
+			case 'libraries.tabs.browse': return 'Bladeren';
+			case 'libraries.tabs.collections': return 'Collecties';
+			case 'libraries.tabs.playlists': return 'Afspeellijsten';
+			case 'libraries.groupings.all': return 'Alles';
+			case 'libraries.groupings.movies': return 'Films';
+			case 'libraries.groupings.shows': return 'Series';
+			case 'libraries.groupings.seasons': return 'Seizoenen';
+			case 'libraries.groupings.episodes': return 'Afleveringen';
+			case 'libraries.groupings.folders': return 'Mappen';
 			case 'about.title': return 'Over';
 			case 'about.openSourceLicenses': return 'Open Source licenties';
 			case 'about.versionLabel': return ({required Object version}) => 'Versie ${version}';
@@ -5544,6 +6599,31 @@ extension on _StringsNl {
 			case 'playlists.errorAdding': return 'Fout bij toevoegen aan afspeellijst';
 			case 'playlists.errorReordering': return 'Fout bij herschikken van afspeellijstitem';
 			case 'playlists.errorRemoving': return 'Fout bij verwijderen uit afspeellijst';
+			case 'playlists.playlist': return 'Afspeellijst';
+			case 'collections.title': return 'Collecties';
+			case 'collections.collection': return 'Collectie';
+			case 'collections.empty': return 'Collectie is leeg';
+			case 'collections.noItems': return 'Geen items in deze collectie';
+			case 'collections.unknownLibrarySection': return 'Kan niet verwijderen: onbekende bibliotheeksectie';
+			case 'collections.deleteCollection': return 'Collectie verwijderen';
+			case 'collections.deleteConfirm': return ({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.';
+			case 'collections.deleted': return 'Collectie verwijderd';
+			case 'collections.deleteFailed': return 'Collectie verwijderen mislukt';
+			case 'collections.deleteFailedWithError': return ({required Object error}) => 'Collectie verwijderen mislukt: ${error}';
+			case 'collections.failedToLoadItems': return ({required Object error}) => 'Collectie-items laden mislukt: ${error}';
+			case 'collections.addTo': return 'Toevoegen aan collectie';
+			case 'collections.selectCollection': return 'Selecteer collectie';
+			case 'collections.createNewCollection': return 'Nieuwe collectie maken';
+			case 'collections.collectionName': return 'Collectienaam';
+			case 'collections.enterCollectionName': return 'Voer collectienaam in';
+			case 'collections.addedToCollection': return 'Toegevoegd aan collectie';
+			case 'collections.errorAddingToCollection': return 'Fout bij toevoegen aan collectie';
+			case 'collections.created': return 'Collectie gemaakt';
+			case 'collections.removeFromCollection': return 'Verwijderen uit collectie';
+			case 'collections.removeFromCollectionConfirm': return ({required Object title}) => '"${title}" uit deze collectie verwijderen?';
+			case 'collections.removedFromCollection': return 'Uit collectie verwijderd';
+			case 'collections.removeFromCollectionFailed': return 'Verwijderen uit collectie mislukt';
+			case 'collections.removeFromCollectionError': return ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}';
 			default: return null;
 		}
 	}
@@ -5586,6 +6666,9 @@ extension on _StringsSv {
 			case 'common.yes': return 'Ja';
 			case 'common.no': return 'Nej';
 			case 'common.server': return 'Server';
+			case 'common.delete': return 'Ta bort';
+			case 'common.shuffle': return 'Blanda';
+			case 'common.addTo': return 'Lägg till i...';
 			case 'screens.licenses': return 'Licenser';
 			case 'screens.selectServer': return 'Välj server';
 			case 'screens.switchProfile': return 'Byt profil';
@@ -5712,6 +6795,14 @@ extension on _StringsSv {
 			case 'mediaMenu.goToSeason': return 'Gå till säsong';
 			case 'mediaMenu.shufflePlay': return 'Blanda uppspelning';
 			case 'mediaMenu.fileInfo': return 'Filinformation';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return 'Blanda uppspelning';
 			case 'tooltips.markAsWatched': return 'Markera som sedd';
 			case 'tooltips.markAsUnwatched': return 'Markera som osedd';
@@ -5728,6 +6819,33 @@ extension on _StringsSv {
 			case 'videoControls.stretch': return 'Sträck';
 			case 'videoControls.lockRotation': return 'Lås rotation';
 			case 'videoControls.unlockRotation': return 'Lås upp rotation';
+			case 'videoControls.sleepTimer': return 'Sovtimer';
+			case 'videoControls.timerActive': return 'Timer aktiv';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Uppspelningen pausas om ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Sovtimer slutförd - uppspelning pausad';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Begränsad';
 			case 'userStatus.protected': return 'Skyddad';
@@ -5758,6 +6876,10 @@ extension on _StringsSv {
 			case 'messages.noResultsFound': return 'Inga resultat hittades';
 			case 'messages.sleepTimerSet': return ({required Object label}) => 'Sovtimer inställd för ${label}';
 			case 'messages.failedToSwitchProfile': return ({required Object displayName}) => 'Misslyckades att byta till ${displayName}';
+			case 'messages.noItemsAvailable': return 'Inga objekt tillgängliga';
+			case 'messages.failedToCreatePlayQueue': return 'Det gick inte att skapa uppspelningskö';
+			case 'messages.failedToCreatePlayQueueNoItems': return 'Det gick inte att skapa uppspelningskö – inga objekt';
+			case 'messages.failedPlayback': return ({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}';
 			case 'profile.noUsersAvailable': return 'Inga användare tillgängliga';
 			case 'subtitlingStyling.stylingOptions': return 'Stilalternativ';
 			case 'subtitlingStyling.fontSize': return 'Teckenstorlek';
@@ -5836,6 +6958,23 @@ extension on _StringsSv {
 			case 'libraries.showLibrary': return 'Visa bibliotek';
 			case 'libraries.hideLibrary': return 'Dölj bibliotek';
 			case 'libraries.libraryOptions': return 'Biblioteksalternativ';
+			case 'libraries.content': return 'bibliotekets innehåll';
+			case 'libraries.selectLibrary': return 'Välj bibliotek';
+			case 'libraries.filtersWithCount': return ({required Object count}) => 'Filter (${count})';
+			case 'libraries.noRecommendations': return 'Inga rekommendationer tillgängliga';
+			case 'libraries.noCollections': return 'Inga samlingar i det här biblioteket';
+			case 'libraries.noFoldersFound': return 'Inga mappar hittades';
+			case 'libraries.folders': return 'mappar';
+			case 'libraries.tabs.recommended': return 'Rekommenderat';
+			case 'libraries.tabs.browse': return 'Bläddra';
+			case 'libraries.tabs.collections': return 'Samlingar';
+			case 'libraries.tabs.playlists': return 'Spellistor';
+			case 'libraries.groupings.all': return 'Alla';
+			case 'libraries.groupings.movies': return 'Filmer';
+			case 'libraries.groupings.shows': return 'Serier';
+			case 'libraries.groupings.seasons': return 'Säsonger';
+			case 'libraries.groupings.episodes': return 'Avsnitt';
+			case 'libraries.groupings.folders': return 'Mappar';
 			case 'about.title': return 'Om';
 			case 'about.openSourceLicenses': return 'Öppen källkod-licenser';
 			case 'about.versionLabel': return ({required Object version}) => 'Version ${version}';
@@ -5907,6 +7046,31 @@ extension on _StringsSv {
 			case 'playlists.errorAdding': return 'Det gick inte att lägga till i spellista';
 			case 'playlists.errorReordering': return 'Det gick inte att omordna spellisteobjekt';
 			case 'playlists.errorRemoving': return 'Det gick inte att ta bort från spellista';
+			case 'playlists.playlist': return 'Spellista';
+			case 'collections.title': return 'Samlingar';
+			case 'collections.collection': return 'Samling';
+			case 'collections.empty': return 'Samlingen är tom';
+			case 'collections.noItems': return 'Inga objekt i den här samlingen';
+			case 'collections.unknownLibrarySection': return 'Kan inte ta bort: okänd bibliotekssektion';
+			case 'collections.deleteCollection': return 'Ta bort samling';
+			case 'collections.deleteConfirm': return ({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Detta går inte att ångra.';
+			case 'collections.deleted': return 'Samling borttagen';
+			case 'collections.deleteFailed': return 'Det gick inte att ta bort samlingen';
+			case 'collections.deleteFailedWithError': return ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}';
+			case 'collections.failedToLoadItems': return ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}';
+			case 'collections.addTo': return 'Lägg till i samling';
+			case 'collections.selectCollection': return 'Välj samling';
+			case 'collections.createNewCollection': return 'Skapa ny samling';
+			case 'collections.collectionName': return 'Samlingsnamn';
+			case 'collections.enterCollectionName': return 'Ange samlingsnamn';
+			case 'collections.addedToCollection': return 'Tillagd i samling';
+			case 'collections.errorAddingToCollection': return 'Fel vid tillägg i samling';
+			case 'collections.created': return 'Samling skapad';
+			case 'collections.removeFromCollection': return 'Ta bort från samling';
+			case 'collections.removeFromCollectionConfirm': return ({required Object title}) => 'Ta bort "${title}" från denna samling?';
+			case 'collections.removedFromCollection': return 'Borttagen från samling';
+			case 'collections.removeFromCollectionFailed': return 'Misslyckades med att ta bort från samling';
+			case 'collections.removeFromCollectionError': return ({required Object error}) => 'Fel vid borttagning från samling: ${error}';
 			default: return null;
 		}
 	}
@@ -5949,6 +7113,9 @@ extension on _StringsZh {
 			case 'common.yes': return '是';
 			case 'common.no': return '否';
 			case 'common.server': return '服务器';
+			case 'common.delete': return '删除';
+			case 'common.shuffle': return '随机播放';
+			case 'common.addTo': return '添加到...';
 			case 'screens.licenses': return '许可证';
 			case 'screens.selectServer': return '选择服务器';
 			case 'screens.switchProfile': return '切换配置文件';
@@ -6075,6 +7242,14 @@ extension on _StringsZh {
 			case 'mediaMenu.goToSeason': return '转到季';
 			case 'mediaMenu.shufflePlay': return '随机播放';
 			case 'mediaMenu.fileInfo': return '文件信息';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'watched';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
+			case 'accessibility.mediaCardUnwatched': return 'unwatched';
+			case 'accessibility.tapToPlay': return 'Tap to play';
 			case 'tooltips.shufflePlay': return '随机播放';
 			case 'tooltips.markAsWatched': return '标记为已观看';
 			case 'tooltips.markAsUnwatched': return '标记为未观看';
@@ -6091,6 +7266,33 @@ extension on _StringsZh {
 			case 'videoControls.stretch': return '拉伸';
 			case 'videoControls.lockRotation': return '锁定旋转';
 			case 'videoControls.unlockRotation': return '解锁旋转';
+			case 'videoControls.sleepTimer': return '睡眠定时器';
+			case 'videoControls.timerActive': return '定时器已激活';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => '播放将在 ${duration} 后暂停';
+			case 'videoControls.sleepTimerCompleted': return '睡眠定时器已完成 - 播放已暂停';
+			case 'videoControls.playButton': return 'Play';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
+			case 'videoControls.previousButton': return 'Previous episode';
+			case 'videoControls.nextButton': return 'Next episode';
+			case 'videoControls.previousChapterButton': return 'Previous chapter';
+			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.volumeButton': return 'Volume';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Unmute';
+			case 'videoControls.settingsButton': return 'Video settings';
+			case 'videoControls.audioTrackButton': return 'Audio tracks';
+			case 'videoControls.subtitlesButton': return 'Subtitles';
+			case 'videoControls.chaptersButton': return 'Chapters';
+			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
+			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
+			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
+			case 'videoControls.rotationLockButton': return 'Rotation lock';
+			case 'videoControls.timelineSlider': return 'Video timeline';
+			case 'videoControls.volumeSlider': return 'Volume level';
+			case 'videoControls.backButton': return 'Back';
 			case 'userStatus.admin': return '管理员';
 			case 'userStatus.restricted': return '受限';
 			case 'userStatus.protected': return '受保护';
@@ -6121,6 +7323,10 @@ extension on _StringsZh {
 			case 'messages.noResultsFound': return '未找到结果';
 			case 'messages.sleepTimerSet': return ({required Object label}) => '睡眠定时器已设置为 ${label}';
 			case 'messages.failedToSwitchProfile': return ({required Object displayName}) => '无法切换到 ${displayName}';
+			case 'messages.noItemsAvailable': return '没有可用的项目';
+			case 'messages.failedToCreatePlayQueue': return '创建播放队列失败';
+			case 'messages.failedToCreatePlayQueueNoItems': return '创建播放队列失败 - 没有项目';
+			case 'messages.failedPlayback': return ({required Object action, required Object error}) => '无法${action}: ${error}';
 			case 'profile.noUsersAvailable': return '没有可用用户';
 			case 'subtitlingStyling.stylingOptions': return '样式选项';
 			case 'subtitlingStyling.fontSize': return '字号';
@@ -6199,6 +7405,23 @@ extension on _StringsZh {
 			case 'libraries.showLibrary': return '显示媒体库';
 			case 'libraries.hideLibrary': return '隐藏媒体库';
 			case 'libraries.libraryOptions': return '媒体库选项';
+			case 'libraries.content': return '媒体库内容';
+			case 'libraries.selectLibrary': return '选择媒体库';
+			case 'libraries.filtersWithCount': return ({required Object count}) => '筛选器（${count}）';
+			case 'libraries.noRecommendations': return '暂无推荐';
+			case 'libraries.noCollections': return '此媒体库中没有合集';
+			case 'libraries.noFoldersFound': return '未找到文件夹';
+			case 'libraries.folders': return '文件夹';
+			case 'libraries.tabs.recommended': return '推荐';
+			case 'libraries.tabs.browse': return '浏览';
+			case 'libraries.tabs.collections': return '合集';
+			case 'libraries.tabs.playlists': return '播放列表';
+			case 'libraries.groupings.all': return '全部';
+			case 'libraries.groupings.movies': return '电影';
+			case 'libraries.groupings.shows': return '剧集';
+			case 'libraries.groupings.seasons': return '季';
+			case 'libraries.groupings.episodes': return '集';
+			case 'libraries.groupings.folders': return '文件夹';
 			case 'about.title': return '关于';
 			case 'about.openSourceLicenses': return '开源许可证';
 			case 'about.versionLabel': return ({required Object version}) => '版本 ${version}';
@@ -6270,6 +7493,31 @@ extension on _StringsZh {
 			case 'playlists.errorAdding': return '添加到播放列表失败';
 			case 'playlists.errorReordering': return '重新排序播放列表项目失败';
 			case 'playlists.errorRemoving': return '从播放列表中移除失败';
+			case 'playlists.playlist': return '播放列表';
+			case 'collections.title': return '合集';
+			case 'collections.collection': return '合集';
+			case 'collections.empty': return '合集为空';
+			case 'collections.noItems': return '此合集没有项目';
+			case 'collections.unknownLibrarySection': return '无法删除：未知的媒体库分区';
+			case 'collections.deleteCollection': return '删除合集';
+			case 'collections.deleteConfirm': return ({required Object title}) => '确定要删除"${title}"吗？此操作无法撤销。';
+			case 'collections.deleted': return '已删除合集';
+			case 'collections.deleteFailed': return '删除合集失败';
+			case 'collections.deleteFailedWithError': return ({required Object error}) => '删除合集失败：${error}';
+			case 'collections.failedToLoadItems': return ({required Object error}) => '加载合集项目失败：${error}';
+			case 'collections.addTo': return '添加到合集';
+			case 'collections.selectCollection': return '选择合集';
+			case 'collections.createNewCollection': return '创建新合集';
+			case 'collections.collectionName': return '合集名称';
+			case 'collections.enterCollectionName': return '输入合集名称';
+			case 'collections.addedToCollection': return '已添加到合集';
+			case 'collections.errorAddingToCollection': return '添加到合集失败';
+			case 'collections.created': return '已创建合集';
+			case 'collections.removeFromCollection': return '从合集移除';
+			case 'collections.removeFromCollectionConfirm': return ({required Object title}) => '将“${title}”从此合集移除？';
+			case 'collections.removedFromCollection': return '已从合集移除';
+			case 'collections.removeFromCollectionFailed': return '从合集移除失败';
+			case 'collections.removeFromCollectionError': return ({required Object error}) => '从合集移除时出错：${error}';
 			default: return null;
 		}
 	}

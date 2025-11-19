@@ -37,7 +37,10 @@
     "refresh": "Vernieuwen",
     "yes": "Ja",
     "no": "Nee",
-    "server": "Server"
+    "server": "Server",
+    "delete": "Verwijderen",
+    "shuffle": "Shuffle",
+    "addTo": "Toevoegen aan..."
   },
   "screens": {
     "licenses": "Licenties",
@@ -181,6 +184,16 @@
     "shufflePlay": "Willekeurig afspelen",
     "fileInfo": "Bestand info"
   },
+  "accessibility": {
+    "mediaCardMovie": "${title}, movie",
+    "mediaCardShow": "${title}, TV show",
+    "mediaCardEpisode": "${title}, ${episodeInfo}",
+    "mediaCardSeason": "${title}, ${seasonInfo}",
+    "mediaCardWatched": "watched",
+    "mediaCardPartiallyWatched": "${percent} percent watched",
+    "mediaCardUnwatched": "unwatched",
+    "tapToPlay": "Tap to play"
+  },
   "tooltips": {
     "shufflePlay": "Willekeurig afspelen",
     "markAsWatched": "Markeer als gekeken",
@@ -199,7 +212,34 @@
     "fillScreen": "Vul scherm",
     "stretch": "Uitrekken",
     "lockRotation": "Vergrendel rotatie",
-    "unlockRotation": "Ontgrendel rotatie"
+    "unlockRotation": "Ontgrendel rotatie",
+    "sleepTimer": "Slaaptimer",
+    "timerActive": "Timer actief",
+    "playbackWillPauseIn": "Afspelen wordt gepauzeerd over ${duration}",
+    "sleepTimerCompleted": "Slaaptimer voltooid - afspelen gepauzeerd",
+    "playButton": "Play",
+    "pauseButton": "Pause",
+    "seekBackwardButton": "Seek backward ${seconds} seconds",
+    "seekForwardButton": "Seek forward ${seconds} seconds",
+    "previousButton": "Previous episode",
+    "nextButton": "Next episode",
+    "previousChapterButton": "Previous chapter",
+    "nextChapterButton": "Next chapter",
+    "volumeButton": "Volume",
+    "muteButton": "Mute",
+    "unmuteButton": "Unmute",
+    "settingsButton": "Video settings",
+    "audioTrackButton": "Audio tracks",
+    "subtitlesButton": "Subtitles",
+    "chaptersButton": "Chapters",
+    "versionsButton": "Video versions",
+    "aspectRatioButton": "Aspect ratio",
+    "fullscreenButton": "Enter fullscreen",
+    "exitFullscreenButton": "Exit fullscreen",
+    "rotationLockButton": "Rotation lock",
+    "timelineSlider": "Video timeline",
+    "volumeSlider": "Volume level",
+    "backButton": "Back"
   },
   "userStatus": {
     "admin": "Beheerder",
@@ -233,7 +273,11 @@
     "noEpisodesFoundGeneral": "Geen afleveringen gevonden",
     "noResultsFound": "Geen resultaten gevonden",
     "sleepTimerSet": "Slaap timer ingesteld voor ${label}",
-    "failedToSwitchProfile": "Kon niet wisselen naar ${displayName}"
+    "failedToSwitchProfile": "Kon niet wisselen naar ${displayName}",
+    "noItemsAvailable": "Geen items beschikbaar",
+    "failedToCreatePlayQueue": "Kan afspeelwachtrij niet maken",
+    "failedToCreatePlayQueueNoItems": "Kan afspeelwachtrij niet maken - geen items",
+    "failedPlayback": "Afspelen van ${action} mislukt: ${error}"
   },
   "profile": {
     "noUsersAvailable": "Geen gebruikers beschikbaar"
@@ -323,7 +367,28 @@
     "confirmActionMessage": "Weet je zeker dat je deze actie wilt uitvoeren?",
     "showLibrary": "Toon bibliotheek",
     "hideLibrary": "Verberg bibliotheek",
-    "libraryOptions": "Bibliotheek opties"
+    "libraryOptions": "Bibliotheek opties",
+    "content": "bibliotheekinhoud",
+    "selectLibrary": "Bibliotheek kiezen",
+    "filtersWithCount": "Filters (${count})",
+    "noRecommendations": "Geen aanbevelingen beschikbaar",
+    "noCollections": "Geen collecties in deze bibliotheek",
+    "noFoldersFound": "Geen mappen gevonden",
+    "folders": "mappen",
+    "tabs": {
+      "recommended": "Aanbevolen",
+      "browse": "Bladeren",
+      "collections": "Collecties",
+      "playlists": "Afspeellijsten"
+    },
+    "groupings": {
+      "all": "Alles",
+      "movies": "Films",
+      "shows": "Series",
+      "seasons": "Seizoenen",
+      "episodes": "Afleveringen",
+      "folders": "Mappen"
+    }
   },
   "about": {
     "title": "Over",
@@ -408,6 +473,33 @@
     "errorLoading": "Fout bij laden afspeellijsten",
     "errorAdding": "Fout bij toevoegen aan afspeellijst",
     "errorReordering": "Fout bij herschikken van afspeellijstitem",
-    "errorRemoving": "Fout bij verwijderen uit afspeellijst"
+    "errorRemoving": "Fout bij verwijderen uit afspeellijst",
+    "playlist": "Afspeellijst"
+  },
+  "collections": {
+    "title": "Collecties",
+    "collection": "Collectie",
+    "empty": "Collectie is leeg",
+    "noItems": "Geen items in deze collectie",
+    "unknownLibrarySection": "Kan niet verwijderen: onbekende bibliotheeksectie",
+    "deleteCollection": "Collectie verwijderen",
+    "deleteConfirm": "Weet je zeker dat je \"${title}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+    "deleted": "Collectie verwijderd",
+    "deleteFailed": "Collectie verwijderen mislukt",
+    "deleteFailedWithError": "Collectie verwijderen mislukt: ${error}",
+    "failedToLoadItems": "Collectie-items laden mislukt: ${error}",
+    "addTo": "Toevoegen aan collectie",
+    "selectCollection": "Selecteer collectie",
+    "createNewCollection": "Nieuwe collectie maken",
+    "collectionName": "Collectienaam",
+    "enterCollectionName": "Voer collectienaam in",
+    "addedToCollection": "Toegevoegd aan collectie",
+    "errorAddingToCollection": "Fout bij toevoegen aan collectie",
+    "created": "Collectie gemaakt",
+    "removeFromCollection": "Verwijderen uit collectie",
+    "removeFromCollectionConfirm": "\"${title}\" uit deze collectie verwijderen?",
+    "removedFromCollection": "Uit collectie verwijderd",
+    "removeFromCollectionFailed": "Verwijderen uit collectie mislukt",
+    "removeFromCollectionError": "Fout bij verwijderen uit collectie: ${error}"
   }
 }

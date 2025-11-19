@@ -18,6 +18,10 @@ class VideoControlButton extends StatelessWidget {
   /// Optional tooltip text shown on hover or long press.
   final String? tooltip;
 
+  /// Optional semantic label for screen readers.
+  /// If not provided, falls back to tooltip.
+  final String? semanticLabel;
+
   /// Whether this button represents an active state (e.g., a feature is enabled).
   /// When true, the icon color defaults to amber instead of white.
   final bool isActive;
@@ -28,6 +32,7 @@ class VideoControlButton extends StatelessWidget {
     required this.onPressed,
     this.color,
     this.tooltip,
+    this.semanticLabel,
     this.isActive = false,
   });
 
@@ -36,11 +41,20 @@ class VideoControlButton extends StatelessWidget {
     // Determine the effective color: explicit color > active amber > default white
     final effectiveColor = color ?? (isActive ? Colors.amber : Colors.white);
 
-    return IconButton(
+    final button = IconButton(
       icon: Icon(icon, color: effectiveColor),
       onPressed: onPressed,
       tooltip: tooltip,
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
     );
+
+    return semanticLabel != null
+        ? Semantics(
+            label: semanticLabel,
+            button: true,
+            excludeSemantics: true,
+            child: button,
+          )
+        : button;
   }
 }

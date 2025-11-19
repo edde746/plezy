@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../utils/duration_formatter.dart';
 
 /// Reusable widget for adjusting sync offsets (audio or subtitle)
 class SyncOffsetControl extends StatefulWidget {
@@ -63,11 +64,6 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     _applyOffset(0);
   }
 
-  String _formatOffset(double offsetMs) {
-    final sign = offsetMs >= 0 ? '+' : '';
-    return '$sign${offsetMs.round()}ms';
-  }
-
   String _getDescriptionText() {
     if (_currentOffset > 0) {
       return t.videoControls.playsLater(label: widget.labelText);
@@ -87,7 +83,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
         children: [
           // Current offset display
           Text(
-            _formatOffset(_currentOffset),
+            formatSyncOffset(_currentOffset),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 48,
