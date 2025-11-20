@@ -43,7 +43,7 @@ To automatically run formatting and analysis checks before each commit, you can 
 ```
 
 This hook will:
-- Check formatting of staged Dart files (excluding generated files)
+- Check formatting of staged Dart files (excluding generated files like `*.g.dart`, `*.freezed.dart`)
 - Run `flutter analyze` to catch issues early
 - Prevent commits if checks fail
 
