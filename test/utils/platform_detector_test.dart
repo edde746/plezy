@@ -254,9 +254,7 @@ void main() {
             ),
             child: Builder(
               builder: (context) {
-                // Desktop platforms don't use the tablet detection
-                // Note: The implementation checks mobile first, so desktop always returns false
-                expect(PlatformDetector.isMobile(context), false);
+                expect(PlatformDetector.isTablet(context), false);
                 return Container();
               },
             ),

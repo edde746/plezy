@@ -137,6 +137,6 @@ Additional tests could be added for:
 ## Notes
 
 - Widget tests require `TestWidgetsFlutterBinding.ensureInitialized()` when using Flutter APIs
-- Asset loading is mocked in `language_codes_test.dart` for testing without real assets
+- Asset loading in `language_codes_test.dart` uses the real asset file (`lib/data/iso_639_codes.json`) via `rootBundle`
 - Platform detection tests use `Theme.of(context).platform` which can be easily mocked
 - Grid size tests use `MediaQuery` data which is easily injectable for testing
