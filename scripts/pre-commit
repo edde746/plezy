@@ -2,8 +2,6 @@
 # Pre-commit hook for Flutter projects
 # This hook runs flutter analyze and dart format checks before allowing a commit
 
-set -e
-
 echo "Running pre-commit checks..."
 
 # Check if flutter is available
@@ -15,11 +13,11 @@ fi
 
 # Get the root directory of the git repository
 REPO_ROOT=$(git rev-parse --show-toplevel)
-cd "$REPO_ROOT"
+cd "$REPO_ROOT" || exit 1
 
 # Check if there are any staged Dart files (excluding generated files)
 # Excludes: *.g.dart (json_serializable, build_runner, slang strings, etc.) and *.freezed.dart
-STAGED_DART_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.dart$' | grep -v '\.g\.dart$' | grep -v '\.freezed\.dart$' || true)
+STAGED_DART_FILES=$(git diff --cached --name-only --diff-filter=ACM -z | grep -z '\.dart$' | grep -zv '\.g\.dart$' | grep -zv '\.freezed\.dart$' | xargs -0 -n1 echo)
 
 if [ -z "$STAGED_DART_FILES" ]; then
     echo "✅ No Dart files to check (or only generated files)"
@@ -30,37 +28,48 @@ echo "📝 Checking formatting..."
 
 # Check formatting of staged files
 FORMAT_ISSUES=""
-for file in $STAGED_DART_FILES; do
+FORMAT_FAILED=0
+
+# Use a temporary file to collect results
+TEMP_FILE=$(mktemp)
+
+echo "$STAGED_DART_FILES" | while IFS= read -r file; do
     if [ -f "$file" ]; then
         if ! dart format --output=none --set-exit-if-changed "$file" > /dev/null 2>&1; then
-            FORMAT_ISSUES="$FORMAT_ISSUES\n  - $file"
+            echo "$file" >> "$TEMP_FILE"
         fi
     fi
 done
 
-if [ -n "$FORMAT_ISSUES" ]; then
+if [ -s "$TEMP_FILE" ]; then
     echo "❌ Format check failed. The following files are not formatted:"
-    echo "$FORMAT_ISSUES"
+    while IFS= read -r file; do
+        echo "  - $file"
+    done < "$TEMP_FILE"
+    rm -f "$TEMP_FILE"
     echo ""
     echo "To fix this, run: dart format ."
     exit 1
 fi
 
+rm -f "$TEMP_FILE"
 echo "✅ Format check passed"
 
 echo "🔍 Running flutter analyze..."
 
 # Run flutter analyze
-if ! flutter analyze --no-pub > /dev/null 2>&1; then
+ANALYZE_OUTPUT=$(mktemp)
+if ! flutter analyze --no-pub > "$ANALYZE_OUTPUT" 2>&1; then
     echo "❌ Flutter analyze found issues"
     echo ""
-    echo "Running flutter analyze for details:"
-    flutter analyze --no-pub
+    cat "$ANALYZE_OUTPUT"
+    rm -f "$ANALYZE_OUTPUT"
     echo ""
     echo "Please fix the issues above before committing"
     exit 1
 fi
 
+rm -f "$ANALYZE_OUTPUT"
 echo "✅ Flutter analyze passed"
 echo ""
 echo "✅ All pre-commit checks passed!"
