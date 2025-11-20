@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/utils/language_codes.dart';
 
@@ -7,49 +5,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
-    // Mock the asset loading for testing
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel('flutter/assets'),
-      (MethodCall methodCall) async {
-        if (methodCall.method == 'loadString' &&
-            methodCall.arguments == 'lib/data/iso_639_codes.json') {
-          // Return a subset of language codes for testing
-          return json.encode({
-            'en': {
-              '639-1': 'en',
-              '639-2': 'eng',
-              'name': 'English',
-            },
-            'de': {
-              '639-1': 'de',
-              '639-2': 'deu',
-              '639-2/B': 'ger',
-              'name': 'German',
-            },
-            'zh': {
-              '639-1': 'zh',
-              '639-2': 'zho',
-              '639-2/B': 'chi',
-              'name': 'Chinese',
-            },
-            'fr': {
-              '639-1': 'fr',
-              '639-2': 'fra',
-              '639-2/B': 'fre',
-              'name': 'French',
-            },
-            'es': {
-              '639-1': 'es',
-              '639-2': 'spa',
-              'name': 'Spanish',
-            },
-          });
-        }
-        return null;
-      },
-    );
-
+    // Initialize with the actual asset file
+    // This is better than mocking as it tests with real data
     await LanguageCodes.initialize();
   });
 
