@@ -1,0 +1,67 @@
+#!/bin/sh
+# Pre-commit hook for Flutter projects
+# This hook runs flutter analyze and dart format checks before allowing a commit
+
+set -e
+
+echo "Running pre-commit checks..."
+
+# Check if flutter is available
+if ! command -v flutter > /dev/null 2>&1; then
+    echo "❌ Flutter is not installed or not in PATH"
+    echo "Please install Flutter to use this pre-commit hook"
+    exit 1
+fi
+
+# Get the root directory of the git repository
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+# Check if there are any staged Dart files (excluding generated files)
+STAGED_DART_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.dart$' | grep -v '\.g\.dart$' | grep -v '\.freezed\.dart$' || true)
+
+if [ -z "$STAGED_DART_FILES" ]; then
+    echo "✅ No Dart files to check (or only generated files)"
+    exit 0
+fi
+
+echo "📝 Checking formatting..."
+
+# Check formatting of staged files
+FORMAT_ISSUES=""
+for file in $STAGED_DART_FILES; do
+    if [ -f "$file" ]; then
+        if ! dart format --output=none --set-exit-if-changed "$file" > /dev/null 2>&1; then
+            FORMAT_ISSUES="$FORMAT_ISSUES\n  - $file"
+        fi
+    fi
+done
+
+if [ -n "$FORMAT_ISSUES" ]; then
+    echo "❌ Format check failed. The following files are not formatted:"
+    echo "$FORMAT_ISSUES"
+    echo ""
+    echo "To fix this, run: dart format ."
+    exit 1
+fi
+
+echo "✅ Format check passed"
+
+echo "🔍 Running flutter analyze..."
+
+# Run flutter analyze
+if ! flutter analyze --no-pub > /dev/null 2>&1; then
+    echo "❌ Flutter analyze found issues"
+    echo ""
+    echo "Running flutter analyze for details:"
+    flutter analyze --no-pub
+    echo ""
+    echo "Please fix the issues above before committing"
+    exit 1
+fi
+
+echo "✅ Flutter analyze passed"
+echo ""
+echo "✅ All pre-commit checks passed!"
+
+exit 0

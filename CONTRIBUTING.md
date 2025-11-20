@@ -5,7 +5,8 @@
 1. Fork and clone the repository
 2. Run `flutter pub get` to install dependencies
 3. Run `dart run build_runner build` to generate code
-4. Start developing!
+4. (Optional) Install the pre-commit hook: `./scripts/install-pre-commit-hook.sh`
+5. Start developing!
 
 ## Development
 
@@ -32,6 +33,24 @@ The project includes automated CI checks that run on all pull requests:
    - Run locally: `flutter test`
 
 All these checks must pass before your changes can be merged.
+
+### Pre-commit Hook (Optional)
+
+To automatically run formatting and analysis checks before each commit, you can install the pre-commit hook:
+
+```bash
+./scripts/install-pre-commit-hook.sh
+```
+
+This hook will:
+- Check formatting of staged Dart files (excluding generated files)
+- Run `flutter analyze` to catch issues early
+- Prevent commits if checks fail
+
+To bypass the hook when needed (not recommended), use:
+```bash
+git commit --no-verify
+```
 
 ## Internationalization (i18n)
 
