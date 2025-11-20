@@ -67,6 +67,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _isReplacingWithVideo =
       false; // Flag to skip orientation restoration during video-to-video navigation
 
+  // App lifecycle state tracking
+  bool _wasPlayingBeforeInactive = false;
+
   // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode = 0;
   bool _isPinching = false; // Track if a pinch gesture is occurring
@@ -148,18 +151,40 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     switch (state) {
       case AppLifecycleState.inactive:
+        // App is inactive (Control Center, Notification Screen, etc.)
+        // Pause video but keep media controls for quick resume (mobile only)
+        if (PlatformDetector.isMobile(context)) {
+          if (player != null && _isPlayerInitialized) {
+            _wasPlayingBeforeInactive = player!.state.playing;
+            if (_wasPlayingBeforeInactive) {
+              player!.pause();
+              appLogger.d('Video paused due to app becoming inactive (mobile)');
+            }
+            // Keep media controls active on mobile for quick resume
+            _updateMediaControlsPlaybackState();
+          }
+        }
+        break;
       case AppLifecycleState.paused:
-        // Clear media controls when app goes to background or screen locks
+        // Clear media controls when app truly goes to background
         // (we don't support background playback)
         OsMediaControls.clear();
         appLogger.d(
-          'Media controls cleared due to app lifecycle state: $state',
+          'Media controls cleared due to app being paused/backgrounded',
         );
         break;
       case AppLifecycleState.resumed:
         // Restore media controls when app is resumed
         if (_isPlayerInitialized && mounted) {
           _updateMediaMetadata();
+
+          // Resume playback if it was playing before going inactive
+          if (_wasPlayingBeforeInactive && player != null) {
+            player!.play();
+            _wasPlayingBeforeInactive = false;
+            appLogger.d('Video resumed after returning from inactive state');
+          }
+
           _updateMediaControlsPlaybackState();
           appLogger.d('Media controls restored on app resume');
         }
@@ -1485,16 +1510,35 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Listen to media control events
     _mediaControlSubscription = OsMediaControls.controlEvents.listen((event) {
       if (event is PlayEvent) {
-        player?.play();
+        appLogger.d('Media control: Play event received');
+        if (player != null) {
+          player!.play();
+          // Clear the inactive state flag since user manually resumed via media controls
+          _wasPlayingBeforeInactive = false;
+          appLogger.d('Cleared _wasPlayingBeforeInactive due to manual play via media controls');
+          // Update media controls to reflect the new state
+          _updateMediaControlsPlaybackState();
+        }
       } else if (event is PauseEvent) {
-        player?.pause();
+        appLogger.d('Media control: Pause event received');
+        if (player != null) {
+          player!.pause();
+          // Don't set _wasPlayingBeforeInactive here - this is a manual user action
+          // The flag should only be set during automatic app lifecycle pauses
+          appLogger.d('Video paused via media controls');
+          // Update media controls to reflect the new state
+          _updateMediaControlsPlaybackState();
+        }
       } else if (event is SeekEvent) {
+        appLogger.d('Media control: Seek event received to ${event.position}');
         player?.seek(event.position);
       } else if (event is NextTrackEvent) {
+        appLogger.d('Media control: Next track event received');
         if (_nextEpisode != null) {
           _playNext();
         }
       } else if (event is PreviousTrackEvent) {
+        appLogger.d('Media control: Previous track event received');
         if (_previousEpisode != null) {
           _playPrevious();
         }
