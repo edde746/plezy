@@ -18,6 +18,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT"
 
 # Check if there are any staged Dart files (excluding generated files)
+# Excludes: *.g.dart (json_serializable, build_runner, slang strings, etc.) and *.freezed.dart
 STAGED_DART_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.dart$' | grep -v '\.g\.dart$' | grep -v '\.freezed\.dart$' || true)
 
 if [ -z "$STAGED_DART_FILES" ]; then
