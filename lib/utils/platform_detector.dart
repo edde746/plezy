@@ -17,7 +17,13 @@ class PlatformDetector {
 
   /// Detects if the device is likely a tablet based on screen size
   /// Uses diagonal screen size to determine if device is a tablet
+  /// Only returns true for mobile platforms (iOS/Android) with large screens
   static bool isTablet(BuildContext context) {
+    // Only mobile platforms can be tablets
+    if (!isMobile(context)) {
+      return false;
+    }
+
     final data = MediaQuery.of(context);
     final size = data.size;
     final diagonal = sqrt(size.width * size.width + size.height * size.height);
