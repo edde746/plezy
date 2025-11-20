@@ -224,6 +224,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             'sub-back-color':
                 '#${(settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt().toRadixString(16).padLeft(2, '0').toUpperCase()}${settingsService.getSubtitleBackgroundColor().replaceFirst('#', '')}',
             'sub-ass-override': 'no',
+            'audio-exclusive': 'yes',
           },
         ),
       );
@@ -1515,7 +1516,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           player!.play();
           // Clear the inactive state flag since user manually resumed via media controls
           _wasPlayingBeforeInactive = false;
-          appLogger.d('Cleared _wasPlayingBeforeInactive due to manual play via media controls');
+          appLogger.d(
+            'Cleared _wasPlayingBeforeInactive due to manual play via media controls',
+          );
           // Update media controls to reflect the new state
           _updateMediaControlsPlaybackState();
         }
