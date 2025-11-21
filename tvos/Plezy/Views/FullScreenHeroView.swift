@@ -158,11 +158,11 @@ struct HeroBackgroundCarouselView: View {
                 // Dark gradient overlay for readability
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        Color.black.opacity(0.3),
+                        Color.clear,
                         Color.black.opacity(0.6),
-                        Color.black.opacity(0.85)
+                        Color.black.opacity(0.9)
                     ]),
-                    startPoint: .top,
+                    startPoint: .center,
                     endPoint: .bottom
                 )
             }

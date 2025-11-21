@@ -407,19 +407,19 @@ struct FullScreenHeroBackground: View {
                 .offset(x: -CGFloat(currentIndex) * geometry.size.width)
                 .animation(.easeInOut(duration: 0.6), value: currentIndex)
 
-                // Subtle gradient at bottom to help Continue Watching row stand out
+                // Gradient at bottom to help Continue Watching row stand out
                 VStack {
                     Spacer()
                     LinearGradient(
                         gradient: Gradient(colors: [
                             Color.clear,
-                            Color.black.opacity(0.5),
-                            Color.black.opacity(0.85)
+                            Color.black.opacity(0.6),
+                            Color.black.opacity(0.9)
                         ]),
                         startPoint: .top,
                         endPoint: .bottom
                     )
-                    .frame(height: geometry.size.height / 3)
+                    .frame(height: geometry.size.height / 2)
                 }
             }
         }
