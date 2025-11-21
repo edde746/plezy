@@ -115,52 +115,61 @@ struct HomeView: View {
             }
 
             // Layer 3: Scrollable content area
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 0) {
-                    // Spacer to push content down - make it fill the screen
-                    GeometryReader { geometry in
-                        Color.clear
-                            .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
-                    }
-                    .frame(height: 700)
+            ScrollViewReader { scrollProxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        // Spacer to push content down - sized so Continue Watching is fully visible
+                        // This prevents tvOS from auto-scrolling when Continue Watching receives focus
+                        GeometryReader { geometry in
+                            Color.clear
+                                .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
+                        }
+                        .frame(height: 600) // Reduced from 700 to ensure Continue Watching is fully visible
 
-                    // Continue Watching section
-                    if !onDeck.isEmpty {
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Continue Watching")
-                                .font(.system(size: 40, weight: .bold, design: .default))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 90)
-                                .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
+                        // Continue Watching section
+                        if !onDeck.isEmpty {
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text("Continue Watching")
+                                    .font(.system(size: 40, weight: .bold, design: .default))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 90)
+                                    .shadow(color: .black.opacity(0.8), radius: 8, x: 0, y: 2)
 
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                LazyHStack(spacing: 30) {
-                                    ForEach(onDeck) { item in
-                                        MediaCard(
-                                            media: item,
-                                            config: .custom(
-                                                width: 410,
-                                                height: 231,
-                                                showProgress: true,
-                                                showLabel: .inside,
-                                                showLogo: true,
-                                                showEpisodeLabelBelow: true
-                                            )
-                                        ) {
-                                            print("🎯 [HomeView] Continue watching item tapped: \(item.title)")
-                                            playingMedia = item
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    LazyHStack(spacing: 30) {
+                                        ForEach(onDeck) { item in
+                                            MediaCard(
+                                                media: item,
+                                                config: .custom(
+                                                    width: 410,
+                                                    height: 231,
+                                                    showProgress: true,
+                                                    showLabel: .inside,
+                                                    showLogo: true,
+                                                    showEpisodeLabelBelow: true
+                                                )
+                                            ) {
+                                                print("🎯 [HomeView] Continue watching item tapped: \(item.title)")
+                                                playingMedia = item
+                                            }
                                         }
                                     }
+                                    .padding(.horizontal, 90)
                                 }
-                                .padding(.horizontal, 90)
+                                .tvOSScrollClipDisabled()
                             }
-                            .tvOSScrollClipDisabled()
+                            .padding(.bottom, 60)
+                            .id("continueWatching")
+                            .focusSection()
                         }
-                        .padding(.bottom, 60)
-                    }
 
                     // Other hub rows
-                    ForEach(hubs.filter { !$0.title.lowercased().contains("recently added") && !$0.title.lowercased().contains("on deck") }) { hub in
+                    ForEach(hubs.filter {
+                        let title = $0.title.lowercased()
+                        return !title.contains("recently added") &&
+                               !title.contains("on deck") &&
+                               !title.contains("continue watching")
+                    }) { hub in
                         if let items = hub.metadata, !items.isEmpty {
                             VStack(alignment: .leading, spacing: 20) {
                                 Text(hub.title)
@@ -198,14 +207,16 @@ struct HomeView: View {
 
                     // Bottom padding - add extra space to allow scrolling past Continue Watching
                     Color.clear.frame(height: 600)
-                }
-            }
-            .coordinateSpace(name: "scroll")
-            .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                scrollOffset = value
-                // Hide hero when scrolled past the spacer (approximately when Continue Watching becomes visible)
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    shouldShowHero = value > -480
+                    }
+                    .coordinateSpace(name: "scroll")
+                    .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+                        scrollOffset = value
+                        // Hide hero when scrolled past Continue Watching section
+                        // Threshold: when scrolled past the Continue Watching row (~400-500 points)
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            shouldShowHero = value > -400
+                        }
+                    }
                 }
             }
         }
