@@ -205,10 +205,10 @@ struct MediaCard: View {
                 .frame(width: config.width, height: config.height)
                 .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
                 .shadow(
-                    color: .black.opacity(isFocused ? 0.6 : 0.4),
-                    radius: isFocused ? 30 : 16,
+                    color: .black.opacity(isFocused ? 0.7 : 0.4),
+                    radius: isFocused ? 40 : 16,
                     x: 0,
-                    y: isFocused ? 15 : 8
+                    y: isFocused ? 20 : 8
                 )
 
                 // Episode label below the card (only for episodes when enabled)
@@ -221,6 +221,8 @@ struct MediaCard: View {
                 }
             }
         }
+        .scaleEffect(isFocused ? 1.10 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isFocused)
         .buttonStyle(MediaCardButtonStyle())
         .focused($isFocused)
         .onPlayPauseCommand {

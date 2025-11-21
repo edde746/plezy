@@ -110,7 +110,7 @@ struct HomeView: View {
                     FullScreenHeroOverlay(
                         item: recentlyAdded[currentHeroIndex]
                     )
-                    .padding(.bottom, 450)
+                    .padding(.bottom, 580)
                 }
             }
 
@@ -118,13 +118,13 @@ struct HomeView: View {
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        // Spacer to push content down - sized so Continue Watching is fully visible
-                        // This prevents tvOS from auto-scrolling when Continue Watching receives focus
+                        // Spacer to push content down - positioned to avoid overlapping hero synopsis
+                        // Height balanced to keep Continue Watching visible while providing space for hero text
                         GeometryReader { geometry in
                             Color.clear
                                 .preference(key: ScrollOffsetPreferenceKey.self, value: geometry.frame(in: .named("scroll")).minY)
                         }
-                        .frame(height: 600) // Reduced from 700 to ensure Continue Watching is fully visible
+                        .frame(height: 680) // Increased to prevent overlap with hero synopsis text
 
                         // Continue Watching section
                         if !onDeck.isEmpty {
@@ -211,10 +211,11 @@ struct HomeView: View {
                     .coordinateSpace(name: "scroll")
                     .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
                         scrollOffset = value
-                        // Hide hero when scrolled past Continue Watching section
-                        // Threshold: when scrolled past the Continue Watching row (~400-500 points)
+                        // Hide hero when scrolled past Continue Watching section into rows below
+                        // Threshold set to fade out when Continue Watching section is leaving the screen
+                        // (~850 points accounts for spacer + Continue Watching row height)
                         withAnimation(.easeInOut(duration: 0.3)) {
-                            shouldShowHero = value > -400
+                            shouldShowHero = value > -850
                         }
                     }
                 }
