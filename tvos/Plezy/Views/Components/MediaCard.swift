@@ -283,65 +283,13 @@ struct MediaCard: View {
 // MARK: - Preview
 
 #Preview {
-    MediaCard(
-        media: PlexMetadata(
-            ratingKey: "1",
-            key: "/library/metadata/1",
-            guid: nil,
-            studio: nil,
-            type: "movie",
-            title: "Sample Movie",
-            titleSort: nil,
-            librarySectionTitle: nil,
-            librarySectionID: nil,
-            librarySectionKey: nil,
-            contentRating: nil,
-            summary: nil,
-            rating: nil,
-            audienceRating: nil,
-            year: nil,
-            tagline: nil,
-            thumb: nil,
-            art: nil,
-            duration: 7200000,
-            originallyAvailableAt: nil,
-            addedAt: nil,
-            updatedAt: nil,
-            audienceRatingImage: nil,
-            primaryExtraKey: nil,
-            ratingImage: nil,
-            viewOffset: 3600000,
-            viewCount: nil,
-            lastViewedAt: nil,
-            grandparentRatingKey: nil,
-            grandparentKey: nil,
-            grandparentTitle: nil,
-            grandparentThumb: nil,
-            grandparentArt: nil,
-            parentRatingKey: nil,
-            parentKey: nil,
-            parentTitle: nil,
-            parentThumb: nil,
-            parentIndex: nil,
-            index: nil,
-            leafCount: nil,
-            viewedLeafCount: nil,
-            childCount: nil,
-            Media: nil,
-            Role: nil,
-            Genre: nil,
-            Director: nil,
-            Writer: nil,
-            Country: nil,
-            Collection: nil,
-            Image: nil,
-            Guid: nil,
-            Rating: nil,
-            Similar: nil
-        ),
-        config: .continueWatching
-    ) {
-        print("Card tapped")
+    // Note: PlexMetadata is Codable and doesn't have a public initializer
+    // Preview would require sample JSON data. Use in actual app context.
+    VStack {
+        Text("MediaCard Preview")
+            .font(.title)
+        Text("Use within app with actual PlexMetadata")
+            .foregroundColor(.gray)
     }
-    .environmentObject(PlexAuthService())
+    .frame(width: 500, height: 300)
 }
