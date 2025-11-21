@@ -217,7 +217,6 @@ struct MediaCard: View {
                         .font(.system(size: config.width * 0.048, weight: .semibold, design: .default))
                         .foregroundColor(.white.opacity(0.85))
                         .frame(width: config.width, alignment: .leading)
-                        .padding(.horizontal, config.width * 0.05)
                         .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
                 }
             }
