@@ -278,7 +278,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                   snapshot.data ?? widget.player.state.audioDevice;
               final deviceLabel = currentDevice.description.isEmpty
                   ? currentDevice.name
-                  : currentDevice.description;
+                  : '${currentDevice.name} · ${currentDevice.description}';
 
               return _SettingsMenuItem(
                 icon: Icons.speaker,
