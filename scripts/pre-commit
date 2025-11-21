@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Pre-commit hook for Flutter projects
 # This hook runs flutter analyze and dart format checks before allowing a commit
 
@@ -57,20 +57,32 @@ echo "✅ Format check passed"
 
 echo "🔍 Running flutter analyze..."
 
-# Run flutter analyze
+# Run flutter analyze and only fail on errors or warnings (not info)
+# This matches the CI behavior in .github/workflows/ci.yml
 ANALYZE_OUTPUT=$(mktemp)
-if ! flutter analyze --no-pub > "$ANALYZE_OUTPUT" 2>&1; then
-    echo "❌ Flutter analyze found issues"
+flutter analyze --no-pub > "$ANALYZE_OUTPUT" 2>&1
+
+if grep -q "error •" "$ANALYZE_OUTPUT"; then
+    echo "❌ Flutter analyze found errors"
     echo ""
     cat "$ANALYZE_OUTPUT"
     rm -f "$ANALYZE_OUTPUT"
     echo ""
     echo "Please fix the issues above before committing"
     exit 1
+elif grep -q "warning •" "$ANALYZE_OUTPUT"; then
+    echo "❌ Flutter analyze found warnings"
+    echo ""
+    cat "$ANALYZE_OUTPUT"
+    rm -f "$ANALYZE_OUTPUT"
+    echo ""
+    echo "Please fix the issues above before committing"
+    exit 1
+else
+    rm -f "$ANALYZE_OUTPUT"
+    echo "✅ Flutter analyze passed (info messages are allowed)"
 fi
 
-rm -f "$ANALYZE_OUTPUT"
-echo "✅ Flutter analyze passed"
 echo ""
 echo "✅ All pre-commit checks passed!"
 
