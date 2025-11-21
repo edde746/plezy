@@ -105,7 +105,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // If this item doesn't have a playQueueItemID, it's a standalone item
       // Clear any existing queue so next/previous work correctly for this content
       if (widget.metadata.playQueueItemID == null) {
-        playbackState.clearShuffle();
+        // Defer clearing until after the first frame to avoid calling
+        // notifyListeners() during build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          playbackState.clearShuffle();
+        });
       } else {
         playbackState.setCurrentItem(widget.metadata);
       }
