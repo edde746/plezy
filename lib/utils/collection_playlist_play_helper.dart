@@ -25,6 +25,8 @@ Future<void> playCollectionOrPlaylist({
     }
 
     String ratingKey = item.ratingKey;
+    String? serverId = isCollection ? (item as PlexMetadata).serverId : (item as PlexPlaylist).serverId;
+    String? serverName = isCollection ? (item as PlexMetadata).serverName : (item as PlexPlaylist).serverName;
 
     final PlayQueueResponse? playQueue;
     if (isCollection) {
@@ -59,17 +61,38 @@ Future<void> playCollectionOrPlaylist({
           fetchedQueue.items!.isNotEmpty) {
         if (!context.mounted) return;
 
+        // Preserve serverId for all items in the queue
+        final itemsWithServerId = fetchedQueue.items!.map((queueItem) {
+          return queueItem.copyWith(
+            serverId: serverId,
+            serverName: serverName,
+          );
+        }).toList();
+
+        final queueWithServerId = PlayQueueResponse(
+          playQueueID: fetchedQueue.playQueueID,
+          playQueueSelectedItemID: fetchedQueue.playQueueSelectedItemID,
+          playQueueSelectedItemOffset: fetchedQueue.playQueueSelectedItemOffset,
+          playQueueSelectedMetadataItemID: fetchedQueue.playQueueSelectedMetadataItemID,
+          playQueueShuffled: fetchedQueue.playQueueShuffled,
+          playQueueSourceURI: fetchedQueue.playQueueSourceURI,
+          playQueueTotalCount: fetchedQueue.playQueueTotalCount,
+          playQueueVersion: fetchedQueue.playQueueVersion,
+          size: fetchedQueue.size,
+          items: itemsWithServerId,
+        );
+
         // Set play queue in provider
         final playbackState = context.read<PlaybackStateProvider>();
         playbackState.setClient(client);
-        await playbackState.setPlaybackFromPlayQueue(fetchedQueue, ratingKey);
+        await playbackState.setPlaybackFromPlayQueue(queueWithServerId, ratingKey);
 
         if (!context.mounted) return;
 
         // Navigate to first item
         await navigateToVideoPlayer(
           context,
-          metadata: fetchedQueue.items!.first,
+          metadata: itemsWithServerId.first,
         );
         return;
       }
@@ -88,15 +111,36 @@ Future<void> playCollectionOrPlaylist({
 
     if (!context.mounted) return;
 
+    // Preserve serverId for all items in the queue
+    final itemsWithServerId = playQueue.items!.map((queueItem) {
+      return queueItem.copyWith(
+        serverId: serverId,
+        serverName: serverName,
+      );
+    }).toList();
+
+    final queueWithServerId = PlayQueueResponse(
+      playQueueID: playQueue.playQueueID,
+      playQueueSelectedItemID: playQueue.playQueueSelectedItemID,
+      playQueueSelectedItemOffset: playQueue.playQueueSelectedItemOffset,
+      playQueueSelectedMetadataItemID: playQueue.playQueueSelectedMetadataItemID,
+      playQueueShuffled: playQueue.playQueueShuffled,
+      playQueueSourceURI: playQueue.playQueueSourceURI,
+      playQueueTotalCount: playQueue.playQueueTotalCount,
+      playQueueVersion: playQueue.playQueueVersion,
+      size: playQueue.size,
+      items: itemsWithServerId,
+    );
+
     // Set play queue in provider
     final playbackState = context.read<PlaybackStateProvider>();
     playbackState.setClient(client);
-    await playbackState.setPlaybackFromPlayQueue(playQueue, ratingKey);
+    await playbackState.setPlaybackFromPlayQueue(queueWithServerId, ratingKey);
 
     if (!context.mounted) return;
 
     // Navigate to first item
-    await navigateToVideoPlayer(context, metadata: playQueue.items!.first);
+    await navigateToVideoPlayer(context, metadata: itemsWithServerId.first);
   } catch (e) {
     appLogger.e('Failed to ${shuffle ? "shuffle play" : "play"}', error: e);
     if (context.mounted) {

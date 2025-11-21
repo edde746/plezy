@@ -4,9 +4,10 @@ import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
-import '../utils/provider_extensions.dart';
+import '../providers/multi_server_provider.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/duration_formatter.dart';
+import '../utils/app_logger.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
 import '../mixins/item_updatable.dart';
@@ -24,17 +25,42 @@ class SeasonDetailScreen extends StatefulWidget {
 
 class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     with ItemUpdatable {
+  late final PlexClient _client;
+
   @override
-  PlexClient get client => context.clientSafe;
+  PlexClient get client => _client;
 
   List<PlexMetadata> _episodes = [];
   bool _isLoadingEpisodes = false;
   bool _watchStateChanged = false;
 
+  /// Get the correct PlexClient for this season's server
+  PlexClient _getClientForSeason(BuildContext context) {
+    final serverId = widget.season.serverId;
+    if (serverId == null) {
+      appLogger.w('Season ${widget.season.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client!;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client!;
+    }
+
+    return client;
+  }
+
   @override
   void initState() {
     super.initState();
-    _loadEpisodes();
+    // Initialize the client once in initState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _client = _getClientForSeason(context);
+      _loadEpisodes();
+    });
   }
 
   Future<void> _loadEpisodes() async {
@@ -43,15 +69,14 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     });
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception('No client available');
-      }
-
-      final episodes = await client.getChildren(widget.season.ratingKey);
+      final episodes = await _client.getChildren(widget.season.ratingKey);
+      // Preserve serverId for each episode
+      final episodesWithServerId = episodes.map((episode) => episode.copyWith(
+        serverId: widget.season.serverId,
+        serverName: widget.season.serverName,
+      )).toList();
       setState(() {
-        _episodes = episodes;
+        _episodes = episodesWithServerId;
         _isLoadingEpisodes = false;
       });
     } catch (e) {
@@ -165,21 +190,10 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
                         child: episode.thumb != null
-                            ? Consumer<PlexClientProvider>(
-                                builder: (context, clientProvider, child) {
-                                  final client = clientProvider.client;
-                                  if (client == null) {
-                                    return Container(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
-                                      child: const Center(
-                                        child: Icon(Icons.movie, size: 40),
-                                      ),
-                                    );
-                                  }
+                            ? Builder(
+                                builder: (context) {
                                   return CachedNetworkImage(
-                                    imageUrl: client.getThumbnailUrl(
+                                    imageUrl: _client.getThumbnailUrl(
                                       episode.thumb,
                                     ),
                                     filterQuality: FilterQuality.medium,

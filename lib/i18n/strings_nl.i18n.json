@@ -399,6 +399,11 @@
   },
   "serverSelection": {
     "connectingToServer": "Verbinden met server...",
+    "connectingToAllServers": "Verbinden met alle servers...",
+    "connectToAllServers": "Verbind met alle servers",
+    "allServerConnectionsFailed": "Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.",
+    "foundServers": "${count} server(s) gevonden",
+    "orSelectIndividually": "Of selecteer een server individueel:",
     "serverDebugCopied": "Server debug gegevens gekopieerd naar klembord",
     "copyDebugData": "Kopieer debug gegevens",
     "noServersFound": "Geen servers gevonden",

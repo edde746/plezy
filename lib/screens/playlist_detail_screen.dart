@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../client/plex_client.dart';
 import '../models/plex_playlist.dart';
+import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
@@ -35,6 +38,25 @@ class _PlaylistDetailScreenState
   @override
   String get emptyMessage => t.playlists.emptyPlaylist;
 
+  /// Get the correct PlexClient for this playlist's server
+  PlexClient? _getClientForPlaylist() {
+    final serverId = widget.playlist.serverId;
+    if (serverId == null) {
+      appLogger.w('Playlist ${widget.playlist.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
+
   @override
   Future<void> loadItems() async {
     if (mounted) {
@@ -48,9 +70,19 @@ class _PlaylistDetailScreenState
       final client = this.client;
       final newItems = await client.getPlaylist(widget.playlist.ratingKey);
 
+      // Tag items with server info for correct client resolution
+      final taggedItems = newItems
+          .map(
+            (item) => item.copyWith(
+              serverId: widget.playlist.serverId,
+              serverName: widget.playlist.serverName,
+            ),
+          )
+          .toList();
+
       if (mounted) {
         setState(() {
-          items = newItems;
+          items = taggedItems;
           isLoading = false;
         });
       }
@@ -221,8 +253,7 @@ class _PlaylistDetailScreenState
     if (items.isEmpty || index < 0 || index >= items.length) return;
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
+      final client = _getClientForPlaylist();
       if (client == null) return;
 
       final selectedItem = items[index];

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
+import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/collection_playlist_play_helper.dart';
+import '../utils/app_logger.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 
@@ -17,7 +21,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
   String? errorMessage;
 
   @override
-  PlexClient get client => context.clientSafe;
+  PlexClient get client => _getClientForMediaItem();
 
   /// The media item being displayed (collection or playlist)
   dynamic get mediaItem;
@@ -27,6 +31,41 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
 
   /// Message to show when list is empty
   String get emptyMessage;
+
+  /// Get the correct PlexClient for this media item's server
+  PlexClient _getClientForMediaItem() {
+    // Try to get serverId from the media item
+    String? serverId;
+
+    // Check if mediaItem has serverId property
+    if (mediaItem is PlexMetadata) {
+      serverId = (mediaItem as PlexMetadata).serverId;
+    } else if (mediaItem != null &&
+               mediaItem.runtimeType.toString().contains('PlexPlaylist')) {
+      // For playlists, use reflection-like access
+      try {
+        final dynamic item = mediaItem;
+        serverId = item.serverId as String?;
+      } catch (_) {
+        // Ignore if serverId is not available
+      }
+    }
+
+    if (serverId == null) {
+      appLogger.w('Media item has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client!;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client!;
+    }
+
+    return client;
+  }
 
   @override
   void initState() {
@@ -54,9 +93,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
       return;
     }
 
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
-    if (client == null) return;
+    final client = _getClientForMediaItem();
 
     await playCollectionOrPlaylist(
       context: context,

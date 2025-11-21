@@ -1,12 +1,18 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
+import '../services/server_registry.dart';
+import '../services/multi_server_manager.dart';
+import '../providers/multi_server_provider.dart';
+import '../providers/plex_client_provider.dart';
 import '../i18n/strings.g.dart';
-import 'server_selection_screen.dart';
+import '../utils/app_logger.dart';
+import 'main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -31,6 +37,74 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _initializeAuthService() async {
     _authService = await PlexAuthService.create();
+  }
+
+  /// Connect to all available servers and navigate to main screen
+  Future<void> _connectToAllServersAndNavigate(String plexToken) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isAuthenticating = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Fetch all servers for this user
+      final servers = await _authService.fetchServers(plexToken);
+
+      if (servers.isEmpty) {
+        setState(() {
+          _isAuthenticating = false;
+          _errorMessage = t.serverSelection.noServersFound;
+        });
+        return;
+      }
+
+      // Save all servers to registry and enable them
+      final storage = await StorageService.getInstance();
+      final registry = ServerRegistry(storage);
+      await registry.saveServers(servers);
+
+      // Enable all servers
+      final serverIds = servers.map((s) => s.clientIdentifier).toSet();
+      await registry.saveEnabledServerIds(serverIds);
+
+      // Connect to all servers
+      if (!mounted) return;
+      final multiServerProvider = context.read<MultiServerProvider>();
+      final connectedCount = await multiServerProvider.serverManager.connectToAllServers(servers);
+
+      if (connectedCount == 0) {
+        setState(() {
+          _isAuthenticating = false;
+          _errorMessage = t.serverSelection.allServerConnectionsFailed;
+        });
+        return;
+      }
+
+      // Get the first connected client for backward compatibility
+      if (!mounted) return;
+      final firstClient = multiServerProvider.serverManager.onlineClients.values.first;
+
+      // Set it as the legacy client
+      final plexClientProvider = context.read<PlexClientProvider>();
+      plexClientProvider.setClient(firstClient);
+
+      // Navigate to main screen
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainScreen(client: firstClient),
+        ),
+      );
+    } catch (e) {
+      appLogger.e('Failed to connect to servers', error: e);
+      setState(() {
+        _isAuthenticating = false;
+        _errorMessage = t.serverSelection.failedToLoadServers(error: e);
+      });
+    }
   }
 
   Future<void> _startAuthentication() async {
@@ -100,23 +174,16 @@ class _AuthScreenState extends State<AuthScreen> {
       final storage = await StorageService.getInstance();
       await storage.savePlexToken(token);
 
-      // Navigate to server selection
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServerSelectionScreen(
-              authService: _authService,
-              plexToken: token,
-            ),
-          ),
-        );
-      }
       // Clear QR URL after successful auth
       setState(() {
         _qrAuthUrl = null;
         _useQrFlow = false;
       });
+
+      // Connect to all servers and navigate to main screen
+      if (mounted) {
+        await _connectToAllServersAndNavigate(token);
+      }
     } catch (e) {
       setState(() {
         _isAuthenticating = false;
@@ -197,17 +264,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       final storage = await StorageService.getInstance();
                       await storage.savePlexToken(token);
 
-                      // Close dialog and navigate
+                      // Close dialog and connect to all servers
                       if (mounted) {
                         navigator.pop();
-                        navigator.pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => ServerSelectionScreen(
-                              authService: _authService,
-                              plexToken: token,
-                            ),
-                          ),
-                        );
+                        await _connectToAllServersAndNavigate(token);
                       }
                     } catch (e) {
                       setDialogState(() {

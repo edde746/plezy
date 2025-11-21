@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../utils/duration_formatter.dart';
+import '../utils/app_logger.dart';
 import '../i18n/strings.g.dart';
 
 /// Custom list item widget for playlist items
@@ -118,12 +121,31 @@ class PlaylistItemCard extends StatelessWidget {
     );
   }
 
+  /// Get the correct PlexClient for this item's server
+  PlexClient? _getClientForItem(BuildContext context) {
+    final serverId = item.serverId;
+    if (serverId == null) {
+      appLogger.w('Playlist item ${item.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
+
   Widget _buildPosterImage(BuildContext context) {
     final posterUrl = item.posterThumb();
     if (posterUrl != null) {
-      return Consumer<PlexClientProvider>(
-        builder: (context, clientProvider, child) {
-          final client = clientProvider.client;
+      return Builder(
+        builder: (context) {
+          final client = _getClientForItem(context);
           if (client == null) {
             return _buildPlaceholder();
           }

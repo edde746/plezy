@@ -5,16 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../client/plex_client.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
+import '../../providers/plex_client_provider.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../screens/video_player_screen.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
 import '../../services/sleep_timer_service.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/duration_formatter.dart';
 import '../../utils/platform_detector.dart';
@@ -99,6 +104,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   int _audioSyncOffset = 0; // Default, loaded from settings
   int _subtitleSyncOffset = 0; // Default, loaded from settings
   bool _isRotationLocked = true; // Default locked (landscape only)
+
+  /// Get the correct PlexClient for this metadata's server
+  PlexClient? _getClientForMetadata() {
+    final serverId = widget.metadata.serverId;
+    if (serverId == null) {
+      appLogger.w('Metadata ${widget.metadata.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
   // Double-tap feedback state
   bool _showDoubleTapFeedback = false;
   double _doubleTapFeedbackOpacity = 0.0;
@@ -344,8 +368,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   Future<void> _loadChapters() async {
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
+    final client = _getClientForMetadata();
     if (client == null) return;
 
     final chapters = await client.getChapters(widget.metadata.ratingKey);
@@ -358,8 +381,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   Future<void> _loadMarkers() async {
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
+    final client = _getClientForMetadata();
     if (client == null) return;
 
     final markers = await client.getMarkers(widget.metadata.ratingKey);
@@ -500,6 +522,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     widget.player,
                     _chapters,
                     _chaptersLoaded,
+                    serverId: widget.metadata.serverId,
                   ),
                 ),
               if (widget.availableVersions.length > 1)

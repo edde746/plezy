@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../client/plex_client.dart';
 import '../../models/plex_library.dart';
 import '../../models/plex_playlist.dart';
 import '../../providers/plex_client_provider.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/library_refresh_notifier.dart';
@@ -42,6 +44,26 @@ class _LibraryPlaylistsTabState extends State<LibraryPlaylistsTab>
     _loadPlaylists();
   }
 
+  /// Get the correct PlexClient for this library's server
+  PlexClient? _getClientForLibrary(BuildContext context) {
+    final serverId = widget.library.serverId;
+    if (serverId == null) {
+      // Fallback to legacy client if no serverId
+      appLogger.w('Library ${widget.library.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
+
   List<PlexPlaylist> _playlists = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -70,7 +92,7 @@ class _LibraryPlaylistsTabState extends State<LibraryPlaylistsTab>
   void didUpdateWidget(LibraryPlaylistsTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Reload if library changed
-    if (oldWidget.library.key != widget.library.key) {
+    if (oldWidget.library.globalKey != widget.library.globalKey) {
       _loadPlaylists();
     }
   }
@@ -82,7 +104,8 @@ class _LibraryPlaylistsTabState extends State<LibraryPlaylistsTab>
     });
 
     try {
-      final client = context.read<PlexClientProvider>().client;
+      // Use server-specific client for this library
+      final client = _getClientForLibrary(context);
       if (client == null) {
         throw Exception(t.errors.noClientAvailable);
       }
@@ -95,8 +118,17 @@ class _LibraryPlaylistsTabState extends State<LibraryPlaylistsTab>
 
       if (!mounted) return;
 
+      final taggedPlaylists = playlists
+          .map(
+            (playlist) => playlist.copyWith(
+              serverId: widget.library.serverId,
+              serverName: widget.library.serverName,
+            ),
+          )
+          .toList();
+
       setState(() {
-        _playlists = playlists;
+        _playlists = taggedPlaylists;
         _isLoading = false;
       });
     } catch (e) {

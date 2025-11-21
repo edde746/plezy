@@ -45,9 +45,18 @@ class PlexMetadata {
   final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
   final int? librarySectionID; // Library section ID this item belongs to
 
+  // Multi-server support fields
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? serverId; // Server machine identifier (not from API)
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? serverName; // Server display name (not from API)
+
   // Transient field for clear logo (extracted from Image array)
   String? _clearLogo;
   String? get clearLogo => _clearLogo;
+
+  /// Global unique identifier across all servers (serverId:ratingKey)
+  String get globalKey => serverId != null ? '$serverId:$ratingKey' : ratingKey;
 
   PlexMetadata({
     required this.ratingKey,
@@ -87,6 +96,8 @@ class PlexMetadata {
     this.playlistItemID,
     this.playQueueItemID,
     this.librarySectionID,
+    this.serverId,
+    this.serverName,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -128,6 +139,8 @@ class PlexMetadata {
     int? playlistItemID,
     int? playQueueItemID,
     int? librarySectionID,
+    String? serverId,
+    String? serverName,
   }) {
     final copy = PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -167,6 +180,8 @@ class PlexMetadata {
       playlistItemID: playlistItemID ?? this.playlistItemID,
       playQueueItemID: playQueueItemID ?? this.playQueueItemID,
       librarySectionID: librarySectionID ?? this.librarySectionID,
+      serverId: serverId ?? this.serverId,
+      serverName: serverName ?? this.serverName,
     );
     // Preserve clearLogo
     copy._clearLogo = _clearLogo;

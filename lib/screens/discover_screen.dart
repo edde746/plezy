@@ -6,6 +6,7 @@ import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_hub.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../services/storage_service.dart';
 import '../services/plex_auth_service.dart';
 import '../widgets/media_card.dart';
@@ -13,8 +14,8 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/user_avatar_widget.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/server_badge.dart';
 import 'profile_switch_screen.dart';
-import 'server_selection_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/settings_provider.dart';
 import '../mixins/refreshable.dart';
@@ -40,7 +41,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
 
   @override
-  PlexClient get client => context.clientSafe;
+  PlexClient get client => _getClientForItem(null);
 
   List<PlexMetadata> _onDeck = [];
   List<PlexHub> _hubs = [];
@@ -52,6 +53,26 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Timer? _autoScrollTimer;
   late AnimationController _indicatorAnimationController;
   bool _isAutoScrollPaused = false;
+
+  /// Get the correct PlexClient for an item's server
+  /// If item is null, returns legacy client for backward compatibility
+  PlexClient _getClientForItem(PlexMetadata? item) {
+    final serverId = item?.serverId;
+    if (serverId == null) {
+      // Fallback to legacy client if no serverId
+      return context.read<PlexClientProvider>().client!;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client!;
+    }
+
+    return client;
+  }
 
   @override
   void initState() {
@@ -160,61 +181,51 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Future<void> _loadContent() async {
-    appLogger.d('Loading discover content');
+    appLogger.d('Loading discover content from all servers');
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      appLogger.d('Fetching onDeck and hubs from Plex');
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception('No client available');
+      appLogger.d('Fetching onDeck and hubs from all Plex servers');
+      final multiServerProvider = Provider.of<MultiServerProvider>(
+        context,
+        listen: false,
+      );
+
+      if (!multiServerProvider.hasConnectedServers) {
+        throw Exception('No servers available');
       }
 
-      final onDeck = await client.getOnDeck();
+      // Fetch on deck and hubs from all servers in parallel for optimal performance
+      final results = await Future.wait([
+        multiServerProvider.aggregationService.getOnDeckFromAllServers(
+          limit: 20,
+        ),
+        multiServerProvider.aggregationService.getHubsFromAllServers(),
+      ]);
 
-      // Load hubs from all libraries
-      final libraries = await client.getLibraries();
-      final allHubs = <PlexHub>[];
+      final onDeck = results[0] as List<PlexMetadata>;
+      final allHubs = results[1] as List<PlexHub>;
 
-      for (final library in libraries) {
-        // Skip libraries that are not movie/show or are hidden
-        if (library.type != 'movie' && library.type != 'show') continue;
-        if (library.hidden != 0) continue;
-
-        try {
-          final libraryHubs = await client.getLibraryHubs(
-            library.key,
-            limit: 12,
-          );
-          // Filter out duplicate hubs that we already fetch separately
-          final filteredHubs = libraryHubs.where((hub) {
-            final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
-            final title = hub.title.toLowerCase();
-            // Skip "Continue Watching" and "On Deck" hubs (we handle these separately)
-            return !hubId.contains('ondeck') &&
-                !hubId.contains('continue') &&
-                !title.contains('continue watching') &&
-                !title.contains('on deck');
-          }).toList();
-          allHubs.addAll(filteredHubs);
-        } catch (e) {
-          appLogger.w(
-            'Failed to load hubs for library ${library.title}',
-            error: e,
-          );
-        }
-      }
+      // Filter out duplicate hubs that we already fetch separately
+      final filteredHubs = allHubs.where((hub) {
+        final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+        final title = hub.title.toLowerCase();
+        // Skip "Continue Watching" and "On Deck" hubs (we handle these separately)
+        return !hubId.contains('ondeck') &&
+            !hubId.contains('continue') &&
+            !title.contains('continue watching') &&
+            !title.contains('on deck');
+      }).toList();
 
       appLogger.d(
-        'Received ${onDeck.length} on deck items and ${allHubs.length} hubs',
+        'Received ${onDeck.length} on deck items and ${filteredHubs.length} hubs from all servers',
       );
       setState(() {
         _onDeck = onDeck;
-        _hubs = allHubs;
+        _hubs = filteredHubs;
         _isLoading = false;
 
         // Reset hero index to avoid sync issues
@@ -239,17 +250,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// Refresh only the Continue Watching section in the background
   /// This is called when returning to the home screen to avoid blocking UI
   Future<void> _refreshContinueWatching() async {
-    appLogger.d('Refreshing Continue Watching in background');
+    appLogger.d('Refreshing Continue Watching in background from all servers');
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        appLogger.w('No client available for background refresh');
+      final multiServerProvider = context.read<MultiServerProvider>();
+      if (!multiServerProvider.hasConnectedServers) {
+        appLogger.w('No servers available for background refresh');
         return;
       }
 
-      final onDeck = await client.getOnDeck();
+      final onDeck = await multiServerProvider.aggregationService
+          .getOnDeckFromAllServers(limit: 20);
 
       if (mounted) {
         setState(() {
@@ -406,43 +417,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
-  Future<void> _handleSwitchServer() async {
-    final storage = await StorageService.getInstance();
-    final plexToken = storage.getPlexToken();
-
-    if (plexToken == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.messages.noPlexToken)));
-      }
-      return;
-    }
-
-    try {
-      final authService = await PlexAuthService.create();
-
-      // Navigate to server selection screen
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServerSelectionScreen(
-              authService: authService,
-              plexToken: plexToken,
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
-        );
-      }
-    }
-  }
-
   Future<void> _handleLogout() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -523,8 +497,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       onSelected: (value) {
                         if (value == 'switch_profile') {
                           _handleSwitchProfile(context);
-                        } else if (value == 'switch_server') {
-                          _handleSwitchServer();
                         } else if (value == 'logout') {
                           _handleLogout();
                         }
@@ -542,16 +514,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               ],
                             ),
                           ),
-                        PopupMenuItem(
-                          value: 'switch_server',
-                          child: Row(
-                            children: [
-                              Icon(Icons.swap_horiz),
-                              SizedBox(width: 8),
-                              Text(t.discover.switchServer),
-                            ],
-                          ),
-                        ),
                         PopupMenuItem(
                           value: 'logout',
                           child: Row(
@@ -818,10 +780,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       hint: t.accessibility.tapToPlay,
       child: GestureDetector(
         onTap: () {
-          final clientProvider = context.plexClient;
-          final client = clientProvider.client;
-          if (client == null) return;
-
           appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
           navigateToVideoPlayer(context, metadata: heroItem);
         },
@@ -865,16 +823,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           child: Opacity(opacity: value, child: child),
                         );
                       },
-                      child: Consumer<PlexClientProvider>(
-                        builder: (context, clientProvider, child) {
-                          final client = clientProvider.client;
-                          if (client == null) {
-                            return Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                            );
-                          }
+                      child: Builder(
+                        builder: (context) {
+                          final client = _getClientForItem(heroItem);
                           return CachedNetworkImage(
                             imageUrl: client.getThumbnailUrl(
                               heroItem.art ?? heroItem.grandparentArt,
@@ -938,12 +889,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           SizedBox(
                             height: 120,
                             width: 400,
-                            child: Consumer<PlexClientProvider>(
-                              builder: (context, clientProvider, child) {
-                                final client = clientProvider.client;
-                                if (client == null) {
-                                  return Container();
-                                }
+                            child: Builder(
+                              builder: (context) {
+                                final client = _getClientForItem(heroItem);
                                 return CachedNetworkImage(
                                   imageUrl: client.getThumbnailUrl(
                                     heroItem.clearLogo,
@@ -1143,10 +1091,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     return InkWell(
       onTap: () {
-        final clientProvider = context.plexClient;
-        final client = clientProvider.client;
-        if (client == null) return;
-
         appLogger.d('Playing: ${heroItem.title}');
         navigateToVideoPlayer(context, metadata: heroItem);
       },

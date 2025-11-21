@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../i18n/strings.g.dart';
+import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../theme/theme_helper.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_rating_formatter.dart';
@@ -49,14 +51,34 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     super.dispose();
   }
 
+  /// Get the correct PlexClient for this metadata's server
+  PlexClient? _getClientForMetadata(BuildContext context) {
+    final serverId = widget.metadata.serverId;
+    if (serverId == null) {
+      // Fallback to legacy client if no serverId
+      appLogger.w('Metadata ${widget.metadata.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
+
   Future<void> _loadFullMetadata() async {
     setState(() {
       _isLoadingMetadata = true;
     });
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
+      // Use server-specific client for this metadata
+      final client = _getClientForMetadata(context);
       if (client == null) {
         throw Exception('No client available');
       }
@@ -69,9 +91,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       final onDeckEpisode = result['onDeckEpisode'] as PlexMetadata?;
 
       if (metadata != null) {
+        // Preserve serverId from original metadata
+        final metadataWithServerId = metadata.copyWith(
+          serverId: widget.metadata.serverId,
+          serverName: widget.metadata.serverName,
+        );
+        final onDeckWithServerId = onDeckEpisode?.copyWith(
+          serverId: widget.metadata.serverId,
+          serverName: widget.metadata.serverName,
+        );
+
         setState(() {
-          _fullMetadata = metadata;
-          _onDeckEpisode = onDeckEpisode;
+          _fullMetadata = metadataWithServerId;
+          _onDeckEpisode = onDeckWithServerId;
           _isLoadingMetadata = false;
         });
 
@@ -110,15 +142,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     });
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
+      // Use server-specific client for this metadata
+      final client = _getClientForMetadata(context);
       if (client == null) {
         throw Exception('No client available');
       }
 
       final seasons = await client.getChildren(widget.metadata.ratingKey);
+      // Preserve serverId for each season
+      final seasonsWithServerId = seasons.map((season) => season.copyWith(
+        serverId: widget.metadata.serverId,
+        serverName: widget.metadata.serverName,
+      )).toList();
       setState(() {
-        _seasons = seasons;
+        _seasons = seasonsWithServerId;
         _isLoadingSeasons = false;
       });
     } catch (e) {
@@ -132,8 +169,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   /// This preserves scroll position and only updates watch-related data
   Future<void> _updateWatchState() async {
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
+      // Use server-specific client for this metadata
+      final client = _getClientForMetadata(context);
       if (client == null) {
         throw Exception('No client available');
       }
@@ -143,15 +180,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       );
 
       if (metadata != null) {
+        // Preserve serverId from original metadata
+        final metadataWithServerId = metadata.copyWith(
+          serverId: widget.metadata.serverId,
+          serverName: widget.metadata.serverName,
+        );
+
         // For shows, also refetch seasons to update their watch counts
         List<PlexMetadata>? updatedSeasons;
         if (metadata.type.toLowerCase() == 'show') {
-          updatedSeasons = await client.getChildren(widget.metadata.ratingKey);
+          final seasons = await client.getChildren(widget.metadata.ratingKey);
+          // Preserve serverId for each season
+          updatedSeasons = seasons.map((season) => season.copyWith(
+            serverId: widget.metadata.serverId,
+            serverName: widget.metadata.serverName,
+          )).toList();
         }
 
         // Single setState to minimize rebuilds - scroll position is preserved by controller
         setState(() {
-          _fullMetadata = metadata;
+          _fullMetadata = metadataWithServerId;
           if (updatedSeasons != null) {
             _seasons = updatedSeasons;
           }
@@ -165,9 +213,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   Future<void> _playFirstEpisode() async {
     try {
-      // Extract context dependencies before async operations
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
+      // Use server-specific client for this metadata
+      final client = _getClientForMetadata(context);
       if (client == null) {
         throw Exception('No client available');
       }
@@ -208,13 +255,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
       // Play the first episode
       final firstEpisode = episodes.first;
+      // Preserve serverId for the episode
+      final episodeWithServerId = firstEpisode.copyWith(
+        serverId: widget.metadata.serverId,
+        serverName: widget.metadata.serverName,
+      );
       if (mounted) {
-        final clientProvider = context.plexClient;
-        final client = clientProvider.client;
-        if (client == null) return;
-
-        appLogger.d('Playing first episode: ${firstEpisode.title}');
-        await navigateToVideoPlayer(context, metadata: firstEpisode);
+        // Client already retrieved earlier in the method
+        appLogger.d('Playing first episode: ${episodeWithServerId.title}');
+        await navigateToVideoPlayer(context, metadata: episodeWithServerId);
         appLogger.d('Returned from playback, refreshing metadata');
         // Refresh metadata when returning from video player
         _loadFullMetadata();
@@ -265,9 +314,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 children: [
                   // Background Art
                   if (metadata.art != null)
-                    Consumer<PlexClientProvider>(
-                      builder: (context, clientProvider, child) {
-                        final client = clientProvider.client;
+                    Builder(
+                      builder: (context) {
+                        final client = _getClientForMetadata(context);
                         if (client == null) {
                           return Container(
                             color: Theme.of(
@@ -331,9 +380,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               SizedBox(
                                 height: 120,
                                 width: 400,
-                                child: Consumer<PlexClientProvider>(
-                                  builder: (context, clientProvider, child) {
-                                    final client = clientProvider.client;
+                                child: Builder(
+                                  builder: (context) {
+                                    final client = _getClientForMetadata(context);
                                     if (client == null) {
                                       return Text(
                                         metadata.title,
@@ -593,8 +642,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               // Otherwise, play the first episode of the first season
                               if (metadata.type.toLowerCase() == 'show') {
                                 if (_onDeckEpisode != null) {
-                                  final clientProvider = context.plexClient;
-                                  final client = clientProvider.client;
+                                  final client = _getClientForMetadata(context);
                                   if (client == null) return;
 
                                   appLogger.d(
@@ -614,8 +662,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   await _playFirstEpisode();
                                 }
                               } else {
-                                final clientProvider = context.plexClient;
-                                final client = clientProvider.client;
+                                final client = _getClientForMetadata(context);
                                 if (client == null) return;
 
                                 appLogger.d('Playing: ${metadata.title}');
@@ -665,8 +712,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       IconButton.filledTonal(
                         onPressed: () async {
                           try {
-                            final clientProvider = context.plexClient;
-                            final client = clientProvider.client;
+                            final client = _getClientForMetadata(context);
                             if (client == null) return;
 
                             await client.markAsWatched(metadata.ratingKey);
@@ -706,8 +752,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       IconButton.filledTonal(
                         onPressed: () async {
                           try {
-                            final clientProvider = context.plexClient;
-                            final client = clientProvider.client;
+                            final client = _getClientForMetadata(context);
                             if (client == null) return;
 
                             await client.markAsUnwatched(metadata.ratingKey);
@@ -985,9 +1030,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                   if (season.thumb != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: Consumer<PlexClientProvider>(
-                        builder: (context, clientProvider, child) {
-                          final client = clientProvider.client;
+                      child: Builder(
+                        builder: (context) {
+                          final client = _getClientForMetadata(context);
                           if (client == null) {
                             return Container(
                               width: 80,

@@ -4,6 +4,8 @@ import '../client/plex_client.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';
+import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
@@ -25,7 +27,7 @@ class HubDetailScreen extends StatefulWidget {
 }
 
 class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
-  PlexClient get client => context.clientSafe;
+  PlexClient get client => _getClientForHub();
 
   List<PlexMetadata> _items = [];
   List<PlexMetadata> _filteredItems = [];
@@ -34,6 +36,25 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
   bool _isSortDescending = false;
   bool _isLoading = false;
   String? _errorMessage;
+
+  /// Get the correct PlexClient for this hub's server
+  PlexClient _getClientForHub() {
+    final serverId = widget.hub.serverId;
+    if (serverId == null) {
+      appLogger.w('Hub ${widget.hub.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client!;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client!;
+    }
+
+    return client;
+  }
 
   @override
   void initState() {
@@ -51,9 +72,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   Future<void> _loadSorts() async {
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) return;
+      final client = _getClientForHub();
 
       // Get the library key from the hub key
       // Hub keys can have various formats:
@@ -197,18 +216,22 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
     });
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception('No client available');
-      }
+      final client = _getClientForHub();
 
       // Fetch more items from the hub using the hubKey
       final response = await client.getHubContent(widget.hub.hubKey);
 
+      // Tag all items with serverId from the hub
+      final taggedItems = response.map((item) {
+        return item.copyWith(
+          serverId: widget.hub.serverId,
+          serverName: widget.hub.serverName,
+        );
+      }).toList();
+
       setState(() {
-        _items = response;
-        _filteredItems = response;
+        _items = taggedItems;
+        _filteredItems = taggedItems;
         _isLoading = false;
       });
 
@@ -216,7 +239,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       _applySort();
 
       appLogger.d(
-        'Loaded ${response.length} items for hub: ${widget.hub.title}',
+        'Loaded ${taggedItems.length} items for hub: ${widget.hub.title}',
       );
     } catch (e) {
       appLogger.e('Failed to load hub content', error: e);

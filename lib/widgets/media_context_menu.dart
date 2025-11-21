@@ -1,7 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
+import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/collection_playlist_play_helper.dart';
@@ -57,8 +61,35 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     _tapPosition = details.globalPosition;
   }
 
+  /// Get the correct PlexClient for this item's server
+  PlexClient? _getClientForItem() {
+    String? serverId;
+
+    // Get serverId from the item (could be PlexMetadata or PlexPlaylist)
+    if (widget.item is PlexMetadata) {
+      serverId = (widget.item as PlexMetadata).serverId;
+    } else if (widget.item is PlexPlaylist) {
+      serverId = (widget.item as PlexPlaylist).serverId;
+    }
+
+    if (serverId == null) {
+      appLogger.w('Item has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
+
   void _showContextMenu(BuildContext context) async {
-    final client = context.client;
+    final client = _getClientForItem();
     if (client == null) return;
 
     final isPlaylist = widget.item is PlexPlaylist;
@@ -423,8 +454,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   ) async {
     if (ratingKey == null) return;
 
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
+    final client = _getClientForItem();
     if (client == null) return;
 
     try {
@@ -447,7 +477,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Show file info bottom sheet
   Future<void> _showFileInfo(BuildContext context) async {
-    final client = context.client;
+    final client = _getClientForItem();
     if (client == null) return;
 
     try {
@@ -583,7 +613,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Show dialog to select playlist and add item
   Future<void> _showAddToPlaylistDialog(BuildContext context) async {
-    final client = context.client;
+    final client = _getClientForItem();
     if (client == null) return;
 
     try {
@@ -694,7 +724,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Show dialog to select collection and add item
   Future<void> _showAddToCollectionDialog(BuildContext context) async {
-    final client = context.client;
+    final client = _getClientForItem();
     if (client == null) return;
 
     try {
@@ -916,7 +946,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     BuildContext context,
     PlexMetadata metadata,
   ) async {
-    final client = context.client;
+    final client = _getClientForItem();
     if (client == null) return;
 
     if (widget.collectionId == null) {
@@ -992,7 +1022,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     bool isCollection,
     bool isPlaylist,
   ) async {
-    final client = context.client;
+    final client = _getClientForItem();
     if (client == null) return;
 
     await playCollectionOrPlaylist(
@@ -1009,7 +1039,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     bool isCollection,
     bool isPlaylist,
   ) async {
-    final client = context.client;
+    final client = _getClientForItem();
     if (client == null) return;
 
     await playCollectionOrPlaylist(
@@ -1026,7 +1056,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     bool isCollection,
     bool isPlaylist,
   ) async {
-    final client = context.client;
+    final client = _getClientForItem();
     if (client == null) return;
 
     final itemTitle = widget.item.title;

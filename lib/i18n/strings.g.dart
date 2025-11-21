@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2634 (439 per locale)
+/// Strings: 2662 (443 per locale)
 ///
-/// Built on 2025-11-18 at 18:40 UTC
+/// Built on 2025-11-21 at 22:35 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -256,7 +256,6 @@ class _StringsScreensEn {
 
 	// Translations
 	String get licenses => 'Licenses';
-	String get selectServer => 'Select Server';
 	String get switchProfile => 'Switch Profile';
 	String get subtitleStyling => 'Subtitle Styling';
 	String get search => 'Search';
@@ -624,7 +623,6 @@ class _StringsDiscoverEn {
 	// Translations
 	String get title => 'Discover';
 	String get switchProfile => 'Switch Profile';
-	String get switchServer => 'Switch Server';
 	String get logout => 'Logout';
 	String get noContentAvailable => 'No content available';
 	String get addMediaToLibraries => 'Add some media to your libraries';
@@ -739,6 +737,11 @@ class _StringsServerSelectionEn {
 
 	// Translations
 	String get connectingToServer => 'Connecting to server...';
+	String get connectingToAllServers => 'Connecting to all servers...';
+	String get connectToAllServers => 'Connect to All Servers';
+	String get allServerConnectionsFailed => 'Failed to connect to any servers. Please check your network and try again.';
+	String foundServers({required Object count}) => 'Found ${count} server(s)';
+	String get orSelectIndividually => 'Or select a server individually:';
 	String get serverDebugCopied => 'Server debug data copied to clipboard';
 	String get copyDebugData => 'Copy Debug Data';
 	String get noServersFound => 'No servers found';
@@ -1524,6 +1527,11 @@ class _StringsServerSelectionDe implements _StringsServerSelectionEn {
 
 	// Translations
 	@override String get connectingToServer => 'Verbinde mit Server...';
+	@override String get connectingToAllServers => 'Verbinde mit allen Servern...';
+	@override String get connectToAllServers => 'Mit allen Servern verbinden';
+	@override String get allServerConnectionsFailed => 'Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.';
+	@override String foundServers({required Object count}) => '${count} Server gefunden';
+	@override String get orSelectIndividually => 'Oder einzelnen Server auswählen:';
 	@override String get serverDebugCopied => 'Server-Debugdaten kopiert';
 	@override String get copyDebugData => 'Debugdaten kopieren';
 	@override String get noServersFound => 'Keine Server gefunden';
@@ -1830,7 +1838,7 @@ class _StringsScreensIt implements _StringsScreensEn {
 	@override String get switchProfile => 'Cambia profilo';
 	@override String get subtitleStyling => 'Stile sottotitoli';
 	@override String get search => 'Cerca';
-	@override String get logs => 'Logs';
+	@override String get logs => 'Registro';
 }
 
 // Path: update
@@ -2023,14 +2031,14 @@ class _StringsAccessibilityIt implements _StringsAccessibilityEn {
 	@override final _StringsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String mediaCardMovie({required Object title}) => '${title}, movie';
-	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardMovie({required Object title}) => '${title}, film';
+	@override String mediaCardShow({required Object title}) => '${title}, serie TV';
 	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
-	@override String get mediaCardWatched => 'watched';
-	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
-	@override String get mediaCardUnwatched => 'unwatched';
-	@override String get tapToPlay => 'Tap to play';
+	@override String get mediaCardWatched => 'visto';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percento visto';
+	@override String get mediaCardUnwatched => 'non visto';
+	@override String get tapToPlay => 'Tocca per riprodurre';
 }
 
 // Path: tooltips
@@ -2059,7 +2067,7 @@ class _StringsVideoControlsIt implements _StringsVideoControlsEn {
 	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
 	@override String playsLater({required Object label}) => '${label} riprodotto dopo';
 	@override String playsEarlier({required Object label}) => '${label} riprodotto prima';
-	@override String get noOffset => 'No offset';
+	@override String get noOffset => 'Nessun offset';
 	@override String get letterbox => 'Letterbox';
 	@override String get fillScreen => 'Riempi schermo';
 	@override String get stretch => 'Allunga';
@@ -2069,29 +2077,29 @@ class _StringsVideoControlsIt implements _StringsVideoControlsEn {
 	@override String get timerActive => 'Timer attivo';
 	@override String playbackWillPauseIn({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
 	@override String get sleepTimerCompleted => 'Timer di spegnimento completato - riproduzione in pausa';
-	@override String get playButton => 'Play';
-	@override String get pauseButton => 'Pause';
-	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
-	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
-	@override String get previousButton => 'Previous episode';
-	@override String get nextButton => 'Next episode';
-	@override String get previousChapterButton => 'Previous chapter';
-	@override String get nextChapterButton => 'Next chapter';
+	@override String get playButton => 'Riproduci';
+	@override String get pauseButton => 'Pausa';
+	@override String seekBackwardButton({required Object seconds}) => 'Riavvolgi di ${seconds} secondi';
+	@override String seekForwardButton({required Object seconds}) => 'Avanza di ${seconds} secondi';
+	@override String get previousButton => 'Episodio precedente';
+	@override String get nextButton => 'Episodio successivo';
+	@override String get previousChapterButton => 'Capitolo precedente';
+	@override String get nextChapterButton => 'Capitolo successivo';
 	@override String get volumeButton => 'Volume';
-	@override String get muteButton => 'Mute';
-	@override String get unmuteButton => 'Unmute';
-	@override String get settingsButton => 'Video settings';
-	@override String get audioTrackButton => 'Audio tracks';
-	@override String get subtitlesButton => 'Subtitles';
-	@override String get chaptersButton => 'Chapters';
-	@override String get versionsButton => 'Video versions';
-	@override String get aspectRatioButton => 'Aspect ratio';
-	@override String get fullscreenButton => 'Enter fullscreen';
-	@override String get exitFullscreenButton => 'Exit fullscreen';
-	@override String get rotationLockButton => 'Rotation lock';
-	@override String get timelineSlider => 'Video timeline';
-	@override String get volumeSlider => 'Volume level';
-	@override String get backButton => 'Back';
+	@override String get muteButton => 'Silenzia';
+	@override String get unmuteButton => 'Riattiva audio';
+	@override String get settingsButton => 'Impostazioni video';
+	@override String get audioTrackButton => 'Tracce audio';
+	@override String get subtitlesButton => 'Sottotitoli';
+	@override String get chaptersButton => 'Capitoli';
+	@override String get versionsButton => 'Versioni video';
+	@override String get aspectRatioButton => 'Proporzioni';
+	@override String get fullscreenButton => 'Attiva schermo intero';
+	@override String get exitFullscreenButton => 'Esci da schermo intero';
+	@override String get rotationLockButton => 'Blocco rotazione';
+	@override String get timelineSlider => 'Timeline video';
+	@override String get volumeSlider => 'Livello volume';
+	@override String get backButton => 'Indietro';
 }
 
 // Path: userStatus
@@ -2192,7 +2200,7 @@ class _StringsDiscoverIt implements _StringsDiscoverEn {
 	@override final _StringsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Discover';
+	@override String get title => 'Esplora';
 	@override String get switchProfile => 'Cambia profilo';
 	@override String get switchServer => 'Cambia server';
 	@override String get logout => 'Disconnetti';
@@ -2206,7 +2214,7 @@ class _StringsDiscoverIt implements _StringsDiscoverEn {
 	@override String resumeEpisode({required Object season, required Object episode}) => 'Riprendi S${season}, E${episode}';
 	@override String get pause => 'Pausa';
 	@override String get overview => 'Panoramica';
-	@override String get cast => 'Cast';
+	@override String get cast => 'Attori';
 	@override String get seasons => 'Stagioni';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Classificazione';
@@ -2309,6 +2317,11 @@ class _StringsServerSelectionIt implements _StringsServerSelectionEn {
 
 	// Translations
 	@override String get connectingToServer => 'Connessione al server...';
+	@override String get connectingToAllServers => 'Connessione a tutti i server...';
+	@override String get connectToAllServers => 'Connetti a tutti i server';
+	@override String get allServerConnectionsFailed => 'Impossibile connettersi a nessun server. Controlla la tua rete e riprova.';
+	@override String foundServers({required Object count}) => 'Trovati ${count} server';
+	@override String get orSelectIndividually => 'Oppure seleziona un server singolarmente:';
 	@override String get serverDebugCopied => 'Dati di debug del server copiati negli appunti';
 	@override String get copyDebugData => 'Copia dati di debug';
 	@override String get noServersFound => 'Nessun server trovato';
@@ -2343,7 +2356,7 @@ class _StringsLogsIt implements _StringsLogsEn {
 	@override final _StringsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Log';
+	@override String get title => 'Registro';
 	@override String get clearLogs => 'Cancella log';
 	@override String get copyLogs => 'Copia log';
 	@override String get exportLogs => 'Esporta log';
@@ -2563,7 +2576,7 @@ class _StringsAuthNl implements _StringsAuthEn {
 	@override String get authenticate => 'Authenticeren';
 	@override String get retry => 'Opnieuw proberen';
 	@override String get debugEnterToken => 'Debug: Voer Plex Token in';
-	@override String get plexTokenLabel => 'Plex Auth Token';
+	@override String get plexTokenLabel => 'Plex Authenticatietoken';
 	@override String get plexTokenHint => 'Voer je Plex.tv token in';
 	@override String get authenticationTimeout => 'Authenticatie verlopen. Probeer opnieuw.';
 	@override String get scanQRCodeInstruction => 'Scan deze QR-code met een apparaat dat is ingelogd op Plex om te authenticeren.';
@@ -2599,7 +2612,7 @@ class _StringsCommonNl implements _StringsCommonEn {
 	@override String get no => 'Nee';
 	@override String get server => 'Server';
 	@override String get delete => 'Verwijderen';
-	@override String get shuffle => 'Shuffle';
+	@override String get shuffle => 'Willekeurig';
 	@override String get addTo => 'Toevoegen aan...';
 }
 
@@ -2615,7 +2628,7 @@ class _StringsScreensNl implements _StringsScreensEn {
 	@override String get switchProfile => 'Wissel van profiel';
 	@override String get subtitleStyling => 'Ondertitel opmaak';
 	@override String get search => 'Zoeken';
-	@override String get logs => 'Logs';
+	@override String get logs => 'Logbestanden';
 }
 
 // Path: update
@@ -2808,14 +2821,14 @@ class _StringsAccessibilityNl implements _StringsAccessibilityEn {
 	@override final _StringsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String mediaCardMovie({required Object title}) => '${title}, movie';
-	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardMovie({required Object title}) => '${title}, film';
+	@override String mediaCardShow({required Object title}) => '${title}, TV-serie';
 	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
-	@override String get mediaCardWatched => 'watched';
-	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
-	@override String get mediaCardUnwatched => 'unwatched';
-	@override String get tapToPlay => 'Tap to play';
+	@override String get mediaCardWatched => 'bekeken';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} procent bekeken';
+	@override String get mediaCardUnwatched => 'niet bekeken';
+	@override String get tapToPlay => 'Tik om af te spelen';
 }
 
 // Path: tooltips
@@ -2854,29 +2867,29 @@ class _StringsVideoControlsNl implements _StringsVideoControlsEn {
 	@override String get timerActive => 'Timer actief';
 	@override String playbackWillPauseIn({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
 	@override String get sleepTimerCompleted => 'Slaaptimer voltooid - afspelen gepauzeerd';
-	@override String get playButton => 'Play';
-	@override String get pauseButton => 'Pause';
-	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
-	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
-	@override String get previousButton => 'Previous episode';
-	@override String get nextButton => 'Next episode';
-	@override String get previousChapterButton => 'Previous chapter';
-	@override String get nextChapterButton => 'Next chapter';
+	@override String get playButton => 'Afspelen';
+	@override String get pauseButton => 'Pauzeren';
+	@override String seekBackwardButton({required Object seconds}) => 'Terugspoelen ${seconds} seconden';
+	@override String seekForwardButton({required Object seconds}) => 'Vooruitspoelen ${seconds} seconden';
+	@override String get previousButton => 'Vorige aflevering';
+	@override String get nextButton => 'Volgende aflevering';
+	@override String get previousChapterButton => 'Vorig hoofdstuk';
+	@override String get nextChapterButton => 'Volgend hoofdstuk';
 	@override String get volumeButton => 'Volume';
-	@override String get muteButton => 'Mute';
-	@override String get unmuteButton => 'Unmute';
-	@override String get settingsButton => 'Video settings';
-	@override String get audioTrackButton => 'Audio tracks';
-	@override String get subtitlesButton => 'Subtitles';
-	@override String get chaptersButton => 'Chapters';
-	@override String get versionsButton => 'Video versions';
-	@override String get aspectRatioButton => 'Aspect ratio';
-	@override String get fullscreenButton => 'Enter fullscreen';
-	@override String get exitFullscreenButton => 'Exit fullscreen';
-	@override String get rotationLockButton => 'Rotation lock';
-	@override String get timelineSlider => 'Video timeline';
-	@override String get volumeSlider => 'Volume level';
-	@override String get backButton => 'Back';
+	@override String get muteButton => 'Dempen';
+	@override String get unmuteButton => 'Dempen opheffen';
+	@override String get settingsButton => 'Video-instellingen';
+	@override String get audioTrackButton => 'Audiosporen';
+	@override String get subtitlesButton => 'Ondertitels';
+	@override String get chaptersButton => 'Hoofdstukken';
+	@override String get versionsButton => 'Videoversies';
+	@override String get aspectRatioButton => 'Beeldverhouding';
+	@override String get fullscreenButton => 'Volledig scherm activeren';
+	@override String get exitFullscreenButton => 'Volledig scherm verlaten';
+	@override String get rotationLockButton => 'Rotatievergrendeling';
+	@override String get timelineSlider => 'Videotijdlijn';
+	@override String get volumeSlider => 'Volumeniveau';
+	@override String get backButton => 'Terug';
 }
 
 // Path: userStatus
@@ -2991,7 +3004,7 @@ class _StringsDiscoverNl implements _StringsDiscoverEn {
 	@override String resumeEpisode({required Object season, required Object episode}) => 'Hervat S${season}, E${episode}';
 	@override String get pause => 'Pauzeren';
 	@override String get overview => 'Overzicht';
-	@override String get cast => 'Cast';
+	@override String get cast => 'Acteurs';
 	@override String get seasons => 'Seizoenen';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Leeftijd';
@@ -3094,6 +3107,11 @@ class _StringsServerSelectionNl implements _StringsServerSelectionEn {
 
 	// Translations
 	@override String get connectingToServer => 'Verbinden met server...';
+	@override String get connectingToAllServers => 'Verbinden met alle servers...';
+	@override String get connectToAllServers => 'Verbind met alle servers';
+	@override String get allServerConnectionsFailed => 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.';
+	@override String foundServers({required Object count}) => '${count} server(s) gevonden';
+	@override String get orSelectIndividually => 'Of selecteer een server individueel:';
 	@override String get serverDebugCopied => 'Server debug gegevens gekopieerd naar klembord';
 	@override String get copyDebugData => 'Kopieer debug gegevens';
 	@override String get noServersFound => 'Geen servers gevonden';
@@ -3128,13 +3146,13 @@ class _StringsLogsNl implements _StringsLogsEn {
 	@override final _StringsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Logs';
+	@override String get title => 'Logbestanden';
 	@override String get clearLogs => 'Wis logs';
 	@override String get copyLogs => 'Kopieer logs';
 	@override String get exportLogs => 'Exporteer logs';
 	@override String get noLogsToShow => 'Geen logs om te tonen';
 	@override String get error => 'Fout:';
-	@override String get stackTrace => 'Stack Trace:';
+	@override String get stackTrace => 'Stacktracering:';
 }
 
 // Path: licenses
@@ -3157,7 +3175,7 @@ class _StringsNavigationNl implements _StringsNavigationEn {
 	@override final _StringsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get home => 'Home';
+	@override String get home => 'Thuis';
 	@override String get search => 'Zoeken';
 	@override String get libraries => 'Bibliotheken';
 	@override String get settings => 'Instellingen';
@@ -3183,7 +3201,7 @@ class _StringsPlaylistsNl implements _StringsPlaylistsEn {
 	@override String get removeItem => 'Verwijderen uit afspeellijst';
 	@override String get clearPlaylist => 'Afspeellijst wissen';
 	@override String get playAll => 'Alles afspelen';
-	@override String get shuffle => 'Shuffle';
+	@override String get shuffle => 'Willekeurig';
 	@override String get smartPlaylist => 'Slimme afspeellijst';
 	@override String get regularPlaylist => 'Normale afspeellijst';
 	@override String itemCount({required Object count}) => '${count} items';
@@ -3593,14 +3611,14 @@ class _StringsAccessibilitySv implements _StringsAccessibilityEn {
 	@override final _StringsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String mediaCardMovie({required Object title}) => '${title}, movie';
-	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardMovie({required Object title}) => '${title}, film';
+	@override String mediaCardShow({required Object title}) => '${title}, TV-serie';
 	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
-	@override String get mediaCardWatched => 'watched';
-	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
-	@override String get mediaCardUnwatched => 'unwatched';
-	@override String get tapToPlay => 'Tap to play';
+	@override String get mediaCardWatched => 'sedd';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} procent sedd';
+	@override String get mediaCardUnwatched => 'osedd';
+	@override String get tapToPlay => 'Tryck för att spela';
 }
 
 // Path: tooltips
@@ -3639,29 +3657,29 @@ class _StringsVideoControlsSv implements _StringsVideoControlsEn {
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
 	@override String get sleepTimerCompleted => 'Sovtimer slutförd - uppspelning pausad';
-	@override String get playButton => 'Play';
-	@override String get pauseButton => 'Pause';
-	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
-	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
-	@override String get previousButton => 'Previous episode';
-	@override String get nextButton => 'Next episode';
-	@override String get previousChapterButton => 'Previous chapter';
-	@override String get nextChapterButton => 'Next chapter';
-	@override String get volumeButton => 'Volume';
-	@override String get muteButton => 'Mute';
-	@override String get unmuteButton => 'Unmute';
-	@override String get settingsButton => 'Video settings';
-	@override String get audioTrackButton => 'Audio tracks';
-	@override String get subtitlesButton => 'Subtitles';
-	@override String get chaptersButton => 'Chapters';
-	@override String get versionsButton => 'Video versions';
-	@override String get aspectRatioButton => 'Aspect ratio';
-	@override String get fullscreenButton => 'Enter fullscreen';
-	@override String get exitFullscreenButton => 'Exit fullscreen';
-	@override String get rotationLockButton => 'Rotation lock';
-	@override String get timelineSlider => 'Video timeline';
-	@override String get volumeSlider => 'Volume level';
-	@override String get backButton => 'Back';
+	@override String get playButton => 'Spela';
+	@override String get pauseButton => 'Pausa';
+	@override String seekBackwardButton({required Object seconds}) => 'Spola bakåt ${seconds} sekunder';
+	@override String seekForwardButton({required Object seconds}) => 'Spola framåt ${seconds} sekunder';
+	@override String get previousButton => 'Föregående avsnitt';
+	@override String get nextButton => 'Nästa avsnitt';
+	@override String get previousChapterButton => 'Föregående kapitel';
+	@override String get nextChapterButton => 'Nästa kapitel';
+	@override String get volumeButton => 'Volym';
+	@override String get muteButton => 'Tysta';
+	@override String get unmuteButton => 'Slå på ljud';
+	@override String get settingsButton => 'Videoinställningar';
+	@override String get audioTrackButton => 'Ljudspår';
+	@override String get subtitlesButton => 'Undertexter';
+	@override String get chaptersButton => 'Kapitel';
+	@override String get versionsButton => 'Videoversioner';
+	@override String get aspectRatioButton => 'Bildförhållande';
+	@override String get fullscreenButton => 'Aktivera helskärm';
+	@override String get exitFullscreenButton => 'Avsluta helskärm';
+	@override String get rotationLockButton => 'Rotationslås';
+	@override String get timelineSlider => 'Videotidslinje';
+	@override String get volumeSlider => 'Volymnivå';
+	@override String get backButton => 'Tillbaka';
 }
 
 // Path: userStatus
@@ -3879,6 +3897,11 @@ class _StringsServerSelectionSv implements _StringsServerSelectionEn {
 
 	// Translations
 	@override String get connectingToServer => 'Ansluter till server...';
+	@override String get connectingToAllServers => 'Ansluter till alla servrar...';
+	@override String get connectToAllServers => 'Anslut till alla servrar';
+	@override String get allServerConnectionsFailed => 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.';
+	@override String foundServers({required Object count}) => 'Hittade ${count} server(ar)';
+	@override String get orSelectIndividually => 'Eller välj en server individuellt:';
 	@override String get serverDebugCopied => 'Server-felsökningsdata kopierad till urklipp';
 	@override String get copyDebugData => 'Kopiera felsökningsdata';
 	@override String get noServersFound => 'Inga servrar hittades';
@@ -4378,14 +4401,14 @@ class _StringsAccessibilityZh implements _StringsAccessibilityEn {
 	@override final _StringsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String mediaCardMovie({required Object title}) => '${title}, movie';
-	@override String mediaCardShow({required Object title}) => '${title}, TV show';
+	@override String mediaCardMovie({required Object title}) => '${title}, 电影';
+	@override String mediaCardShow({required Object title}) => '${title}, 电视剧';
 	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
-	@override String get mediaCardWatched => 'watched';
-	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} percent watched';
-	@override String get mediaCardUnwatched => 'unwatched';
-	@override String get tapToPlay => 'Tap to play';
+	@override String get mediaCardWatched => '已观看';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '已观看 ${percent} 百分比';
+	@override String get mediaCardUnwatched => '未观看';
+	@override String get tapToPlay => '点击播放';
 }
 
 // Path: tooltips
@@ -4424,29 +4447,29 @@ class _StringsVideoControlsZh implements _StringsVideoControlsEn {
 	@override String get timerActive => '定时器已激活';
 	@override String playbackWillPauseIn({required Object duration}) => '播放将在 ${duration} 后暂停';
 	@override String get sleepTimerCompleted => '睡眠定时器已完成 - 播放已暂停';
-	@override String get playButton => 'Play';
-	@override String get pauseButton => 'Pause';
-	@override String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
-	@override String seekForwardButton({required Object seconds}) => 'Seek forward ${seconds} seconds';
-	@override String get previousButton => 'Previous episode';
-	@override String get nextButton => 'Next episode';
-	@override String get previousChapterButton => 'Previous chapter';
-	@override String get nextChapterButton => 'Next chapter';
-	@override String get volumeButton => 'Volume';
-	@override String get muteButton => 'Mute';
-	@override String get unmuteButton => 'Unmute';
-	@override String get settingsButton => 'Video settings';
-	@override String get audioTrackButton => 'Audio tracks';
-	@override String get subtitlesButton => 'Subtitles';
-	@override String get chaptersButton => 'Chapters';
-	@override String get versionsButton => 'Video versions';
-	@override String get aspectRatioButton => 'Aspect ratio';
-	@override String get fullscreenButton => 'Enter fullscreen';
-	@override String get exitFullscreenButton => 'Exit fullscreen';
-	@override String get rotationLockButton => 'Rotation lock';
-	@override String get timelineSlider => 'Video timeline';
-	@override String get volumeSlider => 'Volume level';
-	@override String get backButton => 'Back';
+	@override String get playButton => '播放';
+	@override String get pauseButton => '暂停';
+	@override String seekBackwardButton({required Object seconds}) => '后退 ${seconds} 秒';
+	@override String seekForwardButton({required Object seconds}) => '前进 ${seconds} 秒';
+	@override String get previousButton => '上一集';
+	@override String get nextButton => '下一集';
+	@override String get previousChapterButton => '上一章节';
+	@override String get nextChapterButton => '下一章节';
+	@override String get volumeButton => '音量';
+	@override String get muteButton => '静音';
+	@override String get unmuteButton => '取消静音';
+	@override String get settingsButton => '视频设置';
+	@override String get audioTrackButton => '音轨';
+	@override String get subtitlesButton => '字幕';
+	@override String get chaptersButton => '章节';
+	@override String get versionsButton => '视频版本';
+	@override String get aspectRatioButton => '宽高比';
+	@override String get fullscreenButton => '进入全屏';
+	@override String get exitFullscreenButton => '退出全屏';
+	@override String get rotationLockButton => '旋转锁定';
+	@override String get timelineSlider => '视频时间轴';
+	@override String get volumeSlider => '音量调节';
+	@override String get backButton => '返回';
 }
 
 // Path: userStatus
@@ -4664,6 +4687,11 @@ class _StringsServerSelectionZh implements _StringsServerSelectionEn {
 
 	// Translations
 	@override String get connectingToServer => '正在连接服务器...';
+	@override String get connectingToAllServers => '正在连接所有服务器...';
+	@override String get connectToAllServers => '连接所有服务器';
+	@override String get allServerConnectionsFailed => '无法连接到任何服务器。请检查你的网络并重试。';
+	@override String foundServers({required Object count}) => '找到 ${count} 个服务器';
+	@override String get orSelectIndividually => '或单独选择一个服务器：';
 	@override String get serverDebugCopied => '服务器调试数据已复制到剪贴板';
 	@override String get copyDebugData => '复制调试数据';
 	@override String get noServersFound => '未找到服务器';
@@ -4882,7 +4910,6 @@ extension on Translations {
 			case 'common.shuffle': return 'Shuffle';
 			case 'common.addTo': return 'Add to...';
 			case 'screens.licenses': return 'Licenses';
-			case 'screens.selectServer': return 'Select Server';
 			case 'screens.switchProfile': return 'Switch Profile';
 			case 'screens.subtitleStyling': return 'Subtitle Styling';
 			case 'screens.search': return 'Search';
@@ -5106,7 +5133,6 @@ extension on Translations {
 			case 'dialog.playNow': return 'Play Now';
 			case 'discover.title': return 'Discover';
 			case 'discover.switchProfile': return 'Switch Profile';
-			case 'discover.switchServer': return 'Switch Server';
 			case 'discover.logout': return 'Logout';
 			case 'discover.noContentAvailable': return 'No content available';
 			case 'discover.addMediaToLibraries': return 'Add some media to your libraries';
@@ -5193,6 +5219,11 @@ extension on Translations {
 			case 'about.appDescription': return 'A beautiful Plex client for Flutter';
 			case 'about.viewLicensesDescription': return 'View licenses of third-party libraries';
 			case 'serverSelection.connectingToServer': return 'Connecting to server...';
+			case 'serverSelection.connectingToAllServers': return 'Connecting to all servers...';
+			case 'serverSelection.connectToAllServers': return 'Connect to All Servers';
+			case 'serverSelection.allServerConnectionsFailed': return 'Failed to connect to any servers. Please check your network and try again.';
+			case 'serverSelection.foundServers': return ({required Object count}) => 'Found ${count} server(s)';
+			case 'serverSelection.orSelectIndividually': return 'Or select a server individually:';
 			case 'serverSelection.serverDebugCopied': return 'Server debug data copied to clipboard';
 			case 'serverSelection.copyDebugData': return 'Copy Debug Data';
 			case 'serverSelection.noServersFound': return 'No servers found';
@@ -5640,6 +5671,11 @@ extension on _StringsDe {
 			case 'about.appDescription': return 'Ein schöner Plex-Client für Flutter';
 			case 'about.viewLicensesDescription': return 'Lizenzen von Drittanbieter-Bibliotheken anzeigen';
 			case 'serverSelection.connectingToServer': return 'Verbinde mit Server...';
+			case 'serverSelection.connectingToAllServers': return 'Verbinde mit allen Servern...';
+			case 'serverSelection.connectToAllServers': return 'Mit allen Servern verbinden';
+			case 'serverSelection.allServerConnectionsFailed': return 'Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.';
+			case 'serverSelection.foundServers': return ({required Object count}) => '${count} Server gefunden';
+			case 'serverSelection.orSelectIndividually': return 'Oder einzelnen Server auswählen:';
 			case 'serverSelection.serverDebugCopied': return 'Server-Debugdaten kopiert';
 			case 'serverSelection.copyDebugData': return 'Debugdaten kopieren';
 			case 'serverSelection.noServersFound': return 'Keine Server gefunden';
@@ -5780,7 +5816,7 @@ extension on _StringsIt {
 			case 'screens.switchProfile': return 'Cambia profilo';
 			case 'screens.subtitleStyling': return 'Stile sottotitoli';
 			case 'screens.search': return 'Cerca';
-			case 'screens.logs': return 'Logs';
+			case 'screens.logs': return 'Registro';
 			case 'update.available': return 'Aggiornamento disponibile';
 			case 'update.versionAvailable': return ({required Object version}) => 'Versione ${version} disponibile';
 			case 'update.currentVersion': return ({required Object version}) => 'Corrente: ${version}';
@@ -5901,14 +5937,14 @@ extension on _StringsIt {
 			case 'mediaMenu.goToSeason': return 'Vai alla stagione';
 			case 'mediaMenu.shufflePlay': return 'Riproduzione casuale';
 			case 'mediaMenu.fileInfo': return 'Info sul file';
-			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
-			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, film';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, serie TV';
 			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
 			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
-			case 'accessibility.mediaCardWatched': return 'watched';
-			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
-			case 'accessibility.mediaCardUnwatched': return 'unwatched';
-			case 'accessibility.tapToPlay': return 'Tap to play';
+			case 'accessibility.mediaCardWatched': return 'visto';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percento visto';
+			case 'accessibility.mediaCardUnwatched': return 'non visto';
+			case 'accessibility.tapToPlay': return 'Tocca per riprodurre';
 			case 'tooltips.shufflePlay': return 'Riproduzione casuale';
 			case 'tooltips.markAsWatched': return 'Segna come visto';
 			case 'tooltips.markAsUnwatched': return 'Segna come non visto';
@@ -5919,7 +5955,7 @@ extension on _StringsIt {
 			case 'videoControls.minusTime': return ({required Object amount, required Object unit}) => '-${amount}${unit}';
 			case 'videoControls.playsLater': return ({required Object label}) => '${label} riprodotto dopo';
 			case 'videoControls.playsEarlier': return ({required Object label}) => '${label} riprodotto prima';
-			case 'videoControls.noOffset': return 'No offset';
+			case 'videoControls.noOffset': return 'Nessun offset';
 			case 'videoControls.letterbox': return 'Letterbox';
 			case 'videoControls.fillScreen': return 'Riempi schermo';
 			case 'videoControls.stretch': return 'Allunga';
@@ -5929,29 +5965,29 @@ extension on _StringsIt {
 			case 'videoControls.timerActive': return 'Timer attivo';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
 			case 'videoControls.sleepTimerCompleted': return 'Timer di spegnimento completato - riproduzione in pausa';
-			case 'videoControls.playButton': return 'Play';
-			case 'videoControls.pauseButton': return 'Pause';
-			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
-			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
-			case 'videoControls.previousButton': return 'Previous episode';
-			case 'videoControls.nextButton': return 'Next episode';
-			case 'videoControls.previousChapterButton': return 'Previous chapter';
-			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.playButton': return 'Riproduci';
+			case 'videoControls.pauseButton': return 'Pausa';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Riavvolgi di ${seconds} secondi';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Avanza di ${seconds} secondi';
+			case 'videoControls.previousButton': return 'Episodio precedente';
+			case 'videoControls.nextButton': return 'Episodio successivo';
+			case 'videoControls.previousChapterButton': return 'Capitolo precedente';
+			case 'videoControls.nextChapterButton': return 'Capitolo successivo';
 			case 'videoControls.volumeButton': return 'Volume';
-			case 'videoControls.muteButton': return 'Mute';
-			case 'videoControls.unmuteButton': return 'Unmute';
-			case 'videoControls.settingsButton': return 'Video settings';
-			case 'videoControls.audioTrackButton': return 'Audio tracks';
-			case 'videoControls.subtitlesButton': return 'Subtitles';
-			case 'videoControls.chaptersButton': return 'Chapters';
-			case 'videoControls.versionsButton': return 'Video versions';
-			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
-			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
-			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
-			case 'videoControls.rotationLockButton': return 'Rotation lock';
-			case 'videoControls.timelineSlider': return 'Video timeline';
-			case 'videoControls.volumeSlider': return 'Volume level';
-			case 'videoControls.backButton': return 'Back';
+			case 'videoControls.muteButton': return 'Silenzia';
+			case 'videoControls.unmuteButton': return 'Riattiva audio';
+			case 'videoControls.settingsButton': return 'Impostazioni video';
+			case 'videoControls.audioTrackButton': return 'Tracce audio';
+			case 'videoControls.subtitlesButton': return 'Sottotitoli';
+			case 'videoControls.chaptersButton': return 'Capitoli';
+			case 'videoControls.versionsButton': return 'Versioni video';
+			case 'videoControls.aspectRatioButton': return 'Proporzioni';
+			case 'videoControls.fullscreenButton': return 'Attiva schermo intero';
+			case 'videoControls.exitFullscreenButton': return 'Esci da schermo intero';
+			case 'videoControls.rotationLockButton': return 'Blocco rotazione';
+			case 'videoControls.timelineSlider': return 'Timeline video';
+			case 'videoControls.volumeSlider': return 'Livello volume';
+			case 'videoControls.backButton': return 'Indietro';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Limitato';
 			case 'userStatus.protected': return 'Protetto';
@@ -5998,7 +6034,7 @@ extension on _StringsIt {
 			case 'dialog.areYouSure': return 'Sei sicuro di voler eseguire questa azione?';
 			case 'dialog.cancel': return 'Cancella';
 			case 'dialog.playNow': return 'Riproduci ora';
-			case 'discover.title': return 'Discover';
+			case 'discover.title': return 'Esplora';
 			case 'discover.switchProfile': return 'Cambia profilo';
 			case 'discover.switchServer': return 'Cambia server';
 			case 'discover.logout': return 'Disconnetti';
@@ -6012,7 +6048,7 @@ extension on _StringsIt {
 			case 'discover.resumeEpisode': return ({required Object season, required Object episode}) => 'Riprendi S${season}, E${episode}';
 			case 'discover.pause': return 'Pausa';
 			case 'discover.overview': return 'Panoramica';
-			case 'discover.cast': return 'Cast';
+			case 'discover.cast': return 'Attori';
 			case 'discover.seasons': return 'Stagioni';
 			case 'discover.studio': return 'Studio';
 			case 'discover.rating': return 'Classificazione';
@@ -6087,6 +6123,11 @@ extension on _StringsIt {
 			case 'about.appDescription': return 'Un bellissimo client Plex per Flutter';
 			case 'about.viewLicensesDescription': return 'Visualizza le licenze delle librerie di terze parti';
 			case 'serverSelection.connectingToServer': return 'Connessione al server...';
+			case 'serverSelection.connectingToAllServers': return 'Connessione a tutti i server...';
+			case 'serverSelection.connectToAllServers': return 'Connetti a tutti i server';
+			case 'serverSelection.allServerConnectionsFailed': return 'Impossibile connettersi a nessun server. Controlla la tua rete e riprova.';
+			case 'serverSelection.foundServers': return ({required Object count}) => 'Trovati ${count} server';
+			case 'serverSelection.orSelectIndividually': return 'Oppure seleziona un server singolarmente:';
 			case 'serverSelection.serverDebugCopied': return 'Dati di debug del server copiati negli appunti';
 			case 'serverSelection.copyDebugData': return 'Copia dati di debug';
 			case 'serverSelection.noServersFound': return 'Nessun server trovato';
@@ -6103,7 +6144,7 @@ extension on _StringsIt {
 			case 'hubDetail.dateAdded': return 'Data aggiunta';
 			case 'hubDetail.rating': return 'Valutazione';
 			case 'hubDetail.noItemsFound': return 'Nessun elemento trovato';
-			case 'logs.title': return 'Log';
+			case 'logs.title': return 'Registro';
 			case 'logs.clearLogs': return 'Cancella log';
 			case 'logs.copyLogs': return 'Copia log';
 			case 'logs.exportLogs': return 'Esporta log';
@@ -6193,7 +6234,7 @@ extension on _StringsNl {
 			case 'auth.authenticate': return 'Authenticeren';
 			case 'auth.retry': return 'Opnieuw proberen';
 			case 'auth.debugEnterToken': return 'Debug: Voer Plex Token in';
-			case 'auth.plexTokenLabel': return 'Plex Auth Token';
+			case 'auth.plexTokenLabel': return 'Plex Authenticatietoken';
 			case 'auth.plexTokenHint': return 'Voer je Plex.tv token in';
 			case 'auth.authenticationTimeout': return 'Authenticatie verlopen. Probeer opnieuw.';
 			case 'auth.scanQRCodeInstruction': return 'Scan deze QR-code met een apparaat dat is ingelogd op Plex om te authenticeren.';
@@ -6220,14 +6261,14 @@ extension on _StringsNl {
 			case 'common.no': return 'Nee';
 			case 'common.server': return 'Server';
 			case 'common.delete': return 'Verwijderen';
-			case 'common.shuffle': return 'Shuffle';
+			case 'common.shuffle': return 'Willekeurig';
 			case 'common.addTo': return 'Toevoegen aan...';
 			case 'screens.licenses': return 'Licenties';
 			case 'screens.selectServer': return 'Selecteer server';
 			case 'screens.switchProfile': return 'Wissel van profiel';
 			case 'screens.subtitleStyling': return 'Ondertitel opmaak';
 			case 'screens.search': return 'Zoeken';
-			case 'screens.logs': return 'Logs';
+			case 'screens.logs': return 'Logbestanden';
 			case 'update.available': return 'Update beschikbaar';
 			case 'update.versionAvailable': return ({required Object version}) => 'Versie ${version} is beschikbaar';
 			case 'update.currentVersion': return ({required Object version}) => 'Huidig: ${version}';
@@ -6348,14 +6389,14 @@ extension on _StringsNl {
 			case 'mediaMenu.goToSeason': return 'Ga naar seizoen';
 			case 'mediaMenu.shufflePlay': return 'Willekeurig afspelen';
 			case 'mediaMenu.fileInfo': return 'Bestand info';
-			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
-			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, film';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV-serie';
 			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
 			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
-			case 'accessibility.mediaCardWatched': return 'watched';
-			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
-			case 'accessibility.mediaCardUnwatched': return 'unwatched';
-			case 'accessibility.tapToPlay': return 'Tap to play';
+			case 'accessibility.mediaCardWatched': return 'bekeken';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} procent bekeken';
+			case 'accessibility.mediaCardUnwatched': return 'niet bekeken';
+			case 'accessibility.tapToPlay': return 'Tik om af te spelen';
 			case 'tooltips.shufflePlay': return 'Willekeurig afspelen';
 			case 'tooltips.markAsWatched': return 'Markeer als gekeken';
 			case 'tooltips.markAsUnwatched': return 'Markeer als ongekeken';
@@ -6376,29 +6417,29 @@ extension on _StringsNl {
 			case 'videoControls.timerActive': return 'Timer actief';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
 			case 'videoControls.sleepTimerCompleted': return 'Slaaptimer voltooid - afspelen gepauzeerd';
-			case 'videoControls.playButton': return 'Play';
-			case 'videoControls.pauseButton': return 'Pause';
-			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
-			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
-			case 'videoControls.previousButton': return 'Previous episode';
-			case 'videoControls.nextButton': return 'Next episode';
-			case 'videoControls.previousChapterButton': return 'Previous chapter';
-			case 'videoControls.nextChapterButton': return 'Next chapter';
+			case 'videoControls.playButton': return 'Afspelen';
+			case 'videoControls.pauseButton': return 'Pauzeren';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Terugspoelen ${seconds} seconden';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Vooruitspoelen ${seconds} seconden';
+			case 'videoControls.previousButton': return 'Vorige aflevering';
+			case 'videoControls.nextButton': return 'Volgende aflevering';
+			case 'videoControls.previousChapterButton': return 'Vorig hoofdstuk';
+			case 'videoControls.nextChapterButton': return 'Volgend hoofdstuk';
 			case 'videoControls.volumeButton': return 'Volume';
-			case 'videoControls.muteButton': return 'Mute';
-			case 'videoControls.unmuteButton': return 'Unmute';
-			case 'videoControls.settingsButton': return 'Video settings';
-			case 'videoControls.audioTrackButton': return 'Audio tracks';
-			case 'videoControls.subtitlesButton': return 'Subtitles';
-			case 'videoControls.chaptersButton': return 'Chapters';
-			case 'videoControls.versionsButton': return 'Video versions';
-			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
-			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
-			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
-			case 'videoControls.rotationLockButton': return 'Rotation lock';
-			case 'videoControls.timelineSlider': return 'Video timeline';
-			case 'videoControls.volumeSlider': return 'Volume level';
-			case 'videoControls.backButton': return 'Back';
+			case 'videoControls.muteButton': return 'Dempen';
+			case 'videoControls.unmuteButton': return 'Dempen opheffen';
+			case 'videoControls.settingsButton': return 'Video-instellingen';
+			case 'videoControls.audioTrackButton': return 'Audiosporen';
+			case 'videoControls.subtitlesButton': return 'Ondertitels';
+			case 'videoControls.chaptersButton': return 'Hoofdstukken';
+			case 'videoControls.versionsButton': return 'Videoversies';
+			case 'videoControls.aspectRatioButton': return 'Beeldverhouding';
+			case 'videoControls.fullscreenButton': return 'Volledig scherm activeren';
+			case 'videoControls.exitFullscreenButton': return 'Volledig scherm verlaten';
+			case 'videoControls.rotationLockButton': return 'Rotatievergrendeling';
+			case 'videoControls.timelineSlider': return 'Videotijdlijn';
+			case 'videoControls.volumeSlider': return 'Volumeniveau';
+			case 'videoControls.backButton': return 'Terug';
 			case 'userStatus.admin': return 'Beheerder';
 			case 'userStatus.restricted': return 'Beperkt';
 			case 'userStatus.protected': return 'Beschermd';
@@ -6459,7 +6500,7 @@ extension on _StringsNl {
 			case 'discover.resumeEpisode': return ({required Object season, required Object episode}) => 'Hervat S${season}, E${episode}';
 			case 'discover.pause': return 'Pauzeren';
 			case 'discover.overview': return 'Overzicht';
-			case 'discover.cast': return 'Cast';
+			case 'discover.cast': return 'Acteurs';
 			case 'discover.seasons': return 'Seizoenen';
 			case 'discover.studio': return 'Studio';
 			case 'discover.rating': return 'Leeftijd';
@@ -6534,6 +6575,11 @@ extension on _StringsNl {
 			case 'about.appDescription': return 'Een mooie Plex client voor Flutter';
 			case 'about.viewLicensesDescription': return 'Bekijk licenties van third-party bibliotheken';
 			case 'serverSelection.connectingToServer': return 'Verbinden met server...';
+			case 'serverSelection.connectingToAllServers': return 'Verbinden met alle servers...';
+			case 'serverSelection.connectToAllServers': return 'Verbind met alle servers';
+			case 'serverSelection.allServerConnectionsFailed': return 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.';
+			case 'serverSelection.foundServers': return ({required Object count}) => '${count} server(s) gevonden';
+			case 'serverSelection.orSelectIndividually': return 'Of selecteer een server individueel:';
 			case 'serverSelection.serverDebugCopied': return 'Server debug gegevens gekopieerd naar klembord';
 			case 'serverSelection.copyDebugData': return 'Kopieer debug gegevens';
 			case 'serverSelection.noServersFound': return 'Geen servers gevonden';
@@ -6550,18 +6596,18 @@ extension on _StringsNl {
 			case 'hubDetail.dateAdded': return 'Datum toegevoegd';
 			case 'hubDetail.rating': return 'Beoordeling';
 			case 'hubDetail.noItemsFound': return 'Geen items gevonden';
-			case 'logs.title': return 'Logs';
+			case 'logs.title': return 'Logbestanden';
 			case 'logs.clearLogs': return 'Wis logs';
 			case 'logs.copyLogs': return 'Kopieer logs';
 			case 'logs.exportLogs': return 'Exporteer logs';
 			case 'logs.noLogsToShow': return 'Geen logs om te tonen';
 			case 'logs.error': return 'Fout:';
-			case 'logs.stackTrace': return 'Stack Trace:';
+			case 'logs.stackTrace': return 'Stacktracering:';
 			case 'licenses.relatedPackages': return 'Gerelateerde pakketten';
 			case 'licenses.license': return 'Licentie';
 			case 'licenses.licenseNumber': return ({required Object number}) => 'Licentie ${number}';
 			case 'licenses.licensesCount': return ({required Object count}) => '${count} licenties';
-			case 'navigation.home': return 'Home';
+			case 'navigation.home': return 'Thuis';
 			case 'navigation.search': return 'Zoeken';
 			case 'navigation.libraries': return 'Bibliotheken';
 			case 'navigation.settings': return 'Instellingen';
@@ -6578,7 +6624,7 @@ extension on _StringsNl {
 			case 'playlists.removeItem': return 'Verwijderen uit afspeellijst';
 			case 'playlists.clearPlaylist': return 'Afspeellijst wissen';
 			case 'playlists.playAll': return 'Alles afspelen';
-			case 'playlists.shuffle': return 'Shuffle';
+			case 'playlists.shuffle': return 'Willekeurig';
 			case 'playlists.smartPlaylist': return 'Slimme afspeellijst';
 			case 'playlists.regularPlaylist': return 'Normale afspeellijst';
 			case 'playlists.itemCount': return ({required Object count}) => '${count} items';
@@ -6795,14 +6841,14 @@ extension on _StringsSv {
 			case 'mediaMenu.goToSeason': return 'Gå till säsong';
 			case 'mediaMenu.shufflePlay': return 'Blanda uppspelning';
 			case 'mediaMenu.fileInfo': return 'Filinformation';
-			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
-			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, film';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV-serie';
 			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
 			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
-			case 'accessibility.mediaCardWatched': return 'watched';
-			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
-			case 'accessibility.mediaCardUnwatched': return 'unwatched';
-			case 'accessibility.tapToPlay': return 'Tap to play';
+			case 'accessibility.mediaCardWatched': return 'sedd';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} procent sedd';
+			case 'accessibility.mediaCardUnwatched': return 'osedd';
+			case 'accessibility.tapToPlay': return 'Tryck för att spela';
 			case 'tooltips.shufflePlay': return 'Blanda uppspelning';
 			case 'tooltips.markAsWatched': return 'Markera som sedd';
 			case 'tooltips.markAsUnwatched': return 'Markera som osedd';
@@ -6823,29 +6869,29 @@ extension on _StringsSv {
 			case 'videoControls.timerActive': return 'Timer aktiv';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Uppspelningen pausas om ${duration}';
 			case 'videoControls.sleepTimerCompleted': return 'Sovtimer slutförd - uppspelning pausad';
-			case 'videoControls.playButton': return 'Play';
-			case 'videoControls.pauseButton': return 'Pause';
-			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
-			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
-			case 'videoControls.previousButton': return 'Previous episode';
-			case 'videoControls.nextButton': return 'Next episode';
-			case 'videoControls.previousChapterButton': return 'Previous chapter';
-			case 'videoControls.nextChapterButton': return 'Next chapter';
-			case 'videoControls.volumeButton': return 'Volume';
-			case 'videoControls.muteButton': return 'Mute';
-			case 'videoControls.unmuteButton': return 'Unmute';
-			case 'videoControls.settingsButton': return 'Video settings';
-			case 'videoControls.audioTrackButton': return 'Audio tracks';
-			case 'videoControls.subtitlesButton': return 'Subtitles';
-			case 'videoControls.chaptersButton': return 'Chapters';
-			case 'videoControls.versionsButton': return 'Video versions';
-			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
-			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
-			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
-			case 'videoControls.rotationLockButton': return 'Rotation lock';
-			case 'videoControls.timelineSlider': return 'Video timeline';
-			case 'videoControls.volumeSlider': return 'Volume level';
-			case 'videoControls.backButton': return 'Back';
+			case 'videoControls.playButton': return 'Spela';
+			case 'videoControls.pauseButton': return 'Pausa';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Spola bakåt ${seconds} sekunder';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Spola framåt ${seconds} sekunder';
+			case 'videoControls.previousButton': return 'Föregående avsnitt';
+			case 'videoControls.nextButton': return 'Nästa avsnitt';
+			case 'videoControls.previousChapterButton': return 'Föregående kapitel';
+			case 'videoControls.nextChapterButton': return 'Nästa kapitel';
+			case 'videoControls.volumeButton': return 'Volym';
+			case 'videoControls.muteButton': return 'Tysta';
+			case 'videoControls.unmuteButton': return 'Slå på ljud';
+			case 'videoControls.settingsButton': return 'Videoinställningar';
+			case 'videoControls.audioTrackButton': return 'Ljudspår';
+			case 'videoControls.subtitlesButton': return 'Undertexter';
+			case 'videoControls.chaptersButton': return 'Kapitel';
+			case 'videoControls.versionsButton': return 'Videoversioner';
+			case 'videoControls.aspectRatioButton': return 'Bildförhållande';
+			case 'videoControls.fullscreenButton': return 'Aktivera helskärm';
+			case 'videoControls.exitFullscreenButton': return 'Avsluta helskärm';
+			case 'videoControls.rotationLockButton': return 'Rotationslås';
+			case 'videoControls.timelineSlider': return 'Videotidslinje';
+			case 'videoControls.volumeSlider': return 'Volymnivå';
+			case 'videoControls.backButton': return 'Tillbaka';
 			case 'userStatus.admin': return 'Admin';
 			case 'userStatus.restricted': return 'Begränsad';
 			case 'userStatus.protected': return 'Skyddad';
@@ -6981,6 +7027,11 @@ extension on _StringsSv {
 			case 'about.appDescription': return 'En vacker Plex-klient för Flutter';
 			case 'about.viewLicensesDescription': return 'Visa licenser för tredjepartsbibliotek';
 			case 'serverSelection.connectingToServer': return 'Ansluter till server...';
+			case 'serverSelection.connectingToAllServers': return 'Ansluter till alla servrar...';
+			case 'serverSelection.connectToAllServers': return 'Anslut till alla servrar';
+			case 'serverSelection.allServerConnectionsFailed': return 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.';
+			case 'serverSelection.foundServers': return ({required Object count}) => 'Hittade ${count} server(ar)';
+			case 'serverSelection.orSelectIndividually': return 'Eller välj en server individuellt:';
 			case 'serverSelection.serverDebugCopied': return 'Server-felsökningsdata kopierad till urklipp';
 			case 'serverSelection.copyDebugData': return 'Kopiera felsökningsdata';
 			case 'serverSelection.noServersFound': return 'Inga servrar hittades';
@@ -7242,14 +7293,14 @@ extension on _StringsZh {
 			case 'mediaMenu.goToSeason': return '转到季';
 			case 'mediaMenu.shufflePlay': return '随机播放';
 			case 'mediaMenu.fileInfo': return '文件信息';
-			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, movie';
-			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, TV show';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, 电影';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, 电视剧';
 			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
 			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
-			case 'accessibility.mediaCardWatched': return 'watched';
-			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} percent watched';
-			case 'accessibility.mediaCardUnwatched': return 'unwatched';
-			case 'accessibility.tapToPlay': return 'Tap to play';
+			case 'accessibility.mediaCardWatched': return '已观看';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '已观看 ${percent} 百分比';
+			case 'accessibility.mediaCardUnwatched': return '未观看';
+			case 'accessibility.tapToPlay': return '点击播放';
 			case 'tooltips.shufflePlay': return '随机播放';
 			case 'tooltips.markAsWatched': return '标记为已观看';
 			case 'tooltips.markAsUnwatched': return '标记为未观看';
@@ -7270,29 +7321,29 @@ extension on _StringsZh {
 			case 'videoControls.timerActive': return '定时器已激活';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => '播放将在 ${duration} 后暂停';
 			case 'videoControls.sleepTimerCompleted': return '睡眠定时器已完成 - 播放已暂停';
-			case 'videoControls.playButton': return 'Play';
-			case 'videoControls.pauseButton': return 'Pause';
-			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
-			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Seek forward ${seconds} seconds';
-			case 'videoControls.previousButton': return 'Previous episode';
-			case 'videoControls.nextButton': return 'Next episode';
-			case 'videoControls.previousChapterButton': return 'Previous chapter';
-			case 'videoControls.nextChapterButton': return 'Next chapter';
-			case 'videoControls.volumeButton': return 'Volume';
-			case 'videoControls.muteButton': return 'Mute';
-			case 'videoControls.unmuteButton': return 'Unmute';
-			case 'videoControls.settingsButton': return 'Video settings';
-			case 'videoControls.audioTrackButton': return 'Audio tracks';
-			case 'videoControls.subtitlesButton': return 'Subtitles';
-			case 'videoControls.chaptersButton': return 'Chapters';
-			case 'videoControls.versionsButton': return 'Video versions';
-			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
-			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
-			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
-			case 'videoControls.rotationLockButton': return 'Rotation lock';
-			case 'videoControls.timelineSlider': return 'Video timeline';
-			case 'videoControls.volumeSlider': return 'Volume level';
-			case 'videoControls.backButton': return 'Back';
+			case 'videoControls.playButton': return '播放';
+			case 'videoControls.pauseButton': return '暂停';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => '后退 ${seconds} 秒';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => '前进 ${seconds} 秒';
+			case 'videoControls.previousButton': return '上一集';
+			case 'videoControls.nextButton': return '下一集';
+			case 'videoControls.previousChapterButton': return '上一章节';
+			case 'videoControls.nextChapterButton': return '下一章节';
+			case 'videoControls.volumeButton': return '音量';
+			case 'videoControls.muteButton': return '静音';
+			case 'videoControls.unmuteButton': return '取消静音';
+			case 'videoControls.settingsButton': return '视频设置';
+			case 'videoControls.audioTrackButton': return '音轨';
+			case 'videoControls.subtitlesButton': return '字幕';
+			case 'videoControls.chaptersButton': return '章节';
+			case 'videoControls.versionsButton': return '视频版本';
+			case 'videoControls.aspectRatioButton': return '宽高比';
+			case 'videoControls.fullscreenButton': return '进入全屏';
+			case 'videoControls.exitFullscreenButton': return '退出全屏';
+			case 'videoControls.rotationLockButton': return '旋转锁定';
+			case 'videoControls.timelineSlider': return '视频时间轴';
+			case 'videoControls.volumeSlider': return '音量调节';
+			case 'videoControls.backButton': return '返回';
 			case 'userStatus.admin': return '管理员';
 			case 'userStatus.restricted': return '受限';
 			case 'userStatus.protected': return '受保护';
@@ -7428,6 +7479,11 @@ extension on _StringsZh {
 			case 'about.appDescription': return '一款精美的 Flutter Plex 客户端';
 			case 'about.viewLicensesDescription': return '查看第三方库的许可证';
 			case 'serverSelection.connectingToServer': return '正在连接服务器...';
+			case 'serverSelection.connectingToAllServers': return '正在连接所有服务器...';
+			case 'serverSelection.connectToAllServers': return '连接所有服务器';
+			case 'serverSelection.allServerConnectionsFailed': return '无法连接到任何服务器。请检查你的网络并重试。';
+			case 'serverSelection.foundServers': return ({required Object count}) => '找到 ${count} 个服务器';
+			case 'serverSelection.orSelectIndividually': return '或单独选择一个服务器：';
 			case 'serverSelection.serverDebugCopied': return '服务器调试数据已复制到剪贴板';
 			case 'serverSelection.copyDebugData': return '复制调试数据';
 			case 'serverSelection.noServersFound': return '未找到服务器';

@@ -19,6 +19,8 @@ class StorageService {
   static const String _keyHomeUsersCache = 'home_users_cache';
   static const String _keyHomeUsersCacheExpiry = 'home_users_cache_expiry';
   static const String _keyHiddenLibraries = 'hidden_libraries';
+  static const String _keyServersList = 'servers_list';
+  static const String _keyEnabledServers = 'enabled_servers';
 
   static StorageService? _instance;
   late SharedPreferences _prefs;
@@ -136,6 +138,7 @@ class StorageService {
       _prefs.remove(_keyCurrentUserUUID),
       _prefs.remove(_keyHomeUsersCache),
       _prefs.remove(_keyHomeUsersCacheExpiry),
+      clearMultiServerData(),
     ]);
     LogRedactionManager.clearTrackedValues();
   }
@@ -361,7 +364,10 @@ class StorageService {
 
   // Clear all user-related data (for logout)
   Future<void> clearUserData() async {
-    await Future.wait([clearCredentials(), clearLibraryPreferences()]);
+    await Future.wait([
+      clearCredentials(),
+      clearLibraryPreferences(),
+    ]);
   }
 
   // Update current user after switching
@@ -369,6 +375,46 @@ class StorageService {
     await Future.wait([
       saveCurrentUserUUID(userUUID),
       saveToken(authToken), // Update the main token
+    ]);
+  }
+
+  // Multi-Server Support Methods
+
+  /// Get servers list as JSON string
+  String? getServersListJson() {
+    return _prefs.getString(_keyServersList);
+  }
+
+  /// Save servers list as JSON string
+  Future<void> saveServersListJson(String serversJson) async {
+    await _prefs.setString(_keyServersList, serversJson);
+  }
+
+  /// Get enabled servers as JSON string
+  String? getEnabledServersJson() {
+    return _prefs.getString(_keyEnabledServers);
+  }
+
+  /// Save enabled servers as JSON string
+  Future<void> saveEnabledServersJson(String enabledJson) async {
+    await _prefs.setString(_keyEnabledServers, enabledJson);
+  }
+
+  /// Clear servers list
+  Future<void> clearServersList() async {
+    await _prefs.remove(_keyServersList);
+  }
+
+  /// Clear enabled servers
+  Future<void> clearEnabledServers() async {
+    await _prefs.remove(_keyEnabledServers);
+  }
+
+  /// Clear all multi-server data
+  Future<void> clearMultiServerData() async {
+    await Future.wait([
+      clearServersList(),
+      clearEnabledServers(),
     ]);
   }
 }

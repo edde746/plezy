@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/video_player_navigation.dart';
 import '../screens/media_detail_screen.dart';
@@ -13,9 +15,15 @@ import '../i18n/strings.g.dart';
 /// Shows a hierarchical file/folder structure
 class FolderTreeView extends StatefulWidget {
   final String libraryKey;
+  final String? serverId; // Server this library belongs to
   final void Function(String)? onRefresh;
 
-  const FolderTreeView({super.key, required this.libraryKey, this.onRefresh});
+  const FolderTreeView({
+    super.key,
+    required this.libraryKey,
+    this.serverId,
+    this.onRefresh,
+  });
 
   @override
   State<FolderTreeView> createState() => _FolderTreeViewState();
@@ -28,6 +36,25 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   final Set<String> _loadingFolders = {};
   bool _isLoadingRoot = false;
   String? _errorMessage;
+
+  /// Get the correct PlexClient for this library's server
+  PlexClient? _getClientForLibrary() {
+    final serverId = widget.serverId;
+    if (serverId == null) {
+      appLogger.w('Library ${widget.libraryKey} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
 
   @override
   void initState() {
@@ -42,8 +69,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     });
 
     try {
-      final clientProvider = context.read<PlexClientProvider>();
-      final client = clientProvider.client;
+      final client = _getClientForLibrary();
       if (client == null) {
         throw Exception(t.errors.noClientAvailable);
       }
@@ -52,8 +78,17 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
       if (!mounted) return;
 
+      final taggedFolders = folders
+          .map(
+            (folder) => folder.copyWith(
+              serverId: widget.serverId,
+              serverName: null, // server name not required for folders listing
+            ),
+          )
+          .toList();
+
       setState(() {
-        _rootFolders = folders;
+        _rootFolders = taggedFolders;
         _isLoadingRoot = false;
       });
 
@@ -89,8 +124,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     });
 
     try {
-      final clientProvider = context.read<PlexClientProvider>();
-      final client = clientProvider.client;
+      final client = _getClientForLibrary();
       if (client == null) {
         throw Exception(t.errors.noClientAvailable);
       }
@@ -99,8 +133,17 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
       if (!mounted) return;
 
+      final taggedChildren = children
+          .map(
+            (child) => child.copyWith(
+              serverId: widget.serverId,
+              serverName: null,
+            ),
+          )
+          .toList();
+
       setState(() {
-        _childrenCache[folder.key] = children;
+        _childrenCache[folder.key] = taggedChildren;
         _expandedFolders.add(folder.key);
         _loadingFolders.remove(folder.key);
       });

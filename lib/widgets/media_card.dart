@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/duration_formatter.dart';
+import '../utils/app_logger.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../screens/playlist_detail_screen.dart';
@@ -652,6 +655,32 @@ class _MediaCardList extends StatelessWidget {
   }
 }
 
+/// Helper to get the correct PlexClient for an item's server
+PlexClient? _getClientForItem(BuildContext context, dynamic item) {
+  String? serverId;
+
+  if (item is PlexMetadata) {
+    serverId = item.serverId;
+  } else if (item is PlexPlaylist) {
+    serverId = item.serverId;
+  }
+
+  if (serverId == null) {
+    appLogger.w('Item has no serverId, using legacy client');
+    return context.read<PlexClientProvider>().client;
+  }
+
+  final multiServerProvider = context.read<MultiServerProvider>();
+  final client = multiServerProvider.getClientForServer(serverId);
+
+  if (client == null) {
+    appLogger.w('No client found for server $serverId, using legacy client');
+    return context.read<PlexClientProvider>().client;
+  }
+
+  return client;
+}
+
 Widget _buildPosterImage(BuildContext context, dynamic item) {
   String? posterUrl;
   IconData fallbackIcon = Icons.movie;
@@ -665,9 +694,9 @@ Widget _buildPosterImage(BuildContext context, dynamic item) {
   }
 
   if (posterUrl != null) {
-    return Consumer<PlexClientProvider>(
-      builder: (context, clientProvider, child) {
-        final client = clientProvider.client;
+    return Builder(
+      builder: (context) {
+        final client = _getClientForItem(context, item);
         if (client == null) {
           return SkeletonLoader(
             child: Center(

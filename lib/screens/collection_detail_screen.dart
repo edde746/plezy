@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
+import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/app_logger.dart';
 import '../widgets/media_card.dart';
@@ -32,6 +35,25 @@ class _CollectionDetailScreenState
   @override
   String get emptyMessage => t.collections.empty;
 
+  /// Get the correct PlexClient for this collection's server
+  PlexClient? _getClientForCollection() {
+    final serverId = widget.collection.serverId;
+    if (serverId == null) {
+      appLogger.w('Collection ${widget.collection.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
+
   @override
   Future<void> loadItems() async {
     if (mounted) {
@@ -47,9 +69,19 @@ class _CollectionDetailScreenState
         widget.collection.ratingKey,
       );
 
+      // Tag items with server info for correct client resolution
+      final taggedItems = newItems
+          .map(
+            (item) => item.copyWith(
+              serverId: widget.collection.serverId,
+              serverName: widget.collection.serverName,
+            ),
+          )
+          .toList();
+
       if (mounted) {
         setState(() {
-          items = newItems;
+          items = taggedItems;
           isLoading = false;
         });
       }
@@ -97,8 +129,7 @@ class _CollectionDetailScreenState
     if (!mounted) return;
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
+      final client = _getClientForCollection();
       if (client == null) return;
 
       final success = await client.deleteCollection(

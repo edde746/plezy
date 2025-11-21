@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../client/plex_client.dart';
 import '../../models/plex_library.dart';
 import '../../models/plex_metadata.dart';
 import '../../providers/plex_client_provider.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/library_refresh_notifier.dart';
 import '../../i18n/strings.g.dart';
@@ -39,6 +41,26 @@ class _LibraryCollectionsTabState extends State<LibraryCollectionsTab>
     _loadCollections();
   }
 
+  /// Get the correct PlexClient for this library's server
+  PlexClient? _getClientForLibrary(BuildContext context) {
+    final serverId = widget.library.serverId;
+    if (serverId == null) {
+      // Fallback to legacy client if no serverId
+      appLogger.w('Library ${widget.library.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
+
   List<PlexMetadata> _collections = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -69,7 +91,7 @@ class _LibraryCollectionsTabState extends State<LibraryCollectionsTab>
   void didUpdateWidget(LibraryCollectionsTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Reload if library changed
-    if (oldWidget.library.key != widget.library.key) {
+    if (oldWidget.library.globalKey != widget.library.globalKey) {
       _loadCollections();
     }
   }
@@ -81,7 +103,8 @@ class _LibraryCollectionsTabState extends State<LibraryCollectionsTab>
     });
 
     try {
-      final client = context.read<PlexClientProvider>().client;
+      // Use server-specific client for this library
+      final client = _getClientForLibrary(context);
       if (client == null) {
         throw Exception(t.errors.noClientAvailable);
       }
@@ -92,8 +115,17 @@ class _LibraryCollectionsTabState extends State<LibraryCollectionsTab>
 
       if (!mounted) return;
 
+      final taggedCollections = collections
+          .map(
+            (item) => item.copyWith(
+              serverId: widget.library.serverId,
+              serverName: widget.library.serverName,
+            ),
+          )
+          .toList();
+
       setState(() {
-        _collections = collections;
+        _collections = taggedCollections;
         _isLoading = false;
       });
     } catch (e) {

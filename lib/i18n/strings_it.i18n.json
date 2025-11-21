@@ -399,6 +399,11 @@
   },
   "serverSelection": {
     "connectingToServer": "Connessione al server...",
+    "connectingToAllServers": "Connessione a tutti i server...",
+    "connectToAllServers": "Connetti a tutti i server",
+    "allServerConnectionsFailed": "Impossibile connettersi a nessun server. Controlla la tua rete e riprova.",
+    "foundServers": "Trovati ${count} server",
+    "orSelectIndividually": "Oppure seleziona un server singolarmente:",
     "serverDebugCopied": "Dati di debug del server copiati negli appunti",
     "copyDebugData": "Copia dati di debug",
     "noServersFound": "Nessun server trovato",

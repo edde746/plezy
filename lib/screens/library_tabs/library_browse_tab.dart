@@ -7,6 +7,7 @@ import '../../models/plex_metadata.dart';
 import '../../models/plex_filter.dart';
 import '../../models/plex_sort.dart';
 import '../../providers/plex_client_provider.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/error_message_utils.dart';
@@ -20,6 +21,7 @@ import '../../services/settings_service.dart' show ViewMode;
 import '../../mixins/item_updatable.dart';
 import '../../mixins/refreshable.dart';
 import '../../i18n/strings.g.dart';
+import '../../utils/app_logger.dart';
 
 /// Browse tab for library screen
 /// Shows library items with grouping, filtering, and sorting
@@ -46,6 +48,26 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
 
   @override
   PlexClient get client => context.clientSafe;
+
+  /// Get the correct PlexClient for this library's server
+  PlexClient? _getClientForLibrary(BuildContext context) {
+    final serverId = widget.library.serverId;
+    if (serverId == null) {
+      // Fallback to legacy client if no serverId
+      appLogger.w('Library ${widget.library.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
 
   @override
   void refresh() {
@@ -89,7 +111,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
   void didUpdateWidget(LibraryBrowseTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Reload if library changed
-    if (oldWidget.library.key != widget.library.key) {
+    if (oldWidget.library.globalKey != widget.library.globalKey) {
       _loadContent();
     }
   }
@@ -106,8 +128,8 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     _cancelToken = CancelToken();
     final currentRequestId = ++_requestId;
 
-    // Extract context dependencies before async gap
-    final clientProvider = context.plexClient;
+    // Extract context dependencies before async gap - use server-specific client
+    final client = _getClientForLibrary(context);
 
     setState(() {
       _isLoading = true;
@@ -118,7 +140,6 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     });
 
     try {
-      final client = clientProvider.client;
       if (client == null) {
         throw Exception(t.errors.noClientAvailable);
       }
@@ -131,10 +152,10 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
 
       // Load saved preferences
       final savedFilters = storage.getLibraryFilters(
-        sectionId: widget.library.key,
+        sectionId: widget.library.globalKey,
       );
-      final savedSort = storage.getLibrarySort(widget.library.key);
-      final savedGrouping = storage.getLibraryGrouping(widget.library.key);
+      final savedSort = storage.getLibrarySort(widget.library.globalKey);
+      final savedGrouping = storage.getLibraryGrouping(widget.library.globalKey);
 
       // Check if request was cancelled
       if (currentRequestId != _requestId) return;
@@ -192,7 +213,8 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     });
 
     try {
-      final client = context.read<PlexClientProvider>().client;
+      // Use server-specific client for this library
+      final client = _getClientForLibrary(context);
       if (client == null) {
         throw Exception(t.errors.noClientAvailable);
       }
@@ -223,15 +245,25 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
         cancelToken: _cancelToken,
       );
 
+      // Tag items with server info for multi-server support
+      final taggedItems = items
+          .map(
+            (item) => item.copyWith(
+              serverId: widget.library.serverId,
+              serverName: widget.library.serverName,
+            ),
+          )
+          .toList();
+
       if (currentRequestId != _requestId) return;
 
       setState(() {
         if (loadMore) {
-          _items.addAll(items);
+          _items.addAll(taggedItems);
         } else {
-          _items = items;
+          _items = taggedItems;
         }
-        _hasMoreItems = items.length >= _pageSize;
+        _hasMoreItems = taggedItems.length >= _pageSize;
         _currentPage++;
         _isLoading = false;
       });
@@ -324,8 +356,8 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
                     _selectedGrouping = value;
                   });
 
-                  final storage = await StorageService.getInstance();
-                  await storage.saveLibraryGrouping(widget.library.key, value);
+          final storage = await StorageService.getInstance();
+          await storage.saveLibraryGrouping(widget.library.globalKey, value);
 
                   if (!mounted) return;
 
@@ -357,7 +389,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
           final storage = await StorageService.getInstance();
           await storage.saveLibraryFilters(
             filters,
-            sectionId: widget.library.key,
+            sectionId: widget.library.globalKey,
           );
 
           _loadItems();
@@ -382,7 +414,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
 
           StorageService.getInstance().then((storage) {
             storage.saveLibrarySort(
-              widget.library.key,
+              widget.library.globalKey,
               sort.key,
               descending: descending,
             );
@@ -487,6 +519,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     if (_selectedGrouping == 'folders') {
       return FolderTreeView(
         libraryKey: widget.library.key,
+        serverId: widget.library.serverId,
         onRefresh: updateItem,
       );
     }

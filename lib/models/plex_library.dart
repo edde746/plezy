@@ -15,6 +15,15 @@ class PlexLibrary {
   final int? createdAt;
   final int? hidden;
 
+  // Multi-server support fields
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? serverId; // Server machine identifier (not from API)
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? serverName; // Server display name (not from API)
+
+  /// Global unique identifier across all servers (serverId:key)
+  String get globalKey => serverId != null ? '$serverId:$key' : key;
+
   PlexLibrary({
     required this.key,
     required this.title,
@@ -26,6 +35,8 @@ class PlexLibrary {
     this.updatedAt,
     this.createdAt,
     this.hidden,
+    this.serverId,
+    this.serverName,
   });
 
   factory PlexLibrary.fromJson(Map<String, dynamic> json) =>

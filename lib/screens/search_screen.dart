@@ -8,6 +8,7 @@ import '../i18n/strings.g.dart';
 import '../mixins/item_updatable.dart';
 import '../mixins/refreshable.dart';
 import '../models/plex_metadata.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
@@ -15,6 +16,7 @@ import '../utils/grid_cross_axis_extent.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_card.dart';
+import '../widgets/server_badge.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -91,13 +93,17 @@ class _SearchScreenState extends State<SearchScreen>
     });
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception('No client available');
+      final multiServerProvider = Provider.of<MultiServerProvider>(
+        context,
+        listen: false,
+      );
+
+      if (!multiServerProvider.hasConnectedServers) {
+        throw Exception('No servers available');
       }
 
-      final results = await client.search(query);
+      // Search across all connected servers
+      final results = await multiServerProvider.aggregationService.searchAcrossServers(query);
       if (mounted) {
         setState(() {
           _searchResults = results;

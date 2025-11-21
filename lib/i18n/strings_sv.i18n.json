@@ -399,6 +399,11 @@
   },
   "serverSelection": {
     "connectingToServer": "Ansluter till server...",
+    "connectingToAllServers": "Ansluter till alla servrar...",
+    "connectToAllServers": "Anslut till alla servrar",
+    "allServerConnectionsFailed": "Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.",
+    "foundServers": "Hittade ${count} server(ar)",
+    "orSelectIndividually": "Eller välj en server individuellt:",
     "serverDebugCopied": "Server-felsökningsdata kopierad till urklipp",
     "copyDebugData": "Kopiera felsökningsdata",
     "noServersFound": "Inga servrar hittades",

@@ -1122,6 +1122,10 @@ class PlexClient {
       return null;
     }
 
+    // Extract serverId/serverName from currentEpisode to propagate
+    final serverId = currentEpisode.serverId;
+    final serverName = currentEpisode.serverName;
+
     try {
       // Get all episodes in the current season
       final episodes = await getChildren(parentKey);
@@ -1137,7 +1141,10 @@ class PlexClient {
 
       // Check if target episode is within current season
       if (targetIndex >= 0 && targetIndex < episodes.length) {
-        return episodes[targetIndex];
+        return episodes[targetIndex].copyWith(
+          serverId: serverId,
+          serverName: serverName,
+        );
       }
 
       // Need to move to adjacent season
@@ -1165,9 +1172,12 @@ class PlexClient {
 
           if (targetSeasonEpisodes.isNotEmpty) {
             // Return first episode for next season, last for previous
-            return direction > 0
+            return (direction > 0
                 ? targetSeasonEpisodes.first
-                : targetSeasonEpisodes.last;
+                : targetSeasonEpisodes.last).copyWith(
+              serverId: serverId,
+              serverName: serverName,
+            );
           }
         }
       }

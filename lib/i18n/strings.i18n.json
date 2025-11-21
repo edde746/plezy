@@ -44,7 +44,6 @@
   },
   "screens": {
     "licenses": "Licenses",
-    "selectServer": "Select Server",
     "switchProfile": "Switch Profile",
     "subtitleStyling": "Subtitle Styling",
     "search": "Search",
@@ -300,7 +299,6 @@
   "discover": {
     "title": "Discover",
     "switchProfile": "Switch Profile",
-    "switchServer": "Switch Server",
     "logout": "Logout",
     "noContentAvailable": "No content available",
     "addMediaToLibraries": "Add some media to your libraries",
@@ -399,6 +397,11 @@
   },
   "serverSelection": {
     "connectingToServer": "Connecting to server...",
+    "connectingToAllServers": "Connecting to all servers...",
+    "connectToAllServers": "Connect to All Servers",
+    "allServerConnectionsFailed": "Failed to connect to any servers. Please check your network and try again.",
+    "foundServers": "Found ${count} server(s)",
+    "orSelectIndividually": "Or select a server individually:",
     "serverDebugCopied": "Server debug data copied to clipboard",
     "copyDebugData": "Copy Debug Data",
     "noServersFound": "No servers found",

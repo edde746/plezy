@@ -14,6 +14,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
@@ -55,7 +56,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   PlexMetadata? _previousEpisode;
   bool _isLoadingNext = false;
   bool _showPlayNextDialog = false;
-  PlexClientProvider? _cachedClientProvider;
+  PlexClient? _cachedClient;
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
   StreamSubscription<PlayerLog>? _logSubscription;
@@ -70,6 +71,26 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
+
+  /// Get the correct PlexClient for this metadata's server
+  PlexClient? _getClientForMetadata(BuildContext context) {
+    final serverId = widget.metadata.serverId;
+    if (serverId == null) {
+      // Fallback to legacy client if no serverId
+      appLogger.w('Metadata ${widget.metadata.title} has no serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final client = multiServerProvider.getClientForServer(serverId);
+
+    if (client == null) {
+      appLogger.w('No client found for server $serverId, using legacy client');
+      return context.read<PlexClientProvider>().client;
+    }
+
+    return client;
+  }
 
   // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode = 0;
@@ -128,12 +149,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // Cache provider reference for safe access in dispose()
+    // Cache server-specific client for safe access in dispose() and during playback
     try {
-      _cachedClientProvider = context.plexClient;
+      _cachedClient = _getClientForMetadata(context);
     } catch (e) {
-      appLogger.w('Failed to cache PlexClientProvider', error: e);
-      _cachedClientProvider = null;
+      appLogger.w('Failed to cache PlexClient', error: e);
+      _cachedClient = null;
     }
 
     // Cache device type for safe access in dispose()
@@ -348,8 +369,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   Future<void> _loadAdjacentEpisodes() async {
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
+      // Use server-specific client for this metadata
+      final client = _getClientForMetadata(context);
       if (client == null) return;
 
       final playbackState = context.read<PlaybackStateProvider>();
@@ -421,8 +442,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   Future<void> _startPlayback() async {
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
+      // Use server-specific client for this metadata
+      final client = _getClientForMetadata(context);
       if (client == null) {
         throw Exception('No client available');
       }
@@ -1462,8 +1483,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final duration = player!.state.duration.inMilliseconds;
 
     if (duration > 0) {
-      final clientProvider = _cachedClientProvider;
-      final client = clientProvider?.client;
+      final client = _cachedClient;
       if (client == null) return;
 
       client
@@ -1588,8 +1608,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
 
     final metadata = widget.metadata;
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
+    // Use server-specific client for this metadata
+    final client = _getClientForMetadata(context);
 
     // Get artwork URL
     String? artworkUrl;
@@ -1718,7 +1738,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     try {
       if (!mounted) return;
-      final client = context.read<PlexClient>();
+      // Use server-specific client for this metadata
+      final client = _getClientForMetadata(context);
+      if (client == null) {
+        appLogger.w('No client available to save audio language preference');
+        return;
+      }
       await client.setMetadataPreferences(
         targetRatingKey,
         audioLanguage: languageCode,
@@ -1765,7 +1790,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     try {
       if (!mounted) return;
-      final client = context.read<PlexClient>();
+      // Use server-specific client for this metadata
+      final client = _getClientForMetadata(context);
+      if (client == null) {
+        appLogger.w('No client available to save subtitle language preference');
+        return;
+      }
       await client.setMetadataPreferences(
         targetRatingKey,
         subtitleLanguage: languageCode,

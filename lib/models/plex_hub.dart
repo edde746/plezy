@@ -10,6 +10,10 @@ class PlexHub {
   final bool more;
   final List<PlexMetadata> items;
 
+  // Multi-server support fields
+  final String? serverId; // Server machine identifier
+  final String? serverName; // Server display name
+
   PlexHub({
     required this.hubKey,
     required this.title,
@@ -18,6 +22,8 @@ class PlexHub {
     required this.size,
     required this.more,
     required this.items,
+    this.serverId,
+    this.serverName,
   });
 
   factory PlexHub.fromJson(Map<String, dynamic> json) {

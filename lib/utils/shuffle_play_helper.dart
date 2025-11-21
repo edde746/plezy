@@ -1,11 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../providers/plex_client_provider.dart';
 import '../providers/settings_provider.dart';
-import '../utils/provider_extensions.dart';
+import '../utils/app_logger.dart';
 import '../utils/video_player_navigation.dart';
 import '../i18n/strings.g.dart';
+
+/// Get the correct PlexClient for metadata's server
+PlexClient? _getClientForMetadata(BuildContext context, PlexMetadata metadata) {
+  final serverId = metadata.serverId;
+  if (serverId == null) {
+    // Fallback to legacy client if no serverId
+    appLogger.w('Metadata ${metadata.title} has no serverId, using legacy client');
+    return context.read<PlexClientProvider>().client;
+  }
+
+  final multiServerProvider = context.read<MultiServerProvider>();
+  final client = multiServerProvider.getClientForServer(serverId);
+
+  if (client == null) {
+    appLogger.w('No client found for server $serverId, using legacy client');
+    return context.read<PlexClientProvider>().client;
+  }
+
+  return client;
+}
 
 /// Handle shuffle play action for shows and seasons
 ///
@@ -16,7 +39,7 @@ Future<void> handleShufflePlay(
   BuildContext context,
   PlexMetadata metadata,
 ) async {
-  final client = context.client;
+  final client = _getClientForMetadata(context, metadata);
   if (client == null) return;
 
   final playbackState = context.read<PlaybackStateProvider>();
@@ -41,7 +64,12 @@ Future<void> handleShufflePlay(
     if (itemType == 'show') {
       if (unwatchedOnly) {
         // Get only unwatched episodes
-        episodes = await client.getAllUnwatchedEpisodes(metadata.ratingKey);
+        final fetchedEpisodes = await client.getAllUnwatchedEpisodes(metadata.ratingKey);
+        // Preserve serverId for each episode
+        episodes = fetchedEpisodes.map((ep) => ep.copyWith(
+          serverId: metadata.serverId,
+          serverName: metadata.serverName,
+        )).toList();
       } else {
         // Get all episodes from all seasons
         final allEpisodes = <PlexMetadata>[];
@@ -52,6 +80,10 @@ Future<void> handleShufflePlay(
             final seasonEpisodes = await client.getChildren(season.ratingKey);
             final episodesOnly = seasonEpisodes
                 .where((ep) => ep.type == 'episode')
+                .map((ep) => ep.copyWith(
+                  serverId: metadata.serverId,
+                  serverName: metadata.serverName,
+                ))
                 .toList();
             allEpisodes.addAll(episodesOnly);
           }
@@ -62,13 +94,24 @@ Future<void> handleShufflePlay(
       // season
       if (unwatchedOnly) {
         // Get only unwatched episodes
-        episodes = await client.getUnwatchedEpisodesInSeason(
+        final fetchedEpisodes = await client.getUnwatchedEpisodesInSeason(
           metadata.ratingKey,
         );
+        // Preserve serverId for each episode
+        episodes = fetchedEpisodes.map((ep) => ep.copyWith(
+          serverId: metadata.serverId,
+          serverName: metadata.serverName,
+        )).toList();
       } else {
         // Get all episodes in season
         final seasonEpisodes = await client.getChildren(metadata.ratingKey);
-        episodes = seasonEpisodes.where((ep) => ep.type == 'episode').toList();
+        episodes = seasonEpisodes
+            .where((ep) => ep.type == 'episode')
+            .map((ep) => ep.copyWith(
+              serverId: metadata.serverId,
+              serverName: metadata.serverName,
+            ))
+            .toList();
       }
     }
 

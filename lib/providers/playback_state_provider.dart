@@ -153,7 +153,16 @@ class PlaybackStateProvider with ChangeNotifier {
       );
 
       if (response != null && response.items != null) {
-        _loadedItems = response.items!;
+        // Preserve serverId from existing items
+        final serverId = _loadedItems.isNotEmpty ? _loadedItems.first.serverId : null;
+        final serverName = _loadedItems.isNotEmpty ? _loadedItems.first.serverName : null;
+
+        _loadedItems = response.items!.map((item) {
+          return item.copyWith(
+            serverId: serverId,
+            serverName: serverName,
+          );
+        }).toList();
         // Use size or items length as fallback if totalCount is null
         _playQueueTotalCount =
             response.playQueueTotalCount ??
@@ -245,7 +254,16 @@ class PlaybackStateProvider with ChangeNotifier {
           if (response != null &&
               response.items != null &&
               response.items!.isNotEmpty) {
-            _loadedItems = response.items!;
+            // Preserve serverId when looping
+            final serverId = _loadedItems.isNotEmpty ? _loadedItems.first.serverId : null;
+            final serverName = _loadedItems.isNotEmpty ? _loadedItems.first.serverName : null;
+
+            _loadedItems = response.items!.map((item) {
+              return item.copyWith(
+                serverId: serverId,
+                serverName: serverName,
+              );
+            }).toList();
             final firstItem = _loadedItems.first;
             // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
             return firstItem;

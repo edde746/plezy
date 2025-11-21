@@ -15,10 +15,15 @@ import 'services/update_service.dart';
 import 'services/settings_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';
+import 'providers/multi_server_provider.dart';
+import 'providers/server_state_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/hidden_libraries_provider.dart';
 import 'providers/playback_state_provider.dart';
+import 'services/multi_server_manager.dart';
+import 'services/data_aggregation_service.dart';
+import 'services/server_registry.dart';
 import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
 import 'utils/provider_extensions.dart';
@@ -77,9 +82,20 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Initialize multi-server infrastructure
+    final serverManager = MultiServerManager();
+    final aggregationService = DataAggregationService(serverManager);
+
     return MultiProvider(
       providers: [
+        // Legacy provider for backward compatibility
         ChangeNotifierProvider(create: (context) => PlexClientProvider()),
+        // New multi-server providers
+        ChangeNotifierProvider(
+          create: (context) => MultiServerProvider(serverManager, aggregationService),
+        ),
+        ChangeNotifierProvider(create: (context) => ServerStateProvider()),
+        // Existing providers
         ChangeNotifierProvider(
           create: (context) => UserProfileProvider()..initialize(),
         ),
@@ -219,86 +235,99 @@ class _SetupScreenState extends State<SetupScreen> {
 
   Future<void> _loadSavedCredentials() async {
     final storage = await StorageService.getInstance();
+    final registry = ServerRegistry(storage);
 
-    // Check if we have server data
-    final serverData = storage.getServerData();
-    final clientId = storage.getClientIdentifier();
-    final plexToken = storage.getPlexToken();
+    // Migrate from single-server to multi-server if needed
+    await registry.migrateFromSingleServer();
 
-    // Get current user's server token (prioritize over original server token)
-    final currentUserToken = storage.getToken();
+    // Load enabled servers
+    final servers = await registry.getEnabledServers();
 
-    if (serverData != null && clientId != null) {
-      try {
-        // Recreate PlexServer from stored data
-        final server = PlexServer.fromJson(serverData);
-
-        // Use current user's token if available, fallback to server's original token
-        final tokenToUse = currentUserToken ?? server.accessToken;
-
-        appLogger.d(
-          'App startup token selection: currentUserToken=${currentUserToken != null ? 'present' : 'null'}, using=${currentUserToken != null ? 'current user' : 'original server'} token',
+    if (servers.isEmpty) {
+      // No servers configured - show auth screen
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
         );
-
-        // Create updated server with correct token for current user
-        final serverWithCurrentToken = PlexServer(
-          name: server.name,
-          clientIdentifier: server.clientIdentifier,
-          accessToken: tokenToUse,
-          connections: server.connections,
-          owned: server.owned,
-          product: server.product,
-          platform: server.platform,
-          lastSeenAt: server.lastSeenAt,
-          presence: server.presence,
-        );
-
-        // Connect using the optimized service with current user's token
-        final result = await ServerConnectionService.connectToServer(
-          serverWithCurrentToken,
-          clientIdentifier: clientId,
-          verifyServer: true,
-          fetchUserProfile: plexToken != null,
-          plexToken: plexToken,
-        );
-
-        // Handle result
-        if (result.isSuccess) {
-          // Success! Set client in provider
-          if (mounted) {
-            context.plexClient.setClient(result.client!);
-
-            // Check for updates BEFORE navigation to keep context valid
-            _checkForUpdatesOnStartup();
-
-            // Navigate to main screen after update check is initiated
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MainScreen(client: result.client!),
-                ),
-              );
-            }
-          }
-          return;
-        } else {
-          // Connection failed, clear credentials
-          await storage.clearCredentials();
-        }
-      } catch (e) {
-        // Error loading or testing server
-        appLogger.e('Error during auto-login', error: e);
-        await storage.clearCredentials();
       }
+      return;
     }
 
-    // No saved credentials or auto-login failed - show auth screen
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const AuthScreen()),
+    // Get multi-server provider
+    if (!mounted) return;
+    final multiServerProvider = Provider.of<MultiServerProvider>(
+      context,
+      listen: false,
+    );
+
+    try {
+      appLogger.i('Connecting to ${servers.length} enabled servers...');
+
+      // Get or generate client identifier
+      final clientId = storage.getClientIdentifier();
+
+      // Connect to all servers in parallel
+      final connectedCount = await multiServerProvider.serverManager.connectToAllServers(
+        servers,
+        clientIdentifier: clientId,
+        timeout: const Duration(seconds: 10),
+        onServerConnected: (serverId, client) {
+          // Set first connected client in legacy provider for backward compatibility
+          final legacyProvider = Provider.of<PlexClientProvider>(
+            context,
+            listen: false,
+          );
+          if (legacyProvider.client == null) {
+            legacyProvider.setClient(client);
+          }
+        },
       );
+
+      if (connectedCount > 0) {
+        // At least one server connected successfully
+        appLogger.i('Successfully connected to $connectedCount servers');
+
+        if (mounted) {
+          // Check for updates BEFORE navigation
+          _checkForUpdatesOnStartup();
+
+          // Navigate to main screen
+          // Get first connected client for backward compatibility
+          final firstClient = multiServerProvider.serverManager.onlineClients.values.first;
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MainScreen(client: firstClient),
+            ),
+          );
+        }
+      } else {
+        // All connections failed
+        appLogger.w('Failed to connect to any servers');
+
+        if (mounted) {
+          // Show auth screen to re-authenticate
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const AuthScreen()),
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      appLogger.e(
+        'Error during multi-server connection',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
+        );
+      }
     }
   }
 
