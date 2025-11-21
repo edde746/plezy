@@ -136,7 +136,17 @@ struct HomeView: View {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 LazyHStack(spacing: 30) {
                                     ForEach(onDeck) { item in
-                                        MediaCard(media: item, config: .continueWatching) {
+                                        MediaCard(
+                                            media: item,
+                                            config: .custom(
+                                                width: 410,
+                                                height: 231,
+                                                showProgress: true,
+                                                showLabel: .inside,
+                                                showLogo: true,
+                                                showEpisodeLabelBelow: true
+                                            )
+                                        ) {
                                             print("🎯 [HomeView] Continue watching item tapped: \(item.title)")
                                             playingMedia = item
                                         }
@@ -162,7 +172,17 @@ struct HomeView: View {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     LazyHStack(spacing: 30) {
                                         ForEach(items) { item in
-                                            MediaCard(media: item, config: .continueWatching) {
+                                            MediaCard(
+                                                media: item,
+                                                config: .custom(
+                                                    width: 410,
+                                                    height: 231,
+                                                    showProgress: true,
+                                                    showLabel: .inside,
+                                                    showLogo: true,
+                                                    showEpisodeLabelBelow: true
+                                                )
+                                            ) {
                                                 print("🎯 [HomeView] Hub item tapped: \(item.title)")
                                                 selectedMedia = item
                                             }

@@ -17,6 +17,7 @@ struct MediaCardConfig {
     let showProgress: Bool
     let showLabel: LabelDisplay
     let showLogo: Bool
+    let showEpisodeLabelBelow: Bool  // Show season/episode info below the card
 
     /// Label display mode
     enum LabelDisplay {
@@ -31,7 +32,8 @@ struct MediaCardConfig {
         height: 231,
         showProgress: true,
         showLabel: .inside,
-        showLogo: true
+        showLogo: true,
+        showEpisodeLabelBelow: false
     )
 
     static let libraryGrid = MediaCardConfig(
@@ -39,7 +41,8 @@ struct MediaCardConfig {
         height: 201,
         showProgress: true,
         showLabel: .inside,
-        showLogo: true
+        showLogo: true,
+        showEpisodeLabelBelow: false
     )
 
     static let seasonPoster = MediaCardConfig(
@@ -47,7 +50,8 @@ struct MediaCardConfig {
         height: 435,
         showProgress: false,
         showLabel: .inside,
-        showLogo: false
+        showLogo: false,
+        showEpisodeLabelBelow: false
     )
 
     static func custom(
@@ -55,14 +59,16 @@ struct MediaCardConfig {
         height: CGFloat,
         showProgress: Bool = true,
         showLabel: LabelDisplay = .inside,
-        showLogo: Bool = true
+        showLogo: Bool = true,
+        showEpisodeLabelBelow: Bool = false
     ) -> MediaCardConfig {
         MediaCardConfig(
             width: width,
             height: height,
             showProgress: showProgress,
             showLabel: showLabel,
-            showLogo: showLogo
+            showLogo: showLogo,
+            showEpisodeLabelBelow: showEpisodeLabelBelow
         )
     }
 }
@@ -89,120 +95,132 @@ struct MediaCard: View {
 
     var body: some View {
         Button(action: action) {
-            // Everything inside one fixed-size ZStack
-            ZStack(alignment: .bottomLeading) {
-                // Layer 1: Background image
-                CachedAsyncImage(url: artURL) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } placeholder: {
-                    Rectangle()
-                        .fill(.regularMaterial.opacity(0.3))
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.system(size: config.width * 0.15))
-                                .foregroundStyle(.tertiary)
-                        )
+            VStack(alignment: .leading, spacing: 8) {
+                // Main card
+                ZStack(alignment: .bottomLeading) {
+                    // Layer 1: Background image
+                    CachedAsyncImage(url: artURL) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        Rectangle()
+                            .fill(.regularMaterial.opacity(0.3))
+                            .overlay(
+                                Image(systemName: "photo")
+                                    .font(.system(size: config.width * 0.15))
+                                    .foregroundStyle(.tertiary)
+                            )
+                    }
+                    .frame(width: config.width, height: config.height)
+
+                    // Layer 2: Gradient overlay for better text contrast
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            .clear,
+                            .clear,
+                            .black.opacity(config.showLabel == .inside || config.showProgress ? 0.75 : 0.4)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+
+                    // Layer 3: Logo/Title overlay (if enabled and inside)
+                    if config.showLogo && config.showLabel == .inside {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Spacer()
+
+                            HStack {
+                                if let logoURL = logoURL, let clearLogo = media.clearLogo {
+                                    CachedAsyncImage(url: logoURL) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                    } placeholder: {
+                                        cardTitleText
+                                    }
+                                    .frame(
+                                        maxWidth: config.width * 0.5,
+                                        maxHeight: config.height * 0.25
+                                    )
+                                    .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
+                                    .id("\(media.id)-\(clearLogo)")
+                                } else {
+                                    cardTitleText
+                                        .frame(maxWidth: config.width * 0.5, alignment: .leading)
+                                }
+                                Spacer()
+                            }
+                            .padding(.leading, config.width * 0.05)
+                            .padding(.bottom, config.showProgress ? config.height * 0.12 : config.height * 0.08)
+                        }
+                    }
+
+                    // Layer 4: Progress bar overlay (if enabled)
+                    if config.showProgress && media.progress > 0 && media.progress < 0.98 {
+                        VStack {
+                            Spacer()
+                            ZStack(alignment: .leading) {
+                                // Background capsule
+                                Capsule()
+                                    .fill(.regularMaterial.opacity(0.4))
+                                    .frame(width: config.width, height: 5)
+
+                                // Progress capsule
+                                Capsule()
+                                    .fill(Color.beaconGradient)
+                                    .frame(width: config.width * media.progress, height: 5)
+                                    .shadow(color: Color.beaconMagenta.opacity(0.6), radius: 4, x: 0, y: 0)
+                            }
+                            .padding(.bottom, 8)
+                        }
+                    }
+
+                    // Layer 5: Label text (only if outside mode - deprecated)
+                    if config.showLabel == .outside {
+                        VStack {
+                            Spacer()
+
+                            if media.type == "episode" {
+                                Text(media.episodeInfo)
+                                    .font(.system(size: config.width * 0.048, weight: .semibold, design: .default))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .frame(width: config.width, alignment: .leading)
+                                    .padding(.top, 12)
+                                    .padding(.horizontal, config.width * 0.05)
+                            } else {
+                                Text(media.title)
+                                    .font(.system(size: config.width * 0.048, weight: .semibold, design: .default))
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.leading)
+                                    .frame(width: config.width, alignment: .leading)
+                                    .padding(.top, 12)
+                                    .padding(.horizontal, config.width * 0.05)
+                            }
+                        }
+                        .padding(.bottom, config.height * 0.08)
+                    }
                 }
                 .frame(width: config.width, height: config.height)
-
-                // Layer 2: Gradient overlay for better text contrast
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        .clear,
-                        .clear,
-                        .black.opacity(config.showLabel == .inside || config.showProgress ? 0.75 : 0.4)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
+                .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
+                .shadow(
+                    color: .black.opacity(isFocused ? 0.6 : 0.4),
+                    radius: isFocused ? 30 : 16,
+                    x: 0,
+                    y: isFocused ? 15 : 8
                 )
 
-                // Layer 3: Logo/Title overlay (if enabled and inside)
-                if config.showLogo && config.showLabel == .inside {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Spacer()
-
-                        HStack {
-                            if let logoURL = logoURL, let clearLogo = media.clearLogo {
-                                CachedAsyncImage(url: logoURL) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFit()
-                                } placeholder: {
-                                    cardTitleText
-                                }
-                                .frame(
-                                    maxWidth: config.width * 0.5,
-                                    maxHeight: config.height * 0.25
-                                )
-                                .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 2)
-                                .id("\(media.id)-\(clearLogo)")
-                            } else {
-                                cardTitleText
-                                    .frame(maxWidth: config.width * 0.5, alignment: .leading)
-                            }
-                            Spacer()
-                        }
-                        .padding(.leading, config.width * 0.05)
-                        .padding(.bottom, config.showProgress ? config.height * 0.12 : config.height * 0.08)
-                    }
-                }
-
-                // Layer 4: Progress bar overlay (if enabled)
-                if config.showProgress && media.progress > 0 && media.progress < 0.98 {
-                    VStack {
-                        Spacer()
-                        ZStack(alignment: .leading) {
-                            // Background capsule
-                            Capsule()
-                                .fill(.regularMaterial.opacity(0.4))
-                                .frame(width: config.width, height: 5)
-
-                            // Progress capsule
-                            Capsule()
-                                .fill(Color.beaconGradient)
-                                .frame(width: config.width * media.progress, height: 5)
-                                .shadow(color: Color.beaconMagenta.opacity(0.6), radius: 4, x: 0, y: 0)
-                        }
-                        .padding(.bottom, 8)
-                    }
-                }
-
-                // Layer 5: Label text (only if outside mode - deprecated)
-                if config.showLabel == .outside {
-                    VStack {
-                        Spacer()
-
-                        if media.type == "episode" {
-                            Text(media.episodeInfo)
-                                .font(.system(size: config.width * 0.048, weight: .semibold, design: .default))
-                                .foregroundColor(.white.opacity(0.9))
-                                .frame(width: config.width, alignment: .leading)
-                                .padding(.top, 12)
-                                .padding(.horizontal, config.width * 0.05)
-                        } else {
-                            Text(media.title)
-                                .font(.system(size: config.width * 0.048, weight: .semibold, design: .default))
-                                .foregroundColor(.white.opacity(0.9))
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
-                                .frame(width: config.width, alignment: .leading)
-                                .padding(.top, 12)
-                                .padding(.horizontal, config.width * 0.05)
-                        }
-                    }
-                    .padding(.bottom, config.height * 0.08)
+                // Episode label below the card (only for episodes when enabled)
+                if config.showEpisodeLabelBelow && media.type == "episode" {
+                    Text(media.episodeInfo)
+                        .font(.system(size: config.width * 0.048, weight: .semibold, design: .default))
+                        .foregroundColor(.white.opacity(0.85))
+                        .frame(width: config.width, alignment: .leading)
+                        .padding(.horizontal, config.width * 0.05)
+                        .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 2)
                 }
             }
-            .frame(width: config.width, height: config.height)
-            .clipShape(RoundedRectangle(cornerRadius: DesignTokens.cornerRadiusXLarge, style: .continuous))
-            .shadow(
-                color: .black.opacity(isFocused ? 0.6 : 0.4),
-                radius: isFocused ? 30 : 16,
-                x: 0,
-                y: isFocused ? 15 : 8
-            )
         }
         .buttonStyle(MediaCardButtonStyle())
         .focused($isFocused)
