@@ -118,7 +118,7 @@ struct SearchView: View {
                             GridItem(.adaptive(minimum: 336, maximum: 336), spacing: 24)
                         ], spacing: 40) {
                             ForEach(searchResults) { item in
-                                LibraryLandscapeCard(media: item) {
+                                MediaCard(media: item, config: .libraryGrid) {
                                     selectedMedia = item
                                 }
                                 .padding(.vertical, 40) // Padding for focus scale
