@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -206,6 +207,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           .getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
 
+      // Build MPV configuration
+      final config = <String, String>{
+        'sub-font-size': settingsService.getSubtitleFontSize().toString(),
+        'sub-color': settingsService.getSubtitleTextColor(),
+        'sub-border-size': settingsService.getSubtitleBorderSize().toString(),
+        'sub-border-color': settingsService.getSubtitleBorderColor(),
+        'sub-back-color':
+            '#${(settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt().toRadixString(16).padLeft(2, '0').toUpperCase()}${settingsService.getSubtitleBackgroundColor().replaceFirst('#', '')}',
+        'sub-ass-override': 'no',
+      };
+
+      if (Platform.isIOS) {
+        config['audio-exclusive'] = 'yes';
+      }
+
       // Create player with configuration
       player = Player(
         configuration: PlayerConfiguration(
@@ -214,18 +230,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           libassAndroidFontName: 'Droid Sans Fallback',
           bufferSize: bufferSizeBytes,
           logLevel: debugLoggingEnabled ? MPVLogLevel.debug : MPVLogLevel.error,
-          mpvConfiguration: {
-            'sub-font-size': settingsService.getSubtitleFontSize().toString(),
-            'sub-color': settingsService.getSubtitleTextColor(),
-            'sub-border-size': settingsService
-                .getSubtitleBorderSize()
-                .toString(),
-            'sub-border-color': settingsService.getSubtitleBorderColor(),
-            'sub-back-color':
-                '#${(settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt().toRadixString(16).padLeft(2, '0').toUpperCase()}${settingsService.getSubtitleBackgroundColor().replaceFirst('#', '')}',
-            'sub-ass-override': 'no',
-            'audio-exclusive': 'yes',
-          },
+          mpvConfiguration: config,
         ),
       );
       controller = VideoController(
