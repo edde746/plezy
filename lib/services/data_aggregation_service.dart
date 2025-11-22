@@ -34,8 +34,6 @@ class DataAggregationService {
             updatedAt: lib.updatedAt,
             createdAt: lib.createdAt,
             hidden: lib.hidden,
-            serverId: serverId,
-            serverName: server?.name,
           );
         }).toList();
       },
@@ -91,7 +89,6 @@ class DataAggregationService {
     final hubFutures = clients.entries.map((entry) async {
       final serverId = entry.key;
       final client = entry.value;
-      final server = _serverManager.getServer(serverId);
 
       try {
         // Get libraries for this server
@@ -111,29 +108,8 @@ class DataAggregationService {
         // Fetch hubs from all libraries in parallel
         final libraryHubFutures = visibleLibraries.map((library) async {
           try {
-            final libraryHubs = await client.getLibraryHubs(library.key);
-
-            // Tag hubs and their items with server info
-            return libraryHubs.map((hub) {
-              final taggedItems = hub.items.map((item) {
-                return item.copyWith(
-                  serverId: serverId,
-                  serverName: server?.name,
-                );
-              }).toList();
-
-              return PlexHub(
-                hubKey: hub.hubKey,
-                title: hub.title,
-                type: hub.type,
-                hubIdentifier: hub.hubIdentifier,
-                size: hub.size,
-                more: hub.more,
-                items: taggedItems,
-                serverId: serverId,
-                serverName: server?.name,
-              );
-            }).toList();
+            // Hubs are now tagged with server info at the source
+            return await client.getLibraryHubs(library.key);
           } catch (e) {
             appLogger.w(
               'Failed to fetch hubs for library ${library.title}: $e',
@@ -213,7 +189,6 @@ class DataAggregationService {
   /// Get libraries for a specific server
   Future<List<PlexLibrary>> getLibrariesForServer(String serverId) async {
     final client = _serverManager.getClient(serverId);
-    final server = _serverManager.getServer(serverId);
 
     if (client == null) {
       appLogger.w('No client found for server $serverId');
@@ -236,8 +211,6 @@ class DataAggregationService {
           updatedAt: lib.updatedAt,
           createdAt: lib.createdAt,
           hidden: lib.hidden,
-          serverId: serverId,
-          serverName: server?.name,
         );
       }).toList();
     } catch (e, stackTrace) {

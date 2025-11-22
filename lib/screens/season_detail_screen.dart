@@ -52,18 +52,10 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     });
 
     try {
+      // Episodes are now tagged with server info at the source
       final episodes = await _client.getChildren(widget.season.ratingKey);
-      // Preserve serverId for each episode
-      final episodesWithServerId = episodes
-          .map(
-            (episode) => episode.copyWith(
-              serverId: widget.season.serverId,
-              serverName: widget.season.serverName,
-            ),
-          )
-          .toList();
       setState(() {
-        _episodes = episodesWithServerId;
+        _episodes = episodes;
         _isLoadingEpisodes = false;
       });
     } catch (e) {

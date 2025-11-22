@@ -202,29 +202,19 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
     try {
       final client = _getClientForHub();
 
-      // Fetch more items from the hub using the hubKey
-      final response = await client.getHubContent(widget.hub.hubKey);
-
-      // Tag all items with serverId from the hub
-      final taggedItems = response.map((item) {
-        return item.copyWith(
-          serverId: widget.hub.serverId,
-          serverName: widget.hub.serverName,
-        );
-      }).toList();
+      // Fetch items from the hub, tagged with server info at the source
+      final items = await client.getHubContent(widget.hub.hubKey);
 
       setState(() {
-        _items = taggedItems;
-        _filteredItems = taggedItems;
+        _items = items;
+        _filteredItems = items;
         _isLoading = false;
       });
 
       // Apply any existing sort
       _applySort();
 
-      appLogger.d(
-        'Loaded ${taggedItems.length} items for hub: ${widget.hub.title}',
-      );
+      appLogger.d('Loaded ${items.length} items for hub: ${widget.hub.title}');
     } catch (e) {
       appLogger.e('Failed to load hub content', error: e);
       setState(() {

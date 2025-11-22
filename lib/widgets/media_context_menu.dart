@@ -441,7 +441,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
 
     final client = _getClientForItem();
 
-    try{
+    try {
       final metadata = await client.getMetadata(ratingKey);
       if (metadata != null && context.mounted) {
         await Navigator.push(
@@ -463,7 +463,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _showFileInfo(BuildContext context) async {
     final client = _getClientForItem();
 
-    try{
+    try {
       // Show loading indicator
       if (context.mounted) {
         showDialog(
@@ -688,7 +688,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _showAddToPlaylistDialog(BuildContext context) async {
     final client = _getClientForItem();
 
-    try{
+    try {
       final metadata = widget.item as PlexMetadata;
       final itemType = metadata.type.toLowerCase();
 
@@ -798,7 +798,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _showAddToCollectionDialog(BuildContext context) async {
     final client = _getClientForItem();
 
-    try{
+    try {
       final metadata = widget.item as PlexMetadata;
       final itemType = metadata.type.toLowerCase();
 

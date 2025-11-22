@@ -125,6 +125,8 @@ class MultiServerManager {
 
         final client = PlexClient(
           config,
+          serverId: serverId,
+          serverName: server.name,
           prioritizedEndpoints: prioritizedEndpoints,
           onEndpointChanged: (newUrl) async {
             await storage.saveServerEndpoint(serverId, newUrl);
@@ -194,11 +196,7 @@ class MultiServerManager {
   }
 
   /// Add a single server connection
-  Future<bool> addServer(
-    PlexServer server, {
-    String? clientIdentifier,
-    Duration timeout = const Duration(seconds: 10),
-  }) async {
+  Future<bool> addServer(PlexServer server, {String? clientIdentifier}) async {
     final serverId = server.clientIdentifier;
     final effectiveClientId =
         clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
@@ -236,6 +234,8 @@ class MultiServerManager {
 
       final client = PlexClient(
         config,
+        serverId: serverId,
+        serverName: server.name,
         prioritizedEndpoints: prioritizedEndpoints,
         onEndpointChanged: (newUrl) async {
           await storage.saveServerEndpoint(serverId, newUrl);

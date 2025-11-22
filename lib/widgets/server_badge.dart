@@ -26,7 +26,8 @@ class ServerBadge extends StatelessWidget {
 
     final theme = Theme.of(context);
     final bgColor =
-        backgroundColor ?? theme.colorScheme.primaryContainer.withValues(alpha: 0.8);
+        backgroundColor ??
+        theme.colorScheme.primaryContainer.withValues(alpha: 0.8);
     final fgColor = textColor ?? theme.colorScheme.onPrimaryContainer;
 
     final displayText = showFullName

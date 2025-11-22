@@ -17,7 +17,6 @@ import '../services/media_controls_manager.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/settings_service.dart';
-import '../services/track_selection_service.dart';
 import '../services/video_filter_manager.dart';
 import '../utils/app_logger.dart';
 import '../utils/orientation_helper.dart';
@@ -75,7 +74,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   MediaControlsManager? _mediaControlsManager;
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
-  TrackSelectionService? _trackSelectionService;
   final EpisodeNavigationService _episodeNavigation =
       EpisodeNavigationService();
 
@@ -557,6 +555,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       final result = await playbackService.startPlayback(
         metadata: widget.metadata,
         selectedMediaIndex: widget.selectedMediaIndex,
+        profileSettings: profileSettings,
+        preferredAudioTrack: widget.preferredAudioTrack,
+        preferredSubtitleTrack: widget.preferredSubtitleTrack,
+        preferredPlaybackRate: widget.preferredPlaybackRate,
       );
 
       // Update available versions from the playback data
@@ -577,18 +579,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         }
       }
 
-      // Initialize track selection service and apply tracks
-      _trackSelectionService = TrackSelectionService(
-        player: player!,
-        profileSettings: profileSettings,
-        metadata: widget.metadata,
-      );
-
-      await _trackSelectionService!.selectAndApplyTracks(
-        preferredAudioTrack: widget.preferredAudioTrack,
-        preferredSubtitleTrack: widget.preferredSubtitleTrack,
-        preferredPlaybackRate: widget.preferredPlaybackRate,
-      );
+      // Track selection is now handled inside PlaybackInitializationService
+      // to ensure tracks are selected BEFORE seeking to resume position
     } on PlaybackException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(

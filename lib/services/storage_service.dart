@@ -160,11 +160,6 @@ class StorageService {
     };
   }
 
-  // Selected Library Index (deprecated - use library key instead)
-  Future<void> saveSelectedLibraryIndex(int index) async {
-    await _prefs.setInt(_keySelectedLibraryIndex, index);
-  }
-
   int? getSelectedLibraryIndex() {
     return _prefs.getInt(_keySelectedLibraryIndex);
   }

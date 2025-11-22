@@ -4,8 +4,10 @@ import 'package:media_kit/media_kit.dart';
 import '../client/plex_client.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_user_profile.dart';
 import '../utils/app_logger.dart';
 import '../i18n/strings.g.dart';
+import 'track_selection_service.dart';
 
 /// Service responsible for initializing video playback
 ///
@@ -14,8 +16,9 @@ import '../i18n/strings.g.dart';
 /// 2. Building external subtitle tracks
 /// 3. Opening media in the player
 /// 4. Adding external subtitles to the player
-/// 5. Seeking to resume position
-/// 6. Starting playback
+/// 5. Selecting and applying audio/subtitle tracks
+/// 6. Seeking to resume position
+/// 7. Starting playback
 class PlaybackInitializationService {
   final Player player;
   final PlexClient client;
@@ -33,6 +36,10 @@ class PlaybackInitializationService {
   Future<PlaybackInitializationResult> startPlayback({
     required PlexMetadata metadata,
     required int selectedMediaIndex,
+    required PlexUserProfile? profileSettings,
+    AudioTrack? preferredAudioTrack,
+    SubtitleTrack? preferredSubtitleTrack,
+    double? preferredPlaybackRate,
   }) async {
     try {
       // Get consolidated playback data (URL, media info, and versions) in a single API call
@@ -62,8 +69,23 @@ class PlaybackInitializationService {
         await _addExternalSubtitles(externalSubtitles);
       }
 
-      // Set up playback position if resuming
+      // Select and apply tracks BEFORE seeking to resume position
+      // This prevents track changes from resetting the playback position on Android
+      final trackSelectionService = TrackSelectionService(
+        player: player,
+        profileSettings: profileSettings,
+        metadata: metadata,
+      );
+
+      await trackSelectionService.selectAndApplyTracks(
+        preferredAudioTrack: preferredAudioTrack,
+        preferredSubtitleTrack: preferredSubtitleTrack,
+        preferredPlaybackRate: preferredPlaybackRate,
+      );
+
+      // Set up playback position if resuming (AFTER track selection)
       if (metadata.viewOffset != null && metadata.viewOffset! > 0) {
+        appLogger.d('Resuming playback at ${metadata.viewOffset} ms');
         final resumePosition = Duration(milliseconds: metadata.viewOffset!);
         await player.seek(resumePosition);
       }

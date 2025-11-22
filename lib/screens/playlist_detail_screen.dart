@@ -238,8 +238,6 @@ class _PlaylistDetailScreenState
       await playbackState.setPlaybackFromPlayQueue(
         playQueue,
         widget.playlist.ratingKey,
-        serverId: widget.playlist.serverId,
-        serverName: widget.playlist.serverName,
       );
 
       // Navigate to selected item (should be first in the queue response)

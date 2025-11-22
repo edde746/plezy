@@ -32,6 +32,12 @@ class PlexClient {
   final EndpointFailoverManager? _endpointManager;
   final Future<void> Function(String newBaseUrl)? _onEndpointChanged;
 
+  /// Server identifier - all PlexMetadata items created by this client are tagged with this
+  final String serverId;
+
+  /// Server name - all PlexMetadata items created by this client are tagged with this
+  final String? serverName;
+
   /// Custom response decoder that handles malformed UTF-8 gracefully
   static String _lenientUtf8Decoder(
     List<int> responseBytes,
@@ -43,6 +49,8 @@ class PlexClient {
 
   PlexClient(
     this.config, {
+    required this.serverId,
+    this.serverName,
     List<String>? prioritizedEndpoints,
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
   }) : _endpointManager =

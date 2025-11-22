@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../models/plex_hub.dart';
-import '../../utils/server_tagging_extensions.dart';
 import '../../widgets/hub_section.dart';
 import '../../i18n/strings.g.dart';
 import 'base_library_tab.dart';
@@ -30,24 +29,8 @@ class _LibraryRecommendedTabState
     // Use server-specific client for this library
     final client = getClientForLibrary();
 
-    final hubs = await client.getLibraryHubs(widget.library.key, limit: 12);
-
-    // Tag hubs and items with server info
-    return hubs
-        .map(
-          (hub) => PlexHub(
-            hubKey: hub.hubKey,
-            title: hub.title,
-            type: hub.type,
-            hubIdentifier: hub.hubIdentifier,
-            size: hub.size,
-            more: hub.more,
-            items: hub.items.tagWithLibrary(widget.library),
-            serverId: widget.library.serverId,
-            serverName: widget.library.serverName,
-          ),
-        )
-        .toList();
+    // Hubs are now tagged with server info at the source
+    return await client.getLibraryHubs(widget.library.key, limit: 12);
   }
 
   @override

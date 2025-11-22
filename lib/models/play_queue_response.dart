@@ -49,10 +49,38 @@ class PlayQueueResponse {
     this.items,
   });
 
-  factory PlayQueueResponse.fromJson(Map<String, dynamic> json) {
+  factory PlayQueueResponse.fromJson(
+    Map<String, dynamic> json, {
+    String? serverId,
+    String? serverName,
+  }) {
     // The API returns data wrapped in MediaContainer
     final container = json['MediaContainer'] as Map<String, dynamic>? ?? json;
-    return _$PlayQueueResponseFromJson(container);
+    final response = _$PlayQueueResponseFromJson(container);
+
+    // Tag all items with server info
+    if (response.items != null && (serverId != null || serverName != null)) {
+      final taggedItems = response.items!
+          .map(
+            (item) => item.copyWith(serverId: serverId, serverName: serverName),
+          )
+          .toList();
+      return PlayQueueResponse(
+        playQueueID: response.playQueueID,
+        playQueueSelectedItemID: response.playQueueSelectedItemID,
+        playQueueSelectedItemOffset: response.playQueueSelectedItemOffset,
+        playQueueSelectedMetadataItemID:
+            response.playQueueSelectedMetadataItemID,
+        playQueueShuffled: response.playQueueShuffled,
+        playQueueSourceURI: response.playQueueSourceURI,
+        playQueueTotalCount: response.playQueueTotalCount,
+        playQueueVersion: response.playQueueVersion,
+        size: response.size,
+        items: taggedItems,
+      );
+    }
+
+    return response;
   }
 
   /// Get the current selected item from the queue

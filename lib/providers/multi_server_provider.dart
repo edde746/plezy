@@ -49,19 +49,6 @@ class MultiServerProvider extends ChangeNotifier {
   /// Check if any servers are connected
   bool get hasConnectedServers => onlineServerCount > 0;
 
-  /// Backward compatibility: Get first available client
-  /// This allows existing code to work during migration
-  /// Prefer using getClientForServer() for new code
-  @Deprecated('Use getClientForServer() or aggregationService instead')
-  PlexClient? get client {
-    final onlineClients = _serverManager.onlineClients;
-    if (onlineClients.isEmpty) {
-      return null;
-    }
-    // Return first online client for backward compatibility
-    return onlineClients.values.first;
-  }
-
   /// Update token for a specific server
   void updateTokenForServer(String serverId, String newToken) {
     final client = _serverManager.getClient(serverId);
