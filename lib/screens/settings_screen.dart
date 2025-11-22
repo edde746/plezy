@@ -79,8 +79,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
                 _buildVideoPlaybackSection(),
                 const SizedBox(height: 24),
-                _buildShufflePlaySection(),
-                const SizedBox(height: 24),
                 _buildKeyboardShortcutsSection(),
                 const SizedBox(height: 24),
                 _buildAdvancedSection(),
@@ -276,64 +274,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _rememberTrackSelections = value;
               });
               await _settingsService.setRememberTrackSelections(value);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildShufflePlaySection() {
-    return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              t.settings.shufflePlay,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Consumer<SettingsProvider>(
-            builder: (context, settingsProvider, child) {
-              return SwitchListTile(
-                secondary: const Icon(Icons.visibility_off),
-                title: Text(t.settings.unwatchedOnly),
-                subtitle: Text(t.settings.unwatchedOnlyDescription),
-                value: settingsProvider.shuffleUnwatchedOnly,
-                onChanged: (value) async {
-                  await settingsProvider.setShuffleUnwatchedOnly(value);
-                },
-              );
-            },
-          ),
-          Consumer<SettingsProvider>(
-            builder: (context, settingsProvider, child) {
-              return SwitchListTile(
-                secondary: const Icon(Icons.shuffle),
-                title: Text(t.settings.shuffleOrderNavigation),
-                subtitle: Text(t.settings.shuffleOrderNavigationDescription),
-                value: settingsProvider.shuffleOrderNavigation,
-                onChanged: (value) async {
-                  await settingsProvider.setShuffleOrderNavigation(value);
-                },
-              );
-            },
-          ),
-          Consumer<SettingsProvider>(
-            builder: (context, settingsProvider, child) {
-              return SwitchListTile(
-                secondary: const Icon(Icons.loop),
-                title: Text(t.settings.loopShuffleQueue),
-                subtitle: Text(t.settings.loopShuffleQueueDescription),
-                value: settingsProvider.shuffleLoopQueue,
-                onChanged: (value) async {
-                  await settingsProvider.setShuffleLoopQueue(value);
-                },
-              );
             },
           ),
         ],

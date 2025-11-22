@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'video_sheet_header.dart';
 
 /// Base class for video control bottom sheets providing common UI structure
 class BaseVideoControlSheet extends StatelessWidget {
@@ -6,6 +7,7 @@ class BaseVideoControlSheet extends StatelessWidget {
   final IconData icon;
   final Widget child;
   final Color? iconColor;
+  final VoidCallback? onBack;
 
   const BaseVideoControlSheet({
     super.key,
@@ -13,6 +15,7 @@ class BaseVideoControlSheet extends StatelessWidget {
     required this.icon,
     required this.child,
     this.iconColor,
+    this.onBack,
   });
 
   /// Get consistent bottom sheet constraints across all video control sheets
@@ -48,36 +51,16 @@ class BaseVideoControlSheet extends StatelessWidget {
         height: MediaQuery.of(context).size.height * 0.75,
         child: Column(
           children: [
-            _buildHeader(context),
+            VideoSheetHeader(
+              title: title,
+              icon: icon,
+              iconColor: iconColor,
+              onBack: onBack,
+            ),
             const Divider(color: Colors.white24, height: 1),
             Expanded(child: child),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Icon(icon, color: iconColor ?? Colors.white),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
       ),
     );
   }

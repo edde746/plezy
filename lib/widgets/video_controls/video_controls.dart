@@ -106,23 +106,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _isRotationLocked = true; // Default locked (landscape only)
 
   /// Get the correct PlexClient for this metadata's server
-  PlexClient? _getClientForMetadata() {
-    final serverId = widget.metadata.serverId;
-    if (serverId == null) {
-      appLogger.w('Metadata ${widget.metadata.title} has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    return client;
+  PlexClient _getClientForMetadata() {
+    return context.getClientForServer(widget.metadata.serverId);
   }
+
   // Double-tap feedback state
   bool _showDoubleTapFeedback = false;
   double _doubleTapFeedbackOpacity = 0.0;

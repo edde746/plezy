@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/plex_sort.dart';
+import '../widgets/bottom_sheet_header.dart';
 import '../i18n/strings.g.dart';
 
 class SortBottomSheet extends StatefulWidget {
@@ -61,35 +62,14 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
       builder: (context, scrollController) {
         return Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      t.libraries.sortBy,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  if (widget.onClear != null)
-                    TextButton(
+            BottomSheetHeader(
+              title: t.libraries.sortBy,
+              action: widget.onClear != null
+                  ? TextButton(
                       onPressed: _handleClear,
                       child: Text(t.common.clear),
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
+                    )
+                  : null,
             ),
             Expanded(
               child: RadioGroup<PlexSort>(

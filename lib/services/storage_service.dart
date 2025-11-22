@@ -89,14 +89,7 @@ class StorageService {
   }
 
   Map<String, dynamic>? getServerData() {
-    final jsonString = _prefs.getString(_keyServerData);
-    if (jsonString == null) return null;
-
-    try {
-      return json.decode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      return null;
-    }
+    return _readJsonMap(_keyServerData);
   }
 
   // Client Identifier
@@ -194,12 +187,8 @@ class StorageService {
         _prefs.getString(_keyLibraryFilters);
     if (jsonString == null) return {};
 
-    try {
-      final decoded = json.decode(jsonString) as Map<String, dynamic>;
-      return decoded.map((key, value) => MapEntry(key, value.toString()));
-    } catch (e) {
-      return {};
-    }
+    final decoded = _decodeJsonStringToMap(jsonString);
+    return decoded.map((key, value) => MapEntry(key, value.toString()));
   }
 
   // Library Sort (per-library, stored individually with descending flag)
@@ -213,15 +202,7 @@ class StorageService {
   }
 
   Map<String, dynamic>? getLibrarySort(String sectionId) {
-    final jsonString = _prefs.getString('library_sort_$sectionId');
-    if (jsonString == null) return null;
-
-    try {
-      return json.decode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      // Legacy support: if it's just a string, return it as the key
-      return {'key': jsonString, 'descending': false};
-    }
+    return _readJsonMap('library_sort_$sectionId', legacyStringOk: true);
   }
 
   // Library Grouping (per-library, e.g., 'movies', 'shows', 'seasons', 'episodes')
@@ -301,14 +282,7 @@ class StorageService {
   }
 
   Map<String, dynamic>? getUserProfile() {
-    final jsonString = _prefs.getString(_keyUserProfile);
-    if (jsonString == null) return null;
-
-    try {
-      return json.decode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      return null;
-    }
+    return _readJsonMap(_keyUserProfile);
   }
 
   // Current User UUID
@@ -340,14 +314,7 @@ class StorageService {
       return null;
     }
 
-    final jsonString = _prefs.getString(_keyHomeUsersCache);
-    if (jsonString == null) return null;
-
-    try {
-      return json.decode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      return null;
-    }
+    return _readJsonMap(_keyHomeUsersCache);
   }
 
   Future<void> clearHomeUsersCache() async {
@@ -364,10 +331,7 @@ class StorageService {
 
   // Clear all user-related data (for logout)
   Future<void> clearUserData() async {
-    await Future.wait([
-      clearCredentials(),
-      clearLibraryPreferences(),
-    ]);
+    await Future.wait([clearCredentials(), clearLibraryPreferences()]);
   }
 
   // Update current user after switching
@@ -412,9 +376,43 @@ class StorageService {
 
   /// Clear all multi-server data
   Future<void> clearMultiServerData() async {
-    await Future.wait([
-      clearServersList(),
-      clearEnabledServers(),
-    ]);
+    await Future.wait([clearServersList(), clearEnabledServers()]);
+  }
+
+  // Private helper methods
+
+  /// Helper to read and decode JSON Map from preferences
+  ///
+  /// [key] - The preference key to read
+  /// [legacyStringOk] - If true, returns {'key': value, 'descending': false}
+  ///                    when value is a plain string (for legacy library sort)
+  Map<String, dynamic>? _readJsonMap(
+    String key, {
+    bool legacyStringOk = false,
+  }) {
+    final jsonString = _prefs.getString(key);
+    if (jsonString == null) return null;
+
+    return _decodeJsonStringToMap(jsonString, legacyStringOk: legacyStringOk);
+  }
+
+  /// Helper to decode JSON string to Map with error handling
+  ///
+  /// [jsonString] - The JSON string to decode
+  /// [legacyStringOk] - If true, returns {'key': value, 'descending': false}
+  ///                    when value is a plain string (for legacy library sort)
+  Map<String, dynamic> _decodeJsonStringToMap(
+    String jsonString, {
+    bool legacyStringOk = false,
+  }) {
+    try {
+      return json.decode(jsonString) as Map<String, dynamic>;
+    } catch (e) {
+      if (legacyStringOk) {
+        // Legacy support: if it's just a string, return it as the key
+        return {'key': jsonString, 'descending': false};
+      }
+      return {};
+    }
   }
 }

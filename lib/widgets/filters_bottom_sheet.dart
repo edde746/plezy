@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/plex_filter.dart';
 import '../widgets/app_bar_back_button.dart';
+import '../widgets/bottom_sheet_header.dart';
 import '../utils/provider_extensions.dart';
 import '../i18n/strings.g.dart';
 
@@ -59,10 +60,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     });
 
     try {
-      final client = context.client;
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
+      final client = context.getClientForServer(null);
 
       final values = await client.getFilterValues(filter.key);
       setState(() {
@@ -114,34 +112,11 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
           return Column(
             children: [
               // Header with back button
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Theme.of(context).dividerColor),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    AppBarBackButton(
-                      style: BackButtonStyle.plain,
-                      onPressed: _goBack,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _currentFilter!.title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
+              BottomSheetHeader(
+                title: _currentFilter!.title,
+                leading: AppBarBackButton(
+                  style: BackButtonStyle.plain,
+                  onPressed: _goBack,
                 ),
               ),
 
@@ -209,27 +184,11 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
         return Column(
           children: [
             // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.filter_alt),
-                  const SizedBox(width: 12),
-                  Text(
-                    t.libraries.filters,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (_tempSelectedFilters.isNotEmpty)
-                    TextButton.icon(
+            BottomSheetHeader(
+              title: t.libraries.filters,
+              leading: const Icon(Icons.filter_alt),
+              action: _tempSelectedFilters.isNotEmpty
+                  ? TextButton.icon(
                       onPressed: () {
                         setState(() {
                           _tempSelectedFilters.clear();
@@ -238,13 +197,8 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                       },
                       icon: const Icon(Icons.clear_all),
                       label: Text(t.libraries.clearAll),
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
+                    )
+                  : null,
             ),
 
             // All Filters (boolean toggles first, then regular filters)

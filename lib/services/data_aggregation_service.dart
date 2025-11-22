@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import '../client/plex_client.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 import 'multi_server_manager.dart';
+import 'plex_auth_service.dart';
 
 /// Service for aggregating data from multiple Plex servers
 class DataAggregationService {
@@ -14,24 +16,9 @@ class DataAggregationService {
 
   /// Fetch libraries from all online servers and tag them with server info
   Future<List<PlexLibrary>> getLibrariesFromAllServers() async {
-    final clients = _serverManager.onlineClients;
-
-    if (clients.isEmpty) {
-      appLogger.w('No online servers available for fetching libraries');
-      return [];
-    }
-
-    appLogger.d('Fetching libraries from ${clients.length} servers');
-
-    final allLibraries = <PlexLibrary>[];
-
-    // Fetch from all servers in parallel
-    final libraryFutures = clients.entries.map((entry) async {
-      final serverId = entry.key;
-      final client = entry.value;
-      final server = _serverManager.getServer(serverId);
-
-      try {
+    return _perServer<PlexLibrary>(
+      operationName: 'fetching libraries',
+      operation: (serverId, client, server) async {
         final libraries = await client.getLibraries();
 
         // Tag each library with server info
@@ -51,75 +38,23 @@ class DataAggregationService {
             serverName: server?.name,
           );
         }).toList();
-      } catch (e, stackTrace) {
-        appLogger.e(
-          'Failed to fetch libraries from server $serverId',
-          error: e,
-          stackTrace: stackTrace,
-        );
-        // Mark server as offline
-        _serverManager.updateServerStatus(serverId, false);
-        return <PlexLibrary>[];
-      }
-    });
-
-    final results = await Future.wait(libraryFutures);
-
-    // Flatten results
-    for (final libraries in results) {
-      allLibraries.addAll(libraries);
-    }
-
-    appLogger.i(
-      'Fetched ${allLibraries.length} total libraries from all servers',
+      },
     );
-
-    return allLibraries;
   }
 
   /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency
   Future<List<PlexMetadata>> getOnDeckFromAllServers({int? limit}) async {
-    final clients = _serverManager.onlineClients;
-
-    if (clients.isEmpty) {
-      appLogger.w('No online servers available for fetching on deck');
-      return [];
-    }
-
-    appLogger.d('Fetching on deck from ${clients.length} servers');
-
-    final allOnDeck = <PlexMetadata>[];
-
-    // Fetch from all servers in parallel
-    final onDeckFutures = clients.entries.map((entry) async {
-      final serverId = entry.key;
-      final client = entry.value;
-      final server = _serverManager.getServer(serverId);
-
-      try {
+    final allOnDeck = await _perServer<PlexMetadata>(
+      operationName: 'fetching on deck',
+      operation: (serverId, client, server) async {
         final items = await client.getOnDeck();
 
         // Tag each item with server info
         return items.map((item) {
           return item.copyWith(serverId: serverId, serverName: server?.name);
         }).toList();
-      } catch (e, stackTrace) {
-        appLogger.e(
-          'Failed to fetch on deck from server $serverId',
-          error: e,
-          stackTrace: stackTrace,
-        );
-        _serverManager.updateServerStatus(serverId, false);
-        return <PlexMetadata>[];
-      }
-    });
-
-    final results = await Future.wait(onDeckFutures);
-
-    // Flatten results
-    for (final items in results) {
-      allOnDeck.addAll(items);
-    }
+      },
+    );
 
     // Sort by most recent (lastViewedAt is stored in viewOffset metadata)
     // For on deck items, we use updatedAt or addedAt as proxy for recency
@@ -249,51 +184,21 @@ class DataAggregationService {
     String query, {
     int? limit,
   }) async {
-    final clients = _serverManager.onlineClients;
-
-    if (clients.isEmpty) {
-      appLogger.w('No online servers available for search');
-      return [];
-    }
-
     if (query.trim().isEmpty) {
       return [];
     }
 
-    appLogger.d('Searching for "$query" across ${clients.length} servers');
-
-    final allResults = <PlexMetadata>[];
-
-    // Search all servers in parallel
-    final searchFutures = clients.entries.map((entry) async {
-      final serverId = entry.key;
-      final client = entry.value;
-      final server = _serverManager.getServer(serverId);
-
-      try {
+    final allResults = await _perServer<PlexMetadata>(
+      operationName: 'searching for "$query"',
+      operation: (serverId, client, server) async {
         final results = await client.search(query);
 
         // Tag each result with server info
         return results.map((item) {
           return item.copyWith(serverId: serverId, serverName: server?.name);
         }).toList();
-      } catch (e, stackTrace) {
-        appLogger.e(
-          'Failed to search on server $serverId',
-          error: e,
-          stackTrace: stackTrace,
-        );
-        _serverManager.updateServerStatus(serverId, false);
-        return <PlexMetadata>[];
-      }
-    });
-
-    final results = await Future.wait(searchFutures);
-
-    // Flatten results
-    for (final items in results) {
-      allResults.addAll(items);
-    }
+      },
+    );
 
     // Apply limit if specified
     final result = limit != null && limit < allResults.length
@@ -360,5 +265,64 @@ class DataAggregationService {
     }
 
     return grouped;
+  }
+
+  // Private helper methods
+
+  /// Higher-order helper for per-server fan-out operations
+  ///
+  /// Iterates over all online clients, executes the operation for each server,
+  /// handles errors, updates server status, and aggregates results.
+  ///
+  /// Type parameter `T` is the item type returned by the operation
+  /// [operationName] is used for logging (e.g., "fetching libraries")
+  /// [operation] is the async function to run per server, returning `List<T>`
+  Future<List<T>> _perServer<T>({
+    required String operationName,
+    required Future<List<T>> Function(
+      String serverId,
+      PlexClient client,
+      PlexServer? server,
+    )
+    operation,
+  }) async {
+    final clients = _serverManager.onlineClients;
+
+    if (clients.isEmpty) {
+      appLogger.w('No online servers available for $operationName');
+      return [];
+    }
+
+    appLogger.d('$operationName from ${clients.length} servers');
+
+    final allResults = <T>[];
+
+    // Execute operation on all servers in parallel
+    final Iterable<Future<List<T>>> futures = clients.entries.map((entry) async {
+      final serverId = entry.key;
+      final client = entry.value;
+      final server = _serverManager.getServer(serverId);
+
+      try {
+        return await operation(serverId, client, server);
+      } catch (e, stackTrace) {
+        appLogger.e(
+          'Failed $operationName from server $serverId',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        _serverManager.updateServerStatus(serverId, false);
+        return <T>[];
+      }
+    });
+
+    final List<List<T>> results = await Future.wait<List<T>>(futures);
+
+    // Flatten results
+    for (final items in results) {
+      allResults.addAll(items);
+    }
+
+    return allResults;
   }
 }

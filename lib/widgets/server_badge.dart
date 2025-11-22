@@ -25,8 +25,8 @@ class ServerBadge extends StatelessWidget {
     }
 
     final theme = Theme.of(context);
-    final bgColor = backgroundColor ??
-        theme.colorScheme.primaryContainer.withOpacity(0.8);
+    final bgColor =
+        backgroundColor ?? theme.colorScheme.primaryContainer.withOpacity(0.8);
     final fgColor = textColor ?? theme.colorScheme.onPrimaryContainer;
 
     final displayText = showFullName
@@ -59,10 +59,7 @@ class ServerBadge extends StatelessWidget {
     }
 
     // Show tooltip with full server name on hover/long press
-    return Tooltip(
-      message: serverName!,
-      child: badge,
-    );
+    return Tooltip(message: serverName!, child: badge);
   }
 }
 

@@ -5,11 +5,10 @@ import '../client/plex_client.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';
-import '../providers/plex_client_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
-import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
+import '../utils/provider_extensions.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/context_menu_wrapper.dart';
 import '../widgets/server_badge.dart';
@@ -34,36 +33,9 @@ class LibrariesScreen extends StatefulWidget {
 class _LibrariesScreenState extends State<LibrariesScreen>
     with Refreshable, ItemUpdatable, SingleTickerProviderStateMixin {
   @override
-  PlexClient get client => _getClientForLibrary(null);
+  PlexClient get client => context.getClientForServer(null);
 
   late TabController _tabController;
-
-  /// Get the correct PlexClient for a library's server
-  /// Returns legacy client if libraryKey is null or library not found
-  PlexClient _getClientForLibrary(String? libraryGlobalKey) {
-    if (libraryGlobalKey == null) {
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    // Find the library to get its serverId
-    final library = _allLibraries.where((lib) => lib.globalKey == libraryGlobalKey).firstOrNull;
-    final serverId = library?.serverId;
-
-    if (serverId == null) {
-      appLogger.w('Library $libraryGlobalKey has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    return client;
-  }
 
   // GlobalKeys for tabs to enable refresh
   final _recommendedTabKey = GlobalKey<State<LibraryRecommendedTab>>();
@@ -99,7 +71,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // Save tab index when changed
     if (_selectedLibraryGlobalKey != null && !_tabController.indexIsChanging) {
       StorageService.getInstance().then((storage) {
-        storage.saveLibraryTab(_selectedLibraryGlobalKey!, _tabController.index);
+        storage.saveLibraryTab(
+          _selectedLibraryGlobalKey!,
+          _tabController.index,
+        );
       });
     }
     // Rebuild to update chip selection state
@@ -162,7 +137,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final storage = await StorageService.getInstance();
 
       // Fetch libraries from all servers
-      final allLibraries = await multiServerProvider.aggregationService.getLibrariesFromAllServers();
+      final allLibraries = await multiServerProvider.aggregationService
+          .getLibrariesFromAllServers();
 
       // Filter out music libraries (type: 'artist') since music playback is not yet supported
       // Only show movie and TV show libraries
@@ -191,36 +167,36 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             .toList();
 
         // Load saved preferences
-      final savedLibraryKey = storage.getSelectedLibraryKey();
+        final savedLibraryKey = storage.getSelectedLibraryKey();
 
-      // Find the library by key in visible libraries
-      String? libraryGlobalKeyToLoad;
-      if (savedLibraryKey != null) {
-        // Check if saved library exists and is visible
-        final libraryExists = visibleLibraries.any(
-          (lib) => lib.globalKey == savedLibraryKey,
-        );
-        if (libraryExists) {
-          libraryGlobalKeyToLoad = savedLibraryKey;
+        // Find the library by key in visible libraries
+        String? libraryGlobalKeyToLoad;
+        if (savedLibraryKey != null) {
+          // Check if saved library exists and is visible
+          final libraryExists = visibleLibraries.any(
+            (lib) => lib.globalKey == savedLibraryKey,
+          );
+          if (libraryExists) {
+            libraryGlobalKeyToLoad = savedLibraryKey;
+          }
+        }
+
+        // Fallback to first visible library if saved key not found
+        if (libraryGlobalKeyToLoad == null && visibleLibraries.isNotEmpty) {
+          libraryGlobalKeyToLoad = visibleLibraries.first.globalKey;
+        }
+
+        if (libraryGlobalKeyToLoad != null && mounted) {
+          final savedFilters = storage.getLibraryFilters(
+            sectionId: libraryGlobalKeyToLoad,
+          );
+          if (savedFilters.isNotEmpty) {
+            _selectedFilters = Map.from(savedFilters);
+          }
+          _loadLibraryContent(libraryGlobalKeyToLoad);
         }
       }
-
-      // Fallback to first visible library if saved key not found
-      if (libraryGlobalKeyToLoad == null && visibleLibraries.isNotEmpty) {
-        libraryGlobalKeyToLoad = visibleLibraries.first.globalKey;
-      }
-
-      if (libraryGlobalKeyToLoad != null && mounted) {
-        final savedFilters = storage.getLibraryFilters(
-          sectionId: libraryGlobalKeyToLoad,
-        );
-        if (savedFilters.isNotEmpty) {
-          _selectedFilters = Map.from(savedFilters);
-        }
-        _loadLibraryContent(libraryGlobalKeyToLoad);
-      }
-    }
-  } catch (e) {
+    } catch (e) {
       _updateState(() {
         _errorMessage = _getErrorMessage(e, 'libraries');
         _isLoadingLibraries = false;
@@ -290,7 +266,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         !_isInitialLoad && _selectedLibraryGlobalKey != libraryGlobalKey;
 
     // Get the correct client for this library's server
-    final client = _getClientForLibrary(libraryGlobalKey);
+    final client = context.getClientForLibrary(library);
 
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;
@@ -414,7 +390,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   Future<void> _loadSortOptions(PlexLibrary library) async {
     try {
-      final client = _getClientForLibrary(library.globalKey);
+      final client = context.getClientForLibrary(library);
 
       final sortOptions = await client.getLibrarySorts(library.key);
 
@@ -530,7 +506,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       await hiddenLibrariesProvider.unhideLibrary(library.key);
     } else {
       // Check if we're hiding the currently selected library
-      final isCurrentlySelected = _selectedLibraryGlobalKey == library.globalKey;
+      final isCurrentlySelected =
+          _selectedLibraryGlobalKey == library.globalKey;
 
       await hiddenLibrariesProvider.hideLibrary(library.key);
 
@@ -648,7 +625,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     required String Function(Object error) failureMessage,
   }) async {
     try {
-      final client = _getClientForLibrary(library.globalKey);
+      final client = context.getClientForLibrary(library);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -888,7 +865,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 Text(
                   selectedLibrary.serverName!,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -920,7 +899,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       body: CustomScrollView(
         slivers: [
           DesktopSliverAppBar(
-            title: visibleLibraries.isNotEmpty && _selectedLibraryGlobalKey != null
+            title:
+                visibleLibraries.isNotEmpty && _selectedLibraryGlobalKey != null
                 ? _buildLibraryDropdownTitle(visibleLibraries)
                 : Text(t.libraries.title),
             floating: true,

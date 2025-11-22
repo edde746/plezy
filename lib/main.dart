@@ -92,7 +92,8 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => PlexClientProvider()),
         // New multi-server providers
         ChangeNotifierProvider(
-          create: (context) => MultiServerProvider(serverManager, aggregationService),
+          create: (context) =>
+              MultiServerProvider(serverManager, aggregationService),
         ),
         ChangeNotifierProvider(create: (context) => ServerStateProvider()),
         // Existing providers
@@ -268,21 +269,22 @@ class _SetupScreenState extends State<SetupScreen> {
       final clientId = storage.getClientIdentifier();
 
       // Connect to all servers in parallel
-      final connectedCount = await multiServerProvider.serverManager.connectToAllServers(
-        servers,
-        clientIdentifier: clientId,
-        timeout: const Duration(seconds: 10),
-        onServerConnected: (serverId, client) {
-          // Set first connected client in legacy provider for backward compatibility
-          final legacyProvider = Provider.of<PlexClientProvider>(
-            context,
-            listen: false,
+      final connectedCount = await multiServerProvider.serverManager
+          .connectToAllServers(
+            servers,
+            clientIdentifier: clientId,
+            timeout: const Duration(seconds: 10),
+            onServerConnected: (serverId, client) {
+              // Set first connected client in legacy provider for backward compatibility
+              final legacyProvider = Provider.of<PlexClientProvider>(
+                context,
+                listen: false,
+              );
+              if (legacyProvider.client == null) {
+                legacyProvider.setClient(client);
+              }
+            },
           );
-          if (legacyProvider.client == null) {
-            legacyProvider.setClient(client);
-          }
-        },
-      );
 
       if (connectedCount > 0) {
         // At least one server connected successfully
@@ -294,7 +296,8 @@ class _SetupScreenState extends State<SetupScreen> {
 
           // Navigate to main screen
           // Get first connected client for backward compatibility
-          final firstClient = multiServerProvider.serverManager.onlineClients.values.first;
+          final firstClient =
+              multiServerProvider.serverManager.onlineClients.values.first;
 
           Navigator.pushReplacement(
             context,

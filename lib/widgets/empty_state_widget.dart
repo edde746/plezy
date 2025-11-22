@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'state_message_widget.dart';
 
 /// A reusable widget for displaying empty states throughout the app
 class EmptyStateWidget extends StatelessWidget {
@@ -24,42 +25,12 @@ class EmptyStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 64,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
-              const SizedBox(height: 16),
-            ],
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            if (onAction != null && actionLabel != null) ...[
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: onAction,
-                icon: const Icon(Icons.add),
-                label: Text(actionLabel!),
-              ),
-            ],
-          ],
-        ),
-      ),
+    return StateMessageWidget(
+      message: message,
+      icon: icon,
+      onAction: onAction,
+      actionLabel: actionLabel,
+      actionIcon: Icons.add,
     );
   }
 }

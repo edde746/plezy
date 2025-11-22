@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:provider/provider.dart';
 import '../../../client/plex_client.dart';
 import '../../../models/plex_media_info.dart';
-import '../../../providers/plex_client_provider.dart';
-import '../../../providers/multi_server_provider.dart';
 import '../../../utils/duration_formatter.dart';
-import '../../../utils/app_logger.dart';
+import '../../../utils/provider_extensions.dart';
 import 'base_video_control_sheet.dart';
 
 /// Bottom sheet for selecting chapters
@@ -43,21 +40,8 @@ class ChapterSheet extends StatelessWidget {
   }
 
   /// Get the correct PlexClient for the metadata's server
-  PlexClient? _getClientForChapters(BuildContext context) {
-    if (serverId == null) {
-      appLogger.w('Chapters have no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId!);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    return client;
+  PlexClient _getClientForChapters(BuildContext context) {
+    return context.getClientForServer(serverId);
   }
 
   @override

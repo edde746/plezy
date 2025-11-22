@@ -55,23 +55,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _isAutoScrollPaused = false;
 
   /// Get the correct PlexClient for an item's server
-  /// If item is null, returns legacy client for backward compatibility
   PlexClient _getClientForItem(PlexMetadata? item) {
-    final serverId = item?.serverId;
-    if (serverId == null) {
-      // Fallback to legacy client if no serverId
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    return client;
+    return context.getClientForServer(item?.serverId);
   }
 
   @override

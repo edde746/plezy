@@ -39,9 +39,6 @@ class SettingsService {
   static const String _keySubtitleBackgroundColor = 'subtitle_background_color';
   static const String _keySubtitleBackgroundOpacity =
       'subtitle_background_opacity';
-  static const String _keyShuffleUnwatchedOnly = 'shuffle_unwatched_only';
-  static const String _keyShuffleOrderNavigation = 'shuffle_order_navigation';
-  static const String _keyShuffleLoopQueue = 'shuffle_loop_queue';
   static const String _keyAppLocale = 'app_locale';
   static const String _keyRememberTrackSelections = 'remember_track_selections';
 
@@ -777,9 +774,14 @@ class SettingsService {
     final jsonString = _prefs.getString(_keyMediaVersionPreferences);
     if (jsonString == null) return {};
 
+    final decoded = _decodeJsonStringToMap(jsonString);
+    return decoded.map((key, value) => MapEntry(key, value as int));
+  }
+
+  /// Helper to decode JSON string to Map with error handling
+  Map<String, dynamic> _decodeJsonStringToMap(String jsonString) {
     try {
-      final decoded = json.decode(jsonString) as Map<String, dynamic>;
-      return decoded.map((key, value) => MapEntry(key, value as int));
+      return json.decode(jsonString) as Map<String, dynamic>;
     } catch (e) {
       return {};
     }
@@ -798,35 +800,6 @@ class SettingsService {
       (locale) => locale.languageCode == localeString,
       orElse: () => AppLocale.en,
     );
-  }
-
-  // Shuffle Play Settings
-
-  /// Shuffle Unwatched Only - Filter shuffle queue to unwatched episodes only
-  Future<void> setShuffleUnwatchedOnly(bool enabled) async {
-    await _prefs.setBool(_keyShuffleUnwatchedOnly, enabled);
-  }
-
-  bool getShuffleUnwatchedOnly() {
-    return _prefs.getBool(_keyShuffleUnwatchedOnly) ?? true; // Default: true
-  }
-
-  /// Shuffle Order Navigation - Next/previous buttons follow shuffled order
-  Future<void> setShuffleOrderNavigation(bool enabled) async {
-    await _prefs.setBool(_keyShuffleOrderNavigation, enabled);
-  }
-
-  bool getShuffleOrderNavigation() {
-    return _prefs.getBool(_keyShuffleOrderNavigation) ?? true; // Default: true
-  }
-
-  /// Shuffle Loop Queue - Restart queue when reaching the end
-  Future<void> setShuffleLoopQueue(bool enabled) async {
-    await _prefs.setBool(_keyShuffleLoopQueue, enabled);
-  }
-
-  bool getShuffleLoopQueue() {
-    return _prefs.getBool(_keyShuffleLoopQueue) ?? false; // Default: false
   }
 
   // Track Selection Settings
@@ -868,9 +841,6 @@ class SettingsService {
       _prefs.remove(_keySubtitleBorderColor),
       _prefs.remove(_keySubtitleBackgroundColor),
       _prefs.remove(_keySubtitleBackgroundOpacity),
-      _prefs.remove(_keyShuffleUnwatchedOnly),
-      _prefs.remove(_keyShuffleOrderNavigation),
-      _prefs.remove(_keyShuffleLoopQueue),
       _prefs.remove(_keyAppLocale),
       _prefs.remove(_keyRememberTrackSelections),
     ]);

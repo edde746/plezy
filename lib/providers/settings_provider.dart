@@ -7,9 +7,6 @@ class SettingsProvider extends ChangeNotifier {
   ViewMode _viewMode = ViewMode.grid;
   bool _useSeasonPoster = false;
   bool _showHeroSection = true;
-  bool _shuffleUnwatchedOnly = true;
-  bool _shuffleOrderNavigation = true;
-  bool _shuffleLoopQueue = false;
 
   SettingsProvider() {
     _initializeSettings();
@@ -21,9 +18,6 @@ class SettingsProvider extends ChangeNotifier {
     _viewMode = _settingsService.getViewMode();
     _useSeasonPoster = _settingsService.getUseSeasonPoster();
     _showHeroSection = _settingsService.getShowHeroSection();
-    _shuffleUnwatchedOnly = _settingsService.getShuffleUnwatchedOnly();
-    _shuffleOrderNavigation = _settingsService.getShuffleOrderNavigation();
-    _shuffleLoopQueue = _settingsService.getShuffleLoopQueue();
     notifyListeners();
   }
 
@@ -31,9 +25,6 @@ class SettingsProvider extends ChangeNotifier {
   ViewMode get viewMode => _viewMode;
   bool get useSeasonPoster => _useSeasonPoster;
   bool get showHeroSection => _showHeroSection;
-  bool get shuffleUnwatchedOnly => _shuffleUnwatchedOnly;
-  bool get shuffleOrderNavigation => _shuffleOrderNavigation;
-  bool get shuffleLoopQueue => _shuffleLoopQueue;
 
   Future<void> setLibraryDensity(LibraryDensity density) async {
     if (_libraryDensity != density) {
@@ -63,30 +54,6 @@ class SettingsProvider extends ChangeNotifier {
     if (_showHeroSection != value) {
       _showHeroSection = value;
       await _settingsService.setShowHeroSection(value);
-      notifyListeners();
-    }
-  }
-
-  Future<void> setShuffleUnwatchedOnly(bool value) async {
-    if (_shuffleUnwatchedOnly != value) {
-      _shuffleUnwatchedOnly = value;
-      await _settingsService.setShuffleUnwatchedOnly(value);
-      notifyListeners();
-    }
-  }
-
-  Future<void> setShuffleOrderNavigation(bool value) async {
-    if (_shuffleOrderNavigation != value) {
-      _shuffleOrderNavigation = value;
-      await _settingsService.setShuffleOrderNavigation(value);
-      notifyListeners();
-    }
-  }
-
-  Future<void> setShuffleLoopQueue(bool value) async {
-    if (_shuffleLoopQueue != value) {
-      _shuffleLoopQueue = value;
-      await _settingsService.setShuffleLoopQueue(value);
       notifyListeners();
     }
   }

@@ -7,6 +7,7 @@ import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
+import 'video_sheet_header.dart';
 
 enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice }
 
@@ -183,34 +184,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             _audioSyncOffset != 0 ||
             _subtitleSyncOffset != 0);
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          // Back button or icon
-          if (_currentView != _SettingsView.menu)
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: _navigateBack,
-            )
-          else
-            Icon(_getIcon(), color: isIconActive ? Colors.amber : Colors.white),
-          const SizedBox(width: 12),
-          Text(
-            _getTitle(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
+    return VideoSheetHeader(
+      title: _getTitle(),
+      icon: _getIcon(),
+      iconColor: isIconActive ? Colors.amber : Colors.white,
+      onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
     );
   }
 

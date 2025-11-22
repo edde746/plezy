@@ -6,22 +6,22 @@ import '../../models/plex_library.dart';
 import '../../models/plex_metadata.dart';
 import '../../models/plex_filter.dart';
 import '../../models/plex_sort.dart';
-import '../../providers/plex_client_provider.dart';
-import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../utils/provider_extensions.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/grid_size_calculator.dart';
+import '../../utils/server_tagging_extensions.dart';
 import '../../widgets/media_card.dart';
 import '../../widgets/folder_tree_view.dart';
 import '../../widgets/filters_bottom_sheet.dart';
 import '../../widgets/sort_bottom_sheet.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../widgets/error_state_widget.dart';
 import '../../services/storage_service.dart';
 import '../../services/settings_service.dart' show ViewMode;
 import '../../mixins/item_updatable.dart';
+import '../../mixins/library_tab_state.dart';
 import '../../mixins/refreshable.dart';
 import '../../i18n/strings.g.dart';
-import '../../utils/app_logger.dart';
 
 /// Browse tab for library screen
 /// Shows library items with grouping, filtering, and sorting
@@ -42,32 +42,19 @@ class LibraryBrowseTab extends StatefulWidget {
 }
 
 class _LibraryBrowseTabState extends State<LibraryBrowseTab>
-    with AutomaticKeepAliveClientMixin, ItemUpdatable, Refreshable {
+    with
+        AutomaticKeepAliveClientMixin,
+        ItemUpdatable,
+        Refreshable,
+        LibraryTabStateMixin {
   @override
   bool get wantKeepAlive => true;
 
   @override
-  PlexClient get client => context.clientSafe;
+  PlexLibrary get library => widget.library;
 
-  /// Get the correct PlexClient for this library's server
-  PlexClient? _getClientForLibrary(BuildContext context) {
-    final serverId = widget.library.serverId;
-    if (serverId == null) {
-      // Fallback to legacy client if no serverId
-      appLogger.w('Library ${widget.library.title} has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    return client;
-  }
+  @override
+  PlexClient get client => getClientForLibrary();
 
   @override
   void refresh() {
@@ -129,7 +116,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     final currentRequestId = ++_requestId;
 
     // Extract context dependencies before async gap - use server-specific client
-    final client = _getClientForLibrary(context);
+    final client = getClientForLibrary();
 
     setState(() {
       _isLoading = true;
@@ -140,10 +127,6 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     });
 
     try {
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
       final storage = await StorageService.getInstance();
 
       // Load filters and sorts for this library
@@ -155,7 +138,9 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
         sectionId: widget.library.globalKey,
       );
       final savedSort = storage.getLibrarySort(widget.library.globalKey);
-      final savedGrouping = storage.getLibraryGrouping(widget.library.globalKey);
+      final savedGrouping = storage.getLibraryGrouping(
+        widget.library.globalKey,
+      );
 
       // Check if request was cancelled
       if (currentRequestId != _requestId) return;
@@ -214,10 +199,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
 
     try {
       // Use server-specific client for this library
-      final client = _getClientForLibrary(context);
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
+      final client = getClientForLibrary();
 
       // Build filter params
       final filterParams = Map<String, String>.from(_selectedFilters);
@@ -246,14 +228,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
       );
 
       // Tag items with server info for multi-server support
-      final taggedItems = items
-          .map(
-            (item) => item.copyWith(
-              serverId: widget.library.serverId,
-              serverName: widget.library.serverName,
-            ),
-          )
-          .toList();
+      final taggedItems = items.tagWithLibrary(widget.library);
 
       if (currentRequestId != _requestId) return;
 
@@ -356,8 +331,11 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
                     _selectedGrouping = value;
                   });
 
-          final storage = await StorageService.getInstance();
-          await storage.saveLibraryGrouping(widget.library.globalKey, value);
+                  final storage = await StorageService.getInstance();
+                  await storage.saveLibraryGrouping(
+                    widget.library.globalKey,
+                    value,
+                  );
 
                   if (!mounted) return;
 
@@ -529,33 +507,18 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     }
 
     if (_errorMessage != null && _items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_errorMessage!),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadContent,
-              child: Text(t.common.retry),
-            ),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: _errorMessage!,
+        icon: Icons.error_outline,
+        onRetry: _loadContent,
+        retryLabel: t.common.retry,
       );
     }
 
     if (_items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.folder_open, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(t.libraries.thisLibraryIsEmpty),
-          ],
-        ),
+      return EmptyStateWidget(
+        message: t.libraries.thisLibraryIsEmpty,
+        icon: Icons.folder_open,
       );
     }
 

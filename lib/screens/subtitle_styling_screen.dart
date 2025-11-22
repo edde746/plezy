@@ -11,9 +11,105 @@ class SubtitleStylingScreen extends StatefulWidget {
   State<SubtitleStylingScreen> createState() => _SubtitleStylingScreenState();
 }
 
-class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
-  static const EdgeInsets _sliderPadding = EdgeInsets.fromLTRB(16, 16, 16, 8);
+// Composable widget for slider sections
+class _StylingSliderSection extends StatelessWidget {
+  final String label;
+  final int value;
+  final double min;
+  final double max;
+  final int divisions;
+  final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChangeEnd;
+  final String Function(int)? valueFormatter;
 
+  const _StylingSliderSection({
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.divisions,
+    required this.onChanged,
+    this.onChangeEnd,
+    this.valueFormatter,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final formattedValue = valueFormatter?.call(value) ?? value.toString();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [Text(label), Text(formattedValue)],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                valueFormatter?.call(min.toInt()) ?? min.toInt().toString(),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              Expanded(
+                child: Slider(
+                  value: value.toDouble(),
+                  min: min,
+                  max: max,
+                  divisions: divisions,
+                  label: formattedValue,
+                  onChanged: onChanged,
+                  onChangeEnd: onChangeEnd,
+                ),
+              ),
+              Text(
+                valueFormatter?.call(max.toInt()) ?? max.toInt().toString(),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Composable widget for color picker tiles
+class _ColorSettingTile extends StatelessWidget {
+  final String label;
+  final String currentColor;
+  final VoidCallback onTap;
+  final Color Function(String) hexToColor;
+
+  const _ColorSettingTile({
+    required this.label,
+    required this.currentColor,
+    required this.onTap,
+    required this.hexToColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: hexToColor(currentColor),
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+      title: Text(label),
+      subtitle: Text(currentColor),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+}
+
+class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   late SettingsService _settingsService;
   bool _isLoading = true;
 
@@ -134,66 +230,27 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             ),
           ),
           // Font Size Slider
-          Padding(
-            padding: _sliderPadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(t.subtitlingStyling.fontSize),
-                    Text('$_fontSize'),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Text(
-                      '30',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    Expanded(
-                      child: Slider(
-                        value: _fontSize.toDouble(),
-                        min: 30,
-                        max: 80,
-                        divisions: 50,
-                        label: _fontSize.toString(),
-                        onChanged: (value) {
-                          setState(() {
-                            _fontSize = value.toInt();
-                          });
-                        },
-                        onChangeEnd: (value) {
-                          _settingsService.setSubtitleFontSize(_fontSize);
-                        },
-                      ),
-                    ),
-                    const Text(
-                      '80',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          _StylingSliderSection(
+            label: t.subtitlingStyling.fontSize,
+            value: _fontSize,
+            min: 30,
+            max: 80,
+            divisions: 50,
+            onChanged: (value) {
+              setState(() {
+                _fontSize = value.toInt();
+              });
+            },
+            onChangeEnd: (value) {
+              _settingsService.setSubtitleFontSize(_fontSize);
+            },
           ),
           const Divider(),
           // Text Color
-          ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: _hexToColor(_textColor),
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            title: Text(t.subtitlingStyling.textColor),
-            subtitle: Text(_textColor),
-            trailing: const Icon(Icons.chevron_right),
+          _ColorSettingTile(
+            label: t.subtitlingStyling.textColor,
+            currentColor: _textColor,
+            hexToColor: _hexToColor,
             onTap: () {
               _showColorPicker(t.subtitlingStyling.textColor, _textColor, (
                 color,
@@ -207,66 +264,27 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
           ),
           const Divider(),
           // Border Size Slider
-          Padding(
-            padding: _sliderPadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(t.subtitlingStyling.borderSize),
-                    Text('$_borderSize'),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Text(
-                      '0',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    Expanded(
-                      child: Slider(
-                        value: _borderSize.toDouble(),
-                        min: 0,
-                        max: 5,
-                        divisions: 5,
-                        label: _borderSize.toString(),
-                        onChanged: (value) {
-                          setState(() {
-                            _borderSize = value.toInt();
-                          });
-                        },
-                        onChangeEnd: (value) {
-                          _settingsService.setSubtitleBorderSize(_borderSize);
-                        },
-                      ),
-                    ),
-                    const Text(
-                      '5',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          _StylingSliderSection(
+            label: t.subtitlingStyling.borderSize,
+            value: _borderSize,
+            min: 0,
+            max: 5,
+            divisions: 5,
+            onChanged: (value) {
+              setState(() {
+                _borderSize = value.toInt();
+              });
+            },
+            onChangeEnd: (value) {
+              _settingsService.setSubtitleBorderSize(_borderSize);
+            },
           ),
           const Divider(),
           // Border Color
-          ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: _hexToColor(_borderColor),
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            title: Text(t.subtitlingStyling.borderColor),
-            subtitle: Text(_borderColor),
-            trailing: const Icon(Icons.chevron_right),
+          _ColorSettingTile(
+            label: t.subtitlingStyling.borderColor,
+            currentColor: _borderColor,
+            hexToColor: _hexToColor,
             onTap: () {
               _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, (
                 color,
@@ -280,68 +298,28 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
           ),
           const Divider(),
           // Background Opacity Slider
-          Padding(
-            padding: _sliderPadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(t.subtitlingStyling.backgroundOpacity),
-                    Text('$_backgroundOpacity%'),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Text(
-                      '0%',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    Expanded(
-                      child: Slider(
-                        value: _backgroundOpacity.toDouble(),
-                        min: 0,
-                        max: 100,
-                        divisions: 20,
-                        label: '$_backgroundOpacity%',
-                        onChanged: (value) {
-                          setState(() {
-                            _backgroundOpacity = value.toInt();
-                          });
-                        },
-                        onChangeEnd: (value) {
-                          _settingsService.setSubtitleBackgroundOpacity(
-                            _backgroundOpacity,
-                          );
-                        },
-                      ),
-                    ),
-                    const Text(
-                      '100%',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          _StylingSliderSection(
+            label: t.subtitlingStyling.backgroundOpacity,
+            value: _backgroundOpacity,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            valueFormatter: (value) => '$value%',
+            onChanged: (value) {
+              setState(() {
+                _backgroundOpacity = value.toInt();
+              });
+            },
+            onChangeEnd: (value) {
+              _settingsService.setSubtitleBackgroundOpacity(_backgroundOpacity);
+            },
           ),
           const Divider(),
           // Background Color
-          ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: _hexToColor(_backgroundColor),
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            title: Text(t.subtitlingStyling.backgroundColor),
-            subtitle: Text(_backgroundColor),
-            trailing: const Icon(Icons.chevron_right),
+          _ColorSettingTile(
+            label: t.subtitlingStyling.backgroundColor,
+            currentColor: _backgroundColor,
+            hexToColor: _hexToColor,
             onTap: () {
               _showColorPicker(
                 t.subtitlingStyling.backgroundColor,

@@ -4,8 +4,6 @@ import '../client/plex_client.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
@@ -39,21 +37,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   /// Get the correct PlexClient for this hub's server
   PlexClient _getClientForHub() {
-    final serverId = widget.hub.serverId;
-    if (serverId == null) {
-      appLogger.w('Hub ${widget.hub.title} has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    return client;
+    return context.getClientForServer(widget.hub.serverId);
   }
 
   @override

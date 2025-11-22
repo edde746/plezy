@@ -1,133 +1,65 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../client/plex_client.dart';
-import '../../models/plex_library.dart';
 import '../../models/plex_hub.dart';
-import '../../providers/plex_client_provider.dart';
-import '../../providers/multi_server_provider.dart';
-import '../../utils/app_logger.dart';
+import '../../utils/server_tagging_extensions.dart';
 import '../../widgets/hub_section.dart';
 import '../../i18n/strings.g.dart';
-import '../../mixins/refreshable.dart';
-import '../../widgets/content_state_builder.dart';
+import 'base_library_tab.dart';
 
 /// Recommended tab for library screen
 /// Shows library-specific hubs and recommendations
-class LibraryRecommendedTab extends StatefulWidget {
-  final PlexLibrary library;
-
-  const LibraryRecommendedTab({super.key, required this.library});
+class LibraryRecommendedTab extends BaseLibraryTab<PlexHub> {
+  const LibraryRecommendedTab({super.key, required super.library});
 
   @override
   State<LibraryRecommendedTab> createState() => _LibraryRecommendedTabState();
 }
 
-class _LibraryRecommendedTabState extends State<LibraryRecommendedTab>
-    with AutomaticKeepAliveClientMixin, Refreshable {
+class _LibraryRecommendedTabState
+    extends BaseLibraryTabState<PlexHub, LibraryRecommendedTab> {
   @override
-  bool get wantKeepAlive => true;
-
-  @override
-  void refresh() {
-    _loadHubs();
-  }
-
-  /// Get the correct PlexClient for this library's server
-  PlexClient? _getClientForLibrary(BuildContext context) {
-    final serverId = widget.library.serverId;
-    if (serverId == null) {
-      // Fallback to legacy client if no serverId
-      appLogger.w('Library ${widget.library.title} has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    return client;
-  }
-
-  List<PlexHub> _hubs = [];
-  bool _isLoading = false;
-  String? _errorMessage;
+  IconData get emptyIcon => Icons.recommend;
 
   @override
-  void initState() {
-    super.initState();
-    _loadHubs();
+  String get emptyMessage => t.libraries.noRecommendations;
+
+  @override
+  String get errorContext => t.libraries.tabs.recommended;
+
+  @override
+  Future<List<PlexHub>> loadData() async {
+    // Use server-specific client for this library
+    final client = getClientForLibrary();
+
+    final hubs = await client.getLibraryHubs(widget.library.key, limit: 12);
+
+    // Tag hubs and items with server info
+    return hubs
+        .map(
+          (hub) => PlexHub(
+            hubKey: hub.hubKey,
+            title: hub.title,
+            type: hub.type,
+            hubIdentifier: hub.hubIdentifier,
+            size: hub.size,
+            more: hub.more,
+            items: hub.items.tagWithLibrary(widget.library),
+            serverId: widget.library.serverId,
+            serverName: widget.library.serverName,
+          ),
+        )
+        .toList();
   }
 
   @override
-  void didUpdateWidget(LibraryRecommendedTab oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Reload if library changed
-    if (oldWidget.library.globalKey != widget.library.globalKey) {
-      _loadHubs();
-    }
-  }
-
-  Future<void> _loadHubs() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      // Use server-specific client for this library
-      final client = _getClientForLibrary(context);
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      final hubs = await client.getLibraryHubs(widget.library.key, limit: 12);
-
-      if (!mounted) return;
-
-      // Tag hubs and items with server info
-      final taggedHubs = hubs
-          .map(
-            (hub) => PlexHub(
-              hubKey: hub.hubKey,
-              title: hub.title,
-              type: hub.type,
-              hubIdentifier: hub.hubIdentifier,
-              size: hub.size,
-              more: hub.more,
-              items: hub.items
-                  .map(
-                    (item) => item.copyWith(
-                      serverId: widget.library.serverId,
-                      serverName: widget.library.serverName,
-                    ),
-                  )
-                  .toList(),
-              serverId: widget.library.serverId,
-              serverName: widget.library.serverName,
-            ),
-          )
-          .toList();
-
-      setState(() {
-        _hubs = taggedHubs;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      appLogger.e('Error loading library hubs', error: e);
-      setState(() {
-        _errorMessage = t.errors.failedToLoad(
-          context: t.libraries.tabs.recommended,
-          error: e.toString(),
-        );
-        _isLoading = false;
-      });
-    }
+  Widget buildContent(List<PlexHub> items) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final hub = items[index];
+        return HubSection(hub: hub, icon: _getHubIcon(hub));
+      },
+    );
   }
 
   IconData _getHubIcon(PlexHub hub) {
@@ -148,30 +80,5 @@ class _LibraryRecommendedTabState extends State<LibraryRecommendedTab>
       return Icons.category;
     }
     return Icons.movie;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
-
-    return ContentStateBuilder<PlexHub>(
-      isLoading: _isLoading,
-      errorMessage: _errorMessage,
-      items: _hubs,
-      emptyIcon: Icons.recommend,
-      emptyMessage: t.libraries.noRecommendations,
-      onRetry: _loadHubs,
-      builder: (items) => RefreshIndicator(
-        onRefresh: _loadHubs,
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final hub = items[index];
-            return HubSection(hub: hub, icon: _getHubIcon(hub));
-          },
-        ),
-      ),
-    );
   }
 }

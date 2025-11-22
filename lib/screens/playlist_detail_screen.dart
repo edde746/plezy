@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_playlist.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/multi_server_provider.dart';
+import '../models/plex_metadata.dart';
 import '../providers/settings_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
@@ -28,7 +27,8 @@ class PlaylistDetailScreen extends StatefulWidget {
 }
 
 class _PlaylistDetailScreenState
-    extends BaseMediaListDetailScreen<PlaylistDetailScreen> {
+    extends BaseMediaListDetailScreen<PlaylistDetailScreen>
+    with StandardItemLoader<PlaylistDetailScreen> {
   @override
   dynamic get mediaItem => widget.playlist;
 
@@ -38,67 +38,22 @@ class _PlaylistDetailScreenState
   @override
   String get emptyMessage => t.playlists.emptyPlaylist;
 
-  /// Get the correct PlexClient for this playlist's server
-  PlexClient? _getClientForPlaylist() {
-    final serverId = widget.playlist.serverId;
-    if (serverId == null) {
-      appLogger.w('Playlist ${widget.playlist.title} has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
+  @override
+  IconData get emptyIcon => Icons.playlist_play;
 
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    return client;
+  @override
+  Future<List<PlexMetadata>> fetchItems() async {
+    return await client.getPlaylist(widget.playlist.ratingKey);
   }
 
   @override
-  Future<void> loadItems() async {
-    if (mounted) {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
-    }
+  String getLoadSuccessMessage(int itemCount) {
+    return 'Loaded $itemCount items for playlist: ${widget.playlist.title}';
+  }
 
-    try {
-      final client = this.client;
-      final newItems = await client.getPlaylist(widget.playlist.ratingKey);
-
-      // Tag items with server info for correct client resolution
-      final taggedItems = newItems
-          .map(
-            (item) => item.copyWith(
-              serverId: widget.playlist.serverId,
-              serverName: widget.playlist.serverName,
-            ),
-          )
-          .toList();
-
-      if (mounted) {
-        setState(() {
-          items = taggedItems;
-          isLoading = false;
-        });
-      }
-
-      appLogger.d(
-        'Loaded ${newItems.length} items for playlist: ${widget.playlist.title}',
-      );
-    } catch (e) {
-      appLogger.e('Failed to load playlist items', error: e);
-      if (mounted) {
-        setState(() {
-          errorMessage = 'Failed to load playlist items: ${e.toString()}';
-          isLoading = false;
-        });
-      }
-    }
+  /// Get the correct PlexClient for this playlist's server
+  PlexClient _getClientForPlaylist() {
+    return context.getClientForServer(widget.playlist.serverId);
   }
 
   Future<void> _deletePlaylist() async {
@@ -254,7 +209,6 @@ class _PlaylistDetailScreenState
 
     try {
       final client = _getClientForPlaylist();
-      if (client == null) return;
 
       final selectedItem = items[index];
 
@@ -284,6 +238,8 @@ class _PlaylistDetailScreenState
       await playbackState.setPlaybackFromPlayQueue(
         playQueue,
         widget.playlist.ratingKey,
+        serverId: widget.playlist.serverId,
+        serverName: widget.playlist.serverName,
       );
 
       // Navigate to selected item (should be first in the queue response)
@@ -343,113 +299,51 @@ class _PlaylistDetailScreenState
               ],
             ),
             pinned: true,
-            actions: [
-              // Play button
-              if (items.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.play_arrow),
-                  tooltip: t.discover.play,
-                  onPressed: playItems,
-                ),
-              // Shuffle button
-              if (items.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.shuffle),
-                  tooltip: t.playlists.shuffle,
-                  onPressed: shufflePlayItems,
-                ),
-              // Delete button for non-smart playlists
-              if (!widget.playlist.smart)
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  tooltip: t.playlists.delete,
-                  onPressed: _deletePlaylist,
-                  color: Colors.red,
-                ),
-            ],
-          ),
-          if (errorMessage != null)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(errorMessage!),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: loadItems,
-                      child: Text(t.common.retry),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (items.isEmpty && isLoading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (items.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.playlist_play,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      t.playlists.emptyPlaylist,
-                      style: const TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (widget.playlist.smart)
-            // Smart playlists: Use grid view (cannot be reordered)
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-                    context,
-                    context.watch<SettingsProvider>().libraryDensity,
-                  ),
-                  childAspectRatio: 2 / 3.3,
-                  crossAxisSpacing: 0,
-                  mainAxisSpacing: 0,
-                ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return MediaCard(item: items[index], onRefresh: updateItem);
-                }, childCount: items.length),
-              ),
-            )
-          else
-            // Regular playlists: Use reorderable list view
-            SliverReorderableList(
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return PlaylistItemCard(
-                  key: ValueKey(item.playlistItemID ?? item.ratingKey),
-                  item: item,
-                  index: index,
-                  onRemove: () => _removeItem(index),
-                  onTap: () => _playFromItem(index),
-                  canReorder: !widget.playlist.smart,
-                );
-              },
-              itemCount: items.length,
-              onReorder: _onReorder,
+            actions: buildAppBarActions(
+              onDelete: widget.playlist.smart ? null : _deletePlaylist,
+              deleteTooltip: t.playlists.delete,
+              showDelete: !widget.playlist.smart,
             ),
+          ),
+          ...buildStateSlivers(),
+          if (items.isNotEmpty)
+            if (widget.playlist.smart)
+              // Smart playlists: Use grid view (cannot be reordered)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent:
+                        GridSizeCalculator.getMaxCrossAxisExtent(
+                          context,
+                          context.watch<SettingsProvider>().libraryDensity,
+                        ),
+                    childAspectRatio: 2 / 3.3,
+                    crossAxisSpacing: 0,
+                    mainAxisSpacing: 0,
+                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    return MediaCard(item: items[index], onRefresh: updateItem);
+                  }, childCount: items.length),
+                ),
+              )
+            else
+              // Regular playlists: Use reorderable list view
+              SliverReorderableList(
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return PlaylistItemCard(
+                    key: ValueKey(item.playlistItemID ?? item.ratingKey),
+                    item: item,
+                    index: index,
+                    onRemove: () => _removeItem(index),
+                    onTap: () => _playFromItem(index),
+                    canReorder: !widget.playlist.smart,
+                  );
+                },
+                itemCount: items.length,
+                onReorder: _onReorder,
+              ),
         ],
       ),
     );

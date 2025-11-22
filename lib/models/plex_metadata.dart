@@ -1,11 +1,12 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'mixins/multi_server_fields.dart';
 import 'plex_role.dart';
 
 part 'plex_metadata.g.dart';
 
 @JsonSerializable()
-class PlexMetadata {
+class PlexMetadata with MultiServerFields {
   final String ratingKey;
   final String key;
   final String? guid;
@@ -45,11 +46,13 @@ class PlexMetadata {
   final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
   final int? librarySectionID; // Library section ID this item belongs to
 
-  // Multi-server support fields
+  // Multi-server support fields (from MultiServerFields mixin)
+  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  final String? serverId; // Server machine identifier (not from API)
+  final String? serverId;
+  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  final String? serverName; // Server display name (not from API)
+  final String? serverName;
 
   // Transient field for clear logo (extracted from Image array)
   String? _clearLogo;

@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/collection_playlist_play_helper.dart';
 import '../utils/app_logger.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
+import '../i18n/strings.g.dart';
 
 /// Abstract base class for screens displaying media lists (collections/playlists)
 /// Provides common state management and playback functionality
@@ -32,6 +30,9 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
   /// Message to show when list is empty
   String get emptyMessage;
 
+  /// Optional icon to show when list is empty
+  IconData? get emptyIcon => null;
+
   /// Get the correct PlexClient for this media item's server
   PlexClient _getClientForMediaItem() {
     // Try to get serverId from the media item
@@ -40,9 +41,8 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
     // Check if mediaItem has serverId property
     if (mediaItem is PlexMetadata) {
       serverId = (mediaItem as PlexMetadata).serverId;
-    } else if (mediaItem != null &&
-               mediaItem.runtimeType.toString().contains('PlexPlaylist')) {
-      // For playlists, use reflection-like access
+    } else if (mediaItem != null) {
+      // For playlists or other types, use dynamic access
       try {
         final dynamic item = mediaItem;
         serverId = item.serverId as String?;
@@ -51,20 +51,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
       }
     }
 
-    if (serverId == null) {
-      appLogger.w('Media item has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    return client;
+    return context.getClientForServer(serverId);
   }
 
   @override
@@ -118,5 +105,160 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
   @override
   void refresh() {
     loadItems();
+  }
+
+  /// Build common error/loading/empty state slivers
+  /// Returns a list of slivers to display based on current state
+  List<Widget> buildStateSlivers() {
+    if (errorMessage != null) {
+      return [
+        SliverFillRemaining(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(errorMessage!),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: loadItems,
+                  child: Text(t.common.retry),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
+    }
+
+    if (items.isEmpty && isLoading) {
+      return [
+        const SliverFillRemaining(
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ];
+    }
+
+    if (items.isEmpty) {
+      final icon = emptyIcon;
+      return [
+        SliverFillRemaining(
+          child: Center(
+            child: icon != null
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(icon, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(
+                        emptyMessage,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(emptyMessage),
+          ),
+        ),
+      ];
+    }
+
+    return [];
+  }
+
+  /// Build standard app bar actions (play, shuffle, delete)
+  /// Subclasses can override to customize actions
+  List<Widget> buildAppBarActions({
+    VoidCallback? onDelete,
+    String? deleteTooltip,
+    Color? deleteColor,
+    bool showDelete = true,
+  }) {
+    return [
+      // Play button
+      if (items.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.play_arrow),
+          tooltip: t.discover.play,
+          onPressed: playItems,
+        ),
+      // Shuffle button
+      if (items.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.shuffle),
+          tooltip: t.common.shuffle,
+          onPressed: shufflePlayItems,
+        ),
+      // Delete button
+      if (showDelete && onDelete != null)
+        IconButton(
+          icon: const Icon(Icons.delete),
+          tooltip: deleteTooltip ?? t.common.delete,
+          onPressed: onDelete,
+          color: deleteColor ?? Colors.red,
+        ),
+    ];
+  }
+}
+
+/// Mixin that provides standard loadItems implementation for media lists
+/// Handles the common pattern of fetching, tagging, and setting items
+mixin StandardItemLoader<T extends StatefulWidget>
+    on BaseMediaListDetailScreen<T> {
+  /// Fetch items from the API (must be implemented by subclass)
+  Future<List<PlexMetadata>> fetchItems();
+
+  /// Get error message for failed load (can be overridden)
+  String getLoadErrorMessage(Object error) {
+    return 'Failed to load items: ${error.toString()}';
+  }
+
+  /// Get log message for successful load (can be overridden)
+  String getLoadSuccessMessage(int itemCount) {
+    return 'Loaded $itemCount items';
+  }
+
+  @override
+  Future<void> loadItems() async {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+    }
+
+    try {
+      final newItems = await fetchItems();
+
+      // Tag items with server info for correct client resolution
+      final serverId = (mediaItem as dynamic).serverId as String?;
+      final serverName = (mediaItem as dynamic).serverName as String?;
+
+      final taggedItems = newItems
+          .map(
+            (item) => item.copyWith(serverId: serverId, serverName: serverName),
+          )
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          items = taggedItems;
+          isLoading = false;
+        });
+      }
+
+      appLogger.d(getLoadSuccessMessage(newItems.length));
+    } catch (e) {
+      appLogger.e('Failed to load items', error: e);
+      if (mounted) {
+        setState(() {
+          errorMessage = getLoadErrorMessage(e);
+          isLoading = false;
+        });
+      }
+    }
   }
 }

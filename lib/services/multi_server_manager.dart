@@ -74,7 +74,8 @@ class MultiServerManager {
     appLogger.i('Connecting to ${servers.length} servers...');
 
     // Use provided client ID or generate a unique one for this app instance
-    final effectiveClientId = clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final effectiveClientId =
+        clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
 
     // Create connection tasks for all servers
     final connectionFutures = servers.map((server) async {
@@ -135,13 +136,15 @@ class MultiServerManager {
 
     // Wait for all connections with timeout
     final results = await Future.wait(
-      connectionFutures.map((f) => f.timeout(
-            timeout,
-            onTimeout: () {
-              appLogger.w('Server connection timed out');
-              return null;
-            },
-          )),
+      connectionFutures.map(
+        (f) => f.timeout(
+          timeout,
+          onTimeout: () {
+            appLogger.w('Server connection timed out');
+            return null;
+          },
+        ),
+      ),
     );
 
     // Count successful connections
@@ -164,7 +167,8 @@ class MultiServerManager {
     Duration timeout = const Duration(seconds: 10),
   }) async {
     final serverId = server.clientIdentifier;
-    final effectiveClientId = clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final effectiveClientId =
+        clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
 
     try {
       appLogger.d('Adding server: ${server.name}');

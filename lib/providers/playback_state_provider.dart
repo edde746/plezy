@@ -4,10 +4,10 @@ import '../models/play_queue_response.dart';
 import '../client/plex_client.dart';
 
 /// Playback mode types
+///
+/// All playback now uses Plex play queues.
 enum PlaybackMode {
-  none, // No active playback queue
-  sequential, // Normal episode-to-episode playback (uses Plex API)
-  playQueue, // Play queue-based playback (playlists, collections, shuffle)
+  playQueue, // Play queue-based playback (sequential, shuffle, playlists, collections)
 }
 
 /// Result of trying to locate the current queue index.
@@ -38,13 +38,13 @@ class PlaybackStateProvider with ChangeNotifier {
 
   // Legacy state for backward compatibility
   String? _contextKey; // The show/season/playlist ratingKey for this session
-  PlaybackMode _playbackMode = PlaybackMode.none;
+  PlaybackMode? _playbackMode;
 
   // Client reference for loading more items
   PlexClient? _client;
 
-  /// Current playback mode
-  PlaybackMode get playbackMode => _playbackMode;
+  /// Current playback mode (null if no queue active)
+  PlaybackMode? get playbackMode => _playbackMode;
 
   /// Whether shuffle mode is currently active
   bool get isShuffleActive => _playQueueShuffled;
@@ -92,8 +92,10 @@ class PlaybackStateProvider with ChangeNotifier {
   /// Call this after creating a play queue via the API
   Future<void> setPlaybackFromPlayQueue(
     PlayQueueResponse playQueue,
-    String? contextKey,
-  ) async {
+    String? contextKey, {
+    String? serverId,
+    String? serverName,
+  }) async {
     _playQueueId = playQueue.playQueueID;
     // Use size or items length as fallback if totalCount is null
     _playQueueTotalCount =
@@ -102,31 +104,12 @@ class PlaybackStateProvider with ChangeNotifier {
         (playQueue.items?.length ?? 0);
     _playQueueShuffled = playQueue.playQueueShuffled;
     _currentPlayQueueItemID = playQueue.playQueueSelectedItemID;
-    _loadedItems = playQueue.items ?? [];
-    _contextKey = contextKey;
-    _playbackMode = PlaybackMode.playQueue;
-    notifyListeners();
-  }
 
-  /// Legacy method for backward compatibility with shuffle play
-  /// This now creates a play queue on the server
-  @Deprecated('Use createPlayQueueFromUri instead')
-  void setShuffleQueue(List<PlexMetadata> episodes, String contextKey) {
-    // This is kept for backward compatibility but should not be used
-    // New code should use the play queue API
-    _loadedItems = List.from(episodes);
-    _contextKey = contextKey;
-    _playbackMode = PlaybackMode.playQueue;
-    notifyListeners();
-  }
+    // Preserve serverId/serverName on all items
+    _loadedItems = (playQueue.items ?? []).map((item) {
+      return item.copyWith(serverId: serverId, serverName: serverName);
+    }).toList();
 
-  /// Legacy method for backward compatibility with playlist playback
-  /// This now creates a play queue on the server
-  @Deprecated('Use createPlayQueueFromUri instead')
-  void setPlaybackQueue(List<PlexMetadata> items, String contextKey) {
-    // This is kept for backward compatibility but should not be used
-    // New code should use the play queue API
-    _loadedItems = List.from(items);
     _contextKey = contextKey;
     _playbackMode = PlaybackMode.playQueue;
     notifyListeners();
@@ -154,14 +137,15 @@ class PlaybackStateProvider with ChangeNotifier {
 
       if (response != null && response.items != null) {
         // Preserve serverId from existing items
-        final serverId = _loadedItems.isNotEmpty ? _loadedItems.first.serverId : null;
-        final serverName = _loadedItems.isNotEmpty ? _loadedItems.first.serverName : null;
+        final serverId = _loadedItems.isNotEmpty
+            ? _loadedItems.first.serverId
+            : null;
+        final serverName = _loadedItems.isNotEmpty
+            ? _loadedItems.first.serverName
+            : null;
 
         _loadedItems = response.items!.map((item) {
-          return item.copyWith(
-            serverId: serverId,
-            serverName: serverName,
-          );
+          return item.copyWith(serverId: serverId, serverName: serverName);
         }).toList();
         // Use size or items length as fallback if totalCount is null
         _playQueueTotalCount =
@@ -255,14 +239,15 @@ class PlaybackStateProvider with ChangeNotifier {
               response.items != null &&
               response.items!.isNotEmpty) {
             // Preserve serverId when looping
-            final serverId = _loadedItems.isNotEmpty ? _loadedItems.first.serverId : null;
-            final serverName = _loadedItems.isNotEmpty ? _loadedItems.first.serverName : null;
+            final serverId = _loadedItems.isNotEmpty
+                ? _loadedItems.first.serverId
+                : null;
+            final serverName = _loadedItems.isNotEmpty
+                ? _loadedItems.first.serverName
+                : null;
 
             _loadedItems = response.items!.map((item) {
-              return item.copyWith(
-                serverId: serverId,
-                serverName: serverName,
-              );
+              return item.copyWith(serverId: serverId, serverName: serverName);
             }).toList();
             final firstItem = _loadedItems.first;
             // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
@@ -336,7 +321,7 @@ class PlaybackStateProvider with ChangeNotifier {
     _currentPlayQueueItemID = null;
     _loadedItems = [];
     _contextKey = null;
-    _playbackMode = PlaybackMode.none;
+    _playbackMode = null;
     notifyListeners();
   }
 }

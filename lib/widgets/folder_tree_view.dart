@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/multi_server_provider.dart';
-import '../utils/app_logger.dart';
-import '../utils/video_player_navigation.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
-import 'folder_tree_item.dart';
+import '../utils/app_logger.dart';
+import '../utils/provider_extensions.dart';
+import '../utils/video_player_navigation.dart';
 import '../i18n/strings.g.dart';
+import 'folder_tree_item.dart';
+import 'empty_state_widget.dart';
+import 'error_state_widget.dart';
 
 /// Expandable tree view for browsing library folders
 /// Shows a hierarchical file/folder structure
@@ -37,25 +36,6 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   bool _isLoadingRoot = false;
   String? _errorMessage;
 
-  /// Get the correct PlexClient for this library's server
-  PlexClient? _getClientForLibrary() {
-    final serverId = widget.serverId;
-    if (serverId == null) {
-      appLogger.w('Library ${widget.libraryKey} has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    return client;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -69,10 +49,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     });
 
     try {
-      final client = _getClientForLibrary();
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
+      final client = context.getClientForServer(widget.serverId);
 
       final folders = await client.getLibraryFolders(widget.libraryKey);
 
@@ -124,10 +101,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     });
 
     try {
-      final client = _getClientForLibrary();
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
+      final client = context.getClientForServer(widget.serverId);
 
       final children = await client.getFolderChildren(folder.key);
 
@@ -135,10 +109,8 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
       final taggedChildren = children
           .map(
-            (child) => child.copyWith(
-              serverId: widget.serverId,
-              serverName: null,
-            ),
+            (child) =>
+                child.copyWith(serverId: widget.serverId, serverName: null),
           )
           .toList();
 
@@ -270,33 +242,18 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     }
 
     if (_errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_errorMessage!),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadRootFolders,
-              child: Text(t.common.retry),
-            ),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: _errorMessage!,
+        icon: Icons.error_outline,
+        onRetry: _loadRootFolders,
+        retryLabel: t.common.retry,
       );
     }
 
     if (_rootFolders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.folder_open, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(t.libraries.noFoldersFound),
-          ],
-        ),
+      return EmptyStateWidget(
+        message: t.libraries.noFoldersFound,
+        icon: Icons.folder_open,
       );
     }
 

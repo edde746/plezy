@@ -25,11 +25,7 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen>
-    with Refreshable, ItemUpdatable {
-  @override
-  PlexClient get client => context.clientSafe;
-
+class _SearchScreenState extends State<SearchScreen> with Refreshable {
   final _searchController = TextEditingController();
   List<PlexMetadata> _searchResults = [];
   bool _isSearching = false;
@@ -103,7 +99,8 @@ class _SearchScreenState extends State<SearchScreen>
       }
 
       // Search across all connected servers
-      final results = await multiServerProvider.aggregationService.searchAcrossServers(query);
+      final results = await multiServerProvider.aggregationService
+          .searchAcrossServers(query);
       if (mounted) {
         setState(() {
           _searchResults = results;
@@ -146,13 +143,10 @@ class _SearchScreenState extends State<SearchScreen>
     });
   }
 
-  @override
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
-    final index = _searchResults.indexWhere(
-      (item) => item.ratingKey == ratingKey,
-    );
-    if (index != -1) {
-      _searchResults[index] = updatedMetadata;
+  void updateItem(String ratingKey) {
+    // Trigger a refresh of the search to get updated metadata
+    if (_searchController.text.isNotEmpty) {
+      _performSearch(_searchController.text);
     }
   }
 

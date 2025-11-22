@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../i18n/strings.g.dart';
+import 'empty_state_widget.dart';
+import 'error_state_widget.dart';
 
 /// A widget that handles loading, error, empty, and content states
 /// Provides a consistent UI pattern across the app for data-driven screens
@@ -45,36 +47,17 @@ class ContentStateBuilder<T> extends StatelessWidget {
 
     // Error state (only show error if items list is empty)
     if (errorMessage != null && items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              errorMessage!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: Text(t.common.retry)),
-          ],
-        ),
+      return ErrorStateWidget(
+        message: errorMessage!,
+        icon: Icons.error_outline,
+        onRetry: onRetry,
+        retryLabel: t.common.retry,
       );
     }
 
     // Empty state
     if (items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(emptyIcon, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(emptyMessage, style: const TextStyle(color: Colors.white70)),
-          ],
-        ),
-      );
+      return EmptyStateWidget(message: emptyMessage, icon: emptyIcon);
     }
 
     // Content state - delegate to builder

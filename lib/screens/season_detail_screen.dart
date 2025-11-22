@@ -3,8 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/multi_server_provider.dart';
+import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/duration_formatter.dart';
 import '../utils/app_logger.dart';
@@ -36,21 +35,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
 
   /// Get the correct PlexClient for this season's server
   PlexClient _getClientForSeason(BuildContext context) {
-    final serverId = widget.season.serverId;
-    if (serverId == null) {
-      appLogger.w('Season ${widget.season.title} has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client!;
-    }
-
-    return client;
+    return context.getClientForServer(widget.season.serverId);
   }
 
   @override
@@ -71,10 +56,14 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     try {
       final episodes = await _client.getChildren(widget.season.ratingKey);
       // Preserve serverId for each episode
-      final episodesWithServerId = episodes.map((episode) => episode.copyWith(
-        serverId: widget.season.serverId,
-        serverName: widget.season.serverName,
-      )).toList();
+      final episodesWithServerId = episodes
+          .map(
+            (episode) => episode.copyWith(
+              serverId: widget.season.serverId,
+              serverName: widget.season.serverName,
+            ),
+          )
+          .toList();
       setState(() {
         _episodes = episodesWithServerId;
         _isLoadingEpisodes = false;

@@ -4,15 +4,12 @@ import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/duration_formatter.dart';
-import '../utils/app_logger.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../screens/playlist_detail_screen.dart';
@@ -97,9 +94,6 @@ class _MediaCardState extends State<MediaCard> {
   }
 
   void _handleTap(BuildContext context) async {
-    final client = context.client;
-    if (client == null) return;
-
     // Handle playlists
     if (widget.item is PlexPlaylist) {
       await Navigator.push(
@@ -656,7 +650,7 @@ class _MediaCardList extends StatelessWidget {
 }
 
 /// Helper to get the correct PlexClient for an item's server
-PlexClient? _getClientForItem(BuildContext context, dynamic item) {
+PlexClient _getClientForItem(BuildContext context, dynamic item) {
   String? serverId;
 
   if (item is PlexMetadata) {
@@ -665,20 +659,7 @@ PlexClient? _getClientForItem(BuildContext context, dynamic item) {
     serverId = item.serverId;
   }
 
-  if (serverId == null) {
-    appLogger.w('Item has no serverId, using legacy client');
-    return context.read<PlexClientProvider>().client;
-  }
-
-  final multiServerProvider = context.read<MultiServerProvider>();
-  final client = multiServerProvider.getClientForServer(serverId);
-
-  if (client == null) {
-    appLogger.w('No client found for server $serverId, using legacy client');
-    return context.read<PlexClientProvider>().client;
-  }
-
-  return client;
+  return context.getClientForServer(serverId);
 }
 
 Widget _buildPosterImage(BuildContext context, dynamic item) {

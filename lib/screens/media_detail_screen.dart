@@ -5,14 +5,12 @@ import 'package:provider/provider.dart';
 import '../i18n/strings.g.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/multi_server_provider.dart';
+import '../providers/playback_state_provider.dart';
 import '../theme/theme_helper.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/duration_formatter.dart';
 import '../utils/provider_extensions.dart';
-import '../utils/shuffle_play_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -52,23 +50,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   }
 
   /// Get the correct PlexClient for this metadata's server
-  PlexClient? _getClientForMetadata(BuildContext context) {
-    final serverId = widget.metadata.serverId;
-    if (serverId == null) {
-      // Fallback to legacy client if no serverId
-      appLogger.w('Metadata ${widget.metadata.title} has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    return client;
+  PlexClient _getClientForMetadata(BuildContext context) {
+    return context.getClientForServer(widget.metadata.serverId);
   }
 
   Future<void> _loadFullMetadata() async {
@@ -150,10 +133,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
       final seasons = await client.getChildren(widget.metadata.ratingKey);
       // Preserve serverId for each season
-      final seasonsWithServerId = seasons.map((season) => season.copyWith(
-        serverId: widget.metadata.serverId,
-        serverName: widget.metadata.serverName,
-      )).toList();
+      final seasonsWithServerId = seasons
+          .map(
+            (season) => season.copyWith(
+              serverId: widget.metadata.serverId,
+              serverName: widget.metadata.serverName,
+            ),
+          )
+          .toList();
       setState(() {
         _seasons = seasonsWithServerId;
         _isLoadingSeasons = false;
@@ -191,10 +178,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         if (metadata.type.toLowerCase() == 'show') {
           final seasons = await client.getChildren(widget.metadata.ratingKey);
           // Preserve serverId for each season
-          updatedSeasons = seasons.map((season) => season.copyWith(
-            serverId: widget.metadata.serverId,
-            serverName: widget.metadata.serverName,
-          )).toList();
+          updatedSeasons = seasons
+              .map(
+                (season) => season.copyWith(
+                  serverId: widget.metadata.serverId,
+                  serverName: widget.metadata.serverName,
+                ),
+              )
+              .toList();
         }
 
         // Single setState to minimize rebuilds - scroll position is preserved by controller
@@ -270,6 +261,101 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        );
+      }
+    }
+  }
+
+  /// Handle shuffle play using play queues
+  Future<void> _handleShufflePlayWithQueue(
+    BuildContext context,
+    PlexMetadata metadata,
+  ) async {
+    final client = _getClientForMetadata(context);
+    if (client == null) return;
+
+    final playbackState = context.read<PlaybackStateProvider>();
+    final itemType = metadata.type.toLowerCase();
+
+    try {
+      // Show loading indicator
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      // Determine the rating key for the play queue
+      String showRatingKey;
+      if (itemType == 'show') {
+        showRatingKey = metadata.ratingKey;
+      } else if (itemType == 'season') {
+        // For seasons, we need the show's rating key
+        // The season's parentRatingKey should point to the show
+        if (metadata.parentRatingKey == null) {
+          throw Exception('Season is missing parentRatingKey');
+        }
+        showRatingKey = metadata.parentRatingKey!;
+      } else {
+        throw Exception('Shuffle play only works for shows and seasons');
+      }
+
+      // Create a shuffled play queue for the show
+      final playQueue = await client.createShowPlayQueue(
+        showRatingKey: showRatingKey,
+        shuffle: 1,
+      );
+
+      // Close loading indicator
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      if (playQueue == null ||
+          playQueue.items == null ||
+          playQueue.items!.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.messages.noEpisodesFound)));
+        }
+        return;
+      }
+
+      // Initialize playback state with the play queue
+      await playbackState.setPlaybackFromPlayQueue(
+        playQueue,
+        showRatingKey,
+        serverId: metadata.serverId,
+        serverName: metadata.serverName,
+      );
+
+      // Set the client for the playback state provider
+      playbackState.setClient(client);
+
+      // Navigate to the first episode in the shuffled queue
+      final firstEpisode = playQueue.items!.first.copyWith(
+        serverId: metadata.serverId,
+        serverName: metadata.serverName,
+      );
+
+      if (context.mounted) {
+        await navigateToVideoPlayer(context, metadata: firstEpisode);
+        // Refresh metadata when returning from video player
+        _loadFullMetadata();
+      }
+    } catch (e) {
+      // Close loading indicator if it's still open
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
         );
@@ -382,7 +468,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                 width: 400,
                                 child: Builder(
                                   builder: (context) {
-                                    final client = _getClientForMetadata(context);
+                                    final client = _getClientForMetadata(
+                                      context,
+                                    );
                                     if (client == null) {
                                       return Text(
                                         metadata.title,
@@ -697,7 +785,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           metadata.type.toLowerCase() == 'season') ...[
                         IconButton.filledTonal(
                           onPressed: () async {
-                            await handleShufflePlay(context, metadata);
+                            await _handleShufflePlayWithQueue(
+                              context,
+                              metadata,
+                            );
                           },
                           icon: const Icon(Icons.shuffle),
                           tooltip: t.tooltips.shufflePlay,

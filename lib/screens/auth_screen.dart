@@ -72,7 +72,8 @@ class _AuthScreenState extends State<AuthScreen> {
       // Connect to all servers
       if (!mounted) return;
       final multiServerProvider = context.read<MultiServerProvider>();
-      final connectedCount = await multiServerProvider.serverManager.connectToAllServers(servers);
+      final connectedCount = await multiServerProvider.serverManager
+          .connectToAllServers(servers);
 
       if (connectedCount == 0) {
         setState(() {
@@ -84,7 +85,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
       // Get the first connected client for backward compatibility
       if (!mounted) return;
-      final firstClient = multiServerProvider.serverManager.onlineClients.values.first;
+      final firstClient =
+          multiServerProvider.serverManager.onlineClients.values.first;
 
       // Set it as the legacy client
       final plexClientProvider = context.read<PlexClientProvider>();

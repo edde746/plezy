@@ -6,14 +6,15 @@ import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../providers/plex_client_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/playback_state_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/collection_playlist_play_helper.dart';
 import '../utils/library_refresh_notifier.dart';
+import '../utils/video_player_navigation.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../widgets/file_info_bottom_sheet.dart';
-import '../utils/shuffle_play_helper.dart';
 import '../i18n/strings.g.dart';
 
 /// Helper class to store menu action data
@@ -62,7 +63,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Get the correct PlexClient for this item's server
-  PlexClient? _getClientForItem() {
+  PlexClient _getClientForItem() {
     String? serverId;
 
     // Get serverId from the item (could be PlexMetadata or PlexPlaylist)
@@ -72,25 +73,11 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       serverId = (widget.item as PlexPlaylist).serverId;
     }
 
-    if (serverId == null) {
-      appLogger.w('Item has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    return client;
+    return context.getClientForServer(serverId);
   }
 
   void _showContextMenu(BuildContext context) async {
     final client = _getClientForItem();
-    if (client == null) return;
 
     final isPlaylist = widget.item is PlexPlaylist;
     final metadata = isPlaylist ? null : widget.item as PlexMetadata;
@@ -405,7 +392,7 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         break;
 
       case 'shuffle_play':
-        await handleShufflePlay(context, metadata!);
+        await _handleShufflePlayWithQueue(context);
         break;
 
       case 'play':
@@ -525,6 +512,97 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
           SnackBar(
             content: Text(t.messages.errorLoadingFileInfo(error: e.toString())),
           ),
+        );
+      }
+    }
+  }
+
+  /// Handle shuffle play using play queues
+  Future<void> _handleShufflePlayWithQueue(BuildContext context) async {
+    final client = _getClientForItem();
+    if (client == null) return;
+
+    final metadata = widget.item as PlexMetadata;
+    final playbackState = context.read<PlaybackStateProvider>();
+    final itemType = metadata.type.toLowerCase();
+
+    try {
+      // Show loading indicator
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      // Determine the rating key for the play queue
+      String showRatingKey;
+      if (itemType == 'show') {
+        showRatingKey = metadata.ratingKey;
+      } else if (itemType == 'season') {
+        // For seasons, we need the show's rating key
+        // The season's parentRatingKey should point to the show
+        if (metadata.parentRatingKey == null) {
+          throw Exception('Season is missing parentRatingKey');
+        }
+        showRatingKey = metadata.parentRatingKey!;
+      } else {
+        throw Exception('Shuffle play only works for shows and seasons');
+      }
+
+      // Create a shuffled play queue for the show
+      final playQueue = await client.createShowPlayQueue(
+        showRatingKey: showRatingKey,
+        shuffle: 1,
+      );
+
+      // Close loading indicator
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      if (playQueue == null ||
+          playQueue.items == null ||
+          playQueue.items!.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t.messages.noEpisodesFound)));
+        }
+        return;
+      }
+
+      // Initialize playback state with the play queue
+      await playbackState.setPlaybackFromPlayQueue(
+        playQueue,
+        showRatingKey,
+        serverId: metadata.serverId,
+        serverName: metadata.serverName,
+      );
+
+      // Set the client for the playback state provider
+      playbackState.setClient(client);
+
+      // Navigate to the first episode in the shuffled queue
+      final firstEpisode = playQueue.items!.first.copyWith(
+        serverId: metadata.serverId,
+        serverName: metadata.serverName,
+      );
+
+      if (context.mounted) {
+        await navigateToVideoPlayer(context, metadata: firstEpisode);
+      }
+    } catch (e) {
+      // Close loading indicator if it's still open
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
         );
       }
     }

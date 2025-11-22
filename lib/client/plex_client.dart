@@ -1102,92 +1102,6 @@ class PlexClient {
     }
   }
 
-  /// Find adjacent episode in a given direction
-  ///
-  /// [direction]: +1 for next episode, -1 for previous episode
-  ///
-  /// Handles navigation within current season and across seasons automatically.
-  Future<PlexMetadata?> findAdjacentEpisode(
-    PlexMetadata currentEpisode,
-    int direction,
-  ) async {
-    if (currentEpisode.type.toLowerCase() != 'episode') {
-      return null;
-    }
-
-    final parentKey = currentEpisode.parentRatingKey;
-    final grandparentKey = currentEpisode.grandparentRatingKey;
-
-    if (parentKey == null || grandparentKey == null) {
-      return null;
-    }
-
-    // Extract serverId/serverName from currentEpisode to propagate
-    final serverId = currentEpisode.serverId;
-    final serverName = currentEpisode.serverName;
-
-    try {
-      // Get all episodes in the current season
-      final episodes = await getChildren(parentKey);
-
-      // Find the current episode index
-      final currentIndex = episodes.indexWhere(
-        (e) => e.ratingKey == currentEpisode.ratingKey,
-      );
-
-      if (currentIndex == -1) return null;
-
-      final targetIndex = currentIndex + direction;
-
-      // Check if target episode is within current season
-      if (targetIndex >= 0 && targetIndex < episodes.length) {
-        return episodes[targetIndex].copyWith(
-          serverId: serverId,
-          serverName: serverName,
-        );
-      }
-
-      // Need to move to adjacent season
-      final isAtBoundary = direction > 0
-          ? currentIndex == episodes.length - 1
-          : currentIndex == 0;
-
-      if (isAtBoundary) {
-        // Get all seasons
-        final seasons = await getChildren(grandparentKey);
-        final currentSeasonIndex = seasons.indexWhere(
-          (s) => s.ratingKey == parentKey,
-        );
-
-        if (currentSeasonIndex == -1) return null;
-
-        final targetSeasonIndex = currentSeasonIndex + direction;
-
-        // Check if target season exists
-        if (targetSeasonIndex >= 0 && targetSeasonIndex < seasons.length) {
-          final targetSeason = seasons[targetSeasonIndex];
-          final targetSeasonEpisodes = await getChildren(
-            targetSeason.ratingKey,
-          );
-
-          if (targetSeasonEpisodes.isNotEmpty) {
-            // Return first episode for next season, last for previous
-            return (direction > 0
-                ? targetSeasonEpisodes.first
-                : targetSeasonEpisodes.last).copyWith(
-              serverId: serverId,
-              serverName: serverName,
-            );
-          }
-        }
-      }
-    } catch (e) {
-      // Silently handle errors
-    }
-
-    return null;
-  }
-
   /// Get library hubs (recommendations for a specific library section)
   /// Returns a list of recommendation hubs like "Trending Movies", "Top in Genre", etc.
   Future<List<PlexHub>> getLibraryHubs(
@@ -1733,6 +1647,49 @@ class PlexClient {
     } catch (e) {
       appLogger.e('Failed to clear play queue: $e');
       return false;
+    }
+  }
+
+  /// Create a play queue for a TV show (all episodes)
+  ///
+  /// This is a convenience method that creates a play queue from a show's URI.
+  /// Perfect for sequential or shuffle playback of an entire series.
+  ///
+  /// Parameters:
+  /// - [showRatingKey]: The rating key of the show
+  /// - [shuffle]: Whether to shuffle the episodes (0 = off, 1 = on)
+  /// - [startingEpisodeKey]: Optional rating key of episode to start from
+  ///
+  /// Returns a PlayQueueResponse with all episodes from the show
+  Future<PlayQueueResponse?> createShowPlayQueue({
+    required String showRatingKey,
+    int shuffle = 0,
+    String? startingEpisodeKey,
+  }) async {
+    try {
+      // Get machine identifier for building the URI
+      final machineId =
+          config.machineIdentifier ?? await getMachineIdentifier();
+      if (machineId == null) {
+        throw Exception('Could not get server machine identifier');
+      }
+
+      // Build the URI for the show's episodes
+      final uri =
+          'server://$machineId/com.plexapp.plugins.library/library/metadata/$showRatingKey/children';
+
+      // Create the play queue with optional starting episode
+      return await createPlayQueue(
+        uri: uri,
+        type: 'video',
+        shuffle: shuffle,
+        key: startingEpisodeKey != null
+            ? '/library/metadata/$startingEpisodeKey'
+            : null,
+      );
+    } catch (e) {
+      appLogger.e('Failed to create show play queue', error: e);
+      return null;
     }
   }
 

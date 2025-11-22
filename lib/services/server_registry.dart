@@ -138,13 +138,15 @@ class ServerRegistry {
   }
 
   /// Update server status (called when server connection status changes)
-  Future<void> updateServerStatus(String serverId, {
+  Future<void> updateServerStatus(
+    String serverId, {
     bool? online,
     DateTime? lastSeen,
   }) async {
     final servers = await getServers();
-    final serverIndex =
-        servers.indexWhere((s) => s.clientIdentifier == serverId);
+    final serverIndex = servers.indexWhere(
+      (s) => s.clientIdentifier == serverId,
+    );
 
     if (serverIndex == -1) {
       appLogger.w('Server not found for status update: $serverId');

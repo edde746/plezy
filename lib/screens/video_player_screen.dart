@@ -13,9 +13,9 @@ import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/playback_state_provider.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/multi_server_provider.dart';
-import '../providers/settings_provider.dart';
+import '../services/episode_navigation_service.dart';
+import '../services/media_controls_manager.dart';
+import '../services/playback_progress_tracker.dart';
 import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/language_codes.dart';
@@ -51,51 +51,42 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   Player? player;
   VideoController? controller;
   bool _isPlayerInitialized = false;
-  Timer? _progressTimer;
   PlexMetadata? _nextEpisode;
   PlexMetadata? _previousEpisode;
   bool _isLoadingNext = false;
   bool _showPlayNextDialog = false;
-  PlexClient? _cachedClient;
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
   StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<String>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
-  StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<dynamic>? _mediaControlSubscription;
   StreamSubscription<bool>? _bufferingSubscription;
+  StreamSubscription<Tracks>? _trackLoadingSubscription;
   bool _isReplacingWithVideo =
       false; // Flag to skip orientation restoration during video-to-video navigation
 
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
 
+  // Services
+  MediaControlsManager? _mediaControlsManager;
+  PlaybackProgressTracker? _progressTracker;
+  final EpisodeNavigationService _episodeNavigation =
+      EpisodeNavigationService();
+
   /// Get the correct PlexClient for this metadata's server
-  PlexClient? _getClientForMetadata(BuildContext context) {
-    final serverId = widget.metadata.serverId;
-    if (serverId == null) {
-      // Fallback to legacy client if no serverId
-      appLogger.w('Metadata ${widget.metadata.title} has no serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    final multiServerProvider = context.read<MultiServerProvider>();
-    final client = multiServerProvider.getClientForServer(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId, using legacy client');
-      return context.read<PlexClientProvider>().client;
-    }
-
-    return client;
+  PlexClient _getClientForMetadata(BuildContext context) {
+    return context.getClientForServer(widget.metadata.serverId);
   }
 
   // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode = 0;
   bool _isPinching = false; // Track if a pinch gesture is occurring
-  bool _isBuffering = false; // Track if video is currently buffering
+  final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(
+    false,
+  ); // Track if video is currently buffering
 
   // Video cropping state for fill screen mode
   Size? _playerSize;
@@ -123,19 +114,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     try {
       final playbackState = context.read<PlaybackStateProvider>();
 
-      // If this item doesn't have a playQueueItemID, it's a standalone item
-      // Clear any existing queue so next/previous work correctly for this content
-      if (widget.metadata.playQueueItemID == null) {
-        // Defer clearing until after the first frame to avoid calling
-        // notifyListeners() during build
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Defer both operations until after the first frame to avoid calling
+      // notifyListeners() during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // If this item doesn't have a playQueueItemID, it's a standalone item
+        // Clear any existing queue so next/previous work correctly for this content
+        if (widget.metadata.playQueueItemID == null) {
           playbackState.clearShuffle();
-        });
-      } else {
-        playbackState.setCurrentItem(widget.metadata);
-      }
+        } else {
+          playbackState.setCurrentItem(widget.metadata);
+        }
+      });
     } catch (e) {
-      // Provider might not be available yet
+      // Provider might not be available yet during initialization
+      appLogger.d(
+        'Deferred playback state update (provider not ready)',
+        error: e,
+      );
     }
 
     // Register app lifecycle observer
@@ -148,14 +143,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // Cache server-specific client for safe access in dispose() and during playback
-    try {
-      _cachedClient = _getClientForMetadata(context);
-    } catch (e) {
-      appLogger.w('Failed to cache PlexClient', error: e);
-      _cachedClient = null;
-    }
 
     // Cache device type for safe access in dispose()
     try {
@@ -202,7 +189,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       case AppLifecycleState.resumed:
         // Restore media controls when app is resumed
         if (_isPlayerInitialized && mounted) {
-          _updateMediaMetadata();
+          // Restore media metadata
+          final client = _getClientForMetadata(context);
+          if (client != null && _mediaControlsManager != null) {
+            _mediaControlsManager!.updateMetadata(
+              metadata: widget.metadata,
+              client: client,
+              duration: widget.metadata.duration != null
+                  ? Duration(milliseconds: widget.metadata.duration!)
+                  : null,
+            );
+          }
 
           // Resume playback if it was playing before going inactive
           if (_wasPlayingBeforeInactive && player != null) {
@@ -335,25 +332,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Listen to MPV errors
       _errorSubscription = player!.stream.error.listen(_onPlayerError);
 
-      // Listen to position updates for media controls
-      _positionSubscription = player!.stream.position.listen((_) {
-        _updateMediaControlsPosition();
-      });
-
       // Listen to buffering state
       _bufferingSubscription = player!.stream.buffering.listen((isBuffering) {
-        if (mounted) {
-          setState(() {
-            _isBuffering = isBuffering;
-          });
-        }
+        _isBuffering.value = isBuffering;
       });
 
-      // Initialize OS media controls
-      _initializeMediaControls();
+      // Initialize services
+      await _initializeServices();
 
-      // Start periodic progress updates
-      _startProgressTracking();
+      // Ensure play queue exists for sequential playback
+      await _ensurePlayQueue();
 
       // Load next/previous episodes
       _loadAdjacentEpisodes();
@@ -367,80 +355,198 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
+  /// Initialize the service layer
+  Future<void> _initializeServices() async {
+    if (!mounted || player == null) return;
+
+    final client = _getClientForMetadata(context);
+    if (client == null) return;
+
+    // Initialize progress tracker
+    _progressTracker = PlaybackProgressTracker(
+      client: client,
+      metadata: widget.metadata,
+      player: player!,
+    );
+    _progressTracker!.startTracking();
+
+    // Initialize media controls manager
+    _mediaControlsManager = MediaControlsManager();
+
+    // Set up media control event handling
+    _mediaControlSubscription = _mediaControlsManager!.controlEvents.listen((
+      event,
+    ) {
+      if (event is PlayEvent) {
+        appLogger.d('Media control: Play event received');
+        if (player != null) {
+          player!.play();
+          _wasPlayingBeforeInactive = false;
+          appLogger.d(
+            'Cleared _wasPlayingBeforeInactive due to manual play via media controls',
+          );
+          _updateMediaControlsPlaybackState();
+        }
+      } else if (event is PauseEvent) {
+        appLogger.d('Media control: Pause event received');
+        if (player != null) {
+          player!.pause();
+          appLogger.d('Video paused via media controls');
+          _updateMediaControlsPlaybackState();
+        }
+      } else if (event is SeekEvent) {
+        appLogger.d('Media control: Seek event received to ${event.position}');
+        player?.seek(event.position);
+      } else if (event is NextTrackEvent) {
+        appLogger.d('Media control: Next track event received');
+        if (_nextEpisode != null) {
+          _playNext();
+        }
+      } else if (event is PreviousTrackEvent) {
+        appLogger.d('Media control: Previous track event received');
+        if (_previousEpisode != null) {
+          _playPrevious();
+        }
+      }
+    });
+
+    // Update media metadata
+    await _mediaControlsManager!.updateMetadata(
+      metadata: widget.metadata,
+      client: client,
+      duration: widget.metadata.duration != null
+          ? Duration(milliseconds: widget.metadata.duration!)
+          : null,
+    );
+
+    if (!mounted) return;
+
+    // Set controls enabled based on content type
+    final playbackState = context.read<PlaybackStateProvider>();
+    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    final isInPlaylist = playbackState.isPlaylistActive;
+
+    await _mediaControlsManager!.setControlsEnabled(
+      canGoNext: isEpisode || isInPlaylist,
+      canGoPrevious: isEpisode || isInPlaylist,
+    );
+
+    // Listen to playing state and update media controls
+    player!.stream.playing.listen((isPlaying) {
+      _updateMediaControlsPlaybackState();
+    });
+
+    // Listen to position updates for media controls
+    player!.stream.position.listen((position) {
+      _mediaControlsManager?.updatePlaybackState(
+        isPlaying: player!.state.playing,
+        position: position,
+        speed: player!.state.rate,
+      );
+    });
+  }
+
+  /// Ensure a play queue exists for sequential episode playback
+  Future<void> _ensurePlayQueue() async {
+    if (!mounted) return;
+
+    // Only create play queues for episodes
+    if (widget.metadata.type.toLowerCase() != 'episode') {
+      return;
+    }
+
+    try {
+      final client = _getClientForMetadata(context);
+      if (client == null) return;
+
+      final playbackState = context.read<PlaybackStateProvider>();
+
+      // Determine the show's rating key
+      // For episodes, grandparentRatingKey points to the show
+      final showRatingKey = widget.metadata.grandparentRatingKey;
+      if (showRatingKey == null) {
+        appLogger.d(
+          'Episode missing grandparentRatingKey, skipping play queue creation',
+        );
+        return;
+      }
+
+      // Check if there's already an active queue for this show
+      final existingContextKey = playbackState.shuffleContextKey;
+      final isQueueActive = playbackState.isQueueActive;
+
+      if (isQueueActive && existingContextKey == showRatingKey) {
+        // Queue already exists for this show, just update the current item
+        playbackState.setCurrentItem(widget.metadata);
+        appLogger.d('Using existing play queue for show $showRatingKey');
+        return;
+      }
+
+      // Create a new sequential play queue for the show
+      appLogger.d('Creating sequential play queue for show $showRatingKey');
+      final playQueue = await client.createShowPlayQueue(
+        showRatingKey: showRatingKey,
+        shuffle: 0, // Sequential order
+        startingEpisodeKey: widget.metadata.ratingKey,
+      );
+
+      if (playQueue != null &&
+          playQueue.items != null &&
+          playQueue.items!.isNotEmpty) {
+        // Initialize playback state with the play queue
+        await playbackState.setPlaybackFromPlayQueue(
+          playQueue,
+          showRatingKey,
+          serverId: widget.metadata.serverId,
+          serverName: widget.metadata.serverName,
+        );
+
+        // Set the client for loading more items
+        playbackState.setClient(client);
+
+        appLogger.d(
+          'Sequential play queue created with ${playQueue.items!.length} items',
+        );
+      }
+    } catch (e) {
+      // Non-critical: Sequential playback will fall back to non-queue navigation
+      appLogger.d(
+        'Could not create play queue for sequential playback',
+        error: e,
+      );
+    }
+  }
+
   Future<void> _loadAdjacentEpisodes() async {
+    if (!mounted) return;
+
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
       if (client == null) return;
 
-      final playbackState = context.read<PlaybackStateProvider>();
-      final settingsProvider = context.read<SettingsProvider>();
-
-      PlexMetadata? next;
-      PlexMetadata? previous;
-
-      // Check if playlist mode is active (takes priority)
-      if (playbackState.isPlaylistActive) {
-        // For playlists, always use the queue regardless of item type
-        // Playlists can contain both movies and episodes
-        next = await playbackState.getNextEpisode(
-          widget.metadata.ratingKey,
-          loopQueue: false, // Don't loop playlists by default
-        );
-        previous = await playbackState.getPreviousEpisode(
-          widget.metadata.ratingKey,
-        );
-      }
-      // Check if shuffle mode is active
-      else if (playbackState.isShuffleActive) {
-        // Only works for episodes in shuffle mode
-        if (widget.metadata.type.toLowerCase() != 'episode') {
-          return;
-        }
-
-        // Get settings
-        final shuffleOrderNavigation = settingsProvider.shuffleOrderNavigation;
-        final loopQueue = settingsProvider.shuffleLoopQueue;
-
-        if (shuffleOrderNavigation) {
-          // Use shuffled order for next/previous
-          next = await playbackState.getNextEpisode(
-            widget.metadata.ratingKey,
-            loopQueue: loopQueue,
-          );
-          previous = await playbackState.getPreviousEpisode(
-            widget.metadata.ratingKey,
-          );
-        } else {
-          // Use chronological order even in shuffle mode
-          next = await client.findAdjacentEpisode(widget.metadata, 1);
-          previous = await client.findAdjacentEpisode(widget.metadata, -1);
-        }
-      }
-      // Normal sequential playback
-      else {
-        // Only works for episodes in sequential mode
-        if (widget.metadata.type.toLowerCase() != 'episode') {
-          return;
-        }
-
-        // Use normal sequential episode loading
-        next = await client.findAdjacentEpisode(widget.metadata, 1);
-        previous = await client.findAdjacentEpisode(widget.metadata, -1);
-      }
+      // Load adjacent episodes using the service
+      final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
+        context: context,
+        client: client,
+        metadata: widget.metadata,
+      );
 
       if (mounted) {
         setState(() {
-          _nextEpisode = next;
-          _previousEpisode = previous;
+          _nextEpisode = adjacentEpisodes.next;
+          _previousEpisode = adjacentEpisodes.previous;
         });
       }
     } catch (e) {
-      // Silently handle errors
+      // Non-critical: Failed to load next/previous episode metadata
+      appLogger.d('Could not load adjacent episodes', error: e);
     }
   }
 
   Future<void> _startPlayback() async {
+    if (!mounted) return;
+
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
@@ -614,7 +720,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
+  /// Calculates crop parameters for "fill screen" mode (BoxFit.cover) to eliminate letterboxing.
+  ///
+  /// This method is only active when [_boxFitMode] == 1 (cover mode). It determines how to
+  /// crop the video to completely fill the player area while maintaining aspect ratio.
+  ///
+  /// **How it works:**
+  /// 1. Compares video aspect ratio vs player aspect ratio
+  /// 2. Crops the dimension that would create letterboxing:
+  ///    - Wide video (16:9) on tall player (4:3): crops left/right sides
+  ///    - Tall video (4:3) on wide player (16:9): crops top/bottom
+  /// 3. Centers the crop within the video
+  /// 4. Calculates subtitle margin adjustments to keep subtitles visible
+  ///
+  /// **Subtitle positioning:**
+  /// MPV uses a 720p reference coordinate system for subtitle positioning.
+  /// When cropping zooms the video, subtitles need larger margins to avoid
+  /// being cropped or appearing too close to edges.
+  ///
+  /// Returns `null` if:
+  /// - Not in cover mode (_boxFitMode != 1)
+  /// - Player or video size is unknown
+  /// - Aspect ratios are too similar (< 0.01 difference) - no crop needed
+  ///
+  /// Returns a map containing:
+  /// - `width`, `height`: Dimensions of the cropped area in video pixels
+  /// - `x`, `y`: Crop offset from video's top-left corner in pixels
+  /// - `subMarginX`, `subMarginY`: Subtitle margins in MPV coordinate space (720p reference)
+  /// - `subScale`: Subtitle scaling factor (currently always 1.0)
   Map<String, dynamic>? _calculateCropParameters() {
+    // Only calculate for cover mode with known dimensions
     if (_boxFitMode != 1 || _playerSize == null || _videoSize == null) {
       return null;
     }
@@ -622,37 +757,49 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final playerAspect = _playerSize!.width / _playerSize!.height;
     final videoAspect = _videoSize!.width / _videoSize!.height;
 
+    // No cropping needed if aspect ratios are very similar
     if ((playerAspect - videoAspect).abs() < 0.01) return null;
 
     late final int cropW, cropH, cropX, cropY;
 
     if (videoAspect > playerAspect) {
-      // crop sides
+      // Video is wider than player - crop left/right sides
+      // Example: 16:9 video in 4:3 player
       final scale = _playerSize!.height / _videoSize!.height;
       cropH = _videoSize!.height.toInt();
       cropW = (_playerSize!.width / scale).toInt();
-      cropX = ((_videoSize!.width - cropW) ~/ 2);
+      cropX = ((_videoSize!.width - cropW) ~/ 2); // Center horizontally
       cropY = 0;
     } else {
-      // crop top/bottom — your case
+      // Video is taller than player - crop top/bottom
+      // Example: 4:3 video in 16:9 player (most common case)
       final scale = _playerSize!.width / _videoSize!.width;
       cropW = _videoSize!.width.toInt();
       cropH = (_playerSize!.height / scale).toInt();
       cropX = 0;
-      cropY = ((_videoSize!.height - cropH) ~/ 2);
+      cropY = ((_videoSize!.height - cropH) ~/ 2); // Center vertically
     }
 
+    // Subtitle positioning constants
+    /// MPV's subtitle coordinate system height (720p reference)
     const double kSubCoord = 720.0;
-    const double baseX = 20.0;
-    const double baseY =
-        45.0; // slightly larger than 40 looks better in practice
 
+    /// Base horizontal subtitle margin to prevent edge clipping
+    const double baseX = 20.0;
+
+    /// Base vertical subtitle margin, tuned to position subtitles
+    /// comfortably above the bottom while avoiding overscan areas
+    const double baseY = 45.0;
+
+    // Calculate additional margin needed due to cropping
+    // When we crop, the visible area is "zoomed in", so subtitles need
+    // proportionally larger margins to maintain the same visual distance from edges
     double extraX = cropX > 0
         ? (cropX / _videoSize!.width) * kSubCoord * videoAspect
         : 0.0;
     double extraY = cropY > 0 ? (cropY / _videoSize!.height) * kSubCoord : 0.0;
 
-    // Only increase the margin — never shrink it
+    // Apply additional margin (never reduce below base)
     int marginX = (baseX + extraX).round();
     int marginY = (baseY + extraY).round();
 
@@ -757,8 +904,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Unregister app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
 
-    // Stop progress tracking
-    _progressTimer?.cancel();
+    // Dispose value notifiers
+    _isBuffering.dispose();
+
+    // Stop progress tracking and send final state
+    _progressTracker?.sendProgress('stopped');
+    _progressTracker?.stopTracking();
+    _progressTracker?.dispose();
 
     // Cancel debounce timer
     _resizeDebounceTimer?.cancel();
@@ -768,15 +920,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _completedSubscription?.cancel();
     _logSubscription?.cancel();
     _errorSubscription?.cancel();
-    _positionSubscription?.cancel();
     _mediaControlSubscription?.cancel();
     _bufferingSubscription?.cancel();
+    _trackLoadingSubscription?.cancel();
 
-    // Clear OS media controls completely
-    OsMediaControls.clear();
-
-    // Send final stopped state
-    _sendProgress('stopped');
+    // Clear media controls and dispose manager
+    _mediaControlsManager?.clear();
+    _mediaControlsManager?.dispose();
 
     // Clear video filter and reset subtitle margins before disposing player
     try {
@@ -788,7 +938,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         nativePlayer.setProperty('sub-scale', '1.0');
       }
     } catch (e) {
-      // Ignore errors during cleanup
+      // Non-critical: Cleanup operations during disposal
+      appLogger.d('Error during player cleanup in dispose', error: e);
     }
 
     // Restore system UI and orientation preferences (skip if navigating to another video)
@@ -819,15 +970,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     player?.dispose();
     super.dispose();
-  }
-
-  void _startProgressTracking() {
-    // Send progress update every 10 seconds
-    _progressTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (player?.state.playing ?? false) {
-        _sendProgress('playing');
-      }
-    });
   }
 
   /// Generic track matching for audio and subtitle tracks
@@ -1210,9 +1352,225 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     return variations.contains(trackBase);
   }
 
+  /// Log available tracks for debugging
+  void _logAvailableTracks(
+    List<AudioTrack> audioTracks,
+    List<SubtitleTrack> subtitleTracks,
+  ) {
+    appLogger.d('Available audio tracks: ${audioTracks.length}');
+    for (var track in audioTracks) {
+      appLogger.d(
+        '  - ${track.title ?? "Track ${track.id}"} (${track.language ?? "unknown"}) ${track.isDefault == true ? "[DEFAULT]" : ""}',
+      );
+    }
+    appLogger.d('Available subtitle tracks: ${subtitleTracks.length}');
+    for (var track in subtitleTracks) {
+      appLogger.d(
+        '  - ${track.title ?? "Track ${track.id}"} (${track.language ?? "unknown"}) ${track.isDefault == true ? "[DEFAULT]" : ""}',
+      );
+    }
+  }
+
+  /// Select the best audio track based on priority:
+  /// Priority 1: Preferred track from navigation
+  /// Priority 2: Per-media language preference
+  /// Priority 3: User profile preferences
+  /// Priority 4: Default or first track
+  AudioTrack? _selectAudioTrack(
+    List<AudioTrack> availableTracks,
+    PlexUserProfile? profileSettings,
+  ) {
+    if (availableTracks.isEmpty) return null;
+
+    AudioTrack? trackToSelect;
+
+    // Priority 1: Try to match preferred track from navigation
+    if (widget.preferredAudioTrack != null) {
+      appLogger.d('Priority 1: Checking preferred track from navigation');
+      appLogger.d(
+        '  Preferred: ${widget.preferredAudioTrack!.title ?? "Track ${widget.preferredAudioTrack!.id}"} (${widget.preferredAudioTrack!.language ?? "unknown"})',
+      );
+      trackToSelect = _findBestAudioMatch(
+        availableTracks,
+        widget.preferredAudioTrack!,
+      );
+      if (trackToSelect != null) {
+        appLogger.d('  Matched preferred track');
+        return trackToSelect;
+      }
+      appLogger.d('  No match found for preferred track');
+    } else {
+      appLogger.d('Priority 1: No preferred track from navigation');
+    }
+
+    // Priority 2: If no preferred track matched, try per-media language preference
+    if (widget.metadata.audioLanguage != null) {
+      appLogger.d('Priority 2: Checking per-media audio language preference');
+      appLogger.d(
+        '  Per-media audio language: ${widget.metadata.audioLanguage}',
+      );
+
+      final matchedTrack = availableTracks.firstWhere(
+        (track) =>
+            _languageMatches(track.language, widget.metadata.audioLanguage),
+        orElse: () => availableTracks.first,
+      );
+
+      if (_languageMatches(
+        matchedTrack.language,
+        widget.metadata.audioLanguage,
+      )) {
+        appLogger.d('  Matched per-media audio language preference');
+        return matchedTrack;
+      }
+      appLogger.d('  No match found for per-media audio language');
+    } else {
+      appLogger.d('Priority 2: No per-media audio language preference');
+    }
+
+    // Priority 3: If no preferred track matched, try user profile preferences
+    if (profileSettings != null) {
+      appLogger.d('Priority 3: Checking user profile preferences');
+      trackToSelect = _findAudioTrackByProfile(
+        availableTracks,
+        profileSettings,
+      );
+      if (trackToSelect != null) {
+        return trackToSelect;
+      }
+    } else {
+      appLogger.d('Priority 3: No user profile available');
+    }
+
+    // Priority 4: If no match, use default or first track
+    appLogger.d('Priority 4: Using default or first available track');
+    trackToSelect = availableTracks.firstWhere(
+      (t) => t.isDefault == true,
+      orElse: () => availableTracks.first,
+    );
+    final isDefault = trackToSelect.isDefault == true;
+    appLogger.d(
+      '  Selected ${isDefault ? "default" : "first"} track: ${trackToSelect.title ?? "Track ${trackToSelect.id}"} (${trackToSelect.language ?? "unknown"})',
+    );
+
+    return trackToSelect;
+  }
+
+  /// Select the best subtitle track based on priority:
+  /// Priority 1: Preferred track from navigation
+  /// Priority 2: Per-media language preference
+  /// Priority 3: User profile preferences
+  /// Priority 4: Default track
+  /// Priority 5: Off
+  SubtitleTrack _selectSubtitleTrack(
+    List<SubtitleTrack> availableTracks,
+    PlexUserProfile? profileSettings,
+    AudioTrack? selectedAudioTrack,
+  ) {
+    SubtitleTrack? subtitleToSelect;
+
+    // Priority 1: Try preferred track from navigation (always wins)
+    if (widget.preferredSubtitleTrack != null) {
+      appLogger.d('Priority 1: Checking preferred track from navigation');
+      if (widget.preferredSubtitleTrack!.id == 'no') {
+        appLogger.d('  Preferred: OFF');
+        return SubtitleTrack.no();
+      } else if (availableTracks.isNotEmpty) {
+        appLogger.d(
+          '  Preferred: ${widget.preferredSubtitleTrack!.title ?? "Track ${widget.preferredSubtitleTrack!.id}"} (${widget.preferredSubtitleTrack!.language ?? "unknown"})',
+        );
+        subtitleToSelect = _findBestSubtitleMatch(
+          availableTracks,
+          widget.preferredSubtitleTrack!,
+        );
+        if (subtitleToSelect != null) {
+          appLogger.d('  Matched preferred track');
+          return subtitleToSelect;
+        }
+        appLogger.d('  No match found for preferred track');
+      }
+    } else {
+      appLogger.d('Priority 1: No preferred track from navigation');
+    }
+
+    // Priority 2: If no preferred match, try per-media language preference
+    if (widget.metadata.subtitleLanguage != null) {
+      appLogger.d(
+        'Priority 2: Checking per-media subtitle language preference',
+      );
+      appLogger.d(
+        '  Per-media subtitle language: ${widget.metadata.subtitleLanguage}',
+      );
+
+      // Check if subtitle should be disabled
+      if (widget.metadata.subtitleLanguage == 'none' ||
+          widget.metadata.subtitleLanguage!.isEmpty) {
+        appLogger.d('  Per-media preference: Subtitles OFF');
+        return SubtitleTrack.no();
+      } else if (availableTracks.isNotEmpty) {
+        final matchedTrack = availableTracks.firstWhere(
+          (track) => _languageMatches(
+            track.language,
+            widget.metadata.subtitleLanguage,
+          ),
+          orElse: () => availableTracks.first,
+        );
+        if (_languageMatches(
+          matchedTrack.language,
+          widget.metadata.subtitleLanguage,
+        )) {
+          appLogger.d('  Matched per-media subtitle language preference');
+          return matchedTrack;
+        }
+        appLogger.d('  No match found for per-media subtitle language');
+      }
+    } else {
+      appLogger.d('Priority 2: No per-media subtitle language preference');
+    }
+
+    // Priority 3: If no preferred match, apply user profile preferences
+    if (profileSettings != null && availableTracks.isNotEmpty) {
+      appLogger.d('Priority 3: Checking user profile preferences');
+      subtitleToSelect = _findSubtitleTrackByProfile(
+        availableTracks,
+        profileSettings,
+        selectedAudioTrack: selectedAudioTrack,
+      );
+      if (subtitleToSelect != null) {
+        return subtitleToSelect;
+      }
+    } else if (availableTracks.isNotEmpty) {
+      appLogger.d('Priority 3: No user profile available');
+    }
+
+    // Priority 4: If no profile match, check for default subtitle
+    if (availableTracks.isNotEmpty) {
+      appLogger.d('Priority 4: Checking for default subtitle track');
+      final defaultTrack = availableTracks.firstWhere(
+        (t) => t.isDefault == true,
+        orElse: () => availableTracks.first,
+      );
+      if (defaultTrack.isDefault == true) {
+        appLogger.d(
+          '  Found default track: ${defaultTrack.title ?? "Track ${defaultTrack.id}"} (${defaultTrack.language ?? "unknown"})',
+        );
+        return defaultTrack;
+      }
+      appLogger.d('  No default subtitle track found');
+    }
+
+    // Priority 5: If still no subtitle selected, turn off
+    appLogger.d('Priority 5: No subtitle selected - Subtitles OFF');
+    return SubtitleTrack.no();
+  }
+
   void _waitForTracksAndApply() async {
-    // Helper function to process tracks
+    if (!mounted) return;
+
+    // Process tracks and apply selections
     Future<void> processTracks(Tracks tracks) async {
+      if (!mounted) return;
+
       appLogger.d('Starting track selection process');
 
       // Get profile settings for track selection
@@ -1226,212 +1584,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           .where((t) => t.id != 'auto' && t.id != 'no')
           .toList();
 
-      appLogger.d('Available audio tracks: ${realAudioTracks.length}');
-      for (var track in realAudioTracks) {
-        appLogger.d(
-          '  - ${track.title ?? "Track ${track.id}"} (${track.language ?? "unknown"}) ${track.isDefault == true ? "[DEFAULT]" : ""}',
-        );
-      }
-      appLogger.d('Available subtitle tracks: ${realSubtitleTracks.length}');
-      for (var track in realSubtitleTracks) {
-        appLogger.d(
-          '  - ${track.title ?? "Track ${track.id}"} (${track.language ?? "unknown"}) ${track.isDefault == true ? "[DEFAULT]" : ""}',
-        );
-      }
+      // Log available tracks
+      _logAvailableTracks(realAudioTracks, realSubtitleTracks);
 
-      // Select audio track with priority: preferred > per-media > user profile > default > first
+      // Select and apply audio track
       appLogger.d('Audio track selection');
-      if (realAudioTracks.isNotEmpty) {
-        AudioTrack? trackToSelect;
-
-        // Priority 1: Try to match preferred track from navigation
-        if (widget.preferredAudioTrack != null) {
-          appLogger.d('Priority 1: Checking preferred track from navigation');
-          appLogger.d(
-            '  Preferred: ${widget.preferredAudioTrack!.title ?? "Track ${widget.preferredAudioTrack!.id}"} (${widget.preferredAudioTrack!.language ?? "unknown"})',
-          );
-          trackToSelect = _findBestAudioMatch(
-            realAudioTracks,
-            widget.preferredAudioTrack!,
-          );
-          if (trackToSelect != null) {
-            appLogger.d('  Matched preferred track');
-          } else {
-            appLogger.d('  No match found for preferred track');
-          }
-        } else {
-          appLogger.d('Priority 1: No preferred track from navigation');
-        }
-
-        // Priority 2: If no preferred track matched, try per-media language preference
-        if (trackToSelect == null && widget.metadata.audioLanguage != null) {
-          appLogger.d(
-            'Priority 2: Checking per-media audio language preference',
-          );
-          appLogger.d(
-            '  Per-media audio language: ${widget.metadata.audioLanguage}',
-          );
-          trackToSelect = realAudioTracks.firstWhere(
-            (track) =>
-                _languageMatches(track.language, widget.metadata.audioLanguage),
-            orElse: () => realAudioTracks.first,
-          );
-          if (_languageMatches(
-            trackToSelect.language,
-            widget.metadata.audioLanguage,
-          )) {
-            appLogger.d('  Matched per-media audio language preference');
-          } else {
-            appLogger.d('  No match found for per-media audio language');
-            trackToSelect = null;
-          }
-        } else if (trackToSelect == null) {
-          appLogger.d('Priority 2: No per-media audio language preference');
-        }
-
-        // Priority 3: If no preferred track matched, try user profile preferences
-        if (trackToSelect == null && profileSettings != null) {
-          appLogger.d('Priority 3: Checking user profile preferences');
-          trackToSelect = _findAudioTrackByProfile(
-            realAudioTracks,
-            profileSettings,
-          );
-        } else if (trackToSelect == null) {
-          appLogger.d('Priority 3: No user profile available');
-        }
-
-        // Priority 4: If no match, use default or first track
-        if (trackToSelect == null) {
-          appLogger.d('Priority 4: Using default or first available track');
-          trackToSelect = realAudioTracks.firstWhere(
-            (t) => t.isDefault == true,
-            orElse: () => realAudioTracks.first,
-          );
-          final isDefault = trackToSelect.isDefault == true;
-          appLogger.d(
-            '  Selected ${isDefault ? "default" : "first"} track: ${trackToSelect.title ?? "Track ${trackToSelect.id}"} (${trackToSelect.language ?? "unknown"})',
-          );
-        }
-
+      final selectedAudioTrack = _selectAudioTrack(
+        realAudioTracks,
+        profileSettings,
+      );
+      if (selectedAudioTrack != null) {
         appLogger.i(
-          'Final audio selection: ${trackToSelect.title ?? "Track ${trackToSelect.id}"} (${trackToSelect.language ?? "unknown"})',
+          'Final audio selection: ${selectedAudioTrack.title ?? "Track ${selectedAudioTrack.id}"} (${selectedAudioTrack.language ?? "unknown"})',
         );
-        player!.setAudioTrack(trackToSelect);
+        player!.setAudioTrack(selectedAudioTrack);
       } else {
         appLogger.d('No audio tracks available');
       }
 
-      // Select subtitle track with priority: preferred > per-media > user profile > default > off
+      // Select and apply subtitle track
       appLogger.d('Subtitle track selection');
-      SubtitleTrack? subtitleToSelect;
-
-      // Priority 1: Try preferred track from navigation (always wins)
-      if (widget.preferredSubtitleTrack != null) {
-        appLogger.d('Priority 1: Checking preferred track from navigation');
-        if (widget.preferredSubtitleTrack!.id == 'no') {
-          appLogger.d('  Preferred: OFF');
-          subtitleToSelect = SubtitleTrack.no();
-          appLogger.d('  Using preferred setting: Subtitles OFF');
-        } else if (realSubtitleTracks.isNotEmpty) {
-          appLogger.d(
-            '  Preferred: ${widget.preferredSubtitleTrack!.title ?? "Track ${widget.preferredSubtitleTrack!.id}"} (${widget.preferredSubtitleTrack!.language ?? "unknown"})',
-          );
-          subtitleToSelect = _findBestSubtitleMatch(
-            realSubtitleTracks,
-            widget.preferredSubtitleTrack!,
-          );
-          if (subtitleToSelect != null) {
-            appLogger.d('  Matched preferred track');
-          } else {
-            appLogger.d('  No match found for preferred track');
-          }
-        }
-      } else {
-        appLogger.d('Priority 1: No preferred track from navigation');
-      }
-
-      // Priority 2: If no preferred match, try per-media language preference
-      if (subtitleToSelect == null &&
-          widget.metadata.subtitleLanguage != null) {
-        appLogger.d(
-          'Priority 2: Checking per-media subtitle language preference',
-        );
-        appLogger.d(
-          '  Per-media subtitle language: ${widget.metadata.subtitleLanguage}',
-        );
-        // Check if subtitle should be disabled
-        if (widget.metadata.subtitleLanguage == 'none' ||
-            widget.metadata.subtitleLanguage!.isEmpty) {
-          appLogger.d('  Per-media preference: Subtitles OFF');
-          subtitleToSelect = SubtitleTrack.no();
-        } else if (realSubtitleTracks.isNotEmpty) {
-          final matchedTrack = realSubtitleTracks.firstWhere(
-            (track) => _languageMatches(
-              track.language,
-              widget.metadata.subtitleLanguage,
-            ),
-            orElse: () => realSubtitleTracks.first,
-          );
-          if (_languageMatches(
-            matchedTrack.language,
-            widget.metadata.subtitleLanguage,
-          )) {
-            subtitleToSelect = matchedTrack;
-            appLogger.d('  Matched per-media subtitle language preference');
-          } else {
-            appLogger.d('  No match found for per-media subtitle language');
-          }
-        }
-      } else if (subtitleToSelect == null) {
-        appLogger.d('Priority 2: No per-media subtitle language preference');
-      }
-
-      // Priority 3: If no preferred match, apply user profile preferences
-      if (subtitleToSelect == null &&
-          profileSettings != null &&
-          realSubtitleTracks.isNotEmpty) {
-        appLogger.d('Priority 3: Checking user profile preferences');
-        // Get the currently selected audio track
-        final currentAudioTrack = realAudioTracks.firstWhere(
-          (t) => t.id == player!.state.track.audio.id,
-          orElse: () => realAudioTracks.first,
-        );
-        subtitleToSelect = _findSubtitleTrackByProfile(
-          realSubtitleTracks,
-          profileSettings,
-          selectedAudioTrack: currentAudioTrack,
-        );
-      } else if (subtitleToSelect == null && realSubtitleTracks.isNotEmpty) {
-        appLogger.d('Priority 3: No user profile available');
-      }
-
-      // Priority 4: If no profile match, check for default subtitle
-      if (subtitleToSelect == null && realSubtitleTracks.isNotEmpty) {
-        appLogger.d('Priority 4: Checking for default subtitle track');
-        final defaultTrackIndex = realSubtitleTracks.indexWhere(
-          (t) => t.isDefault == true,
-        );
-        if (defaultTrackIndex != -1) {
-          subtitleToSelect = realSubtitleTracks[defaultTrackIndex];
-          appLogger.d(
-            '  Found default track: ${subtitleToSelect.title ?? "Track ${subtitleToSelect.id}"} (${subtitleToSelect.language ?? "unknown"})',
-          );
-        } else {
-          appLogger.d('  No default subtitle track found');
-        }
-      }
-
-      // If still no subtitle selected, turn off
-      if (subtitleToSelect == null) {
-        appLogger.d('Priority 5: No subtitle selected - Subtitles OFF');
-        subtitleToSelect = SubtitleTrack.no();
-      }
-
-      final finalSubtitle = subtitleToSelect.id == 'no'
+      final selectedSubtitleTrack = _selectSubtitleTrack(
+        realSubtitleTracks,
+        profileSettings,
+        selectedAudioTrack,
+      );
+      final finalSubtitle = selectedSubtitleTrack.id == 'no'
           ? 'OFF'
-          : '${subtitleToSelect.title ?? "Track ${subtitleToSelect.id}"} (${subtitleToSelect.language ?? "unknown"})';
+          : '${selectedSubtitleTrack.title ?? "Track ${selectedSubtitleTrack.id}"} (${selectedSubtitleTrack.language ?? "unknown"})';
       appLogger.i('Final subtitle selection: $finalSubtitle');
-      player!.setSubtitleTrack(subtitleToSelect);
+      player!.setSubtitleTrack(selectedSubtitleTrack);
 
       // Set playback rate if preferred rate was provided
       if (widget.preferredPlaybackRate != null) {
@@ -1453,50 +1635,32 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     // If not, listen to tracks stream for when they become available
     bool applied = false;
-    final subscription = player!.stream.tracks.listen((tracks) async {
+    _trackLoadingSubscription = player!.stream.tracks.listen((tracks) async {
       // Check if tracks are loaded (have at least one track) and not yet applied
       if (!applied && (tracks.audio.isNotEmpty || tracks.subtitle.isNotEmpty)) {
         applied = true;
         await processTracks(tracks);
+        // Cancel subscription after successful processing
+        _trackLoadingSubscription?.cancel();
+        _trackLoadingSubscription = null;
       }
     });
 
-    // Cancel subscription after timeout
+    // Cancel subscription after timeout if still waiting
     Future.delayed(const Duration(seconds: 5), () {
-      subscription.cancel();
+      if (!applied) {
+        _trackLoadingSubscription?.cancel();
+        _trackLoadingSubscription = null;
+      }
     });
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
     // Send timeline update when playback state changes
-    _sendProgress(isPlaying ? 'playing' : 'paused');
+    _progressTracker?.sendProgress(isPlaying ? 'playing' : 'paused');
 
     // Update OS media controls playback state
     _updateMediaControlsPlaybackState();
-  }
-
-  void _sendProgress(String state) {
-    // Don't send misleading data if player isn't available
-    if (player == null) return;
-
-    final position = player!.state.position.inMilliseconds;
-    final duration = player!.state.duration.inMilliseconds;
-
-    if (duration > 0) {
-      final client = _cachedClient;
-      if (client == null) return;
-
-      client
-          .updateProgress(
-            widget.metadata.ratingKey,
-            time: position,
-            state: state,
-            duration: duration,
-          )
-          .catchError((error) {
-            // Silently handle errors - don't interrupt playback
-          });
-    }
   }
 
   void _onVideoCompleted(bool completed) {
@@ -1536,160 +1700,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   // OS Media Controls Integration
 
-  void _initializeMediaControls() async {
-    // Listen to media control events
-    _mediaControlSubscription = OsMediaControls.controlEvents.listen((event) {
-      if (event is PlayEvent) {
-        appLogger.d('Media control: Play event received');
-        if (player != null) {
-          player!.play();
-          // Clear the inactive state flag since user manually resumed via media controls
-          _wasPlayingBeforeInactive = false;
-          appLogger.d(
-            'Cleared _wasPlayingBeforeInactive due to manual play via media controls',
-          );
-          // Update media controls to reflect the new state
-          _updateMediaControlsPlaybackState();
-        }
-      } else if (event is PauseEvent) {
-        appLogger.d('Media control: Pause event received');
-        if (player != null) {
-          player!.pause();
-          // Don't set _wasPlayingBeforeInactive here - this is a manual user action
-          // The flag should only be set during automatic app lifecycle pauses
-          appLogger.d('Video paused via media controls');
-          // Update media controls to reflect the new state
-          _updateMediaControlsPlaybackState();
-        }
-      } else if (event is SeekEvent) {
-        appLogger.d('Media control: Seek event received to ${event.position}');
-        player?.seek(event.position);
-      } else if (event is NextTrackEvent) {
-        appLogger.d('Media control: Next track event received');
-        if (_nextEpisode != null) {
-          _playNext();
-        }
-      } else if (event is PreviousTrackEvent) {
-        appLogger.d('Media control: Previous track event received');
-        if (_previousEpisode != null) {
-          _playPrevious();
-        }
-      }
-    });
-
-    // Enable/disable next/previous track controls based on content type and playback mode
-    final playbackState = context.read<PlaybackStateProvider>();
-    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
-    final isInPlaylist = playbackState.isPlaylistActive;
-
-    // Enable controls for episodes OR playlist items
-    if (isEpisode || isInPlaylist) {
-      // Enable next/previous track controls for episodes and playlist items
-      await OsMediaControls.enableControls([
-        MediaControl.next,
-        MediaControl.previous,
-      ]);
-    } else {
-      // Disable next/previous track controls for standalone movies
-      await OsMediaControls.disableControls([
-        MediaControl.next,
-        MediaControl.previous,
-      ]);
-    }
-
-    // Set initial metadata
-    await _updateMediaMetadata();
-  }
-
-  Future<void> _updateMediaMetadata() async {
-    if (!mounted) {
-      appLogger.w('Cannot update media metadata: widget not mounted');
-      return;
-    }
-
-    final metadata = widget.metadata;
-    // Use server-specific client for this metadata
-    final client = _getClientForMetadata(context);
-
-    // Get artwork URL
-    String? artworkUrl;
-    if (client == null) {
-      appLogger.w(
-        'Cannot get artwork URL for media controls: Plex client is null',
-      );
-    } else {
-      final thumbUrl = metadata.type.toLowerCase() == 'episode'
-          ? metadata.grandparentThumb ?? metadata.thumb
-          : metadata.thumb;
-
-      if (thumbUrl != null) {
-        try {
-          artworkUrl = client.getThumbnailUrl(thumbUrl);
-          appLogger.d('Artwork URL for media controls: $artworkUrl');
-        } catch (e) {
-          appLogger.w('Failed to get artwork URL for media controls', error: e);
-        }
-      } else {
-        appLogger.d('No thumbnail URL available for media controls');
-      }
-    }
-
-    // Build title/artist based on content type
-    String title = metadata.title;
-    String? artist;
-    String? album;
-
-    if (metadata.type.toLowerCase() == 'episode') {
-      title = metadata.title;
-      artist = metadata.grandparentTitle; // Show name
-      if (metadata.parentIndex != null) {
-        album = 'Season ${metadata.parentIndex}';
-      }
-    }
-
-    await OsMediaControls.setMetadata(
-      MediaMetadata(
-        title: title,
-        artist: artist,
-        album: album,
-        duration: metadata.duration != null
-            ? Duration(milliseconds: metadata.duration!)
-            : null,
-        artworkUrl: artworkUrl,
-      ),
-    );
-
-    // Set initial playback state
-    _updateMediaControlsPlaybackState();
-  }
-
+  /// Wrapper method to update media controls playback state
   void _updateMediaControlsPlaybackState() {
     if (player == null) return;
 
-    OsMediaControls.setPlaybackState(
-      MediaPlaybackState(
-        state: player!.state.playing
-            ? PlaybackState.playing
-            : PlaybackState.paused,
-        position: player!.state.position,
-        speed: player!.state.rate,
-      ),
+    _mediaControlsManager?.updatePlaybackState(
+      isPlaying: player!.state.playing,
+      position: player!.state.position,
+      speed: player!.state.rate,
+      force: true, // Force update since this is an explicit state change
     );
-  }
-
-  void _updateMediaControlsPosition() {
-    if (player == null) return;
-
-    // Only update if playing to avoid excessive updates
-    if (player!.state.playing) {
-      OsMediaControls.setPlaybackState(
-        MediaPlaybackState(
-          state: PlaybackState.playing,
-          position: player!.state.position,
-          speed: player!.state.rate,
-        ),
-      );
-    }
   }
 
   Future<void> _playNext() async {
@@ -1828,18 +1848,31 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       return;
     }
 
-    // Capture current track selection BEFORE pausing
-    final currentAudioTrack = player!.state.track.audio;
-    final currentSubtitleTrack = player!.state.track.subtitle;
+    // Capture current state atomically to avoid race conditions
+    final currentPlayer = player;
+    if (currentPlayer == null) {
+      // Player already disposed, navigate without preserving settings
+      if (mounted) {
+        navigateToVideoPlayer(
+          context,
+          metadata: episodeMetadata,
+          usePushReplacement: true,
+        );
+      }
+      return;
+    }
+
+    final currentAudioTrack = currentPlayer.state.track.audio;
+    final currentSubtitleTrack = currentPlayer.state.track.subtitle;
+    final currentRate = currentPlayer.state.rate;
 
     // Pause and stop current playback
-    player!.pause();
-    _progressTimer?.cancel();
-    _sendProgress('stopped');
+    currentPlayer.pause();
+    _progressTracker?.sendProgress('stopped');
+    _progressTracker?.stopTracking();
 
     // Navigate to the episode using pushReplacement to destroy current player
     if (mounted) {
-      final currentRate = player!.state.rate;
       navigateToVideoPlayer(
         context,
         metadata: episodeMetadata,
@@ -1861,6 +1894,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       );
     }
 
+    // Cache platform detection to avoid multiple calls
+    final isMobile = PlatformDetector.isMobile(context);
+
     return PopScope(
       canPop:
           false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
@@ -1877,19 +1913,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
               .translucent, // Allow taps to pass through to controls
           onScaleStart: (details) {
             // Initialize pinch gesture tracking (mobile only)
-            if (!PlatformDetector.isMobile(context)) return;
+            if (!isMobile) return;
             _isPinching = false;
           },
           onScaleUpdate: (details) {
             // Track if this is a pinch gesture (2+ fingers) on mobile
-            if (!PlatformDetector.isMobile(context)) return;
+            if (!isMobile) return;
             if (details.pointerCount >= 2) {
               _isPinching = true;
             }
           },
           onScaleEnd: (details) {
             // Only toggle if we detected a pinch gesture on mobile
-            if (!PlatformDetector.isMobile(context)) return;
+            if (!isMobile) return;
             if (_isPinching) {
               _toggleContainCover();
               _isPinching = false;
@@ -2055,22 +2091,27 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                   ),
                 ),
               // Buffering indicator
-              if (_isBuffering)
-                Positioned.fill(
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 3,
+              ValueListenableBuilder<bool>(
+                valueListenable: _isBuffering,
+                builder: (context, isBuffering, child) {
+                  if (!isBuffering) return const SizedBox.shrink();
+                  return Positioned.fill(
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
+              ),
             ],
           ),
         ),

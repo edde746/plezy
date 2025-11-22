@@ -1,9 +1,11 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'mixins/multi_server_fields.dart';
+
 part 'plex_playlist.g.dart';
 
 @JsonSerializable()
-class PlexPlaylist {
+class PlexPlaylist with MultiServerFields {
   final String ratingKey;
   final String key;
   final String type; // "playlist"
@@ -22,9 +24,11 @@ class PlexPlaylist {
   final String? guid;
   final String? thumb;
 
-  // Multi-server support: Track which server this playlist belongs to
+  // Multi-server support fields (from MultiServerFields mixin)
+  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverId;
+  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverName;
 
