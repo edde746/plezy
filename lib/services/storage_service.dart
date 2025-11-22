@@ -21,6 +21,7 @@ class StorageService {
   static const String _keyHiddenLibraries = 'hidden_libraries';
   static const String _keyServersList = 'servers_list';
   static const String _keyEnabledServers = 'enabled_servers';
+  static const String _keyServerOrder = 'server_order';
 
   static StorageService? _instance;
   late SharedPreferences _prefs;
@@ -376,7 +377,34 @@ class StorageService {
 
   /// Clear all multi-server data
   Future<void> clearMultiServerData() async {
-    await Future.wait([clearServersList(), clearEnabledServers()]);
+    await Future.wait([
+      clearServersList(),
+      clearEnabledServers(),
+      clearServerOrder(),
+    ]);
+  }
+
+  /// Server Order (stored as JSON list of server IDs)
+  Future<void> saveServerOrder(List<String> serverIds) async {
+    final jsonString = json.encode(serverIds);
+    await _prefs.setString(_keyServerOrder, jsonString);
+  }
+
+  List<String>? getServerOrder() {
+    final jsonString = _prefs.getString(_keyServerOrder);
+    if (jsonString == null) return null;
+
+    try {
+      final decoded = json.decode(jsonString) as List<dynamic>;
+      return decoded.map((e) => e.toString()).toList();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Clear server order
+  Future<void> clearServerOrder() async {
+    await _prefs.remove(_keyServerOrder);
   }
 
   // Private helper methods

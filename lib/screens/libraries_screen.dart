@@ -48,6 +48,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   String? _errorMessage;
   String? _selectedLibraryGlobalKey;
   bool _isInitialLoad = true;
+  List<String>? _serverOrder; // Cached server order from storage
 
   Map<String, String> _selectedFilters = {};
   PlexSort? _selectedSort;
@@ -112,6 +113,37 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     return uniqueServerIds.length > 1;
   }
 
+  /// Get ordered list of server IDs from libraries
+  List<String> _getOrderedServerIds(List<PlexLibrary> libraries) {
+    // Get unique server IDs from libraries
+    final serverIds = libraries
+        .where((lib) => lib.serverId != null)
+        .map((lib) => lib.serverId!)
+        .toSet()
+        .toList();
+
+    if (_serverOrder == null || _serverOrder!.isEmpty) {
+      return serverIds;
+    }
+
+    // Apply saved order, but include any new servers not in the saved order
+    final ordered = <String>[];
+    for (final id in _serverOrder!) {
+      if (serverIds.contains(id)) {
+        ordered.add(id);
+      }
+    }
+
+    // Add any servers not in saved order
+    for (final id in serverIds) {
+      if (!ordered.contains(id)) {
+        ordered.add(id);
+      }
+    }
+
+    return ordered;
+  }
+
   Future<void> _loadLibraries() async {
     // Extract context dependencies before async gap
     final multiServerProvider = Provider.of<MultiServerProvider>(
@@ -153,9 +185,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         savedOrder,
       );
 
+      // Load saved server order
+      final savedServerOrder = storage.getServerOrder();
+
       _updateState(() {
         _allLibraries =
             orderedLibraries; // Store all libraries with ordering applied
+        _serverOrder = savedServerOrder;
         _isLoadingLibraries = false;
       });
 
@@ -163,7 +199,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         // Compute visible libraries for initial load
         final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
         final visibleLibraries = allLibraries
-            .where((lib) => !hiddenKeys.contains(lib.key))
+            .where((lib) => !hiddenKeys.contains(lib.globalKey))
             .toList();
 
         // Load saved preferences
@@ -251,7 +287,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
     final visibleLibraries = _allLibraries
-        .where((lib) => !hiddenKeys.contains(lib.key))
+        .where((lib) => !hiddenKeys.contains(lib.globalKey))
         .toList();
 
     // Find the library by key
@@ -499,25 +535,25 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       listen: false,
     );
     final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(
-      library.key,
+      library.globalKey,
     );
 
     if (isHidden) {
-      await hiddenLibrariesProvider.unhideLibrary(library.key);
+      await hiddenLibrariesProvider.unhideLibrary(library.globalKey);
     } else {
       // Check if we're hiding the currently selected library
       final isCurrentlySelected =
           _selectedLibraryGlobalKey == library.globalKey;
 
-      await hiddenLibrariesProvider.hideLibrary(library.key);
+      await hiddenLibrariesProvider.hideLibrary(library.globalKey);
 
       // If we just hid the selected library, select the first visible one
       if (isCurrentlySelected) {
         // Compute visible libraries after hiding
         final visibleLibraries = _allLibraries
             .where(
-              (lib) =>
-                  !hiddenLibrariesProvider.hiddenLibraryKeys.contains(lib.key),
+              (lib) => !hiddenLibrariesProvider.hiddenLibraryKeys
+                  .contains(lib.globalKey),
             )
             .toList();
 
@@ -746,7 +782,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       groupedLibraries.putIfAbsent(serverKey, () => []).add(library);
     }
 
-    final serverKeys = groupedLibraries.keys.toList();
+    // Use ordered server keys
+    final serverKeys = _getOrderedServerIds(visibleLibraries);
     for (int i = 0; i < serverKeys.length; i++) {
       final serverKey = serverKeys[i];
       final libraries = groupedLibraries[serverKey]!;
@@ -892,7 +929,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Compute visible libraries (filtered from all libraries)
     final visibleLibraries = _allLibraries
-        .where((lib) => !hiddenKeys.contains(lib.key))
+        .where((lib) => !hiddenKeys.contains(lib.globalKey))
         .toList();
 
     return Scaffold(
@@ -1072,11 +1109,70 @@ class _LibraryManagementSheet extends StatefulWidget {
 
 class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   late List<PlexLibrary> _tempLibraries;
+  List<String>? _serverOrder;
+  bool _isLoadingServerOrder = true;
 
   @override
   void initState() {
     super.initState();
     _tempLibraries = List.from(widget.allLibraries);
+    _loadServerOrder();
+  }
+
+  /// Load server order from storage
+  Future<void> _loadServerOrder() async {
+    final storage = await StorageService.getInstance();
+    final savedOrder = storage.getServerOrder();
+
+    if (mounted) {
+      setState(() {
+        _serverOrder = savedOrder;
+        _isLoadingServerOrder = false;
+      });
+    }
+  }
+
+  /// Save server order to storage
+  Future<void> _saveServerOrder(List<String> serverIds) async {
+    final storage = await StorageService.getInstance();
+    await storage.saveServerOrder(serverIds);
+
+    if (mounted) {
+      setState(() {
+        _serverOrder = serverIds;
+      });
+    }
+  }
+
+  /// Get ordered list of server IDs
+  List<String> _getOrderedServerIds() {
+    // Get unique server IDs from libraries
+    final serverIds = _tempLibraries
+        .where((lib) => lib.serverId != null)
+        .map((lib) => lib.serverId!)
+        .toSet()
+        .toList();
+
+    if (_serverOrder == null || _serverOrder!.isEmpty) {
+      return serverIds;
+    }
+
+    // Apply saved order, but include any new servers not in the saved order
+    final ordered = <String>[];
+    for (final id in _serverOrder!) {
+      if (serverIds.contains(id)) {
+        ordered.add(id);
+      }
+    }
+
+    // Add any servers not in saved order
+    for (final id in serverIds) {
+      if (!ordered.contains(id)) {
+        ordered.add(id);
+      }
+    }
+
+    return ordered;
   }
 
   /// Check if libraries come from multiple servers
@@ -1232,80 +1328,229 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
               ),
             ),
 
-            // Reorderable library list
+            // Library list (grouped by server if multiple servers)
             Expanded(
-              child: ReorderableListView.builder(
-                scrollController: scrollController,
-                onReorder: _reorderLibraries,
-                itemCount: _tempLibraries.length,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                buildDefaultDragHandles: false,
-                itemBuilder: (context, index) {
-                  final library = _tempLibraries[index];
-                  final isHidden = hiddenLibraryKeys.contains(library.key);
-
-                  return Opacity(
-                    key: ValueKey(library.key),
-                    opacity: isHidden ? 0.5 : 1.0,
-                    child: ListTile(
-                      leading: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ReorderableDragStartListener(
-                            index: index,
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: Icon(
-                                Icons.drag_indicator,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.color
-                                    ?.withValues(alpha: 0.5),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(_getLibraryIcon(library.type)),
-                        ],
-                      ),
-                      title: Row(
-                        children: [
-                          Expanded(child: Text(library.title)),
-                          if (_hasMultipleServers && library.serverName != null)
-                            ServerBadge(serverName: library.serverName),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              isHidden
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () => widget.onToggleVisibility(library),
-                            tooltip: isHidden
-                                ? t.libraries.showLibrary
-                                : t.libraries.hideLibrary,
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.more_vert),
-                            onPressed: () =>
-                                _showLibraryMenuBottomSheet(context, library),
-                            tooltip: t.libraries.libraryOptions,
-                          ),
-                        ],
-                      ),
+              child: _hasMultipleServers
+                  ? _buildGroupedLibraryList(
+                      scrollController,
+                      hiddenLibraryKeys,
+                    )
+                  : _buildFlatLibraryList(
+                      scrollController,
+                      hiddenLibraryKeys,
                     ),
-                  );
-                },
-              ),
             ),
           ],
         );
       },
+    );
+  }
+
+
+  /// Build flat library list (single server)
+  Widget _buildFlatLibraryList(
+    ScrollController scrollController,
+    Set<String> hiddenLibraryKeys,
+  ) {
+    return ReorderableListView.builder(
+      scrollController: scrollController,
+      onReorder: _reorderLibraries,
+      itemCount: _tempLibraries.length,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      buildDefaultDragHandles: false,
+      itemBuilder: (context, index) {
+        final library = _tempLibraries[index];
+        return _buildLibraryTile(library, index, hiddenLibraryKeys);
+      },
+    );
+  }
+
+  /// Build grouped library list (multiple servers)
+  Widget _buildGroupedLibraryList(
+    ScrollController scrollController,
+    Set<String> hiddenLibraryKeys,
+  ) {
+    // Group libraries by server
+    final Map<String, List<PlexLibrary>> groupedLibraries = {};
+    for (final library in _tempLibraries) {
+      final serverKey = library.serverId ?? 'unknown';
+      groupedLibraries.putIfAbsent(serverKey, () => []).add(library);
+    }
+
+    // Use ordered server keys
+    final serverKeys = _getOrderedServerIds();
+
+    return ReorderableListView.builder(
+      scrollController: scrollController,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      buildDefaultDragHandles: false,
+      onReorder: (oldIndex, newIndex) {
+        // Reorder servers
+        final reorderedServerIds = List<String>.from(serverKeys);
+        if (newIndex > oldIndex) {
+          newIndex -= 1;
+        }
+        final serverId = reorderedServerIds.removeAt(oldIndex);
+        reorderedServerIds.insert(newIndex, serverId);
+        _saveServerOrder(reorderedServerIds);
+      },
+      itemCount: serverKeys.length,
+      itemBuilder: (context, serverIndex) {
+        final serverKey = serverKeys[serverIndex];
+        final libraries = groupedLibraries[serverKey]!;
+        final serverName = libraries.first.serverName ?? 'Unknown Server';
+
+        return Column(
+          key: ValueKey(serverKey),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Server header with drag handle
+            ListTile(
+              leading: ReorderableDragStartListener(
+                index: serverIndex,
+                child: Icon(
+                  Icons.drag_indicator,
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color
+                      ?.withValues(alpha: 0.5),
+                ),
+              ),
+              title: Text(
+                serverName,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+
+            // Libraries for this server (reorderable within server)
+            ...libraries.asMap().entries.map((entry) {
+              final index = entry.key;
+              final library = entry.value;
+              return _buildLibraryTile(
+                library,
+                index,
+                hiddenLibraryKeys,
+                showServerBadge: false,
+                enableDrag: false, // Disable drag for individual libraries
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Reorder libraries within a server group
+  void _reorderLibrariesInServer(
+    String serverKey,
+    List<PlexLibrary> serverLibraries,
+    int oldIndex,
+    int newIndex,
+  ) {
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+
+      // Get the library being moved
+      final library = serverLibraries[oldIndex];
+
+      // Find global indices
+      final globalOldIndex = _tempLibraries.indexOf(library);
+
+      // Calculate the new global index
+      // We need to find where this library should go in the global list
+      final targetLibrary = newIndex < serverLibraries.length
+          ? serverLibraries[newIndex]
+          : serverLibraries.last;
+      final globalNewIndex = _tempLibraries.indexOf(targetLibrary);
+
+      // Reorder in global list
+      _tempLibraries.removeAt(globalOldIndex);
+      _tempLibraries.insert(
+        globalOldIndex < globalNewIndex ? globalNewIndex : globalNewIndex,
+        library,
+      );
+    });
+
+    // Apply immediately
+    widget.onReorder(_tempLibraries);
+  }
+
+  /// Build a single library tile
+  Widget _buildLibraryTile(
+    PlexLibrary library,
+    int index,
+    Set<String> hiddenLibraryKeys, {
+    bool showServerBadge = true,
+    bool enableDrag = true,
+  }) {
+    final isHidden = hiddenLibraryKeys.contains(library.globalKey);
+
+    return Opacity(
+      key: ValueKey(library.globalKey),
+      opacity: isHidden ? 0.5 : 1.0,
+      child: ListTile(
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (enableDrag)
+              ReorderableDragStartListener(
+                index: index,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Icon(
+                    Icons.drag_indicator,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.color
+                        ?.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+            if (enableDrag) const SizedBox(width: 8),
+            if (!enableDrag) const SizedBox(width: 12),
+            Icon(_getLibraryIcon(library.type)),
+          ],
+        ),
+        title: Row(
+          children: [
+            Expanded(child: Text(library.title)),
+            if (showServerBadge &&
+                _hasMultipleServers &&
+                library.serverName != null)
+              ServerBadge(
+                serverName: library.serverName,
+                showFullName: true,
+              ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(
+                isHidden ? Icons.visibility_off : Icons.visibility,
+              ),
+              onPressed: () => widget.onToggleVisibility(library),
+              tooltip:
+                  isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,
+            ),
+            IconButton(
+              icon: const Icon(Icons.more_vert),
+              onPressed: () => _showLibraryMenuBottomSheet(context, library),
+              tooltip: t.libraries.libraryOptions,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
