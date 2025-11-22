@@ -53,10 +53,17 @@ jobs:
           find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null -print0 | xargs -0 dart format --output=none --set-exit-if-changed
       - name: Analyze code
         run: |
-          # Run flutter analyze and filter out info-level warnings
-          # Only fail on errors and warnings, not on info messages
+          # Run flutter analyze
+          # Fails on any errors or warnings (info messages are allowed)
           flutter analyze 2>&1 | tee analyze_output.txt
-          # Check if there are any errors (not just info)
+
+          # Check the exit status
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ Analysis failed"
+            exit 1
+          fi
+
+          # Also verify no warnings or errors in output
           if grep -q "error •" analyze_output.txt; then
             echo "❌ Analysis failed with errors"
             exit 1
@@ -64,8 +71,32 @@ jobs:
             echo "⚠️  Analysis completed with warnings"
             exit 1
           else
-            echo "✅ Analysis passed (info messages are allowed)"
+            echo "✅ Analysis passed - no issues found!"
             exit 0
+          fi
+
+      - name: Check for unused code
+        run: |
+          echo "🔍 Checking for unused code..."
+          dart run dart_code_linter:metrics check-unused-code lib 2>&1 | tee unused_code.txt
+          if grep -qi "no unused code found" unused_code.txt; then
+            echo "✅ No unused code found"
+          else
+            echo "❌ Found unused code:"
+            cat unused_code.txt
+            exit 1
+          fi
+
+      - name: Check for unused files
+        run: |
+          echo "🔍 Checking for unused files..."
+          dart run dart_code_linter:metrics check-unused-files lib 2>&1 | tee unused_files.txt
+          if grep -qi "no unused files found" unused_files.txt; then
+            echo "✅ No unused files found"
+          else
+            echo "❌ Found unused files:"
+            cat unused_files.txt
+            exit 1
           fi
 
   test:
