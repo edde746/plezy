@@ -54,6 +54,20 @@ class StorageService {
     return _prefs.getString(_keyServerUrl);
   }
 
+  // Per-Server Endpoint URL (for multi-server connection caching)
+  Future<void> saveServerEndpoint(String serverId, String url) async {
+    await _prefs.setString('server_endpoint_$serverId', url);
+    LogRedactionManager.registerServerUrl(url);
+  }
+
+  String? getServerEndpoint(String serverId) {
+    return _prefs.getString('server_endpoint_$serverId');
+  }
+
+  Future<void> clearServerEndpoint(String serverId) async {
+    await _prefs.remove('server_endpoint_$serverId');
+  }
+
   // Server Access Token
   Future<void> saveToken(String token) async {
     await _prefs.setString(_keyToken, token);
@@ -377,10 +391,17 @@ class StorageService {
 
   /// Clear all multi-server data
   Future<void> clearMultiServerData() async {
+    // Clear all server endpoint caches
+    final keys = _prefs.getKeys();
+    final endpointKeys = keys.where(
+      (key) => key.startsWith('server_endpoint_'),
+    );
+
     await Future.wait([
       clearServersList(),
       clearEnabledServers(),
       clearServerOrder(),
+      ...endpointKeys.map((key) => _prefs.remove(key)),
     ]);
   }
 

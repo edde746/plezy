@@ -55,6 +55,7 @@ class ServerConnectionService {
         .findBestWorkingConnection()
         .asBroadcastStream();
     PlexClient? client;
+    final serverId = server.clientIdentifier;
 
     final optimizationSubscription = connectionStream
         .skip(1)
@@ -64,6 +65,7 @@ class ServerConnectionService {
               connection: connection,
               storage: storage,
               server: server,
+              serverId: serverId,
               client: client,
               reason: 'initial_latency_sweep',
             );
@@ -87,6 +89,7 @@ class ServerConnectionService {
       // Save server information to storage
       await storage.saveServerData(server.toJson());
       await storage.saveServerUrl(connection.uri);
+      await storage.saveServerEndpoint(serverId, connection.uri);
       await storage.saveServerAccessToken(server.accessToken);
 
       // Save plex token if provided
@@ -95,8 +98,9 @@ class ServerConnectionService {
       }
 
       // Create client with working connection
+      final cachedEndpoint = storage.getServerEndpoint(serverId);
       final prioritizedEndpoints = server.prioritizedEndpointUrls(
-        preferredFirst: connection.uri,
+        preferredFirst: cachedEndpoint ?? connection.uri,
       );
       final config = await PlexConfig.create(
         baseUrl: connection.uri,
@@ -108,6 +112,7 @@ class ServerConnectionService {
         prioritizedEndpoints: prioritizedEndpoints,
         onEndpointChanged: (newUrl) async {
           await storage.saveServerUrl(newUrl);
+          await storage.saveServerEndpoint(serverId, newUrl);
           appLogger.i(
             'Updated stored server URL after failover',
             error: newUrl,
@@ -265,6 +270,7 @@ class ServerConnectionService {
     required String reason,
   }) async {
     final storage = await StorageService.getInstance();
+    final serverId = server.clientIdentifier;
     try {
       appLogger.d(
         'Starting background connection optimization run',
@@ -275,6 +281,7 @@ class ServerConnectionService {
           connection: connection,
           storage: storage,
           server: server,
+          serverId: serverId,
           client: client,
           reason: reason,
         );
@@ -292,13 +299,15 @@ class ServerConnectionService {
     required PlexConnection connection,
     required StorageService storage,
     required PlexServer server,
+    required String serverId,
     required PlexClient? client,
     required String reason,
   }) async {
-    final previousUrl = storage.getServerUrl();
+    final previousUrl = storage.getServerEndpoint(serverId);
     final isNewEndpoint = previousUrl != connection.uri;
 
     await storage.saveServerUrl(connection.uri);
+    await storage.saveServerEndpoint(serverId, connection.uri);
     appLogger.d(
       'Evaluated optimized endpoint candidate',
       error: {
@@ -337,6 +346,7 @@ class ServerConnectionService {
           connection: upgraded,
           storage: storage,
           server: server,
+          serverId: serverId,
           client: client,
           reason: '$reason:https-upgrade',
         );

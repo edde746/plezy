@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 import '../client/plex_client.dart';
 import '../config/plex_config.dart';
 import '../utils/app_logger.dart';
 import 'plex_auth_service.dart';
+import 'storage_service.dart';
 
 /// Manages multiple Plex server connections simultaneously
 class MultiServerManager {
@@ -21,6 +24,12 @@ class MultiServerManager {
 
   /// Stream of server status changes
   Stream<Map<String, bool>> get statusStream => _statusController.stream;
+
+  /// Connectivity subscription for network monitoring
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
+  /// Map of serverId to active optimization futures
+  final Map<String, Future<void>> _activeOptimizations = {};
 
   /// Get all registered server IDs
   List<String> get serverIds => _servers.keys.toList();
@@ -100,14 +109,33 @@ class MultiServerManager {
         final baseUrl = workingConnection.uri;
         appLogger.d('Connected to ${server.name} at $baseUrl');
 
-        // Create PlexClient with the working connection
+        // Get storage and load cached endpoint for this server
+        final storage = await StorageService.getInstance();
+        final cachedEndpoint = storage.getServerEndpoint(serverId);
+
+        // Create PlexClient with the working connection and failover support
+        final prioritizedEndpoints = server.prioritizedEndpointUrls(
+          preferredFirst: cachedEndpoint ?? baseUrl,
+        );
         final config = await PlexConfig.create(
           baseUrl: baseUrl,
           token: server.accessToken,
           clientIdentifier: effectiveClientId,
         );
 
-        final client = PlexClient(config);
+        final client = PlexClient(
+          config,
+          prioritizedEndpoints: prioritizedEndpoints,
+          onEndpointChanged: (newUrl) async {
+            await storage.saveServerEndpoint(serverId, newUrl);
+            appLogger.i(
+              'Updated endpoint for ${server.name} after failover: $newUrl',
+            );
+          },
+        );
+
+        // Save the initial endpoint
+        await storage.saveServerEndpoint(serverId, baseUrl);
 
         // Store the client and server info
         _clients[serverId] = client;
@@ -157,6 +185,11 @@ class MultiServerManager {
       'Connected to $successCount/${servers.length} servers successfully',
     );
 
+    // Start network monitoring if we have any connected servers
+    if (successCount > 0) {
+      startNetworkMonitoring();
+    }
+
     return successCount;
   }
 
@@ -187,14 +220,33 @@ class MultiServerManager {
 
       final baseUrl = workingConnection.uri;
 
-      // Create PlexClient
+      // Get storage and load cached endpoint for this server
+      final storage = await StorageService.getInstance();
+      final cachedEndpoint = storage.getServerEndpoint(serverId);
+
+      // Create PlexClient with failover support
+      final prioritizedEndpoints = server.prioritizedEndpointUrls(
+        preferredFirst: cachedEndpoint ?? baseUrl,
+      );
       final config = await PlexConfig.create(
         baseUrl: baseUrl,
         token: server.accessToken,
         clientIdentifier: effectiveClientId,
       );
 
-      final client = PlexClient(config);
+      final client = PlexClient(
+        config,
+        prioritizedEndpoints: prioritizedEndpoints,
+        onEndpointChanged: (newUrl) async {
+          await storage.saveServerEndpoint(serverId, newUrl);
+          appLogger.i(
+            'Updated endpoint for ${server.name} after failover: $newUrl',
+          );
+        },
+      );
+
+      // Save the initial endpoint
+      await storage.saveServerEndpoint(serverId, baseUrl);
 
       // Store
       _clients[serverId] = client;
@@ -260,12 +312,142 @@ class MultiServerManager {
     await Future.wait(healthChecks);
   }
 
+  /// Start monitoring network connectivity for all servers
+  void startNetworkMonitoring() {
+    if (_connectivitySubscription != null) {
+      appLogger.d('Network monitoring already active');
+      return;
+    }
+
+    appLogger.i('Starting network monitoring for all servers');
+    final connectivity = Connectivity();
+    _connectivitySubscription = connectivity.onConnectivityChanged.listen(
+      (results) {
+        final status = results.isNotEmpty
+            ? results.first
+            : ConnectivityResult.none;
+
+        if (status == ConnectivityResult.none) {
+          appLogger.w(
+            'Connectivity lost, pausing optimization until network returns',
+          );
+          return;
+        }
+
+        appLogger.d(
+          'Connectivity change detected, re-optimizing all servers',
+          error: {
+            'status': status.name,
+            'interfaces': results.map((r) => r.name).toList(),
+            'serverCount': _servers.length,
+          },
+        );
+
+        // Re-optimize all servers
+        _reoptimizeAllServers(reason: 'connectivity:${status.name}');
+      },
+      onError: (error, stackTrace) {
+        appLogger.w(
+          'Connectivity listener error',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      },
+    );
+  }
+
+  /// Stop monitoring network connectivity
+  void stopNetworkMonitoring() {
+    _connectivitySubscription?.cancel();
+    _connectivitySubscription = null;
+    appLogger.i('Stopped network monitoring');
+  }
+
+  /// Re-optimize all connected servers
+  void _reoptimizeAllServers({required String reason}) {
+    for (final entry in _servers.entries) {
+      final serverId = entry.key;
+      final server = entry.value;
+
+      // Skip if server is offline
+      if (!isServerOnline(serverId)) {
+        continue;
+      }
+
+      // Skip if optimization already running for this server
+      if (_activeOptimizations.containsKey(serverId)) {
+        appLogger.d(
+          'Optimization already running for ${server.name}, skipping',
+          error: {'reason': reason},
+        );
+        continue;
+      }
+
+      // Run optimization
+      _activeOptimizations[serverId] =
+          _reoptimizeServer(
+            serverId: serverId,
+            server: server,
+            reason: reason,
+          ).whenComplete(() {
+            _activeOptimizations.remove(serverId);
+          });
+    }
+  }
+
+  /// Re-optimize connection for a specific server
+  Future<void> _reoptimizeServer({
+    required String serverId,
+    required PlexServer server,
+    required String reason,
+  }) async {
+    final storage = await StorageService.getInstance();
+    final client = _clients[serverId];
+
+    try {
+      appLogger.d(
+        'Starting connection optimization for ${server.name}',
+        error: {'reason': reason},
+      );
+
+      await for (final connection in server.findBestWorkingConnection()) {
+        final newUrl = connection.uri;
+
+        // Check if this is actually a better connection than current
+        if (client != null && client.config.baseUrl == newUrl) {
+          appLogger.d(
+            'Already using optimal endpoint for ${server.name}: $newUrl',
+          );
+          continue;
+        }
+
+        // Save the new endpoint
+        await storage.saveServerEndpoint(serverId, newUrl);
+
+        // If client has endpoint failover, it will automatically switch
+        // Otherwise, we might need to recreate the client (but failover should handle it)
+        appLogger.i(
+          'Updated optimal endpoint for ${server.name}: $newUrl',
+          error: {'type': connection.displayType},
+        );
+      }
+    } catch (e, stackTrace) {
+      appLogger.w(
+        'Connection optimization failed for ${server.name}',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   /// Disconnect all servers
   void disconnectAll() {
     appLogger.i('Disconnecting all servers');
+    stopNetworkMonitoring();
     _clients.clear();
     _servers.clear();
     _serverStatus.clear();
+    _activeOptimizations.clear();
     _statusController.add({});
   }
 
