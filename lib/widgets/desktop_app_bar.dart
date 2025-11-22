@@ -3,58 +3,6 @@ import '../utils/desktop_window_padding.dart';
 import '../services/fullscreen_state_manager.dart';
 import 'app_bar_back_button.dart';
 
-/// A custom app bar that automatically handles desktop window controls spacing.
-/// Use this instead of AppBar for consistent desktop platform behavior.
-class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final Widget? title;
-  final List<Widget>? actions;
-  final Widget? leading;
-  final bool automaticallyImplyLeading;
-  final double? elevation;
-  final Color? backgroundColor;
-  final Color? surfaceTintColor;
-  final Color? shadowColor;
-  final double? scrolledUnderElevation;
-
-  const DesktopAppBar({
-    super.key,
-    this.title,
-    this.actions,
-    this.leading,
-    this.automaticallyImplyLeading = true,
-    this.elevation,
-    this.backgroundColor,
-    this.surfaceTintColor,
-    this.shadowColor,
-    this.scrolledUnderElevation,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final appBar = AppBar(
-      title: title != null
-          ? DesktopTitleBarPadding(
-              leftPadding: leading != null ? 0 : null,
-              child: title!,
-            )
-          : null,
-      actions: DesktopAppBarHelper.buildAdjustedActions(actions),
-      leading: DesktopAppBarHelper.buildAdjustedLeading(leading),
-      automaticallyImplyLeading: automaticallyImplyLeading,
-      elevation: elevation,
-      backgroundColor: backgroundColor,
-      surfaceTintColor: surfaceTintColor,
-      shadowColor: shadowColor,
-      scrolledUnderElevation: scrolledUnderElevation,
-    );
-
-    return DesktopAppBarHelper.wrapWithGestureDetector(appBar);
-  }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-}
-
 /// A custom sliver app bar that automatically handles desktop window controls spacing.
 /// Use this instead of SliverAppBar for consistent desktop platform behavior.
 class DesktopSliverAppBar extends StatelessWidget {
@@ -140,66 +88,6 @@ class DesktopSliverAppBar extends StatelessWidget {
       bottom: bottom,
     );
   }
-}
-
-/// Convenient wrapper for DesktopAppBar with built-in back button handling
-class PlexAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final Widget? title;
-  final List<Widget>? actions;
-  final VoidCallback? onBackPressed;
-  final double? elevation;
-  final Color? backgroundColor;
-  final Color? surfaceTintColor;
-  final Color? shadowColor;
-  final double? scrolledUnderElevation;
-
-  const PlexAppBar({
-    super.key,
-    this.title,
-    this.actions,
-    this.onBackPressed,
-    this.elevation,
-    this.backgroundColor,
-    this.surfaceTintColor,
-    this.shadowColor,
-    this.scrolledUnderElevation,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: FullscreenStateManager(),
-      builder: (context, _) {
-        final isFullscreen = FullscreenStateManager().isFullscreen;
-
-        return DesktopAppBar(
-          key: ValueKey('plex_app_bar_$isFullscreen'),
-          title: title,
-          actions: actions,
-          leading: _shouldShowBackButton(context)
-              ? AppBarBackButton(
-                  style: BackButtonStyle.plain,
-                  onPressed: onBackPressed,
-                )
-              : null,
-          automaticallyImplyLeading: false,
-          elevation: elevation,
-          backgroundColor: backgroundColor,
-          surfaceTintColor: surfaceTintColor,
-          shadowColor: shadowColor,
-          scrolledUnderElevation: scrolledUnderElevation,
-        );
-      },
-    );
-  }
-
-  bool _shouldShowBackButton(BuildContext context) {
-    final parentRoute = ModalRoute.of(context);
-    return parentRoute?.canPop ?? false;
-  }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
 /// Convenient wrapper for DesktopSliverAppBar with built-in back button handling

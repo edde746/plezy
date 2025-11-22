@@ -62,9 +62,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      if (client == null) {
-        throw Exception('No client available');
-      }
 
       // Fetch full metadata with clearLogo and OnDeck episode
       final result = await client.getMetadataWithImagesAndOnDeck(
@@ -127,9 +124,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      if (client == null) {
-        throw Exception('No client available');
-      }
 
       final seasons = await client.getChildren(widget.metadata.ratingKey);
       // Preserve serverId for each season
@@ -158,9 +152,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      if (client == null) {
-        throw Exception('No client available');
-      }
 
       final metadata = await client.getMetadataWithImages(
         widget.metadata.ratingKey,
@@ -206,9 +197,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      if (client == null) {
-        throw Exception('No client available');
-      }
 
       // If seasons aren't loaded yet, wait for them or load them
       if (_seasons.isEmpty && !_isLoadingSeasons) {
@@ -274,7 +262,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     PlexMetadata metadata,
   ) async {
     final client = _getClientForMetadata(context);
-    if (client == null) return;
 
     final playbackState = context.read<PlaybackStateProvider>();
     final itemType = metadata.type.toLowerCase();
@@ -403,13 +390,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     Builder(
                       builder: (context) {
                         final client = _getClientForMetadata(context);
-                        if (client == null) {
-                          return Container(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                          );
-                        }
                         return CachedNetworkImage(
                           imageUrl: client.getThumbnailUrl(metadata.art),
                           fit: BoxFit.cover,
@@ -471,18 +451,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                     final client = _getClientForMetadata(
                                       context,
                                     );
-                                    if (client == null) {
-                                      return Text(
-                                        metadata.title,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .displaySmall
-                                            ?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      );
-                                    }
                                     return CachedNetworkImage(
                                       imageUrl: client.getThumbnailUrl(
                                         metadata.clearLogo,
@@ -730,9 +698,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               // Otherwise, play the first episode of the first season
                               if (metadata.type.toLowerCase() == 'show') {
                                 if (_onDeckEpisode != null) {
-                                  final client = _getClientForMetadata(context);
-                                  if (client == null) return;
-
                                   appLogger.d(
                                     'Playing on deck episode: ${_onDeckEpisode!.title}',
                                   );
@@ -750,9 +715,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   await _playFirstEpisode();
                                 }
                               } else {
-                                final client = _getClientForMetadata(context);
-                                if (client == null) return;
-
                                 appLogger.d('Playing: ${metadata.title}');
                                 // For movies or episodes, play directly
                                 await navigateToVideoPlayer(
@@ -804,7 +766,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         onPressed: () async {
                           try {
                             final client = _getClientForMetadata(context);
-                            if (client == null) return;
 
                             await client.markAsWatched(metadata.ratingKey);
                             if (context.mounted) {
@@ -844,7 +805,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         onPressed: () async {
                           try {
                             final client = _getClientForMetadata(context);
-                            if (client == null) return;
 
                             await client.markAsUnwatched(metadata.ratingKey);
                             if (context.mounted) {
@@ -1124,16 +1084,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       child: Builder(
                         builder: (context) {
                           final client = _getClientForMetadata(context);
-                          if (client == null) {
-                            return Container(
-                              width: 80,
-                              height: 120,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              child: const Icon(Icons.movie, size: 32),
-                            );
-                          }
                           return CachedNetworkImage(
                             imageUrl: client.getThumbnailUrl(season.thumb),
                             width: 80,

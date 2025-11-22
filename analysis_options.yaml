@@ -4,3 +4,9 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+  plugins:
+    - dart_code_linter
+
+dart_code_linter:
+  rules:
+    - avoid-unused-parameters

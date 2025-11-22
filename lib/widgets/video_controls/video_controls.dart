@@ -346,7 +346,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   Future<void> _loadChapters() async {
     final client = _getClientForMetadata();
-    if (client == null) return;
 
     final chapters = await client.getChapters(widget.metadata.ratingKey);
     if (mounted) {
@@ -359,7 +358,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   Future<void> _loadMarkers() async {
     final client = _getClientForMetadata();
-    if (client == null) return;
 
     final markers = await client.getMarkers(widget.metadata.ratingKey);
 

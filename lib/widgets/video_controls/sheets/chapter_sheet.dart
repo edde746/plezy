@@ -96,13 +96,6 @@ class ChapterSheet extends StatelessWidget {
                             child: Builder(
                               builder: (context) {
                                 final client = _getClientForChapters(context);
-                                if (client == null) {
-                                  return const Icon(
-                                    Icons.image,
-                                    color: Colors.white54,
-                                    size: 34,
-                                  );
-                                }
                                 return Image.network(
                                   client.getThumbnailUrl(chapter.thumb),
                                   width: 60,

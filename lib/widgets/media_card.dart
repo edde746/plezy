@@ -678,13 +678,6 @@ Widget _buildPosterImage(BuildContext context, dynamic item) {
     return Builder(
       builder: (context) {
         final client = _getClientForItem(context, item);
-        if (client == null) {
-          return SkeletonLoader(
-            child: Center(
-              child: Icon(fallbackIcon, size: 40, color: Colors.white54),
-            ),
-          );
-        }
 
         return CachedNetworkImage(
           imageUrl: client.getThumbnailUrl(posterUrl!),

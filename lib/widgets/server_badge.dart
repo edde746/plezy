@@ -26,7 +26,7 @@ class ServerBadge extends StatelessWidget {
 
     final theme = Theme.of(context);
     final bgColor =
-        backgroundColor ?? theme.colorScheme.primaryContainer.withOpacity(0.8);
+        backgroundColor ?? theme.colorScheme.primaryContainer.withValues(alpha: 0.8);
     final fgColor = textColor ?? theme.colorScheme.onPrimaryContainer;
 
     final displayText = showFullName
@@ -60,60 +60,5 @@ class ServerBadge extends StatelessWidget {
 
     // Show tooltip with full server name on hover/long press
     return Tooltip(message: serverName!, child: badge);
-  }
-}
-
-/// Server section header for grouping content by server
-class ServerSectionHeader extends StatelessWidget {
-  final String serverName;
-  final bool isOnline;
-  final VoidCallback? onTap;
-  final Widget? trailing;
-
-  const ServerSectionHeader({
-    super.key,
-    required this.serverName,
-    this.isOnline = true,
-    this.onTap,
-    this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-        child: Row(
-          children: [
-            // Server status indicator
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: isOnline ? Colors.green : Colors.grey,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Server name
-            Expanded(
-              child: Text(
-                serverName,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ),
-            // Optional trailing widget
-            if (trailing != null) trailing!,
-          ],
-        ),
-      ),
-    );
   }
 }

@@ -25,12 +25,8 @@ Future<void> playCollectionOrPlaylist({
     }
 
     String ratingKey = item.ratingKey;
-    String? serverId = isCollection
-        ? (item as PlexMetadata).serverId
-        : (item as PlexPlaylist).serverId;
-    String? serverName = isCollection
-        ? (item as PlexMetadata).serverName
-        : (item as PlexPlaylist).serverName;
+    String? serverId = item.serverId;
+    String? serverName = item.serverName;
 
     final PlayQueueResponse? playQueue;
     if (isCollection) {

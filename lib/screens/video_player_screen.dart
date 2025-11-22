@@ -186,7 +186,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         if (_isPlayerInitialized && mounted) {
           // Restore media metadata
           final client = _getClientForMetadata(context);
-          if (client != null && _mediaControlsManager != null) {
+          if (_mediaControlsManager != null) {
             _mediaControlsManager!.updateMetadata(
               metadata: widget.metadata,
               client: client,
@@ -355,7 +355,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (!mounted || player == null) return;
 
     final client = _getClientForMetadata(context);
-    if (client == null) return;
 
     // Initialize progress tracker
     _progressTracker = PlaybackProgressTracker(
@@ -452,7 +451,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     try {
       final client = _getClientForMetadata(context);
-      if (client == null) return;
 
       final playbackState = context.read<PlaybackStateProvider>();
 
@@ -518,7 +516,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      if (client == null) return;
 
       // Load adjacent episodes using the service
       final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
@@ -545,9 +542,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      if (client == null) {
-        throw Exception('No client available');
-      }
+
+      // Capture profile settings before async gap
+      final profileSettings = context.profileSettings;
 
       // Initialize playback service
       final playbackService = PlaybackInitializationService(
@@ -583,7 +580,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Initialize track selection service and apply tracks
       _trackSelectionService = TrackSelectionService(
         player: player!,
-        profileSettings: context.profileSettings,
+        profileSettings: profileSettings,
         metadata: widget.metadata,
       );
 
@@ -799,10 +796,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (!mounted) return;
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      if (client == null) {
-        appLogger.w('No client available to save audio language preference');
-        return;
-      }
       await client.setMetadataPreferences(
         targetRatingKey,
         audioLanguage: languageCode,
@@ -851,10 +844,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (!mounted) return;
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      if (client == null) {
-        appLogger.w('No client available to save subtitle language preference');
-        return;
-      }
       await client.setMetadataPreferences(
         targetRatingKey,
         subtitleLanguage: languageCode,

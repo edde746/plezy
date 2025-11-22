@@ -440,9 +440,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     if (ratingKey == null) return;
 
     final client = _getClientForItem();
-    if (client == null) return;
 
-    try {
+    try{
       final metadata = await client.getMetadata(ratingKey);
       if (metadata != null && context.mounted) {
         await Navigator.push(
@@ -463,9 +462,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   /// Show file info bottom sheet
   Future<void> _showFileInfo(BuildContext context) async {
     final client = _getClientForItem();
-    if (client == null) return;
 
-    try {
+    try{
       // Show loading indicator
       if (context.mounted) {
         showDialog(
@@ -518,7 +516,6 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   /// Handle shuffle play using play queues
   Future<void> _handleShufflePlayWithQueue(BuildContext context) async {
     final client = _getClientForItem();
-    if (client == null) return;
 
     final metadata = widget.item as PlexMetadata;
     final playbackState = context.read<PlaybackStateProvider>();
@@ -690,9 +687,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   /// Show dialog to select playlist and add item
   Future<void> _showAddToPlaylistDialog(BuildContext context) async {
     final client = _getClientForItem();
-    if (client == null) return;
 
-    try {
+    try{
       final metadata = widget.item as PlexMetadata;
       final itemType = metadata.type.toLowerCase();
 
@@ -801,9 +797,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
   /// Show dialog to select collection and add item
   Future<void> _showAddToCollectionDialog(BuildContext context) async {
     final client = _getClientForItem();
-    if (client == null) return;
 
-    try {
+    try{
       final metadata = widget.item as PlexMetadata;
       final itemType = metadata.type.toLowerCase();
 
@@ -889,6 +884,8 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       // Build URI for the item
       final itemUri = await client.buildMetadataUri(metadata.ratingKey);
       appLogger.d('Built URI for $itemType: $itemUri');
+
+      if (!context.mounted) return;
 
       if (result == '_create_new') {
         // Create new collection flow
@@ -1023,7 +1020,6 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     PlexMetadata metadata,
   ) async {
     final client = _getClientForItem();
-    if (client == null) return;
 
     if (widget.collectionId == null) {
       appLogger.e('Cannot remove from collection: collectionId is null');
@@ -1099,7 +1095,6 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     bool isPlaylist,
   ) async {
     final client = _getClientForItem();
-    if (client == null) return;
 
     await playCollectionOrPlaylist(
       context: context,
@@ -1116,7 +1111,6 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     bool isPlaylist,
   ) async {
     final client = _getClientForItem();
-    if (client == null) return;
 
     await playCollectionOrPlaylist(
       context: context,
@@ -1133,7 +1127,6 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
     bool isPlaylist,
   ) async {
     final client = _getClientForItem();
-    if (client == null) return;
 
     final itemTitle = widget.item.title;
     final itemTypeLabel = isCollection

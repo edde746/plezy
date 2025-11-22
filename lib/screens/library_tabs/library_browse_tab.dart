@@ -337,7 +337,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
                     value,
                   );
 
-                  if (!mounted) return;
+                  if (!context.mounted) return;
 
                   Navigator.pop(context);
                   _loadItems();
