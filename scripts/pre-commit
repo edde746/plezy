@@ -1,0 +1,89 @@
+#!/bin/bash
+# Pre-commit hook for Flutter projects
+# This hook runs flutter analyze and dart format checks before allowing a commit
+
+echo "Running pre-commit checks..."
+
+# Check if flutter is available
+if ! command -v flutter > /dev/null 2>&1; then
+    echo "❌ Flutter is not installed or not in PATH"
+    echo "Please install Flutter to use this pre-commit hook"
+    exit 1
+fi
+
+# Get the root directory of the git repository
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 1
+
+# Check if there are any staged Dart files (excluding generated files)
+# Excludes: *.g.dart (json_serializable, build_runner, slang strings, etc.) and *.freezed.dart
+STAGED_DART_FILES=$(git diff --cached --name-only --diff-filter=ACM -z | grep -z '\.dart$' | grep -zv '\.g\.dart$' | grep -zv '\.freezed\.dart$' | xargs -0 -n1 echo)
+
+if [ -z "$STAGED_DART_FILES" ]; then
+    echo "✅ No Dart files to check (or only generated files)"
+    exit 0
+fi
+
+echo "📝 Checking formatting..."
+
+# Check formatting of staged files
+FORMAT_ISSUES=""
+FORMAT_FAILED=0
+
+# Use a temporary file to collect results
+TEMP_FILE=$(mktemp)
+
+echo "$STAGED_DART_FILES" | while IFS= read -r file; do
+    if [ -f "$file" ]; then
+        if ! dart format --output=none --set-exit-if-changed "$file" > /dev/null 2>&1; then
+            echo "$file" >> "$TEMP_FILE"
+        fi
+    fi
+done
+
+if [ -s "$TEMP_FILE" ]; then
+    echo "❌ Format check failed. The following files are not formatted:"
+    while IFS= read -r file; do
+        echo "  - $file"
+    done < "$TEMP_FILE"
+    rm -f "$TEMP_FILE"
+    echo ""
+    echo "To fix this, run: dart format ."
+    exit 1
+fi
+
+rm -f "$TEMP_FILE"
+echo "✅ Format check passed"
+
+echo "🔍 Running flutter analyze..."
+
+# Run flutter analyze and only fail on errors or warnings (not info)
+# This matches the CI behavior in .github/workflows/ci.yml
+ANALYZE_OUTPUT=$(mktemp)
+flutter analyze --no-pub > "$ANALYZE_OUTPUT" 2>&1
+
+if grep -q "error •" "$ANALYZE_OUTPUT"; then
+    echo "❌ Flutter analyze found errors"
+    echo ""
+    cat "$ANALYZE_OUTPUT"
+    rm -f "$ANALYZE_OUTPUT"
+    echo ""
+    echo "Please fix the issues above before committing"
+    exit 1
+elif grep -q "warning •" "$ANALYZE_OUTPUT"; then
+    echo "❌ Flutter analyze found warnings"
+    echo ""
+    cat "$ANALYZE_OUTPUT"
+    rm -f "$ANALYZE_OUTPUT"
+    echo ""
+    echo "Please fix the issues above before committing"
+    exit 1
+else
+    rm -f "$ANALYZE_OUTPUT"
+    echo "✅ Flutter analyze passed (info messages are allowed)"
+fi
+
+echo ""
+echo "✅ All pre-commit checks passed!"
+
+exit 0
