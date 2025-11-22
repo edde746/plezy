@@ -552,8 +552,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         // Compute visible libraries after hiding
         final visibleLibraries = _allLibraries
             .where(
-              (lib) => !hiddenLibrariesProvider.hiddenLibraryKeys
-                  .contains(lib.globalKey),
+              (lib) => !hiddenLibrariesProvider.hiddenLibraryKeys.contains(
+                lib.globalKey,
+              ),
             )
             .toList();
 
@@ -1335,17 +1336,13 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                       scrollController,
                       hiddenLibraryKeys,
                     )
-                  : _buildFlatLibraryList(
-                      scrollController,
-                      hiddenLibraryKeys,
-                    ),
+                  : _buildFlatLibraryList(scrollController, hiddenLibraryKeys),
             ),
           ],
         );
       },
     );
   }
-
 
   /// Build flat library list (single server)
   Widget _buildFlatLibraryList(
@@ -1411,11 +1408,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                 index: serverIndex,
                 child: Icon(
                   Icons.drag_indicator,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.color
-                      ?.withValues(alpha: 0.5),
+                  color: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                 ),
               ),
               title: Text(
@@ -1507,11 +1502,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                   padding: const EdgeInsets.only(right: 12),
                   child: Icon(
                     Icons.drag_indicator,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.color
-                        ?.withValues(alpha: 0.5),
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -1526,22 +1519,18 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             if (showServerBadge &&
                 _hasMultipleServers &&
                 library.serverName != null)
-              ServerBadge(
-                serverName: library.serverName,
-                showFullName: true,
-              ),
+              ServerBadge(serverName: library.serverName, showFullName: true),
           ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: Icon(
-                isHidden ? Icons.visibility_off : Icons.visibility,
-              ),
+              icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
               onPressed: () => widget.onToggleVisibility(library),
-              tooltip:
-                  isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,
+              tooltip: isHidden
+                  ? t.libraries.showLibrary
+                  : t.libraries.hideLibrary,
             ),
             IconButton(
               icon: const Icon(Icons.more_vert),

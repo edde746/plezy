@@ -11,14 +11,15 @@ import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_user_profile.dart';
 import '../providers/playback_state_provider.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
+import '../services/playback_initialization_service.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/settings_service.dart';
+import '../services/track_selection_service.dart';
+import '../services/video_filter_manager.dart';
 import '../utils/app_logger.dart';
-import '../utils/language_codes.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
@@ -73,6 +74,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   // Services
   MediaControlsManager? _mediaControlsManager;
   PlaybackProgressTracker? _progressTracker;
+  VideoFilterManager? _videoFilterManager;
+  TrackSelectionService? _trackSelectionService;
   final EpisodeNavigationService _episodeNavigation =
       EpisodeNavigationService();
 
@@ -81,17 +84,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     return context.getClientForServer(widget.metadata.serverId);
   }
 
-  // BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
-  int _boxFitMode = 0;
-  bool _isPinching = false; // Track if a pinch gesture is occurring
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(
     false,
   ); // Track if video is currently buffering
-
-  // Video cropping state for fill screen mode
-  Size? _playerSize;
-  Size? _videoSize;
-  Timer? _resizeDebounceTimer;
 
   @override
   void initState() {
@@ -154,7 +149,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     // Update video filter when dependencies change (orientation, screen size, etc.)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _debouncedUpdateVideoFilter();
+      _videoFilterManager?.debouncedUpdateVideoFilter();
     });
   }
 
@@ -294,7 +289,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       // Get the video URL and start playback
-      _startPlayback();
+      await _startPlayback();
 
       // Set fullscreen mode and orientation based on rotation lock setting
       if (mounted) {
@@ -554,132 +549,54 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         throw Exception('No client available');
       }
 
-      // Get consolidated playback data (URL, media info, and versions) in a single API call
-      final playbackData = await client.getVideoPlaybackData(
-        widget.metadata.ratingKey,
-        mediaIndex: widget.selectedMediaIndex,
+      // Initialize playback service
+      final playbackService = PlaybackInitializationService(
+        player: player!,
+        client: client,
+        context: context,
       );
 
-      if (playbackData.hasValidVideoUrl) {
-        final videoUrl = playbackData.videoUrl!;
-        final mediaInfo = playbackData.mediaInfo;
+      // Start playback and get available versions
+      final result = await playbackService.startPlayback(
+        metadata: widget.metadata,
+        selectedMediaIndex: widget.selectedMediaIndex,
+      );
 
-        // Update available versions from the playback data
-        if (mounted) {
-          setState(() {
-            _availableVersions = playbackData.availableVersions;
-          });
+      // Update available versions from the playback data
+      if (mounted) {
+        setState(() {
+          _availableVersions = result.availableVersions.cast();
+        });
+
+        // Initialize video filter manager with player and available versions
+        if (player != null && _availableVersions.isNotEmpty) {
+          _videoFilterManager = VideoFilterManager(
+            player: player!,
+            availableVersions: _availableVersions,
+            selectedMediaIndex: widget.selectedMediaIndex,
+          );
           // Update video filter once dimensions are available
-          _updateVideoFilter();
+          _videoFilterManager!.updateVideoFilter();
         }
+      }
 
-        // Build list of external subtitle tracks for media_kit
-        final externalSubtitles = <SubtitleTrack>[];
-        if (mediaInfo != null) {
-          final externalTracks = mediaInfo.subtitleTracks
-              .where((track) => track.isExternal)
-              .toList();
+      // Initialize track selection service and apply tracks
+      _trackSelectionService = TrackSelectionService(
+        player: player!,
+        profileSettings: context.profileSettings,
+        metadata: widget.metadata,
+      );
 
-          if (externalTracks.isNotEmpty) {
-            appLogger.d(
-              'Found ${externalTracks.length} external subtitle track(s)',
-            );
-          }
-
-          for (final plexTrack in externalTracks) {
-            try {
-              // Skip if no auth token is available
-              final token = client.config.token;
-              if (token == null) {
-                appLogger.w('No auth token available for external subtitles');
-                continue;
-              }
-
-              final url = plexTrack.getSubtitleUrl(
-                client.config.baseUrl,
-                token,
-              );
-
-              // Skip if URL couldn't be constructed
-              if (url == null) continue;
-
-              externalSubtitles.add(
-                SubtitleTrack.uri(
-                  url,
-                  title:
-                      plexTrack.displayTitle ??
-                      plexTrack.language ??
-                      'Track ${plexTrack.id}',
-                  language: plexTrack.languageCode,
-                ),
-              );
-            } catch (e) {
-              // Silent fallback - log error but continue with other subtitles
-              appLogger.w(
-                'Failed to add external subtitle track ${plexTrack.id}',
-                error: e,
-              );
-            }
-          }
-        }
-
-        // Open video (without external subtitles in Media constructor)
-        await player!.open(Media(videoUrl), play: false);
-
-        // Wait for media to be ready (duration > 0)
-        int attempts = 0;
-        while (player!.state.duration.inMilliseconds == 0 && attempts < 100) {
-          await Future.delayed(const Duration(milliseconds: 100));
-          attempts++;
-        }
-
-        // Add external subtitle tracks without auto-selecting them
-        if (externalSubtitles.isNotEmpty) {
-          appLogger.d(
-            'Adding ${externalSubtitles.length} external subtitle(s) to player',
-          );
-
-          final nativePlayer = player!.platform as dynamic;
-
-          for (final subtitleTrack in externalSubtitles) {
-            try {
-              // Use mpv's sub-add with 'auto' flag to avoid auto-selection
-              await nativePlayer.command([
-                'sub-add',
-                subtitleTrack.id,
-                'auto',
-                subtitleTrack.title ?? 'external',
-                subtitleTrack.language ?? 'auto',
-              ]);
-            } catch (e) {
-              appLogger.w(
-                'Failed to add external subtitle: ${subtitleTrack.title}',
-                error: e,
-              );
-            }
-          }
-        }
-
-        // Set up playback position if resuming
-        if (widget.metadata.viewOffset != null &&
-            widget.metadata.viewOffset! > 0) {
-          final resumePosition = Duration(
-            milliseconds: widget.metadata.viewOffset!,
-          );
-          await player!.seek(resumePosition);
-        }
-
-        // Start playback after seeking
-        await player!.play();
-
-        // Wait for tracks to be loaded, then apply preferred tracks
-        _waitForTracksAndApply();
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.messages.fileInfoNotAvailable)),
-          );
-        }
+      await _trackSelectionService!.selectAndApplyTracks(
+        preferredAudioTrack: widget.preferredAudioTrack,
+        preferredSubtitleTrack: widget.preferredSubtitleTrack,
+        preferredPlaybackRate: widget.preferredPlaybackRate,
+      );
+    } on PlaybackException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } catch (e) {
       if (mounted) {
@@ -693,209 +610,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void _cycleBoxFitMode() {
     setState(() {
-      _boxFitMode = (_boxFitMode + 1) % 3;
+      _videoFilterManager?.cycleBoxFitMode();
     });
-    _updateVideoFilter();
   }
 
   /// Toggle between contain and cover modes only (for pinch gesture)
   void _toggleContainCover() {
     setState(() {
-      _boxFitMode = _boxFitMode == 0 ? 1 : 0;
-    });
-    _updateVideoFilter();
-  }
-
-  /// Get current BoxFit based on mode
-  BoxFit get _getCurrentBoxFit {
-    switch (_boxFitMode) {
-      case 0:
-        return BoxFit.contain;
-      case 1:
-        return BoxFit.cover;
-      case 2:
-        return BoxFit.fill;
-      default:
-        return BoxFit.contain;
-    }
-  }
-
-  /// Calculates crop parameters for "fill screen" mode (BoxFit.cover) to eliminate letterboxing.
-  ///
-  /// This method is only active when [_boxFitMode] == 1 (cover mode). It determines how to
-  /// crop the video to completely fill the player area while maintaining aspect ratio.
-  ///
-  /// **How it works:**
-  /// 1. Compares video aspect ratio vs player aspect ratio
-  /// 2. Crops the dimension that would create letterboxing:
-  ///    - Wide video (16:9) on tall player (4:3): crops left/right sides
-  ///    - Tall video (4:3) on wide player (16:9): crops top/bottom
-  /// 3. Centers the crop within the video
-  /// 4. Calculates subtitle margin adjustments to keep subtitles visible
-  ///
-  /// **Subtitle positioning:**
-  /// MPV uses a 720p reference coordinate system for subtitle positioning.
-  /// When cropping zooms the video, subtitles need larger margins to avoid
-  /// being cropped or appearing too close to edges.
-  ///
-  /// Returns `null` if:
-  /// - Not in cover mode (_boxFitMode != 1)
-  /// - Player or video size is unknown
-  /// - Aspect ratios are too similar (< 0.01 difference) - no crop needed
-  ///
-  /// Returns a map containing:
-  /// - `width`, `height`: Dimensions of the cropped area in video pixels
-  /// - `x`, `y`: Crop offset from video's top-left corner in pixels
-  /// - `subMarginX`, `subMarginY`: Subtitle margins in MPV coordinate space (720p reference)
-  /// - `subScale`: Subtitle scaling factor (currently always 1.0)
-  Map<String, dynamic>? _calculateCropParameters() {
-    // Only calculate for cover mode with known dimensions
-    if (_boxFitMode != 1 || _playerSize == null || _videoSize == null) {
-      return null;
-    }
-
-    final playerAspect = _playerSize!.width / _playerSize!.height;
-    final videoAspect = _videoSize!.width / _videoSize!.height;
-
-    // No cropping needed if aspect ratios are very similar
-    if ((playerAspect - videoAspect).abs() < 0.01) return null;
-
-    late final int cropW, cropH, cropX, cropY;
-
-    if (videoAspect > playerAspect) {
-      // Video is wider than player - crop left/right sides
-      // Example: 16:9 video in 4:3 player
-      final scale = _playerSize!.height / _videoSize!.height;
-      cropH = _videoSize!.height.toInt();
-      cropW = (_playerSize!.width / scale).toInt();
-      cropX = ((_videoSize!.width - cropW) ~/ 2); // Center horizontally
-      cropY = 0;
-    } else {
-      // Video is taller than player - crop top/bottom
-      // Example: 4:3 video in 16:9 player (most common case)
-      final scale = _playerSize!.width / _videoSize!.width;
-      cropW = _videoSize!.width.toInt();
-      cropH = (_playerSize!.height / scale).toInt();
-      cropX = 0;
-      cropY = ((_videoSize!.height - cropH) ~/ 2); // Center vertically
-    }
-
-    // Subtitle positioning constants
-    /// MPV's subtitle coordinate system height (720p reference)
-    const double kSubCoord = 720.0;
-
-    /// Base horizontal subtitle margin to prevent edge clipping
-    const double baseX = 20.0;
-
-    /// Base vertical subtitle margin, tuned to position subtitles
-    /// comfortably above the bottom while avoiding overscan areas
-    const double baseY = 45.0;
-
-    // Calculate additional margin needed due to cropping
-    // When we crop, the visible area is "zoomed in", so subtitles need
-    // proportionally larger margins to maintain the same visual distance from edges
-    double extraX = cropX > 0
-        ? (cropX / _videoSize!.width) * kSubCoord * videoAspect
-        : 0.0;
-    double extraY = cropY > 0 ? (cropY / _videoSize!.height) * kSubCoord : 0.0;
-
-    // Apply additional margin (never reduce below base)
-    int marginX = (baseX + extraX).round();
-    int marginY = (baseY + extraY).round();
-
-    return {
-      'width': cropW,
-      'height': cropH,
-      'x': cropX,
-      'y': cropY,
-      'subMarginX': marginX,
-      'subMarginY': marginY,
-      'subScale': 1.0,
-    };
-  }
-
-  /// Get video dimensions from the currently selected media version
-  Size? _getCurrentVideoSize() {
-    if (_availableVersions.isEmpty ||
-        widget.selectedMediaIndex >= _availableVersions.length) {
-      return null;
-    }
-
-    final currentVersion = _availableVersions[widget.selectedMediaIndex];
-    if (currentVersion.width != null && currentVersion.height != null) {
-      return Size(
-        currentVersion.width!.toDouble(),
-        currentVersion.height!.toDouble(),
-      );
-    }
-
-    return null;
-  }
-
-  /// Update the video filter based on current crop mode
-  void _updateVideoFilter() async {
-    if (player == null) return;
-
-    try {
-      final nativePlayer = player!.platform as dynamic;
-
-      if (_boxFitMode == 1) {
-        // Fill screen mode - apply crop filter
-        _videoSize = _getCurrentVideoSize();
-        final cropParams = _calculateCropParameters();
-
-        if (cropParams != null) {
-          final cropFilter =
-              'crop=${cropParams['width']}:${cropParams['height']}:${cropParams['x']}:${cropParams['y']}';
-          appLogger.d(
-            'Applying video filter: $cropFilter (player: $_playerSize, video: $_videoSize)',
-          );
-
-          // Apply crop filter
-          await nativePlayer.setProperty('vf', cropFilter);
-
-          // Apply subtitle margins and scaling to compensate for crop zoom
-          final subMarginX = cropParams['subMarginX']!;
-          final subMarginY = cropParams['subMarginY']!;
-          final subScale = cropParams['subScale']!;
-
-          appLogger.d(
-            'Applying subtitle properties - margins: x=$subMarginX, y=$subMarginY, scale=$subScale',
-          );
-
-          await nativePlayer.setProperty('sub-margin-x', subMarginX.toString());
-          await nativePlayer.setProperty('sub-margin-y', subMarginY.toString());
-          await nativePlayer.setProperty('sub-scale', subScale.toString());
-        } else {
-          // Clear filter but apply base margins if no cropping needed
-          appLogger.d(
-            'Clearing video filter - aspect ratios similar, applying base margins (player: $_playerSize, video: $_videoSize)',
-          );
-          await nativePlayer.setProperty('vf', '');
-          await nativePlayer.setProperty('sub-margin-x', '20'); // Base margin
-          await nativePlayer.setProperty('sub-margin-y', '40'); // Base margin
-          await nativePlayer.setProperty('sub-scale', '1.0'); // Reset scale
-        }
-      } else {
-        // Other modes - clear video filter but apply base margins
-        appLogger.d(
-          'Clearing video filter, applying base margins - BoxFit mode $_boxFitMode',
-        );
-        await nativePlayer.setProperty('vf', '');
-        await nativePlayer.setProperty('sub-margin-x', '20'); // Base margin
-        await nativePlayer.setProperty('sub-margin-y', '40'); // Base margin
-        await nativePlayer.setProperty('sub-scale', '1.0'); // Reset scale
-      }
-    } catch (e) {
-      appLogger.w('Failed to update video filter', error: e);
-    }
-  }
-
-  /// Debounced version of _updateVideoFilter for resize events
-  void _debouncedUpdateVideoFilter() {
-    _resizeDebounceTimer?.cancel();
-    _resizeDebounceTimer = Timer(const Duration(milliseconds: 50), () {
-      _updateVideoFilter();
+      _videoFilterManager?.toggleContainCover();
     });
   }
 
@@ -912,8 +634,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _progressTracker?.stopTracking();
     _progressTracker?.dispose();
 
-    // Cancel debounce timer
-    _resizeDebounceTimer?.cancel();
+    // Dispose video filter manager
+    _videoFilterManager?.dispose();
 
     // Cancel stream subscriptions
     _playingSubscription?.cancel();
@@ -970,689 +692,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     player?.dispose();
     super.dispose();
-  }
-
-  /// Generic track matching for audio and subtitle tracks
-  /// Returns the best matching track based on hierarchical criteria:
-  /// 1. Exact match (id + title + language)
-  /// 2. Partial match (title + language)
-  /// 3. Language-only match
-  T? _findBestTrackMatch<T>(
-    List<T> availableTracks,
-    T preferred,
-    String Function(T) getId,
-    String? Function(T) getTitle,
-    String? Function(T) getLanguage,
-  ) {
-    if (availableTracks.isEmpty) return null;
-
-    // Filter out auto and no tracks
-    final validTracks = availableTracks
-        .where((t) => getId(t) != 'auto' && getId(t) != 'no')
-        .toList();
-    if (validTracks.isEmpty) return null;
-
-    final preferredId = getId(preferred);
-    final preferredTitle = getTitle(preferred);
-    final preferredLanguage = getLanguage(preferred);
-
-    // Try to match: id, title, and language
-    for (var track in validTracks) {
-      if (getId(track) == preferredId &&
-          getTitle(track) == preferredTitle &&
-          getLanguage(track) == preferredLanguage) {
-        return track;
-      }
-    }
-
-    // Try to match: title and language
-    for (var track in validTracks) {
-      if (getTitle(track) == preferredTitle &&
-          getLanguage(track) == preferredLanguage) {
-        return track;
-      }
-    }
-
-    // Try to match: language only
-    for (var track in validTracks) {
-      if (getLanguage(track) == preferredLanguage) {
-        return track;
-      }
-    }
-
-    return null;
-  }
-
-  AudioTrack? _findBestAudioMatch(
-    List<AudioTrack> availableTracks,
-    AudioTrack preferred,
-  ) {
-    return _findBestTrackMatch<AudioTrack>(
-      availableTracks,
-      preferred,
-      (t) => t.id,
-      (t) => t.title,
-      (t) => t.language,
-    );
-  }
-
-  AudioTrack? _findAudioTrackByProfile(
-    List<AudioTrack> availableTracks,
-    PlexUserProfile profile,
-  ) {
-    appLogger.d('Audio track selection using user profile');
-    appLogger.d(
-      'Profile settings - autoSelectAudio: ${profile.autoSelectAudio}, defaultAudioLanguage: ${profile.defaultAudioLanguage}, defaultAudioLanguages: ${profile.defaultAudioLanguages}',
-    );
-
-    if (availableTracks.isEmpty || !profile.autoSelectAudio) {
-      appLogger.d(
-        'Cannot use profile: ${availableTracks.isEmpty ? "No tracks available" : "autoSelectAudio is false"}',
-      );
-      return null;
-    }
-
-    // Build list of preferred languages
-    final preferredLanguages = <String>[];
-    if (profile.defaultAudioLanguage != null &&
-        profile.defaultAudioLanguage!.isNotEmpty) {
-      preferredLanguages.add(profile.defaultAudioLanguage!);
-    }
-    if (profile.defaultAudioLanguages != null) {
-      preferredLanguages.addAll(profile.defaultAudioLanguages!);
-    }
-
-    if (preferredLanguages.isEmpty) {
-      appLogger.d('Cannot use profile: No defaultAudioLanguage(s) specified');
-      return null;
-    }
-
-    appLogger.d('Preferred languages: ${preferredLanguages.join(", ")}');
-
-    // Try to find track matching any preferred language
-    for (final preferredLanguage in preferredLanguages) {
-      // Get all possible language code variations (e.g., "en" → ["en", "eng"])
-      final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-      appLogger.d(
-        'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
-      );
-
-      for (var track in availableTracks) {
-        final trackLang = track.language?.toLowerCase();
-        if (trackLang != null && languageVariations.contains(trackLang)) {
-          appLogger.d(
-            'Found audio track matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
-          );
-          return track;
-        }
-      }
-    }
-
-    appLogger.d(
-      'No audio track found matching profile languages or their variations',
-    );
-    return null;
-  }
-
-  SubtitleTrack? _findBestSubtitleMatch(
-    List<SubtitleTrack> availableTracks,
-    SubtitleTrack preferred,
-  ) {
-    // Handle special "no subtitles" case
-    if (preferred.id == 'no') {
-      return SubtitleTrack.no();
-    }
-
-    return _findBestTrackMatch<SubtitleTrack>(
-      availableTracks,
-      preferred,
-      (t) => t.id,
-      (t) => t.title,
-      (t) => t.language,
-    );
-  }
-
-  SubtitleTrack? _findSubtitleTrackByProfile(
-    List<SubtitleTrack> availableTracks,
-    PlexUserProfile profile, {
-    AudioTrack? selectedAudioTrack,
-  }) {
-    appLogger.d('Subtitle track selection using user profile');
-    appLogger.d(
-      'Profile settings - autoSelectSubtitle: ${profile.autoSelectSubtitle}, defaultSubtitleLanguage: ${profile.defaultSubtitleLanguage}, defaultSubtitleLanguages: ${profile.defaultSubtitleLanguages}, defaultSubtitleForced: ${profile.defaultSubtitleForced}, defaultSubtitleAccessibility: ${profile.defaultSubtitleAccessibility}',
-    );
-
-    if (availableTracks.isEmpty) {
-      appLogger.d('Cannot use profile: No subtitle tracks available');
-      return null;
-    }
-
-    // Mode 0: Manually selected - return OFF
-    if (profile.autoSelectSubtitle == 0) {
-      appLogger.d(
-        'Profile specifies manual mode (autoSelectSubtitle=0) - Subtitles OFF',
-      );
-      return SubtitleTrack.no();
-    }
-
-    // Mode 1: Shown with foreign audio
-    if (profile.autoSelectSubtitle == 1) {
-      appLogger.d(
-        'Profile specifies foreign audio mode (autoSelectSubtitle=1)',
-      );
-
-      // Check if audio language matches user's preferred subtitle language
-      if (selectedAudioTrack != null &&
-          profile.defaultSubtitleLanguage != null) {
-        final audioLang = selectedAudioTrack.language?.toLowerCase();
-        final prefLang = profile.defaultSubtitleLanguage!.toLowerCase();
-        final languageVariations = LanguageCodes.getVariations(prefLang);
-
-        appLogger.d(
-          'Checking if audio is foreign - audio: $audioLang, preferred subtitle lang: $prefLang',
-        );
-
-        // If audio matches preferred language, no subtitles needed
-        if (audioLang != null && languageVariations.contains(audioLang)) {
-          appLogger.d('Audio matches preferred language - Subtitles OFF');
-          return SubtitleTrack.no();
-        }
-        appLogger.d('Foreign audio detected - enabling subtitles');
-      }
-      // Foreign audio detected or cannot determine, enable subtitles
-    }
-
-    // Mode 2: Always enabled (or continuing from mode 1 with foreign audio)
-    appLogger.d('Selecting subtitle track based on preferences');
-
-    // Build list of preferred languages
-    final preferredLanguages = <String>[];
-    if (profile.defaultSubtitleLanguage != null &&
-        profile.defaultSubtitleLanguage!.isNotEmpty) {
-      preferredLanguages.add(profile.defaultSubtitleLanguage!);
-    }
-    if (profile.defaultSubtitleLanguages != null) {
-      preferredLanguages.addAll(profile.defaultSubtitleLanguages!);
-    }
-
-    if (preferredLanguages.isEmpty) {
-      appLogger.d(
-        'Cannot use profile: No defaultSubtitleLanguage(s) specified',
-      );
-      return null;
-    }
-
-    appLogger.d('Preferred languages: ${preferredLanguages.join(", ")}');
-
-    // Apply filtering based on preferences
-    var candidateTracks = availableTracks;
-
-    // Filter by SDH (defaultSubtitleAccessibility: 0-3)
-    candidateTracks = _filterSubtitlesBySDH(
-      candidateTracks,
-      profile.defaultSubtitleAccessibility,
-    );
-
-    // Filter by forced subtitle preference (defaultSubtitleForced: 0-3)
-    candidateTracks = _filterSubtitlesByForced(
-      candidateTracks,
-      profile.defaultSubtitleForced,
-    );
-
-    // If no candidates after filtering, relax filters
-    if (candidateTracks.isEmpty) {
-      appLogger.d('No tracks match strict filters, relaxing filters');
-      candidateTracks = availableTracks;
-    }
-
-    // Try to find track matching any preferred language
-    for (final preferredLanguage in preferredLanguages) {
-      final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-      appLogger.d(
-        'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
-      );
-
-      for (var track in candidateTracks) {
-        final trackLang = track.language?.toLowerCase();
-        if (trackLang != null && languageVariations.contains(trackLang)) {
-          appLogger.d(
-            'Found subtitle matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
-          );
-          return track;
-        }
-      }
-    }
-
-    appLogger.d(
-      'No subtitle track found matching profile languages or their variations',
-    );
-    return null;
-  }
-
-  /// Filters subtitle tracks based on SDH (Subtitles for Deaf or Hard-of-Hearing) preference
-  ///
-  /// Values:
-  /// - 0: Prefer non-SDH subtitles
-  /// - 1: Prefer SDH subtitles
-  /// - 2: Only show SDH subtitles
-  /// - 3: Only show non-SDH subtitles
-  List<SubtitleTrack> _filterSubtitlesBySDH(
-    List<SubtitleTrack> tracks,
-    int preference,
-  ) {
-    if (preference == 0 || preference == 1) {
-      // Prefer but don't require
-      final preferSDH = preference == 1;
-      final preferred = tracks.where((t) => _isSDH(t) == preferSDH).toList();
-      if (preferred.isNotEmpty) {
-        appLogger.d(
-          'Applying SDH preference: ${preferSDH ? "prefer SDH" : "prefer non-SDH"} (${preferred.length} tracks)',
-        );
-        return preferred;
-      }
-      appLogger.d('No tracks match SDH preference, using all tracks');
-      return tracks;
-    } else if (preference == 2) {
-      // Only SDH
-      final filtered = tracks.where(_isSDH).toList();
-      appLogger.d('Filtering to SDH only (${filtered.length} tracks)');
-      return filtered;
-    } else if (preference == 3) {
-      // Only non-SDH
-      final filtered = tracks.where((t) => !_isSDH(t)).toList();
-      appLogger.d('Filtering to non-SDH only (${filtered.length} tracks)');
-      return filtered;
-    }
-    return tracks;
-  }
-
-  /// Filters subtitle tracks based on forced subtitle preference
-  ///
-  /// Values:
-  /// - 0: Prefer non-forced subtitles
-  /// - 1: Prefer forced subtitles
-  /// - 2: Only show forced subtitles
-  /// - 3: Only show non-forced subtitles
-  List<SubtitleTrack> _filterSubtitlesByForced(
-    List<SubtitleTrack> tracks,
-    int preference,
-  ) {
-    if (preference == 0 || preference == 1) {
-      // Prefer but don't require
-      final preferForced = preference == 1;
-      final preferred = tracks
-          .where((t) => _isForced(t) == preferForced)
-          .toList();
-      if (preferred.isNotEmpty) {
-        appLogger.d(
-          'Applying forced preference: ${preferForced ? "prefer forced" : "prefer non-forced"} (${preferred.length} tracks)',
-        );
-        return preferred;
-      }
-      appLogger.d('No tracks match forced preference, using all tracks');
-      return tracks;
-    } else if (preference == 2) {
-      // Only forced
-      final filtered = tracks.where(_isForced).toList();
-      appLogger.d('Filtering to forced only (${filtered.length} tracks)');
-      return filtered;
-    } else if (preference == 3) {
-      // Only non-forced
-      final filtered = tracks.where((t) => !_isForced(t)).toList();
-      appLogger.d('Filtering to non-forced only (${filtered.length} tracks)');
-      return filtered;
-    }
-    return tracks;
-  }
-
-  /// Checks if a subtitle track is SDH (Subtitles for Deaf or Hard-of-Hearing)
-  ///
-  /// Since media_kit may not expose this directly, we infer from the title
-  bool _isSDH(SubtitleTrack track) {
-    final title = track.title?.toLowerCase() ?? '';
-
-    // Look for common SDH indicators
-    return title.contains('sdh') ||
-        title.contains('cc') ||
-        title.contains('hearing impaired') ||
-        title.contains('deaf');
-  }
-
-  /// Checks if a subtitle track is forced
-  bool _isForced(SubtitleTrack track) {
-    final title = track.title?.toLowerCase() ?? '';
-    return title.contains('forced');
-  }
-
-  /// Checks if a track language matches a preferred language
-  ///
-  /// Handles both 2-letter (ISO 639-1) and 3-letter (ISO 639-2) codes
-  /// Also handles bibliographic variants and region codes (e.g., "en-US")
-  bool _languageMatches(String? trackLanguage, String? preferredLanguage) {
-    if (trackLanguage == null || preferredLanguage == null) {
-      return false;
-    }
-
-    final track = trackLanguage.toLowerCase();
-    final preferred = preferredLanguage.toLowerCase();
-
-    // Direct match
-    if (track == preferred) return true;
-
-    // Extract base language codes (handle region codes like "en-US")
-    final trackBase = track.split('-').first;
-    final preferredBase = preferred.split('-').first;
-
-    if (trackBase == preferredBase) return true;
-
-    // Get all variations of the preferred language (e.g., "en" → ["en", "eng"])
-    final variations = LanguageCodes.getVariations(preferredBase);
-
-    // Check if track's base code matches any variation
-    return variations.contains(trackBase);
-  }
-
-  /// Log available tracks for debugging
-  void _logAvailableTracks(
-    List<AudioTrack> audioTracks,
-    List<SubtitleTrack> subtitleTracks,
-  ) {
-    appLogger.d('Available audio tracks: ${audioTracks.length}');
-    for (var track in audioTracks) {
-      appLogger.d(
-        '  - ${track.title ?? "Track ${track.id}"} (${track.language ?? "unknown"}) ${track.isDefault == true ? "[DEFAULT]" : ""}',
-      );
-    }
-    appLogger.d('Available subtitle tracks: ${subtitleTracks.length}');
-    for (var track in subtitleTracks) {
-      appLogger.d(
-        '  - ${track.title ?? "Track ${track.id}"} (${track.language ?? "unknown"}) ${track.isDefault == true ? "[DEFAULT]" : ""}',
-      );
-    }
-  }
-
-  /// Select the best audio track based on priority:
-  /// Priority 1: Preferred track from navigation
-  /// Priority 2: Per-media language preference
-  /// Priority 3: User profile preferences
-  /// Priority 4: Default or first track
-  AudioTrack? _selectAudioTrack(
-    List<AudioTrack> availableTracks,
-    PlexUserProfile? profileSettings,
-  ) {
-    if (availableTracks.isEmpty) return null;
-
-    AudioTrack? trackToSelect;
-
-    // Priority 1: Try to match preferred track from navigation
-    if (widget.preferredAudioTrack != null) {
-      appLogger.d('Priority 1: Checking preferred track from navigation');
-      appLogger.d(
-        '  Preferred: ${widget.preferredAudioTrack!.title ?? "Track ${widget.preferredAudioTrack!.id}"} (${widget.preferredAudioTrack!.language ?? "unknown"})',
-      );
-      trackToSelect = _findBestAudioMatch(
-        availableTracks,
-        widget.preferredAudioTrack!,
-      );
-      if (trackToSelect != null) {
-        appLogger.d('  Matched preferred track');
-        return trackToSelect;
-      }
-      appLogger.d('  No match found for preferred track');
-    } else {
-      appLogger.d('Priority 1: No preferred track from navigation');
-    }
-
-    // Priority 2: If no preferred track matched, try per-media language preference
-    if (widget.metadata.audioLanguage != null) {
-      appLogger.d('Priority 2: Checking per-media audio language preference');
-      appLogger.d(
-        '  Per-media audio language: ${widget.metadata.audioLanguage}',
-      );
-
-      final matchedTrack = availableTracks.firstWhere(
-        (track) =>
-            _languageMatches(track.language, widget.metadata.audioLanguage),
-        orElse: () => availableTracks.first,
-      );
-
-      if (_languageMatches(
-        matchedTrack.language,
-        widget.metadata.audioLanguage,
-      )) {
-        appLogger.d('  Matched per-media audio language preference');
-        return matchedTrack;
-      }
-      appLogger.d('  No match found for per-media audio language');
-    } else {
-      appLogger.d('Priority 2: No per-media audio language preference');
-    }
-
-    // Priority 3: If no preferred track matched, try user profile preferences
-    if (profileSettings != null) {
-      appLogger.d('Priority 3: Checking user profile preferences');
-      trackToSelect = _findAudioTrackByProfile(
-        availableTracks,
-        profileSettings,
-      );
-      if (trackToSelect != null) {
-        return trackToSelect;
-      }
-    } else {
-      appLogger.d('Priority 3: No user profile available');
-    }
-
-    // Priority 4: If no match, use default or first track
-    appLogger.d('Priority 4: Using default or first available track');
-    trackToSelect = availableTracks.firstWhere(
-      (t) => t.isDefault == true,
-      orElse: () => availableTracks.first,
-    );
-    final isDefault = trackToSelect.isDefault == true;
-    appLogger.d(
-      '  Selected ${isDefault ? "default" : "first"} track: ${trackToSelect.title ?? "Track ${trackToSelect.id}"} (${trackToSelect.language ?? "unknown"})',
-    );
-
-    return trackToSelect;
-  }
-
-  /// Select the best subtitle track based on priority:
-  /// Priority 1: Preferred track from navigation
-  /// Priority 2: Per-media language preference
-  /// Priority 3: User profile preferences
-  /// Priority 4: Default track
-  /// Priority 5: Off
-  SubtitleTrack _selectSubtitleTrack(
-    List<SubtitleTrack> availableTracks,
-    PlexUserProfile? profileSettings,
-    AudioTrack? selectedAudioTrack,
-  ) {
-    SubtitleTrack? subtitleToSelect;
-
-    // Priority 1: Try preferred track from navigation (always wins)
-    if (widget.preferredSubtitleTrack != null) {
-      appLogger.d('Priority 1: Checking preferred track from navigation');
-      if (widget.preferredSubtitleTrack!.id == 'no') {
-        appLogger.d('  Preferred: OFF');
-        return SubtitleTrack.no();
-      } else if (availableTracks.isNotEmpty) {
-        appLogger.d(
-          '  Preferred: ${widget.preferredSubtitleTrack!.title ?? "Track ${widget.preferredSubtitleTrack!.id}"} (${widget.preferredSubtitleTrack!.language ?? "unknown"})',
-        );
-        subtitleToSelect = _findBestSubtitleMatch(
-          availableTracks,
-          widget.preferredSubtitleTrack!,
-        );
-        if (subtitleToSelect != null) {
-          appLogger.d('  Matched preferred track');
-          return subtitleToSelect;
-        }
-        appLogger.d('  No match found for preferred track');
-      }
-    } else {
-      appLogger.d('Priority 1: No preferred track from navigation');
-    }
-
-    // Priority 2: If no preferred match, try per-media language preference
-    if (widget.metadata.subtitleLanguage != null) {
-      appLogger.d(
-        'Priority 2: Checking per-media subtitle language preference',
-      );
-      appLogger.d(
-        '  Per-media subtitle language: ${widget.metadata.subtitleLanguage}',
-      );
-
-      // Check if subtitle should be disabled
-      if (widget.metadata.subtitleLanguage == 'none' ||
-          widget.metadata.subtitleLanguage!.isEmpty) {
-        appLogger.d('  Per-media preference: Subtitles OFF');
-        return SubtitleTrack.no();
-      } else if (availableTracks.isNotEmpty) {
-        final matchedTrack = availableTracks.firstWhere(
-          (track) => _languageMatches(
-            track.language,
-            widget.metadata.subtitleLanguage,
-          ),
-          orElse: () => availableTracks.first,
-        );
-        if (_languageMatches(
-          matchedTrack.language,
-          widget.metadata.subtitleLanguage,
-        )) {
-          appLogger.d('  Matched per-media subtitle language preference');
-          return matchedTrack;
-        }
-        appLogger.d('  No match found for per-media subtitle language');
-      }
-    } else {
-      appLogger.d('Priority 2: No per-media subtitle language preference');
-    }
-
-    // Priority 3: If no preferred match, apply user profile preferences
-    if (profileSettings != null && availableTracks.isNotEmpty) {
-      appLogger.d('Priority 3: Checking user profile preferences');
-      subtitleToSelect = _findSubtitleTrackByProfile(
-        availableTracks,
-        profileSettings,
-        selectedAudioTrack: selectedAudioTrack,
-      );
-      if (subtitleToSelect != null) {
-        return subtitleToSelect;
-      }
-    } else if (availableTracks.isNotEmpty) {
-      appLogger.d('Priority 3: No user profile available');
-    }
-
-    // Priority 4: If no profile match, check for default subtitle
-    if (availableTracks.isNotEmpty) {
-      appLogger.d('Priority 4: Checking for default subtitle track');
-      final defaultTrack = availableTracks.firstWhere(
-        (t) => t.isDefault == true,
-        orElse: () => availableTracks.first,
-      );
-      if (defaultTrack.isDefault == true) {
-        appLogger.d(
-          '  Found default track: ${defaultTrack.title ?? "Track ${defaultTrack.id}"} (${defaultTrack.language ?? "unknown"})',
-        );
-        return defaultTrack;
-      }
-      appLogger.d('  No default subtitle track found');
-    }
-
-    // Priority 5: If still no subtitle selected, turn off
-    appLogger.d('Priority 5: No subtitle selected - Subtitles OFF');
-    return SubtitleTrack.no();
-  }
-
-  void _waitForTracksAndApply() async {
-    if (!mounted) return;
-
-    // Process tracks and apply selections
-    Future<void> processTracks(Tracks tracks) async {
-      if (!mounted) return;
-
-      appLogger.d('Starting track selection process');
-
-      // Get profile settings for track selection
-      final profileSettings = context.profileSettings;
-
-      // Get real tracks (excluding auto and no)
-      final realAudioTracks = tracks.audio
-          .where((t) => t.id != 'auto' && t.id != 'no')
-          .toList();
-      final realSubtitleTracks = tracks.subtitle
-          .where((t) => t.id != 'auto' && t.id != 'no')
-          .toList();
-
-      // Log available tracks
-      _logAvailableTracks(realAudioTracks, realSubtitleTracks);
-
-      // Select and apply audio track
-      appLogger.d('Audio track selection');
-      final selectedAudioTrack = _selectAudioTrack(
-        realAudioTracks,
-        profileSettings,
-      );
-      if (selectedAudioTrack != null) {
-        appLogger.i(
-          'Final audio selection: ${selectedAudioTrack.title ?? "Track ${selectedAudioTrack.id}"} (${selectedAudioTrack.language ?? "unknown"})',
-        );
-        player!.setAudioTrack(selectedAudioTrack);
-      } else {
-        appLogger.d('No audio tracks available');
-      }
-
-      // Select and apply subtitle track
-      appLogger.d('Subtitle track selection');
-      final selectedSubtitleTrack = _selectSubtitleTrack(
-        realSubtitleTracks,
-        profileSettings,
-        selectedAudioTrack,
-      );
-      final finalSubtitle = selectedSubtitleTrack.id == 'no'
-          ? 'OFF'
-          : '${selectedSubtitleTrack.title ?? "Track ${selectedSubtitleTrack.id}"} (${selectedSubtitleTrack.language ?? "unknown"})';
-      appLogger.i('Final subtitle selection: $finalSubtitle');
-      player!.setSubtitleTrack(selectedSubtitleTrack);
-
-      // Set playback rate if preferred rate was provided
-      if (widget.preferredPlaybackRate != null) {
-        appLogger.d(
-          'Setting preferred playback rate: ${widget.preferredPlaybackRate}x',
-        );
-        player!.setRate(widget.preferredPlaybackRate!);
-      }
-
-      appLogger.d('Track selection complete');
-    }
-
-    // Check if tracks are already available in current state
-    final currentTracks = player!.state.tracks;
-    if (currentTracks.audio.isNotEmpty || currentTracks.subtitle.isNotEmpty) {
-      await processTracks(currentTracks);
-      return;
-    }
-
-    // If not, listen to tracks stream for when they become available
-    bool applied = false;
-    _trackLoadingSubscription = player!.stream.tracks.listen((tracks) async {
-      // Check if tracks are loaded (have at least one track) and not yet applied
-      if (!applied && (tracks.audio.isNotEmpty || tracks.subtitle.isNotEmpty)) {
-        applied = true;
-        await processTracks(tracks);
-        // Cancel subscription after successful processing
-        _trackLoadingSubscription?.cancel();
-        _trackLoadingSubscription = null;
-      }
-    });
-
-    // Cancel subscription after timeout if still waiting
-    Future.delayed(const Duration(seconds: 5), () {
-      if (!applied) {
-        _trackLoadingSubscription?.cancel();
-        _trackLoadingSubscription = null;
-      }
-    });
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
@@ -1914,21 +953,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           onScaleStart: (details) {
             // Initialize pinch gesture tracking (mobile only)
             if (!isMobile) return;
-            _isPinching = false;
+            if (_videoFilterManager != null) {
+              _videoFilterManager!.isPinching = false;
+            }
           },
           onScaleUpdate: (details) {
             // Track if this is a pinch gesture (2+ fingers) on mobile
             if (!isMobile) return;
-            if (details.pointerCount >= 2) {
-              _isPinching = true;
+            if (details.pointerCount >= 2 && _videoFilterManager != null) {
+              _videoFilterManager!.isPinching = true;
             }
           },
           onScaleEnd: (details) {
             // Only toggle if we detected a pinch gesture on mobile
             if (!isMobile) return;
-            if (_isPinching) {
+            if (_videoFilterManager != null &&
+                _videoFilterManager!.isPinching) {
               _toggleContainCover();
-              _isPinching = false;
+              _videoFilterManager!.isPinching = false;
             }
           },
           child: Stack(
@@ -1943,24 +985,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                       constraints.maxHeight,
                     );
 
-                    // Check if size actually changed to avoid unnecessary updates
-                    if (_playerSize == null ||
-                        (_playerSize!.width - newSize.width).abs() > 0.1 ||
-                        (_playerSize!.height - newSize.height).abs() > 0.1) {
+                    // Update player size in video filter manager
+                    if (_videoFilterManager != null) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (mounted) {
-                          setState(() {
-                            _playerSize = newSize;
-                          });
-                          // Use debounced update for resize events
-                          _debouncedUpdateVideoFilter();
+                          _videoFilterManager!.updatePlayerSize(newSize);
                         }
                       });
                     }
 
                     return Video(
                       controller: controller!,
-                      fit: _getCurrentBoxFit,
+                      fit: _videoFilterManager?.currentBoxFit ?? BoxFit.contain,
                       controls: (state) => plexVideoControlsBuilder(
                         player!,
                         widget.metadata,
@@ -1970,7 +1006,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                             : null,
                         availableVersions: _availableVersions,
                         selectedMediaIndex: widget.selectedMediaIndex,
-                        boxFitMode: _boxFitMode,
+                        boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         onCycleBoxFitMode: _cycleBoxFitMode,
                         onAudioTrackChanged: _onAudioTrackChanged,
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,

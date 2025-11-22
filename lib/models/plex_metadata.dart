@@ -23,6 +23,7 @@ class PlexMetadata with MultiServerFields {
   final int? duration;
   final int? addedAt;
   final int? updatedAt;
+  final int? lastViewedAt; // Timestamp when item was last viewed
   final String? grandparentTitle; // Show title for episodes
   final String? grandparentThumb; // Show poster for episodes
   final String? grandparentArt; // Show art for episodes
@@ -78,6 +79,7 @@ class PlexMetadata with MultiServerFields {
     this.duration,
     this.addedAt,
     this.updatedAt,
+    this.lastViewedAt,
     this.grandparentTitle,
     this.grandparentThumb,
     this.grandparentArt,
@@ -121,6 +123,7 @@ class PlexMetadata with MultiServerFields {
     int? duration,
     int? addedAt,
     int? updatedAt,
+    int? lastViewedAt,
     String? grandparentTitle,
     String? grandparentThumb,
     String? grandparentArt,
@@ -162,6 +165,7 @@ class PlexMetadata with MultiServerFields {
       duration: duration ?? this.duration,
       addedAt: addedAt ?? this.addedAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      lastViewedAt: lastViewedAt ?? this.lastViewedAt,
       grandparentTitle: grandparentTitle ?? this.grandparentTitle,
       grandparentThumb: grandparentThumb ?? this.grandparentThumb,
       grandparentArt: grandparentArt ?? this.grandparentArt,

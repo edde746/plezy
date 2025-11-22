@@ -5,34 +5,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../client/plex_client.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
-import '../../providers/plex_client_provider.dart';
-import '../../providers/multi_server_provider.dart';
 import '../../screens/video_player_screen.dart';
-import '../../services/fullscreen_state_manager.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
-import '../../services/sleep_timer_service.dart';
-import '../../utils/app_logger.dart';
-import '../../utils/desktop_window_padding.dart';
-import '../../utils/duration_formatter.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
-import '../app_bar_back_button.dart';
-import 'painters/chapter_marker_painter.dart';
-import 'sheets/audio_track_sheet.dart';
-import 'sheets/chapter_sheet.dart';
-import 'sheets/subtitle_track_sheet.dart';
-import 'sheets/version_sheet.dart';
-import 'sheets/video_settings_sheet.dart';
-import 'video_control_button.dart';
+import 'widgets/volume_control.dart';
+import 'widgets/track_chapter_controls.dart';
+import 'mobile_video_controls.dart';
+import 'desktop_video_controls.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
@@ -381,183 +369,30 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
-  bool _hasMultipleAudioTracks(Tracks? tracks) {
-    if (tracks == null) return false;
-    final audioTracks = tracks.audio
-        .where((track) => track.id != 'auto' && track.id != 'no')
-        .toList();
-    return audioTracks.length > 1;
-  }
-
-  bool _hasSubtitles(Tracks? tracks) {
-    if (tracks == null) return false;
-    final subtitles = tracks.subtitle
-        .where((track) => track.id != 'auto' && track.id != 'no')
-        .toList();
-    return subtitles.isNotEmpty;
-  }
-
-  IconData _getBoxFitIcon(int mode) {
-    switch (mode) {
-      case 0:
-        return Icons.fit_screen; // contain (letterbox)
-      case 1:
-        return Icons.aspect_ratio; // cover (fill screen)
-      case 2:
-        return Icons.settings_overscan; // fill (stretch)
-      default:
-        return Icons.fit_screen;
-    }
-  }
-
-  String _getBoxFitTooltip(int mode) {
-    switch (mode) {
-      case 0:
-        return t.videoControls.letterbox;
-      case 1:
-        return t.videoControls.fillScreen;
-      case 2:
-        return t.videoControls.stretch;
-      default:
-        return t.videoControls.letterbox;
-    }
-  }
-
-  /// Conditionally wraps child with SafeArea only in portrait mode
-  Widget _conditionalSafeArea({
-    required Widget child,
-    bool top = true,
-    bool bottom = true,
-  }) {
-    final orientation = MediaQuery.of(context).orientation;
-    final isPortrait = orientation == Orientation.portrait;
-
-    // Only apply SafeArea in portrait mode
-    if (isPortrait) {
-      return SafeArea(top: top, bottom: bottom, child: child);
-    }
-
-    // In landscape, return child without SafeArea
-    return child;
-  }
-
-  Widget _buildTrackAndChapterControls() {
-    return StreamBuilder<Tracks>(
-      stream: widget.player.stream.tracks,
-      initialData: widget.player.state.tracks,
-      builder: (context, snapshot) {
-        final tracks = snapshot.data;
-        return IntrinsicHeight(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Unified settings button (speed, sleep timer, audio sync, subtitle sync)
-              ListenableBuilder(
-                listenable: SleepTimerService(),
-                builder: (context, _) {
-                  final sleepTimer = SleepTimerService();
-                  final isActive =
-                      sleepTimer.isActive ||
-                      _audioSyncOffset != 0 ||
-                      _subtitleSyncOffset != 0;
-                  return VideoControlButton(
-                    icon: Icons.tune,
-                    isActive: isActive,
-                    semanticLabel: t.videoControls.settingsButton,
-                    onPressed: () async {
-                      await VideoSettingsSheet.show(
-                        context,
-                        widget.player,
-                        _audioSyncOffset,
-                        _subtitleSyncOffset,
-                      );
-                      // Sheet is now closed, reload immediately
-                      if (mounted) {
-                        await _loadSeekTimes();
-                      }
-                    },
-                  );
-                },
-              ),
-              if (_hasMultipleAudioTracks(tracks))
-                VideoControlButton(
-                  icon: Icons.audiotrack,
-                  semanticLabel: t.videoControls.audioTrackButton,
-                  onPressed: () => AudioTrackSheet.show(
-                    context,
-                    widget.player,
-                    onTrackChanged: widget.onAudioTrackChanged,
-                  ),
-                ),
-              if (_hasSubtitles(tracks))
-                VideoControlButton(
-                  icon: Icons.subtitles,
-                  semanticLabel: t.videoControls.subtitlesButton,
-                  onPressed: () => SubtitleTrackSheet.show(
-                    context,
-                    widget.player,
-                    onTrackChanged: widget.onSubtitleTrackChanged,
-                  ),
-                ),
-              if (_chapters.isNotEmpty)
-                VideoControlButton(
-                  icon: Icons.video_library,
-                  semanticLabel: t.videoControls.chaptersButton,
-                  onPressed: () => ChapterSheet.show(
-                    context,
-                    widget.player,
-                    _chapters,
-                    _chaptersLoaded,
-                    serverId: widget.metadata.serverId,
-                  ),
-                ),
-              if (widget.availableVersions.length > 1)
-                VideoControlButton(
-                  icon: Icons.video_file,
-                  semanticLabel: t.videoControls.versionsButton,
-                  onPressed: () => VersionSheet.show(
-                    context,
-                    widget.availableVersions,
-                    widget.selectedMediaIndex,
-                    _switchMediaVersion,
-                  ),
-                ),
-              // BoxFit mode cycle button
-              if (widget.onCycleBoxFitMode != null)
-                VideoControlButton(
-                  icon: _getBoxFitIcon(widget.boxFitMode),
-                  tooltip: _getBoxFitTooltip(widget.boxFitMode),
-                  semanticLabel: t.videoControls.aspectRatioButton,
-                  onPressed: widget.onCycleBoxFitMode,
-                ),
-              // Rotation lock toggle (mobile only)
-              if (PlatformDetector.isMobile(context))
-                VideoControlButton(
-                  icon: _isRotationLocked
-                      ? Icons.screen_lock_rotation
-                      : Icons.screen_rotation,
-                  tooltip: _isRotationLocked
-                      ? t.videoControls.unlockRotation
-                      : t.videoControls.lockRotation,
-                  semanticLabel: t.videoControls.rotationLockButton,
-                  onPressed: _toggleRotationLock,
-                ),
-              // Fullscreen toggle (desktop only)
-              if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-                VideoControlButton(
-                  icon: _isFullscreen
-                      ? Icons.fullscreen_exit
-                      : Icons.fullscreen,
-                  semanticLabel: _isFullscreen
-                      ? t.videoControls.exitFullscreenButton
-                      : t.videoControls.fullscreenButton,
-                  onPressed: _toggleFullscreen,
-                ),
-            ],
-          ),
-        );
+  Widget _buildTrackChapterControlsWidget() {
+    return TrackChapterControls(
+      player: widget.player,
+      chapters: _chapters,
+      chaptersLoaded: _chaptersLoaded,
+      availableVersions: widget.availableVersions,
+      selectedMediaIndex: widget.selectedMediaIndex,
+      boxFitMode: widget.boxFitMode,
+      audioSyncOffset: _audioSyncOffset,
+      subtitleSyncOffset: _subtitleSyncOffset,
+      isRotationLocked: _isRotationLocked,
+      isFullscreen: _isFullscreen,
+      onCycleBoxFitMode: widget.onCycleBoxFitMode,
+      onToggleRotationLock: _toggleRotationLock,
+      onToggleFullscreen: _toggleFullscreen,
+      onSwitchVersion: _switchMediaVersion,
+      onAudioTrackChanged: widget.onAudioTrackChanged,
+      onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
+      onLoadSeekTimes: () async {
+        if (mounted) {
+          await _loadSeekTimes();
+        }
       },
+      serverId: widget.metadata.serverId ?? '',
     );
   }
 
@@ -846,8 +681,41 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         ),
                       ),
                       child: isMobile
-                          ? _buildMobileLayout()
-                          : _buildDesktopLayout(),
+                          ? MobileVideoControls(
+                              player: widget.player,
+                              metadata: widget.metadata,
+                              chapters: _chapters,
+                              chaptersLoaded: _chaptersLoaded,
+                              seekTimeSmall: _seekTimeSmall,
+                              trackChapterControls:
+                                  _buildTrackChapterControlsWidget(),
+                              onSeek: _throttledSeek,
+                              onSeekEnd: _finalizeSeek,
+                              onPlayPause:
+                                  () {}, // Not used, handled internally
+                              onCancelAutoHide: () => _hideTimer?.cancel(),
+                              onStartAutoHide: _startHideTimer,
+                            )
+                          : DesktopVideoControls(
+                              player: widget.player,
+                              metadata: widget.metadata,
+                              onNext: widget.onNext,
+                              onPrevious: widget.onPrevious,
+                              chapters: _chapters,
+                              chaptersLoaded: _chaptersLoaded,
+                              seekTimeSmall: _seekTimeSmall,
+                              volumeControl: VolumeControl(
+                                player: widget.player,
+                              ),
+                              trackChapterControls:
+                                  _buildTrackChapterControlsWidget(),
+                              onSeekToPreviousChapter: _seekToPreviousChapter,
+                              onSeekToNextChapter: _seekToNextChapter,
+                              onSeek: _throttledSeek,
+                              onSeekEnd: _finalizeSeek,
+                              getReplayIcon: _getReplayIcon,
+                              getForwardIcon: _getForwardIcon,
+                            ),
                     ),
                   ),
                 ),
@@ -1010,661 +878,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildMobileLayout() {
-    return Column(
-      children: [
-        // Top bar with back button and track/chapter controls
-        _buildMobileTopBar(),
-        const Spacer(),
-        // Centered large playback controls
-        _buildMobilePlaybackControls(),
-        const Spacer(),
-        // Progress bar at bottom
-        _buildMobileBottomBar(),
-      ],
-    );
-  }
-
-  Widget _buildDesktopLayout() {
-    return Column(
-      children: [
-        // Top bar with back button and title
-        _buildDesktopTopBar(),
-        const Spacer(),
-        // Bottom controls
-        _buildDesktopBottomControls(),
-      ],
-    );
-  }
-
-  // Mobile layout components
-  Widget _buildMobileTopBar() {
-    final topBar = _conditionalSafeArea(
-      bottom: false, // Only respect top safe area when in portrait
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            AppBarBackButton(
-              style: BackButtonStyle.video,
-              semanticLabel: t.videoControls.backButton,
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.metadata.grandparentTitle ?? widget.metadata.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (widget.metadata.parentIndex != null &&
-                      widget.metadata.index != null)
-                    Text(
-                      'S${widget.metadata.parentIndex} · E${widget.metadata.index} · ${widget.metadata.title}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            // Track and chapter controls in top right
-            _buildTrackAndChapterControls(),
-          ],
-        ),
-      ),
-    );
-
-    // On macOS, wrap with GestureDetector to prevent window dragging
-    if (Platform.isMacOS) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
-        child: topBar,
-      );
-    }
-
-    return topBar;
-  }
-
-  Widget _buildMobilePlaybackControls() {
-    return StreamBuilder<bool>(
-      stream: widget.player.stream.playing,
-      initialData: widget.player.state.playing,
-      builder: (context, snapshot) {
-        final isPlaying = snapshot.data ?? false;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: Semantics(
-                label: t.videoControls.seekBackwardButton(
-                  seconds: _seekTimeSmall,
-                ),
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    _getReplayIcon(_seekTimeSmall),
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                  iconSize: 48,
-                  onPressed: () {
-                    _seekWithClamping(Duration(seconds: -_seekTimeSmall));
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(width: 48),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: Semantics(
-                label: isPlaying
-                    ? t.videoControls.pauseButton
-                    : t.videoControls.playButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 72,
-                  ),
-                  iconSize: 72,
-                  onPressed: () {
-                    if (isPlaying) {
-                      widget.player.pause();
-                      _hideTimer?.cancel(); // Cancel auto-hide when paused
-                    } else {
-                      widget.player.play();
-                      _startHideTimer(); // Start auto-hide when playing
-                    }
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(width: 48),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: Semantics(
-                label: t.videoControls.seekForwardButton(
-                  seconds: _seekTimeSmall,
-                ),
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    _getForwardIcon(_seekTimeSmall),
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                  iconSize: 48,
-                  onPressed: () {
-                    _seekWithClamping(Duration(seconds: _seekTimeSmall));
-                  },
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildMobileBottomBar() {
-    return _conditionalSafeArea(
-      top: false, // Only respect bottom safe area when in portrait
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: StreamBuilder<Duration>(
-          stream: widget.player.stream.position,
-          initialData: widget.player.state.position,
-          builder: (context, positionSnapshot) {
-            return StreamBuilder<Duration>(
-              stream: widget.player.stream.duration,
-              initialData: widget.player.state.duration,
-              builder: (context, durationSnapshot) {
-                final position = positionSnapshot.data ?? Duration.zero;
-                final duration = durationSnapshot.data ?? Duration.zero;
-
-                return Column(
-                  children: [
-                    _buildTimelineWithChapters(
-                      position: position,
-                      duration: duration,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            formatDurationTimestamp(position),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            formatDurationTimestamp(duration),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  // Desktop layout components
-  Widget _buildDesktopTopBar() {
-    // Use global fullscreen state for padding
-    return ListenableBuilder(
-      listenable: FullscreenStateManager(),
-      builder: (context, _) {
-        final isFullscreen = FullscreenStateManager().isFullscreen;
-        // In fullscreen on macOS, use less left padding since traffic lights auto-hide
-        // In normal mode on macOS, need more padding to avoid traffic lights
-        final leftPadding = Platform.isMacOS
-            ? (isFullscreen
-                  ? DesktopWindowPadding.macOSLeftFullscreen
-                  : DesktopWindowPadding.macOSLeft)
-            : DesktopWindowPadding.macOSLeftFullscreen;
-
-        return _buildDesktopTopBarContent(leftPadding);
-      },
-    );
-  }
-
-  Widget _buildDesktopTopBarContent(double leftPadding) {
-    final topBar = Padding(
-      padding: EdgeInsets.only(left: leftPadding, right: 16),
-      child: Row(
-        children: [
-          AppBarBackButton(
-            style: BackButtonStyle.video,
-            semanticLabel: t.videoControls.backButton,
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Platform.isMacOS
-                ? _buildMacOSSingleLineTitle()
-                : _buildMultiLineTitle(),
-          ),
-        ],
-      ),
-    );
-
-    // On macOS, wrap with GestureDetector to prevent window dragging
-    if (Platform.isMacOS) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
-        child: topBar,
-      );
-    }
-
-    return topBar;
-  }
-
-  Widget _buildMacOSSingleLineTitle() {
-    // Build single-line title combining series and episode info
-    final seriesName =
-        widget.metadata.grandparentTitle ?? widget.metadata.title;
-    final hasEpisodeInfo =
-        widget.metadata.parentIndex != null && widget.metadata.index != null;
-
-    final titleText = hasEpisodeInfo
-        ? '$seriesName · S${widget.metadata.parentIndex} E${widget.metadata.index} · ${widget.metadata.title}'
-        : seriesName;
-
-    return Text(
-      titleText,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 15,
-        fontWeight: FontWeight.w500,
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildMultiLineTitle() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.metadata.grandparentTitle ?? widget.metadata.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        if (widget.metadata.parentIndex != null &&
-            widget.metadata.index != null)
-          Text(
-            'S${widget.metadata.parentIndex} · E${widget.metadata.index} · ${widget.metadata.title}',
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-      ],
-    );
-  }
-
-  Widget _buildDesktopBottomControls() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
-        children: [
-          // Row 1: Timeline with time indicators
-          StreamBuilder<Duration>(
-            stream: widget.player.stream.position,
-            initialData: widget.player.state.position,
-            builder: (context, positionSnapshot) {
-              return StreamBuilder<Duration>(
-                stream: widget.player.stream.duration,
-                initialData: widget.player.state.duration,
-                builder: (context, durationSnapshot) {
-                  final position = positionSnapshot.data ?? Duration.zero;
-                  final duration = durationSnapshot.data ?? Duration.zero;
-
-                  return Row(
-                    children: [
-                      Text(
-                        formatDurationTimestamp(position),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildTimelineWithChapters(
-                          position: position,
-                          duration: duration,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        formatDurationTimestamp(duration),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 4),
-          // Row 2: Playback controls and options
-          Row(
-            children: [
-              // Previous item
-              Semantics(
-                label: t.videoControls.previousButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.skip_previous,
-                    color: widget.onPrevious != null
-                        ? Colors.white
-                        : Colors.white54,
-                  ),
-                  onPressed: widget.onPrevious,
-                ),
-              ),
-              // Previous chapter (or skip backward if no chapters)
-              Semantics(
-                label: _chapters.isEmpty
-                    ? t.videoControls.seekBackwardButton(
-                        seconds: _seekTimeSmall,
-                      )
-                    : t.videoControls.previousChapterButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    _chapters.isEmpty
-                        ? _getReplayIcon(_seekTimeSmall)
-                        : Icons.fast_rewind,
-                    color: Colors.white,
-                  ),
-                  onPressed: _seekToPreviousChapter,
-                ),
-              ),
-              // Play/Pause
-              StreamBuilder<bool>(
-                stream: widget.player.stream.playing,
-                initialData: widget.player.state.playing,
-                builder: (context, snapshot) {
-                  final isPlaying = snapshot.data ?? false;
-                  return Semantics(
-                    label: isPlaying
-                        ? t.videoControls.pauseButton
-                        : t.videoControls.playButton,
-                    button: true,
-                    excludeSemantics: true,
-                    child: IconButton(
-                      icon: Icon(
-                        isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                      iconSize: 32,
-                      onPressed: () {
-                        if (isPlaying) {
-                          widget.player.pause();
-                          _hideTimer?.cancel(); // Cancel auto-hide when paused
-                        } else {
-                          widget.player.play();
-                          _startHideTimer(); // Start auto-hide when playing
-                        }
-                      },
-                    ),
-                  );
-                },
-              ),
-              // Next chapter (or skip forward if no chapters)
-              Semantics(
-                label: _chapters.isEmpty
-                    ? t.videoControls.seekForwardButton(seconds: _seekTimeSmall)
-                    : t.videoControls.nextChapterButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    _chapters.isEmpty
-                        ? _getForwardIcon(_seekTimeSmall)
-                        : Icons.fast_forward,
-                    color: Colors.white,
-                  ),
-                  onPressed: _seekToNextChapter,
-                ),
-              ),
-              // Next item
-              Semantics(
-                label: t.videoControls.nextButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.skip_next,
-                    color: widget.onNext != null
-                        ? Colors.white
-                        : Colors.white54,
-                  ),
-                  onPressed: widget.onNext,
-                ),
-              ),
-              const Spacer(),
-              // Volume control
-              _buildVolumeControl(),
-              const SizedBox(width: 16),
-              // Audio track, subtitle, and chapter controls
-              _buildTrackAndChapterControls(),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimelineWithChapters({
-    required Duration position,
-    required Duration duration,
-  }) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // Chapter markers layer
-        if (_chaptersLoaded &&
-            _chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children:
-                    _chapters.map((chapter) {
-                      final chapterPosition =
-                          (chapter.startTimeOffset ?? 0) /
-                          duration.inMilliseconds;
-                      return Expanded(
-                        flex: (chapterPosition * 1000).toInt(),
-                        child: const SizedBox(),
-                      );
-                    }).toList()..add(
-                      Expanded(
-                        flex:
-                            1000 -
-                            _chapters.fold<int>(
-                              0,
-                              (sum, chapter) =>
-                                  sum +
-                                  ((chapter.startTimeOffset ?? 0) /
-                                          duration.inMilliseconds *
-                                          1000)
-                                      .toInt(),
-                            ),
-                        child: const SizedBox(),
-                      ),
-                    ),
-              ),
-            ),
-          ),
-        // Slider
-        Semantics(
-          label: t.videoControls.timelineSlider,
-          slider: true,
-          child: Slider(
-            value: duration.inMilliseconds > 0
-                ? position.inMilliseconds.toDouble()
-                : 0.0,
-            min: 0.0,
-            max: duration.inMilliseconds.toDouble(),
-            onChanged: (value) {
-              _throttledSeek(Duration(milliseconds: value.toInt()));
-            },
-            onChangeEnd: (value) {
-              _finalizeSeek(Duration(milliseconds: value.toInt()));
-            },
-            activeColor: Colors.white,
-            inactiveColor: Colors.white.withValues(alpha: 0.3),
-          ),
-        ),
-        // Chapter marker indicators
-        if (_chaptersLoaded &&
-            _chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: CustomPaint(
-                  painter: ChapterMarkerPainter(
-                    chapters: _chapters,
-                    duration: duration,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildVolumeControl() {
-    return StreamBuilder<double>(
-      stream: widget.player.stream.volume,
-      initialData: widget.player.state.volume,
-      builder: (context, snapshot) {
-        final volume = snapshot.data ?? 100.0;
-        final isMuted = volume == 0;
-
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Semantics(
-              label: isMuted
-                  ? t.videoControls.unmuteButton
-                  : t.videoControls.muteButton,
-              button: true,
-              excludeSemantics: true,
-              child: IconButton(
-                icon: Icon(
-                  isMuted ? Icons.volume_off : Icons.volume_up,
-                  color: Colors.white,
-                ),
-                onPressed: () async {
-                  final newVolume = isMuted ? 100.0 : 0.0;
-                  widget.player.setVolume(newVolume);
-                  final settings = await SettingsService.getInstance();
-                  await settings.setVolume(newVolume);
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 100,
-              child: SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 3,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 6,
-                  ),
-                  overlayShape: const RoundSliderOverlayShape(
-                    overlayRadius: 12,
-                  ),
-                ),
-                child: Semantics(
-                  label: t.videoControls.volumeSlider,
-                  slider: true,
-                  child: Slider(
-                    value: volume,
-                    min: 0.0,
-                    max: 100.0,
-                    onChanged: (value) {
-                      widget.player.setVolume(value);
-                    },
-                    onChangeEnd: (value) async {
-                      final settings = await SettingsService.getInstance();
-                      await settings.setVolume(value);
-                    },
-                    activeColor: Colors.white,
-                    inactiveColor: Colors.white.withValues(alpha: 0.3),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 

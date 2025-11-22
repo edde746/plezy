@@ -56,11 +56,11 @@ class DataAggregationService {
       },
     );
 
-    // Sort by most recent (lastViewedAt is stored in viewOffset metadata)
-    // For on deck items, we use updatedAt or addedAt as proxy for recency
+    // Sort by most recently viewed
+    // Use lastViewedAt (when item was last viewed), falling back to updatedAt/addedAt if not available
     allOnDeck.sort((a, b) {
-      final aTime = a.updatedAt ?? a.addedAt ?? 0;
-      final bTime = b.updatedAt ?? b.addedAt ?? 0;
+      final aTime = a.lastViewedAt ?? a.updatedAt ?? a.addedAt ?? 0;
+      final bTime = b.lastViewedAt ?? b.updatedAt ?? b.addedAt ?? 0;
       return bTime.compareTo(aTime); // Descending (most recent first)
     });
 
@@ -298,7 +298,9 @@ class DataAggregationService {
     final allResults = <T>[];
 
     // Execute operation on all servers in parallel
-    final Iterable<Future<List<T>>> futures = clients.entries.map((entry) async {
+    final Iterable<Future<List<T>>> futures = clients.entries.map((
+      entry,
+    ) async {
       final serverId = entry.key;
       final client = entry.value;
       final server = _serverManager.getServer(serverId);

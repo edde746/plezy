@@ -1,0 +1,400 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/material.dart';
+import 'package:media_kit/media_kit.dart';
+
+import '../../models/plex_media_info.dart';
+import '../../models/plex_metadata.dart';
+import '../../services/fullscreen_state_manager.dart';
+import '../../utils/desktop_window_padding.dart';
+import '../../utils/duration_formatter.dart';
+import '../../i18n/strings.g.dart';
+import '../app_bar_back_button.dart';
+import 'painters/chapter_marker_painter.dart';
+
+/// Desktop-specific video controls layout with top bar and bottom controls
+class DesktopVideoControls extends StatelessWidget {
+  final Player player;
+  final PlexMetadata metadata;
+  final VoidCallback? onNext;
+  final VoidCallback? onPrevious;
+  final List<PlexChapter> chapters;
+  final bool chaptersLoaded;
+  final int seekTimeSmall;
+  final VoidCallback onSeekToPreviousChapter;
+  final VoidCallback onSeekToNextChapter;
+  final ValueChanged<Duration> onSeek;
+  final ValueChanged<Duration> onSeekEnd;
+  final Widget volumeControl;
+  final Widget trackChapterControls;
+  final IconData Function(int) getReplayIcon;
+  final IconData Function(int) getForwardIcon;
+
+  const DesktopVideoControls({
+    super.key,
+    required this.player,
+    required this.metadata,
+    this.onNext,
+    this.onPrevious,
+    required this.chapters,
+    required this.chaptersLoaded,
+    required this.seekTimeSmall,
+    required this.onSeekToPreviousChapter,
+    required this.onSeekToNextChapter,
+    required this.onSeek,
+    required this.onSeekEnd,
+    required this.volumeControl,
+    required this.trackChapterControls,
+    required this.getReplayIcon,
+    required this.getForwardIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Top bar with back button and title
+        _buildTopBar(context),
+        const Spacer(),
+        // Bottom controls
+        _buildBottomControls(context),
+      ],
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context) {
+    // Use global fullscreen state for padding
+    return ListenableBuilder(
+      listenable: FullscreenStateManager(),
+      builder: (context, _) {
+        final isFullscreen = FullscreenStateManager().isFullscreen;
+        // In fullscreen on macOS, use less left padding since traffic lights auto-hide
+        // In normal mode on macOS, need more padding to avoid traffic lights
+        final leftPadding = Platform.isMacOS
+            ? (isFullscreen
+                  ? DesktopWindowPadding.macOSLeftFullscreen
+                  : DesktopWindowPadding.macOSLeft)
+            : DesktopWindowPadding.macOSLeftFullscreen;
+
+        return _buildTopBarContent(context, leftPadding);
+      },
+    );
+  }
+
+  Widget _buildTopBarContent(BuildContext context, double leftPadding) {
+    final topBar = Padding(
+      padding: EdgeInsets.only(left: leftPadding, right: 16),
+      child: Row(
+        children: [
+          AppBarBackButton(
+            style: BackButtonStyle.video,
+            semanticLabel: t.videoControls.backButton,
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Platform.isMacOS
+                ? _buildMacOSSingleLineTitle()
+                : _buildMultiLineTitle(),
+          ),
+        ],
+      ),
+    );
+
+    // On macOS, wrap with GestureDetector to prevent window dragging
+    if (Platform.isMacOS) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
+        child: topBar,
+      );
+    }
+
+    return topBar;
+  }
+
+  Widget _buildMacOSSingleLineTitle() {
+    // Build single-line title combining series and episode info
+    final seriesName = metadata.grandparentTitle ?? metadata.title;
+    final hasEpisodeInfo =
+        metadata.parentIndex != null && metadata.index != null;
+
+    final titleText = hasEpisodeInfo
+        ? '$seriesName · S${metadata.parentIndex} E${metadata.index} · ${metadata.title}'
+        : seriesName;
+
+    return Text(
+      titleText,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildMultiLineTitle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          metadata.grandparentTitle ?? metadata.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (metadata.parentIndex != null && metadata.index != null)
+          Text(
+            'S${metadata.parentIndex} · E${metadata.index} · ${metadata.title}',
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildBottomControls(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Column(
+        children: [
+          // Row 1: Timeline with time indicators
+          StreamBuilder<Duration>(
+            stream: player.stream.position,
+            initialData: player.state.position,
+            builder: (context, positionSnapshot) {
+              return StreamBuilder<Duration>(
+                stream: player.stream.duration,
+                initialData: player.state.duration,
+                builder: (context, durationSnapshot) {
+                  final position = positionSnapshot.data ?? Duration.zero;
+                  final duration = durationSnapshot.data ?? Duration.zero;
+
+                  return Row(
+                    children: [
+                      Text(
+                        formatDurationTimestamp(position),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTimelineWithChapters(
+                          position: position,
+                          duration: duration,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        formatDurationTimestamp(duration),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 4),
+          // Row 2: Playback controls and options
+          Row(
+            children: [
+              // Previous item
+              Semantics(
+                label: t.videoControls.previousButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.skip_previous,
+                    color: onPrevious != null ? Colors.white : Colors.white54,
+                  ),
+                  onPressed: onPrevious,
+                ),
+              ),
+              // Previous chapter (or skip backward if no chapters)
+              Semantics(
+                label: chapters.isEmpty
+                    ? t.videoControls.seekBackwardButton(seconds: seekTimeSmall)
+                    : t.videoControls.previousChapterButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    chapters.isEmpty
+                        ? getReplayIcon(seekTimeSmall)
+                        : Icons.fast_rewind,
+                    color: Colors.white,
+                  ),
+                  onPressed: onSeekToPreviousChapter,
+                ),
+              ),
+              // Play/Pause
+              StreamBuilder<bool>(
+                stream: player.stream.playing,
+                initialData: player.state.playing,
+                builder: (context, snapshot) {
+                  final isPlaying = snapshot.data ?? false;
+                  return Semantics(
+                    label: isPlaying
+                        ? t.videoControls.pauseButton
+                        : t.videoControls.playButton,
+                    button: true,
+                    excludeSemantics: true,
+                    child: IconButton(
+                      icon: Icon(
+                        isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                      iconSize: 32,
+                      onPressed: () {
+                        if (isPlaying) {
+                          player.pause();
+                        } else {
+                          player.play();
+                        }
+                      },
+                    ),
+                  );
+                },
+              ),
+              // Next chapter (or skip forward if no chapters)
+              Semantics(
+                label: chapters.isEmpty
+                    ? t.videoControls.seekForwardButton(seconds: seekTimeSmall)
+                    : t.videoControls.nextChapterButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    chapters.isEmpty
+                        ? getForwardIcon(seekTimeSmall)
+                        : Icons.fast_forward,
+                    color: Colors.white,
+                  ),
+                  onPressed: onSeekToNextChapter,
+                ),
+              ),
+              // Next item
+              Semantics(
+                label: t.videoControls.nextButton,
+                button: true,
+                excludeSemantics: true,
+                child: IconButton(
+                  icon: Icon(
+                    Icons.skip_next,
+                    color: onNext != null ? Colors.white : Colors.white54,
+                  ),
+                  onPressed: onNext,
+                ),
+              ),
+              const Spacer(),
+              // Volume control
+              volumeControl,
+              const SizedBox(width: 16),
+              // Audio track, subtitle, and chapter controls
+              trackChapterControls,
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineWithChapters({
+    required Duration position,
+    required Duration duration,
+  }) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Chapter markers layer
+        if (chaptersLoaded &&
+            chapters.isNotEmpty &&
+            duration.inMilliseconds > 0)
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children:
+                    chapters.map((chapter) {
+                      final chapterPosition =
+                          (chapter.startTimeOffset ?? 0) /
+                          duration.inMilliseconds;
+                      return Expanded(
+                        flex: (chapterPosition * 1000).toInt(),
+                        child: const SizedBox(),
+                      );
+                    }).toList()..add(
+                      Expanded(
+                        flex:
+                            1000 -
+                            chapters.fold<int>(
+                              0,
+                              (sum, chapter) =>
+                                  sum +
+                                  ((chapter.startTimeOffset ?? 0) /
+                                          duration.inMilliseconds *
+                                          1000)
+                                      .toInt(),
+                            ),
+                        child: const SizedBox(),
+                      ),
+                    ),
+              ),
+            ),
+          ),
+        // Slider
+        Semantics(
+          label: t.videoControls.timelineSlider,
+          slider: true,
+          child: Slider(
+            value: duration.inMilliseconds > 0
+                ? position.inMilliseconds.toDouble()
+                : 0.0,
+            min: 0.0,
+            max: duration.inMilliseconds.toDouble(),
+            onChanged: (value) {
+              onSeek(Duration(milliseconds: value.toInt()));
+            },
+            onChangeEnd: (value) {
+              onSeekEnd(Duration(milliseconds: value.toInt()));
+            },
+            activeColor: Colors.white,
+            inactiveColor: Colors.white.withValues(alpha: 0.3),
+          ),
+        ),
+        // Chapter marker indicators
+        if (chaptersLoaded &&
+            chapters.isNotEmpty &&
+            duration.inMilliseconds > 0)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: CustomPaint(
+                  painter: ChapterMarkerPainter(
+                    chapters: chapters,
+                    duration: duration,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
