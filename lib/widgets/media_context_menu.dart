@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
-import '../providers/plex_client_provider.dart';
-import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';

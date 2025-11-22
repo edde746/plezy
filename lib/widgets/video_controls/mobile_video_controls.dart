@@ -6,9 +6,11 @@ import 'package:media_kit/media_kit.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/duration_formatter.dart';
+import '../../utils/player_utils.dart';
+import '../../utils/video_control_icons.dart';
 import '../../i18n/strings.g.dart';
 import '../app_bar_back_button.dart';
-import 'painters/chapter_marker_painter.dart';
+import 'widgets/timeline_slider.dart';
 
 /// Mobile video controls layout for Plex video player
 ///
@@ -142,13 +144,13 @@ class MobileVideoControls extends StatelessWidget {
                 excludeSemantics: true,
                 child: IconButton(
                   icon: Icon(
-                    _getReplayIcon(seekTimeSmall),
+                    getReplayIcon(seekTimeSmall),
                     color: Colors.white,
                     size: 48,
                   ),
                   iconSize: 48,
                   onPressed: () {
-                    _seekWithClamping(Duration(seconds: -seekTimeSmall));
+                    seekWithClamping(player, Duration(seconds: -seekTimeSmall));
                   },
                 ),
               ),
@@ -198,13 +200,13 @@ class MobileVideoControls extends StatelessWidget {
                 excludeSemantics: true,
                 child: IconButton(
                   icon: Icon(
-                    _getForwardIcon(seekTimeSmall),
+                    getForwardIcon(seekTimeSmall),
                     color: Colors.white,
                     size: 48,
                   ),
                   iconSize: 48,
                   onPressed: () {
-                    _seekWithClamping(Duration(seconds: seekTimeSmall));
+                    seekWithClamping(player, Duration(seconds: seekTimeSmall));
                   },
                 ),
               ),
@@ -234,9 +236,13 @@ class MobileVideoControls extends StatelessWidget {
 
                 return Column(
                   children: [
-                    _buildTimelineWithChapters(
+                    TimelineSlider(
                       position: position,
                       duration: duration,
+                      chapters: chapters,
+                      chaptersLoaded: chaptersLoaded,
+                      onSeek: onSeek,
+                      onSeekEnd: onSeekEnd,
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -270,90 +276,6 @@ class MobileVideoControls extends StatelessWidget {
     );
   }
 
-  Widget _buildTimelineWithChapters({
-    required Duration position,
-    required Duration duration,
-  }) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // Chapter markers layer
-        if (chaptersLoaded &&
-            chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children:
-                    chapters.map((chapter) {
-                      final chapterPosition =
-                          (chapter.startTimeOffset ?? 0) /
-                          duration.inMilliseconds;
-                      return Expanded(
-                        flex: (chapterPosition * 1000).toInt(),
-                        child: const SizedBox(),
-                      );
-                    }).toList()..add(
-                      Expanded(
-                        flex:
-                            1000 -
-                            chapters.fold<int>(
-                              0,
-                              (sum, chapter) =>
-                                  sum +
-                                  ((chapter.startTimeOffset ?? 0) /
-                                          duration.inMilliseconds *
-                                          1000)
-                                      .toInt(),
-                            ),
-                        child: const SizedBox(),
-                      ),
-                    ),
-              ),
-            ),
-          ),
-        // Slider
-        Semantics(
-          label: t.videoControls.timelineSlider,
-          slider: true,
-          child: Slider(
-            value: duration.inMilliseconds > 0
-                ? position.inMilliseconds.toDouble()
-                : 0.0,
-            min: 0.0,
-            max: duration.inMilliseconds.toDouble(),
-            onChanged: (value) {
-              onSeek(Duration(milliseconds: value.toInt()));
-            },
-            onChangeEnd: (value) {
-              onSeekEnd(Duration(milliseconds: value.toInt()));
-            },
-            activeColor: Colors.white,
-            inactiveColor: Colors.white.withValues(alpha: 0.3),
-          ),
-        ),
-        // Chapter marker indicators
-        if (chaptersLoaded &&
-            chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: CustomPaint(
-                  painter: ChapterMarkerPainter(
-                    chapters: chapters,
-                    duration: duration,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   /// Conditionally wraps child with SafeArea only in portrait mode
   Widget _conditionalSafeArea({
     required BuildContext context,
@@ -371,50 +293,5 @@ class MobileVideoControls extends StatelessWidget {
 
     // In landscape, return child without SafeArea
     return child;
-  }
-
-  void _seekWithClamping(Duration offset) {
-    final currentPosition = player.state.position;
-    final duration = player.state.duration;
-    final newPosition = currentPosition + offset;
-
-    // Clamp between 0 and video duration
-    final clampedPosition = newPosition.isNegative
-        ? Duration.zero
-        : (newPosition > duration ? duration : newPosition);
-
-    player.seek(clampedPosition);
-  }
-
-  /// Get the replay icon based on the duration
-  /// Returns numbered icons (replay_5, replay_10, replay_30) when available,
-  /// otherwise returns generic replay icon
-  IconData _getReplayIcon(int seconds) {
-    switch (seconds) {
-      case 5:
-        return Icons.replay_5;
-      case 10:
-        return Icons.replay_10;
-      case 30:
-        return Icons.replay_30;
-      default:
-        return Icons.replay; // Generic icon for custom durations
-    }
-  }
-
-  /// Get the forward icon based on the duration
-  /// Returns numbered icons (forward_5, forward_10, forward_30) when available,
-  /// otherwise returns generic forward icon
-  IconData _getForwardIcon(int seconds) {
-    switch (seconds) {
-      case 5:
-        return Icons.forward_5;
-      case 10:
-        return Icons.forward_10;
-      case 30:
-        return Icons.forward_30;
-      default:
-        return Icons.forward; // Generic icon for custom durations
-    }
   }
 }

@@ -1111,7 +1111,6 @@ class _LibraryManagementSheet extends StatefulWidget {
 class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   late List<PlexLibrary> _tempLibraries;
   List<String>? _serverOrder;
-  bool _isLoadingServerOrder = true;
 
   @override
   void initState() {
@@ -1128,7 +1127,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     if (mounted) {
       setState(() {
         _serverOrder = savedOrder;
-        _isLoadingServerOrder = false;
       });
     }
   }
@@ -1439,43 +1437,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         );
       },
     );
-  }
-
-  /// Reorder libraries within a server group
-  void _reorderLibrariesInServer(
-    String serverKey,
-    List<PlexLibrary> serverLibraries,
-    int oldIndex,
-    int newIndex,
-  ) {
-    setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
-
-      // Get the library being moved
-      final library = serverLibraries[oldIndex];
-
-      // Find global indices
-      final globalOldIndex = _tempLibraries.indexOf(library);
-
-      // Calculate the new global index
-      // We need to find where this library should go in the global list
-      final targetLibrary = newIndex < serverLibraries.length
-          ? serverLibraries[newIndex]
-          : serverLibraries.last;
-      final globalNewIndex = _tempLibraries.indexOf(targetLibrary);
-
-      // Reorder in global list
-      _tempLibraries.removeAt(globalOldIndex);
-      _tempLibraries.insert(
-        globalOldIndex < globalNewIndex ? globalNewIndex : globalNewIndex,
-        library,
-      );
-    });
-
-    // Apply immediately
-    widget.onReorder(_tempLibraries);
   }
 
   /// Build a single library tile

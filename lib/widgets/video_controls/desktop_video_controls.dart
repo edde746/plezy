@@ -10,7 +10,7 @@ import '../../utils/desktop_window_padding.dart';
 import '../../utils/duration_formatter.dart';
 import '../../i18n/strings.g.dart';
 import '../app_bar_back_button.dart';
-import 'painters/chapter_marker_painter.dart';
+import 'widgets/timeline_slider.dart';
 
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatelessWidget {
@@ -188,9 +188,13 @@ class DesktopVideoControls extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _buildTimelineWithChapters(
+                        child: TimelineSlider(
                           position: position,
                           duration: duration,
+                          chapters: chapters,
+                          chaptersLoaded: chaptersLoaded,
+                          onSeek: onSeek,
+                          onSeekEnd: onSeekEnd,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -311,90 +315,6 @@ class DesktopVideoControls extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTimelineWithChapters({
-    required Duration position,
-    required Duration duration,
-  }) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // Chapter markers layer
-        if (chaptersLoaded &&
-            chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children:
-                    chapters.map((chapter) {
-                      final chapterPosition =
-                          (chapter.startTimeOffset ?? 0) /
-                          duration.inMilliseconds;
-                      return Expanded(
-                        flex: (chapterPosition * 1000).toInt(),
-                        child: const SizedBox(),
-                      );
-                    }).toList()..add(
-                      Expanded(
-                        flex:
-                            1000 -
-                            chapters.fold<int>(
-                              0,
-                              (sum, chapter) =>
-                                  sum +
-                                  ((chapter.startTimeOffset ?? 0) /
-                                          duration.inMilliseconds *
-                                          1000)
-                                      .toInt(),
-                            ),
-                        child: const SizedBox(),
-                      ),
-                    ),
-              ),
-            ),
-          ),
-        // Slider
-        Semantics(
-          label: t.videoControls.timelineSlider,
-          slider: true,
-          child: Slider(
-            value: duration.inMilliseconds > 0
-                ? position.inMilliseconds.toDouble()
-                : 0.0,
-            min: 0.0,
-            max: duration.inMilliseconds.toDouble(),
-            onChanged: (value) {
-              onSeek(Duration(milliseconds: value.toInt()));
-            },
-            onChangeEnd: (value) {
-              onSeekEnd(Duration(milliseconds: value.toInt()));
-            },
-            activeColor: Colors.white,
-            inactiveColor: Colors.white.withValues(alpha: 0.3),
-          ),
-        ),
-        // Chapter marker indicators
-        if (chaptersLoaded &&
-            chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: CustomPaint(
-                  painter: ChapterMarkerPainter(
-                    chapters: chapters,
-                    duration: duration,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

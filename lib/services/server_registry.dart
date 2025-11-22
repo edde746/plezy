@@ -7,9 +7,6 @@ import 'storage_service.dart';
 /// Centralized server configuration registry
 /// Manages which servers are available, enabled/disabled, and their configurations
 class ServerRegistry {
-  static const String _keyServersList = 'servers_list';
-  static const String _keyEnabledServers = 'enabled_servers';
-
   final StorageService _storage;
 
   ServerRegistry(this._storage);

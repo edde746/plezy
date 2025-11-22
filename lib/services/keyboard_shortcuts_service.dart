@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'settings_service.dart';
+import '../utils/player_utils.dart';
 
 class KeyboardShortcutsService {
   static KeyboardShortcutsService? _instance;
@@ -230,21 +231,6 @@ class KeyboardShortcutsService {
     return KeyEventResult.ignored;
   }
 
-  /// Seeks by the given offset (can be positive or negative) while clamping
-  /// the result between 0 and the video duration
-  void _seekWithClamping(Player player, Duration offset) {
-    final currentPosition = player.state.position;
-    final duration = player.state.duration;
-    final newPosition = currentPosition + offset;
-
-    // Clamp between 0 and video duration
-    final clampedPosition = newPosition.isNegative
-        ? Duration.zero
-        : (newPosition > duration ? duration : newPosition);
-
-    player.seek(clampedPosition);
-  }
-
   void _executeAction(
     String action,
     Player player,
@@ -270,16 +256,16 @@ class KeyboardShortcutsService {
         _settingsService.setVolume(newVolume);
         break;
       case 'seek_forward':
-        _seekWithClamping(player, Duration(seconds: _seekTimeSmall));
+        seekWithClamping(player, Duration(seconds: _seekTimeSmall));
         break;
       case 'seek_backward':
-        _seekWithClamping(player, Duration(seconds: -_seekTimeSmall));
+        seekWithClamping(player, Duration(seconds: -_seekTimeSmall));
         break;
       case 'seek_forward_large':
-        _seekWithClamping(player, Duration(seconds: _seekTimeLarge));
+        seekWithClamping(player, Duration(seconds: _seekTimeLarge));
         break;
       case 'seek_backward_large':
-        _seekWithClamping(player, Duration(seconds: -_seekTimeLarge));
+        seekWithClamping(player, Duration(seconds: -_seekTimeLarge));
         break;
       case 'fullscreen_toggle':
         onToggleFullscreen?.call();

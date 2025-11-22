@@ -7,8 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
-import 'services/plex_auth_service.dart';
-import 'services/server_connection_service.dart';
 import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/update_service.dart';
@@ -26,7 +24,6 @@ import 'services/data_aggregation_service.dart';
 import 'services/server_registry.dart';
 import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
-import 'utils/provider_extensions.dart';
 import 'utils/orientation_helper.dart';
 import 'i18n/strings.g.dart';
 

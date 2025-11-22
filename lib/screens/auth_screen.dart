@@ -7,7 +7,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/server_registry.dart';
-import '../services/multi_server_manager.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/plex_client_provider.dart';
 import '../i18n/strings.g.dart';

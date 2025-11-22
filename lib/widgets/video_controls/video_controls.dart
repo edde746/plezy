@@ -15,7 +15,9 @@ import '../../screens/video_player_screen.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/player_utils.dart';
 import '../../utils/provider_extensions.dart';
+import '../../utils/video_control_icons.dart';
 import '../../i18n/strings.g.dart';
 import 'widgets/volume_control.dart';
 import 'widgets/track_chapter_controls.dart';
@@ -399,7 +401,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _seekToPreviousChapter() {
     if (_chapters.isEmpty) {
       // No chapters - seek backward by configured amount
-      _seekWithClamping(Duration(seconds: -_seekTimeSmall));
+      seekWithClamping(widget.player, Duration(seconds: -_seekTimeSmall));
       return;
     }
 
@@ -422,7 +424,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _seekToNextChapter() {
     if (_chapters.isEmpty) {
       // No chapters - seek forward by configured amount
-      _seekWithClamping(Duration(seconds: _seekTimeSmall));
+      seekWithClamping(widget.player, Duration(seconds: _seekTimeSmall));
       return;
     }
 
@@ -436,21 +438,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         return;
       }
     }
-  }
-
-  /// Seeks by the given offset (can be positive or negative) while clamping
-  /// the result between 0 and the video duration
-  void _seekWithClamping(Duration offset) {
-    final currentPosition = widget.player.state.position;
-    final duration = widget.player.state.duration;
-    final newPosition = currentPosition + offset;
-
-    // Clamp between 0 and video duration
-    final clampedPosition = newPosition.isNegative
-        ? Duration.zero
-        : (newPosition > duration ? duration : newPosition);
-
-    widget.player.seek(clampedPosition);
   }
 
   /// Throttled seek for timeline slider - only sends seek events at most every 100ms
@@ -487,42 +474,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _pendingSeekPosition = null;
   }
 
-  /// Get the replay icon based on the duration
-  /// Returns numbered icons (replay_5, replay_10, replay_30) when available,
-  /// otherwise returns generic replay icon
-  IconData _getReplayIcon(int seconds) {
-    switch (seconds) {
-      case 5:
-        return Icons.replay_5;
-      case 10:
-        return Icons.replay_10;
-      case 30:
-        return Icons.replay_30;
-      default:
-        return Icons.replay; // Generic icon for custom durations
-    }
-  }
-
-  /// Get the forward icon based on the duration
-  /// Returns numbered icons (forward_5, forward_10, forward_30) when available,
-  /// otherwise returns generic forward icon
-  IconData _getForwardIcon(int seconds) {
-    switch (seconds) {
-      case 5:
-        return Icons.forward_5;
-      case 10:
-        return Icons.forward_10;
-      case 30:
-        return Icons.forward_30;
-      default:
-        return Icons.forward; // Generic icon for custom durations
-    }
-  }
-
   /// Handle double-tap skip forward or backward
   void _handleDoubleTapSkip({required bool isForward}) {
     // Perform the seek
-    _seekWithClamping(
+    seekWithClamping(
+      widget.player,
       Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall),
     );
 
@@ -573,8 +529,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         ),
         child: Icon(
           _lastDoubleTapWasForward
-              ? _getForwardIcon(_seekTimeSmall)
-              : _getReplayIcon(_seekTimeSmall),
+              ? getForwardIcon(_seekTimeSmall)
+              : getReplayIcon(_seekTimeSmall),
           color: Colors.white,
           size: 48,
         ),
@@ -713,8 +669,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                               onSeekToNextChapter: _seekToNextChapter,
                               onSeek: _throttledSeek,
                               onSeekEnd: _finalizeSeek,
-                              getReplayIcon: _getReplayIcon,
-                              getForwardIcon: _getForwardIcon,
+                              getReplayIcon: getReplayIcon,
+                              getForwardIcon: getForwardIcon,
                             ),
                     ),
                   ),
