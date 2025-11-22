@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.9.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version format
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Error: Version must be in semantic versioning format (e.g., 1.9.0)"
+            exit 1
+          fi
+
+      - name: Extract current build number
+        id: get_build
+        run: |
+          # Extract current build number from pubspec.yaml
+          CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          CURRENT_BUILD=$(echo "$CURRENT_VERSION" | cut -d'+' -f2)
+          NEW_BUILD=$((CURRENT_BUILD + 1))
+
+          echo "current_build=$CURRENT_BUILD" >> $GITHUB_OUTPUT
+          echo "new_build=$NEW_BUILD" >> $GITHUB_OUTPUT
+          echo "Current build: $CURRENT_BUILD"
+          echo "New build: $NEW_BUILD"
+
+      - name: Update pubspec.yaml
+        run: |
+          NEW_VERSION="${{ inputs.version }}+${{ steps.get_build.outputs.new_build }}"
+          sed -i "s/^version: .*/version: $NEW_VERSION/" pubspec.yaml
+          echo "Updated version to: $NEW_VERSION"
+          cat pubspec.yaml | grep '^version:'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit version bump
+        run: |
+          git add pubspec.yaml
+          git commit -m "chore: bump version to ${{ inputs.version }}+${{ steps.get_build.outputs.new_build }}"
+
+      - name: Create Git tag
+        run: |
+          git tag "${{ inputs.version }}"
+          echo "Created tag: ${{ inputs.version }}"
+
+      - name: Push changes and tag
+        run: |
+          git push origin main
+          git push origin "${{ inputs.version }}"
+
+      - name: Trigger build workflow
+        run: |
+          curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/build.yml/dispatches \
+            -d '{"ref":"main"}'
+
+          echo "Build workflow triggered successfully"
