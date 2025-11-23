@@ -30,13 +30,17 @@ Future<void> playCollectionOrPlaylist({
 
     final PlayQueueResponse? playQueue;
     if (isCollection) {
-      // Validate that machine identifier is available
-      if (client.config.machineIdentifier == null) {
-        throw Exception('Machine identifier is required to play collections');
+      // Get machine identifier (fetch if not cached in config)
+      final machineId =
+          client.config.machineIdentifier ??
+          await client.getMachineIdentifier();
+
+      if (machineId == null) {
+        throw Exception('Could not get server machine identifier');
       }
 
       final collectionUri =
-          'server://${client.config.machineIdentifier}/com.plexapp.plugins.library/library/collections/${item.ratingKey}';
+          'server://$machineId/com.plexapp.plugins.library/library/collections/${item.ratingKey}';
       playQueue = await client.createPlayQueue(
         uri: collectionUri,
         type: 'video',
@@ -61,30 +65,12 @@ Future<void> playCollectionOrPlaylist({
           fetchedQueue.items!.isNotEmpty) {
         if (!context.mounted) return;
 
-        // Preserve serverId for all items in the queue
-        final itemsWithServerId = fetchedQueue.items!.map((queueItem) {
-          return queueItem.copyWith(serverId: serverId, serverName: serverName);
-        }).toList();
-
-        final queueWithServerId = PlayQueueResponse(
-          playQueueID: fetchedQueue.playQueueID,
-          playQueueSelectedItemID: fetchedQueue.playQueueSelectedItemID,
-          playQueueSelectedItemOffset: fetchedQueue.playQueueSelectedItemOffset,
-          playQueueSelectedMetadataItemID:
-              fetchedQueue.playQueueSelectedMetadataItemID,
-          playQueueShuffled: fetchedQueue.playQueueShuffled,
-          playQueueSourceURI: fetchedQueue.playQueueSourceURI,
-          playQueueTotalCount: fetchedQueue.playQueueTotalCount,
-          playQueueVersion: fetchedQueue.playQueueVersion,
-          size: fetchedQueue.size,
-          items: itemsWithServerId,
-        );
-
+        // Items are automatically tagged with server info by PlexClient
         // Set play queue in provider
         final playbackState = context.read<PlaybackStateProvider>();
         playbackState.setClient(client);
         await playbackState.setPlaybackFromPlayQueue(
-          queueWithServerId,
+          fetchedQueue,
           ratingKey,
           serverId: serverId,
           serverName: serverName,
@@ -93,7 +79,7 @@ Future<void> playCollectionOrPlaylist({
         if (!context.mounted) return;
 
         // Navigate to first item
-        await navigateToVideoPlayer(context, metadata: itemsWithServerId.first);
+        await navigateToVideoPlayer(context, metadata: fetchedQueue.items!.first);
         return;
       }
     }
@@ -111,30 +97,12 @@ Future<void> playCollectionOrPlaylist({
 
     if (!context.mounted) return;
 
-    // Preserve serverId for all items in the queue
-    final itemsWithServerId = playQueue.items!.map((queueItem) {
-      return queueItem.copyWith(serverId: serverId, serverName: serverName);
-    }).toList();
-
-    final queueWithServerId = PlayQueueResponse(
-      playQueueID: playQueue.playQueueID,
-      playQueueSelectedItemID: playQueue.playQueueSelectedItemID,
-      playQueueSelectedItemOffset: playQueue.playQueueSelectedItemOffset,
-      playQueueSelectedMetadataItemID:
-          playQueue.playQueueSelectedMetadataItemID,
-      playQueueShuffled: playQueue.playQueueShuffled,
-      playQueueSourceURI: playQueue.playQueueSourceURI,
-      playQueueTotalCount: playQueue.playQueueTotalCount,
-      playQueueVersion: playQueue.playQueueVersion,
-      size: playQueue.size,
-      items: itemsWithServerId,
-    );
-
+    // Items are automatically tagged with server info by PlexClient
     // Set play queue in provider
     final playbackState = context.read<PlaybackStateProvider>();
     playbackState.setClient(client);
     await playbackState.setPlaybackFromPlayQueue(
-      queueWithServerId,
+      playQueue,
       ratingKey,
       serverId: serverId,
       serverName: serverName,
@@ -143,7 +111,7 @@ Future<void> playCollectionOrPlaylist({
     if (!context.mounted) return;
 
     // Navigate to first item
-    await navigateToVideoPlayer(context, metadata: itemsWithServerId.first);
+    await navigateToVideoPlayer(context, metadata: playQueue.items!.first);
   } catch (e) {
     appLogger.e('Failed to ${shuffle ? "shuffle play" : "play"}', error: e);
     if (context.mounted) {

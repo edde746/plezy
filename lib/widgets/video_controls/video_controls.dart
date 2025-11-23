@@ -97,7 +97,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata() {
-    return context.getClientForServer(widget.metadata.serverId);
+    return context.getClientForServer(widget.metadata.serverId!);
   }
 
   // Double-tap feedback state

@@ -49,7 +49,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     });
 
     try {
-      final client = context.getClientForServer(widget.serverId);
+      final client = context.getClientForServer(widget.serverId!);
 
       final folders = await client.getLibraryFolders(widget.libraryKey);
 
@@ -58,7 +58,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       final taggedFolders = folders
           .map(
             (folder) => folder.copyWith(
-              serverId: widget.serverId,
+              serverId: widget.serverId!,
               serverName: null, // server name not required for folders listing
             ),
           )
@@ -101,21 +101,15 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     });
 
     try {
-      final client = context.getClientForServer(widget.serverId);
+      final client = context.getClientForServer(widget.serverId!);
 
+      // Items are automatically tagged with server info by PlexClient
       final children = await client.getFolderChildren(folder.key);
 
       if (!mounted) return;
 
-      final taggedChildren = children
-          .map(
-            (child) =>
-                child.copyWith(serverId: widget.serverId, serverName: null),
-          )
-          .toList();
-
       setState(() {
-        _childrenCache[folder.key] = taggedChildren;
+        _childrenCache[folder.key] = children;
         _expandedFolders.add(folder.key);
         _loadingFolders.remove(folder.key);
       });

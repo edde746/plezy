@@ -105,10 +105,8 @@ class PlaybackStateProvider with ChangeNotifier {
     _playQueueShuffled = playQueue.playQueueShuffled;
     _currentPlayQueueItemID = playQueue.playQueueSelectedItemID;
 
-    // Preserve serverId/serverName on all items
-    _loadedItems = (playQueue.items ?? []).map((item) {
-      return item.copyWith(serverId: serverId, serverName: serverName);
-    }).toList();
+    // Items are already tagged with server info by PlexClient
+    _loadedItems = playQueue.items ?? [];
 
     _contextKey = contextKey;
     _playbackMode = PlaybackMode.playQueue;
@@ -136,17 +134,8 @@ class PlaybackStateProvider with ChangeNotifier {
       );
 
       if (response != null && response.items != null) {
-        // Preserve serverId from existing items
-        final serverId = _loadedItems.isNotEmpty
-            ? _loadedItems.first.serverId
-            : null;
-        final serverName = _loadedItems.isNotEmpty
-            ? _loadedItems.first.serverName
-            : null;
-
-        _loadedItems = response.items!.map((item) {
-          return item.copyWith(serverId: serverId, serverName: serverName);
-        }).toList();
+        // Items are already tagged with server info by PlexClient
+        _loadedItems = response.items!;
         // Use size or items length as fallback if totalCount is null
         _playQueueTotalCount =
             response.playQueueTotalCount ??
@@ -238,25 +227,15 @@ class PlaybackStateProvider with ChangeNotifier {
           if (response != null &&
               response.items != null &&
               response.items!.isNotEmpty) {
-            // Preserve serverId when looping
-            final serverId = _loadedItems.isNotEmpty
-                ? _loadedItems.first.serverId
-                : null;
-            final serverName = _loadedItems.isNotEmpty
-                ? _loadedItems.first.serverName
-                : null;
-
-            _loadedItems = response.items!.map((item) {
-              return item.copyWith(serverId: serverId, serverName: serverName);
-            }).toList();
+            // Items are already tagged with server info by PlexClient
+            _loadedItems = response.items!;
             final firstItem = _loadedItems.first;
             // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
             return firstItem;
           }
         }
       }
-      // Queue has ended - clear it and let sequential playback take over
-      clearShuffle();
+      // At end of queue - return null but keep queue active so user can still go back
       return null;
     }
 

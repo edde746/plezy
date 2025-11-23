@@ -37,7 +37,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
 
   @override
-  PlexClient get client => _getClientForItem(null);
+  PlexClient get client {
+    final multiServerProvider = Provider.of<MultiServerProvider>(
+      context,
+      listen: false,
+    );
+    if (!multiServerProvider.hasConnectedServers) {
+      throw Exception('No servers available');
+    }
+    return context.getClientForServer(
+      multiServerProvider.onlineServerIds.first,
+    );
+  }
 
   List<PlexMetadata> _onDeck = [];
   List<PlexHub> _hubs = [];
@@ -52,7 +63,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Get the correct PlexClient for an item's server
   PlexClient _getClientForItem(PlexMetadata? item) {
-    return context.getClientForServer(item?.serverId);
+    // Items should always have a serverId, but if not, fall back to first available server
+    final serverId = item?.serverId;
+    if (serverId == null) {
+      final multiServerProvider = Provider.of<MultiServerProvider>(
+        context,
+        listen: false,
+      );
+      if (!multiServerProvider.hasConnectedServers) {
+        throw Exception('No servers available');
+      }
+      return context.getClientForServer(
+        multiServerProvider.onlineServerIds.first,
+      );
+    }
+    return context.getClientForServer(serverId);
   }
 
   @override

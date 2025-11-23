@@ -53,7 +53,7 @@ class _PlaylistDetailScreenState
 
   /// Get the correct PlexClient for this playlist's server
   PlexClient _getClientForPlaylist() {
-    return context.getClientForServer(widget.playlist.serverId);
+    return context.getClientForServer(widget.playlist.serverId!);
   }
 
   Future<void> _deletePlaylist() async {

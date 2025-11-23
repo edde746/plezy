@@ -33,30 +33,12 @@ extension ProviderExtensions on BuildContext {
   PlexUserProfile? get profileSettings => userProfile.profileSettings;
 
   /// Get PlexClient for a specific server ID
-  /// If serverId is null, returns the first available online client
-  /// Throws an exception if no client is available
-  PlexClient getClientForServer(String? serverId) {
+  /// Throws an exception if no client is available for the given serverId
+  PlexClient getClientForServer(String serverId) {
     final multiServerProvider = Provider.of<MultiServerProvider>(
       this,
       listen: false,
     );
-
-    if (serverId == null) {
-      // No serverId specified - try to get first online server
-      appLogger.w('No serverId provided, using first available online server');
-
-      if (!multiServerProvider.hasConnectedServers) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      final firstServerId = multiServerProvider.onlineServerIds.first;
-      final client = multiServerProvider.getClientForServer(firstServerId);
-      if (client == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      return client;
-    }
 
     final serverClient = multiServerProvider.getClientForServer(serverId);
 
@@ -71,6 +53,17 @@ extension ProviderExtensions on BuildContext {
   /// Get PlexClient for a library
   /// Throws an exception if no client is available
   PlexClient getClientForLibrary(PlexLibrary library) {
-    return getClientForServer(library.serverId);
+    // If library doesn't have a serverId, fall back to first available server
+    if (library.serverId == null) {
+      final multiServerProvider = Provider.of<MultiServerProvider>(
+        this,
+        listen: false,
+      );
+      if (!multiServerProvider.hasConnectedServers) {
+        throw Exception(t.errors.noClientAvailable);
+      }
+      return getClientForServer(multiServerProvider.onlineServerIds.first);
+    }
+    return getClientForServer(library.serverId!);
   }
 }

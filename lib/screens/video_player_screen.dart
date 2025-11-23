@@ -79,7 +79,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata(BuildContext context) {
-    return context.getClientForServer(widget.metadata.serverId);
+    return context.getClientForServer(widget.metadata.serverId!);
   }
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(
@@ -462,14 +462,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         return;
       }
 
-      // Check if there's already an active queue for this show
+      // Check if there's already an active queue
       final existingContextKey = playbackState.shuffleContextKey;
       final isQueueActive = playbackState.isQueueActive;
 
-      if (isQueueActive && existingContextKey == showRatingKey) {
-        // Queue already exists for this show, just update the current item
+      if (isQueueActive) {
+        // A queue already exists (could be shuffle, playlist, or sequential)
+        // Just update the current item, don't create a new queue
         playbackState.setCurrentItem(widget.metadata);
-        appLogger.d('Using existing play queue for show $showRatingKey');
+        appLogger.d('Using existing play queue (context: $existingContextKey)');
         return;
       }
 

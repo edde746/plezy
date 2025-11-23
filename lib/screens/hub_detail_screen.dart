@@ -37,7 +37,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   /// Get the correct PlexClient for this hub's server
   PlexClient _getClientForHub() {
-    return context.getClientForServer(widget.hub.serverId);
+    return context.getClientForServer(widget.hub.serverId!);
   }
 
   @override

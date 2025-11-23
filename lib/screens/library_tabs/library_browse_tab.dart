@@ -9,7 +9,6 @@ import '../../models/plex_sort.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/grid_size_calculator.dart';
-import '../../utils/server_tagging_extensions.dart';
 import '../../widgets/media_card.dart';
 import '../../widgets/folder_tree_view.dart';
 import '../../widgets/filters_bottom_sheet.dart';
@@ -219,6 +218,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
         );
       }
 
+      // Items are automatically tagged with server info by PlexClient
       final items = await client.getLibraryContent(
         widget.library.key,
         start: _currentPage * _pageSize,
@@ -227,18 +227,15 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
         cancelToken: _cancelToken,
       );
 
-      // Tag items with server info for multi-server support
-      final taggedItems = items.tagWithLibrary(widget.library);
-
       if (currentRequestId != _requestId) return;
 
       setState(() {
         if (loadMore) {
-          _items.addAll(taggedItems);
+          _items.addAll(items);
         } else {
-          _items = taggedItems;
+          _items = items;
         }
-        _hasMoreItems = taggedItems.length >= _pageSize;
+        _hasMoreItems = items.length >= _pageSize;
         _currentPage++;
         _isLoading = false;
       });
@@ -357,6 +354,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
       builder: (context) => FiltersBottomSheet(
         filters: _filters,
         selectedFilters: _selectedFilters,
+        serverId: widget.library.serverId!,
         onFiltersChanged: (filters) async {
           setState(() {
             _selectedFilters.clear();

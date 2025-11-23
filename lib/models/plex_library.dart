@@ -47,4 +47,35 @@ class PlexLibrary with MultiServerFields {
       _$PlexLibraryFromJson(json);
 
   Map<String, dynamic> toJson() => _$PlexLibraryToJson(this);
+
+  /// Create a copy of this library with optional field overrides
+  PlexLibrary copyWith({
+    String? key,
+    String? title,
+    String? type,
+    String? agent,
+    String? scanner,
+    String? language,
+    String? uuid,
+    int? updatedAt,
+    int? createdAt,
+    int? hidden,
+    String? serverId,
+    String? serverName,
+  }) {
+    return PlexLibrary(
+      key: key ?? this.key,
+      title: title ?? this.title,
+      type: type ?? this.type,
+      agent: agent ?? this.agent,
+      scanner: scanner ?? this.scanner,
+      language: language ?? this.language,
+      uuid: uuid ?? this.uuid,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdAt: createdAt ?? this.createdAt,
+      hidden: hidden ?? this.hidden,
+      serverId: serverId ?? this.serverId,
+      serverName: serverName ?? this.serverName,
+    );
+  }
 }

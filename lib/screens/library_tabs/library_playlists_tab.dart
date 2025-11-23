@@ -5,7 +5,6 @@ import '../../providers/settings_provider.dart';
 import '../../utils/library_refresh_notifier.dart';
 import '../../services/settings_service.dart' show ViewMode;
 import '../../utils/grid_size_calculator.dart';
-import '../../utils/server_tagging_extensions.dart';
 import '../../widgets/media_card.dart';
 import '../../i18n/strings.g.dart';
 import 'base_library_tab.dart';
@@ -43,14 +42,11 @@ class _LibraryPlaylistsTabState
     // Use server-specific client for this library
     final client = getClientForLibrary();
 
-    // Get playlists for this library
-    final playlists = await client.getLibraryPlaylists(
+    // Playlists are automatically tagged with server info by PlexClient
+    return await client.getLibraryPlaylists(
       sectionId: widget.library.key,
       playlistType: 'video',
     );
-
-    // Tag playlists with server info
-    return playlists.tagWithLibrary(widget.library);
   }
 
   @override

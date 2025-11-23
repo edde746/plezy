@@ -33,7 +33,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
 
   /// Get the correct PlexClient for this season's server
   PlexClient _getClientForSeason(BuildContext context) {
-    return context.getClientForServer(widget.season.serverId);
+    return context.getClientForServer(widget.season.serverId!);
   }
 
   @override
@@ -52,8 +52,9 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     });
 
     try {
-      // Episodes are now tagged with server info at the source
+      // Episodes are automatically tagged with server info by PlexClient
       final episodes = await _client.getChildren(widget.season.ratingKey);
+
       setState(() {
         _episodes = episodes;
         _isLoadingEpisodes = false;

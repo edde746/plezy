@@ -33,7 +33,18 @@ class LibrariesScreen extends StatefulWidget {
 class _LibrariesScreenState extends State<LibrariesScreen>
     with Refreshable, ItemUpdatable, SingleTickerProviderStateMixin {
   @override
-  PlexClient get client => context.getClientForServer(null);
+  PlexClient get client {
+    final multiServerProvider = Provider.of<MultiServerProvider>(
+      context,
+      listen: false,
+    );
+    if (!multiServerProvider.hasConnectedServers) {
+      throw Exception(t.errors.noClientAvailable);
+    }
+    return context.getClientForServer(
+      multiServerProvider.onlineServerIds.first,
+    );
+  }
 
   late TabController _tabController;
 

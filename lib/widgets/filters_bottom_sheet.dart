@@ -9,12 +9,14 @@ class FiltersBottomSheet extends StatefulWidget {
   final List<PlexFilter> filters;
   final Map<String, String> selectedFilters;
   final Function(Map<String, String>) onFiltersChanged;
+  final String serverId;
 
   const FiltersBottomSheet({
     super.key,
     required this.filters,
     required this.selectedFilters,
     required this.onFiltersChanged,
+    required this.serverId,
   });
 
   @override
@@ -60,7 +62,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     });
 
     try {
-      final client = context.getClientForServer(null);
+      final client = context.getClientForServer(widget.serverId);
 
       final values = await client.getFilterValues(filter.key);
       setState(() {

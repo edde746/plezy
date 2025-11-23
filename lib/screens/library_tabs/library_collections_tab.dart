@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/library_refresh_notifier.dart';
-import '../../utils/server_tagging_extensions.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/adaptive_media_grid.dart';
 import 'base_library_tab.dart';
@@ -40,10 +39,8 @@ class _LibraryCollectionsTabState
     // Use server-specific client for this library
     final client = getClientForLibrary();
 
-    final collections = await client.getLibraryCollections(widget.library.key);
-
-    // Tag collections with server info
-    return collections.tagWithLibrary(widget.library);
+    // Collections are automatically tagged with server info by PlexClient
+    return await client.getLibraryCollections(widget.library.key);
   }
 
   @override

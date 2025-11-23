@@ -120,7 +120,7 @@ class PlaylistItemCard extends StatelessWidget {
 
   /// Get the correct PlexClient for this item's server
   PlexClient _getClientForItem(BuildContext context) {
-    return context.getClientForServer(item.serverId);
+    return context.getClientForServer(item.serverId!);
   }
 
   Widget _buildPosterImage(BuildContext context) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
+import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/collection_playlist_play_helper.dart';
 import '../utils/app_logger.dart';
@@ -49,6 +51,18 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
       } catch (_) {
         // Ignore if serverId is not available
       }
+    }
+
+    // If serverId is null, fall back to first available server
+    if (serverId == null) {
+      final multiServerProvider = Provider.of<MultiServerProvider>(
+        context,
+        listen: false,
+      );
+      if (!multiServerProvider.hasConnectedServers) {
+        throw Exception(t.errors.noClientAvailable);
+      }
+      serverId = multiServerProvider.onlineServerIds.first;
     }
 
     return context.getClientForServer(serverId);
@@ -231,21 +245,12 @@ mixin StandardItemLoader<T extends StatefulWidget>
     }
 
     try {
+      // Items are automatically tagged with server info by PlexClient
       final newItems = await fetchItems();
-
-      // Tag items with server info for correct client resolution
-      final serverId = (mediaItem as dynamic).serverId as String?;
-      final serverName = (mediaItem as dynamic).serverName as String?;
-
-      final taggedItems = newItems
-          .map(
-            (item) => item.copyWith(serverId: serverId, serverName: serverName),
-          )
-          .toList();
 
       if (mounted) {
         setState(() {
-          items = taggedItems;
+          items = newItems;
           isLoading = false;
         });
       }

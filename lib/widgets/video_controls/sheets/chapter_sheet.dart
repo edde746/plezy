@@ -41,7 +41,7 @@ class ChapterSheet extends StatelessWidget {
 
   /// Get the correct PlexClient for the metadata's server
   PlexClient _getClientForChapters(BuildContext context) {
-    return context.getClientForServer(serverId);
+    return context.getClientForServer(serverId!);
   }
 
   @override

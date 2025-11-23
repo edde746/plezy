@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
@@ -69,6 +70,18 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
       serverId = (widget.item as PlexMetadata).serverId;
     } else if (widget.item is PlexPlaylist) {
       serverId = (widget.item as PlexPlaylist).serverId;
+    }
+
+    // If serverId is null, fall back to first available server
+    if (serverId == null) {
+      final multiServerProvider = Provider.of<MultiServerProvider>(
+        context,
+        listen: false,
+      );
+      if (!multiServerProvider.hasConnectedServers) {
+        throw Exception('No servers available');
+      }
+      serverId = multiServerProvider.onlineServerIds.first;
     }
 
     return context.getClientForServer(serverId);

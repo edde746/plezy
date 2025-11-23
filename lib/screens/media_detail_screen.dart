@@ -51,7 +51,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata(BuildContext context) {
-    return context.getClientForServer(widget.metadata.serverId);
+    return context.getClientForServer(widget.metadata.serverId!);
   }
 
   Future<void> _loadFullMetadata() async {

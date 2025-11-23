@@ -14,43 +14,24 @@ class DataAggregationService {
 
   DataAggregationService(this._serverManager);
 
-  /// Fetch libraries from all online servers and tag them with server info
+  /// Fetch libraries from all online servers
+  /// Libraries are automatically tagged with server info by PlexClient
   Future<List<PlexLibrary>> getLibrariesFromAllServers() async {
     return _perServer<PlexLibrary>(
       operationName: 'fetching libraries',
       operation: (serverId, client, server) async {
-        final libraries = await client.getLibraries();
-
-        // Tag each library with server info
-        return libraries.map((lib) {
-          return PlexLibrary(
-            key: lib.key,
-            title: lib.title,
-            type: lib.type,
-            agent: lib.agent,
-            scanner: lib.scanner,
-            language: lib.language,
-            uuid: lib.uuid,
-            updatedAt: lib.updatedAt,
-            createdAt: lib.createdAt,
-            hidden: lib.hidden,
-          );
-        }).toList();
+        return await client.getLibraries();
       },
     );
   }
 
   /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency
+  /// Items are automatically tagged with server info by PlexClient
   Future<List<PlexMetadata>> getOnDeckFromAllServers({int? limit}) async {
     final allOnDeck = await _perServer<PlexMetadata>(
       operationName: 'fetching on deck',
       operation: (serverId, client, server) async {
-        final items = await client.getOnDeck();
-
-        // Tag each item with server info
-        return items.map((item) {
-          return item.copyWith(serverId: serverId, serverName: server?.name);
-        }).toList();
+        return await client.getOnDeck();
       },
     );
 
@@ -156,6 +137,7 @@ class DataAggregationService {
   }
 
   /// Search across all online servers
+  /// Results are automatically tagged with server info by PlexClient
   Future<List<PlexMetadata>> searchAcrossServers(
     String query, {
     int? limit,
@@ -167,12 +149,7 @@ class DataAggregationService {
     final allResults = await _perServer<PlexMetadata>(
       operationName: 'searching for "$query"',
       operation: (serverId, client, server) async {
-        final results = await client.search(query);
-
-        // Tag each result with server info
-        return results.map((item) {
-          return item.copyWith(serverId: serverId, serverName: server?.name);
-        }).toList();
+        return await client.search(query);
       },
     );
 
@@ -196,23 +173,8 @@ class DataAggregationService {
     }
 
     try {
-      final libraries = await client.getLibraries();
-
-      // Tag with server info
-      return libraries.map((lib) {
-        return PlexLibrary(
-          key: lib.key,
-          title: lib.title,
-          type: lib.type,
-          agent: lib.agent,
-          scanner: lib.scanner,
-          language: lib.language,
-          uuid: lib.uuid,
-          updatedAt: lib.updatedAt,
-          createdAt: lib.createdAt,
-          hidden: lib.hidden,
-        );
-      }).toList();
+      // Libraries are automatically tagged with server info by PlexClient
+      return await client.getLibraries();
     } catch (e, stackTrace) {
       appLogger.e(
         'Failed to fetch libraries for server $serverId',

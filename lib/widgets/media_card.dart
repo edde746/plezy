@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
@@ -657,6 +658,18 @@ PlexClient _getClientForItem(BuildContext context, dynamic item) {
     serverId = item.serverId;
   } else if (item is PlexPlaylist) {
     serverId = item.serverId;
+  }
+
+  // If serverId is null, fall back to first available server
+  if (serverId == null) {
+    final multiServerProvider = Provider.of<MultiServerProvider>(
+      context,
+      listen: false,
+    );
+    if (!multiServerProvider.hasConnectedServers) {
+      throw Exception('No servers available');
+    }
+    serverId = multiServerProvider.onlineServerIds.first;
   }
 
   return context.getClientForServer(serverId);
