@@ -79,7 +79,10 @@ Future<void> playCollectionOrPlaylist({
         if (!context.mounted) return;
 
         // Navigate to first item
-        await navigateToVideoPlayer(context, metadata: fetchedQueue.items!.first);
+        await navigateToVideoPlayer(
+          context,
+          metadata: fetchedQueue.items!.first,
+        );
         return;
       }
     }

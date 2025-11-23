@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
+import '../providers/multi_server_provider.dart';
+import '../providers/server_state_provider.dart';
+import '../providers/hidden_libraries_provider.dart';
+import '../providers/playback_state_provider.dart';
 import 'discover_screen.dart';
 import 'libraries_screen.dart';
 import 'search_screen.dart';
@@ -93,6 +98,20 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   /// Invalidate all cached data across all screens when profile is switched
   void _invalidateAllScreens() {
     appLogger.d('Invalidating all screen data due to profile switch');
+
+    // Clear all provider states first (servers, playback, UI state)
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final serverStateProvider = context.read<ServerStateProvider>();
+    final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+    final playbackStateProvider = context.read<PlaybackStateProvider>();
+
+    // Clear all server connections (new profile may have different servers)
+    multiServerProvider.clearAllConnections();
+    serverStateProvider.reset();
+    hiddenLibrariesProvider.refresh();
+    playbackStateProvider.clearShuffle();
+
+    appLogger.d('Cleared all provider states for profile switch');
 
     // Full refresh discover screen (reload all content for new profile)
     final discoverState = _discoverKey.currentState;

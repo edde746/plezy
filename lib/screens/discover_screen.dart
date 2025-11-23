@@ -6,6 +6,9 @@ import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_hub.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/server_state_provider.dart';
+import '../providers/hidden_libraries_provider.dart';
+import '../providers/playback_state_provider.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/user_avatar_widget.dart';
@@ -449,10 +452,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         listen: false,
       );
       final plexClientProvider = context.plexClient;
+      final multiServerProvider = context.read<MultiServerProvider>();
+      final serverStateProvider = context.read<ServerStateProvider>();
+      final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+      final playbackStateProvider = context.read<PlaybackStateProvider>();
 
       // Clear all user data and provider states
       await userProfileProvider.logout();
       plexClientProvider.clearClient();
+      multiServerProvider.clearAllConnections();
+      serverStateProvider.reset();
+      await hiddenLibrariesProvider.refresh();
+      playbackStateProvider.clearShuffle();
 
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
