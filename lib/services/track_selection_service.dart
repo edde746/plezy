@@ -125,7 +125,7 @@ class TrackSelectionService {
 
       for (var track in availableTracks) {
         final trackLang = track.language?.toLowerCase();
-        if (trackLang != null && languageVariations.contains(trackLang)) {
+        if (trackLang != null && languageVariations.any((lang) => trackLang.startsWith(lang))) {
           appLogger.d(
             'Found audio track matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
           );
@@ -260,7 +260,7 @@ class TrackSelectionService {
 
       for (var track in candidateTracks) {
         final trackLang = track.language?.toLowerCase();
-        if (trackLang != null && languageVariations.contains(trackLang)) {
+        if (trackLang != null && languageVariations.any((lang) => trackLang.startsWith(lang))) {
           appLogger.d(
             'Found subtitle matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
           );
