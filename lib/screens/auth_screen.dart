@@ -50,8 +50,10 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       // Fetch all servers for this user
       final servers = await _authService.fetchServers(plexToken);
+      final storage = await StorageService.getInstance();
 
       if (servers.isEmpty) {
+        await storage.clearCredentials();
         setState(() {
           _isAuthenticating = false;
           _errorMessage = t.serverSelection.noServersFound;
@@ -60,7 +62,6 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       // Save all servers to registry and enable them
-      final storage = await StorageService.getInstance();
       final registry = ServerRegistry(storage);
       await registry.saveServers(servers);
 
