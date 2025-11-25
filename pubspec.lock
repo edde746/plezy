@@ -897,6 +897,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
+  rate_limiter:
+    dependency: "direct main"
+    description:
+      name: rate_limiter
+      sha256: "2bae2e961adedf7fc2e8b0305d30e3a3619baf001d050c6907870c5c6235b559"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   rxdart:
     dependency: transitive
     description:

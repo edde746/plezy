@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:rate_limiter/rate_limiter.dart';
 
 import '../models/plex_media_version.dart';
 import '../utils/app_logger.dart';
@@ -30,14 +29,21 @@ class VideoFilterManager {
   /// Current video dimensions
   Size? _videoSize;
 
-  /// Debounce timer for resize events
-  Timer? _resizeDebounceTimer;
+  /// Debounced video filter update with leading edge execution
+  late final Debounce _debouncedUpdateVideoFilter;
 
   VideoFilterManager({
     required this.player,
     required this.availableVersions,
     required this.selectedMediaIndex,
-  });
+  }) {
+    _debouncedUpdateVideoFilter = debounce(
+      updateVideoFilter,
+      const Duration(milliseconds: 50),
+      leading: true,
+      trailing: true,
+    );
+  }
 
   /// Current BoxFit mode (0=contain, 1=cover, 2=fill)
   int get boxFitMode => _boxFitMode;
@@ -251,16 +257,13 @@ class VideoFilterManager {
     }
   }
 
-  /// Debounced version of updateVideoFilter for resize events
-  void debouncedUpdateVideoFilter() {
-    _resizeDebounceTimer?.cancel();
-    _resizeDebounceTimer = Timer(const Duration(milliseconds: 50), () {
-      updateVideoFilter();
-    });
-  }
+  /// Debounced version of updateVideoFilter for resize events.
+  /// Uses leading-edge debounce: first call executes immediately,
+  /// subsequent calls within 50ms are debounced.
+  void debouncedUpdateVideoFilter() => _debouncedUpdateVideoFilter();
 
   /// Clean up resources
   void dispose() {
-    _resizeDebounceTimer?.cancel();
+    _debouncedUpdateVideoFilter.cancel();
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async' show StreamSubscription, Timer;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:rate_limiter/rate_limiter.dart';
 import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:media_kit/media_kit.dart';
@@ -105,9 +106,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   double _doubleTapFeedbackOpacity = 0.0;
   bool _lastDoubleTapWasForward = true;
   Timer? _feedbackTimer;
-  // Seek throttle state
-  Timer? _seekThrottleTimer;
-  Duration? _pendingSeekPosition;
+  // Seek throttle
+  late final Throttle _seekThrottle;
   // Current marker state
   PlexMarker? _currentMarker;
   List<PlexMarker> _markers = [];
@@ -119,6 +119,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void initState() {
     super.initState();
     _focusNode = FocusNode();
+    _seekThrottle = throttle(
+      (Duration pos) => widget.player.seek(pos),
+      const Duration(milliseconds: 200),
+      leading: true,
+      trailing: true,
+    );
     _loadChapters();
     _loadMarkers();
     _loadSeekTimes();
@@ -234,7 +240,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void dispose() {
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
-    _seekThrottleTimer?.cancel();
+    _seekThrottle.cancel();
     _playingSubscription?.cancel();
     _focusNode.dispose();
     // Remove lifecycle observer
@@ -460,38 +466,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
-  /// Throttled seek for timeline slider - only sends seek events at most every 100ms
-  void _throttledSeek(Duration position) {
-    // Store the pending position
-    _pendingSeekPosition = position;
-
-    // If timer is already active, just update the pending position
-    if (_seekThrottleTimer?.isActive ?? false) {
-      return;
-    }
-
-    // Execute the seek immediately for the first call
-    widget.player.seek(position);
-
-    // Start a timer to throttle subsequent seeks
-    _seekThrottleTimer = Timer(const Duration(milliseconds: 200), () {
-      // If there's a pending position that's different, execute it
-      if (_pendingSeekPosition != null && _pendingSeekPosition != position) {
-        widget.player.seek(_pendingSeekPosition!);
-      }
-      _pendingSeekPosition = null;
-    });
-  }
+  /// Throttled seek for timeline slider - executes immediately then throttles to 200ms
+  void _throttledSeek(Duration position) => _seekThrottle([position]);
 
   /// Finalizes the seek when user stops scrubbing the timeline
   void _finalizeSeek(Duration position) {
-    // Cancel any pending throttled seek
-    _seekThrottleTimer?.cancel();
-    _seekThrottleTimer = null;
-
-    // Execute the final position immediately to ensure accuracy
+    _seekThrottle.cancel();
     widget.player.seek(position);
-    _pendingSeekPosition = null;
   }
 
   /// Handle double-tap skip forward or backward

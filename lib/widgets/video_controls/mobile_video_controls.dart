@@ -1,10 +1,9 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 
 import '../../models/plex_media_info.dart';
 import '../../models/plex_metadata.dart';
+import '../../utils/desktop_window_padding.dart';
 import '../../utils/duration_formatter.dart';
 import '../../utils/player_utils.dart';
 import '../../utils/video_control_icons.dart';
@@ -110,16 +109,7 @@ class MobileVideoControls extends StatelessWidget {
       ),
     );
 
-    // On macOS, wrap with GestureDetector to prevent window dragging
-    if (Platform.isMacOS) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
-        child: topBar,
-      );
-    }
-
-    return topBar;
+    return DesktopAppBarHelper.wrapWithGestureDetector(topBar, opaque: true);
   }
 
   Widget _buildPlaybackControls(BuildContext context) {

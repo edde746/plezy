@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rate_limiter/rate_limiter.dart';
 
 import '../i18n/strings.g.dart';
 import '../mixins/refreshable.dart';
@@ -26,30 +25,32 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
   List<PlexMetadata> _searchResults = [];
   bool _isSearching = false;
   bool _hasSearched = false;
-  Timer? _debounceTimer;
+  late final Debounce _searchDebounce;
   String _lastSearchedQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _searchDebounce = debounce(
+      _performSearch,
+      const Duration(milliseconds: 500),
+    );
     _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
+    _searchDebounce.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged() {
-    // Cancel previous timer
-    _debounceTimer?.cancel();
-
     final query = _searchController.text;
 
     if (query.trim().isEmpty) {
+      _searchDebounce.cancel();
       setState(() {
         _searchResults = [];
         _hasSearched = false;
@@ -64,10 +65,7 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
       return;
     }
 
-    // Start new timer
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      _performSearch(query);
-    });
+    _searchDebounce([query]);
   }
 
   Future<void> _performSearch(String query) async {

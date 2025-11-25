@@ -107,13 +107,16 @@ class DesktopAppBarHelper {
   }
 
   /// Wraps a widget with GestureDetector on macOS to prevent window dragging
-  static Widget wrapWithGestureDetector(Widget child) {
+  ///
+  /// [opaque] - If true, uses HitTestBehavior.opaque to fully consume gestures.
+  ///            If false (default), uses HitTestBehavior.translucent.
+  static Widget wrapWithGestureDetector(Widget child, {bool opaque = false}) {
     if (!Platform.isMacOS) {
       return child;
     }
 
     return GestureDetector(
-      behavior: HitTestBehavior.translucent,
+      behavior: opaque ? HitTestBehavior.opaque : HitTestBehavior.translucent,
       onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
       child: child,
     );

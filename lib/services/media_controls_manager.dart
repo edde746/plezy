@@ -1,6 +1,5 @@
-import 'dart:async';
-
 import 'package:os_media_controls/os_media_controls.dart';
+import 'package:rate_limiter/rate_limiter.dart';
 
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
@@ -17,13 +16,17 @@ class MediaControlsManager {
   /// Stream of control events from OS media controls
   Stream<dynamic> get controlEvents => OsMediaControls.controlEvents;
 
-  /// Last time position was updated (for throttling)
-  DateTime? _lastPositionUpdate;
+  /// Throttled playback state update (1 second interval, leading edge only)
+  late final Throttle _throttledUpdate;
 
-  /// Throttle interval for position updates (default: 1 second)
-  final Duration throttleInterval;
-
-  MediaControlsManager({this.throttleInterval = const Duration(seconds: 1)});
+  MediaControlsManager() {
+    _throttledUpdate = throttle(
+      _doUpdatePlaybackState,
+      const Duration(seconds: 1),
+      leading: true,
+      trailing: false,
+    );
+  }
 
   /// Update media metadata displayed in OS media controls
   ///
@@ -71,37 +74,31 @@ class MediaControlsManager {
     required double speed,
     bool force = false,
   }) async {
-    try {
-      // Throttle position updates unless forced
-      if (!force) {
-        final now = DateTime.now();
-        if (_lastPositionUpdate != null) {
-          final timeSinceLastUpdate = now.difference(_lastPositionUpdate!);
-          if (timeSinceLastUpdate < throttleInterval) {
-            return; // Skip this update
-          }
-        }
-        _lastPositionUpdate = now;
-      }
+    final params = _PlaybackStateParams(
+      isPlaying: isPlaying,
+      position: position,
+      speed: speed,
+    );
 
-      // Only update if playing (avoid excessive updates when paused)
-      if (isPlaying) {
-        await OsMediaControls.setPlaybackState(
-          MediaPlaybackState(
-            state: PlaybackState.playing,
-            position: position,
-            speed: speed,
-          ),
-        );
-      } else {
-        await OsMediaControls.setPlaybackState(
-          MediaPlaybackState(
-            state: PlaybackState.paused,
-            position: position,
-            speed: speed,
-          ),
-        );
-      }
+    if (force) {
+      // Bypass throttling for forced updates
+      await _doUpdatePlaybackState(params);
+    } else {
+      // Use throttled update
+      _throttledUpdate([params]);
+    }
+  }
+
+  /// Internal method to actually perform the playback state update
+  Future<void> _doUpdatePlaybackState(_PlaybackStateParams params) async {
+    try {
+      await OsMediaControls.setPlaybackState(
+        MediaPlaybackState(
+          state: params.isPlaying ? PlaybackState.playing : PlaybackState.paused,
+          position: params.position,
+          speed: params.speed,
+        ),
+      );
     } catch (e) {
       appLogger.w('Failed to update media controls playback state', error: e);
     }
@@ -146,7 +143,7 @@ class MediaControlsManager {
   Future<void> clear() async {
     try {
       await OsMediaControls.clear();
-      _lastPositionUpdate = null;
+      _throttledUpdate.cancel();
       appLogger.d('Media controls cleared');
     } catch (e) {
       appLogger.w('Failed to clear media controls', error: e);
@@ -155,7 +152,7 @@ class MediaControlsManager {
 
   /// Dispose resources
   void dispose() {
-    _lastPositionUpdate = null;
+    _throttledUpdate.cancel();
   }
 
   /// Build artist string from metadata
@@ -190,4 +187,17 @@ class MediaControlsManager {
 
     return '';
   }
+}
+
+/// Parameters for playback state update (used with throttle)
+class _PlaybackStateParams {
+  final bool isPlaying;
+  final Duration position;
+  final double speed;
+
+  const _PlaybackStateParams({
+    required this.isPlaying,
+    required this.position,
+    required this.speed,
+  });
 }
