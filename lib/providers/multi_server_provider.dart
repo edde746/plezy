@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../client/plex_client.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/multi_server_manager.dart';
+import '../services/plex_auth_service.dart';
 import '../utils/app_logger.dart';
 
 /// Provider for multi-server Plex connections
@@ -68,6 +69,31 @@ class MultiServerProvider extends ChangeNotifier {
     _serverManager.disconnectAll();
     appLogger.d('MultiServerProvider: All connections cleared');
     notifyListeners();
+  }
+
+  /// Reconnect all servers after a profile switch
+  /// Clears existing connections and connects to all provided servers
+  Future<int> reconnectWithServers(
+    List<PlexServer> servers, {
+    String? clientIdentifier,
+  }) async {
+    // Clear existing connections first
+    _serverManager.disconnectAll();
+    appLogger.d(
+      'MultiServerProvider: Cleared connections, reconnecting to ${servers.length} servers',
+    );
+
+    // Connect with new server tokens
+    final connectedCount = await _serverManager.connectToAllServers(
+      servers,
+      clientIdentifier: clientIdentifier,
+    );
+
+    appLogger.i(
+      'MultiServerProvider: Reconnected to $connectedCount/${servers.length} servers after profile switch',
+    );
+    notifyListeners();
+    return connectedCount;
   }
 
   /// Check server health for all connected servers

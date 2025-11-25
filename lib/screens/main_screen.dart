@@ -10,6 +10,8 @@ import '../providers/multi_server_provider.dart';
 import '../providers/server_state_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../services/plex_auth_service.dart';
+import '../services/storage_service.dart';
 import 'discover_screen.dart';
 import 'libraries_screen.dart';
 import 'search_screen.dart';
@@ -96,17 +98,33 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   }
 
   /// Invalidate all cached data across all screens when profile is switched
-  void _invalidateAllScreens() {
-    appLogger.d('Invalidating all screen data due to profile switch');
+  /// Receives the list of servers with new profile tokens for reconnection
+  Future<void> _invalidateAllScreens(List<PlexServer> servers) async {
+    appLogger.d(
+      'Invalidating all screen data due to profile switch with ${servers.length} servers',
+    );
 
-    // Clear all provider states first (servers, playback, UI state)
+    // Get all providers
     final multiServerProvider = context.read<MultiServerProvider>();
     final serverStateProvider = context.read<ServerStateProvider>();
     final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
     final playbackStateProvider = context.read<PlaybackStateProvider>();
 
-    // Clear all server connections (new profile may have different servers)
-    multiServerProvider.clearAllConnections();
+    // Reconnect to all servers with new profile tokens
+    if (servers.isNotEmpty) {
+      final storage = await StorageService.getInstance();
+      final clientId = storage.getClientIdentifier();
+
+      final connectedCount = await multiServerProvider.reconnectWithServers(
+        servers,
+        clientIdentifier: clientId,
+      );
+      appLogger.d(
+        'Reconnected to $connectedCount/${servers.length} servers after profile switch',
+      );
+    }
+
+    // Reset other provider states
     serverStateProvider.reset();
     hiddenLibrariesProvider.refresh();
     playbackStateProvider.clearShuffle();
