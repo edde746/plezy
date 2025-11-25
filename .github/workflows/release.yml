@@ -57,7 +57,7 @@ jobs:
       - name: Commit version bump
         run: |
           git add pubspec.yaml
-          git commit -m "chore: bump version to ${{ inputs.version }}+${{ steps.get_build.outputs.new_build }}"
+          git commit -m "chore: bump version to ${{ inputs.version }}"
 
       - name: Create Git tag
         run: |
@@ -67,7 +67,7 @@ jobs:
       - name: Push changes and tag
         run: |
           git push origin main
-          git push origin "${{ inputs.version }}"
+          git push origin --tags
 
       - name: Trigger build workflow
         run: |
