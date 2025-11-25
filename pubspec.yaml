@@ -83,7 +83,7 @@ flutter:
   assets:
     - lib/data/iso_639_codes.json
     - assets/plezy.png
-    - assets/droid-sans.ttf
+    - assets/go-noto-current-regular.ttf
 
 flutter_launcher_icons:
   android: true

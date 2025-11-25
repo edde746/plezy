@@ -241,8 +241,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       player = Player(
         configuration: PlayerConfiguration(
           libass: true,
-          libassAndroidFont: 'assets/droid-sans.ttf',
-          libassAndroidFontName: 'Droid Sans Fallback',
+          libassAndroidFont: 'assets/go-noto-current-regular.ttf',
+          libassAndroidFontName: 'Go Noto Current-Regular',
           bufferSize: bufferSizeBytes,
           logLevel: debugLoggingEnabled ? MPVLogLevel.debug : MPVLogLevel.error,
           mpvConfiguration: config,
