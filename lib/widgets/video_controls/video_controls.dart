@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:async' show StreamSubscription, Timer;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -112,6 +112,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   PlexMarker? _currentMarker;
   List<PlexMarker> _markers = [];
   bool _markersLoaded = false;
+  // Playback state subscription for auto-hide timer
+  StreamSubscription<bool>? _playingSubscription;
 
   @override
   void initState() {
@@ -123,6 +125,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _startHideTimer();
     _initKeyboardService();
     _listenToPosition();
+    _listenToPlayingState();
     // Add lifecycle observer to reload settings when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
@@ -155,6 +158,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             _currentMarker = foundMarker;
           });
         }
+      }
+    });
+  }
+
+  /// Listen to playback state changes to manage auto-hide timer on iOS/mobile
+  void _listenToPlayingState() {
+    _playingSubscription = widget.player.stream.playing.listen((isPlaying) {
+      if (isPlaying && _showControls) {
+        _startHideTimer();
+      } else if (!isPlaying) {
+        _hideTimer?.cancel();
       }
     });
   }
@@ -221,6 +235,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
     _seekThrottleTimer?.cancel();
+    _playingSubscription?.cancel();
     _focusNode.dispose();
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
@@ -292,6 +307,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           }
         }
       });
+    }
+  }
+
+  /// Restart the hide timer on user interaction (if video is playing)
+  void _restartHideTimerIfPlaying() {
+    if (widget.player.state.playing) {
+      _startHideTimer();
     }
   }
 
@@ -635,40 +657,50 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         ),
                       ),
                       child: isMobile
-                          ? MobileVideoControls(
-                              player: widget.player,
-                              metadata: widget.metadata,
-                              chapters: _chapters,
-                              chaptersLoaded: _chaptersLoaded,
-                              seekTimeSmall: _seekTimeSmall,
-                              trackChapterControls:
-                                  _buildTrackChapterControlsWidget(),
-                              onSeek: _throttledSeek,
-                              onSeekEnd: _finalizeSeek,
-                              onPlayPause:
-                                  () {}, // Not used, handled internally
-                              onCancelAutoHide: () => _hideTimer?.cancel(),
-                              onStartAutoHide: _startHideTimer,
-                            )
-                          : DesktopVideoControls(
-                              player: widget.player,
-                              metadata: widget.metadata,
-                              onNext: widget.onNext,
-                              onPrevious: widget.onPrevious,
-                              chapters: _chapters,
-                              chaptersLoaded: _chaptersLoaded,
-                              seekTimeSmall: _seekTimeSmall,
-                              volumeControl: VolumeControl(
+                          ? Listener(
+                              behavior: HitTestBehavior.translucent,
+                              onPointerDown: (_) =>
+                                  _restartHideTimerIfPlaying(),
+                              child: MobileVideoControls(
                                 player: widget.player,
+                                metadata: widget.metadata,
+                                chapters: _chapters,
+                                chaptersLoaded: _chaptersLoaded,
+                                seekTimeSmall: _seekTimeSmall,
+                                trackChapterControls:
+                                    _buildTrackChapterControlsWidget(),
+                                onSeek: _throttledSeek,
+                                onSeekEnd: _finalizeSeek,
+                                onPlayPause:
+                                    () {}, // Not used, handled internally
+                                onCancelAutoHide: () => _hideTimer?.cancel(),
+                                onStartAutoHide: _startHideTimer,
                               ),
-                              trackChapterControls:
-                                  _buildTrackChapterControlsWidget(),
-                              onSeekToPreviousChapter: _seekToPreviousChapter,
-                              onSeekToNextChapter: _seekToNextChapter,
-                              onSeek: _throttledSeek,
-                              onSeekEnd: _finalizeSeek,
-                              getReplayIcon: getReplayIcon,
-                              getForwardIcon: getForwardIcon,
+                            )
+                          : Listener(
+                              behavior: HitTestBehavior.translucent,
+                              onPointerDown: (_) =>
+                                  _restartHideTimerIfPlaying(),
+                              child: DesktopVideoControls(
+                                player: widget.player,
+                                metadata: widget.metadata,
+                                onNext: widget.onNext,
+                                onPrevious: widget.onPrevious,
+                                chapters: _chapters,
+                                chaptersLoaded: _chaptersLoaded,
+                                seekTimeSmall: _seekTimeSmall,
+                                volumeControl: VolumeControl(
+                                  player: widget.player,
+                                ),
+                                trackChapterControls:
+                                    _buildTrackChapterControlsWidget(),
+                                onSeekToPreviousChapter: _seekToPreviousChapter,
+                                onSeekToNextChapter: _seekToNextChapter,
+                                onSeek: _throttledSeek,
+                                onSeekEnd: _finalizeSeek,
+                                getReplayIcon: getReplayIcon,
+                                getForwardIcon: getForwardIcon,
+                              ),
                             ),
                     ),
                   ),
