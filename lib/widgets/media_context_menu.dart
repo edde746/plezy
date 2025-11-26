@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
@@ -9,6 +10,7 @@ import '../providers/playback_state_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/collection_playlist_play_helper.dart';
+import '../utils/keyboard_utils.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../utils/video_player_navigation.dart';
 import '../screens/media_detail_screen.dart';
@@ -51,14 +53,38 @@ class MediaContextMenu extends StatefulWidget {
   });
 
   @override
-  State<MediaContextMenu> createState() => _MediaContextMenuState();
+  State<MediaContextMenu> createState() => MediaContextMenuState();
 }
 
-class _MediaContextMenuState extends State<MediaContextMenu> {
+class MediaContextMenuState extends State<MediaContextMenu> {
   Offset? _tapPosition;
 
   void _storeTapPosition(TapDownDetails details) {
     _tapPosition = details.globalPosition;
+  }
+
+  bool _openedFromKeyboard = false;
+
+  /// Show the context menu programmatically.
+  /// Used for keyboard/gamepad long-press activation.
+  /// If [position] is null, the menu will appear at the center of this widget.
+  void showContextMenu(BuildContext menuContext, {Offset? position}) {
+    _openedFromKeyboard = true;
+    if (position != null) {
+      _tapPosition = position;
+    } else {
+      // Calculate center of the widget for keyboard activation
+      final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final size = renderBox.size;
+        final topLeft = renderBox.localToGlobal(Offset.zero);
+        _tapPosition = Offset(
+          topLeft.dx + size.width / 2,
+          topLeft.dy + size.height / 2,
+        );
+      }
+    }
+    _showContextMenu(menuContext);
   }
 
   /// Get the correct PlexClient for this item's server
@@ -243,51 +269,21 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
 
     String? selected;
 
+    final openedFromKeyboard = _openedFromKeyboard;
+    _openedFromKeyboard = false;
+
     if (useBottomSheet) {
       // Show bottom sheet on mobile
       selected = await showModalBottomSheet<String>(
         context: context,
-        builder: (context) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  widget.item.title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              ...menuActions.map(
-                (action) => ListTile(
-                  leading: Icon(action.icon),
-                  title: Text(action.label),
-                  onTap: () => Navigator.pop(context, action.value),
-                ),
-              ),
-            ],
-          ),
+        builder: (context) => _FocusableContextMenuSheet(
+          title: widget.item.title,
+          actions: menuActions,
+          focusFirstItem: openedFromKeyboard,
         ),
       );
     } else {
-      // Show popup menu on larger screens
-      final menuItems = menuActions
-          .map(
-            (action) => PopupMenuItem(
-              value: action.value,
-              child: Row(
-                children: [
-                  Icon(action.icon),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(action.label)),
-                ],
-              ),
-            ),
-          )
-          .toList();
-
+      // Show custom focusable popup menu on larger screens
       // Use stored tap position or fallback to widget position
       final RenderBox? overlay =
           Overlay.of(context).context.findRenderObject() as RenderBox?;
@@ -300,27 +296,13 @@ class _MediaContextMenuState extends State<MediaContextMenu> {
         position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
       }
 
-      // Calculate position for menu using RelativeRect
-      final overlayRect = RelativeRect.fromLTRB(
-        position.dx,
-        position.dy,
-        position.dx + 1,
-        position.dy + 1,
-      );
-
-      // Use showMenu with fast animations via PopupMenuTheme
-      selected = await showMenu<String>(
+      selected = await showDialog<String>(
         context: context,
-        position: overlayRect,
-        items: menuItems,
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        menuPadding: EdgeInsets.zero,
-        // Override animation duration for faster animations
-        popUpAnimationStyle: AnimationStyle(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeIn,
+        barrierColor: Colors.transparent,
+        builder: (dialogContext) => _FocusablePopupMenu(
+          actions: menuActions,
+          position: position,
+          focusFirstItem: openedFromKeyboard,
         ),
       );
     }
@@ -1436,6 +1418,315 @@ class _CreateCollectionDialogState extends State<_CreateCollectionDialog> {
             }
           },
           child: Text(t.common.save),
+        ),
+      ],
+    );
+  }
+}
+
+/// Focusable context menu sheet for keyboard/gamepad navigation (mobile)
+class _FocusableContextMenuSheet extends StatefulWidget {
+  final String title;
+  final List<_MenuAction> actions;
+  final bool focusFirstItem;
+
+  const _FocusableContextMenuSheet({
+    required this.title,
+    required this.actions,
+    this.focusFirstItem = false,
+  });
+
+  @override
+  State<_FocusableContextMenuSheet> createState() =>
+      _FocusableContextMenuSheetState();
+}
+
+class _FocusableContextMenuSheetState
+    extends State<_FocusableContextMenuSheet> {
+  late List<FocusNode> _focusNodes;
+  int _focusedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNodes = List.generate(
+      widget.actions.length,
+      (index) => FocusNode(debugLabel: 'ContextMenuItem$index'),
+    );
+
+    if (widget.focusFirstItem && widget.actions.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusNodes[0].requestFocus();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final node in _focusNodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    // Close on back keys
+    if (isBackKey(event.logicalKey)) {
+      Navigator.pop(context);
+      return KeyEventResult.handled;
+    }
+
+    // Navigate with arrow keys
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      if (_focusedIndex > 0) {
+        _focusedIndex--;
+        _focusNodes[_focusedIndex].requestFocus();
+      }
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      if (_focusedIndex < widget.actions.length - 1) {
+        _focusedIndex++;
+        _focusNodes[_focusedIndex].requestFocus();
+      }
+      return KeyEventResult.handled;
+    }
+
+    // Select with Enter/Space
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.space ||
+        event.logicalKey == LogicalKeyboardKey.select ||
+        event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+      Navigator.pop(context, widget.actions[_focusedIndex].value);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onKeyEvent: _handleKeyEvent,
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                widget.title,
+                style: Theme.of(context).textTheme.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            ...widget.actions.asMap().entries.map((entry) {
+              final index = entry.key;
+              final action = entry.value;
+              return Focus(
+                focusNode: _focusNodes[index],
+                onFocusChange: (hasFocus) {
+                  if (hasFocus) {
+                    setState(() => _focusedIndex = index);
+                  }
+                },
+                child: Builder(
+                  builder: (context) {
+                    final isFocused = Focus.of(context).hasFocus;
+                    return ListTile(
+                      leading: Icon(action.icon),
+                      title: Text(action.label),
+                      onTap: () => Navigator.pop(context, action.value),
+                      selected: isFocused,
+                      selectedTileColor: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.1),
+                    );
+                  },
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Focusable popup menu for keyboard/gamepad navigation (desktop)
+class _FocusablePopupMenu extends StatefulWidget {
+  final List<_MenuAction> actions;
+  final Offset position;
+  final bool focusFirstItem;
+
+  const _FocusablePopupMenu({
+    required this.actions,
+    required this.position,
+    this.focusFirstItem = false,
+  });
+
+  @override
+  State<_FocusablePopupMenu> createState() => _FocusablePopupMenuState();
+}
+
+class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
+  late List<FocusNode> _focusNodes;
+  int _focusedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNodes = List.generate(
+      widget.actions.length,
+      (index) => FocusNode(debugLabel: 'PopupMenuItem$index'),
+    );
+
+    if (widget.focusFirstItem && widget.actions.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusNodes[0].requestFocus();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final node in _focusNodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    // Close on back keys
+    if (isBackKey(event.logicalKey)) {
+      Navigator.pop(context);
+      return KeyEventResult.handled;
+    }
+
+    // Navigate with arrow keys
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      if (_focusedIndex > 0) {
+        _focusedIndex--;
+        _focusNodes[_focusedIndex].requestFocus();
+      }
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      if (_focusedIndex < widget.actions.length - 1) {
+        _focusedIndex++;
+        _focusNodes[_focusedIndex].requestFocus();
+      }
+      return KeyEventResult.handled;
+    }
+
+    // Select with Enter/Space
+    if (event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.space ||
+        event.logicalKey == LogicalKeyboardKey.select ||
+        event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+      Navigator.pop(context, widget.actions[_focusedIndex].value);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    const menuWidth = 220.0;
+
+    // Calculate menu position, keeping it on screen
+    double left = widget.position.dx;
+    double top = widget.position.dy;
+
+    // Adjust if menu would go off right edge
+    if (left + menuWidth > screenSize.width) {
+      left = screenSize.width - menuWidth - 8;
+    }
+
+    // Estimate menu height and adjust if would go off bottom
+    final estimatedHeight = widget.actions.length * 48.0 + 16;
+    if (top + estimatedHeight > screenSize.height) {
+      top = screenSize.height - estimatedHeight - 8;
+    }
+
+    return Stack(
+      children: [
+        // Barrier to close menu when clicking outside
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            behavior: HitTestBehavior.opaque,
+            child: Container(color: Colors.transparent),
+          ),
+        ),
+        // Menu
+        Positioned(
+          left: left,
+          top: top,
+          child: Focus(
+            autofocus: !widget.focusFirstItem,
+            onKeyEvent: _handleKeyEvent,
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(8),
+              clipBehavior: Clip.antiAlias,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: menuWidth,
+                  maxWidth: menuWidth,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: widget.actions.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final action = entry.value;
+                    return Focus(
+                      focusNode: _focusNodes[index],
+                      onFocusChange: (hasFocus) {
+                        if (hasFocus) {
+                          setState(() => _focusedIndex = index);
+                        }
+                      },
+                      child: Builder(
+                        builder: (context) {
+                          final isFocused = Focus.of(context).hasFocus;
+                          return InkWell(
+                            onTap: () => Navigator.pop(context, action.value),
+                            child: Container(
+                              color: isFocused
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.primary.withOpacity(0.1)
+                                  : null,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(action.icon, size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: Text(action.label)),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
         ),
       ],
     );

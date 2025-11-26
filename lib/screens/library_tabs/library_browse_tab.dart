@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../../client/plex_client.dart';
@@ -9,6 +10,7 @@ import '../../models/plex_sort.dart';
 import '../../providers/settings_provider.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/grid_size_calculator.dart';
+import '../../utils/keyboard_utils.dart';
 import '../../widgets/media_card.dart';
 import '../../widgets/folder_tree_view.dart';
 import '../../widgets/filters_bottom_sheet.dart';
@@ -87,6 +89,11 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
   int _requestId = 0;
   static const int _pageSize = 500;
 
+  /// Focus node for the first item in the list/grid
+  final FocusNode _firstItemFocusNode = FocusNode(
+    debugLabel: 'BrowseFirstItem',
+  );
+
   @override
   void initState() {
     super.initState();
@@ -105,7 +112,15 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
   @override
   void dispose() {
     _cancelToken?.cancel();
+    _firstItemFocusNode.dispose();
     super.dispose();
+  }
+
+  /// Focus the first item in the list/grid
+  void focusFirstItem() {
+    if (_items.isNotEmpty) {
+      _firstItemFocusNode.requestFocus();
+    }
   }
 
   Future<void> _loadContent() async {
@@ -312,36 +327,50 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
   void _showGroupingBottomSheet() {
     showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return ListView(
-          shrinkWrap: true,
-          children: _getGroupingOptions().map((grouping) {
-            return RadioListTile<String>(
-              title: Text(_getGroupingLabel(grouping)),
-              value: grouping,
-              // ignore: deprecated_member_use
-              groupValue: _selectedGrouping,
-              // ignore: deprecated_member_use
-              onChanged: (value) async {
-                if (value != null) {
-                  setState(() {
-                    _selectedGrouping = value;
-                  });
+      builder: (sheetContext) {
+        final options = _getGroupingOptions();
+        return Focus(
+          autofocus: true,
+          onKeyEvent: (node, event) {
+            if (isBackKeyEvent(event)) {
+              Navigator.pop(sheetContext);
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: FocusTraversalGroup(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: options.length,
+              itemBuilder: (context, index) {
+                final grouping = options[index];
+                return RadioListTile<String>(
+                  autofocus: index == 0,
+                  title: Text(_getGroupingLabel(grouping)),
+                  value: grouping,
+                  groupValue: _selectedGrouping,
+                  onChanged: (value) async {
+                    if (value != null) {
+                      setState(() {
+                        _selectedGrouping = value;
+                      });
 
-                  final storage = await StorageService.getInstance();
-                  await storage.saveLibraryGrouping(
-                    widget.library.globalKey,
-                    value,
-                  );
+                      final storage = await StorageService.getInstance();
+                      await storage.saveLibraryGrouping(
+                        widget.library.globalKey,
+                        value,
+                      );
 
-                  if (!context.mounted) return;
+                      if (!sheetContext.mounted) return;
 
-                  Navigator.pop(context);
-                  _loadItems();
-                }
+                      Navigator.pop(sheetContext);
+                      _loadItems();
+                    }
+                  },
+                );
               },
-            );
-          }).toList(),
+            ),
+          ),
         );
       },
     );
@@ -407,32 +436,55 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     required String label,
     required VoidCallback onPressed,
   }) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.space ||
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onPressed();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+          final colorScheme = Theme.of(context).colorScheme;
+          // When focused: inverse colors (white bg + dark text in dark mode, dark bg + light text in light mode)
+          final backgroundColor = isFocused
+              ? colorScheme.onSurface
+              : colorScheme.surfaceContainerHighest;
+          final foregroundColor = isFocused
+              ? colorScheme.surface
+              : colorScheme.onSurfaceVariant;
+          return InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 16, color: foregroundColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelMedium?.copyWith(color: foregroundColor),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -533,48 +585,58 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, child) {
           if (settingsProvider.viewMode == ViewMode.list) {
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              itemCount: _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index >= _items.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(child: CircularProgressIndicator()),
+            return ClipRect(
+              child: ListView.builder(
+                clipBehavior: Clip.none, // Allow focus indicator to overflow
+                padding: const EdgeInsets.all(8),
+                itemCount:
+                    _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= _items.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final item = _items[index];
+                  return MediaCard(
+                    key: Key(item.ratingKey),
+                    item: item,
+                    onRefresh: updateItem,
+                    focusNode: index == 0 ? _firstItemFocusNode : null,
                   );
-                }
-                final item = _items[index];
-                return MediaCard(
-                  key: Key(item.ratingKey),
-                  item: item,
-                  onRefresh: updateItem,
-                );
-              },
+                },
+              ),
             );
           } else {
-            return GridView.builder(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-                  context,
-                  settingsProvider.libraryDensity,
+            return ClipRect(
+              child: GridView.builder(
+                clipBehavior: Clip.none, // Allow focus indicator to overflow
+                padding: const EdgeInsets.all(8),
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
+                    context,
+                    settingsProvider.libraryDensity,
+                  ),
+                  childAspectRatio: 2 / 3.3,
+                  crossAxisSpacing: 0,
+                  mainAxisSpacing: 0,
                 ),
-                childAspectRatio: 2 / 3.3,
-                crossAxisSpacing: 0,
-                mainAxisSpacing: 0,
+                itemCount:
+                    _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= _items.length) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final item = _items[index];
+                  return MediaCard(
+                    key: Key(item.ratingKey),
+                    item: item,
+                    onRefresh: updateItem,
+                    focusNode: index == 0 ? _firstItemFocusNode : null,
+                  );
+                },
               ),
-              itemCount: _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index >= _items.length) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final item = _items[index];
-                return MediaCard(
-                  key: Key(item.ratingKey),
-                  item: item,
-                  onRefresh: updateItem,
-                );
-              },
             );
           }
         },

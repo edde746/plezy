@@ -584,6 +584,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           _nextSubtitleTrack,
           _nextChapter,
           _previousChapter,
+          onBack: () => Navigator.of(context).pop(true),
         );
       },
       child: MouseRegion(

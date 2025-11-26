@@ -336,6 +336,7 @@ class _PlaylistDetailScreenState
                     index: index,
                     onRemove: () => _removeItem(index),
                     onTap: () => _playFromItem(index),
+                    onRefresh: updateItem,
                     canReorder: !widget.playlist.smart,
                   );
                 },

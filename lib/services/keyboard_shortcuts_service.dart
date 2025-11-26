@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'settings_service.dart';
+import '../utils/keyboard_utils.dart';
 import '../utils/player_utils.dart';
 
 class KeyboardShortcutsService {
@@ -153,9 +154,16 @@ class KeyboardShortcutsService {
     VoidCallback? onNextAudioTrack,
     VoidCallback? onNextSubtitleTrack,
     VoidCallback? onNextChapter,
-    VoidCallback? onPreviousChapter,
-  ) {
+    VoidCallback? onPreviousChapter, {
+    VoidCallback? onBack,
+  }) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    // Handle back navigation keys first
+    if (isBackKey(event.logicalKey)) {
+      onBack?.call();
+      return KeyEventResult.handled;
+    }
 
     final physicalKey = event.physicalKey;
     final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;

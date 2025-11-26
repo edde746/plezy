@@ -139,6 +139,19 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
     }
   }
 
+  /// Focus the first item in the tab content
+  /// Subclasses can override this for custom focus behavior
+  void focusFirstItem() {
+    // Default implementation: try to focus the first focusable item
+    if (_items.isNotEmpty && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          FocusScope.of(context).nextFocus();
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin

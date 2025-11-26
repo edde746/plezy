@@ -25,6 +25,17 @@ class LibraryPlaylistsTab extends BaseLibraryTab<PlexPlaylist> {
 
 class _LibraryPlaylistsTabState
     extends BaseLibraryTabState<PlexPlaylist, LibraryPlaylistsTab> {
+  /// Focus node for the first item in the grid
+  final FocusNode _firstItemFocusNode = FocusNode(
+    debugLabel: 'PlaylistsFirstItem',
+  );
+
+  @override
+  void dispose() {
+    _firstItemFocusNode.dispose();
+    super.dispose();
+  }
+
   @override
   IconData get emptyIcon => Icons.playlist_play;
 
@@ -50,6 +61,13 @@ class _LibraryPlaylistsTabState
   }
 
   @override
+  void focusFirstItem() {
+    if (items.isNotEmpty) {
+      _firstItemFocusNode.requestFocus();
+    }
+  }
+
+  @override
   Widget buildContent(List<PlexPlaylist> items) {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
@@ -63,6 +81,7 @@ class _LibraryPlaylistsTabState
                 key: Key(playlist.ratingKey),
                 item: playlist,
                 onListRefresh: loadItems,
+                focusNode: index == 0 ? _firstItemFocusNode : null,
               );
             },
           );
@@ -85,6 +104,7 @@ class _LibraryPlaylistsTabState
                 key: Key(playlist.ratingKey),
                 item: playlist,
                 onListRefresh: loadItems,
+                focusNode: index == 0 ? _firstItemFocusNode : null,
               );
             },
           );

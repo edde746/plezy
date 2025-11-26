@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../client/plex_client.dart';
+import '../mixins/keyboard_long_press_mixin.dart';
 import '../models/plex_metadata.dart';
 import '../utils/duration_formatter.dart';
 import '../utils/provider_extensions.dart';
 import '../i18n/strings.g.dart';
+import 'focus/focus_indicator.dart';
+import 'media_context_menu.dart';
 
 /// Custom list item widget for playlist items
 /// Shows drag handle, poster, title/metadata, duration, and remove button
-class PlaylistItemCard extends StatelessWidget {
+class PlaylistItemCard extends StatefulWidget {
   final PlexMetadata item;
   final int index;
   final VoidCallback onRemove;
   final VoidCallback? onTap;
+  final void Function(String ratingKey)? onRefresh;
   final bool canReorder; // Whether drag handle should be shown
 
   const PlaylistItemCard({
@@ -21,97 +26,170 @@ class PlaylistItemCard extends StatelessWidget {
     required this.index,
     required this.onRemove,
     this.onTap,
+    this.onRefresh,
     this.canReorder = true,
   });
 
   @override
+  State<PlaylistItemCard> createState() => _PlaylistItemCardState();
+}
+
+class _PlaylistItemCardState extends State<PlaylistItemCard>
+    with KeyboardLongPressMixin {
+  late final FocusNode _focusNode;
+  bool _isFocused = false;
+  final _contextMenuKey = GlobalKey<MediaContextMenuState>();
+
+  @override
+  void onKeyboardTap() => widget.onTap?.call();
+
+  @override
+  void onKeyboardLongPress() {
+    _contextMenuKey.currentState?.showContextMenu(context);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (_isFocused != _focusNode.hasFocus) {
+      setState(() {
+        _isFocused = _focusNode.hasFocus;
+      });
+      if (_focusNode.hasFocus) {
+        Scrollable.ensureVisible(
+          context,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    }
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    // Handle long-press detection for activation keys
+    return handleKeyboardLongPress(event);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              // Drag handle (if reorderable)
-              if (canReorder)
-                ReorderableDragStartListener(
-                  index: index,
-                  child: const Padding(
-                    padding: EdgeInsets.only(right: 12),
-                    child: Icon(Icons.drag_indicator, color: Colors.grey),
-                  ),
-                ),
-
-              // Poster thumbnail
-              _buildPosterImage(context),
-
-              const SizedBox(width: 12),
-
-              // Title and metadata
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+    final item = widget.item;
+    return MediaContextMenu(
+      key: _contextMenuKey,
+      item: item,
+      onRefresh: widget.onRefresh,
+      onTap: widget.onTap,
+      child: Focus(
+        focusNode: _focusNode,
+        onKeyEvent: _handleKeyEvent,
+        child: FocusIndicator(
+          isFocused: _isFocused,
+          borderRadius: 12,
+          child: Card(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: InkWell(
+              onTap: widget.onTap,
+              focusColor: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
                   children: [
-                    // Title
-                    Text(
-                      item.displayTitle,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // Subtitle (episode info or type)
-                    Text(
-                      _buildSubtitle(),
-                      style: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    // Progress indicator if partially watched
-                    if (item.viewOffset != null && item.duration != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: LinearProgressIndicator(
-                          value: item.viewOffset! / item.duration!,
-                          backgroundColor: Colors.grey[800],
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.primary,
-                          ),
-                          minHeight: 3,
+                    // Drag handle (if reorderable)
+                    if (widget.canReorder)
+                      ReorderableDragStartListener(
+                        index: widget.index,
+                        child: const Padding(
+                          padding: EdgeInsets.only(right: 12),
+                          child: Icon(Icons.drag_indicator, color: Colors.grey),
                         ),
                       ),
+
+                    // Poster thumbnail
+                    _buildPosterImage(context),
+
+                    const SizedBox(width: 12),
+
+                    // Title and metadata
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Title
+                          Text(
+                            item.displayTitle,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          // Subtitle (episode info or type)
+                          Text(
+                            _buildSubtitle(),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[400],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+
+                          // Progress indicator if partially watched
+                          if (item.viewOffset != null && item.duration != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: LinearProgressIndicator(
+                                value: item.viewOffset! / item.duration!,
+                                backgroundColor: Colors.grey[800],
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).colorScheme.primary,
+                                ),
+                                minHeight: 3,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // Duration
+                    if (item.duration != null)
+                      Text(
+                        formatDurationTextual(item.duration!),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                      ),
+
+                    const SizedBox(width: 8),
+
+                    // Remove button
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: widget.onRemove,
+                      tooltip: t.playlists.removeItem,
+                      color: Colors.grey[400],
+                    ),
                   ],
                 ),
               ),
-
-              const SizedBox(width: 12),
-
-              // Duration
-              if (item.duration != null)
-                Text(
-                  formatDurationTextual(item.duration!),
-                  style: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                ),
-
-              const SizedBox(width: 8),
-
-              // Remove button
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: onRemove,
-                tooltip: t.playlists.removeItem,
-                color: Colors.grey[400],
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -120,11 +198,11 @@ class PlaylistItemCard extends StatelessWidget {
 
   /// Get the correct PlexClient for this item's server
   PlexClient _getClientForItem(BuildContext context) {
-    return context.getClientForServer(item.serverId!);
+    return context.getClientForServer(widget.item.serverId!);
   }
 
   Widget _buildPosterImage(BuildContext context) {
-    final posterUrl = item.posterThumb();
+    final posterUrl = widget.item.posterThumb();
     if (posterUrl != null) {
       return Builder(
         builder: (context) {
@@ -160,6 +238,7 @@ class PlaylistItemCard extends StatelessWidget {
   }
 
   String _buildSubtitle() {
+    final item = widget.item;
     final itemType = item.type.toLowerCase();
 
     if (itemType == 'episode') {

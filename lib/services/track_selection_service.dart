@@ -123,15 +123,15 @@ class TrackSelectionService {
         'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
       );
 
-      for (var track in availableTracks) {
-        final trackLang = track.language?.toLowerCase();
-        if (trackLang != null && languageVariations.any((lang) => trackLang.startsWith(lang))) {
-          appLogger.d(
-            'Found audio track matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
-          );
-          return track;
-        }
-      }
+      final match = _findTrackByLanguageVariations<AudioTrack>(
+        availableTracks,
+        preferredLanguage,
+        languageVariations,
+        (t) => t.language,
+        (t) => t.title ?? 'Track ${t.id}',
+        'audio track',
+      );
+      if (match != null) return match;
     }
 
     appLogger.d(
@@ -258,15 +258,15 @@ class TrackSelectionService {
         'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
       );
 
-      for (var track in candidateTracks) {
-        final trackLang = track.language?.toLowerCase();
-        if (trackLang != null && languageVariations.any((lang) => trackLang.startsWith(lang))) {
-          appLogger.d(
-            'Found subtitle matching profile language "$preferredLanguage" (matched: "$trackLang"): ${track.title ?? "Track ${track.id}"}',
-          );
-          return track;
-        }
-      }
+      final match = _findTrackByLanguageVariations<SubtitleTrack>(
+        candidateTracks,
+        preferredLanguage,
+        languageVariations,
+        (t) => t.language,
+        (t) => t.title ?? 'Track ${t.id}',
+        'subtitle',
+      );
+      if (match != null) return match;
     }
 
     appLogger.d(
@@ -368,6 +368,29 @@ class TrackSelectionService {
   bool isForced(SubtitleTrack track) {
     final title = track.title?.toLowerCase() ?? '';
     return title.contains('forced');
+  }
+
+  /// Find a track matching a preferred language from a list of tracks
+  /// Returns the first track whose language matches any variation of the preferred language
+  T? _findTrackByLanguageVariations<T>(
+    List<T> tracks,
+    String preferredLanguage,
+    List<String> languageVariations,
+    String? Function(T) getLanguage,
+    String Function(T) getTrackDescription,
+    String trackType,
+  ) {
+    for (var track in tracks) {
+      final trackLang = getLanguage(track)?.toLowerCase();
+      if (trackLang != null &&
+          languageVariations.any((lang) => trackLang.startsWith(lang))) {
+        appLogger.d(
+          'Found $trackType matching profile language "$preferredLanguage" (matched: "$trackLang"): ${getTrackDescription(track)}',
+        );
+        return track;
+      }
+    }
+    return null;
   }
 
   /// Checks if a track language matches a preferred language

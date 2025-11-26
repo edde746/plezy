@@ -94,7 +94,9 @@ class MediaControlsManager {
     try {
       await OsMediaControls.setPlaybackState(
         MediaPlaybackState(
-          state: params.isPlaying ? PlaybackState.playing : PlaybackState.paused,
+          state: params.isPlaying
+              ? PlaybackState.playing
+              : PlaybackState.paused,
           position: params.position,
           speed: params.speed,
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../client/plex_client.dart';
@@ -8,6 +9,7 @@ import '../models/plex_sort.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/keyboard_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/context_menu_wrapper.dart';
@@ -22,6 +24,7 @@ import 'library_tabs/library_browse_tab.dart';
 import 'library_tabs/library_recommended_tab.dart';
 import 'library_tabs/library_collections_tab.dart';
 import 'library_tabs/library_playlists_tab.dart';
+import 'main_screen.dart';
 
 class LibrariesScreen extends StatefulWidget {
   const LibrariesScreen({super.key});
@@ -71,11 +74,33 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   int _requestId = 0;
   static const int _pageSize = 1000;
 
+  /// Focus node for the tab chips row (single focusable element)
+  late final FocusNode _tabChipsFocusNode;
+
+  /// Focus node for the library dropdown in the app bar
+  late final FocusNode _libraryDropdownFocusNode;
+
+  /// Focus node for the edit libraries button in the app bar
+  late final FocusNode _editButtonFocusNode;
+
+  /// Focus node for the refresh button in the app bar
+  late final FocusNode _refreshButtonFocusNode;
+
+  /// Key for the library dropdown popup menu button
+  final _libraryDropdownKey = GlobalKey<PopupMenuButtonState<String>>();
+
+  /// Scroll controller for the main CustomScrollView
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_onTabChanged);
+    _tabChipsFocusNode = FocusNode(debugLabel: 'LibraryTabChips');
+    _libraryDropdownFocusNode = FocusNode(debugLabel: 'LibraryDropdown');
+    _editButtonFocusNode = FocusNode(debugLabel: 'EditLibrariesButton');
+    _refreshButtonFocusNode = FocusNode(debugLabel: 'RefreshButton');
     _loadLibraries();
   }
 
@@ -97,8 +122,74 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void dispose() {
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
+    _tabChipsFocusNode.dispose();
+    _libraryDropdownFocusNode.dispose();
+    _editButtonFocusNode.dispose();
+    _refreshButtonFocusNode.dispose();
+    _scrollController.dispose();
     _cancelToken?.cancel();
     super.dispose();
+  }
+
+  /// Handle back key press with two-level navigation:
+  /// - From content → focus tab chips
+  /// - From tab chips → focus bottom nav
+  KeyEventResult _handleBackKey(FocusNode node, KeyEvent event) {
+    if (isBackKeyEvent(event)) {
+      // Check if focus is currently on the tab chips
+      final isInTabs = _tabChipsFocusNode.hasFocus;
+
+      if (isInTabs) {
+        // In tabs zone, go to bottom nav
+        BackNavigationScope.of(context)?.focusBottomNav();
+      } else {
+        // In content zone, move to tab chips
+        // First scroll to top to make tab chips visible
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+        _tabChipsFocusNode.requestFocus();
+      }
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  /// Focus the first item in the current tab content
+  /// Called when navigating to the Libraries screen from bottom nav
+  void focusFirstContentItem() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Focus the first item based on current tab
+      switch (_tabController.index) {
+        case 0: // Recommended
+          final recommendedState = _recommendedTabKey.currentState;
+          if (recommendedState != null) {
+            (recommendedState as dynamic).focusFirstItem();
+          }
+          break;
+        case 1: // Browse
+          final browseState = _browseTabKey.currentState;
+          if (browseState != null) {
+            (browseState as dynamic).focusFirstItem();
+          }
+          break;
+        case 2: // Collections
+          final collectionsState = _collectionsTabKey.currentState;
+          if (collectionsState != null) {
+            (collectionsState as dynamic).focusFirstItem();
+          }
+          break;
+        case 3: // Playlists
+          final playlistsState = _playlistsTabKey.currentState;
+          if (playlistsState != null) {
+            (playlistsState as dynamic).focusFirstItem();
+          }
+          break;
+      }
+    });
   }
 
   void _updateState(VoidCallback fn) {
@@ -641,6 +732,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   void _showLibraryManagementSheet() {
+    // Check if opened via keyboard (edit button has focus)
+    final openedViaKeyboard = _editButtonFocusNode.hasFocus;
+
     final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
       context,
       listen: false,
@@ -661,6 +755,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         onToggleVisibility: _toggleLibraryVisibility,
         getLibraryMenuItems: _getLibraryMenuItems,
         onLibraryMenuAction: _handleLibraryMenuAction,
+        autoFocusFirstHandle: openedViaKeyboard,
       ),
     );
   }
@@ -859,6 +954,45 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     return menuItems;
   }
 
+  /// Handle key events for the tab chips area
+  KeyEventResult _handleTabChipsKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    // Left arrow: select previous tab
+    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      if (_tabController.index > 0) {
+        setState(() {
+          _tabController.index = _tabController.index - 1;
+        });
+      }
+      return KeyEventResult.handled;
+    }
+
+    // Right arrow: select next tab
+    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      if (_tabController.index < 3) {
+        setState(() {
+          _tabController.index = _tabController.index + 1;
+        });
+      }
+      return KeyEventResult.handled;
+    }
+
+    // Down arrow: focus the tab content
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      node.nextFocus();
+      return KeyEventResult.handled;
+    }
+
+    // Up arrow: focus the library selector in app bar
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      _libraryDropdownFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
   Widget _buildTabChip(String label, int index) {
     final isSelected = _tabController.index == index;
     final t = tokens(context);
@@ -890,45 +1024,156 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       orElse: () => visibleLibraries.first,
     );
 
-    return PopupMenuButton<String>(
-      offset: const Offset(0, 48),
-      tooltip: t.libraries.selectLibrary,
-      onSelected: (libraryGlobalKey) {
-        _loadLibraryContent(libraryGlobalKey);
+    return Focus(
+      focusNode: _libraryDropdownFocusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.space ||
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            _libraryDropdownKey.currentState?.showButtonMenu();
+            return KeyEventResult.handled;
+          }
+          // Down arrow from dropdown goes to tab chips
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            _tabChipsFocusNode.requestFocus();
+            return KeyEventResult.handled;
+          }
+          // Right arrow from dropdown goes to edit button (if libraries exist)
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            if (_allLibraries.isNotEmpty) {
+              _editButtonFocusNode.requestFocus();
+            } else {
+              _refreshButtonFocusNode.requestFocus();
+            }
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
       },
-      itemBuilder: (context) => _buildGroupedLibraryMenuItems(visibleLibraries),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_getLibraryIcon(selectedLibrary.type), size: 20),
-          const SizedBox(width: 8),
-          if (_hasMultipleServers && selectedLibrary.serverName != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  selectedLibrary.title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Text(
-                  selectedLibrary.serverName!,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            )
-          else
-            Text(
-              selectedLibrary.title,
-              style: Theme.of(context).textTheme.titleLarge,
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+          return PopupMenuButton<String>(
+            key: _libraryDropdownKey,
+            offset: const Offset(0, 48),
+            tooltip: t.libraries.selectLibrary,
+            onSelected: (libraryGlobalKey) {
+              _loadLibraryContent(libraryGlobalKey);
+            },
+            itemBuilder: (context) =>
+                _buildGroupedLibraryMenuItems(visibleLibraries),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: isFocused
+                  ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    )
+                  : null,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(_getLibraryIcon(selectedLibrary.type), size: 20),
+                  const SizedBox(width: 8),
+                  if (_hasMultipleServers && selectedLibrary.serverName != null)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          selectedLibrary.title,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text(
+                          selectedLibrary.serverName!,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withValues(alpha: 0.6),
+                              ),
+                        ),
+                      ],
+                    )
+                  else
+                    Text(
+                      selectedLibrary.title,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_drop_down, size: 24),
+                ],
+              ),
             ),
-          const SizedBox(width: 4),
-          const Icon(Icons.arrow_drop_down, size: 24),
-        ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Build a focusable icon button with keyboard navigation support
+  Widget _buildFocusableIconButton({
+    required FocusNode focusNode,
+    required IconData icon,
+    required String semanticLabel,
+    required VoidCallback onPressed,
+    VoidCallback? onLeft,
+    VoidCallback? onRight,
+    VoidCallback? onDown,
+  }) {
+    return Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent) {
+          // Activation keys
+          if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.space ||
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onPressed();
+            return KeyEventResult.handled;
+          }
+          // Navigation
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft &&
+              onLeft != null) {
+            onLeft();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight &&
+              onRight != null) {
+            onRight();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown &&
+              onDown != null) {
+            onDown();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+          return IconButton(
+            icon: Icon(icon, semanticLabel: semanticLabel),
+            onPressed: onPressed,
+            style: isFocused
+                ? IconButton.styleFrom(
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.08),
+                  )
+                : null,
+          );
+        },
       ),
     );
   }
@@ -945,138 +1190,161 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         .toList();
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          DesktopSliverAppBar(
-            title:
-                visibleLibraries.isNotEmpty && _selectedLibraryGlobalKey != null
-                ? _buildLibraryDropdownTitle(visibleLibraries)
-                : Text(t.libraries.title),
-            floating: true,
-            pinned: true,
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            surfaceTintColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            scrolledUnderElevation: 0,
-            actions: [
-              if (_allLibraries.isNotEmpty)
-                IconButton(
-                  icon: Icon(
-                    Icons.edit,
+      body: Focus(
+        onKeyEvent: _handleBackKey,
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            DesktopSliverAppBar(
+              title:
+                  visibleLibraries.isNotEmpty &&
+                      _selectedLibraryGlobalKey != null
+                  ? _buildLibraryDropdownTitle(visibleLibraries)
+                  : Text(t.libraries.title),
+              floating: true,
+              pinned: true,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              surfaceTintColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              scrolledUnderElevation: 0,
+              actions: [
+                if (_allLibraries.isNotEmpty)
+                  _buildFocusableIconButton(
+                    focusNode: _editButtonFocusNode,
+                    icon: Icons.edit,
                     semanticLabel: t.libraries.manageLibraries,
+                    onPressed: _showLibraryManagementSheet,
+                    onLeft: () => _libraryDropdownFocusNode.requestFocus(),
+                    onRight: () => _refreshButtonFocusNode.requestFocus(),
+                    onDown: () => _tabChipsFocusNode.requestFocus(),
                   ),
-                  onPressed: _showLibraryManagementSheet,
+                _buildFocusableIconButton(
+                  focusNode: _refreshButtonFocusNode,
+                  icon: Icons.refresh,
+                  semanticLabel: t.common.refresh,
+                  onPressed: _refreshCurrentTab,
+                  onLeft: () {
+                    if (_allLibraries.isNotEmpty) {
+                      _editButtonFocusNode.requestFocus();
+                    } else {
+                      _libraryDropdownFocusNode.requestFocus();
+                    }
+                  },
+                  onDown: () => _tabChipsFocusNode.requestFocus(),
                 ),
-              IconButton(
-                icon: Icon(Icons.refresh, semanticLabel: t.common.refresh),
-                onPressed: _refreshCurrentTab,
-              ),
-            ],
-          ),
-          if (_isLoadingLibraries)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_errorMessage != null && visibleLibraries.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(_errorMessage!),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadLibraries,
-                      child: Text(t.common.retry),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (visibleLibraries.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.video_library_outlined,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(t.libraries.noLibrariesFound),
-                  ],
-                ),
-              ),
-            )
-          else ...[
-            // Tab selector chips
-            if (_selectedLibraryGlobalKey != null)
-              SliverToBoxAdapter(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildTabChip(t.libraries.tabs.recommended, 0),
-                        const SizedBox(width: 8),
-                        _buildTabChip(t.libraries.tabs.browse, 1),
-                        const SizedBox(width: 8),
-                        _buildTabChip(t.libraries.tabs.collections, 2),
-                        const SizedBox(width: 8),
-                        _buildTabChip(t.libraries.tabs.playlists, 3),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-            // Tab content
-            if (_selectedLibraryGlobalKey != null)
+              ],
+            ),
+            if (_isLoadingLibraries)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_errorMessage != null && visibleLibraries.isEmpty)
               SliverFillRemaining(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    LibraryRecommendedTab(
-                      key: _recommendedTabKey,
-                      library: _allLibraries.firstWhere(
-                        (lib) => lib.globalKey == _selectedLibraryGlobalKey,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
                       ),
-                    ),
-                    LibraryBrowseTab(
-                      key: _browseTabKey,
-                      library: _allLibraries.firstWhere(
-                        (lib) => lib.globalKey == _selectedLibraryGlobalKey,
+                      const SizedBox(height: 16),
+                      Text(_errorMessage!),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadLibraries,
+                        child: Text(t.common.retry),
                       ),
-                    ),
-                    LibraryCollectionsTab(
-                      key: _collectionsTabKey,
-                      library: _allLibraries.firstWhere(
-                        (lib) => lib.globalKey == _selectedLibraryGlobalKey,
-                      ),
-                    ),
-                    LibraryPlaylistsTab(
-                      key: _playlistsTabKey,
-                      library: _allLibraries.firstWhere(
-                        (lib) => lib.globalKey == _selectedLibraryGlobalKey,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              )
+            else if (visibleLibraries.isEmpty)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.video_library_outlined,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(t.libraries.noLibrariesFound),
+                    ],
+                  ),
+                ),
+              )
+            else ...[
+              // Tab selector chips
+              if (_selectedLibraryGlobalKey != null)
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Focus(
+                      focusNode: _tabChipsFocusNode,
+                      onKeyEvent: _handleTabChipsKeyEvent,
+                      child: ExcludeFocus(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildTabChip(t.libraries.tabs.recommended, 0),
+                              const SizedBox(width: 8),
+                              _buildTabChip(t.libraries.tabs.browse, 1),
+                              const SizedBox(width: 8),
+                              _buildTabChip(t.libraries.tabs.collections, 2),
+                              const SizedBox(width: 8),
+                              _buildTabChip(t.libraries.tabs.playlists, 3),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+              // Tab content
+              if (_selectedLibraryGlobalKey != null)
+                SliverFillRemaining(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      LibraryRecommendedTab(
+                        key: _recommendedTabKey,
+                        library: _allLibraries.firstWhere(
+                          (lib) => lib.globalKey == _selectedLibraryGlobalKey,
+                        ),
+                      ),
+                      LibraryBrowseTab(
+                        key: _browseTabKey,
+                        library: _allLibraries.firstWhere(
+                          (lib) => lib.globalKey == _selectedLibraryGlobalKey,
+                        ),
+                      ),
+                      LibraryCollectionsTab(
+                        key: _collectionsTabKey,
+                        library: _allLibraries.firstWhere(
+                          (lib) => lib.globalKey == _selectedLibraryGlobalKey,
+                        ),
+                      ),
+                      LibraryPlaylistsTab(
+                        key: _playlistsTabKey,
+                        library: _allLibraries.firstWhere(
+                          (lib) => lib.globalKey == _selectedLibraryGlobalKey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -1104,6 +1372,7 @@ class _LibraryManagementSheet extends StatefulWidget {
   final Function(PlexLibrary) onToggleVisibility;
   final List<ContextMenuItem> Function(PlexLibrary) getLibraryMenuItems;
   final void Function(String action, PlexLibrary library) onLibraryMenuAction;
+  final bool autoFocusFirstHandle;
 
   const _LibraryManagementSheet({
     required this.allLibraries,
@@ -1112,6 +1381,7 @@ class _LibraryManagementSheet extends StatefulWidget {
     required this.onToggleVisibility,
     required this.getLibraryMenuItems,
     required this.onLibraryMenuAction,
+    this.autoFocusFirstHandle = false,
   });
 
   @override
@@ -1123,11 +1393,94 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   late List<PlexLibrary> _tempLibraries;
   List<String>? _serverOrder;
 
+  /// Index of library currently being moved via keyboard (null if not moving)
+  int? _movingLibraryIndex;
+
+  /// Original index of library when move started (for cancel/restore)
+  int? _originalLibraryIndex;
+
+  /// Index of server currently being moved via keyboard (null if not moving)
+  int? _movingServerIndex;
+
+  /// Original index of server when move started (for cancel/restore)
+  int? _originalServerIndex;
+
+  /// Focus nodes for library drag handles, keyed by library globalKey
+  final Map<String, FocusNode> _libraryDragFocusNodes = {};
+
+  /// Focus nodes for server drag handles, keyed by serverId
+  final Map<String, FocusNode> _serverDragFocusNodes = {};
+
+  /// Get or create a focus node for a library drag handle
+  FocusNode _getLibraryDragFocusNode(String globalKey) {
+    return _libraryDragFocusNodes.putIfAbsent(
+      globalKey,
+      () => FocusNode(debugLabel: 'LibraryDrag-$globalKey'),
+    );
+  }
+
+  /// Get or create a focus node for a server drag handle
+  FocusNode _getServerDragFocusNode(String serverId) {
+    return _serverDragFocusNodes.putIfAbsent(
+      serverId,
+      () => FocusNode(debugLabel: 'ServerDrag-$serverId'),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _tempLibraries = List.from(widget.allLibraries);
     _loadServerOrder();
+
+    // Focus the first drag handle after the sheet is built (only if opened via keyboard)
+    if (widget.autoFocusFirstHandle) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _focusFirstDragHandle();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    // Dispose all focus nodes
+    for (final node in _libraryDragFocusNodes.values) {
+      node.dispose();
+    }
+    for (final node in _serverDragFocusNodes.values) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  /// Focus the first drag handle in the list
+  void _focusFirstDragHandle() {
+    if (_hasMultipleServers) {
+      // Focus first server drag handle
+      final serverKeys = _getOrderedServerIds();
+      if (serverKeys.isNotEmpty) {
+        _getServerDragFocusNode(serverKeys.first).requestFocus();
+      }
+    } else {
+      // Focus first library drag handle
+      if (_tempLibraries.isNotEmpty) {
+        _getLibraryDragFocusNode(_tempLibraries.first.globalKey).requestFocus();
+      }
+    }
+  }
+
+  /// Handle back key to close the sheet
+  KeyEventResult _handleBackKey(FocusNode node, KeyEvent event) {
+    // Don't close if we're in the middle of moving an item
+    if (_movingLibraryIndex != null || _movingServerIndex != null) {
+      return KeyEventResult.ignored;
+    }
+
+    if (isBackKeyEvent(event)) {
+      Navigator.pop(context);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   /// Load server order from storage
@@ -1194,6 +1547,257 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     return uniqueServerIds.length > 1;
   }
 
+  /// Start moving a library via keyboard
+  void _startLibraryMove(int index) {
+    setState(() {
+      _movingLibraryIndex = index;
+      _originalLibraryIndex = index;
+    });
+  }
+
+  /// Move library to new position during keyboard reordering
+  void _moveLibraryTo(int newIndex) {
+    if (_movingLibraryIndex == null) return;
+    if (newIndex < 0 || newIndex >= _tempLibraries.length) return;
+    if (newIndex == _movingLibraryIndex) return;
+
+    setState(() {
+      final library = _tempLibraries.removeAt(_movingLibraryIndex!);
+      _tempLibraries.insert(newIndex, library);
+      _movingLibraryIndex = newIndex;
+    });
+  }
+
+  /// End library move and save the new order
+  void _endLibraryMove() {
+    if (_movingLibraryIndex == null) return;
+    widget.onReorder(_tempLibraries);
+    setState(() {
+      _movingLibraryIndex = null;
+      _originalLibraryIndex = null;
+    });
+  }
+
+  /// Cancel library move and restore original position
+  void _cancelLibraryMove() {
+    if (_movingLibraryIndex == null || _originalLibraryIndex == null) return;
+    if (_movingLibraryIndex != _originalLibraryIndex) {
+      setState(() {
+        final library = _tempLibraries.removeAt(_movingLibraryIndex!);
+        _tempLibraries.insert(_originalLibraryIndex!, library);
+      });
+    }
+    setState(() {
+      _movingLibraryIndex = null;
+      _originalLibraryIndex = null;
+    });
+  }
+
+  /// Start moving a server via keyboard
+  void _startServerMove(int index) {
+    setState(() {
+      _movingServerIndex = index;
+      _originalServerIndex = index;
+    });
+  }
+
+  /// Move server to new position during keyboard reordering
+  void _moveServerTo(int newIndex, List<String> serverKeys) {
+    if (_movingServerIndex == null) return;
+    if (newIndex < 0 || newIndex >= serverKeys.length) return;
+    if (newIndex == _movingServerIndex) return;
+
+    final reorderedServerIds = List<String>.from(serverKeys);
+    final serverId = reorderedServerIds.removeAt(_movingServerIndex!);
+    reorderedServerIds.insert(newIndex, serverId);
+    _saveServerOrder(reorderedServerIds);
+
+    setState(() {
+      _movingServerIndex = newIndex;
+    });
+  }
+
+  /// End server move
+  void _endServerMove() {
+    setState(() {
+      _movingServerIndex = null;
+      _originalServerIndex = null;
+    });
+  }
+
+  /// Cancel server move and restore original position
+  void _cancelServerMove(List<String> serverKeys) {
+    if (_movingServerIndex == null || _originalServerIndex == null) return;
+    if (_movingServerIndex != _originalServerIndex) {
+      final reorderedServerIds = List<String>.from(serverKeys);
+      final serverId = reorderedServerIds.removeAt(_movingServerIndex!);
+      reorderedServerIds.insert(_originalServerIndex!, serverId);
+      _saveServerOrder(reorderedServerIds);
+    }
+    setState(() {
+      _movingServerIndex = null;
+      _originalServerIndex = null;
+    });
+  }
+
+  /// Build a keyboard-accessible drag handle
+  /// When [reorderableIndex] is provided, wraps with ReorderableDragStartListener for mouse/touch drag
+  Widget _buildKeyboardDragHandle({
+    required FocusNode focusNode,
+    required int index,
+    required bool isMoving,
+    required int maxIndex,
+    required VoidCallback onStartMove,
+    required void Function(int delta) onMove,
+    required VoidCallback onEndMove,
+    required VoidCallback onCancelMove,
+    int? reorderableIndex,
+  }) {
+    Widget handle = Focus(
+      focusNode: focusNode,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+        if (isMoving) {
+          // Moving mode - handle arrow keys and confirm/cancel
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            if (index > 0) onMove(-1);
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            if (index < maxIndex) onMove(1);
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.space ||
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onEndMove();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.escape ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonB) {
+            onCancelMove();
+            return KeyEventResult.handled;
+          }
+        } else {
+          // Not moving - Enter/Space starts move
+          if (event.logicalKey == LogicalKeyboardKey.enter ||
+              event.logicalKey == LogicalKeyboardKey.space ||
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+            onStartMove();
+            return KeyEventResult.handled;
+          }
+          // Allow left/right navigation to other focusable items
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            focusNode.nextFocus();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            focusNode.previousFocus();
+            return KeyEventResult.handled;
+          }
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+          return Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: isMoving
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : isFocused
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
+                  : null,
+            ),
+            child: Icon(
+              isMoving ? Icons.unfold_more : Icons.drag_indicator,
+              color: isMoving
+                  ? Theme.of(context).colorScheme.onPrimaryContainer
+                  : isFocused
+                  ? Theme.of(context).colorScheme.primary
+                  : IconTheme.of(context).color?.withValues(alpha: 0.5),
+            ),
+          );
+        },
+      ),
+    );
+
+    // Wrap with ReorderableDragStartListener for mouse/touch drag support
+    if (reorderableIndex != null) {
+      handle = ReorderableDragStartListener(
+        index: reorderableIndex,
+        child: handle,
+      );
+    }
+
+    return handle;
+  }
+
+  /// Build an IconButton with left/right arrow key navigation
+  Widget _buildNavigableIconButton({
+    required IconData iconData,
+    required VoidCallback onPressed,
+    String? tooltip,
+  }) {
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+        // Handle activation
+        if (event.logicalKey == LogicalKeyboardKey.enter ||
+            event.logicalKey == LogicalKeyboardKey.space ||
+            event.logicalKey == LogicalKeyboardKey.select ||
+            event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+          onPressed();
+          return KeyEventResult.handled;
+        }
+
+        if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+          node.previousFocus();
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+          node.nextFocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Builder(
+        builder: (context) {
+          final isFocused = Focus.of(context).hasFocus;
+          return GestureDetector(
+            onTap: onPressed,
+            child: Tooltip(
+              message: tooltip ?? '',
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: isFocused
+                      ? Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.2)
+                      : null,
+                ),
+                child: Icon(
+                  iconData,
+                  color: isFocused
+                      ? Theme.of(context).colorScheme.primary
+                      : IconTheme.of(context).color,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _reorderLibraries(int oldIndex, int newIndex) {
     setState(() {
       if (newIndex > oldIndex) {
@@ -1207,34 +1811,45 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   }
 
   Future<void> _showLibraryMenuBottomSheet(
-    BuildContext context,
+    BuildContext outerContext,
     PlexLibrary library,
   ) async {
     final menuItems = widget.getLibraryMenuItems(library);
     final selected = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                library.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+      context: outerContext,
+      builder: (context) => Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) {
+          if (isBackKeyEvent(event)) {
+            Navigator.pop(context);
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  library.title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            ...menuItems.map(
-              (item) => ListTile(
-                leading: Icon(item.icon),
-                title: Text(item.label),
-                onTap: () => Navigator.pop(context, item.value),
+              ...menuItems.indexed.map(
+                (entry) => ListTile(
+                  autofocus: entry.$1 == 0,
+                  leading: Icon(entry.$2.icon),
+                  title: Text(entry.$2.label),
+                  onTap: () => Navigator.pop(context, entry.$2.value),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1307,47 +1922,53 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
-        return Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Theme.of(context).dividerColor),
+        return Focus(
+          onKeyEvent: _handleBackKey,
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Theme.of(context).dividerColor),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.edit),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      t.libraries.manageLibraries,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                child: Row(
+                  children: [
+                    const Icon(Icons.edit),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        t.libraries.manageLibraries,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            // Library list (grouped by server if multiple servers)
-            Expanded(
-              child: _hasMultipleServers
-                  ? _buildGroupedLibraryList(
-                      scrollController,
-                      hiddenLibraryKeys,
-                    )
-                  : _buildFlatLibraryList(scrollController, hiddenLibraryKeys),
-            ),
-          ],
+              // Library list (grouped by server if multiple servers)
+              Expanded(
+                child: _hasMultipleServers
+                    ? _buildGroupedLibraryList(
+                        scrollController,
+                        hiddenLibraryKeys,
+                      )
+                    : _buildFlatLibraryList(
+                        scrollController,
+                        hiddenLibraryKeys,
+                      ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -1406,28 +2027,40 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         final libraries = groupedLibraries[serverKey]!;
         final serverName = libraries.first.serverName ?? 'Unknown Server';
 
+        final isServerMoving = _movingServerIndex == serverIndex;
+
         return Column(
           key: ValueKey(serverKey),
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Server header with drag handle
-            ListTile(
-              leading: ReorderableDragStartListener(
-                index: serverIndex,
-                child: Icon(
-                  Icons.drag_indicator,
-                  color: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+            // Server header with keyboard-accessible drag handle
+            Container(
+              color: isServerMoving
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer.withValues(alpha: 0.3)
+                  : null,
+              child: ListTile(
+                leading: _buildKeyboardDragHandle(
+                  focusNode: _getServerDragFocusNode(serverKey),
+                  index: serverIndex,
+                  isMoving: isServerMoving,
+                  maxIndex: serverKeys.length - 1,
+                  onStartMove: () => _startServerMove(serverIndex),
+                  onMove: (delta) =>
+                      _moveServerTo(serverIndex + delta, serverKeys),
+                  onEndMove: _endServerMove,
+                  onCancelMove: () => _cancelServerMove(serverKeys),
+                  reorderableIndex: serverIndex,
                 ),
-              ),
-              title: Text(
-                serverName,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
+                title: Text(
+                  serverName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ),
@@ -1459,57 +2092,64 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     bool enableDrag = true,
   }) {
     final isHidden = hiddenLibraryKeys.contains(library.globalKey);
+    final isMoving = _movingLibraryIndex == index;
 
     return Opacity(
       key: ValueKey(library.globalKey),
       opacity: isHidden ? 0.5 : 1.0,
-      child: ListTile(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (enableDrag)
-              ReorderableDragStartListener(
-                index: index,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Icon(
-                    Icons.drag_indicator,
-                    color: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-                  ),
+      child: Container(
+        color: isMoving
+            ? Theme.of(
+                context,
+              ).colorScheme.primaryContainer.withValues(alpha: 0.3)
+            : null,
+        child: ListTile(
+          leading: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (enableDrag)
+                _buildKeyboardDragHandle(
+                  focusNode: _getLibraryDragFocusNode(library.globalKey),
+                  index: index,
+                  isMoving: isMoving,
+                  maxIndex: _tempLibraries.length - 1,
+                  onStartMove: () => _startLibraryMove(index),
+                  onMove: (delta) => _moveLibraryTo(index + delta),
+                  onEndMove: _endLibraryMove,
+                  onCancelMove: _cancelLibraryMove,
+                  reorderableIndex: index,
                 ),
+              if (enableDrag) const SizedBox(width: 8),
+              if (!enableDrag) const SizedBox(width: 12),
+              Icon(_getLibraryIcon(library.type)),
+            ],
+          ),
+          title: Row(
+            children: [
+              Expanded(child: Text(library.title)),
+              if (showServerBadge &&
+                  _hasMultipleServers &&
+                  library.serverName != null)
+                ServerBadge(serverName: library.serverName, showFullName: true),
+            ],
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildNavigableIconButton(
+                iconData: isHidden ? Icons.visibility_off : Icons.visibility,
+                onPressed: () => widget.onToggleVisibility(library),
+                tooltip: isHidden
+                    ? t.libraries.showLibrary
+                    : t.libraries.hideLibrary,
               ),
-            if (enableDrag) const SizedBox(width: 8),
-            if (!enableDrag) const SizedBox(width: 12),
-            Icon(_getLibraryIcon(library.type)),
-          ],
-        ),
-        title: Row(
-          children: [
-            Expanded(child: Text(library.title)),
-            if (showServerBadge &&
-                _hasMultipleServers &&
-                library.serverName != null)
-              ServerBadge(serverName: library.serverName, showFullName: true),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
-              onPressed: () => widget.onToggleVisibility(library),
-              tooltip: isHidden
-                  ? t.libraries.showLibrary
-                  : t.libraries.hideLibrary,
-            ),
-            IconButton(
-              icon: const Icon(Icons.more_vert),
-              onPressed: () => _showLibraryMenuBottomSheet(context, library),
-              tooltip: t.libraries.libraryOptions,
-            ),
-          ],
+              _buildNavigableIconButton(
+                iconData: Icons.more_vert,
+                onPressed: () => _showLibraryMenuBottomSheet(context, library),
+                tooltip: t.libraries.libraryOptions,
+              ),
+            ],
+          ),
         ),
       ),
     );
