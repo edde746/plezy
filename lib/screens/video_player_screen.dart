@@ -31,7 +31,7 @@ import '../i18n/strings.g.dart';
 
 Map<String, dynamic>? _isoLangTable;
 
-/// Charger la table en mémoire au démarrage du widget (dans initState par exemple)
+/// Load the table into memory at widget startup (in initState for example)
 Future<void> loadIsoTable() async {
   final data = await rootBundle.loadString('lib/data/iso_6369_codes.json');
   _isoLangTable = json.decode(data) as Map<String, dynamic>;
@@ -226,10 +226,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
-  /// Convertit un code à 2 lettres "fr", "nl", "ca" en code Plex à 3 lettres, ou renvoie null si inconnu
+  /// Converts a 2-letter code like "fr", "nl", "ca" to a Plex 3-letter code, or returns null if unknown
   String? _iso6391ToPlex6392(String? code) {
     if (code == null || code.isEmpty || _isoLangTable == null) return null;
-    // Prend la base "fr" de "fr-FR"
+    // Takes the base "fr" from "fr-FR"
     final lang = code.split('-').first.toLowerCase();
     final langEntry = _isoLangTable![lang] as Map<String, dynamic>?;
     return langEntry?['639-2'] as String?;

@@ -480,18 +480,19 @@ class PlexClient {
         queryParams['subtitleStreamID'] = subtitleStreamID;
       }
       if (allParts) {
-      // If no streams to select, return early
-      if (queryParams.isEmpty) {
-        return true;
+        // If no streams to select, return early
+        if (queryParams.isEmpty) {
+          return true;
+        }
+
+        // Use PUT request on /library/parts/{partId}
+        final response = await _dio.put(
+          '/library/parts/$partId',
+          queryParameters: queryParams,
+        );
+
+        return response.statusCode == 200;
       }
-
-      // Use PUT request on /library/parts/{partId}
-      final response = await _dio.put(
-        '/library/parts/$partId',
-        queryParameters: queryParams,
-      );
-
-      return response.statusCode == 200;
     } catch (e) {
       appLogger.e('Failed to select streams', error: e);
       return false;

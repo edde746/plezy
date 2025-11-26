@@ -96,6 +96,7 @@ class PlaybackInitializationService {
       // Return result with available versions for UI updates
       return PlaybackInitializationResult(
         availableVersions: playbackData.availableVersions,
+        mediaInfo: mediaInfo,
       );
     } catch (e) {
       if (e is PlaybackException) {
@@ -199,8 +200,12 @@ class PlaybackInitializationService {
 /// Result of playback initialization
 class PlaybackInitializationResult {
   final List<dynamic> availableVersions;
+  final PlexMediaInfo? mediaInfo;
 
-  PlaybackInitializationResult({required this.availableVersions});
+  PlaybackInitializationResult({
+    required this.availableVersions,
+    this.mediaInfo,
+  });
 }
 
 /// Exception thrown when playback initialization fails
