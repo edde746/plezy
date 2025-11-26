@@ -4,6 +4,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../utils/app_logger.dart';
 import '../utils/language_codes.dart';
+import '../models/plex_media_info.dart';
 
 /// Service for selecting and applying audio and subtitle tracks based on
 /// preferences, user profiles, and per-media settings.
@@ -11,11 +12,13 @@ class TrackSelectionService {
   final Player player;
   final PlexUserProfile? profileSettings;
   final PlexMetadata metadata;
+  PlexMediaInfo? mediaInfo;
 
   TrackSelectionService({
     required this.player,
     this.profileSettings,
     required this.metadata,
+    this.mediaInfo,
   });
 
   /// Generic track matching for audio and subtitle tracks
@@ -421,6 +424,111 @@ class TrackSelectionService {
     return variations.contains(trackBase);
   }
 
+  /// Find the audio track that Plex has pre-selected
+  /// Uses multiple attributes for matching:
+  /// 1. Language + Title match (most specific)
+  /// 2. Language + Selected flag match
+  /// 3. Language only match
+  AudioTrack? findPlexSelectedAudioTrack(List<AudioTrack> availableTracks) {
+    if (mediaInfo == null || availableTracks.isEmpty) return null;
+
+    // Find the Plex-selected audio track
+    final plexSelectedTrack = mediaInfo!.audioTracks.firstWhere(
+      (track) => track.selected,
+      orElse: () => mediaInfo!.audioTracks.first,
+    );
+
+    appLogger.d(
+      'Plex selected audio: ${plexSelectedTrack.displayTitle ?? plexSelectedTrack.languageCode} (language: ${plexSelectedTrack.languageCode})',
+    );
+
+    // Try to match by language + title
+    for (var track in availableTracks) {
+      final titleMatches =
+          track.title == plexSelectedTrack.displayTitle ||
+          track.title == plexSelectedTrack.title;
+      if (titleMatches && track.language == plexSelectedTrack.languageCode) {
+        appLogger.d('Matched Plex audio by language + title');
+        return track;
+      }
+    }
+
+    // Try to match by language + forced flag
+    for (var track in availableTracks) {
+      if (track.language == plexSelectedTrack.languageCode) {
+        appLogger.d('Matched Plex audio by language');
+        return track;
+      }
+    }
+
+    appLogger.d('Could not match Plex selected audio track');
+    return null;
+  }
+
+  /// Find the subtitle track that Plex has pre-selected
+  /// Uses multiple attributes for matching:
+  /// 1. Language + Title match (most specific)
+  /// 2. Language + Forced flag match
+  /// 3. Language only match
+  SubtitleTrack? findPlexSelectedSubtitleTrack(
+    List<SubtitleTrack> availableTracks,
+  ) {
+    if (mediaInfo == null) return null;
+    // Check if there's any selected subtitle
+    PlexSubtitleTrack? plexSelectedTrack;
+    // log each subtitle track for debugging
+    for (var track in mediaInfo!.subtitleTracks) {
+      appLogger.d(
+        'Plex subtitle track: ${track.displayTitle ?? "Track ${track.id}"} (language: ${track.languageCode}, selected: ${track.selected}, forced: ${track.forced})',
+      );
+    }
+    try {
+      plexSelectedTrack = mediaInfo!.subtitleTracks.firstWhere(
+        (track) => track.selected,
+      );
+    } catch (e) {
+      // No selected subtitle track found
+      appLogger.d('Plex has no subtitle selected');
+      return null;
+    }
+
+    appLogger.d(
+      'Plex selected subtitle: ${plexSelectedTrack.displayTitle ?? plexSelectedTrack.languageCode} (language: ${plexSelectedTrack.languageCode}, forced: ${plexSelectedTrack.forced})',
+    );
+
+    // Try to match by language + title
+    for (var track in availableTracks) {
+      final titleMatches =
+          track.title == plexSelectedTrack.displayTitle ||
+          track.title == plexSelectedTrack.title;
+      if (titleMatches && track.language == plexSelectedTrack.languageCode) {
+        appLogger.d('Matched Plex subtitle by language + title');
+        return track;
+      }
+    }
+
+    // Try to match by language + forced flag
+    for (var track in availableTracks) {
+      final trackIsForced = isForced(track);
+      if (track.language == plexSelectedTrack.languageCode &&
+          trackIsForced == plexSelectedTrack.forced) {
+        appLogger.d('Matched Plex subtitle by language + forced flag');
+        return track;
+      }
+    }
+
+    // Try to match by language only
+    for (var track in availableTracks) {
+      if (track.language == plexSelectedTrack.languageCode) {
+        appLogger.d('Matched Plex subtitle by language only');
+        return track;
+      }
+    }
+
+    appLogger.d('Could not match Plex selected subtitle track');
+    return null;
+  }
+
   /// Log available tracks for debugging
   void logAvailableTracks(
     List<AudioTrack> audioTracks,
@@ -468,6 +576,15 @@ class TrackSelectionService {
     } else {
       appLogger.d('Priority 1: No preferred track from navigation');
     }
+
+    // Priority 1.1: Try Plex selected track
+    appLogger.d('Priority 1.1: Checking Plex selected audio track');
+    trackToSelect = findPlexSelectedAudioTrack(availableTracks);
+    if (trackToSelect != null) {
+      appLogger.d('  Matched Plex selected audio track');
+      return trackToSelect;
+    }
+    appLogger.d('  No Plex selected audio track found');
 
     // Priority 2: If no preferred track matched, try per-media language preference
     if (metadata.audioLanguage != null) {
@@ -552,6 +669,15 @@ class TrackSelectionService {
     } else {
       appLogger.d('Priority 1: No preferred track from navigation');
     }
+
+    // Priority 1.1: Try Plex selected track
+    appLogger.d('Priority 1.1: Checking Plex selected subtitle track');
+    subtitleToSelect = findPlexSelectedSubtitleTrack(availableTracks);
+    if (subtitleToSelect != null) {
+      appLogger.d('  Matched Plex selected subtitle track');
+      return subtitleToSelect;
+    }
+    appLogger.d('  No Plex selected subtitle track found');
 
     // Priority 2: If no preferred match, try per-media language preference
     if (metadata.subtitleLanguage != null) {
