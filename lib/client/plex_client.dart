@@ -493,6 +493,9 @@ class PlexClient {
 
         return response.statusCode == 200;
       }
+      // Si allParts est false, retourner true ou false explicitement (selon la logique souhaitée)
+      // Ici, on retourne true par défaut si rien n'est fait
+      return true;
     } catch (e) {
       appLogger.e('Failed to select streams', error: e);
       return false;
