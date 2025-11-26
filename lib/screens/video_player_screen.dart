@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:os_media_controls/os_media_controls.dart';
@@ -11,6 +13,7 @@ import 'package:provider/provider.dart';
 import '../client/plex_client.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_media_info.dart';
 import '../providers/playback_state_provider.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
@@ -25,6 +28,14 @@ import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../i18n/strings.g.dart';
+
+Map<String, dynamic>? _isoLangTable;
+
+/// Charger la table en mémoire au démarrage du widget (dans initState par exemple)
+Future<void> loadIsoTable() async {
+  final data = await rootBundle.loadString('lib/data/iso_6369_codes.json');
+  _isoLangTable = json.decode(data) as Map<String, dynamic>;
+}
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -57,6 +68,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _showPlayNextDialog = false;
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
+  PlexMediaInfo? _currentMediaInfo;
   StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<String>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
@@ -89,6 +101,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void initState() {
     super.initState();
+
+    loadIsoTable();
 
     appLogger.d('VideoPlayerScreen initialized for: ${widget.metadata.title}');
     if (widget.preferredAudioTrack != null) {
@@ -210,6 +224,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // No action needed for these states
         break;
     }
+  }
+
+  /// Convertit un code à 2 lettres "fr", "nl", "ca" en code Plex à 3 lettres, ou renvoie null si inconnu
+  String? _iso6391ToPlex6392(String? code) {
+    if (code == null || code.isEmpty || _isoLangTable == null) return null;
+    // Prend la base "fr" de "fr-FR"
+    final lang = code.split('-').first.toLowerCase();
+    final langEntry = _isoLangTable![lang] as Map<String, dynamic>?;
+    return langEntry?['639-2'] as String?;
   }
 
   Future<void> _initializePlayer() async {
@@ -566,6 +589,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (mounted) {
         setState(() {
           _availableVersions = result.availableVersions.cast();
+          _currentMediaInfo = result.mediaInfo;
         });
 
         // Initialize video filter manager with player and available versions
@@ -757,7 +781,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     await _navigateToEpisode(_previousEpisode!);
   }
 
-  /// Handle audio track changes from the user - save as per-media preference if enabled
+  /// Handle audio track changes from the user - save both stream selection and language preference
   Future<void> _onAudioTrackChanged(AudioTrack track) async {
     final settings = await SettingsService.getInstance();
 
@@ -765,41 +789,101 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (!settings.getRememberTrackSelections()) {
       return;
     }
-
-    // Extract language code from the track
-    final languageCode = track.language;
-    if (languageCode == null || languageCode.isEmpty) {
-      appLogger.d('Audio track has no language code, not saving preference');
+    if (_currentMediaInfo == null) {
+      appLogger.w('No media info available, cannot save stream selection');
+      return;
+    }
+    final partId = _currentMediaInfo!.getPartId();
+    if (partId == null) {
+      appLogger.w('No part ID available, cannot save stream selection');
       return;
     }
 
-    // Determine which ratingKey to use
-    // For TV shows: use grandparentRatingKey (series level)
-    // For movies: use ratingKey (movie level)
+    final languageCode = track.language;
+    int? streamID;
+
+    // === Matching by attributes ===
+    PlexAudioTrack? matched;
+    final normalizedTrackLang = _iso6391ToPlex6392(track.language);
+
+    appLogger.d(
+      'Normalized media_kit language: ${track.language} -> $normalizedTrackLang',
+    );
+
+    for (final plexTrack in _currentMediaInfo!.audioTracks) {
+      final matchLang = plexTrack.languageCode == normalizedTrackLang;
+      final matchTitle = (track.title == null || track.title!.isEmpty)
+          ? true
+          : (plexTrack.displayTitle == track.title ||
+                plexTrack.title == track.title);
+
+      if (matchLang && matchTitle) {
+        matched = plexTrack;
+        appLogger.d('Matched audio by lang/title: streamID ${matched.id}');
+        break;
+      }
+    }
+
+    if (matched != null) {
+      streamID = matched.id;
+      appLogger.d('Matched audio by lang/title: streamID $streamID');
+    } else {
+      appLogger.w('Could not match audio track, using fallback index');
+      // Fallback - normally no offset for audio
+      try {
+        final trackIndex = int.parse(track.id);
+
+        if (trackIndex >= 0 &&
+            trackIndex < _currentMediaInfo!.audioTracks.length) {
+          streamID = _currentMediaInfo!.audioTracks[trackIndex].id;
+          appLogger.d(
+            'Using fallback: audio index $trackIndex -> streamID $streamID',
+          );
+        } else {
+          appLogger.e(
+            'Fallback index $trackIndex out of bounds (total: ${_currentMediaInfo!.audioTracks.length})',
+          );
+        }
+      } catch (e) {
+        appLogger.e('Failed to parse track index', error: e);
+      }
+    }
+
     final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
-    final targetRatingKey = isEpisode
+    final languagePrefRatingKey = isEpisode
         ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
         : widget.metadata.ratingKey;
 
-    appLogger.i(
-      'Saving audio language preference: $languageCode for ${isEpisode ? "series" : "movie"} (ratingKey: $targetRatingKey)',
-    );
-
     try {
       if (!mounted) return;
-      // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      await client.setMetadataPreferences(
-        targetRatingKey,
-        audioLanguage: languageCode,
-      );
-      appLogger.d('Successfully saved audio language preference');
+
+      final futures = <Future>[];
+
+      // 1. Language preference (series/movie level)
+      if (languageCode != null && languageCode.isNotEmpty) {
+        futures.add(
+          client.setMetadataPreferences(
+            languagePrefRatingKey,
+            audioLanguage: languageCode,
+          ),
+        );
+      }
+      // 2. Exact stream selection (part level)
+      if (streamID != null) {
+        futures.add(
+          client.selectStreams(partId, audioStreamID: streamID, allParts: true),
+        );
+      }
+
+      await Future.wait(futures);
+      appLogger.d('Successfully saved audio preferences (language + stream)');
     } catch (e) {
-      appLogger.e('Failed to save audio language preference', error: e);
+      appLogger.e('Failed to save audio preferences', error: e);
     }
   }
 
-  /// Handle subtitle track changes from the user - save as per-media preference if enabled
+  /// Handle subtitle track changes from the user - save both stream selection and language preference
   Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async {
     final settings = await SettingsService.getInstance();
 
@@ -808,42 +892,127 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       return;
     }
 
-    // Handle "Off" selection
+    if (_currentMediaInfo == null) {
+      appLogger.w('No media info available, cannot save stream selection');
+      return;
+    }
+
+    final partId = _currentMediaInfo!.getPartId();
+    if (partId == null) {
+      appLogger.w('No part ID available, cannot save stream selection');
+      return;
+    }
+
     String? languageCode;
+    int? streamID;
+
     if (track.id == 'no') {
       languageCode = 'none';
+      streamID = 0;
       appLogger.i('User turned subtitles off, saving preference');
     } else {
       languageCode = track.language;
-      if (languageCode == null || languageCode.isEmpty) {
+
+      // === Matching by attributes ===
+      PlexSubtitleTrack? matched;
+      final normalizedTrackLang = _iso6391ToPlex6392(track.language);
+
+      appLogger.d(
+        'Normalized media_kit language: ${track.language} -> $normalizedTrackLang',
+      );
+
+      for (final plexTrack in _currentMediaInfo!.subtitleTracks) {
+        final matchLang = plexTrack.languageCode == normalizedTrackLang;
+        final matchTitle = (track.title == null || track.title!.isEmpty)
+            ? true
+            : (plexTrack.displayTitle == track.title ||
+                  plexTrack.title == track.title);
+
+        appLogger.d('Comparing with streamID ${plexTrack.id}:');
         appLogger.d(
-          'Subtitle track has no language code, not saving preference',
+          '  matchLang: $matchLang (${plexTrack.languageCode} == $normalizedTrackLang)',
         );
-        return;
+        appLogger.d('  matchTitle: $matchTitle');
+
+        if (matchLang && matchTitle) {
+          matched = plexTrack;
+          appLogger.d('  ✅ MATCHED!');
+          break;
+        }
+      }
+
+      if (matched != null) {
+        streamID = matched.id;
+        appLogger.d('Matched subtitle by lang/title: streamID $streamID');
+      } else {
+        appLogger.w('Could not match subtitle track, using fallback index');
+        // Fallback with offset correction
+        try {
+          final trackIndex = int.parse(track.id);
+
+          // media kit has a "no" (off) at index 0, so real subtitles start at 1
+          // We need to subtract 1 to get the actual index in PlexMediaInfo
+          final plexIndex = trackIndex > 0 ? trackIndex - 1 : 0;
+
+          if (plexIndex >= 0 &&
+              plexIndex < _currentMediaInfo!.subtitleTracks.length) {
+            streamID = _currentMediaInfo!.subtitleTracks[plexIndex].id;
+            appLogger.d(
+              'Using fallback: media_kit index $trackIndex -> Plex index $plexIndex -> streamID $streamID',
+            );
+          } else {
+            appLogger.e(
+              'Fallback index $plexIndex out of bounds (total: ${_currentMediaInfo!.subtitleTracks.length})',
+            );
+          }
+        } catch (e) {
+          appLogger.e('Failed to parse track index', error: e);
+        }
       }
     }
 
-    // Determine which ratingKey to use
+    // Determine ratingKeys
     final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
-    final targetRatingKey = isEpisode
+    final languagePrefRatingKey = isEpisode
         ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
         : widget.metadata.ratingKey;
 
     appLogger.i(
-      'Saving subtitle language preference: $languageCode for ${isEpisode ? "series" : "movie"} (ratingKey: $targetRatingKey)',
+      'Saving subtitle preference: language=$languageCode (ratingKey: $languagePrefRatingKey), streamID=$streamID (partId: $partId)',
     );
 
     try {
       if (!mounted) return;
-      // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
-      await client.setMetadataPreferences(
-        targetRatingKey,
-        subtitleLanguage: languageCode,
+
+      final futures = <Future>[];
+
+      // 1. Save language preference at series/movie level
+      if (languageCode != null) {
+        futures.add(
+          client.setMetadataPreferences(
+            languagePrefRatingKey,
+            subtitleLanguage: languageCode,
+          ),
+        );
+      }
+      // 2. Save exact stream selection using part ID
+      if (streamID != null) {
+        futures.add(
+          client.selectStreams(
+            partId,
+            subtitleStreamID: streamID,
+            allParts: true,
+          ),
+        );
+      }
+
+      await Future.wait(futures);
+      appLogger.d(
+        'Successfully saved subtitle preferences (language + stream)',
       );
-      appLogger.d('Successfully saved subtitle language preference');
     } catch (e) {
-      appLogger.e('Failed to save subtitle language preference', error: e);
+      appLogger.e('Failed to save subtitle preferences', error: e);
     }
   }
 

@@ -3,13 +3,16 @@ class PlexMediaInfo {
   final List<PlexAudioTrack> audioTracks;
   final List<PlexSubtitleTrack> subtitleTracks;
   final List<PlexChapter> chapters;
+  final int? partId;
 
   PlexMediaInfo({
     required this.videoUrl,
     required this.audioTracks,
     required this.subtitleTracks,
     required this.chapters,
+    this.partId,
   });
+  int? getPartId() => partId;
 }
 
 /// Mixin for building track labels with a consistent pattern
