@@ -205,6 +205,17 @@ class MpvPlayerStub implements MpvPlayer {
   }
 
   // ============================================
+  // Visibility
+  // ============================================
+
+  @override
+  Future<bool> setVisible(bool visible) async {
+    _checkDisposed();
+    // No-op on unsupported platforms
+    return false;
+  }
+
+  // ============================================
   // Lifecycle
   // ============================================
 

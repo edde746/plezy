@@ -159,6 +159,18 @@ abstract class MpvPlayer {
   Future<void> setAudioPassthrough(bool enabled);
 
   // ============================================
+  // Visibility (macOS Metal Layer)
+  // ============================================
+
+  /// Show or hide the video rendering layer.
+  ///
+  /// On macOS, this controls the Metal layer visibility.
+  /// On other platforms, this may have no effect.
+  ///
+  /// Returns true if the operation was successful.
+  Future<bool> setVisible(bool visible);
+
+  // ============================================
   // Lifecycle
   // ============================================
 

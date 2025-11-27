@@ -79,6 +79,7 @@ class MpvPlayerCore: NSObject {
         contentView.layer?.addSublayer(layer)
 
         print("[MpvPlayerCore] Metal layer added, frame: \(layer.frame)")
+        printLayerHierarchy(contentView.layer)
 
         // Initialize MPV with this Metal layer
         guard setupMpv() else {
@@ -234,7 +235,17 @@ class MpvPlayerCore: NSObject {
     // MARK: - Visibility
 
     func setVisible(_ visible: Bool) {
-        metalLayer?.isHidden = !visible
+        guard let layer = metalLayer else { return }
+
+        if visible {
+            // Re-insert after background layer but before Flutter control views
+            layer.removeFromSuperlayer()
+            if let superlayer = window?.contentView?.layer {
+                superlayer.insertSublayer(layer, at: 1)
+            }
+        }
+
+        layer.isHidden = !visible
         print("[MpvPlayerCore] setVisible(\(visible))")
     }
 
@@ -433,5 +444,12 @@ class MpvPlayerCore: NSObject {
 
     deinit {
         dispose()
+    }
+
+    private func printLayerHierarchy(_ layer: CALayer?, depth: Int = 0) {
+        guard let layer = layer else { return }
+        let indent = String(repeating: "  ", count: depth)
+        print("\(indent)- \(type(of: layer)) frame=\(layer.frame) zPos=\(layer.zPosition) opacity=\(layer.opacity) hidden=\(layer.isHidden)")
+        layer.sublayers?.forEach { printLayerHierarchy($0, depth: depth + 1) }
     }
 }

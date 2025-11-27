@@ -14,7 +14,6 @@ import '../models/plex_metadata.dart';
 import '../providers/playback_state_provider.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
-import '../services/native_video_service.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/settings_service.dart';
@@ -77,10 +76,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   final EpisodeNavigationService _episodeNavigation =
       EpisodeNavigationService();
 
-  // Native video service for macOS Metal layer
-  NativeVideoService? _nativeVideoService;
-  bool _useNativeVideo = false;
-
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata(BuildContext context) {
     return context.getClientForServer(widget.metadata.serverId!);
@@ -133,27 +128,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Register app lifecycle observer
     WidgetsBinding.instance.addObserver(this);
 
-    // Initialize native video layer on macOS
-    if (Platform.isMacOS) {
-      _initNativeVideo();
-    }
-
     // Initialize player asynchronously with buffer size from settings
     _initializePlayer();
-  }
-
-  /// Initialize the native Metal video layer on macOS
-  Future<void> _initNativeVideo() async {
-    _nativeVideoService = NativeVideoService();
-    final initialized = await _nativeVideoService!.initialize();
-    if (initialized) {
-      await _nativeVideoService!.setVisible(true);
-      // Don't set _useNativeVideo = true yet - keep Flutter controls
-      // Native MPV will render behind the transparent Flutter layer
-      appLogger.d('Native video layer initialized and visible');
-    } else {
-      appLogger.w('Failed to initialize native video layer');
-    }
   }
 
   @override
@@ -552,28 +528,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
 
-      // Capture profile settings before async gap
-      final profileSettings = context.profileSettings;
-
       // Initialize playback service
       final playbackService = PlaybackInitializationService(
-        player: player!,
         client: client,
-        context: context,
       );
 
-      // Start playback and get available versions
-      // Skip Flutter player on macOS when native video is initialized
-      final useNativePlayer = _nativeVideoService?.isInitialized == true;
-      final result = await playbackService.startPlayback(
+      // Get playback data (video URL and available versions)
+      final result = await playbackService.getPlaybackData(
         metadata: widget.metadata,
         selectedMediaIndex: widget.selectedMediaIndex,
-        profileSettings: profileSettings,
-        preferredAudioTrack: widget.preferredAudioTrack,
-        preferredSubtitleTrack: widget.preferredSubtitleTrack,
-        preferredPlaybackRate: widget.preferredPlaybackRate,
-        useNativePlayer: useNativePlayer,
       );
+
+      // Open video through MpvPlayer
+      if (result.videoUrl != null) {
+        await player!.open(MpvMedia(result.videoUrl!));
+      }
 
       // Update available versions from the playback data
       if (mounted) {
@@ -590,11 +559,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           );
           // Update video filter once dimensions are available
           _videoFilterManager!.updateVideoFilter();
-        }
-
-        // Also open video in native MPV player on macOS (if initialized)
-        if (_nativeVideoService?.isInitialized == true && result.videoUrl != null) {
-          await _nativeVideoService?.open(result.videoUrl!);
         }
       }
 
@@ -633,10 +597,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   void dispose() {
     // Unregister app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
-
-    // Stop and dispose native video layer on macOS
-    _nativeVideoService?.stop();
-    _nativeVideoService?.dispose();
 
     // Dispose value notifiers
     _isBuffering.dispose();
@@ -979,9 +939,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           },
           child: Stack(
             children: [
-              // Video player (hidden when using native Metal layer on macOS)
-              if (!_useNativeVideo)
-                Center(
+              // Video player
+              Center(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       // Update player size when layout changes
@@ -1018,22 +977,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                         ),
                       );
                     },
-                  ),
-                ),
-              // Controls overlay when using native Metal layer on macOS
-              if (_useNativeVideo)
-                Positioned.fill(
-                  child: plexVideoControlsBuilder(
-                    player!,
-                    widget.metadata,
-                    onNext: _nextEpisode != null ? _playNext : null,
-                    onPrevious: _previousEpisode != null ? _playPrevious : null,
-                    availableVersions: _availableVersions,
-                    selectedMediaIndex: widget.selectedMediaIndex,
-                    boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
-                    onCycleBoxFitMode: _cycleBoxFitMode,
-                    onAudioTrackChanged: _onAudioTrackChanged,
-                    onSubtitleTrackChanged: _onSubtitleTrackChanged,
                   ),
                 ),
               // Play Next Dialog

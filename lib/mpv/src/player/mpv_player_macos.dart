@@ -52,6 +52,7 @@ class MpvPlayerMacOS implements MpvPlayer {
   StreamSubscription? _eventSubscription;
   bool _disposed = false;
   bool _initialized = false;
+  bool _isVisible = false;
 
   MpvPlayerMacOS() {
     _streams = MpvPlayerStreams(
@@ -296,6 +297,7 @@ class MpvPlayerMacOS implements MpvPlayer {
 
     // Show the video layer
     await _methodChannel.invokeMethod('setVisible', {'visible': true});
+    _isVisible = true;
 
     await _methodChannel.invokeMethod('open', {
       'url': media.uri,
@@ -330,6 +332,7 @@ class MpvPlayerMacOS implements MpvPlayer {
     _checkDisposed();
     await _methodChannel.invokeMethod('stop');
     await _methodChannel.invokeMethod('setVisible', {'visible': false});
+    _isVisible = false;
   }
 
   @override
@@ -434,6 +437,24 @@ class MpvPlayerMacOS implements MpvPlayer {
     } else {
       await setProperty('audio-spdif', '');
       await setProperty('audio-exclusive', 'no');
+    }
+  }
+
+  // ============================================
+  // Visibility
+  // ============================================
+
+  @override
+  Future<bool> setVisible(bool visible) async {
+    _checkDisposed();
+
+    try {
+      await _methodChannel.invokeMethod('setVisible', {'visible': visible});
+      _isVisible = visible;
+      return true;
+    } catch (e) {
+      _errorController.add('Failed to set visibility: $e');
+      return false;
     }
   }
 
