@@ -462,6 +462,46 @@ class PlexClient {
     }
   }
 
+  /// Select specific audio and subtitle streams for playback
+  /// This updates which streams are "selected" in the media metadata
+  /// Uses the part ID from media info for accurate stream selection
+  Future<bool> selectStreams(
+    int partId, {
+    int? audioStreamID,
+    int? subtitleStreamID,
+    bool allParts = true,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (audioStreamID != null) {
+        queryParams['audioStreamID'] = audioStreamID;
+      }
+      if (subtitleStreamID != null) {
+        queryParams['subtitleStreamID'] = subtitleStreamID;
+      }
+      if (allParts) {
+        // If no streams to select, return early
+        if (queryParams.isEmpty) {
+          return true;
+        }
+
+        // Use PUT request on /library/parts/{partId}
+        final response = await _dio.put(
+          '/library/parts/$partId',
+          queryParameters: queryParams,
+        );
+
+        return response.statusCode == 200;
+      }
+      // Si allParts est false, retourner true ou false explicitement (selon la logique souhaitée)
+      // Ici, on retourne true par défaut si rien n'est fait
+      return true;
+    } catch (e) {
+      appLogger.e('Failed to select streams', error: e);
+      return false;
+    }
+  }
+
   /// Search across all libraries using the hub search endpoint
   /// Only returns movies and shows, filtering out seasons and episodes
   Future<List<PlexMetadata>> search(String query, {int limit = 10}) async {
@@ -923,6 +963,7 @@ class PlexClient {
             audioTracks: audioTracks,
             subtitleTracks: subtitleTracks,
             chapters: chapters,
+            partId: part['id'] as int?,
           );
         }
       }
