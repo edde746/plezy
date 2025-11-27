@@ -283,6 +283,8 @@ class MpvPlayerMacOS implements MpvPlayer {
       await _observeProperty('track-list', 'node');
       await _observeProperty('eof-reached', 'flag');
       await _observeProperty('volume', 'double');
+      await _observeProperty('aid', 'string');
+      await _observeProperty('sid', 'string');
     } catch (e) {
       _errorController.add('Initialization failed: $e');
       rethrow;
