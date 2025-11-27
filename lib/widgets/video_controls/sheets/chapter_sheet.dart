@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+
+import '../../../mpv/mpv.dart';
 import '../../../client/plex_client.dart';
 import '../../../models/plex_media_info.dart';
 import '../../../utils/duration_formatter.dart';
@@ -8,7 +9,7 @@ import 'base_video_control_sheet.dart';
 
 /// Bottom sheet for selecting chapters
 class ChapterSheet extends StatelessWidget {
-  final Player player;
+  final MpvPlayer player;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
   final String? serverId; // Server ID for the metadata these chapters belong to
@@ -23,7 +24,7 @@ class ChapterSheet extends StatelessWidget {
 
   static void show(
     BuildContext context,
-    Player player,
+    MpvPlayer player,
     List<PlexChapter> chapters,
     bool chaptersLoaded, {
     String? serverId,
@@ -47,7 +48,7 @@ class ChapterSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Duration>(
-      stream: player.stream.position,
+      stream: player.streams.position,
       initialData: player.state.position,
       builder: (context, positionSnapshot) {
         final currentPosition = positionSnapshot.data ?? Duration.zero;

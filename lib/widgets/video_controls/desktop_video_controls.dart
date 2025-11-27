@@ -1,8 +1,8 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
 
+import '../../mpv/mpv.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_metadata.dart';
 import '../../services/fullscreen_state_manager.dart';
@@ -14,7 +14,7 @@ import 'widgets/timeline_slider.dart';
 
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatelessWidget {
-  final Player player;
+  final MpvPlayer player;
   final PlexMetadata metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
@@ -158,11 +158,11 @@ class DesktopVideoControls extends StatelessWidget {
         children: [
           // Row 1: Timeline with time indicators
           StreamBuilder<Duration>(
-            stream: player.stream.position,
+            stream: player.streams.position,
             initialData: player.state.position,
             builder: (context, positionSnapshot) {
               return StreamBuilder<Duration>(
-                stream: player.stream.duration,
+                stream: player.streams.duration,
                 initialData: player.state.duration,
                 builder: (context, durationSnapshot) {
                   final position = positionSnapshot.data ?? Duration.zero;
@@ -238,7 +238,7 @@ class DesktopVideoControls extends StatelessWidget {
               ),
               // Play/Pause
               StreamBuilder<bool>(
-                stream: player.stream.playing,
+                stream: player.streams.playing,
                 initialData: player.state.playing,
                 builder: (context, snapshot) {
                   final isPlaying = snapshot.data ?? false;

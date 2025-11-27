@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+
+import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
 import 'track_selection_sheet.dart';
 
@@ -7,10 +8,10 @@ import 'track_selection_sheet.dart';
 class AudioTrackSheet {
   static void show(
     BuildContext context,
-    Player player, {
-    Function(AudioTrack)? onTrackChanged,
+    MpvPlayer player, {
+    Function(MpvAudioTrack)? onTrackChanged,
   }) {
-    TrackSelectionSheet.show<AudioTrack>(
+    TrackSelectionSheet.show<MpvAudioTrack>(
       context: context,
       player: player,
       title: t.videoControls.audioLabel,
@@ -28,12 +29,12 @@ class AudioTrackSheet {
         if (audioTrack.codec != null && audioTrack.codec!.isNotEmpty) {
           parts.add(audioTrack.codec!.toUpperCase());
         }
-        if (audioTrack.channelscount != null) {
-          parts.add('${audioTrack.channelscount}ch');
+        if (audioTrack.channelsCount != null) {
+          parts.add('${audioTrack.channelsCount}ch');
         }
         return parts.isEmpty ? 'Audio Track ${index + 1}' : parts.join(' · ');
       },
-      setTrack: (track) => player.setAudioTrack(track),
+      setTrack: (track) => player.selectAudioTrack(track),
       onTrackChanged: onTrackChanged,
     );
   }

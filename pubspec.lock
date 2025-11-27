@@ -600,78 +600,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.11.1"
-  media_kit:
-    dependency: "direct main"
-    description:
-      path: media_kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      resolved-ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      url: "https://github.com/edde746/media-kit"
-    source: git
-    version: "1.2.1"
-  media_kit_libs_android_video:
-    dependency: "direct overridden"
-    description:
-      path: "libs/android/media_kit_libs_android_video"
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      resolved-ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      url: "https://github.com/edde746/media-kit"
-    source: git
-    version: "1.3.9"
-  media_kit_libs_ios_video:
-    dependency: "direct overridden"
-    description:
-      path: "libs/ios/media_kit_libs_ios_video"
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      resolved-ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      url: "https://github.com/edde746/media-kit"
-    source: git
-    version: "1.1.4"
-  media_kit_libs_linux:
-    dependency: transitive
-    description:
-      path: "libs/linux/media_kit_libs_linux"
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      resolved-ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      url: "https://github.com/edde746/media-kit"
-    source: git
-    version: "1.2.1"
-  media_kit_libs_macos_video:
-    dependency: "direct overridden"
-    description:
-      path: "libs/macos/media_kit_libs_macos_video"
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      resolved-ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      url: "https://github.com/edde746/media-kit"
-    source: git
-    version: "1.1.5"
-  media_kit_libs_video:
-    dependency: "direct main"
-    description:
-      path: "libs/universal/media_kit_libs_video"
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      resolved-ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      url: "https://github.com/edde746/media-kit"
-    source: git
-    version: "1.0.7"
-  media_kit_libs_windows_video:
-    dependency: transitive
-    description:
-      path: "libs/windows/media_kit_libs_windows_video"
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      resolved-ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      url: "https://github.com/edde746/media-kit"
-    source: git
-    version: "1.0.12"
-  media_kit_video:
-    dependency: "direct main"
-    description:
-      path: media_kit_video
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      resolved-ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      url: "https://github.com/edde746/media-kit"
-    source: git
-    version: "1.3.1"
   meta:
     dependency: transitive
     description:
@@ -913,30 +841,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
-  safe_local_storage:
-    dependency: transitive
-    description:
-      name: safe_local_storage
-      sha256: e9a21b6fec7a8aa62cc2585ff4c1b127df42f3185adbd2aca66b47abe2e80236
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.1"
-  screen_brightness_android:
-    dependency: transitive
-    description:
-      name: screen_brightness_android
-      sha256: d34f5321abd03bc3474f4c381f53d189117eba0b039eac1916aa92cca5fd0a96
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.3"
-  screen_brightness_platform_interface:
-    dependency: transitive
-    description:
-      name: screen_brightness_platform_interface
-      sha256: "737bd47b57746bc4291cab1b8a5843ee881af499514881b0247ec77447ee769c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
   screen_retriever:
     dependency: transitive
     description:
@@ -1222,22 +1126,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.3"
-  universal_platform:
-    dependency: transitive
-    description:
-      name: universal_platform
-      sha256: "64e16458a0ea9b99260ceb5467a214c1f298d647c659af1bff6d3bf82536b1ec"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
-  uri_parser:
-    dependency: transitive
-    description:
-      name: uri_parser
-      sha256: ff4d2c720aca3f4f7d5445e23b11b2d15ef8af5ddce5164643f38ff962dcb270
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
   url_launcher:
     dependency: "direct main"
     description:
@@ -1326,30 +1214,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "15.0.2"
-  volume_controller:
-    dependency: transitive
-    description:
-      name: volume_controller
-      sha256: d75039e69c0d90e7810bfd47e3eedf29ff8543ea7a10392792e81f9bded7edf5
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.4.0"
-  wakelock_plus:
-    dependency: transitive
-    description:
-      name: wakelock_plus
-      sha256: "9296d40c9adbedaba95d1e704f4e0b434be446e2792948d0e4aa977048104228"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.4.0"
-  wakelock_plus_platform_interface:
-    dependency: transitive
-    description:
-      name: wakelock_plus_platform_interface
-      sha256: "036deb14cd62f558ca3b73006d52ce049fabcdcb2eddfe0bf0fe4e8a943b5cf2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.3.0"
   watcher:
     dependency: transitive
     description:

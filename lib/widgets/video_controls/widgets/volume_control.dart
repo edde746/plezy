@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
 
+import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../i18n/strings.g.dart';
 
 /// A volume control widget that displays a mute/unmute button and volume slider.
 ///
-/// This widget integrates with [Player] to control volume and persists
+/// This widget integrates with [MpvPlayer] to control volume and persists
 /// the volume setting using [SettingsService].
 class VolumeControl extends StatelessWidget {
-  final Player player;
+  final MpvPlayer player;
 
   const VolumeControl({super.key, required this.player});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<double>(
-      stream: player.stream.volume,
+      stream: player.streams.volume,
       initialData: player.state.volume,
       builder: (context, snapshot) {
         final volume = snapshot.data ?? 100.0;

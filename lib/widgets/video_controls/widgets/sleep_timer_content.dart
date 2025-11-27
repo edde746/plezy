@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+
+import '../../../mpv/mpv.dart';
 import '../../../services/sleep_timer_service.dart';
 import 'sleep_timer_active_status.dart';
 import 'sleep_timer_duration_list.dart';
 
 /// Shared UI for sleep timer selection and active status.
 class SleepTimerContent extends StatelessWidget {
-  final Player player;
+  final MpvPlayer player;
   final SleepTimerService sleepTimer;
   final int? defaultDuration;
   final VoidCallback? onCancel;

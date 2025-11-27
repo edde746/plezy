@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
 import 'package:macos_window_utils/macos_window_utils.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
+
+import '../../mpv/mpv.dart';
 
 import '../../client/plex_client.dart';
 import '../../models/plex_media_info.dart';
@@ -27,7 +28,7 @@ import 'desktop_video_controls.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
-  Player player,
+  MpvPlayer player,
   PlexMetadata metadata, {
   VoidCallback? onNext,
   VoidCallback? onPrevious,
@@ -35,8 +36,8 @@ Widget plexVideoControlsBuilder(
   int? selectedMediaIndex,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
-  Function(AudioTrack)? onAudioTrackChanged,
-  Function(SubtitleTrack)? onSubtitleTrackChanged,
+  Function(MpvAudioTrack)? onAudioTrackChanged,
+  Function(MpvSubtitleTrack)? onSubtitleTrackChanged,
 }) {
   return PlexVideoControls(
     player: player,
@@ -53,7 +54,7 @@ Widget plexVideoControlsBuilder(
 }
 
 class PlexVideoControls extends StatefulWidget {
-  final Player player;
+  final MpvPlayer player;
   final PlexMetadata metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
@@ -61,8 +62,8 @@ class PlexVideoControls extends StatefulWidget {
   final int selectedMediaIndex;
   final int boxFitMode;
   final VoidCallback? onCycleBoxFitMode;
-  final Function(AudioTrack)? onAudioTrackChanged;
-  final Function(SubtitleTrack)? onSubtitleTrackChanged;
+  final Function(MpvAudioTrack)? onAudioTrackChanged;
+  final Function(MpvSubtitleTrack)? onSubtitleTrackChanged;
 
   const PlexVideoControls({
     super.key,
@@ -145,7 +146,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   void _listenToPosition() {
-    widget.player.stream.position.listen((position) {
+    widget.player.streams.position.listen((position) {
       if (_markers.isEmpty || !_markersLoaded) {
         return;
       }
@@ -170,7 +171,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   /// Listen to playback state changes to manage auto-hide timer on iOS/mobile
   void _listenToPlayingState() {
-    _playingSubscription = widget.player.stream.playing.listen((isPlaying) {
+    _playingSubscription = widget.player.streams.playing.listen((isPlaying) {
       if (isPlaying && _showControls) {
         _startHideTimer();
       } else if (!isPlaying) {

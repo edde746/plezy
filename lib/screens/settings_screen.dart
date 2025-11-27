@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
@@ -16,6 +18,7 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/hotkey_recorder_widget.dart';
 import 'about_screen.dart';
 import 'logs_screen.dart';
+import 'metal_test_screen.dart';
 import 'subtitle_styling_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -374,6 +377,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showResetSettingsDialog(),
           ),
+          // Metal layer test (macOS only)
+          if (Platform.isMacOS)
+            ListTile(
+              leading: const Icon(Icons.layers),
+              title: const Text('Metal Layer Test'),
+              subtitle: const Text('Test native Metal rendering behind Flutter'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MetalTestScreen(),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );

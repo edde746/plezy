@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+
+import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/duration_formatter.dart';
 
 /// Reusable widget for adjusting sync offsets (audio or subtitle)
 class SyncOffsetControl extends StatefulWidget {
-  final Player player;
+  final MpvPlayer player;
   final String propertyName; // 'audio-delay' or 'sub-delay'
   final int initialOffset;
   final String labelText; // 'Audio' or 'Subtitles'
@@ -44,11 +45,11 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   }
 
   Future<void> _applyOffset(double offsetMs) async {
-    // Convert milliseconds to seconds for media_kit
+    // Convert milliseconds to seconds for mpv
     final offsetSeconds = offsetMs / 1000.0;
 
     // Apply to player using setProperty
-    await (widget.player.platform as dynamic).setProperty(
+    await widget.player.setProperty(
       widget.propertyName,
       offsetSeconds.toString(),
     );

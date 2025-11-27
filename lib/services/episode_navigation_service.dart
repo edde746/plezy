@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:provider/provider.dart';
 
+import '../mpv/mpv.dart';
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/playback_state_provider.dart';
@@ -77,14 +77,14 @@ class EpisodeNavigationService {
   Future<void> navigateToEpisode({
     required BuildContext context,
     required PlexMetadata episode,
-    required Player? player,
+    required MpvPlayer? player,
     bool usePushReplacement = true,
   }) async {
     if (!context.mounted) return;
 
     // Capture current player state before navigation
-    AudioTrack? currentAudioTrack;
-    SubtitleTrack? currentSubtitleTrack;
+    MpvAudioTrack? currentAudioTrack;
+    MpvSubtitleTrack? currentSubtitleTrack;
     double? currentPlaybackRate;
 
     if (player != null) {
@@ -93,7 +93,7 @@ class EpisodeNavigationService {
       currentPlaybackRate = player.state.rate;
 
       appLogger.d(
-        'Navigating to episode with preserved settings - Audio: ${currentAudioTrack.id}, Subtitle: ${currentSubtitleTrack.id}, Rate: ${currentPlaybackRate}x',
+        'Navigating to episode with preserved settings - Audio: ${currentAudioTrack?.id}, Subtitle: ${currentSubtitleTrack?.id}, Rate: ${currentPlaybackRate}x',
       );
     }
 

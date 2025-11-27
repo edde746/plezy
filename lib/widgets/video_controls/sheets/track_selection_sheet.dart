@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+
+import '../../../mpv/mpv.dart';
 import 'base_video_control_sheet.dart';
 
 /// Generic track selection sheet for audio and subtitle tracks
 ///
-/// Type parameter [T] should be either [AudioTrack] or [SubtitleTrack]
+/// Type parameter [T] should be either [MpvAudioTrack] or [MpvSubtitleTrack]
 class TrackSelectionSheet<T> extends StatelessWidget {
-  final Player player;
+  final MpvPlayer player;
   final String title;
   final IconData icon;
-  final List<T> Function(Tracks?) extractTracks;
-  final T Function(Track) getCurrentTrack;
+  final List<T> Function(MpvTracks?) extractTracks;
+  final T? Function(MpvTrack) getCurrentTrack;
   final String Function(T track, int index) buildLabel;
   final void Function(T track) setTrack;
   final Function(T)? onTrackChanged;
@@ -35,11 +36,11 @@ class TrackSelectionSheet<T> extends StatelessWidget {
 
   static void show<T>({
     required BuildContext context,
-    required Player player,
+    required MpvPlayer player,
     required String title,
     required IconData icon,
-    required List<T> Function(Tracks?) extractTracks,
-    required T Function(Track) getCurrentTrack,
+    required List<T> Function(MpvTracks?) extractTracks,
+    required T? Function(MpvTrack) getCurrentTrack,
     required String Function(T track, int index) buildLabel,
     required void Function(T track) setTrack,
     Function(T)? onTrackChanged,
@@ -66,9 +67,9 @@ class TrackSelectionSheet<T> extends StatelessWidget {
   }
 
   String _getEmptyMessage() {
-    if (T == SubtitleTrack) {
+    if (T == MpvSubtitleTrack) {
       return 'No subtitles available';
-    } else if (T == AudioTrack) {
+    } else if (T == MpvAudioTrack) {
       return 'No audio tracks available';
     }
     return 'No tracks available';
@@ -76,16 +77,16 @@ class TrackSelectionSheet<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Tracks>(
-      stream: player.stream.tracks,
+    return StreamBuilder<MpvTracks>(
+      stream: player.streams.tracks,
       initialData: player.state.tracks,
       builder: (context, snapshot) {
         final tracks = snapshot.data;
         final availableTracks = extractTracks(tracks).where((track) {
           // Filter out 'auto' and 'no' tracks from the list
-          if (track is AudioTrack) {
+          if (track is MpvAudioTrack) {
             return track.id != 'auto' && track.id != 'no';
-          } else if (track is SubtitleTrack) {
+          } else if (track is MpvSubtitleTrack) {
             return track.id != 'auto' && track.id != 'no';
           }
           return true;
@@ -101,17 +102,17 @@ class TrackSelectionSheet<T> extends StatelessWidget {
                     style: const TextStyle(color: Colors.white70),
                   ),
                 )
-              : StreamBuilder<Track>(
-                  stream: player.stream.track,
+              : StreamBuilder<MpvTrack>(
+                  stream: player.streams.track,
                   initialData: player.state.track,
                   builder: (context, selectedSnapshot) {
                     final currentTrack =
                         selectedSnapshot.data ?? player.state.track;
                     final selectedTrack = getCurrentTrack(currentTrack);
 
-                    // Determine if "Off" is selected
-                    final isOffSelected =
-                        isOffTrack?.call(selectedTrack) ?? false;
+                    // Determine if "Off" is selected (null or explicit off)
+                    final isOffSelected = selectedTrack == null ||
+                        (isOffTrack?.call(selectedTrack) ?? false);
 
                     final itemCount =
                         availableTracks.length + (showOffOption ? 1 : 0);
@@ -150,18 +151,20 @@ class TrackSelectionSheet<T> extends StatelessWidget {
 
                         // Check if this track is selected
                         String trackId;
-                        if (track is AudioTrack) {
+                        if (track is MpvAudioTrack) {
                           trackId = track.id;
-                        } else if (track is SubtitleTrack) {
+                        } else if (track is MpvSubtitleTrack) {
                           trackId = track.id;
                         } else {
                           trackId = '';
                         }
 
                         String selectedId;
-                        if (selectedTrack is AudioTrack) {
+                        if (selectedTrack == null) {
+                          selectedId = '';
+                        } else if (selectedTrack is MpvAudioTrack) {
                           selectedId = selectedTrack.id;
-                        } else if (selectedTrack is SubtitleTrack) {
+                        } else if (selectedTrack is MpvSubtitleTrack) {
                           selectedId = selectedTrack.id;
                         } else {
                           selectedId = '';

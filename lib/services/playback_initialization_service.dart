@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
 
+import '../mpv/mpv.dart';
 import '../client/plex_client.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_metadata.dart';
@@ -20,7 +20,7 @@ import 'track_selection_service.dart';
 /// 6. Seeking to resume position
 /// 7. Starting playback
 class PlaybackInitializationService {
-  final Player player;
+  final MpvPlayer player;
   final PlexClient client;
   final BuildContext context;
 
@@ -37,8 +37,8 @@ class PlaybackInitializationService {
     required PlexMetadata metadata,
     required int selectedMediaIndex,
     required PlexUserProfile? profileSettings,
-    AudioTrack? preferredAudioTrack,
-    SubtitleTrack? preferredSubtitleTrack,
+    MpvAudioTrack? preferredAudioTrack,
+    MpvSubtitleTrack? preferredSubtitleTrack,
     double? preferredPlaybackRate,
   }) async {
     try {
@@ -55,11 +55,11 @@ class PlaybackInitializationService {
       final videoUrl = playbackData.videoUrl!;
       final mediaInfo = playbackData.mediaInfo;
 
-      // Build list of external subtitle tracks for media_kit
+      // Build list of external subtitle tracks for mpv
       final externalSubtitles = _buildExternalSubtitles(mediaInfo);
 
       // Open video (without external subtitles in Media constructor)
-      await player.open(Media(videoUrl), play: false);
+      await player.open(MpvMedia(videoUrl), play: false);
 
       // Wait for media to be ready (duration > 0)
       await _waitForMediaReady();
@@ -106,8 +106,8 @@ class PlaybackInitializationService {
   }
 
   /// Build list of external subtitle tracks from media info
-  List<SubtitleTrack> _buildExternalSubtitles(PlexMediaInfo? mediaInfo) {
-    final externalSubtitles = <SubtitleTrack>[];
+  List<MpvSubtitleTrack> _buildExternalSubtitles(PlexMediaInfo? mediaInfo) {
+    final externalSubtitles = <MpvSubtitleTrack>[];
 
     if (mediaInfo == null) {
       return externalSubtitles;
@@ -136,7 +136,7 @@ class PlaybackInitializationService {
         if (url == null) continue;
 
         externalSubtitles.add(
-          SubtitleTrack.uri(
+          MpvSubtitleTrack.uri(
             url,
             title:
                 plexTrack.displayTitle ??
@@ -168,20 +168,18 @@ class PlaybackInitializationService {
 
   /// Add external subtitle tracks to the player without auto-selecting them
   Future<void> _addExternalSubtitles(
-    List<SubtitleTrack> externalSubtitles,
+    List<MpvSubtitleTrack> externalSubtitles,
   ) async {
     appLogger.d(
       'Adding ${externalSubtitles.length} external subtitle(s) to player',
     );
 
-    final nativePlayer = player.platform as dynamic;
-
     for (final subtitleTrack in externalSubtitles) {
       try {
         // Use mpv's sub-add with 'auto' flag to avoid auto-selection
-        await nativePlayer.command([
+        await player.command([
           'sub-add',
-          subtitleTrack.id,
+          subtitleTrack.uri ?? subtitleTrack.id,
           'auto',
           subtitleTrack.title ?? 'external',
           subtitleTrack.language ?? 'auto',

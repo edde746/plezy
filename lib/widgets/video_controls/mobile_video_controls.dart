@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
 
+import '../../mpv/mpv.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/desktop_window_padding.dart';
@@ -18,7 +18,7 @@ import 'widgets/timeline_slider.dart';
 /// - Center: Large playback controls (seek backward, play/pause, seek forward)
 /// - Bottom bar: Timeline slider with chapter markers and timestamps
 class MobileVideoControls extends StatelessWidget {
-  final Player player;
+  final MpvPlayer player;
   final PlexMetadata metadata;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
@@ -114,7 +114,7 @@ class MobileVideoControls extends StatelessWidget {
 
   Widget _buildPlaybackControls(BuildContext context) {
     return StreamBuilder<bool>(
-      stream: player.stream.playing,
+      stream: player.streams.playing,
       initialData: player.state.playing,
       builder: (context, snapshot) {
         final isPlaying = snapshot.data ?? false;
@@ -214,11 +214,11 @@ class MobileVideoControls extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: StreamBuilder<Duration>(
-          stream: player.stream.position,
+          stream: player.streams.position,
           initialData: player.state.position,
           builder: (context, positionSnapshot) {
             return StreamBuilder<Duration>(
-              stream: player.stream.duration,
+              stream: player.streams.duration,
               initialData: player.state.duration,
               builder: (context, durationSnapshot) {
                 final position = positionSnapshot.data ?? Duration.zero;
