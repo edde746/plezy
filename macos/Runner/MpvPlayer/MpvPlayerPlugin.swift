@@ -58,44 +58,14 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         case "dispose":
             handleDispose(result: result)
 
-        case "open":
-            handleOpen(call: call, result: result)
-
-        case "play":
-            playerCore?.play()
-            result(nil)
-
-        case "pause":
-            playerCore?.pause()
-            result(nil)
-
-        case "stop":
-            playerCore?.stop()
-            result(nil)
-
-        case "seek":
-            handleSeek(call: call, result: result)
-
-        case "setVolume":
-            handleSetVolume(call: call, result: result)
-
-        case "setRate":
-            handleSetRate(call: call, result: result)
-
-        case "selectAudioTrack":
-            handleSelectAudioTrack(call: call, result: result)
-
-        case "selectSubtitleTrack":
-            handleSelectSubtitleTrack(call: call, result: result)
-
-        case "addSubtitleTrack":
-            handleAddSubtitleTrack(call: call, result: result)
-
         case "setProperty":
             handleSetProperty(call: call, result: result)
 
         case "getProperty":
             handleGetProperty(call: call, result: result)
+
+        case "observeProperty":
+            handleObserveProperty(call: call, result: result)
 
         case "command":
             handleCommand(call: call, result: result)
@@ -163,89 +133,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         }
     }
 
-    private func handleOpen(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let url = args["url"] as? String else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'url' argument", details: nil))
-            return
-        }
-
-        let play = args["play"] as? Bool ?? true
-
-        playerCore?.loadFile(url, play: play)
-        result(nil)
-    }
-
-    private func handleSeek(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let position = args["position"] as? Double else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'position' argument", details: nil))
-            return
-        }
-
-        playerCore?.seek(to: position)
-        result(nil)
-    }
-
-    private func handleSetVolume(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let volume = args["volume"] as? Double else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'volume' argument", details: nil))
-            return
-        }
-
-        playerCore?.setVolume(volume)
-        result(nil)
-    }
-
-    private func handleSetRate(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let rate = args["rate"] as? Double else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'rate' argument", details: nil))
-            return
-        }
-
-        playerCore?.setRate(rate)
-        result(nil)
-    }
-
-    private func handleSelectAudioTrack(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let id = args["id"] as? String else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'id' argument", details: nil))
-            return
-        }
-
-        playerCore?.setAudioTrack(id)
-        result(nil)
-    }
-
-    private func handleSelectSubtitleTrack(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let id = args["id"] as? String else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'id' argument", details: nil))
-            return
-        }
-
-        playerCore?.setSubtitleTrack(id)
-        result(nil)
-    }
-
-    private func handleAddSubtitleTrack(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-              let url = args["url"] as? String else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'url' argument", details: nil))
-            return
-        }
-
-        let title = args["title"] as? String
-        let language = args["language"] as? String
-        let select = args["select"] as? Bool ?? false
-
-        playerCore?.addSubtitleTrack(url: url, title: title, language: language, select: select)
-        result(nil)
-    }
-
     private func handleSetProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard let args = call.arguments as? [String: Any],
               let name = args["name"] as? String,
@@ -267,6 +154,18 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
 
         let value = playerCore?.getProperty(name)
         result(value)
+    }
+
+    private func handleObserveProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? [String: Any],
+              let name = args["name"] as? String,
+              let format = args["format"] as? String else {
+            result(FlutterError(code: "INVALID_ARGS", message: "Missing 'name' or 'format' argument", details: nil))
+            return
+        }
+
+        playerCore?.observeProperty(name, format: format)
+        result(nil)
     }
 
     private func handleCommand(call: FlutterMethodCall, result: @escaping FlutterResult) {

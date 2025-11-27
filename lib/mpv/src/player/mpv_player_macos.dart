@@ -274,10 +274,26 @@ class MpvPlayerMacOS implements MpvPlayer {
       if (!_initialized) {
         throw Exception('Failed to initialize MPV player');
       }
+
+      // Subscribe to MPV properties
+      await _observeProperty('time-pos', 'double');
+      await _observeProperty('duration', 'double');
+      await _observeProperty('pause', 'flag');
+      await _observeProperty('paused-for-cache', 'flag');
+      await _observeProperty('track-list', 'node');
+      await _observeProperty('eof-reached', 'flag');
+      await _observeProperty('volume', 'double');
     } catch (e) {
       _errorController.add('Initialization failed: $e');
       rethrow;
     }
+  }
+
+  Future<void> _observeProperty(String name, String format) async {
+    await _methodChannel.invokeMethod('observeProperty', {
+      'name': name,
+      'format': format,
+    });
   }
 
   void _checkDisposed() {
@@ -299,22 +315,22 @@ class MpvPlayerMacOS implements MpvPlayer {
     await _methodChannel.invokeMethod('setVisible', {'visible': true});
     _isVisible = true;
 
-    await _methodChannel.invokeMethod('open', {
-      'url': media.uri,
-      'play': play,
-    });
+    await command(['loadfile', media.uri, 'replace']);
+    if (!play) {
+      await setProperty('pause', 'yes');
+    }
   }
 
   @override
   Future<void> play() async {
     _checkDisposed();
-    await _methodChannel.invokeMethod('play');
+    await setProperty('pause', 'no');
   }
 
   @override
   Future<void> pause() async {
     _checkDisposed();
-    await _methodChannel.invokeMethod('pause');
+    await setProperty('pause', 'yes');
   }
 
   @override
@@ -330,7 +346,7 @@ class MpvPlayerMacOS implements MpvPlayer {
   @override
   Future<void> stop() async {
     _checkDisposed();
-    await _methodChannel.invokeMethod('stop');
+    await command(['stop']);
     await _methodChannel.invokeMethod('setVisible', {'visible': false});
     _isVisible = false;
   }
@@ -338,9 +354,11 @@ class MpvPlayerMacOS implements MpvPlayer {
   @override
   Future<void> seek(Duration position) async {
     _checkDisposed();
-    await _methodChannel.invokeMethod('seek', {
-      'position': position.inMilliseconds / 1000.0,
-    });
+    await command([
+      'seek',
+      (position.inMilliseconds / 1000.0).toString(),
+      'absolute',
+    ]);
   }
 
   // ============================================
@@ -350,13 +368,13 @@ class MpvPlayerMacOS implements MpvPlayer {
   @override
   Future<void> selectAudioTrack(MpvAudioTrack track) async {
     _checkDisposed();
-    await _methodChannel.invokeMethod('selectAudioTrack', {'id': track.id});
+    await setProperty('aid', track.id);
   }
 
   @override
   Future<void> selectSubtitleTrack(MpvSubtitleTrack track) async {
     _checkDisposed();
-    await _methodChannel.invokeMethod('selectSubtitleTrack', {'id': track.id});
+    await setProperty('sid', track.id);
   }
 
   @override
@@ -367,12 +385,10 @@ class MpvPlayerMacOS implements MpvPlayer {
     bool select = false,
   }) async {
     _checkDisposed();
-    await _methodChannel.invokeMethod('addSubtitleTrack', {
-      'url': uri,
-      'title': title,
-      'language': language,
-      'select': select,
-    });
+    final args = ['sub-add', uri, select ? 'select' : 'auto'];
+    if (title != null) args.add('title=$title');
+    if (language != null) args.add('lang=$language');
+    await command(args);
   }
 
   // ============================================
@@ -382,13 +398,13 @@ class MpvPlayerMacOS implements MpvPlayer {
   @override
   Future<void> setVolume(double volume) async {
     _checkDisposed();
-    await _methodChannel.invokeMethod('setVolume', {'volume': volume});
+    await setProperty('volume', volume.toString());
   }
 
   @override
   Future<void> setRate(double rate) async {
     _checkDisposed();
-    await _methodChannel.invokeMethod('setRate', {'rate': rate});
+    await setProperty('speed', rate.toString());
   }
 
   @override

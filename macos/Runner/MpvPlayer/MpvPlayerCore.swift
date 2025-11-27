@@ -79,7 +79,6 @@ class MpvPlayerCore: NSObject {
         contentView.layer?.addSublayer(layer)
 
         print("[MpvPlayerCore] Metal layer added, frame: \(layer.frame)")
-        printLayerHierarchy(contentView.layer)
 
         // Initialize MPV with this Metal layer
         guard setupMpv() else {
@@ -129,14 +128,6 @@ class MpvPlayerCore: NSObject {
             return false
         }
 
-        // Observe properties for state updates
-        mpv_observe_property(mpv, 0, "time-pos", MPV_FORMAT_DOUBLE)
-        mpv_observe_property(mpv, 0, "duration", MPV_FORMAT_DOUBLE)
-        mpv_observe_property(mpv, 0, "pause", MPV_FORMAT_FLAG)
-        mpv_observe_property(mpv, 0, "paused-for-cache", MPV_FORMAT_FLAG)
-        mpv_observe_property(mpv, 0, "track-list", MPV_FORMAT_NODE)
-        mpv_observe_property(mpv, 0, "eof-reached", MPV_FORMAT_FLAG)
-
         // Set up wakeup callback for event handling
         mpv_set_wakeup_callback(mpv, { ctx in
             let core = Unmanaged<MpvPlayerCore>.fromOpaque(ctx!).takeUnretainedValue()
@@ -147,73 +138,7 @@ class MpvPlayerCore: NSObject {
         return true
     }
 
-    // MARK: - Playback Control
-
-    func loadFile(_ url: String, play: Bool = true) {
-        guard mpv != nil else {
-            print("[MpvPlayerCore] Cannot load file - MPV not initialized")
-            return
-        }
-
-        print("[MpvPlayerCore] Loading: \(url)")
-        command("loadfile", args: [url, "replace"])
-
-        if !play {
-            setFlag("pause", true)
-        }
-    }
-
-    func play() {
-        setFlag("pause", false)
-    }
-
-    func pause() {
-        setFlag("pause", true)
-    }
-
-    func stop() {
-        command("stop")
-    }
-
-    func seek(to seconds: Double) {
-        command("seek", args: [String(seconds), "absolute"])
-    }
-
-    func setAudioTrack(_ id: String) {
-        setProperty("aid", value: id)
-    }
-
-    func setSubtitleTrack(_ id: String) {
-        setProperty("sid", value: id)
-    }
-
-    func addSubtitleTrack(url: String, title: String?, language: String?, select: Bool) {
-        var args = [url]
-        if select {
-            args.append("select")
-        } else {
-            args.append("auto")
-        }
-        if let title = title {
-            args.append("title=\(title)")
-        }
-        if let language = language {
-            args.append("lang=\(language)")
-        }
-        command("sub-add", args: args)
-    }
-
-    func setVolume(_ volume: Double) {
-        guard mpv != nil else { return }
-        var vol = volume
-        mpv_set_property(mpv, "volume", MPV_FORMAT_DOUBLE, &vol)
-    }
-
-    func setRate(_ rate: Double) {
-        guard mpv != nil else { return }
-        var r = rate
-        mpv_set_property(mpv, "speed", MPV_FORMAT_DOUBLE, &r)
-    }
+    // MARK: - MPV Properties and Commands
 
     func setProperty(_ name: String, value: String) {
         guard mpv != nil else { return }
@@ -225,6 +150,21 @@ class MpvPlayerCore: NSObject {
         let cstr = mpv_get_property_string(mpv, name)
         defer { mpv_free(cstr) }
         return cstr.map { String(cString: $0) }
+    }
+
+    func observeProperty(_ name: String, format: String) {
+        guard mpv != nil else { return }
+
+        let mpvFormat: mpv_format
+        switch format {
+        case "double": mpvFormat = MPV_FORMAT_DOUBLE
+        case "flag": mpvFormat = MPV_FORMAT_FLAG
+        case "node": mpvFormat = MPV_FORMAT_NODE
+        case "string": mpvFormat = MPV_FORMAT_STRING
+        default: return
+        }
+
+        mpv_observe_property(mpv, 0, name, mpvFormat)
     }
 
     func command(_ args: [String]) {
@@ -271,12 +211,6 @@ class MpvPlayerCore: NSObject {
     }
 
     // MARK: - Private Helpers
-
-    private func setFlag(_ name: String, _ flag: Bool) {
-        guard mpv != nil else { return }
-        var data: Int = flag ? 1 : 0
-        mpv_set_property(mpv, name, MPV_FORMAT_FLAG, &data)
-    }
 
     private func command(_ cmd: String, args: [String] = []) {
         guard mpv != nil else { return }
@@ -444,12 +378,5 @@ class MpvPlayerCore: NSObject {
 
     deinit {
         dispose()
-    }
-
-    private func printLayerHierarchy(_ layer: CALayer?, depth: Int = 0) {
-        guard let layer = layer else { return }
-        let indent = String(repeating: "  ", count: depth)
-        print("\(indent)- \(type(of: layer)) frame=\(layer.frame) zPos=\(layer.zPosition) opacity=\(layer.opacity) hidden=\(layer.isHidden)")
-        layer.sublayers?.forEach { printLayerHierarchy($0, depth: depth + 1) }
     }
 }
