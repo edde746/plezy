@@ -33,6 +33,7 @@ class PlaybackInitializationService {
   /// Start playback for the given metadata
   ///
   /// Returns a PlaybackInitializationResult with available versions and other data
+  /// Set [useNativePlayer] to true on macOS to skip Flutter player operations
   Future<PlaybackInitializationResult> startPlayback({
     required PlexMetadata metadata,
     required int selectedMediaIndex,
@@ -40,6 +41,7 @@ class PlaybackInitializationService {
     MpvAudioTrack? preferredAudioTrack,
     MpvSubtitleTrack? preferredSubtitleTrack,
     double? preferredPlaybackRate,
+    bool useNativePlayer = false,
   }) async {
     try {
       // Get consolidated playback data (URL, media info, and versions) in a single API call
@@ -55,47 +57,51 @@ class PlaybackInitializationService {
       final videoUrl = playbackData.videoUrl!;
       final mediaInfo = playbackData.mediaInfo;
 
-      // Build list of external subtitle tracks for mpv
-      final externalSubtitles = _buildExternalSubtitles(mediaInfo);
+      // Skip Flutter player operations when using native player on macOS
+      if (!useNativePlayer) {
+        // Build list of external subtitle tracks for mpv
+        final externalSubtitles = _buildExternalSubtitles(mediaInfo);
 
-      // Open video (without external subtitles in Media constructor)
-      await player.open(MpvMedia(videoUrl), play: false);
+        // Open video (without external subtitles in Media constructor)
+        await player.open(MpvMedia(videoUrl), play: false);
 
-      // Wait for media to be ready (duration > 0)
-      await _waitForMediaReady();
+        // Wait for media to be ready (duration > 0)
+        await _waitForMediaReady();
 
-      // Add external subtitle tracks without auto-selecting them
-      if (externalSubtitles.isNotEmpty) {
-        await _addExternalSubtitles(externalSubtitles);
+        // Add external subtitle tracks without auto-selecting them
+        if (externalSubtitles.isNotEmpty) {
+          await _addExternalSubtitles(externalSubtitles);
+        }
+
+        // Select and apply tracks BEFORE seeking to resume position
+        // This prevents track changes from resetting the playback position on Android
+        final trackSelectionService = TrackSelectionService(
+          player: player,
+          profileSettings: profileSettings,
+          metadata: metadata,
+        );
+
+        await trackSelectionService.selectAndApplyTracks(
+          preferredAudioTrack: preferredAudioTrack,
+          preferredSubtitleTrack: preferredSubtitleTrack,
+          preferredPlaybackRate: preferredPlaybackRate,
+        );
+
+        // Set up playback position if resuming (AFTER track selection)
+        if (metadata.viewOffset != null && metadata.viewOffset! > 0) {
+          appLogger.d('Resuming playback at ${metadata.viewOffset} ms');
+          final resumePosition = Duration(milliseconds: metadata.viewOffset!);
+          await player.seek(resumePosition);
+        }
+
+        // Start playback after seeking
+        await player.play();
       }
 
-      // Select and apply tracks BEFORE seeking to resume position
-      // This prevents track changes from resetting the playback position on Android
-      final trackSelectionService = TrackSelectionService(
-        player: player,
-        profileSettings: profileSettings,
-        metadata: metadata,
-      );
-
-      await trackSelectionService.selectAndApplyTracks(
-        preferredAudioTrack: preferredAudioTrack,
-        preferredSubtitleTrack: preferredSubtitleTrack,
-        preferredPlaybackRate: preferredPlaybackRate,
-      );
-
-      // Set up playback position if resuming (AFTER track selection)
-      if (metadata.viewOffset != null && metadata.viewOffset! > 0) {
-        appLogger.d('Resuming playback at ${metadata.viewOffset} ms');
-        final resumePosition = Duration(milliseconds: metadata.viewOffset!);
-        await player.seek(resumePosition);
-      }
-
-      // Start playback after seeking
-      await player.play();
-
-      // Return result with available versions for UI updates
+      // Return result with available versions and video URL for UI updates
       return PlaybackInitializationResult(
         availableVersions: playbackData.availableVersions,
+        videoUrl: videoUrl,
       );
     } catch (e) {
       if (e is PlaybackException) {
@@ -197,8 +203,12 @@ class PlaybackInitializationService {
 /// Result of playback initialization
 class PlaybackInitializationResult {
   final List<dynamic> availableVersions;
+  final String? videoUrl;
 
-  PlaybackInitializationResult({required this.availableVersions});
+  PlaybackInitializationResult({
+    required this.availableVersions,
+    this.videoUrl,
+  });
 }
 
 /// Exception thrown when playback initialization fails

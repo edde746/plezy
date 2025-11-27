@@ -133,11 +133,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Register app lifecycle observer
     WidgetsBinding.instance.addObserver(this);
 
-    // NOTE: Native video layer disabled in video player for now.
-    // Use Settings > Advanced > Metal Layer Test to test the Metal layer.
-    // if (Platform.isMacOS) {
-    //   _initNativeVideo();
-    // }
+    // Initialize native video layer on macOS
+    if (Platform.isMacOS) {
+      _initNativeVideo();
+    }
 
     // Initialize player asynchronously with buffer size from settings
     _initializePlayer();
@@ -149,11 +148,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final initialized = await _nativeVideoService!.initialize();
     if (initialized) {
       await _nativeVideoService!.setVisible(true);
-      if (mounted) {
-        setState(() {
-          _useNativeVideo = true;
-        });
-      }
+      // Don't set _useNativeVideo = true yet - keep Flutter controls
+      // Native MPV will render behind the transparent Flutter layer
       appLogger.d('Native video layer initialized and visible');
     } else {
       appLogger.w('Failed to initialize native video layer');
@@ -258,7 +254,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       await player!.setProperty('sub-font', 'Go Noto Current-Regular');
       await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
       await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
-      await player!.setProperty('hwdec', enableHardwareDecoding ? 'auto' : 'no');
+      // await player!.setProperty('hwdec', enableHardwareDecoding ? 'auto' : 'no');
 
       // Subtitle styling
       await player!.setProperty('sub-font-size', settingsService.getSubtitleFontSize().toString());
@@ -567,6 +563,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       );
 
       // Start playback and get available versions
+      // Skip Flutter player on macOS when native video is initialized
+      final useNativePlayer = _nativeVideoService?.isInitialized == true;
       final result = await playbackService.startPlayback(
         metadata: widget.metadata,
         selectedMediaIndex: widget.selectedMediaIndex,
@@ -574,6 +572,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         preferredAudioTrack: widget.preferredAudioTrack,
         preferredSubtitleTrack: widget.preferredSubtitleTrack,
         preferredPlaybackRate: widget.preferredPlaybackRate,
+        useNativePlayer: useNativePlayer,
       );
 
       // Update available versions from the playback data
@@ -591,6 +590,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           );
           // Update video filter once dimensions are available
           _videoFilterManager!.updateVideoFilter();
+        }
+
+        // Also open video in native MPV player on macOS (if initialized)
+        if (_nativeVideoService?.isInitialized == true && result.videoUrl != null) {
+          await _nativeVideoService?.open(result.videoUrl!);
         }
       }
 
@@ -630,8 +634,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Unregister app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
 
-    // Hide native video layer on macOS
-    _nativeVideoService?.setVisible(false);
+    // Stop and dispose native video layer on macOS
+    _nativeVideoService?.stop();
+    _nativeVideoService?.dispose();
 
     // Dispose value notifiers
     _isBuffering.dispose();
