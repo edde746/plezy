@@ -1,0 +1,69 @@
+import '../models/mpv_audio_device.dart';
+import '../models/mpv_log.dart';
+import '../models/mpv_tracks.dart';
+import '../models/mpv_track_selection.dart';
+
+/// Reactive streams for player state changes.
+///
+/// Subscribe to these streams to receive updates when the player state changes.
+/// For synchronous state access, use [MpvPlayerState].
+class MpvPlayerStreams {
+  /// Stream of playing state changes.
+  final Stream<bool> playing;
+
+  /// Stream of completion state changes.
+  final Stream<bool> completed;
+
+  /// Stream of buffering state changes.
+  final Stream<bool> buffering;
+
+  /// Stream of position updates.
+  final Stream<Duration> position;
+
+  /// Stream of duration changes (when media is loaded).
+  final Stream<Duration> duration;
+
+  /// Stream of buffer position updates.
+  final Stream<Duration> buffer;
+
+  /// Stream of volume changes.
+  final Stream<double> volume;
+
+  /// Stream of playback rate changes.
+  final Stream<double> rate;
+
+  /// Stream of available tracks updates.
+  final Stream<MpvTracks> tracks;
+
+  /// Stream of track selection changes.
+  final Stream<MpvTrackSelection> track;
+
+  /// Stream of log messages from MPV.
+  final Stream<MpvLog> log;
+
+  /// Stream of error messages.
+  final Stream<String> error;
+
+  /// Stream of audio device changes.
+  final Stream<MpvAudioDevice> audioDevice;
+
+  /// Stream of available audio devices.
+  final Stream<List<MpvAudioDevice>> audioDevices;
+
+  const MpvPlayerStreams({
+    required this.playing,
+    required this.completed,
+    required this.buffering,
+    required this.position,
+    required this.duration,
+    required this.buffer,
+    required this.volume,
+    required this.rate,
+    required this.tracks,
+    required this.track,
+    required this.log,
+    required this.error,
+    required this.audioDevice,
+    required this.audioDevices,
+  });
+}

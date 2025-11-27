@@ -13,9 +13,6 @@ dependencies:
   json_annotation: ^4.8.1
   shared_preferences: ^2.2.2
   cached_network_image: ^3.4.1
-  media_kit: ^1.1.10+1
-  media_kit_video: ^1.2.4
-  media_kit_libs_video: ^1.0.4
   macos_window_utils: ^1.9.0
   url_launcher: ^6.3.0
   uuid: ^4.4.0
@@ -35,38 +32,6 @@ dependencies:
       url: https://github.com/edde746/os-media-controls
       ref: 75dc5642cd148c54c03fe96976702b8d31c48599
   rate_limiter: ^1.0.0
-
-dependency_overrides:
-  media_kit:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: media_kit
-  media_kit_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: media_kit_video
-  media_kit_libs_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: libs/universal/media_kit_libs_video
-  media_kit_libs_macos_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: libs/macos/media_kit_libs_macos_video
-  media_kit_libs_ios_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: libs/ios/media_kit_libs_ios_video
-  media_kit_libs_android_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: dce2963936424ffc80309ef4bca7e95041dfbfef
-      path: libs/android/media_kit_libs_android_video
 
 dev_dependencies:
   flutter_test:

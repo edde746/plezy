@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
+
+import '../mpv/mpv.dart';
 
 import '../client/plex_client.dart';
 import '../models/plex_media_version.dart';
@@ -28,8 +28,8 @@ import '../i18n/strings.g.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
-  final AudioTrack? preferredAudioTrack;
-  final SubtitleTrack? preferredSubtitleTrack;
+  final MpvAudioTrack? preferredAudioTrack;
+  final MpvSubtitleTrack? preferredSubtitleTrack;
   final double? preferredPlaybackRate;
   final int selectedMediaIndex;
 
@@ -48,8 +48,7 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class VideoPlayerScreenState extends State<VideoPlayerScreen>
     with WidgetsBindingObserver {
-  Player? player;
-  VideoController? controller;
+  MpvPlayer? player;
   bool _isPlayerInitialized = false;
   PlexMetadata? _nextEpisode;
   PlexMetadata? _previousEpisode;
@@ -57,13 +56,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _showPlayNextDialog = false;
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
-  StreamSubscription<PlayerLog>? _logSubscription;
+  StreamSubscription<MpvLog>? _logSubscription;
   StreamSubscription<String>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
   StreamSubscription<dynamic>? _mediaControlSubscription;
   StreamSubscription<bool>? _bufferingSubscription;
-  StreamSubscription<Tracks>? _trackLoadingSubscription;
+  StreamSubscription<MpvTracks>? _trackLoadingSubscription;
   bool _isReplacingWithVideo =
       false; // Flag to skip orientation restoration during video-to-video navigation
 
@@ -222,57 +221,44 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           .getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
 
-      // Build MPV configuration
-      final config = <String, String>{
-        'sub-font-size': settingsService.getSubtitleFontSize().toString(),
-        'sub-color': settingsService.getSubtitleTextColor(),
-        'sub-border-size': settingsService.getSubtitleBorderSize().toString(),
-        'sub-border-color': settingsService.getSubtitleBorderColor(),
-        'sub-back-color':
-            '#${(settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt().toRadixString(16).padLeft(2, '0').toUpperCase()}${settingsService.getSubtitleBackgroundColor().replaceFirst('#', '')}',
-        'sub-ass-override': 'no',
-      };
+      // Create player
+      player = MpvPlayer();
 
+      // Configure player properties
+      await player!.setProperty('sub-ass', 'yes'); // Enable libass
+      await player!.setProperty('sub-fonts-dir', 'assets');
+      await player!.setProperty('sub-font', 'Go Noto Current-Regular');
+      await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
+      await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
+      // await player!.setProperty('hwdec', enableHardwareDecoding ? 'auto' : 'no');
+
+      // Subtitle styling
+      await player!.setProperty('sub-font-size', settingsService.getSubtitleFontSize().toString());
+      await player!.setProperty('sub-color', settingsService.getSubtitleTextColor());
+      await player!.setProperty('sub-border-size', settingsService.getSubtitleBorderSize().toString());
+      await player!.setProperty('sub-border-color', settingsService.getSubtitleBorderColor());
+      final bgOpacity = (settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt();
+      final bgColor = settingsService.getSubtitleBackgroundColor().replaceFirst('#', '');
+      await player!.setProperty('sub-back-color', '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor');
+      await player!.setProperty('sub-ass-override', 'no');
+
+      // Platform-specific settings
       if (Platform.isIOS) {
-        config['audio-exclusive'] = 'yes';
+        await player!.setProperty('audio-exclusive', 'yes');
       }
-
-      // Create player with configuration
-      player = Player(
-        configuration: PlayerConfiguration(
-          libass: true,
-          libassAndroidFont: 'assets/go-noto-current-regular.ttf',
-          libassAndroidFontName: 'Go Noto Current-Regular',
-          bufferSize: bufferSizeBytes,
-          logLevel: debugLoggingEnabled ? MPVLogLevel.debug : MPVLogLevel.error,
-          mpvConfiguration: config,
-        ),
-      );
-      controller = VideoController(
-        player!,
-        configuration: VideoControllerConfiguration(
-          enableHardwareAcceleration: enableHardwareDecoding,
-        ),
-      );
 
       // Apply audio sync offset
       final audioSyncOffset = settingsService.getAudioSyncOffset();
       if (audioSyncOffset != 0) {
         final offsetSeconds = audioSyncOffset / 1000.0;
-        await (player!.platform as dynamic).setProperty(
-          'audio-delay',
-          offsetSeconds.toString(),
-        );
+        await player!.setProperty('audio-delay', offsetSeconds.toString());
       }
 
       // Apply subtitle sync offset
       final subtitleSyncOffset = settingsService.getSubtitleSyncOffset();
       if (subtitleSyncOffset != 0) {
         final offsetSeconds = subtitleSyncOffset / 1000.0;
-        await (player!.platform as dynamic).setProperty(
-          'sub-delay',
-          offsetSeconds.toString(),
-        );
+        await player!.setProperty('sub-delay', offsetSeconds.toString());
       }
 
       // Apply saved volume
@@ -310,23 +296,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       // Listen to playback state changes
-      _playingSubscription = player!.stream.playing.listen(
+      _playingSubscription = player!.streams.playing.listen(
         _onPlayingStateChanged,
       );
 
       // Listen to completion
-      _completedSubscription = player!.stream.completed.listen(
+      _completedSubscription = player!.streams.completed.listen(
         _onVideoCompleted,
       );
 
       // Listen to MPV logs
-      _logSubscription = player!.stream.log.listen(_onPlayerLog);
+      _logSubscription = player!.streams.log.listen(_onPlayerLog);
 
       // Listen to MPV errors
-      _errorSubscription = player!.stream.error.listen(_onPlayerError);
+      _errorSubscription = player!.streams.error.listen(_onPlayerError);
 
       // Listen to buffering state
-      _bufferingSubscription = player!.stream.buffering.listen((isBuffering) {
+      _bufferingSubscription = player!.streams.buffering.listen((isBuffering) {
         _isBuffering.value = isBuffering;
       });
 
@@ -424,12 +410,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     );
 
     // Listen to playing state and update media controls
-    player!.stream.playing.listen((isPlaying) {
+    player!.streams.playing.listen((isPlaying) {
       _updateMediaControlsPlaybackState();
     });
 
     // Listen to position updates for media controls
-    player!.stream.position.listen((position) {
+    player!.streams.position.listen((position) {
       _mediaControlsManager?.updatePlaybackState(
         isPlaying: player!.state.playing,
         position: position,
@@ -542,25 +528,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
 
-      // Capture profile settings before async gap
-      final profileSettings = context.profileSettings;
-
       // Initialize playback service
       final playbackService = PlaybackInitializationService(
-        player: player!,
         client: client,
-        context: context,
       );
 
-      // Start playback and get available versions
-      final result = await playbackService.startPlayback(
+      // Get playback data (video URL and available versions)
+      final result = await playbackService.getPlaybackData(
         metadata: widget.metadata,
         selectedMediaIndex: widget.selectedMediaIndex,
-        profileSettings: profileSettings,
-        preferredAudioTrack: widget.preferredAudioTrack,
-        preferredSubtitleTrack: widget.preferredSubtitleTrack,
-        preferredPlaybackRate: widget.preferredPlaybackRate,
       );
+
+      // Open video through MpvPlayer
+      if (result.videoUrl != null) {
+        await player!.open(MpvMedia(result.videoUrl!));
+      }
 
       // Update available versions from the playback data
       if (mounted) {
@@ -643,11 +625,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Clear video filter and reset subtitle margins before disposing player
     try {
       if (player != null) {
-        final nativePlayer = player!.platform as dynamic;
-        nativePlayer.setProperty('vf', '');
-        nativePlayer.setProperty('sub-margin-x', '0');
-        nativePlayer.setProperty('sub-margin-y', '0');
-        nativePlayer.setProperty('sub-scale', '1.0');
+        player!.setProperty('vf', '');
+        player!.setProperty('sub-margin-x', '0');
+        player!.setProperty('sub-margin-y', '0');
+        player!.setProperty('sub-scale', '1.0');
       }
     } catch (e) {
       // Non-critical: Cleanup operations during disposal
@@ -700,26 +681,26 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
-  void _onPlayerLog(PlayerLog log) {
+  void _onPlayerLog(MpvLog log) {
     // Map MPV log levels to app logger levels
-    switch (log.level.toLowerCase()) {
-      case 'fatal':
-      case 'error':
+    switch (log.level) {
+      case MpvLogLevel.fatal:
+      case MpvLogLevel.error:
         appLogger.e('[MPV:${log.prefix}] ${log.text}');
         break;
-      case 'warn':
+      case MpvLogLevel.warn:
         appLogger.w('[MPV:${log.prefix}] ${log.text}');
         break;
-      case 'info':
+      case MpvLogLevel.info:
         appLogger.i('[MPV:${log.prefix}] ${log.text}');
         break;
-      case 'debug':
-      case 'trace':
-      case 'v':
+      case MpvLogLevel.debug:
+      case MpvLogLevel.trace:
+      case MpvLogLevel.verbose:
         appLogger.d('[MPV:${log.prefix}] ${log.text}');
         break;
       default:
-        appLogger.d('[MPV:${log.prefix}:${log.level}] ${log.text}');
+        appLogger.d('[MPV:${log.prefix}:${log.level.name}] ${log.text}');
     }
   }
 
@@ -758,7 +739,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   /// Handle audio track changes from the user - save as per-media preference if enabled
-  Future<void> _onAudioTrackChanged(AudioTrack track) async {
+  Future<void> _onAudioTrackChanged(MpvAudioTrack track) async {
     final settings = await SettingsService.getInstance();
 
     // Only save if remember track selections is enabled
@@ -800,7 +781,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   /// Handle subtitle track changes from the user - save as per-media preference if enabled
-  Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async {
+  Future<void> _onSubtitleTrackChanged(MpvSubtitleTrack track) async {
     final settings = await SettingsService.getInstance();
 
     // Only save if remember track selections is enabled
@@ -908,7 +889,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   Widget build(BuildContext context) {
     // Show loading indicator while player initializes
-    if (!_isPlayerInitialized || controller == null || player == null) {
+    if (!_isPlayerInitialized || player == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(child: CircularProgressIndicator(color: Colors.white)),
@@ -928,7 +909,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.black,
+        // Use transparent background on macOS when native video layer is active
+        backgroundColor: Platform.isMacOS ? Colors.transparent : Colors.black,
         body: GestureDetector(
           behavior: HitTestBehavior
               .translucent, // Allow taps to pass through to controls
@@ -959,44 +941,44 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             children: [
               // Video player
               Center(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Update player size when layout changes
-                    final newSize = Size(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Update player size when layout changes
+                      final newSize = Size(
+                        constraints.maxWidth,
+                        constraints.maxHeight,
+                      );
 
-                    // Update player size in video filter manager
-                    if (_videoFilterManager != null) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          _videoFilterManager!.updatePlayerSize(newSize);
-                        }
-                      });
-                    }
+                      // Update player size in video filter manager
+                      if (_videoFilterManager != null) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) {
+                            _videoFilterManager!.updatePlayerSize(newSize);
+                          }
+                        });
+                      }
 
-                    return Video(
-                      controller: controller!,
-                      fit: _videoFilterManager?.currentBoxFit ?? BoxFit.contain,
-                      controls: (state) => plexVideoControlsBuilder(
-                        player!,
-                        widget.metadata,
-                        onNext: _nextEpisode != null ? _playNext : null,
-                        onPrevious: _previousEpisode != null
-                            ? _playPrevious
-                            : null,
-                        availableVersions: _availableVersions,
-                        selectedMediaIndex: widget.selectedMediaIndex,
-                        boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
-                        onCycleBoxFitMode: _cycleBoxFitMode,
-                        onAudioTrackChanged: _onAudioTrackChanged,
-                        onSubtitleTrackChanged: _onSubtitleTrackChanged,
-                      ),
-                    );
-                  },
+                      return MpvVideo(
+                        player: player!,
+                        fit: _videoFilterManager?.currentBoxFit ?? BoxFit.contain,
+                        controls: (context) => plexVideoControlsBuilder(
+                          player!,
+                          widget.metadata,
+                          onNext: _nextEpisode != null ? _playNext : null,
+                          onPrevious: _previousEpisode != null
+                              ? _playPrevious
+                              : null,
+                          availableVersions: _availableVersions,
+                          selectedMediaIndex: widget.selectedMediaIndex,
+                          boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
+                          onCycleBoxFitMode: _cycleBoxFitMode,
+                          onAudioTrackChanged: _onAudioTrackChanged,
+                          onSubtitleTrackChanged: _onSubtitleTrackChanged,
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
               // Play Next Dialog
               if (_showPlayNextDialog && _nextEpisode != null)
                 Positioned.fill(

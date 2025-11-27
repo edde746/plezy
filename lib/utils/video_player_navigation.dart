@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+
+import '../mpv/mpv.dart';
 import '../models/plex_metadata.dart';
 import '../screens/video_player_screen.dart';
 import '../services/settings_service.dart';
@@ -26,8 +27,8 @@ import '../services/settings_service.dart';
 Future<bool?> navigateToVideoPlayer(
   BuildContext context, {
   required PlexMetadata metadata,
-  AudioTrack? preferredAudioTrack,
-  SubtitleTrack? preferredSubtitleTrack,
+  MpvAudioTrack? preferredAudioTrack,
+  MpvSubtitleTrack? preferredSubtitleTrack,
   double? preferredPlaybackRate,
   int? selectedMediaIndex,
   bool usePushReplacement = false,

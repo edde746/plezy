@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
-import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -48,9 +47,6 @@ void main() async {
 
   // Configure macOS window with custom titlebar
   await MacOSTitlebarService.setupCustomTitlebar();
-
-  // Initialize MediaKit
-  MediaKit.ensureInitialized();
 
   // Note: Orientation will be set dynamically based on device type in MainApp
 

@@ -26,7 +26,10 @@
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
+		6AB6B0952EDB27C100EAC8DB /* MPVKit-GPL in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB6B0942EDB27C100EAC8DB /* MPVKit-GPL */; };
 		6AC86ED72EA70B4C0067BC66 /* plezy.icon in Resources */ = {isa = PBXBuildFile; fileRef = 6AC86ED62EA70B4C0067BC66 /* plezy.icon */; };
+		6AD8B1612ED7B50000E9E1B4 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */; };
+		6AD8B1622ED7B50000E9E1B4 /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */; };
 		9AECA605E2E1BECE3CA5BD01 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 78F9F23331B540A25C4A70C7 /* Pods_Runner.framework */; };
 		FE52EE1D2D489FA88507D14E /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84260356652A3270E664FED4 /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
@@ -81,6 +84,8 @@
 		4E4BFEE5F31FF1CC308F1693 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		5EBEC2B546108DF45BEB0B00 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		6AC86ED62EA70B4C0067BC66 /* plezy.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = plezy.icon; sourceTree = "<group>"; };
+		6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerCore.swift; sourceTree = "<group>"; };
+		6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MpvPlayerPlugin.swift; sourceTree = "<group>"; };
 		78F9F23331B540A25C4A70C7 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		84260356652A3270E664FED4 /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -104,6 +109,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9AECA605E2E1BECE3CA5BD01 /* Pods_Runner.framework in Frameworks */,
+				6AB6B0952EDB27C100EAC8DB /* MPVKit-GPL in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -190,6 +196,7 @@
 			children = (
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
+				6AD8B1652ED7B50000E9E1B4 /* MpvPlayer */,
 				33E51913231747F40026EE4D /* DebugProfile.entitlements */,
 				33E51914231749380026EE4D /* Release.entitlements */,
 				33CC11242044D66E0003C045 /* Resources */,
@@ -205,6 +212,15 @@
 				84260356652A3270E664FED4 /* Pods_RunnerTests.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6AD8B1652ED7B50000E9E1B4 /* MpvPlayer */ = {
+			isa = PBXGroup;
+			children = (
+				6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */,
+				6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */,
+			);
+			path = MpvPlayer;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -291,6 +307,9 @@
 				Base,
 			);
 			mainGroup = 33CC10E42044A3C60003C045;
+			packageReferences = (
+				6AB6B0932EDB27C100EAC8DB /* XCRemoteSwiftPackageReference "MPVKit" */,
+			);
 			productRefGroup = 33CC10EE2044A3C60003C045 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -439,6 +458,8 @@
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
 				335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */,
+				6AD8B1612ED7B50000E9E1B4 /* MpvPlayerCore.swift in Sources */,
+				6AD8B1622ED7B50000E9E1B4 /* MpvPlayerPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -556,7 +577,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -638,7 +659,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -688,7 +709,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -795,6 +816,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6AB6B0932EDB27C100EAC8DB /* XCRemoteSwiftPackageReference "MPVKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/edde746/MPVKit";
+			requirement = {
+				kind = revision;
+				revision = a8ae0d2f08df6188c662b7670bddb97131db8c5a;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6AB6B0942EDB27C100EAC8DB /* MPVKit-GPL */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6AB6B0932EDB27C100EAC8DB /* XCRemoteSwiftPackageReference "MPVKit" */;
+			productName = "MPVKit-GPL";
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 33CC10E52044A3C60003C045 /* Project object */;
 }

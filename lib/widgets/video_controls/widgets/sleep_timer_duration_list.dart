@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+
+import '../../../mpv/mpv.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/duration_formatter.dart';
 import '../../../i18n/strings.g.dart';
 
 /// Widget displaying list of sleep timer durations for selection
 class SleepTimerDurationList extends StatelessWidget {
-  final Player player;
+  final MpvPlayer player;
   final SleepTimerService sleepTimer;
   final int? defaultDuration;
 

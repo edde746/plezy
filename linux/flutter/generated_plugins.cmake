@@ -4,12 +4,9 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   hotkey_manager_linux
-  media_kit_libs_linux
-  media_kit_video
   os_media_controls
   screen_retriever_linux
   url_launcher_linux
-  volume_controller
   window_manager
 )
 

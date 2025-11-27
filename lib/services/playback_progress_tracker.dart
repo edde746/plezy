@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:media_kit/media_kit.dart';
+import '../mpv/mpv.dart';
 
 import '../client/plex_client.dart';
 import '../models/plex_metadata.dart';
@@ -15,7 +15,7 @@ import '../utils/app_logger.dart';
 class PlaybackProgressTracker {
   final PlexClient client;
   final PlexMetadata metadata;
-  final Player player;
+  final MpvPlayer player;
 
   /// Timer for periodic progress updates
   Timer? _progressTimer;

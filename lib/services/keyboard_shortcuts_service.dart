@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import '../mpv/mpv.dart';
 import 'settings_service.dart';
 import '../utils/keyboard_utils.dart';
 import '../utils/player_utils.dart';
@@ -148,7 +148,7 @@ class KeyboardShortcutsService {
   // Handle keyboard input for video player
   KeyEventResult handleVideoPlayerKeyEvent(
     KeyEvent event,
-    Player player,
+    MpvPlayer player,
     VoidCallback? onToggleFullscreen,
     VoidCallback? onToggleSubtitles,
     VoidCallback? onNextAudioTrack,
@@ -241,7 +241,7 @@ class KeyboardShortcutsService {
 
   void _executeAction(
     String action,
-    Player player,
+    MpvPlayer player,
     VoidCallback? onToggleFullscreen,
     VoidCallback? onToggleSubtitles,
     VoidCallback? onNextAudioTrack,

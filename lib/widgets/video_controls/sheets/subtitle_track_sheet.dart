@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+
+import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
 import 'track_selection_sheet.dart';
 
@@ -7,10 +8,10 @@ import 'track_selection_sheet.dart';
 class SubtitleTrackSheet {
   static void show(
     BuildContext context,
-    Player player, {
-    Function(SubtitleTrack)? onTrackChanged,
+    MpvPlayer player, {
+    Function(MpvSubtitleTrack)? onTrackChanged,
   }) {
-    TrackSelectionSheet.show<SubtitleTrack>(
+    TrackSelectionSheet.show<MpvSubtitleTrack>(
       context: context,
       player: player,
       title: t.videoControls.subtitlesLabel,
@@ -41,10 +42,10 @@ class SubtitleTrackSheet {
         }
         return parts.isEmpty ? 'Track ${index + 1}' : parts.join(' · ');
       },
-      setTrack: (track) => player.setSubtitleTrack(track),
+      setTrack: (track) => player.selectSubtitleTrack(track),
       onTrackChanged: onTrackChanged,
       showOffOption: true,
-      createOffTrack: () => SubtitleTrack.no(),
+      createOffTrack: () => MpvSubtitleTrack.off,
       isOffTrack: (track) => track.id == 'no',
     );
   }

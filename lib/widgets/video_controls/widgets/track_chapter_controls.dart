@@ -1,8 +1,8 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
 
+import '../../../mpv/mpv.dart';
 import '../../../models/plex_media_info.dart';
 import '../../../models/plex_media_version.dart';
 import '../../../services/sleep_timer_service.dart';
@@ -17,7 +17,7 @@ import '../video_control_button.dart';
 
 /// Row of track and chapter control buttons for the video player
 class TrackChapterControls extends StatelessWidget {
-  final Player player;
+  final MpvPlayer player;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
   final List<PlexMediaVersion> availableVersions;
@@ -31,8 +31,8 @@ class TrackChapterControls extends StatelessWidget {
   final VoidCallback? onToggleRotationLock;
   final VoidCallback? onToggleFullscreen;
   final Function(int)? onSwitchVersion;
-  final Function(AudioTrack)? onAudioTrackChanged;
-  final Function(SubtitleTrack)? onSubtitleTrackChanged;
+  final Function(MpvAudioTrack)? onAudioTrackChanged;
+  final Function(MpvSubtitleTrack)? onSubtitleTrackChanged;
   final VoidCallback? onLoadSeekTimes;
   final String serverId;
 
@@ -60,8 +60,8 @@ class TrackChapterControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Tracks>(
-      stream: player.stream.tracks,
+    return StreamBuilder<MpvTracks>(
+      stream: player.streams.tracks,
       initialData: player.state.tracks,
       builder: (context, snapshot) {
         final tracks = snapshot.data;
@@ -175,7 +175,7 @@ class TrackChapterControls extends StatelessWidget {
     );
   }
 
-  bool _hasMultipleAudioTracks(Tracks? tracks) {
+  bool _hasMultipleAudioTracks(MpvTracks? tracks) {
     if (tracks == null) return false;
     final audioTracks = tracks.audio
         .where((track) => track.id != 'auto' && track.id != 'no')
@@ -183,7 +183,7 @@ class TrackChapterControls extends StatelessWidget {
     return audioTracks.length > 1;
   }
 
-  bool _hasSubtitles(Tracks? tracks) {
+  bool _hasSubtitles(MpvTracks? tracks) {
     if (tracks == null) return false;
     final subtitles = tracks.subtitle
         .where((track) => track.id != 'auto' && track.id != 'no')

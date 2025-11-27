@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+
+import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/platform_detector.dart';
@@ -58,7 +59,7 @@ class _SettingsMenuItem extends StatelessWidget {
 
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
-  final Player player;
+  final MpvPlayer player;
   final int audioSyncOffset;
   final int subtitleSyncOffset;
 
@@ -71,7 +72,7 @@ class VideoSettingsSheet extends StatefulWidget {
 
   static Future<void> show(
     BuildContext context,
-    Player player,
+    MpvPlayer player,
     int audioSyncOffset,
     int subtitleSyncOffset,
   ) {
@@ -200,7 +201,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       children: [
         // Playback Speed
         StreamBuilder<double>(
-          stream: widget.player.stream.rate,
+          stream: widget.player.streams.rate,
           initialData: widget.player.state.rate,
           builder: (context, snapshot) {
             final currentRate = snapshot.data ?? 1.0;
@@ -248,8 +249,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // Audio Output Device (Desktop only)
         if (isDesktop)
-          StreamBuilder<AudioDevice>(
-            stream: widget.player.stream.audioDevice,
+          StreamBuilder<MpvAudioDevice>(
+            stream: widget.player.streams.audioDevice,
             initialData: widget.player.state.audioDevice,
             builder: (context, snapshot) {
               final currentDevice =
@@ -273,7 +274,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   Widget _buildSpeedView() {
     return StreamBuilder<double>(
-      stream: widget.player.stream.rate,
+      stream: widget.player.streams.rate,
       initialData: widget.player.state.rate,
       builder: (context, snapshot) {
         final currentRate = snapshot.data ?? 1.0;
@@ -352,14 +353,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildAudioDeviceView() {
-    return StreamBuilder<List<AudioDevice>>(
-      stream: widget.player.stream.audioDevices,
+    return StreamBuilder<List<MpvAudioDevice>>(
+      stream: widget.player.streams.audioDevices,
       initialData: widget.player.state.audioDevices,
       builder: (context, snapshot) {
         final devices = snapshot.data ?? [];
 
-        return StreamBuilder<AudioDevice>(
-          stream: widget.player.stream.audioDevice,
+        return StreamBuilder<MpvAudioDevice>(
+          stream: widget.player.streams.audioDevice,
           initialData: widget.player.state.audioDevice,
           builder: (context, selectedSnapshot) {
             final currentDevice =

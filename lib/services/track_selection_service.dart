@@ -1,4 +1,4 @@
-import 'package:media_kit/media_kit.dart';
+import '../mpv/mpv.dart';
 
 import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
@@ -8,7 +8,7 @@ import '../utils/language_codes.dart';
 /// Service for selecting and applying audio and subtitle tracks based on
 /// preferences, user profiles, and per-media settings.
 class TrackSelectionService {
-  final Player player;
+  final MpvPlayer player;
   final PlexUserProfile? profileSettings;
   final PlexMetadata metadata;
 
@@ -69,11 +69,11 @@ class TrackSelectionService {
     return null;
   }
 
-  AudioTrack? findBestAudioMatch(
-    List<AudioTrack> availableTracks,
-    AudioTrack preferred,
+  MpvAudioTrack? findBestAudioMatch(
+    List<MpvAudioTrack> availableTracks,
+    MpvAudioTrack preferred,
   ) {
-    return findBestTrackMatch<AudioTrack>(
+    return findBestTrackMatch<MpvAudioTrack>(
       availableTracks,
       preferred,
       (t) => t.id,
@@ -82,8 +82,8 @@ class TrackSelectionService {
     );
   }
 
-  AudioTrack? findAudioTrackByProfile(
-    List<AudioTrack> availableTracks,
+  MpvAudioTrack? findAudioTrackByProfile(
+    List<MpvAudioTrack> availableTracks,
     PlexUserProfile profile,
   ) {
     appLogger.d('Audio track selection using user profile');
@@ -123,7 +123,7 @@ class TrackSelectionService {
         'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
       );
 
-      final match = _findTrackByLanguageVariations<AudioTrack>(
+      final match = _findTrackByLanguageVariations<MpvAudioTrack>(
         availableTracks,
         preferredLanguage,
         languageVariations,
@@ -140,16 +140,16 @@ class TrackSelectionService {
     return null;
   }
 
-  SubtitleTrack? findBestSubtitleMatch(
-    List<SubtitleTrack> availableTracks,
-    SubtitleTrack preferred,
+  MpvSubtitleTrack? findBestSubtitleMatch(
+    List<MpvSubtitleTrack> availableTracks,
+    MpvSubtitleTrack preferred,
   ) {
     // Handle special "no subtitles" case
     if (preferred.id == 'no') {
-      return SubtitleTrack.no();
+      return MpvSubtitleTrack.off;
     }
 
-    return findBestTrackMatch<SubtitleTrack>(
+    return findBestTrackMatch<MpvSubtitleTrack>(
       availableTracks,
       preferred,
       (t) => t.id,
@@ -158,10 +158,10 @@ class TrackSelectionService {
     );
   }
 
-  SubtitleTrack? findSubtitleTrackByProfile(
-    List<SubtitleTrack> availableTracks,
+  MpvSubtitleTrack? findSubtitleTrackByProfile(
+    List<MpvSubtitleTrack> availableTracks,
     PlexUserProfile profile, {
-    AudioTrack? selectedAudioTrack,
+    MpvAudioTrack? selectedAudioTrack,
   }) {
     appLogger.d('Subtitle track selection using user profile');
     appLogger.d(
@@ -178,7 +178,7 @@ class TrackSelectionService {
       appLogger.d(
         'Profile specifies manual mode (autoSelectSubtitle=0) - Subtitles OFF',
       );
-      return SubtitleTrack.no();
+      return MpvSubtitleTrack.off;
     }
 
     // Mode 1: Shown with foreign audio
@@ -201,7 +201,7 @@ class TrackSelectionService {
         // If audio matches preferred language, no subtitles needed
         if (audioLang != null && languageVariations.contains(audioLang)) {
           appLogger.d('Audio matches preferred language - Subtitles OFF');
-          return SubtitleTrack.no();
+          return MpvSubtitleTrack.off;
         }
         appLogger.d('Foreign audio detected - enabling subtitles');
       }
@@ -258,7 +258,7 @@ class TrackSelectionService {
         'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
       );
 
-      final match = _findTrackByLanguageVariations<SubtitleTrack>(
+      final match = _findTrackByLanguageVariations<MpvSubtitleTrack>(
         candidateTracks,
         preferredLanguage,
         languageVariations,
@@ -282,8 +282,8 @@ class TrackSelectionService {
   /// - 1: Prefer SDH subtitles
   /// - 2: Only show SDH subtitles
   /// - 3: Only show non-SDH subtitles
-  List<SubtitleTrack> filterSubtitlesBySDH(
-    List<SubtitleTrack> tracks,
+  List<MpvSubtitleTrack> filterSubtitlesBySDH(
+    List<MpvSubtitleTrack> tracks,
     int preference,
   ) {
     if (preference == 0 || preference == 1) {
@@ -319,8 +319,8 @@ class TrackSelectionService {
   /// - 1: Prefer forced subtitles
   /// - 2: Only show forced subtitles
   /// - 3: Only show non-forced subtitles
-  List<SubtitleTrack> filterSubtitlesByForced(
-    List<SubtitleTrack> tracks,
+  List<MpvSubtitleTrack> filterSubtitlesByForced(
+    List<MpvSubtitleTrack> tracks,
     int preference,
   ) {
     if (preference == 0 || preference == 1) {
@@ -353,8 +353,8 @@ class TrackSelectionService {
 
   /// Checks if a subtitle track is SDH (Subtitles for Deaf or Hard-of-Hearing)
   ///
-  /// Since media_kit may not expose this directly, we infer from the title
-  bool isSDH(SubtitleTrack track) {
+  /// Since mpv may not expose this directly, we infer from the title
+  bool isSDH(MpvSubtitleTrack track) {
     final title = track.title?.toLowerCase() ?? '';
 
     // Look for common SDH indicators
@@ -365,7 +365,7 @@ class TrackSelectionService {
   }
 
   /// Checks if a subtitle track is forced
-  bool isForced(SubtitleTrack track) {
+  bool isForced(MpvSubtitleTrack track) {
     final title = track.title?.toLowerCase() ?? '';
     return title.contains('forced');
   }
@@ -423,8 +423,8 @@ class TrackSelectionService {
 
   /// Log available tracks for debugging
   void logAvailableTracks(
-    List<AudioTrack> audioTracks,
-    List<SubtitleTrack> subtitleTracks,
+    List<MpvAudioTrack> audioTracks,
+    List<MpvSubtitleTrack> subtitleTracks,
   ) {
     appLogger.d('Available audio tracks: ${audioTracks.length}');
     for (var track in audioTracks) {
@@ -445,13 +445,13 @@ class TrackSelectionService {
   /// Priority 2: Per-media language preference
   /// Priority 3: User profile preferences
   /// Priority 4: Default or first track
-  AudioTrack? selectAudioTrack(
-    List<AudioTrack> availableTracks,
-    AudioTrack? preferredAudioTrack,
+  MpvAudioTrack? selectAudioTrack(
+    List<MpvAudioTrack> availableTracks,
+    MpvAudioTrack? preferredAudioTrack,
   ) {
     if (availableTracks.isEmpty) return null;
 
-    AudioTrack? trackToSelect;
+    MpvAudioTrack? trackToSelect;
 
     // Priority 1: Try to match preferred track from navigation
     if (preferredAudioTrack != null) {
@@ -522,19 +522,19 @@ class TrackSelectionService {
   /// Priority 3: User profile preferences
   /// Priority 4: Default track
   /// Priority 5: Off
-  SubtitleTrack selectSubtitleTrack(
-    List<SubtitleTrack> availableTracks,
-    SubtitleTrack? preferredSubtitleTrack,
-    AudioTrack? selectedAudioTrack,
+  MpvSubtitleTrack selectSubtitleTrack(
+    List<MpvSubtitleTrack> availableTracks,
+    MpvSubtitleTrack? preferredSubtitleTrack,
+    MpvAudioTrack? selectedAudioTrack,
   ) {
-    SubtitleTrack? subtitleToSelect;
+    MpvSubtitleTrack? subtitleToSelect;
 
     // Priority 1: Try preferred track from navigation (always wins)
     if (preferredSubtitleTrack != null) {
       appLogger.d('Priority 1: Checking preferred track from navigation');
       if (preferredSubtitleTrack.id == 'no') {
         appLogger.d('  Preferred: OFF');
-        return SubtitleTrack.no();
+        return MpvSubtitleTrack.off;
       } else if (availableTracks.isNotEmpty) {
         appLogger.d(
           '  Preferred: ${preferredSubtitleTrack.title ?? "Track ${preferredSubtitleTrack.id}"} (${preferredSubtitleTrack.language ?? "unknown"})',
@@ -566,7 +566,7 @@ class TrackSelectionService {
       if (metadata.subtitleLanguage == 'none' ||
           metadata.subtitleLanguage!.isEmpty) {
         appLogger.d('  Per-media preference: Subtitles OFF');
-        return SubtitleTrack.no();
+        return MpvSubtitleTrack.off;
       } else if (availableTracks.isNotEmpty) {
         final matchedTrack = availableTracks.firstWhere(
           (track) => languageMatches(track.language, metadata.subtitleLanguage),
@@ -615,16 +615,16 @@ class TrackSelectionService {
 
     // Priority 5: If still no subtitle selected, turn off
     appLogger.d('Priority 5: No subtitle selected - Subtitles OFF');
-    return SubtitleTrack.no();
+    return MpvSubtitleTrack.off;
   }
 
   /// Select and apply audio and subtitle tracks based on preferences
   Future<void> selectAndApplyTracks({
-    AudioTrack? preferredAudioTrack,
-    SubtitleTrack? preferredSubtitleTrack,
+    MpvAudioTrack? preferredAudioTrack,
+    MpvSubtitleTrack? preferredSubtitleTrack,
     double? preferredPlaybackRate,
-    Function(AudioTrack)? onAudioTrackChanged,
-    Function(SubtitleTrack)? onSubtitleTrackChanged,
+    Function(MpvAudioTrack)? onAudioTrackChanged,
+    Function(MpvSubtitleTrack)? onSubtitleTrackChanged,
   }) async {
     // Wait for tracks to be loaded
     int attempts = 0;
@@ -658,7 +658,7 @@ class TrackSelectionService {
       appLogger.i(
         'Final audio selection: ${selectedAudioTrack.title ?? "Track ${selectedAudioTrack.id}"} (${selectedAudioTrack.language ?? "unknown"})',
       );
-      player.setAudioTrack(selectedAudioTrack);
+      player.selectAudioTrack(selectedAudioTrack);
     } else {
       appLogger.d('No audio tracks available');
     }
@@ -674,7 +674,7 @@ class TrackSelectionService {
         ? 'OFF'
         : '${selectedSubtitleTrack.title ?? "Track ${selectedSubtitleTrack.id}"} (${selectedSubtitleTrack.language ?? "unknown"})';
     appLogger.i('Final subtitle selection: $finalSubtitle');
-    player.setSubtitleTrack(selectedSubtitleTrack);
+    player.selectSubtitleTrack(selectedSubtitleTrack);
 
     // Set playback rate if preferred rate was provided
     if (preferredPlaybackRate != null) {

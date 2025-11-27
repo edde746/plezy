@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:rate_limiter/rate_limiter.dart';
+
+import '../mpv/mpv.dart';
 
 import '../models/plex_media_version.dart';
 import '../utils/app_logger.dart';
@@ -13,7 +14,7 @@ import '../utils/app_logger.dart';
 /// - Subtitle positioning adjustments based on crop parameters
 /// - Debounced video filter updates on resize events
 class VideoFilterManager {
-  final Player player;
+  final MpvPlayer player;
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
 
@@ -203,8 +204,6 @@ class VideoFilterManager {
   /// Update the video filter based on current crop mode
   void updateVideoFilter() async {
     try {
-      final nativePlayer = player.platform as dynamic;
-
       if (_boxFitMode == 1) {
         // Fill screen mode - apply crop filter
         _videoSize = _getCurrentVideoSize();
@@ -218,7 +217,7 @@ class VideoFilterManager {
           );
 
           // Apply crop filter
-          await nativePlayer.setProperty('vf', cropFilter);
+          await player.setProperty('vf', cropFilter);
 
           // Apply subtitle margins and scaling to compensate for crop zoom
           final subMarginX = cropParams['subMarginX']!;
@@ -229,28 +228,28 @@ class VideoFilterManager {
             'Applying subtitle properties - margins: x=$subMarginX, y=$subMarginY, scale=$subScale',
           );
 
-          await nativePlayer.setProperty('sub-margin-x', subMarginX.toString());
-          await nativePlayer.setProperty('sub-margin-y', subMarginY.toString());
-          await nativePlayer.setProperty('sub-scale', subScale.toString());
+          await player.setProperty('sub-margin-x', subMarginX.toString());
+          await player.setProperty('sub-margin-y', subMarginY.toString());
+          await player.setProperty('sub-scale', subScale.toString());
         } else {
           // Clear filter but apply base margins if no cropping needed
           appLogger.d(
             'Clearing video filter - aspect ratios similar, applying base margins (player: $_playerSize, video: $_videoSize)',
           );
-          await nativePlayer.setProperty('vf', '');
-          await nativePlayer.setProperty('sub-margin-x', '20'); // Base margin
-          await nativePlayer.setProperty('sub-margin-y', '40'); // Base margin
-          await nativePlayer.setProperty('sub-scale', '1.0'); // Reset scale
+          await player.setProperty('vf', '');
+          await player.setProperty('sub-margin-x', '20'); // Base margin
+          await player.setProperty('sub-margin-y', '40'); // Base margin
+          await player.setProperty('sub-scale', '1.0'); // Reset scale
         }
       } else {
         // Other modes - clear video filter but apply base margins
         appLogger.d(
           'Clearing video filter, applying base margins - BoxFit mode $_boxFitMode',
         );
-        await nativePlayer.setProperty('vf', '');
-        await nativePlayer.setProperty('sub-margin-x', '20'); // Base margin
-        await nativePlayer.setProperty('sub-margin-y', '40'); // Base margin
-        await nativePlayer.setProperty('sub-scale', '1.0'); // Reset scale
+        await player.setProperty('vf', '');
+        await player.setProperty('sub-margin-x', '20'); // Base margin
+        await player.setProperty('sub-margin-y', '40'); // Base margin
+        await player.setProperty('sub-scale', '1.0'); // Reset scale
       }
     } catch (e) {
       appLogger.w('Failed to update video filter', error: e);
