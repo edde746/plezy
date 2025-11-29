@@ -209,20 +209,20 @@ class MpvPlayerMacOS implements MpvPlayer {
         audioTracks.add(MpvAudioTrack(
           id: id,
           title: track['title'] as String?,
-          language: track['language'] as String?,
+          language: track['lang'] as String?,
           codec: track['codec'] as String?,
-          channels: track['channels'] as int?,
-          sampleRate: track['sampleRate'] as int?,
-          isDefault: track['isDefault'] as bool? ?? false,
+          channels: (track['demux-channel-count'] as num?)?.toInt(),
+          sampleRate: (track['demux-samplerate'] as num?)?.toInt(),
+          isDefault: track['default'] as bool? ?? false,
         ));
       } else if (type == 'sub') {
         subtitleTracks.add(MpvSubtitleTrack(
           id: id,
           title: track['title'] as String?,
-          language: track['language'] as String?,
+          language: track['lang'] as String?,
           codec: track['codec'] as String?,
-          isExternal: track['isExternal'] as bool? ?? false,
-          uri: track['uri'] as String?,
+          isExternal: track['external'] as bool? ?? false,
+          uri: track['external-filename'] as String?,
         ));
       }
     }

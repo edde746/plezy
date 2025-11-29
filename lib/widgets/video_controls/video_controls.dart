@@ -115,6 +115,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _markersLoaded = false;
   // Playback state subscription for auto-hide timer
   StreamSubscription<bool>? _playingSubscription;
+  // Window resize pause state
+  Timer? _resizeDebounceTimer;
+  bool _wasPlayingBeforeResize = false;
 
   @override
   void initState() {
@@ -241,6 +244,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void dispose() {
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
+    _resizeDebounceTimer?.cancel();
     _seekThrottle.cancel();
     _playingSubscription?.cancel();
     _focusNode.dispose();
@@ -297,6 +301,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _isFullscreen = false;
       });
     }
+  }
+
+  @override
+  void onWindowResize() {
+    // Pause video while resizing to prevent lag
+    if (_resizeDebounceTimer == null && widget.player.state.playing) {
+      _wasPlayingBeforeResize = true;
+      widget.player.pause();
+    }
+
+    // Reset debounce timer - resume when resizing stops
+    _resizeDebounceTimer?.cancel();
+    _resizeDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (_wasPlayingBeforeResize && mounted) {
+        widget.player.play();
+      }
+      _wasPlayingBeforeResize = false;
+      _resizeDebounceTimer = null;
+    });
   }
 
   void _startHideTimer() {

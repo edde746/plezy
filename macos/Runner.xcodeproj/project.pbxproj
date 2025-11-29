@@ -26,10 +26,10 @@
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
+		6AB6B0952EDB27C100EAC8DB /* MPVKit-GPL in Frameworks */ = {isa = PBXBuildFile; productRef = 6AB6B0942EDB27C100EAC8DB /* MPVKit-GPL */; };
 		6AC86ED72EA70B4C0067BC66 /* plezy.icon in Resources */ = {isa = PBXBuildFile; fileRef = 6AC86ED62EA70B4C0067BC66 /* plezy.icon */; };
 		6AD8B1612ED7B50000E9E1B4 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1632ED7B50000E9E1B4 /* MpvPlayerCore.swift */; };
 		6AD8B1622ED7B50000E9E1B4 /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AD8B1642ED7B50000E9E1B4 /* MpvPlayerPlugin.swift */; };
-		6AD8B1672ED80AB000E9E1B4 /* MPVKit-GPL in Frameworks */ = {isa = PBXBuildFile; productRef = 6AD8B1662ED80AB000E9E1B4 /* MPVKit-GPL */; };
 		9AECA605E2E1BECE3CA5BD01 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 78F9F23331B540A25C4A70C7 /* Pods_Runner.framework */; };
 		FE52EE1D2D489FA88507D14E /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84260356652A3270E664FED4 /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
@@ -109,7 +109,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9AECA605E2E1BECE3CA5BD01 /* Pods_Runner.framework in Frameworks */,
-				6AD8B1672ED80AB000E9E1B4 /* MPVKit-GPL in Frameworks */,
+				6AB6B0952EDB27C100EAC8DB /* MPVKit-GPL in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -308,7 +308,7 @@
 			);
 			mainGroup = 33CC10E42044A3C60003C045;
 			packageReferences = (
-				6AD8B1652ED80AB000E9E1B4 /* XCRemoteSwiftPackageReference "MPVKit" */,
+				6AB6B0932EDB27C100EAC8DB /* XCRemoteSwiftPackageReference "MPVKit" */,
 			);
 			productRefGroup = 33CC10EE2044A3C60003C045 /* Products */;
 			projectDirPath = "";
@@ -818,20 +818,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		6AD8B1652ED80AB000E9E1B4 /* XCRemoteSwiftPackageReference "MPVKit" */ = {
+		6AB6B0932EDB27C100EAC8DB /* XCRemoteSwiftPackageReference "MPVKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mpvkit/MPVKit.git";
+			repositoryURL = "https://github.com/edde746/MPVKit";
 			requirement = {
 				kind = revision;
-				revision = 6401bcb8afd2959582eff06f99d055a66442f3ce;
+				revision = a8ae0d2f08df6188c662b7670bddb97131db8c5a;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		6AD8B1662ED80AB000E9E1B4 /* MPVKit-GPL */ = {
+		6AB6B0942EDB27C100EAC8DB /* MPVKit-GPL */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 6AD8B1652ED80AB000E9E1B4 /* XCRemoteSwiftPackageReference "MPVKit" */;
+			package = 6AB6B0932EDB27C100EAC8DB /* XCRemoteSwiftPackageReference "MPVKit" */;
 			productName = "MPVKit-GPL";
 		};
 /* End XCSwiftPackageProductDependency section */

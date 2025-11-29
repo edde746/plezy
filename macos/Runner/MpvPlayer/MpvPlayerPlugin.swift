@@ -206,12 +206,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         var event: [String: Any] = ["type": "property", "name": name]
 
         if let value = value {
-            // Handle track-list specially - convert to serializable format
-            if name == "track-list", let tracks = value as? [[String: Any]] {
-                event["value"] = serializeTracks(tracks)
-            } else {
-                event["value"] = value
-            }
+            event["value"] = value
         }
 
         eventSink(event)
@@ -250,44 +245,5 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         }
 
         return nil
-    }
-
-    private func serializeTracks(_ tracks: [[String: Any]]) -> [[String: Any]] {
-        return tracks.map { track in
-            var serialized = [String: Any]()
-
-            if let id = track["id"] as? Int64 {
-                serialized["id"] = String(id)
-            }
-            if let type = track["type"] as? String {
-                serialized["type"] = type
-            }
-            if let title = track["title"] as? String {
-                serialized["title"] = title
-            }
-            if let lang = track["lang"] as? String {
-                serialized["language"] = lang
-            }
-            if let codec = track["codec"] as? String {
-                serialized["codec"] = codec
-            }
-            if let channels = track["demux-channel-count"] as? Int64 {
-                serialized["channels"] = Int(channels)
-            }
-            if let sampleRate = track["demux-samplerate"] as? Int64 {
-                serialized["sampleRate"] = Int(sampleRate)
-            }
-            if let isDefault = track["default"] as? Bool {
-                serialized["isDefault"] = isDefault
-            }
-            if let isExternal = track["external"] as? Bool {
-                serialized["isExternal"] = isExternal
-            }
-            if let externalFilename = track["external-filename"] as? String {
-                serialized["uri"] = externalFilename
-            }
-
-            return serialized
-        }
     }
 }
