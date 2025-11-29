@@ -4,6 +4,7 @@ import '../models/mpv_audio_device.dart';
 import '../models/mpv_media.dart';
 import '../models/mpv_audio_track.dart';
 import '../models/mpv_subtitle_track.dart';
+import 'mpv_player_ios.dart';
 import 'mpv_player_macos.dart';
 import 'mpv_player_state.dart';
 import 'mpv_player_streams.dart';
@@ -187,12 +188,16 @@ abstract class MpvPlayer {
   ///
   /// Returns a platform-specific implementation:
   /// - macOS: [MpvPlayerMacOS] using MPVKit with Metal rendering
+  /// - iOS: [MpvPlayerIOS] using MPVKit with Metal rendering
   /// - Other platforms: [MpvPlayerStub] (placeholder)
   factory MpvPlayer() {
     if (Platform.isMacOS) {
       return MpvPlayerMacOS();
     }
-    // Future: Add iOS, Android, Windows, Linux implementations
+    if (Platform.isIOS) {
+      return MpvPlayerIOS();
+    }
+    // Future: Add Android, Windows, Linux implementations
     return MpvPlayerStub();
   }
 }

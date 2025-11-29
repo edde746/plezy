@@ -225,6 +225,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       player = MpvPlayer();
 
       // Configure player properties
+      await player!.setProperty('target-colorspace-hint', 'yes'); // Enable HDR passthrough
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
       await player!.setProperty('sub-fonts-dir', 'assets');
       await player!.setProperty('sub-font', 'Go Noto Current-Regular');
@@ -910,7 +911,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       },
       child: Scaffold(
         // Use transparent background on macOS when native video layer is active
-        backgroundColor: Platform.isMacOS ? Colors.transparent : Colors.black,
+        backgroundColor: Colors.transparent,
         body: GestureDetector(
           behavior: HitTestBehavior
               .translucent, // Allow taps to pass through to controls

@@ -10,6 +10,11 @@ import AVFoundation
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
 
+    // Register MPV player plugin
+    if let registrar = self.registrar(forPlugin: "MpvPlayerPlugin") {
+      MpvPlayerPlugin.register(with: registrar)
+    }
+
     // Configure audio session for media playback
     do {
       let session = AVAudioSession.sharedInstance()

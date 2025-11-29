@@ -47,11 +47,8 @@ class MpvVideo extends StatefulWidget {
 class _MpvVideoState extends State<MpvVideo> {
   @override
   Widget build(BuildContext context) {
-    // macOS uses transparent background so native Metal layer shows through
-    final bgColor = Platform.isMacOS ? Colors.transparent : widget.backgroundColor;
-
     return Container(
-      color: bgColor,
+      color: Colors.transparent,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -66,41 +63,6 @@ class _MpvVideoState extends State<MpvVideo> {
   }
 
   Widget _buildVideoSurface() {
-    // macOS: Video renders behind Flutter via native Metal layer
-    // Just show transparent container so native layer shows through
-    if (Platform.isMacOS) {
-      return const SizedBox.expand();
-    }
-
-    // When textureId is available, use Flutter's Texture widget
-    final textureId = widget.player.textureId;
-    if (textureId != null) {
-      return FittedBox(
-        fit: widget.fit,
-        child: Texture(textureId: textureId),
-      );
-    }
-
-    // Placeholder when video is not ready
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.play_circle_outline,
-            size: 64,
-            color: Colors.white.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'MPV Video',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.3),
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.expand();
   }
 }
