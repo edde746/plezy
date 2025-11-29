@@ -27,6 +27,12 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_ios_podfile_setup
 
+def apple_silicon_host?
+  `uname -m`.strip == 'arm64'
+rescue
+  false
+end
+
 target 'Runner' do
   use_frameworks!
 
@@ -39,5 +45,12 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    next unless apple_silicon_host?
+
+    target.build_configurations.each do |config|
+      # media_kit vendored frameworks only ship arm64 simulator slices.
+      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386 x86_64'
+    end
   end
 end

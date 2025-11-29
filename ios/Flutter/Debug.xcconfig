@@ -1,2 +1,4 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
+// media_kit ships arm64-only simulator frameworks; skip Intel slices to avoid linker errors.
+EXCLUDED_ARCHS[sdk=iphonesimulator*]=i386 x86_64
