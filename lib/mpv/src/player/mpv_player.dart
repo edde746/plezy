@@ -4,6 +4,7 @@ import '../models/mpv_audio_device.dart';
 import '../models/mpv_media.dart';
 import '../models/mpv_audio_track.dart';
 import '../models/mpv_subtitle_track.dart';
+import 'mpv_player_android.dart';
 import 'mpv_player_ios.dart';
 import 'mpv_player_macos.dart';
 import 'mpv_player_state.dart';
@@ -197,7 +198,10 @@ abstract class MpvPlayer {
     if (Platform.isIOS) {
       return MpvPlayerIOS();
     }
-    // Future: Add Android, Windows, Linux implementations
+    if (Platform.isAndroid) {
+      return MpvPlayerAndroid();
+    }
+    // Future: Add Windows, Linux implementations
     return MpvPlayerStub();
   }
 }
