@@ -7,6 +7,7 @@ import '../models/mpv_subtitle_track.dart';
 import 'mpv_player_android.dart';
 import 'mpv_player_ios.dart';
 import 'mpv_player_macos.dart';
+import 'mpv_player_windows.dart';
 import 'mpv_player_state.dart';
 import 'mpv_player_streams.dart';
 import 'mpv_player_stub.dart';
@@ -201,7 +202,10 @@ abstract class MpvPlayer {
     if (Platform.isAndroid) {
       return MpvPlayerAndroid();
     }
-    // Future: Add Windows, Linux implementations
+    if (Platform.isWindows) {
+      return MpvPlayerWindows();
+    }
+    // Future: Add Linux implementation
     return MpvPlayerStub();
   }
 }

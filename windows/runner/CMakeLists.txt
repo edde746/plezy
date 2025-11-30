@@ -11,6 +11,8 @@ add_executable(${BINARY_NAME} WIN32
   "main.cpp"
   "utils.cpp"
   "win32_window.cpp"
+  "MpvPlayer/MpvPlayerCore.cpp"
+  "MpvPlayer/MpvPlayerPlugin.cpp"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
   "Runner.rc"
   "runner.exe.manifest"
@@ -34,7 +36,32 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 # dependencies here.
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
 target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib")
+target_link_libraries(${BINARY_NAME} PRIVATE "comctl32.lib")
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+
+# MPV library - fetch from GitHub releases
+include(FetchContent)
+
+set(MPV_URL "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20251130/mpv-dev-x86_64-v3-20251130-git-23f9381.7z")
+
+FetchContent_Declare(
+  mpv
+  URL ${MPV_URL}
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+FetchContent_MakeAvailable(mpv)
+
+set(MPV_DIR "${mpv_SOURCE_DIR}")
+target_include_directories(${BINARY_NAME} PRIVATE "${MPV_DIR}/include")
+target_link_libraries(${BINARY_NAME} PRIVATE "${MPV_DIR}/libmpv.dll.a")
+
+# Copy mpv DLL to output directory
+add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${MPV_DIR}/libmpv-2.dll"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>"
+)
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
