@@ -910,7 +910,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       },
       child: Scaffold(
         // Use transparent background on macOS when native video layer is active
-        backgroundColor: Platform.isMacOS ? Colors.transparent : Colors.black,
+        backgroundColor: Colors.transparent,
         body: GestureDetector(
           behavior: HitTestBehavior
               .translucent, // Allow taps to pass through to controls

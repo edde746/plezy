@@ -42,7 +42,7 @@ class MpvPlayerCore: NSObject {
 
     private var metalLayer: MetalLayer?
     private var mpv: OpaquePointer?
-    private weak var parentView: UIView?
+    private weak var window: UIWindow?
     private lazy var queue = DispatchQueue(label: "mpv", qos: .userInitiated)
 
     weak var delegate: MpvPlayerDelegate?
@@ -51,27 +51,27 @@ class MpvPlayerCore: NSObject {
 
     // MARK: - Initialization
 
-    func initialize(in view: UIView) -> Bool {
+    func initialize(in window: UIWindow) -> Bool {
         guard !isInitialized else {
             print("[MpvPlayerCore] Already initialized")
             return true
         }
 
-        self.parentView = view
+        self.window = window
 
         // Create Metal layer for video rendering
         let layer = MetalLayer()
-        layer.frame = view.bounds
+        layer.frame = window.bounds
         layer.contentsScale = UIScreen.main.nativeScale
         layer.framebufferOnly = true
         layer.backgroundColor = UIColor.black.cgColor
 
         metalLayer = layer
 
-        // Add Metal layer to view
-        view.layer.addSublayer(layer)
+        // Add Metal layer to WINDOW layer (behind Flutter's view controller)
+        window.layer.insertSublayer(layer, at: 0)
 
-        print("[MpvPlayerCore] Metal layer added, frame: \(layer.frame)")
+        print("[MpvPlayerCore] Metal layer added to window, frame: \(layer.frame)")
 
         // Initialize MPV with this Metal layer
         guard setupMpv() else {
@@ -207,10 +207,10 @@ class MpvPlayerCore: NSObject {
         guard let layer = metalLayer else { return }
 
         if visible {
-            // Re-insert after background layer but before Flutter control views
+            // Re-insert at the bottom of the window layer stack
             layer.removeFromSuperlayer()
-            if let superlayer = parentView?.layer {
-                superlayer.insertSublayer(layer, at: 1)
+            if let windowLayer = window?.layer {
+                windowLayer.insertSublayer(layer, at: 0)
             }
         }
 
@@ -223,8 +223,8 @@ class MpvPlayerCore: NSObject {
 
         if let frame = frame {
             metalLayer.frame = frame
-        } else if let parentView = parentView {
-            metalLayer.frame = parentView.bounds
+        } else if let window = window {
+            metalLayer.frame = window.bounds
         }
 
         // Update drawable size for proper scaling

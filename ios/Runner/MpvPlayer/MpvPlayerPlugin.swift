@@ -97,10 +97,10 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
                 return
             }
 
-            // Find the Flutter view
-            guard let flutterView = self.findFlutterView() else {
-                print("[MpvPlayerPlugin] Failed to find Flutter view")
-                result(FlutterError(code: "NO_VIEW", message: "Could not find Flutter view", details: nil))
+            // Find the key window
+            guard let window = self.findKeyWindow() else {
+                print("[MpvPlayerPlugin] Failed to find key window")
+                result(FlutterError(code: "NO_WINDOW", message: "Could not find key window", details: nil))
                 return
             }
 
@@ -108,7 +108,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             let core = MpvPlayerCore()
             core.delegate = self
 
-            guard core.initialize(in: flutterView) else {
+            guard core.initialize(in: window) else {
                 print("[MpvPlayerPlugin] Failed to initialize MPV")
                 result(FlutterError(code: "MPV_INIT_FAILED", message: "Failed to initialize MPV", details: nil))
                 return
@@ -225,15 +225,11 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
 
     // MARK: - Helpers
 
-    private func findFlutterView() -> UIView? {
-        // Get the key window's root view controller
+    private func findKeyWindow() -> UIWindow? {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first(where: { $0.isKeyWindow }),
-              let rootViewController = window.rootViewController else {
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {
             return nil
         }
-
-        // The Flutter view is the root view controller's view
-        return rootViewController.view
+        return window
     }
 }
