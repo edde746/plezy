@@ -41,6 +41,9 @@ class SettingsService {
       'subtitle_background_opacity';
   static const String _keyAppLocale = 'app_locale';
   static const String _keyRememberTrackSelections = 'remember_track_selections';
+  static const String _keyAutoSkipIntro = 'auto_skip_intro';
+  static const String _keyAutoSkipCredits = 'auto_skip_credits';
+  static const String _keyAutoSkipDelay = 'auto_skip_delay';
 
   static SettingsService? _instance;
   late SharedPreferences _prefs;
@@ -805,12 +808,39 @@ class SettingsService {
   // Track Selection Settings
 
   /// Remember Track Selections - Save per-media audio/subtitle language preferences
-  Future<void> setRememberTrackSelections(bool enabled) async {
-    await _prefs.setBool(_keyRememberTrackSelections, enabled);
+  Future<void> setRememberTrackSelections(bool value) async {
+    await _prefs.setBool(_keyRememberTrackSelections, value);
   }
 
   bool getRememberTrackSelections() {
-    return _prefs.getBool(_keyRememberTrackSelections) ?? true; // Default: true
+    return _prefs.getBool(_keyRememberTrackSelections) ?? true;
+  }
+
+  // Auto Skip Intro
+  Future<void> setAutoSkipIntro(bool value) async {
+    await _prefs.setBool(_keyAutoSkipIntro, value);
+  }
+
+  bool getAutoSkipIntro() {
+    return _prefs.getBool(_keyAutoSkipIntro) ?? true; // Default: enabled
+  }
+
+  // Auto Skip Credits
+  Future<void> setAutoSkipCredits(bool value) async {
+    await _prefs.setBool(_keyAutoSkipCredits, value);
+  }
+
+  bool getAutoSkipCredits() {
+    return _prefs.getBool(_keyAutoSkipCredits) ?? true; // Default: enabled
+  }
+
+  // Auto Skip Delay (in seconds)
+  Future<void> setAutoSkipDelay(int seconds) async {
+    await _prefs.setInt(_keyAutoSkipDelay, seconds);
+  }
+
+  int getAutoSkipDelay() {
+    return _prefs.getInt(_keyAutoSkipDelay) ?? 5; // Default: 5 seconds
   }
 
   // Reset all settings to defaults
@@ -875,6 +905,9 @@ class SettingsService {
         (key, value) => MapEntry(key, _serializeHotKey(value)),
       ),
       'rememberTrackSelections': getRememberTrackSelections(),
+      'autoSkipIntro': getAutoSkipIntro(),
+      'autoSkipCredits': getAutoSkipCredits(),
+      'autoSkipDelay': getAutoSkipDelay(),
     };
   }
 }
