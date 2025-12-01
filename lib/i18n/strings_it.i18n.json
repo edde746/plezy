@@ -133,7 +133,14 @@
     "validationErrorEnterNumber": "Inserisci un numero valido",
     "validationErrorDuration": "la durata deve essere compresa tra ${min} e ${max} ${unit}",
     "shortcutAlreadyAssigned": "Scorciatoia già assegnata a ${action}",
-    "shortcutUpdated": "Scorciatoia aggiornata per ${action}"
+    "shortcutUpdated": "Scorciatoia aggiornata per ${action}",
+    "autoSkip": "Salto Automatico",
+    "autoSkipIntro": "Salta Intro Automaticamente",
+    "autoSkipIntroDescription": "Salta automaticamente i marcatori dell'intro dopo alcuni secondi",
+    "autoSkipCredits": "Salta Crediti Automaticamente",
+    "autoSkipCreditsDescription": "Salta automaticamente i crediti e riproduci l'episodio successivo",
+    "autoSkipDelay": "Ritardo Salto Automatico",
+    "autoSkipDelayDescription": "Aspetta ${seconds} secondi prima del salto automatico"
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",

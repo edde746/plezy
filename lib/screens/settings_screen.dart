@@ -301,7 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Text(
-              'Auto Skip',
+              t.settings.autoSkip,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.primary,
@@ -310,8 +310,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SwitchListTile(
             secondary: const Icon(Icons.fast_forward),
-            title: const Text('Auto Skip Intro'),
-            subtitle: const Text('Automatically skip intro markers after a few seconds'),
+            title: Text(t.settings.autoSkipIntro),
+            subtitle: Text(t.settings.autoSkipIntroDescription),
             value: _autoSkipIntro,
             onChanged: (value) async {
               setState(() {
@@ -322,8 +322,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SwitchListTile(
             secondary: const Icon(Icons.skip_next),
-            title: const Text('Auto Skip Credits'),
-            subtitle: const Text('Automatically skip credits and play next episode'),
+            title: Text(t.settings.autoSkipCredits),
+            subtitle: Text(t.settings.autoSkipCreditsDescription),
             value: _autoSkipCredits,
             onChanged: (value) async {
               setState(() {
@@ -334,8 +334,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.timer),
-            title: const Text('Auto Skip Delay'),
-            subtitle: Text('Wait $_autoSkipDelay seconds before auto-skipping'),
+            title: Text(t.settings.autoSkipDelay),
+            subtitle: Text(t.settings.autoSkipDelayDescription(seconds: _autoSkipDelay.toString())),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showAutoSkipDelayDialog(),
           ),
@@ -811,24 +811,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Auto Skip Delay'),
+              title: Text(t.settings.autoSkipDelay),
               content: TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Seconds',
-                  hintText: 'Enter delay between 1-30 seconds',
+                  labelText: t.settings.secondsLabel,
+                  hintText: t.settings.durationHint(min: 1, max: 30),
                   errorText: errorText,
-                  suffixText: 's',
+                  suffixText: t.settings.secondsShort,
                 ),
                 autofocus: true,
                 onChanged: (value) {
                   final parsed = int.tryParse(value);
                   setDialogState(() {
                     if (parsed == null) {
-                      errorText = 'Please enter a valid number';
+                      errorText = t.settings.validationErrorEnterNumber;
                     } else if (parsed < 1 || parsed > 30) {
-                      errorText = 'Delay must be between 1 and 30 seconds';
+                      errorText = t.settings.validationErrorDuration(
+                        min: 1,
+                        max: 30,
+                        unit: t.settings.secondsLabel.toLowerCase(),
+                      );
                     } else {
                       errorText = null;
                     }

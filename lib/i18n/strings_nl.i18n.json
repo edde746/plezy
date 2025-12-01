@@ -133,7 +133,14 @@
     "validationErrorEnterNumber": "Voer een geldig nummer in",
     "validationErrorDuration": "Duur moet tussen ${min} en ${max} ${unit} zijn",
     "shortcutAlreadyAssigned": "Sneltoets al toegewezen aan ${action}",
-    "shortcutUpdated": "Sneltoets bijgewerkt voor ${action}"
+    "shortcutUpdated": "Sneltoets bijgewerkt voor ${action}",
+    "autoSkip": "Automatisch Overslaan",
+    "autoSkipIntro": "Intro Automatisch Overslaan",
+    "autoSkipIntroDescription": "Intro-markeringen na enkele seconden automatisch overslaan",
+    "autoSkipCredits": "Credits Automatisch Overslaan",
+    "autoSkipCreditsDescription": "Credits automatisch overslaan en volgende aflevering afspelen",
+    "autoSkipDelay": "Vertraging Automatisch Overslaan",
+    "autoSkipDelayDescription": "${seconds} seconden wachten voor automatisch overslaan"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",

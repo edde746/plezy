@@ -132,7 +132,14 @@
     "validationErrorEnterNumber": "Please enter a valid number",
     "validationErrorDuration": "Duration must be between ${min} and ${max} ${unit}",
     "shortcutAlreadyAssigned": "Shortcut already assigned to ${action}",
-    "shortcutUpdated": "Shortcut updated for ${action}"
+    "shortcutUpdated": "Shortcut updated for ${action}",
+    "autoSkip": "Auto Skip",
+    "autoSkipIntro": "Auto Skip Intro",
+    "autoSkipIntroDescription": "Automatically skip intro markers after a few seconds",
+    "autoSkipCredits": "Auto Skip Credits",
+    "autoSkipCreditsDescription": "Automatically skip credits and play next episode",
+    "autoSkipDelay": "Auto Skip Delay",
+    "autoSkipDelayDescription": "Wait ${seconds} seconds before auto-skipping"
   },
   "search": {
     "hint": "Search movies, shows, music...",
