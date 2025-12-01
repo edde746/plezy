@@ -422,6 +422,7 @@ class MpvPlayerNative implements MpvPlayer {
   @override
   Future<void> setProperty(String name, String value) async {
     _checkDisposed();
+    await _ensureInitialized();
     await _methodChannel.invokeMethod('setProperty', {
       'name': name,
       'value': value,
@@ -431,6 +432,7 @@ class MpvPlayerNative implements MpvPlayer {
   @override
   Future<String?> getProperty(String name) async {
     _checkDisposed();
+    await _ensureInitialized();
     return await _methodChannel.invokeMethod<String>('getProperty', {
       'name': name,
     });
@@ -439,6 +441,7 @@ class MpvPlayerNative implements MpvPlayer {
   @override
   Future<void> command(List<String> args) async {
     _checkDisposed();
+    await _ensureInitialized();
     await _methodChannel.invokeMethod('command', {'args': args});
   }
 

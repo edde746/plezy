@@ -10,6 +10,7 @@ import 'mpv_player_macos.dart';
 import 'mpv_player_state.dart';
 import 'mpv_player_streams.dart';
 import 'mpv_player_stub.dart';
+import 'mpv_player_windows.dart';
 
 /// Abstract interface for the MPV player.
 ///
@@ -190,6 +191,8 @@ abstract class MpvPlayer {
   /// Returns a platform-specific implementation:
   /// - macOS: [MpvPlayerMacOS] using MPVKit with Metal rendering
   /// - iOS: [MpvPlayerIOS] using MPVKit with Metal rendering
+  /// - Android: [MpvPlayerAndroid] using libmpv
+  /// - Windows: [MpvPlayerWindows] using libmpv with native window embedding
   /// - Other platforms: [MpvPlayerStub] (placeholder)
   factory MpvPlayer() {
     if (Platform.isMacOS) {
@@ -201,7 +204,10 @@ abstract class MpvPlayer {
     if (Platform.isAndroid) {
       return MpvPlayerAndroid();
     }
-    // Future: Add Windows, Linux implementations
+    if (Platform.isWindows) {
+      return MpvPlayerWindows();
+    }
+    // Future: Add Linux implementation
     return MpvPlayerStub();
   }
 }

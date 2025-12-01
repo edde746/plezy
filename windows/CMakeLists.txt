@@ -2,6 +2,18 @@
 cmake_minimum_required(VERSION 3.14)
 project(plezy LANGUAGES CXX)
 
+# Download and extract mpv-dev
+include(FetchContent)
+FetchContent_Declare(
+  mpv_dev
+  URL https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20251201/mpv-dev-x86_64-v3-20251201-git-72dbcf1.7z
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(mpv_dev)
+
+set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
+set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "plezy")
@@ -105,4 +117,9 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 # Install the AOT library on non-Debug builds only.
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
+  COMPONENT Runtime)
+
+# Install mpv DLL
+install(FILES "${MPV_LIB_DIR}/libmpv-2.dll"
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
