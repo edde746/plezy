@@ -335,7 +335,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.timer),
             title: Text(t.settings.autoSkipDelay),
-            subtitle: Text(t.settings.autoSkipDelayDescription(seconds: _autoSkipDelay.toString())),
+            subtitle: Text(
+              t.settings.autoSkipDelayDescription(
+                seconds: _autoSkipDelay.toString(),
+              ),
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showAutoSkipDelayDialog(),
           ),

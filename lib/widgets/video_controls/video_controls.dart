@@ -202,8 +202,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _startAutoSkipTimer(PlexMarker marker) {
     _cancelAutoSkipTimer();
 
-    final shouldAutoSkip = (marker.isCredits && _autoSkipCredits) ||
-                          (!marker.isCredits && _autoSkipIntro);
+    final shouldAutoSkip =
+        (marker.isCredits && _autoSkipCredits) ||
+        (!marker.isCredits && _autoSkipIntro);
 
     if (!shouldAutoSkip || _autoSkipDelay <= 0) return;
 
@@ -263,7 +264,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _shouldShowAutoSkip() {
     if (_currentMarker == null) return false;
     return (_currentMarker!.isCredits && _autoSkipCredits) ||
-           (!_currentMarker!.isCredits && _autoSkipIntro);
+        (!_currentMarker!.isCredits && _autoSkipIntro);
   }
 
   Future<void> _loadSeekTimes() async {
@@ -899,10 +900,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     final shouldShowAutoSkip = _shouldShowAutoSkip();
 
     final int remainingSeconds = isAutoSkipActive && shouldShowAutoSkip
-        ? (_autoSkipDelay - (_autoSkipProgress * _autoSkipDelay)).ceil().clamp(0, _autoSkipDelay)
+        ? (_autoSkipDelay - (_autoSkipProgress * _autoSkipDelay)).ceil().clamp(
+            0,
+            _autoSkipDelay,
+          )
         : 0;
 
-    final String buttonText = isAutoSkipActive && shouldShowAutoSkip && remainingSeconds > 0
+    final String buttonText =
+        isAutoSkipActive && shouldShowAutoSkip && remainingSeconds > 0
         ? '$baseButtonText ($remainingSeconds)'
         : baseButtonText;
     final IconData buttonIcon = showNextEpisode
