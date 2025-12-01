@@ -133,7 +133,14 @@
     "validationErrorEnterNumber": "Bitte eine gültige Zahl eingeben",
     "validationErrorDuration": "Dauer muss zwischen ${min} und ${max} ${unit} liegen",
     "shortcutAlreadyAssigned": "Tastenkürzel bereits zugewiesen an ${action}",
-    "shortcutUpdated": "Tastenkürzel aktualisiert für ${action}"
+    "shortcutUpdated": "Tastenkürzel aktualisiert für ${action}",
+    "autoSkip": "Automatisches Überspringen",
+    "autoSkipIntro": "Intro automatisch überspringen",
+    "autoSkipIntroDescription": "Intro-Marker nach wenigen Sekunden automatisch überspringen",
+    "autoSkipCredits": "Abspann automatisch überspringen",
+    "autoSkipCreditsDescription": "Abspann automatisch überspringen und nächste Episode abspielen",
+    "autoSkipDelay": "Verzögerung für automatisches Überspringen",
+    "autoSkipDelayDescription": "${seconds} Sekunden vor dem automatischen Überspringen warten"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",

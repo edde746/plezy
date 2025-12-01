@@ -37,6 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _seekTimeLarge = 30;
   int _sleepTimerDuration = 30;
   bool _rememberTrackSelections = true;
+  bool _autoSkipIntro = true;
+  bool _autoSkipCredits = true;
+  int _autoSkipDelay = 5;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -60,6 +63,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _seekTimeLarge = _settingsService.getSeekTimeLarge();
       _sleepTimerDuration = _settingsService.getSleepTimerDuration();
       _rememberTrackSelections = _settingsService.getRememberTrackSelections();
+      _autoSkipIntro = _settingsService.getAutoSkipIntro();
+      _autoSkipCredits = _settingsService.getAutoSkipCredits();
+      _autoSkipDelay = _settingsService.getAutoSkipDelay();
       _isLoading = false;
     });
   }
@@ -290,6 +296,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
               });
               await _settingsService.setRememberTrackSelections(value);
             },
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Text(
+              t.settings.autoSkip,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.fast_forward),
+            title: Text(t.settings.autoSkipIntro),
+            subtitle: Text(t.settings.autoSkipIntroDescription),
+            value: _autoSkipIntro,
+            onChanged: (value) async {
+              setState(() {
+                _autoSkipIntro = value;
+              });
+              await _settingsService.setAutoSkipIntro(value);
+            },
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.skip_next),
+            title: Text(t.settings.autoSkipCredits),
+            subtitle: Text(t.settings.autoSkipCreditsDescription),
+            value: _autoSkipCredits,
+            onChanged: (value) async {
+              setState(() {
+                _autoSkipCredits = value;
+              });
+              await _settingsService.setAutoSkipCredits(value);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.timer),
+            title: Text(t.settings.autoSkipDelay),
+            subtitle: Text(
+              t.settings.autoSkipDelayDescription(
+                seconds: _autoSkipDelay.toString(),
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showAutoSkipDelayDialog(),
           ),
         ],
       ),
@@ -703,7 +755,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   labelText: t.settings.minutesLabel,
-                  hintText: t.settings.durationHint(min: 5, max: 180),
+                  hintText: t.settings.durationHint(min: 5, max: 240),
                   errorText: errorText,
                   suffixText: t.settings.minutesShort,
                 ),
@@ -713,10 +765,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   setDialogState(() {
                     if (parsed == null) {
                       errorText = t.settings.validationErrorEnterNumber;
-                    } else if (parsed < 5 || parsed > 180) {
+                    } else if (parsed < 5 || parsed > 240) {
                       errorText = t.settings.validationErrorDuration(
                         min: 5,
-                        max: 180,
+                        max: 240,
                         unit: t.settings.minutesLabel.toLowerCase(),
                       );
                     } else {
@@ -733,11 +785,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 TextButton(
                   onPressed: () async {
                     final parsed = int.tryParse(controller.text);
-                    if (parsed != null && parsed >= 5 && parsed <= 180) {
+                    if (parsed != null && parsed >= 5 && parsed <= 240) {
                       setState(() {
                         _sleepTimerDuration = parsed;
-                        _settingsService.setSleepTimerDuration(parsed);
                       });
+                      await _settingsService.setSleepTimerDuration(parsed);
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
+                    }
+                  },
+                  child: Text(t.common.save),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAutoSkipDelayDialog() {
+    final controller = TextEditingController(text: _autoSkipDelay.toString());
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(t.settings.autoSkipDelay),
+              content: TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: t.settings.secondsLabel,
+                  hintText: t.settings.durationHint(min: 1, max: 30),
+                  errorText: errorText,
+                  suffixText: t.settings.secondsShort,
+                ),
+                autofocus: true,
+                onChanged: (value) {
+                  final parsed = int.tryParse(value);
+                  setDialogState(() {
+                    if (parsed == null) {
+                      errorText = t.settings.validationErrorEnterNumber;
+                    } else if (parsed < 1 || parsed > 30) {
+                      errorText = t.settings.validationErrorDuration(
+                        min: 1,
+                        max: 30,
+                        unit: t.settings.secondsLabel.toLowerCase(),
+                      );
+                    } else {
+                      errorText = null;
+                    }
+                  });
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(t.common.cancel),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final parsed = int.tryParse(controller.text);
+                    if (parsed != null && parsed >= 1 && parsed <= 30) {
+                      setState(() {
+                        _autoSkipDelay = parsed;
+                      });
+                      await _settingsService.setAutoSkipDelay(parsed);
                       if (dialogContext.mounted) {
                         Navigator.pop(dialogContext);
                       }

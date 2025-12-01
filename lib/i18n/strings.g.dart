@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2662 (443 per locale)
+/// Strings: 2704 (450 per locale)
 ///
-/// Built on 2025-11-21 at 22:35 UTC
+/// Built on 2025-12-01 at 09:54 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -435,6 +435,16 @@ class _StringsSettingsEn {
       'Shortcut already assigned to ${action}';
   String shortcutUpdated({required Object action}) =>
       'Shortcut updated for ${action}';
+  String get autoSkip => 'Auto Skip';
+  String get autoSkipIntro => 'Auto Skip Intro';
+  String get autoSkipIntroDescription =>
+      'Automatically skip intro markers after a few seconds';
+  String get autoSkipCredits => 'Auto Skip Credits';
+  String get autoSkipCreditsDescription =>
+      'Automatically skip credits and play next episode';
+  String get autoSkipDelay => 'Auto Skip Delay';
+  String autoSkipDelayDescription({required Object seconds}) =>
+      'Wait ${seconds} seconds before auto-skipping';
 }
 
 // Path: search
@@ -1478,6 +1488,23 @@ class _StringsSettingsDe implements _StringsSettingsEn {
   @override
   String shortcutUpdated({required Object action}) =>
       'Tastenkürzel aktualisiert für ${action}';
+  @override
+  String get autoSkip => 'Automatisches Überspringen';
+  @override
+  String get autoSkipIntro => 'Intro automatisch überspringen';
+  @override
+  String get autoSkipIntroDescription =>
+      'Intro-Marker nach wenigen Sekunden automatisch überspringen';
+  @override
+  String get autoSkipCredits => 'Abspann automatisch überspringen';
+  @override
+  String get autoSkipCreditsDescription =>
+      'Abspann automatisch überspringen und nächste Episode abspielen';
+  @override
+  String get autoSkipDelay => 'Verzögerung für automatisches Überspringen';
+  @override
+  String autoSkipDelayDescription({required Object seconds}) =>
+      '${seconds} Sekunden vor dem automatischen Überspringen warten';
 }
 
 // Path: search
@@ -2883,6 +2910,23 @@ class _StringsSettingsIt implements _StringsSettingsEn {
   @override
   String shortcutUpdated({required Object action}) =>
       'Scorciatoia aggiornata per ${action}';
+  @override
+  String get autoSkip => 'Salto Automatico';
+  @override
+  String get autoSkipIntro => 'Salta Intro Automaticamente';
+  @override
+  String get autoSkipIntroDescription =>
+      'Salta automaticamente i marcatori dell\'intro dopo alcuni secondi';
+  @override
+  String get autoSkipCredits => 'Salta Crediti Automaticamente';
+  @override
+  String get autoSkipCreditsDescription =>
+      'Salta automaticamente i crediti e riproduci l\'episodio successivo';
+  @override
+  String get autoSkipDelay => 'Ritardo Salto Automatico';
+  @override
+  String autoSkipDelayDescription({required Object seconds}) =>
+      'Aspetta ${seconds} secondi prima del salto automatico';
 }
 
 // Path: search
@@ -4287,6 +4331,23 @@ class _StringsSettingsNl implements _StringsSettingsEn {
   @override
   String shortcutUpdated({required Object action}) =>
       'Sneltoets bijgewerkt voor ${action}';
+  @override
+  String get autoSkip => 'Automatisch Overslaan';
+  @override
+  String get autoSkipIntro => 'Intro Automatisch Overslaan';
+  @override
+  String get autoSkipIntroDescription =>
+      'Intro-markeringen na enkele seconden automatisch overslaan';
+  @override
+  String get autoSkipCredits => 'Credits Automatisch Overslaan';
+  @override
+  String get autoSkipCreditsDescription =>
+      'Credits automatisch overslaan en volgende aflevering afspelen';
+  @override
+  String get autoSkipDelay => 'Vertraging Automatisch Overslaan';
+  @override
+  String autoSkipDelayDescription({required Object seconds}) =>
+      '${seconds} seconden wachten voor automatisch overslaan';
 }
 
 // Path: search
@@ -5680,6 +5741,23 @@ class _StringsSettingsSv implements _StringsSettingsEn {
   @override
   String shortcutUpdated({required Object action}) =>
       'Genväg uppdaterad för ${action}';
+  @override
+  String get autoSkip => 'Auto Hoppa Över';
+  @override
+  String get autoSkipIntro => 'Hoppa Över Intro Automatiskt';
+  @override
+  String get autoSkipIntroDescription =>
+      'Hoppa automatiskt över intro-markörer efter några sekunder';
+  @override
+  String get autoSkipCredits => 'Hoppa Över Credits Automatiskt';
+  @override
+  String get autoSkipCreditsDescription =>
+      'Hoppa automatiskt över credits och spela nästa avsnitt';
+  @override
+  String get autoSkipDelay => 'Fördröjning Auto Hoppa Över';
+  @override
+  String autoSkipDelayDescription({required Object seconds}) =>
+      'Vänta ${seconds} sekunder innan automatisk överhoppning';
 }
 
 // Path: search
@@ -7062,6 +7140,21 @@ class _StringsSettingsZh implements _StringsSettingsEn {
       '快捷键已被分配给 ${action}';
   @override
   String shortcutUpdated({required Object action}) => '快捷键已为 ${action} 更新';
+  @override
+  String get autoSkip => '自动跳过';
+  @override
+  String get autoSkipIntro => '自动跳过片头';
+  @override
+  String get autoSkipIntroDescription => '几秒钟后自动跳过片头标记';
+  @override
+  String get autoSkipCredits => '自动跳过片尾';
+  @override
+  String get autoSkipCreditsDescription => '自动跳过片尾并播放下一集';
+  @override
+  String get autoSkipDelay => '自动跳过延迟';
+  @override
+  String autoSkipDelayDescription({required Object seconds}) =>
+      '自动跳过前等待 ${seconds} 秒';
 }
 
 // Path: search
@@ -8253,6 +8346,21 @@ extension on Translations {
             'Shortcut already assigned to ${action}';
       case 'settings.shortcutUpdated':
         return ({required Object action}) => 'Shortcut updated for ${action}';
+      case 'settings.autoSkip':
+        return 'Auto Skip';
+      case 'settings.autoSkipIntro':
+        return 'Auto Skip Intro';
+      case 'settings.autoSkipIntroDescription':
+        return 'Automatically skip intro markers after a few seconds';
+      case 'settings.autoSkipCredits':
+        return 'Auto Skip Credits';
+      case 'settings.autoSkipCreditsDescription':
+        return 'Automatically skip credits and play next episode';
+      case 'settings.autoSkipDelay':
+        return 'Auto Skip Delay';
+      case 'settings.autoSkipDelayDescription':
+        return ({required Object seconds}) =>
+            'Wait ${seconds} seconds before auto-skipping';
       case 'search.hint':
         return 'Search movies, shows, music...';
       case 'search.tryDifferentTerm':
@@ -9189,6 +9297,21 @@ extension on _StringsDe {
       case 'settings.shortcutUpdated':
         return ({required Object action}) =>
             'Tastenkürzel aktualisiert für ${action}';
+      case 'settings.autoSkip':
+        return 'Automatisches Überspringen';
+      case 'settings.autoSkipIntro':
+        return 'Intro automatisch überspringen';
+      case 'settings.autoSkipIntroDescription':
+        return 'Intro-Marker nach wenigen Sekunden automatisch überspringen';
+      case 'settings.autoSkipCredits':
+        return 'Abspann automatisch überspringen';
+      case 'settings.autoSkipCreditsDescription':
+        return 'Abspann automatisch überspringen und nächste Episode abspielen';
+      case 'settings.autoSkipDelay':
+        return 'Verzögerung für automatisches Überspringen';
+      case 'settings.autoSkipDelayDescription':
+        return ({required Object seconds}) =>
+            '${seconds} Sekunden vor dem automatischen Überspringen warten';
       case 'search.hint':
         return 'Filme, Serien, Musik suchen...';
       case 'search.tryDifferentTerm':
@@ -10130,6 +10253,21 @@ extension on _StringsIt {
       case 'settings.shortcutUpdated':
         return ({required Object action}) =>
             'Scorciatoia aggiornata per ${action}';
+      case 'settings.autoSkip':
+        return 'Salto Automatico';
+      case 'settings.autoSkipIntro':
+        return 'Salta Intro Automaticamente';
+      case 'settings.autoSkipIntroDescription':
+        return 'Salta automaticamente i marcatori dell\'intro dopo alcuni secondi';
+      case 'settings.autoSkipCredits':
+        return 'Salta Crediti Automaticamente';
+      case 'settings.autoSkipCreditsDescription':
+        return 'Salta automaticamente i crediti e riproduci l\'episodio successivo';
+      case 'settings.autoSkipDelay':
+        return 'Ritardo Salto Automatico';
+      case 'settings.autoSkipDelayDescription':
+        return ({required Object seconds}) =>
+            'Aspetta ${seconds} secondi prima del salto automatico';
       case 'search.hint':
         return 'Cerca film. spettacoli, musica...';
       case 'search.tryDifferentTerm':
@@ -11073,6 +11211,21 @@ extension on _StringsNl {
       case 'settings.shortcutUpdated':
         return ({required Object action}) =>
             'Sneltoets bijgewerkt voor ${action}';
+      case 'settings.autoSkip':
+        return 'Automatisch Overslaan';
+      case 'settings.autoSkipIntro':
+        return 'Intro Automatisch Overslaan';
+      case 'settings.autoSkipIntroDescription':
+        return 'Intro-markeringen na enkele seconden automatisch overslaan';
+      case 'settings.autoSkipCredits':
+        return 'Credits Automatisch Overslaan';
+      case 'settings.autoSkipCreditsDescription':
+        return 'Credits automatisch overslaan en volgende aflevering afspelen';
+      case 'settings.autoSkipDelay':
+        return 'Vertraging Automatisch Overslaan';
+      case 'settings.autoSkipDelayDescription':
+        return ({required Object seconds}) =>
+            '${seconds} seconden wachten voor automatisch overslaan';
       case 'search.hint':
         return 'Zoek films, series, muziek...';
       case 'search.tryDifferentTerm':
@@ -12017,6 +12170,21 @@ extension on _StringsSv {
         return ({required Object action}) => 'Genväg redan tilldelad ${action}';
       case 'settings.shortcutUpdated':
         return ({required Object action}) => 'Genväg uppdaterad för ${action}';
+      case 'settings.autoSkip':
+        return 'Auto Hoppa Över';
+      case 'settings.autoSkipIntro':
+        return 'Hoppa Över Intro Automatiskt';
+      case 'settings.autoSkipIntroDescription':
+        return 'Hoppa automatiskt över intro-markörer efter några sekunder';
+      case 'settings.autoSkipCredits':
+        return 'Hoppa Över Credits Automatiskt';
+      case 'settings.autoSkipCreditsDescription':
+        return 'Hoppa automatiskt över credits och spela nästa avsnitt';
+      case 'settings.autoSkipDelay':
+        return 'Fördröjning Auto Hoppa Över';
+      case 'settings.autoSkipDelayDescription':
+        return ({required Object seconds}) =>
+            'Vänta ${seconds} sekunder innan automatisk överhoppning';
       case 'search.hint':
         return 'Sök filmer, serier, musik...';
       case 'search.tryDifferentTerm':
@@ -12959,6 +13127,20 @@ extension on _StringsZh {
         return ({required Object action}) => '快捷键已被分配给 ${action}';
       case 'settings.shortcutUpdated':
         return ({required Object action}) => '快捷键已为 ${action} 更新';
+      case 'settings.autoSkip':
+        return '自动跳过';
+      case 'settings.autoSkipIntro':
+        return '自动跳过片头';
+      case 'settings.autoSkipIntroDescription':
+        return '几秒钟后自动跳过片头标记';
+      case 'settings.autoSkipCredits':
+        return '自动跳过片尾';
+      case 'settings.autoSkipCreditsDescription':
+        return '自动跳过片尾并播放下一集';
+      case 'settings.autoSkipDelay':
+        return '自动跳过延迟';
+      case 'settings.autoSkipDelayDescription':
+        return ({required Object seconds}) => '自动跳过前等待 ${seconds} 秒';
       case 'search.hint':
         return '搜索电影、系列、音乐...';
       case 'search.tryDifferentTerm':
