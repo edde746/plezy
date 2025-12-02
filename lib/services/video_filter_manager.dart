@@ -205,9 +205,12 @@ class VideoFilterManager {
   void updateVideoFilter() async {
     try {
       if (_boxFitMode == 1) {
-        // Fill screen mode - apply crop filter
+        // Cover mode - apply crop filter to fill screen while maintaining aspect ratio
         _videoSize = _getCurrentVideoSize();
         final cropParams = _calculateCropParameters();
+
+        // Reset aspect override (may have been set by stretch mode)
+        await player.setProperty('video-aspect-override', 'no');
 
         if (cropParams != null) {
           final cropFilter =
@@ -241,12 +244,29 @@ class VideoFilterManager {
           await player.setProperty('sub-margin-y', '40'); // Base margin
           await player.setProperty('sub-scale', '1.0'); // Reset scale
         }
+      } else if (_boxFitMode == 2) {
+        // Stretch/fill mode - override aspect ratio to match player
+        appLogger.d(
+          'Applying stretch mode - BoxFit mode $_boxFitMode (player: $_playerSize)',
+        );
+        await player.setProperty('vf', '');
+
+        // Override video aspect ratio to match player aspect ratio (stretches video)
+        if (_playerSize != null) {
+          final playerAspect = _playerSize!.width / _playerSize!.height;
+          await player.setProperty('video-aspect-override', playerAspect.toString());
+        }
+
+        await player.setProperty('sub-margin-x', '20'); // Base margin
+        await player.setProperty('sub-margin-y', '40'); // Base margin
+        await player.setProperty('sub-scale', '1.0'); // Reset scale
       } else {
-        // Other modes - clear video filter but apply base margins
+        // Contain mode (0) - clear video filter and reset aspect ratio
         appLogger.d(
           'Clearing video filter, applying base margins - BoxFit mode $_boxFitMode',
         );
         await player.setProperty('vf', '');
+        await player.setProperty('video-aspect-override', 'no'); // Reset to original aspect
         await player.setProperty('sub-margin-x', '20'); // Base margin
         await player.setProperty('sub-margin-y', '40'); // Base margin
         await player.setProperty('sub-scale', '1.0'); // Reset scale
