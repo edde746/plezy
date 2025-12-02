@@ -70,7 +70,7 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
 
   // Configure mpv for embedded playback.
   LogToFile("MpvPlayer::Initialize - setting mpv options");
-  mpv_set_option_string(mpv_, "hwdec", "auto");
+  // hwdec is set from Flutter via setProperty based on user preference
   mpv_set_option_string(mpv_, "keep-open", "yes");
   mpv_set_option_string(mpv_, "idle", "yes");
   mpv_set_option_string(mpv_, "input-default-bindings", "no");

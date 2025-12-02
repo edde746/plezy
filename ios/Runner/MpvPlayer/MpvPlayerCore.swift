@@ -113,7 +113,7 @@ class MpvPlayerCore: NSObject {
         checkError(mpv_set_option_string(mpv, "vo", "gpu-next"))
         checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
         checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
-        checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
+        // hwdec is set from Flutter via setProperty based on user preference
 
         // Initialize MPV
         let initResult = mpv_initialize(mpv)

@@ -16,7 +16,6 @@ import '../widgets/user_avatar_widget.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/hub_navigation_controller.dart';
-import '../widgets/focus/focus_indicator.dart';
 import 'profile_switch_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/settings_provider.dart';
@@ -1289,68 +1288,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHorizontalList(
-    List<PlexMetadata> items, {
-    bool isLarge = false,
-    bool isInContinueWatching = false,
-  }) {
-    return SliverToBoxAdapter(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Responsive card width based on screen size
-          // Match Libraries screen sizing (190px baseline)
-          final screenWidth = constraints.maxWidth;
-          final cardWidth = screenWidth > 1600
-              ? 220.0
-              : screenWidth > 1200
-              ? 200.0
-              : screenWidth > 800
-              ? 190.0
-              : 160.0;
-
-          // MediaCard has 8px padding on all sides (16px total horizontally)
-          // So actual poster width is cardWidth - 16
-          final posterWidth = cardWidth - 16;
-          // 2:3 poster aspect ratio (height is 1.5x width)
-          final posterHeight = posterWidth * 1.5;
-          // Container height = poster + padding + spacing + text
-          // 8px top padding + posterHeight + 4px spacing + ~26px text + 8px bottom padding
-          final containerHeight = posterHeight + 46;
-
-          return SizedBox(
-            height: containerHeight,
-            child: HorizontalScrollWithArrows(
-              builder: (scrollController) => ListView.builder(
-                controller: scrollController,
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: MediaCard(
-                      key: Key(item.ratingKey),
-                      item: item,
-                      width: cardWidth,
-                      height: posterHeight,
-                      onRefresh: updateItem,
-                      onRemoveFromContinueWatching: isInContinueWatching
-                          ? _refreshContinueWatching
-                          : null,
-                      forceGridMode: true,
-                      isInContinueWatching: isInContinueWatching,
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        },
       ),
     );
   }

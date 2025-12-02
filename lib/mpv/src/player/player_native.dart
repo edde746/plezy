@@ -52,7 +52,6 @@ class PlayerNative implements Player {
   StreamSubscription? _eventSubscription;
   bool _disposed = false;
   bool _initialized = false;
-  bool _isVisible = false;
 
   PlayerNative() {
     _streams = PlayerStreams(
@@ -315,7 +314,6 @@ class PlayerNative implements Player {
 
     // Show the video layer
     await _methodChannel.invokeMethod('setVisible', {'visible': true});
-    _isVisible = true;
 
     // Set start position if provided (must be set before loading file)
     if (media.start != null && media.start!.inSeconds > 0) {
@@ -358,7 +356,6 @@ class PlayerNative implements Player {
     _checkDisposed();
     await command(['stop']);
     await _methodChannel.invokeMethod('setVisible', {'visible': false});
-    _isVisible = false;
   }
 
   @override
@@ -479,7 +476,6 @@ class PlayerNative implements Player {
 
     try {
       await _methodChannel.invokeMethod('setVisible', {'visible': visible});
-      _isVisible = visible;
       return true;
     } catch (e) {
       _errorController.add('Failed to set visibility: $e');

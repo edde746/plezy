@@ -255,7 +255,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       await player!.setProperty('sub-font', 'Go Noto Current-Regular');
       await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
       await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
-      // await player!.setProperty('hwdec', enableHardwareDecoding ? 'auto' : 'no');
+      await player!.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
       // Subtitle styling
       await player!.setProperty('sub-font-size', settingsService.getSubtitleFontSize().toString());
@@ -1322,5 +1322,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         ),
       ),
     );
+  }
+}
+
+/// Returns the appropriate hwdec value based on platform and user preference.
+String _getHwdecValue(bool enabled) {
+  if (!enabled) return 'no';
+
+  if (Platform.isMacOS || Platform.isIOS) {
+    return 'videotoolbox';
+  } else if (Platform.isAndroid) {
+    return 'mediacodec-copy';
+  } else {
+    return 'auto'; // Windows, Linux
   }
 }

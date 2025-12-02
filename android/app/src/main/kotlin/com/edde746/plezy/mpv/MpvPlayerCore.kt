@@ -99,7 +99,7 @@ class MpvPlayerCore(private val activity: Activity) :
         // Video output configuration
         MPVLib.setOptionString("vo", "gpu")
         MPVLib.setOptionString("gpu-context", "android")
-        MPVLib.setOptionString("hwdec", "mediacodec-copy")
+        // hwdec is set from Flutter via setProperty based on user preference
 
         // Audio configuration
         MPVLib.setOptionString("ao", "audiotrack")
