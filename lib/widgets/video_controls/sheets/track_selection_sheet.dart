@@ -47,9 +47,13 @@ class TrackSelectionSheet<T> extends StatelessWidget {
     bool showOffOption = false,
     T Function()? createOffTrack,
     bool Function(T track)? isOffTrack,
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
   }) {
     BaseVideoControlSheet.showSheet(
       context: context,
+      onOpen: onOpen,
+      onClose: onClose,
       builder: (context) => TrackSelectionSheet<T>(
         player: player,
         title: title,

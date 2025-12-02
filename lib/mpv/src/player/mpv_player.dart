@@ -6,6 +6,7 @@ import '../models/mpv_audio_track.dart';
 import '../models/mpv_subtitle_track.dart';
 import 'mpv_player_android.dart';
 import 'mpv_player_ios.dart';
+import 'mpv_player_linux.dart';
 import 'mpv_player_macos.dart';
 import 'mpv_player_state.dart';
 import 'mpv_player_streams.dart';
@@ -173,6 +174,13 @@ abstract class MpvPlayer {
   /// Returns true if the operation was successful.
   Future<bool> setVisible(bool visible);
 
+  /// Notify the player about controls visibility.
+  ///
+  /// On Linux, due to Flutter's lack of transparency support in GtkOverlay,
+  /// the video layer is hidden when controls are visible and shown when
+  /// controls are hidden. On other platforms, this is a no-op.
+  Future<void> setControlsVisible(bool visible);
+
   // ============================================
   // Lifecycle
   // ============================================
@@ -193,6 +201,7 @@ abstract class MpvPlayer {
   /// - iOS: [MpvPlayerIOS] using MPVKit with Metal rendering
   /// - Android: [MpvPlayerAndroid] using libmpv
   /// - Windows: [MpvPlayerWindows] using libmpv with native window embedding
+  /// - Linux: [MpvPlayerLinux] using libmpv with OpenGL rendering via GtkGLArea
   /// - Other platforms: [MpvPlayerStub] (placeholder)
   factory MpvPlayer() {
     if (Platform.isMacOS) {
@@ -207,7 +216,9 @@ abstract class MpvPlayer {
     if (Platform.isWindows) {
       return MpvPlayerWindows();
     }
-    // Future: Add Linux implementation
+    if (Platform.isLinux) {
+      return MpvPlayerLinux();
+    }
     return MpvPlayerStub();
   }
 }

@@ -215,6 +215,11 @@ class MpvPlayerStub implements MpvPlayer {
     return false;
   }
 
+  @override
+  Future<void> setControlsVisible(bool visible) async {
+    // No-op on unsupported platforms
+  }
+
   // ============================================
   // Lifecycle
   // ============================================

@@ -10,6 +10,8 @@ class SubtitleTrackSheet {
     BuildContext context,
     MpvPlayer player, {
     Function(MpvSubtitleTrack)? onTrackChanged,
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
   }) {
     TrackSelectionSheet.show<MpvSubtitleTrack>(
       context: context,
@@ -47,6 +49,8 @@ class SubtitleTrackSheet {
       showOffOption: true,
       createOffTrack: () => MpvSubtitleTrack.off,
       isOffTrack: (track) => track.id == 'no',
+      onOpen: onOpen,
+      onClose: onClose,
     );
   }
 }

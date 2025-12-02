@@ -34,14 +34,19 @@ class BaseVideoControlSheet extends StatelessWidget {
   static Future<T?> showSheet<T>({
     required BuildContext context,
     required WidgetBuilder builder,
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
   }) {
+    onOpen?.call();
     return showModalBottomSheet<T>(
       context: context,
       backgroundColor: Colors.grey[900],
       isScrollControlled: true,
       constraints: getBottomSheetConstraints(context),
       builder: builder,
-    );
+    ).whenComplete(() {
+      onClose?.call();
+    });
   }
 
   @override

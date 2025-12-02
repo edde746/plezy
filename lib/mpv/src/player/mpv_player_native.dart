@@ -479,6 +479,11 @@ class MpvPlayerNative implements MpvPlayer {
     }
   }
 
+  @override
+  Future<void> setControlsVisible(bool visible) async {
+    // No-op on most platforms. Override on Linux for transparency workaround.
+  }
+
   // ============================================
   // Lifecycle
   // ============================================

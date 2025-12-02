@@ -10,6 +10,8 @@ class AudioTrackSheet {
     BuildContext context,
     MpvPlayer player, {
     Function(MpvAudioTrack)? onTrackChanged,
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
   }) {
     TrackSelectionSheet.show<MpvAudioTrack>(
       context: context,
@@ -36,6 +38,8 @@ class AudioTrackSheet {
       },
       setTrack: (track) => player.selectAudioTrack(track),
       onTrackChanged: onTrackChanged,
+      onOpen: onOpen,
+      onClose: onClose,
     );
   }
 }

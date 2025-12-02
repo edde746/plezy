@@ -28,9 +28,13 @@ class ChapterSheet extends StatelessWidget {
     List<PlexChapter> chapters,
     bool chaptersLoaded, {
     String? serverId,
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
   }) {
     BaseVideoControlSheet.showSheet(
       context: context,
+      onOpen: onOpen,
+      onClose: onClose,
       builder: (context) => ChapterSheet(
         player: player,
         chapters: chapters,

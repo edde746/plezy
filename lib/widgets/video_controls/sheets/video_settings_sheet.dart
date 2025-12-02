@@ -74,8 +74,11 @@ class VideoSettingsSheet extends StatefulWidget {
     BuildContext context,
     MpvPlayer player,
     int audioSyncOffset,
-    int subtitleSyncOffset,
-  ) {
+    int subtitleSyncOffset, {
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
+  }) {
+    onOpen?.call();
     return showModalBottomSheet(
       context: context,
       backgroundColor: Colors.grey[900],
@@ -86,7 +89,9 @@ class VideoSettingsSheet extends StatefulWidget {
         audioSyncOffset: audioSyncOffset,
         subtitleSyncOffset: subtitleSyncOffset,
       ),
-    );
+    ).whenComplete(() {
+      onClose?.call();
+    });
   }
 
   @override

@@ -19,10 +19,14 @@ class VersionSheet extends StatelessWidget {
     BuildContext context,
     List<PlexMediaVersion> availableVersions,
     int selectedMediaIndex,
-    Function(int) onVersionSelected,
-  ) {
+    Function(int) onVersionSelected, {
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
+  }) {
     BaseVideoControlSheet.showSheet(
       context: context,
+      onOpen: onOpen,
+      onClose: onClose,
       builder: (context) => VersionSheet(
         availableVersions: availableVersions,
         selectedMediaIndex: selectedMediaIndex,

@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 
 import '../player/mpv_player.dart';
+import '../player/mpv_player_linux.dart';
 import '../player/mpv_player_windows.dart';
 
 /// Video widget for displaying MPV player output.
@@ -79,6 +80,19 @@ class _MpvVideoState extends State<MpvVideo> {
         },
       );
     }
+    if (Platform.isLinux) {
+      // On Linux, use GtkGLArea behind the Flutter view.
+      // The GL area fills the entire overlay, and mpv handles aspect ratio.
+      // We still communicate the rect for potential future use.
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _updateVideoRectLinux(context, constraints);
+          });
+          return const SizedBox.expand();
+        },
+      );
+    }
     return const SizedBox.expand();
   }
 
@@ -112,6 +126,45 @@ class _MpvVideoState extends State<MpvVideo> {
     if (widget.player is MpvPlayerWindows) {
       final windowsPlayer = widget.player as MpvPlayerWindows;
       windowsPlayer.setVideoRect(
+        left: (position.dx * dpr).toInt(),
+        top: (position.dy * dpr).toInt(),
+        right: ((position.dx + size.width) * dpr).toInt(),
+        bottom: ((position.dy + size.height) * dpr).toInt(),
+        devicePixelRatio: dpr,
+      );
+    }
+  }
+
+  void _updateVideoRectLinux(BuildContext context, BoxConstraints constraints) {
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) return;
+
+    final position = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+    final dpr = MediaQuery.of(context).devicePixelRatio;
+
+    final newRect = Rect.fromLTWH(
+      position.dx,
+      position.dy,
+      size.width,
+      size.height,
+    );
+
+    // Only update if the rect has changed significantly
+    if (_lastRect != null &&
+        (newRect.left - _lastRect!.left).abs() < 1 &&
+        (newRect.top - _lastRect!.top).abs() < 1 &&
+        (newRect.width - _lastRect!.width).abs() < 1 &&
+        (newRect.height - _lastRect!.height).abs() < 1) {
+      return;
+    }
+
+    _lastRect = newRect;
+
+    // Update the Linux mpv player (triggers redraw)
+    if (widget.player is MpvPlayerLinux) {
+      final linuxPlayer = widget.player as MpvPlayerLinux;
+      linuxPlayer.setVideoRect(
         left: (position.dx * dpr).toInt(),
         top: (position.dy * dpr).toInt(),
         right: ((position.dx + size.width) * dpr).toInt(),

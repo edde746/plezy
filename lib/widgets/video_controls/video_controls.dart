@@ -86,6 +86,7 @@ class PlexVideoControls extends StatefulWidget {
 class _PlexVideoControlsState extends State<PlexVideoControls>
     with WindowListener, WidgetsBindingObserver {
   bool _showControls = true;
+  bool _controlsFullyHidden = false; // For Linux: true after fade-out completes
   List<PlexChapter> _chapters = [];
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
@@ -115,6 +116,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _markersLoaded = false;
   // Playback state subscription for auto-hide timer
   StreamSubscription<bool>? _playingSubscription;
+  // Completed subscription to show controls when video ends
+  StreamSubscription<bool>? _completedSubscription;
   // Window resize pause state
   Timer? _resizeDebounceTimer;
   bool _wasPlayingBeforeResize = false;
@@ -136,6 +139,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _initKeyboardService();
     _listenToPosition();
     _listenToPlayingState();
+    _listenToCompleted();
     // Add lifecycle observer to reload settings when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
@@ -179,6 +183,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _startHideTimer();
       } else if (!isPlaying) {
         _hideTimer?.cancel();
+      }
+    });
+  }
+
+  /// Listen to completed stream to show controls when video ends
+  void _listenToCompleted() {
+    _completedSubscription = widget.player.streams.completed.listen((completed) {
+      if (completed && mounted) {
+        // Show controls when video completes (for play next dialog etc.)
+        setState(() {
+          _showControls = true;
+          _controlsFullyHidden = false;
+        });
+        _hideTimer?.cancel();
+        // On Linux, ensure Flutter view is visible
+        if (Platform.isLinux) {
+          widget.player.setControlsVisible(true);
+        }
       }
     });
   }
@@ -247,6 +269,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _resizeDebounceTimer?.cancel();
     _seekThrottle.cancel();
     _playingSubscription?.cancel();
+    _completedSubscription?.cancel();
     _focusNode.dispose();
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
@@ -335,6 +358,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           if (Platform.isMacOS) {
             _updateTrafficLightVisibility();
           }
+          // On Linux, fully hide after animation completes (200ms)
+          if (Platform.isLinux) {
+            Future.delayed(const Duration(milliseconds: 250), () {
+              if (mounted && !_showControls) {
+                setState(() {
+                  _controlsFullyHidden = true;
+                });
+                // Hide Flutter view to show only video
+                widget.player.setControlsVisible(false);
+              }
+            });
+          }
         }
       });
     }
@@ -350,9 +385,27 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _toggleControls() {
     setState(() {
       _showControls = !_showControls;
+      if (_showControls) {
+        _controlsFullyHidden = false;
+        // On Linux, show Flutter view when controls are shown
+        if (Platform.isLinux) {
+          widget.player.setControlsVisible(true);
+        }
+      }
     });
     if (_showControls) {
       _startHideTimer();
+    } else if (Platform.isLinux) {
+      // On Linux, fully hide after animation completes (200ms)
+      Future.delayed(const Duration(milliseconds: 250), () {
+        if (mounted && !_showControls) {
+          setState(() {
+            _controlsFullyHidden = true;
+          });
+          // Hide Flutter view to show only video
+          widget.player.setControlsVisible(false);
+        }
+      });
     }
 
     // On macOS, hide/show traffic lights with controls
@@ -444,6 +497,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           await _loadSeekTimes();
         }
       },
+      onCancelAutoHide: () => _hideTimer?.cancel(),
+      onStartAutoHide: _startHideTimer,
       serverId: widget.metadata.serverId ?? '',
     );
   }
@@ -620,7 +675,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           if (!_showControls) {
             setState(() {
               _showControls = true;
+              _controlsFullyHidden = false;
             });
+            // On Linux, show Flutter view when controls are shown
+            if (Platform.isLinux) {
+              widget.player.setControlsVisible(true);
+            }
             _startHideTimer();
             // On macOS, show traffic lights when controls appear
             if (Platform.isMacOS) {
@@ -639,29 +699,32 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               ),
             ),
             // Custom controls overlay - use AnimatedOpacity to keep widget tree alive
+            // On Linux, use Offstage after fade completes to fully hide
             Positioned.fill(
-              child: IgnorePointer(
-                ignoring: !_showControls,
-                child: AnimatedOpacity(
-                  opacity: _showControls ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: GestureDetector(
-                    onTap: _toggleControls,
-                    behavior: HitTestBehavior.deferToChild,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.7),
-                            Colors.transparent,
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.7),
-                          ],
-                          stops: const [0.0, 0.2, 0.8, 1.0],
+              child: Offstage(
+                offstage: Platform.isLinux && _controlsFullyHidden,
+                child: IgnorePointer(
+                  ignoring: !_showControls,
+                  child: AnimatedOpacity(
+                    opacity: _showControls ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: GestureDetector(
+                      onTap: _toggleControls,
+                      behavior: HitTestBehavior.deferToChild,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.7),
+                              Colors.transparent,
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.7),
+                            ],
+                            stops: const [0.0, 0.2, 0.8, 1.0],
+                          ),
                         ),
-                      ),
                       child: isMobile
                           ? Listener(
                               behavior: HitTestBehavior.translucent,
@@ -708,6 +771,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                 getForwardIcon: getForwardIcon,
                               ),
                             ),
+                      ),
                     ),
                   ),
                 ),

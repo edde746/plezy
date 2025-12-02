@@ -34,6 +34,8 @@ class TrackChapterControls extends StatelessWidget {
   final Function(MpvAudioTrack)? onAudioTrackChanged;
   final Function(MpvSubtitleTrack)? onSubtitleTrackChanged;
   final VoidCallback? onLoadSeekTimes;
+  final VoidCallback? onCancelAutoHide;
+  final VoidCallback? onStartAutoHide;
   final String serverId;
 
   const TrackChapterControls({
@@ -56,6 +58,8 @@ class TrackChapterControls extends StatelessWidget {
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onLoadSeekTimes,
+    this.onCancelAutoHide,
+    this.onStartAutoHide,
   });
 
   @override
@@ -89,6 +93,8 @@ class TrackChapterControls extends StatelessWidget {
                         player,
                         audioSyncOffset,
                         subtitleSyncOffset,
+                        onOpen: onCancelAutoHide,
+                        onClose: onStartAutoHide,
                       );
                       // Sheet is now closed, reload immediately
                       onLoadSeekTimes?.call();
@@ -104,6 +110,8 @@ class TrackChapterControls extends StatelessWidget {
                     context,
                     player,
                     onTrackChanged: onAudioTrackChanged,
+                    onOpen: onCancelAutoHide,
+                    onClose: onStartAutoHide,
                   ),
                 ),
               if (_hasSubtitles(tracks))
@@ -114,6 +122,8 @@ class TrackChapterControls extends StatelessWidget {
                     context,
                     player,
                     onTrackChanged: onSubtitleTrackChanged,
+                    onOpen: onCancelAutoHide,
+                    onClose: onStartAutoHide,
                   ),
                 ),
               if (chapters.isNotEmpty)
@@ -126,6 +136,8 @@ class TrackChapterControls extends StatelessWidget {
                     chapters,
                     chaptersLoaded,
                     serverId: serverId,
+                    onOpen: onCancelAutoHide,
+                    onClose: onStartAutoHide,
                   ),
                 ),
               if (availableVersions.length > 1 && onSwitchVersion != null)
@@ -137,6 +149,8 @@ class TrackChapterControls extends StatelessWidget {
                     availableVersions,
                     selectedMediaIndex,
                     onSwitchVersion!,
+                    onOpen: onCancelAutoHide,
+                    onClose: onStartAutoHide,
                   ),
                 ),
               // BoxFit mode cycle button
