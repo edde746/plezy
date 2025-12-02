@@ -36,8 +36,6 @@ class PlaylistItemCard extends StatefulWidget {
 
 class _PlaylistItemCardState extends State<PlaylistItemCard>
     with KeyboardLongPressMixin {
-  late final FocusNode _focusNode;
-  bool _isFocused = false;
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
 
   @override
@@ -49,41 +47,6 @@ class _PlaylistItemCardState extends State<PlaylistItemCard>
   }
 
   @override
-  void initState() {
-    super.initState();
-    _focusNode = FocusNode();
-    _focusNode.addListener(_handleFocusChange);
-  }
-
-  @override
-  void dispose() {
-    _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _handleFocusChange() {
-    if (_isFocused != _focusNode.hasFocus) {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
-      if (_focusNode.hasFocus) {
-        Scrollable.ensureVisible(
-          context,
-          alignment: 0.5,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-        );
-      }
-    }
-  }
-
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    // Handle long-press detection for activation keys
-    return handleKeyboardLongPress(event);
-  }
-
-  @override
   Widget build(BuildContext context) {
     final item = widget.item;
     return MediaContextMenu(
@@ -91,11 +54,10 @@ class _PlaylistItemCardState extends State<PlaylistItemCard>
       item: item,
       onRefresh: widget.onRefresh,
       onTap: widget.onTap,
-      child: Focus(
-        focusNode: _focusNode,
-        onKeyEvent: _handleKeyEvent,
-        child: FocusIndicator(
-          isFocused: _isFocused,
+      child: FocusableWrapper(
+        onKeyEvent: (node, event) => handleKeyboardLongPress(event),
+        builder: (context, isFocused) => FocusIndicator(
+          isFocused: isFocused,
           borderRadius: 12,
           child: Card(
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

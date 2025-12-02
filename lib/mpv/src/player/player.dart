@@ -7,7 +7,6 @@ import '../models/subtitle_track.dart';
 import 'player_native.dart';
 import 'player_state.dart';
 import 'player_streams.dart';
-import 'player_stub.dart';
 import 'platform/player_linux.dart';
 import 'platform/player_windows.dart';
 
@@ -198,7 +197,6 @@ abstract class Player {
   /// - macOS/iOS/Android: [PlayerNative] using MPVKit/libmpv with texture rendering
   /// - Windows: [PlayerWindows] using libmpv with native window embedding
   /// - Linux: [PlayerLinux] using libmpv with OpenGL rendering via GtkGLArea
-  /// - Other platforms: [PlayerStub] (placeholder)
   factory Player() {
     if (Platform.isMacOS || Platform.isIOS || Platform.isAndroid) {
       return PlayerNative();
@@ -209,6 +207,6 @@ abstract class Player {
     if (Platform.isLinux) {
       return PlayerLinux();
     }
-    return PlayerStub();
+    throw UnsupportedError('Player is not supported on this platform');
   }
 }

@@ -1,10 +1,7 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/material.dart';
 
 import '../player/player.dart';
-import '../player/player_linux.dart';
-import '../player/player_windows.dart';
+import '../player/video_rect_support.dart';
 
 /// Video widget for displaying player output.
 ///
@@ -67,27 +64,13 @@ class _VideoState extends State<Video> {
   }
 
   Widget _buildVideoSurface() {
-    if (Platform.isWindows) {
-      // On Windows, use native window embedding.
-      // The mpv window is positioned behind Flutter, and we need to
-      // communicate the video rect to the native side.
+    // For players that support video rect positioning (Windows, Linux),
+    // communicate layout changes to the native side.
+    if (widget.player is VideoRectSupport) {
       return LayoutBuilder(
         builder: (context, constraints) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _updateVideoRect(context, constraints);
-          });
-          return const SizedBox.expand();
-        },
-      );
-    }
-    if (Platform.isLinux) {
-      // On Linux, use GtkGLArea behind the Flutter view.
-      // The GL area fills the entire overlay, and mpv handles aspect ratio.
-      // We still communicate the rect for potential future use.
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _updateVideoRectLinux(context, constraints);
           });
           return const SizedBox.expand();
         },
@@ -122,55 +105,13 @@ class _VideoState extends State<Video> {
 
     _lastRect = newRect;
 
-    // Update the native mpv window position
-    if (widget.player is PlayerWindows) {
-      final windowsPlayer = widget.player as PlayerWindows;
-      windowsPlayer.setVideoRect(
-        left: (position.dx * dpr).toInt(),
-        top: (position.dy * dpr).toInt(),
-        right: ((position.dx + size.width) * dpr).toInt(),
-        bottom: ((position.dy + size.height) * dpr).toInt(),
-        devicePixelRatio: dpr,
-      );
-    }
-  }
-
-  void _updateVideoRectLinux(BuildContext context, BoxConstraints constraints) {
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null || !renderBox.hasSize) return;
-
-    final position = renderBox.localToGlobal(Offset.zero);
-    final size = renderBox.size;
-    final dpr = MediaQuery.of(context).devicePixelRatio;
-
-    final newRect = Rect.fromLTWH(
-      position.dx,
-      position.dy,
-      size.width,
-      size.height,
+    // Update the native video rect
+    (widget.player as VideoRectSupport).setVideoRect(
+      left: (position.dx * dpr).toInt(),
+      top: (position.dy * dpr).toInt(),
+      right: ((position.dx + size.width) * dpr).toInt(),
+      bottom: ((position.dy + size.height) * dpr).toInt(),
+      devicePixelRatio: dpr,
     );
-
-    // Only update if the rect has changed significantly
-    if (_lastRect != null &&
-        (newRect.left - _lastRect!.left).abs() < 1 &&
-        (newRect.top - _lastRect!.top).abs() < 1 &&
-        (newRect.width - _lastRect!.width).abs() < 1 &&
-        (newRect.height - _lastRect!.height).abs() < 1) {
-      return;
-    }
-
-    _lastRect = newRect;
-
-    // Update the Linux player (triggers redraw)
-    if (widget.player is PlayerLinux) {
-      final linuxPlayer = widget.player as PlayerLinux;
-      linuxPlayer.setVideoRect(
-        left: (position.dx * dpr).toInt(),
-        top: (position.dy * dpr).toInt(),
-        right: ((position.dx + size.width) * dpr).toInt(),
-        bottom: ((position.dy + size.height) * dpr).toInt(),
-        devicePixelRatio: dpr,
-      );
-    }
   }
 }

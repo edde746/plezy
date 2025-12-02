@@ -19,7 +19,9 @@ import '../services/media_controls_manager.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_progress_tracker.dart';
 import '../services/settings_service.dart';
+import '../services/track_selection_service.dart';
 import '../services/video_filter_manager.dart';
+import '../providers/user_profile_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
@@ -590,8 +592,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         }
       }
 
-      // Track selection is now handled inside PlaybackInitializationService
-      // to ensure tracks are selected BEFORE seeking to resume position
+      // Set up track loading subscription to apply track selection when tracks are loaded
+      _trackLoadingSubscription?.cancel();
+      _trackLoadingSubscription = player!.streams.tracks.listen((tracks) {
+        // Only process when we have actual tracks loaded
+        if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
+
+        // Cancel subscription after first load to avoid re-applying on every track change
+        _trackLoadingSubscription?.cancel();
+        _trackLoadingSubscription = null;
+
+        // Apply track selection using the service
+        _applyTrackSelection();
+      });
     } on PlaybackException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -764,6 +777,25 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   Future<void> _playPrevious() async {
     if (_previousEpisode == null) return;
     await _navigateToEpisode(_previousEpisode!);
+  }
+
+  /// Apply track selection using the TrackSelectionService
+  Future<void> _applyTrackSelection() async {
+    if (!mounted || player == null) return;
+
+    final profileSettings = context.read<UserProfileProvider>().profileSettings;
+
+    final trackService = TrackSelectionService(
+      player: player!,
+      profileSettings: profileSettings,
+      metadata: widget.metadata,
+    );
+
+    await trackService.selectAndApplyTracks(
+      preferredAudioTrack: widget.preferredAudioTrack,
+      preferredSubtitleTrack: widget.preferredSubtitleTrack,
+      preferredPlaybackRate: widget.preferredPlaybackRate,
+    );
   }
 
   /// Handle audio track changes from the user - save both stream selection and language preference

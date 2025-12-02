@@ -608,50 +608,21 @@ class _MediaCardList extends StatefulWidget {
 
 class _MediaCardListState extends State<_MediaCardList>
     with KeyboardLongPressMixin {
-  late final FocusNode _focusNode;
-  bool _isFocused = false;
-
   @override
   void onKeyboardTap() => widget.onTap();
 
   @override
   void onKeyboardLongPress() => widget.onLongPress();
 
-  @override
-  void initState() {
-    super.initState();
-    _focusNode = FocusNode();
-    _focusNode.addListener(_handleFocusChange);
-  }
-
-  @override
-  void dispose() {
-    _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _handleFocusChange() {
-    if (_isFocused != _focusNode.hasFocus) {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
-      if (_focusNode.hasFocus) {
-        // Scroll to center only if item is not fully visible
-        _scrollToCenterIfNeeded();
-      }
-    }
-  }
-
   /// Scrolls to center the item only if it's not already fully visible.
   /// This prevents unnecessary scrolling when navigating horizontally
   /// within the same row while still centering when scrolling is needed.
-  void _scrollToCenterIfNeeded() {
-    final scrollable = Scrollable.maybeOf(context);
+  void _scrollToCenterIfNeeded(BuildContext ctx) {
+    final scrollable = Scrollable.maybeOf(ctx);
     if (scrollable == null) {
       // Fallback to simple centering
       Scrollable.ensureVisible(
-        context,
+        ctx,
         alignment: 0.5,
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
@@ -659,7 +630,7 @@ class _MediaCardListState extends State<_MediaCardList>
       return;
     }
 
-    final renderObject = context.findRenderObject();
+    final renderObject = ctx.findRenderObject();
     if (renderObject == null || renderObject is! RenderBox) return;
 
     final box = renderObject;
@@ -686,17 +657,12 @@ class _MediaCardListState extends State<_MediaCardList>
     if (!isFullyVisible) {
       // Item is not fully visible, scroll to center it
       Scrollable.ensureVisible(
-        context,
+        ctx,
         alignment: 0.5,
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
       );
     }
-  }
-
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    // Handle long-press detection for activation keys
-    return handleKeyboardLongPress(event);
   }
 
   double get _posterWidth {
@@ -856,11 +822,11 @@ class _MediaCardListState extends State<_MediaCardList>
     final metadataLine = _buildMetadataLine();
     final subtitle = _buildSubtitleText();
 
-    return Focus(
-      focusNode: _focusNode,
-      onKeyEvent: _handleKeyEvent,
-      child: FocusIndicator(
-        isFocused: _isFocused,
+    return FocusableWrapper(
+      onKeyEvent: (node, event) => handleKeyboardLongPress(event),
+      onScrollIntoView: _scrollToCenterIfNeeded,
+      builder: (context, isFocused) => FocusIndicator(
+        isFocused: isFocused,
         borderRadius: 8,
         child: Semantics(
           label: widget.semanticLabel,

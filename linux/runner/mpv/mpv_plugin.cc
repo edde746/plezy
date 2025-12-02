@@ -369,13 +369,6 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
 
       response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
     }
-  } else if (strcmp(method, "setVideoRect") == 0) {
-    // On Linux, the GtkGLArea fills the entire overlay area,
-    // and mpv handles its own aspect ratio. So we just trigger a redraw.
-    if (self->player && self->initialized && self->visible) {
-      gtk_gl_area_queue_render(self->gl_area);
-    }
-    response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   } else if (strcmp(method, "setControlsVisible") == 0) {
     // Set Flutter view opacity when controls are hidden/shown.
     // This is a workaround for Flutter's lack of transparency support on Linux.

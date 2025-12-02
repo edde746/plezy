@@ -72,7 +72,8 @@ class FocusableWrapper extends StatefulWidget {
   final FocusNode? focusNode;
   final bool autofocus;
   final VoidCallback? onFocused;
-  final ValueChanged<KeyEvent>? onKeyEvent;
+  final KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent;
+  final void Function(BuildContext context)? onScrollIntoView;
   final String? debugLabel;
 
   const FocusableWrapper({
@@ -82,6 +83,7 @@ class FocusableWrapper extends StatefulWidget {
     this.autofocus = false,
     this.onFocused,
     this.onKeyEvent,
+    this.onScrollIntoView,
     this.debugLabel,
   });
 
@@ -118,19 +120,25 @@ class _FocusableWrapperState extends State<FocusableWrapper> {
       });
       if (hasFocus) {
         widget.onFocused?.call();
-        // Ensure the focused item is visible in scrollable containers
-        Scrollable.ensureVisible(
-          context,
-          alignment: 0.5,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-        );
+        // Use custom scroll behavior if provided, otherwise default
+        if (widget.onScrollIntoView != null) {
+          widget.onScrollIntoView!(context);
+        } else {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+          );
+        }
       }
     }
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    widget.onKeyEvent?.call(event);
+    if (widget.onKeyEvent != null) {
+      return widget.onKeyEvent!(node, event);
+    }
     return KeyEventResult.ignored;
   }
 

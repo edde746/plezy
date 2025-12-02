@@ -43,14 +43,10 @@
 /// ```
 library;
 
-// Import for type alias
-import 'src/models/track_selection.dart' as track_selection;
-
 // Player
 export 'src/player/player.dart';
 export 'src/player/player_state.dart';
 export 'src/player/player_streams.dart';
-export 'src/player/player_stub.dart';
 
 // Models
 export 'src/models/media.dart';
@@ -64,6 +60,3 @@ export 'src/models/player_log_level.dart';
 
 // Video
 export 'src/video/video.dart';
-
-// Type alias for compatibility (must be after exports)
-typedef Track = track_selection.TrackSelection;
