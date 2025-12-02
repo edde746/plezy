@@ -54,16 +54,10 @@ jobs:
       - name: Analyze code
         run: |
           # Run flutter analyze
-          # Fails on any errors or warnings (info messages are allowed)
-          flutter analyze 2>&1 | tee analyze_output.txt
+          # Fails on errors or warnings only (info messages are allowed)
+          flutter analyze 2>&1 | tee analyze_output.txt || true
 
-          # Check the exit status
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "❌ Analysis failed"
-            exit 1
-          fi
-
-          # Also verify no warnings or errors in output
+          # Check output for errors or warnings
           if grep -q "error •" analyze_output.txt; then
             echo "❌ Analysis failed with errors"
             exit 1
@@ -71,7 +65,7 @@ jobs:
             echo "⚠️  Analysis completed with warnings"
             exit 1
           else
-            echo "✅ Analysis passed - no issues found!"
+            echo "✅ Analysis passed!"
             exit 0
           fi
 
