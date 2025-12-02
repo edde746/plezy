@@ -317,6 +317,14 @@ class MpvPlayerNative implements MpvPlayer {
     await _methodChannel.invokeMethod('setVisible', {'visible': true});
     _isVisible = true;
 
+    // Set start position if provided (must be set before loading file)
+    if (media.start != null && media.start!.inSeconds > 0) {
+      await setProperty('start', media.start!.inSeconds.toString());
+    } else {
+      // Reset start position if not resuming
+      await setProperty('start', 'none');
+    }
+
     await command(['loadfile', media.uri, 'replace']);
     if (!play) {
       await setProperty('pause', 'yes');

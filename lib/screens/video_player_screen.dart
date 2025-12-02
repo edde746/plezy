@@ -542,7 +542,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
       // Open video through MpvPlayer
       if (result.videoUrl != null) {
-        await player!.open(MpvMedia(result.videoUrl!));
+        // Pass resume position if available
+        final resumePosition = widget.metadata.viewOffset != null
+            ? Duration(milliseconds: widget.metadata.viewOffset!)
+            : null;
+        await player!.open(MpvMedia(result.videoUrl!, start: resumePosition));
       }
 
       // Update available versions from the playback data
