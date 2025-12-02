@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 
-import 'player_native.dart';
+import '../player_native.dart';
 
 /// Linux implementation of [Player].
 ///

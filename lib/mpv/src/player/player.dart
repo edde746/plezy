@@ -4,14 +4,12 @@ import '../models/audio_device.dart';
 import '../models/media.dart';
 import '../models/audio_track.dart';
 import '../models/subtitle_track.dart';
-import 'player_android.dart';
-import 'player_ios.dart';
-import 'player_linux.dart';
-import 'player_macos.dart';
+import 'player_native.dart';
 import 'player_state.dart';
 import 'player_streams.dart';
 import 'player_stub.dart';
-import 'player_windows.dart';
+import 'platform/player_linux.dart';
+import 'platform/player_windows.dart';
 
 /// Abstract interface for the video player.
 ///
@@ -197,21 +195,13 @@ abstract class Player {
   /// Creates a new player instance.
   ///
   /// Returns a platform-specific implementation:
-  /// - macOS: [PlayerMacOS] using MPVKit with Metal rendering
-  /// - iOS: [PlayerIOS] using MPVKit with Metal rendering
-  /// - Android: [PlayerAndroid] using libmpv
+  /// - macOS/iOS/Android: [PlayerNative] using MPVKit/libmpv with texture rendering
   /// - Windows: [PlayerWindows] using libmpv with native window embedding
   /// - Linux: [PlayerLinux] using libmpv with OpenGL rendering via GtkGLArea
   /// - Other platforms: [PlayerStub] (placeholder)
   factory Player() {
-    if (Platform.isMacOS) {
-      return PlayerMacOS();
-    }
-    if (Platform.isIOS) {
-      return PlayerIOS();
-    }
-    if (Platform.isAndroid) {
-      return PlayerAndroid();
+    if (Platform.isMacOS || Platform.isIOS || Platform.isAndroid) {
+      return PlayerNative();
     }
     if (Platform.isWindows) {
       return PlayerWindows();
