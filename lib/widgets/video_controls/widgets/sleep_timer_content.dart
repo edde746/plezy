@@ -7,7 +7,7 @@ import 'sleep_timer_duration_list.dart';
 
 /// Shared UI for sleep timer selection and active status.
 class SleepTimerContent extends StatelessWidget {
-  final MpvPlayer player;
+  final Player player;
   final SleepTimerService sleepTimer;
   final int? defaultDuration;
   final VoidCallback? onCancel;

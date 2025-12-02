@@ -18,7 +18,7 @@ import 'widgets/timeline_slider.dart';
 /// - Center: Large playback controls (seek backward, play/pause, seek forward)
 /// - Bottom bar: Timeline slider with chapter markers and timestamps
 class MobileVideoControls extends StatelessWidget {
-  final MpvPlayer player;
+  final Player player;
   final PlexMetadata metadata;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;

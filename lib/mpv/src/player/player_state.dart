@@ -1,12 +1,12 @@
-import '../models/mpv_audio_device.dart';
-import '../models/mpv_tracks.dart';
-import '../models/mpv_track_selection.dart';
+import '../models/audio_device.dart';
+import '../models/tracks.dart';
+import '../models/track_selection.dart';
 
 /// Immutable snapshot of the current player state.
 ///
 /// This class provides synchronous access to the player's current state.
-/// For reactive updates, use [MpvPlayerStreams].
-class MpvPlayerState {
+/// For reactive updates, use [PlayerStreams].
+class PlayerState {
   /// Whether playback is currently active.
   final bool playing;
 
@@ -32,10 +32,10 @@ class MpvPlayerState {
   final double rate;
 
   /// Available tracks in the media.
-  final MpvTracks tracks;
+  final Tracks tracks;
 
   /// Currently selected tracks.
-  final MpvTrackSelection track;
+  final TrackSelection track;
 
   /// Audio delay/sync offset in seconds.
   final double audioDelay;
@@ -47,12 +47,12 @@ class MpvPlayerState {
   final bool audioPassthrough;
 
   /// Current audio output device.
-  final MpvAudioDevice audioDevice;
+  final AudioDevice audioDevice;
 
   /// Available audio output devices.
-  final List<MpvAudioDevice> audioDevices;
+  final List<AudioDevice> audioDevices;
 
-  const MpvPlayerState({
+  const PlayerState({
     this.playing = false,
     this.completed = false,
     this.buffering = false,
@@ -61,17 +61,17 @@ class MpvPlayerState {
     this.buffer = Duration.zero,
     this.volume = 100.0,
     this.rate = 1.0,
-    this.tracks = const MpvTracks(),
-    this.track = const MpvTrackSelection(),
+    this.tracks = const Tracks(),
+    this.track = const TrackSelection(),
     this.audioDelay = 0.0,
     this.subtitleDelay = 0.0,
     this.audioPassthrough = false,
-    this.audioDevice = MpvAudioDevice.auto,
+    this.audioDevice = AudioDevice.auto,
     this.audioDevices = const [],
   });
 
   /// Creates a copy with the given fields replaced.
-  MpvPlayerState copyWith({
+  PlayerState copyWith({
     bool? playing,
     bool? completed,
     bool? buffering,
@@ -80,15 +80,15 @@ class MpvPlayerState {
     Duration? buffer,
     double? volume,
     double? rate,
-    MpvTracks? tracks,
-    MpvTrackSelection? track,
+    Tracks? tracks,
+    TrackSelection? track,
     double? audioDelay,
     double? subtitleDelay,
     bool? audioPassthrough,
-    MpvAudioDevice? audioDevice,
-    List<MpvAudioDevice>? audioDevices,
+    AudioDevice? audioDevice,
+    List<AudioDevice>? audioDevices,
   }) {
-    return MpvPlayerState(
+    return PlayerState(
       playing: playing ?? this.playing,
       completed: completed ?? this.completed,
       buffering: buffering ?? this.buffering,
@@ -109,5 +109,5 @@ class MpvPlayerState {
 
   @override
   String toString() =>
-      'MpvPlayerState(playing: $playing, position: $position, duration: $duration)';
+      'PlayerState(playing: $playing, position: $position, duration: $duration)';
 }

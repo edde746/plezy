@@ -148,7 +148,7 @@ class KeyboardShortcutsService {
   // Handle keyboard input for video player
   KeyEventResult handleVideoPlayerKeyEvent(
     KeyEvent event,
-    MpvPlayer player,
+    Player player,
     VoidCallback? onToggleFullscreen,
     VoidCallback? onToggleSubtitles,
     VoidCallback? onNextAudioTrack,
@@ -241,7 +241,7 @@ class KeyboardShortcutsService {
 
   void _executeAction(
     String action,
-    MpvPlayer player,
+    Player player,
     VoidCallback? onToggleFullscreen,
     VoidCallback? onToggleSubtitles,
     VoidCallback? onNextAudioTrack,

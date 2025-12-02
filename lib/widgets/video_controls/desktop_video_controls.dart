@@ -14,7 +14,7 @@ import 'widgets/timeline_slider.dart';
 
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatelessWidget {
-  final MpvPlayer player;
+  final Player player;
   final PlexMetadata metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;

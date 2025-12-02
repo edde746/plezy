@@ -5,13 +5,13 @@ import 'base_video_control_sheet.dart';
 
 /// Generic track selection sheet for audio and subtitle tracks
 ///
-/// Type parameter [T] should be either [MpvAudioTrack] or [MpvSubtitleTrack]
+/// Type parameter [T] should be either [AudioTrack] or [SubtitleTrack]
 class TrackSelectionSheet<T> extends StatelessWidget {
-  final MpvPlayer player;
+  final Player player;
   final String title;
   final IconData icon;
-  final List<T> Function(MpvTracks?) extractTracks;
-  final T? Function(MpvTrack) getCurrentTrack;
+  final List<T> Function(Tracks?) extractTracks;
+  final T? Function(TrackSelection) getCurrentTrack;
   final String Function(T track, int index) buildLabel;
   final void Function(T track) setTrack;
   final Function(T)? onTrackChanged;
@@ -36,11 +36,11 @@ class TrackSelectionSheet<T> extends StatelessWidget {
 
   static void show<T>({
     required BuildContext context,
-    required MpvPlayer player,
+    required Player player,
     required String title,
     required IconData icon,
-    required List<T> Function(MpvTracks?) extractTracks,
-    required T? Function(MpvTrack) getCurrentTrack,
+    required List<T> Function(Tracks?) extractTracks,
+    required T? Function(TrackSelection) getCurrentTrack,
     required String Function(T track, int index) buildLabel,
     required void Function(T track) setTrack,
     Function(T)? onTrackChanged,
@@ -71,9 +71,9 @@ class TrackSelectionSheet<T> extends StatelessWidget {
   }
 
   String _getEmptyMessage() {
-    if (T == MpvSubtitleTrack) {
+    if (T == SubtitleTrack) {
       return 'No subtitles available';
-    } else if (T == MpvAudioTrack) {
+    } else if (T == AudioTrack) {
       return 'No audio tracks available';
     }
     return 'No tracks available';
@@ -81,16 +81,16 @@ class TrackSelectionSheet<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<MpvTracks>(
+    return StreamBuilder<Tracks>(
       stream: player.streams.tracks,
       initialData: player.state.tracks,
       builder: (context, snapshot) {
         final tracks = snapshot.data;
         final availableTracks = extractTracks(tracks).where((track) {
           // Filter out 'auto' and 'no' tracks from the list
-          if (track is MpvAudioTrack) {
+          if (track is AudioTrack) {
             return track.id != 'auto' && track.id != 'no';
-          } else if (track is MpvSubtitleTrack) {
+          } else if (track is SubtitleTrack) {
             return track.id != 'auto' && track.id != 'no';
           }
           return true;
@@ -106,7 +106,7 @@ class TrackSelectionSheet<T> extends StatelessWidget {
                     style: const TextStyle(color: Colors.white70),
                   ),
                 )
-              : StreamBuilder<MpvTrack>(
+              : StreamBuilder<TrackSelection>(
                   stream: player.streams.track,
                   initialData: player.state.track,
                   builder: (context, selectedSnapshot) {
@@ -155,9 +155,9 @@ class TrackSelectionSheet<T> extends StatelessWidget {
 
                         // Check if this track is selected
                         String trackId;
-                        if (track is MpvAudioTrack) {
+                        if (track is AudioTrack) {
                           trackId = track.id;
-                        } else if (track is MpvSubtitleTrack) {
+                        } else if (track is SubtitleTrack) {
                           trackId = track.id;
                         } else {
                           trackId = '';
@@ -166,9 +166,9 @@ class TrackSelectionSheet<T> extends StatelessWidget {
                         String selectedId;
                         if (selectedTrack == null) {
                           selectedId = '';
-                        } else if (selectedTrack is MpvAudioTrack) {
+                        } else if (selectedTrack is AudioTrack) {
                           selectedId = selectedTrack.id;
-                        } else if (selectedTrack is MpvSubtitleTrack) {
+                        } else if (selectedTrack is SubtitleTrack) {
                           selectedId = selectedTrack.id;
                         } else {
                           selectedId = '';

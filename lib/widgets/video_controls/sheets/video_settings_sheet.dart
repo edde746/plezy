@@ -59,7 +59,7 @@ class _SettingsMenuItem extends StatelessWidget {
 
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
-  final MpvPlayer player;
+  final Player player;
   final int audioSyncOffset;
   final int subtitleSyncOffset;
 
@@ -72,7 +72,7 @@ class VideoSettingsSheet extends StatefulWidget {
 
   static Future<void> show(
     BuildContext context,
-    MpvPlayer player,
+    Player player,
     int audioSyncOffset,
     int subtitleSyncOffset, {
     VoidCallback? onOpen,
@@ -254,7 +254,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // Audio Output Device (Desktop only)
         if (isDesktop)
-          StreamBuilder<MpvAudioDevice>(
+          StreamBuilder<AudioDevice>(
             stream: widget.player.streams.audioDevice,
             initialData: widget.player.state.audioDevice,
             builder: (context, snapshot) {
@@ -358,13 +358,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildAudioDeviceView() {
-    return StreamBuilder<List<MpvAudioDevice>>(
+    return StreamBuilder<List<AudioDevice>>(
       stream: widget.player.streams.audioDevices,
       initialData: widget.player.state.audioDevices,
       builder: (context, snapshot) {
         final devices = snapshot.data ?? [];
 
-        return StreamBuilder<MpvAudioDevice>(
+        return StreamBuilder<AudioDevice>(
           stream: widget.player.streams.audioDevice,
           initialData: widget.player.state.audioDevice,
           builder: (context, selectedSnapshot) {

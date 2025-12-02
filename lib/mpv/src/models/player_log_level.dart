@@ -1,5 +1,5 @@
-/// Log level for MPV player messages.
-enum MpvLogLevel {
+/// Log level for player messages.
+enum PlayerLogLevel {
   /// No logging.
   none,
 

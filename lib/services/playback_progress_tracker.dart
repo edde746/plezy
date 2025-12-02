@@ -15,7 +15,7 @@ import '../utils/app_logger.dart';
 class PlaybackProgressTracker {
   final PlexClient client;
   final PlexMetadata metadata;
-  final MpvPlayer player;
+  final Player player;
 
   /// Timer for periodic progress updates
   Timer? _progressTimer;

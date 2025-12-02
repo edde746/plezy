@@ -7,7 +7,7 @@ import '../../../i18n/strings.g.dart';
 
 /// Widget displaying list of sleep timer durations for selection
 class SleepTimerDurationList extends StatelessWidget {
-  final MpvPlayer player;
+  final Player player;
   final SleepTimerService sleepTimer;
   final int? defaultDuration;
 

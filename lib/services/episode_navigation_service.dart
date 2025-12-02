@@ -77,14 +77,14 @@ class EpisodeNavigationService {
   Future<void> navigateToEpisode({
     required BuildContext context,
     required PlexMetadata episode,
-    required MpvPlayer? player,
+    required Player? player,
     bool usePushReplacement = true,
   }) async {
     if (!context.mounted) return;
 
     // Capture current player state before navigation
-    MpvAudioTrack? currentAudioTrack;
-    MpvSubtitleTrack? currentSubtitleTrack;
+    AudioTrack? currentAudioTrack;
+    SubtitleTrack? currentSubtitleTrack;
     double? currentPlaybackRate;
 
     if (player != null) {

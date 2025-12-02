@@ -1,14 +1,14 @@
 import 'package:flutter/services.dart';
 
-import 'mpv_player_native.dart';
+import 'player_native.dart';
 
-/// Linux implementation of [MpvPlayer].
+/// Linux implementation of [Player].
 ///
 /// Uses libmpv with OpenGL rendering via GtkGLArea.
 /// The mpv video is rendered to a GtkGLArea positioned behind
 /// the Flutter view using a GtkOverlay, with transparent regions
 /// in the Flutter UI allowing the video to show through.
-class MpvPlayerLinux extends MpvPlayerNative {
+class PlayerLinux extends PlayerNative {
   static const _methodChannel = MethodChannel('com.plezy/mpv_player');
 
   @override

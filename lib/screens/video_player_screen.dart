@@ -38,8 +38,8 @@ Future<void> loadIsoTable() async {
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
-  final MpvAudioTrack? preferredAudioTrack;
-  final MpvSubtitleTrack? preferredSubtitleTrack;
+  final AudioTrack? preferredAudioTrack;
+  final SubtitleTrack? preferredSubtitleTrack;
   final double? preferredPlaybackRate;
   final int selectedMediaIndex;
 
@@ -58,7 +58,7 @@ class VideoPlayerScreen extends StatefulWidget {
 
 class VideoPlayerScreenState extends State<VideoPlayerScreen>
     with WidgetsBindingObserver {
-  MpvPlayer? player;
+  Player? player;
   bool _isPlayerInitialized = false;
   PlexMetadata? _nextEpisode;
   PlexMetadata? _previousEpisode;
@@ -67,13 +67,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
   PlexMediaInfo? _currentMediaInfo;
-  StreamSubscription<MpvLog>? _logSubscription;
+  StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<String>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
   StreamSubscription<dynamic>? _mediaControlSubscription;
   StreamSubscription<bool>? _bufferingSubscription;
-  StreamSubscription<MpvTracks>? _trackLoadingSubscription;
+  StreamSubscription<Tracks>? _trackLoadingSubscription;
   bool _isReplacingWithVideo =
       false; // Flag to skip orientation restoration during video-to-video navigation
 
@@ -244,7 +244,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
 
       // Create player
-      player = MpvPlayer();
+      player = Player();
 
       // Configure player properties
       await player!.setProperty('target-colorspace-hint', 'yes'); // Enable HDR passthrough
@@ -562,13 +562,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         selectedMediaIndex: widget.selectedMediaIndex,
       );
 
-      // Open video through MpvPlayer
+      // Open video through Player
       if (result.videoUrl != null) {
         // Pass resume position if available
         final resumePosition = widget.metadata.viewOffset != null
             ? Duration(milliseconds: widget.metadata.viewOffset!)
             : null;
-        await player!.open(MpvMedia(result.videoUrl!, start: resumePosition));
+        await player!.open(Media(result.videoUrl!, start: resumePosition));
       }
 
       // Update available versions from the playback data
@@ -709,22 +709,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
-  void _onPlayerLog(MpvLog log) {
+  void _onPlayerLog(PlayerLog log) {
     // Map MPV log levels to app logger levels
     switch (log.level) {
-      case MpvLogLevel.fatal:
-      case MpvLogLevel.error:
+      case PlayerLogLevel.fatal:
+      case PlayerLogLevel.error:
         appLogger.e('[MPV:${log.prefix}] ${log.text}');
         break;
-      case MpvLogLevel.warn:
+      case PlayerLogLevel.warn:
         appLogger.w('[MPV:${log.prefix}] ${log.text}');
         break;
-      case MpvLogLevel.info:
+      case PlayerLogLevel.info:
         appLogger.i('[MPV:${log.prefix}] ${log.text}');
         break;
-      case MpvLogLevel.debug:
-      case MpvLogLevel.trace:
-      case MpvLogLevel.verbose:
+      case PlayerLogLevel.debug:
+      case PlayerLogLevel.trace:
+      case PlayerLogLevel.verbose:
         appLogger.d('[MPV:${log.prefix}] ${log.text}');
         break;
       default:
@@ -767,7 +767,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   /// Handle audio track changes from the user - save both stream selection and language preference
-  Future<void> _onAudioTrackChanged(MpvAudioTrack track) async {
+  Future<void> _onAudioTrackChanged(AudioTrack track) async {
     final settings = await SettingsService.getInstance();
 
     // Only save if remember track selections is enabled
@@ -869,7 +869,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   /// Handle subtitle track changes from the user - save both stream selection and language preference
-  Future<void> _onSubtitleTrackChanged(MpvSubtitleTrack track) async {
+  Future<void> _onSubtitleTrackChanged(SubtitleTrack track) async {
     final settings = await SettingsService.getInstance();
 
     // Only save if remember track selections is enabled
@@ -1131,7 +1131,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                         });
                       }
 
-                      return MpvVideo(
+                      return Video(
                         player: player!,
                         fit: _videoFilterManager?.currentBoxFit ?? BoxFit.contain,
                         controls: (context) => plexVideoControlsBuilder(

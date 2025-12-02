@@ -8,12 +8,12 @@ import 'track_selection_sheet.dart';
 class AudioTrackSheet {
   static void show(
     BuildContext context,
-    MpvPlayer player, {
-    Function(MpvAudioTrack)? onTrackChanged,
+    Player player, {
+    Function(AudioTrack)? onTrackChanged,
     VoidCallback? onOpen,
     VoidCallback? onClose,
   }) {
-    TrackSelectionSheet.show<MpvAudioTrack>(
+    TrackSelectionSheet.show<AudioTrack>(
       context: context,
       player: player,
       title: t.videoControls.audioLabel,

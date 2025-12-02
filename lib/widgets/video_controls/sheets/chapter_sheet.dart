@@ -9,7 +9,7 @@ import 'base_video_control_sheet.dart';
 
 /// Bottom sheet for selecting chapters
 class ChapterSheet extends StatelessWidget {
-  final MpvPlayer player;
+  final Player player;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
   final String? serverId; // Server ID for the metadata these chapters belong to
@@ -24,7 +24,7 @@ class ChapterSheet extends StatelessWidget {
 
   static void show(
     BuildContext context,
-    MpvPlayer player,
+    Player player,
     List<PlexChapter> chapters,
     bool chaptersLoaded, {
     String? serverId,

@@ -1,27 +1,27 @@
 import 'dart:io' show Platform;
 
-import '../models/mpv_audio_device.dart';
-import '../models/mpv_media.dart';
-import '../models/mpv_audio_track.dart';
-import '../models/mpv_subtitle_track.dart';
-import 'mpv_player_android.dart';
-import 'mpv_player_ios.dart';
-import 'mpv_player_linux.dart';
-import 'mpv_player_macos.dart';
-import 'mpv_player_state.dart';
-import 'mpv_player_streams.dart';
-import 'mpv_player_stub.dart';
-import 'mpv_player_windows.dart';
+import '../models/audio_device.dart';
+import '../models/media.dart';
+import '../models/audio_track.dart';
+import '../models/subtitle_track.dart';
+import 'player_android.dart';
+import 'player_ios.dart';
+import 'player_linux.dart';
+import 'player_macos.dart';
+import 'player_state.dart';
+import 'player_streams.dart';
+import 'player_stub.dart';
+import 'player_windows.dart';
 
-/// Abstract interface for the MPV player.
+/// Abstract interface for the video player.
 ///
 /// This interface defines all playback control methods, state access,
 /// and reactive streams for the video player.
 ///
 /// Example usage:
 /// ```dart
-/// final player = MpvPlayer();
-/// await player.open(MpvMedia('https://example.com/video.mp4'));
+/// final player = Player();
+/// await player.open(Media('https://example.com/video.mp4'));
 /// await player.play();
 ///
 /// // Configure player properties
@@ -36,16 +36,16 @@ import 'mpv_player_windows.dart';
 /// // Access current state
 /// print('Playing: ${player.state.playing}');
 /// ```
-abstract class MpvPlayer {
+abstract class Player {
   /// Current synchronous state snapshot.
   ///
   /// Use this for immediate state access in UI.
-  MpvPlayerState get state;
+  PlayerState get state;
 
   /// Reactive streams for state changes.
   ///
   /// Use these for reactive UI updates.
-  MpvPlayerStreams get streams;
+  PlayerStreams get streams;
 
   /// Texture ID for Flutter's Texture widget (video rendering).
   ///
@@ -61,7 +61,7 @@ abstract class MpvPlayer {
   ///
   /// [media] - The media source to open.
   /// [play] - Whether to start playback immediately (default: true).
-  Future<void> open(MpvMedia media, {bool play = true});
+  Future<void> open(Media media, {bool play = true});
 
   /// Start or resume playback.
   Future<void> play();
@@ -83,12 +83,12 @@ abstract class MpvPlayer {
   // ============================================
 
   /// Select an audio track.
-  Future<void> selectAudioTrack(MpvAudioTrack track);
+  Future<void> selectAudioTrack(AudioTrack track);
 
   /// Select a subtitle track.
   ///
-  /// Pass [MpvSubtitleTrack.off] to disable subtitles.
-  Future<void> selectSubtitleTrack(MpvSubtitleTrack track);
+  /// Pass [SubtitleTrack.off] to disable subtitles.
+  Future<void> selectSubtitleTrack(SubtitleTrack track);
 
   /// Add an external subtitle track.
   ///
@@ -120,7 +120,7 @@ abstract class MpvPlayer {
   /// Set the audio output device.
   ///
   /// [device] - The audio device to use.
-  Future<void> setAudioDevice(MpvAudioDevice device);
+  Future<void> setAudioDevice(AudioDevice device);
 
   // ============================================
   // MPV Properties (Advanced)
@@ -194,31 +194,31 @@ abstract class MpvPlayer {
   // Factory
   // ============================================
 
-  /// Creates a new MPV player instance.
+  /// Creates a new player instance.
   ///
   /// Returns a platform-specific implementation:
-  /// - macOS: [MpvPlayerMacOS] using MPVKit with Metal rendering
-  /// - iOS: [MpvPlayerIOS] using MPVKit with Metal rendering
-  /// - Android: [MpvPlayerAndroid] using libmpv
-  /// - Windows: [MpvPlayerWindows] using libmpv with native window embedding
-  /// - Linux: [MpvPlayerLinux] using libmpv with OpenGL rendering via GtkGLArea
-  /// - Other platforms: [MpvPlayerStub] (placeholder)
-  factory MpvPlayer() {
+  /// - macOS: [PlayerMacOS] using MPVKit with Metal rendering
+  /// - iOS: [PlayerIOS] using MPVKit with Metal rendering
+  /// - Android: [PlayerAndroid] using libmpv
+  /// - Windows: [PlayerWindows] using libmpv with native window embedding
+  /// - Linux: [PlayerLinux] using libmpv with OpenGL rendering via GtkGLArea
+  /// - Other platforms: [PlayerStub] (placeholder)
+  factory Player() {
     if (Platform.isMacOS) {
-      return MpvPlayerMacOS();
+      return PlayerMacOS();
     }
     if (Platform.isIOS) {
-      return MpvPlayerIOS();
+      return PlayerIOS();
     }
     if (Platform.isAndroid) {
-      return MpvPlayerAndroid();
+      return PlayerAndroid();
     }
     if (Platform.isWindows) {
-      return MpvPlayerWindows();
+      return PlayerWindows();
     }
     if (Platform.isLinux) {
-      return MpvPlayerLinux();
+      return PlayerLinux();
     }
-    return MpvPlayerStub();
+    return PlayerStub();
   }
 }

@@ -6,7 +6,7 @@ import '../../../utils/duration_formatter.dart';
 
 /// Reusable widget for adjusting sync offsets (audio or subtitle)
 class SyncOffsetControl extends StatefulWidget {
-  final MpvPlayer player;
+  final Player player;
   final String propertyName; // 'audio-delay' or 'sub-delay'
   final int initialOffset;
   final String labelText; // 'Audio' or 'Subtitles'

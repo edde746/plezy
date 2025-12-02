@@ -27,8 +27,8 @@ import '../services/settings_service.dart';
 Future<bool?> navigateToVideoPlayer(
   BuildContext context, {
   required PlexMetadata metadata,
-  MpvAudioTrack? preferredAudioTrack,
-  MpvSubtitleTrack? preferredSubtitleTrack,
+  AudioTrack? preferredAudioTrack,
+  SubtitleTrack? preferredSubtitleTrack,
   double? preferredPlaybackRate,
   int? selectedMediaIndex,
   bool usePushReplacement = false,

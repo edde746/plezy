@@ -2,28 +2,28 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 
-import '../player/mpv_player.dart';
-import '../player/mpv_player_linux.dart';
-import '../player/mpv_player_windows.dart';
+import '../player/player.dart';
+import '../player/player_linux.dart';
+import '../player/player_windows.dart';
 
-/// Video widget for displaying MPV player output.
+/// Video widget for displaying player output.
 ///
-/// This widget displays the video output from an [MpvPlayer] instance
+/// This widget displays the video output from a [Player] instance
 /// and optionally overlays custom controls.
 ///
 /// Example usage:
 /// ```dart
-/// final player = MpvPlayer();
+/// final player = Player();
 ///
-/// MpvVideo(
+/// Video(
 ///   player: player,
 ///   fit: BoxFit.contain,
 ///   controls: (context) => MyCustomControls(),
 /// )
 /// ```
-class MpvVideo extends StatefulWidget {
+class Video extends StatefulWidget {
   /// The player instance.
-  final MpvPlayer player;
+  final Player player;
 
   /// How the video should be inscribed into the widget's box.
   final BoxFit fit;
@@ -34,7 +34,7 @@ class MpvVideo extends StatefulWidget {
   /// Background color shown behind the video.
   final Color backgroundColor;
 
-  const MpvVideo({
+  const Video({
     super.key,
     required this.player,
     this.fit = BoxFit.contain,
@@ -43,10 +43,10 @@ class MpvVideo extends StatefulWidget {
   });
 
   @override
-  State<MpvVideo> createState() => _MpvVideoState();
+  State<Video> createState() => _VideoState();
 }
 
-class _MpvVideoState extends State<MpvVideo> {
+class _VideoState extends State<Video> {
   Rect? _lastRect;
 
   @override
@@ -123,8 +123,8 @@ class _MpvVideoState extends State<MpvVideo> {
     _lastRect = newRect;
 
     // Update the native mpv window position
-    if (widget.player is MpvPlayerWindows) {
-      final windowsPlayer = widget.player as MpvPlayerWindows;
+    if (widget.player is PlayerWindows) {
+      final windowsPlayer = widget.player as PlayerWindows;
       windowsPlayer.setVideoRect(
         left: (position.dx * dpr).toInt(),
         top: (position.dy * dpr).toInt(),
@@ -161,9 +161,9 @@ class _MpvVideoState extends State<MpvVideo> {
 
     _lastRect = newRect;
 
-    // Update the Linux mpv player (triggers redraw)
-    if (widget.player is MpvPlayerLinux) {
-      final linuxPlayer = widget.player as MpvPlayerLinux;
+    // Update the Linux player (triggers redraw)
+    if (widget.player is PlayerLinux) {
+      final linuxPlayer = widget.player as PlayerLinux;
       linuxPlayer.setVideoRect(
         left: (position.dx * dpr).toInt(),
         top: (position.dy * dpr).toInt(),

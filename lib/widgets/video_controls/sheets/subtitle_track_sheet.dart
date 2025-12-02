@@ -8,12 +8,12 @@ import 'track_selection_sheet.dart';
 class SubtitleTrackSheet {
   static void show(
     BuildContext context,
-    MpvPlayer player, {
-    Function(MpvSubtitleTrack)? onTrackChanged,
+    Player player, {
+    Function(SubtitleTrack)? onTrackChanged,
     VoidCallback? onOpen,
     VoidCallback? onClose,
   }) {
-    TrackSelectionSheet.show<MpvSubtitleTrack>(
+    TrackSelectionSheet.show<SubtitleTrack>(
       context: context,
       player: player,
       title: t.videoControls.subtitlesLabel,
@@ -47,7 +47,7 @@ class SubtitleTrackSheet {
       setTrack: (track) => player.selectSubtitleTrack(track),
       onTrackChanged: onTrackChanged,
       showOffOption: true,
-      createOffTrack: () => MpvSubtitleTrack.off,
+      createOffTrack: () => SubtitleTrack.off,
       isOffTrack: (track) => track.id == 'no',
       onOpen: onOpen,
       onClose: onClose,

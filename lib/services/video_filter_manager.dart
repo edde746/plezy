@@ -14,7 +14,7 @@ import '../utils/app_logger.dart';
 /// - Subtitle positioning adjustments based on crop parameters
 /// - Debounced video filter updates on resize events
 class VideoFilterManager {
-  final MpvPlayer player;
+  final Player player;
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
 

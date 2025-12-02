@@ -1,5 +1,5 @@
-/// Represents a media source for the MPV player.
-class MpvMedia {
+/// Represents a media source for the player.
+class Media {
   /// The URI of the media (file path, HTTP URL, etc.).
   final String uri;
 
@@ -9,19 +9,19 @@ class MpvMedia {
   /// Optional start position for playback.
   final Duration? start;
 
-  const MpvMedia(
+  const Media(
     this.uri, {
     this.headers,
     this.start,
   });
 
   @override
-  String toString() => 'MpvMedia($uri)';
+  String toString() => 'Media($uri)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is MpvMedia &&
+      other is Media &&
           runtimeType == other.runtimeType &&
           uri == other.uri &&
           start == other.start;

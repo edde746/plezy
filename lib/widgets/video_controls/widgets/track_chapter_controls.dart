@@ -17,7 +17,7 @@ import '../video_control_button.dart';
 
 /// Row of track and chapter control buttons for the video player
 class TrackChapterControls extends StatelessWidget {
-  final MpvPlayer player;
+  final Player player;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
   final List<PlexMediaVersion> availableVersions;
@@ -31,8 +31,8 @@ class TrackChapterControls extends StatelessWidget {
   final VoidCallback? onToggleRotationLock;
   final VoidCallback? onToggleFullscreen;
   final Function(int)? onSwitchVersion;
-  final Function(MpvAudioTrack)? onAudioTrackChanged;
-  final Function(MpvSubtitleTrack)? onSubtitleTrackChanged;
+  final Function(AudioTrack)? onAudioTrackChanged;
+  final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final VoidCallback? onLoadSeekTimes;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
@@ -64,7 +64,7 @@ class TrackChapterControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<MpvTracks>(
+    return StreamBuilder<Tracks>(
       stream: player.streams.tracks,
       initialData: player.state.tracks,
       builder: (context, snapshot) {
@@ -189,7 +189,7 @@ class TrackChapterControls extends StatelessWidget {
     );
   }
 
-  bool _hasMultipleAudioTracks(MpvTracks? tracks) {
+  bool _hasMultipleAudioTracks(Tracks? tracks) {
     if (tracks == null) return false;
     final audioTracks = tracks.audio
         .where((track) => track.id != 'auto' && track.id != 'no')
@@ -197,7 +197,7 @@ class TrackChapterControls extends StatelessWidget {
     return audioTracks.length > 1;
   }
 
-  bool _hasSubtitles(MpvTracks? tracks) {
+  bool _hasSubtitles(Tracks? tracks) {
     if (tracks == null) return false;
     final subtitles = tracks.subtitle
         .where((track) => track.id != 'auto' && track.id != 'no')

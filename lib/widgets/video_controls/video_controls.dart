@@ -28,7 +28,7 @@ import 'desktop_video_controls.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
-  MpvPlayer player,
+  Player player,
   PlexMetadata metadata, {
   VoidCallback? onNext,
   VoidCallback? onPrevious,
@@ -36,8 +36,8 @@ Widget plexVideoControlsBuilder(
   int? selectedMediaIndex,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
-  Function(MpvAudioTrack)? onAudioTrackChanged,
-  Function(MpvSubtitleTrack)? onSubtitleTrackChanged,
+  Function(AudioTrack)? onAudioTrackChanged,
+  Function(SubtitleTrack)? onSubtitleTrackChanged,
 }) {
   return PlexVideoControls(
     player: player,
@@ -54,7 +54,7 @@ Widget plexVideoControlsBuilder(
 }
 
 class PlexVideoControls extends StatefulWidget {
-  final MpvPlayer player;
+  final Player player;
   final PlexMetadata metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
@@ -62,8 +62,8 @@ class PlexVideoControls extends StatefulWidget {
   final int selectedMediaIndex;
   final int boxFitMode;
   final VoidCallback? onCycleBoxFitMode;
-  final Function(MpvAudioTrack)? onAudioTrackChanged;
-  final Function(MpvSubtitleTrack)? onSubtitleTrackChanged;
+  final Function(AudioTrack)? onAudioTrackChanged;
+  final Function(SubtitleTrack)? onSubtitleTrackChanged;
 
   const PlexVideoControls({
     super.key,

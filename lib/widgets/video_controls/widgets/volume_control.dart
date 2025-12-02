@@ -6,10 +6,10 @@ import '../../../i18n/strings.g.dart';
 
 /// A volume control widget that displays a mute/unmute button and volume slider.
 ///
-/// This widget integrates with [MpvPlayer] to control volume and persists
+/// This widget integrates with [Player] to control volume and persists
 /// the volume setting using [SettingsService].
 class VolumeControl extends StatelessWidget {
-  final MpvPlayer player;
+  final Player player;
 
   const VolumeControl({super.key, required this.player});
 

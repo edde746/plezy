@@ -1,26 +1,26 @@
 /// Represents an audio output device.
-class MpvAudioDevice {
+class AudioDevice {
   /// Unique identifier for the device.
   final String name;
 
   /// Human-readable description of the device.
   final String description;
 
-  const MpvAudioDevice({
+  const AudioDevice({
     required this.name,
     this.description = '',
   });
 
   /// Default/auto audio device.
-  static const auto = MpvAudioDevice(name: 'auto', description: 'Auto');
+  static const auto = AudioDevice(name: 'auto', description: 'Auto');
 
   @override
-  String toString() => 'MpvAudioDevice($name, $description)';
+  String toString() => 'AudioDevice($name, $description)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is MpvAudioDevice &&
+      other is AudioDevice &&
           runtimeType == other.runtimeType &&
           name == other.name;
 

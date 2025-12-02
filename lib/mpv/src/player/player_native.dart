@@ -2,32 +2,32 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-import '../models/mpv_audio_device.dart';
-import '../models/mpv_audio_track.dart';
-import '../models/mpv_log.dart';
-import '../models/mpv_media.dart';
-import '../models/mpv_subtitle_track.dart';
-import '../models/mpv_track_selection.dart';
-import '../models/mpv_tracks.dart';
-import 'mpv_player.dart';
-import 'mpv_player_state.dart';
-import 'mpv_player_streams.dart';
+import '../models/audio_device.dart';
+import '../models/audio_track.dart';
+import '../models/player_log.dart';
+import '../models/media.dart';
+import '../models/subtitle_track.dart';
+import '../models/track_selection.dart';
+import '../models/tracks.dart';
+import 'player.dart';
+import 'player_state.dart';
+import 'player_streams.dart';
 
-/// Shared native implementation of [MpvPlayer] for iOS and macOS.
+/// Shared native implementation of [Player] for iOS and macOS.
 /// Uses MPVKit via platform channels with Metal rendering.
-class MpvPlayerNative implements MpvPlayer {
+class PlayerNative implements Player {
   static const _methodChannel = MethodChannel('com.plezy/mpv_player');
   static const _eventChannel = EventChannel('com.plezy/mpv_player/events');
 
-  MpvPlayerState _state = const MpvPlayerState();
+  PlayerState _state = const PlayerState();
 
   @override
-  MpvPlayerState get state => _state;
+  PlayerState get state => _state;
 
-  late final MpvPlayerStreams _streams;
+  late final PlayerStreams _streams;
 
   @override
-  MpvPlayerStreams get streams => _streams;
+  PlayerStreams get streams => _streams;
 
   @override
   int? get textureId => null; // Uses direct Metal layer, not Flutter texture
@@ -41,21 +41,21 @@ class MpvPlayerNative implements MpvPlayer {
   final _bufferController = StreamController<Duration>.broadcast();
   final _volumeController = StreamController<double>.broadcast();
   final _rateController = StreamController<double>.broadcast();
-  final _tracksController = StreamController<MpvTracks>.broadcast();
-  final _trackController = StreamController<MpvTrackSelection>.broadcast();
-  final _logController = StreamController<MpvLog>.broadcast();
+  final _tracksController = StreamController<Tracks>.broadcast();
+  final _trackController = StreamController<TrackSelection>.broadcast();
+  final _logController = StreamController<PlayerLog>.broadcast();
   final _errorController = StreamController<String>.broadcast();
-  final _audioDeviceController = StreamController<MpvAudioDevice>.broadcast();
+  final _audioDeviceController = StreamController<AudioDevice>.broadcast();
   final _audioDevicesController =
-      StreamController<List<MpvAudioDevice>>.broadcast();
+      StreamController<List<AudioDevice>>.broadcast();
 
   StreamSubscription? _eventSubscription;
   bool _disposed = false;
   bool _initialized = false;
   bool _isVisible = false;
 
-  MpvPlayerNative() {
-    _streams = MpvPlayerStreams(
+  PlayerNative() {
+    _streams = PlayerStreams(
       playing: _playingController.stream,
       completed: _completedController.stream,
       buffering: _bufferingController.stream,
@@ -195,9 +195,9 @@ class MpvPlayerNative implements MpvPlayer {
     }
   }
 
-  MpvTracks _parseTrackList(List trackList) {
-    final audioTracks = <MpvAudioTrack>[];
-    final subtitleTracks = <MpvSubtitleTrack>[];
+  Tracks _parseTrackList(List trackList) {
+    final audioTracks = <AudioTrack>[];
+    final subtitleTracks = <SubtitleTrack>[];
 
     for (final track in trackList) {
       if (track is! Map) continue;
@@ -206,7 +206,7 @@ class MpvPlayerNative implements MpvPlayer {
       final id = track['id']?.toString() ?? '';
 
       if (type == 'audio') {
-        audioTracks.add(MpvAudioTrack(
+        audioTracks.add(AudioTrack(
           id: id,
           title: track['title'] as String?,
           language: track['lang'] as String?,
@@ -216,7 +216,7 @@ class MpvPlayerNative implements MpvPlayer {
           isDefault: track['default'] as bool? ?? false,
         ));
       } else if (type == 'sub') {
-        subtitleTracks.add(MpvSubtitleTrack(
+        subtitleTracks.add(SubtitleTrack(
           id: id,
           title: track['title'] as String?,
           language: track['lang'] as String?,
@@ -227,15 +227,15 @@ class MpvPlayerNative implements MpvPlayer {
       }
     }
 
-    return MpvTracks(audio: audioTracks, subtitle: subtitleTracks);
+    return Tracks(audio: audioTracks, subtitle: subtitleTracks);
   }
 
   void _updateSelectedAudioTrack(dynamic trackId) {
     final id = trackId?.toString();
-    MpvAudioTrack? selectedTrack;
+    AudioTrack? selectedTrack;
 
     if (id != null && id != 'no') {
-      selectedTrack = _state.tracks.audio.cast<MpvAudioTrack?>().firstWhere(
+      selectedTrack = _state.tracks.audio.cast<AudioTrack?>().firstWhere(
             (t) => t?.id == id,
             orElse: () => null,
           );
@@ -249,11 +249,11 @@ class MpvPlayerNative implements MpvPlayer {
 
   void _updateSelectedSubtitleTrack(dynamic trackId) {
     final id = trackId?.toString();
-    MpvSubtitleTrack? selectedTrack;
+    SubtitleTrack? selectedTrack;
 
     if (id != null && id != 'no') {
       selectedTrack =
-          _state.tracks.subtitle.cast<MpvSubtitleTrack?>().firstWhere(
+          _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere(
                 (t) => t?.id == id,
                 orElse: () => null,
               );
@@ -272,7 +272,7 @@ class MpvPlayerNative implements MpvPlayer {
       final result = await _methodChannel.invokeMethod<bool>('initialize');
       _initialized = result == true;
       if (!_initialized) {
-        throw Exception('Failed to initialize MPV player');
+        throw Exception('Failed to initialize player');
       }
 
       // Subscribe to MPV properties
@@ -300,7 +300,7 @@ class MpvPlayerNative implements MpvPlayer {
 
   void _checkDisposed() {
     if (_disposed) {
-      throw StateError('MpvPlayer has been disposed');
+      throw StateError('Player has been disposed');
     }
   }
 
@@ -309,7 +309,7 @@ class MpvPlayerNative implements MpvPlayer {
   // ============================================
 
   @override
-  Future<void> open(MpvMedia media, {bool play = true}) async {
+  Future<void> open(Media media, {bool play = true}) async {
     _checkDisposed();
     await _ensureInitialized();
 
@@ -376,13 +376,13 @@ class MpvPlayerNative implements MpvPlayer {
   // ============================================
 
   @override
-  Future<void> selectAudioTrack(MpvAudioTrack track) async {
+  Future<void> selectAudioTrack(AudioTrack track) async {
     _checkDisposed();
     await setProperty('aid', track.id);
   }
 
   @override
-  Future<void> selectSubtitleTrack(MpvSubtitleTrack track) async {
+  Future<void> selectSubtitleTrack(SubtitleTrack track) async {
     _checkDisposed();
     await setProperty('sid', track.id);
   }
@@ -418,7 +418,7 @@ class MpvPlayerNative implements MpvPlayer {
   }
 
   @override
-  Future<void> setAudioDevice(MpvAudioDevice device) async {
+  Future<void> setAudioDevice(AudioDevice device) async {
     _checkDisposed();
     await setProperty('audio-device', device.name);
   }

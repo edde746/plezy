@@ -1,5 +1,5 @@
 /// Represents a subtitle track in the media.
-class MpvSubtitleTrack {
+class SubtitleTrack {
   /// Unique identifier for the track.
   final String id;
 
@@ -24,7 +24,7 @@ class MpvSubtitleTrack {
   /// URI of external subtitle file (if isExternal is true).
   final String? uri;
 
-  const MpvSubtitleTrack({
+  const SubtitleTrack({
     required this.id,
     this.title,
     this.language,
@@ -36,12 +36,12 @@ class MpvSubtitleTrack {
   });
 
   /// Create a subtitle track from an external URI.
-  factory MpvSubtitleTrack.uri(
+  factory SubtitleTrack.uri(
     String uri, {
     String? title,
     String? language,
   }) {
-    return MpvSubtitleTrack(
+    return SubtitleTrack(
       id: 'external:$uri',
       title: title,
       language: language,
@@ -51,10 +51,10 @@ class MpvSubtitleTrack {
   }
 
   /// Auto-select track.
-  static const auto = MpvSubtitleTrack(id: 'auto', title: 'Auto');
+  static const auto = SubtitleTrack(id: 'auto', title: 'Auto');
 
   /// Disable subtitles.
-  static const off = MpvSubtitleTrack(id: 'no', title: 'Off');
+  static const off = SubtitleTrack(id: 'no', title: 'Off');
 
   /// Returns a display name for the track.
   String get displayName {
@@ -65,12 +65,12 @@ class MpvSubtitleTrack {
   }
 
   @override
-  String toString() => 'MpvSubtitleTrack($id, $displayName)';
+  String toString() => 'SubtitleTrack($id, $displayName)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is MpvSubtitleTrack &&
+      other is SubtitleTrack &&
           runtimeType == other.runtimeType &&
           id == other.id;
 

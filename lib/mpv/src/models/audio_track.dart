@@ -1,5 +1,5 @@
 /// Represents an audio track in the media.
-class MpvAudioTrack {
+class AudioTrack {
   /// Unique identifier for the track.
   final String id;
 
@@ -30,7 +30,7 @@ class MpvAudioTrack {
   /// Whether this track is forced.
   final bool isForced;
 
-  const MpvAudioTrack({
+  const AudioTrack({
     required this.id,
     this.title,
     this.language,
@@ -43,10 +43,10 @@ class MpvAudioTrack {
   });
 
   /// Auto-select track.
-  static const auto = MpvAudioTrack(id: 'auto', title: 'Auto');
+  static const auto = AudioTrack(id: 'auto', title: 'Auto');
 
   /// Disable audio.
-  static const off = MpvAudioTrack(id: 'no', title: 'Off');
+  static const off = AudioTrack(id: 'no', title: 'Off');
 
   /// Returns a display name for the track.
   String get displayName {
@@ -56,12 +56,12 @@ class MpvAudioTrack {
   }
 
   @override
-  String toString() => 'MpvAudioTrack($id, $displayName)';
+  String toString() => 'AudioTrack($id, $displayName)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is MpvAudioTrack &&
+      other is AudioTrack &&
           runtimeType == other.runtimeType &&
           id == other.id;
 
