@@ -7,9 +7,7 @@ import '../i18n/strings.g.dart';
 class PlaybackInitializationService {
   final PlexClient client;
 
-  PlaybackInitializationService({
-    required this.client,
-  });
+  PlaybackInitializationService({required this.client});
 
   /// Fetch playback data for the given metadata
   ///

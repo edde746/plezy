@@ -121,85 +121,43 @@ class MobileVideoControls extends StatelessWidget {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
+            _buildCircularButton(
+              semanticLabel: t.videoControls.seekBackwardButton(
+                seconds: seekTimeSmall,
               ),
-              child: Semantics(
-                label: t.videoControls.seekBackwardButton(
-                  seconds: seekTimeSmall,
-                ),
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    getReplayIcon(seekTimeSmall),
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                  iconSize: 48,
-                  onPressed: () {
-                    seekWithClamping(player, Duration(seconds: -seekTimeSmall));
-                  },
-                ),
-              ),
+              icon: getReplayIcon(seekTimeSmall),
+              iconSize: 48,
+              onPressed: () {
+                seekWithClamping(player, Duration(seconds: -seekTimeSmall));
+              },
             ),
             const SizedBox(width: 48),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: Semantics(
-                label: isPlaying
-                    ? t.videoControls.pauseButton
-                    : t.videoControls.playButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 72,
-                  ),
-                  iconSize: 72,
-                  onPressed: () {
-                    if (isPlaying) {
-                      player.pause();
-                      onCancelAutoHide?.call(); // Cancel auto-hide when paused
-                    } else {
-                      player.play();
-                      onStartAutoHide?.call(); // Start auto-hide when playing
-                    }
-                  },
-                ),
-              ),
+            _buildCircularButton(
+              semanticLabel: isPlaying
+                  ? t.videoControls.pauseButton
+                  : t.videoControls.playButton,
+              icon: isPlaying ? Icons.pause : Icons.play_arrow,
+              iconSize: 72,
+              onPressed: () {
+                if (isPlaying) {
+                  player.pause();
+                  onCancelAutoHide?.call(); // Cancel auto-hide when paused
+                } else {
+                  player.play();
+                  onStartAutoHide?.call(); // Start auto-hide when playing
+                }
+              },
             ),
             const SizedBox(width: 48),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
+            _buildCircularButton(
+              semanticLabel: t.videoControls.seekForwardButton(
+                seconds: seekTimeSmall,
               ),
-              child: Semantics(
-                label: t.videoControls.seekForwardButton(
-                  seconds: seekTimeSmall,
-                ),
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    getForwardIcon(seekTimeSmall),
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                  iconSize: 48,
-                  onPressed: () {
-                    seekWithClamping(player, Duration(seconds: seekTimeSmall));
-                  },
-                ),
-              ),
+              icon: getForwardIcon(seekTimeSmall),
+              iconSize: 48,
+              onPressed: () {
+                seekWithClamping(player, Duration(seconds: seekTimeSmall));
+              },
             ),
           ],
         );
@@ -261,6 +219,30 @@ class MobileVideoControls extends StatelessWidget {
               },
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCircularButton({
+    required String semanticLabel,
+    required IconData icon,
+    required double iconSize,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        shape: BoxShape.circle,
+      ),
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        excludeSemantics: true,
+        child: IconButton(
+          icon: Icon(icon, color: Colors.white, size: iconSize),
+          iconSize: iconSize,
+          onPressed: onPressed,
         ),
       ),
     );

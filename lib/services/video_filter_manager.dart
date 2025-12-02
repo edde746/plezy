@@ -240,9 +240,7 @@ class VideoFilterManager {
             'Clearing video filter - aspect ratios similar, applying base margins (player: $_playerSize, video: $_videoSize)',
           );
           await player.setProperty('vf', '');
-          await player.setProperty('sub-margin-x', '20'); // Base margin
-          await player.setProperty('sub-margin-y', '40'); // Base margin
-          await player.setProperty('sub-scale', '1.0'); // Reset scale
+          await _applyBaseSubtitleMargins();
         }
       } else if (_boxFitMode == 2) {
         // Stretch/fill mode - override aspect ratio to match player
@@ -254,22 +252,24 @@ class VideoFilterManager {
         // Override video aspect ratio to match player aspect ratio (stretches video)
         if (_playerSize != null) {
           final playerAspect = _playerSize!.width / _playerSize!.height;
-          await player.setProperty('video-aspect-override', playerAspect.toString());
+          await player.setProperty(
+            'video-aspect-override',
+            playerAspect.toString(),
+          );
         }
 
-        await player.setProperty('sub-margin-x', '20'); // Base margin
-        await player.setProperty('sub-margin-y', '40'); // Base margin
-        await player.setProperty('sub-scale', '1.0'); // Reset scale
+        await _applyBaseSubtitleMargins();
       } else {
         // Contain mode (0) - clear video filter and reset aspect ratio
         appLogger.d(
           'Clearing video filter, applying base margins - BoxFit mode $_boxFitMode',
         );
         await player.setProperty('vf', '');
-        await player.setProperty('video-aspect-override', 'no'); // Reset to original aspect
-        await player.setProperty('sub-margin-x', '20'); // Base margin
-        await player.setProperty('sub-margin-y', '40'); // Base margin
-        await player.setProperty('sub-scale', '1.0'); // Reset scale
+        await player.setProperty(
+          'video-aspect-override',
+          'no',
+        ); // Reset to original aspect
+        await _applyBaseSubtitleMargins();
       }
     } catch (e) {
       appLogger.w('Failed to update video filter', error: e);
@@ -280,6 +280,13 @@ class VideoFilterManager {
   /// Uses leading-edge debounce: first call executes immediately,
   /// subsequent calls within 50ms are debounced.
   void debouncedUpdateVideoFilter() => _debouncedUpdateVideoFilter();
+
+  /// Apply base subtitle margins (used when no custom crop margins needed)
+  Future<void> _applyBaseSubtitleMargins() async {
+    await player.setProperty('sub-margin-x', '20');
+    await player.setProperty('sub-margin-y', '40');
+    await player.setProperty('sub-scale', '1.0');
+  }
 
   /// Clean up resources
   void dispose() {

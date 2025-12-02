@@ -26,6 +26,7 @@ class _LibraryRecommendedTabState
   }
 
   /// Focus the first item in the first hub
+  @override
   void focusFirstItem() {
     _hubNavigationController.focusHub(0, 0);
   }

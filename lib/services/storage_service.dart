@@ -273,17 +273,7 @@ class StorageService {
     await _prefs.setString(_keyLibraryOrder, jsonString);
   }
 
-  List<String>? getLibraryOrder() {
-    final jsonString = _prefs.getString(_keyLibraryOrder);
-    if (jsonString == null) return null;
-
-    try {
-      final decoded = json.decode(jsonString) as List<dynamic>;
-      return decoded.map((e) => e.toString()).toList();
-    } catch (e) {
-      return null;
-    }
-  }
+  List<String>? getLibraryOrder() => _getStringList(_keyLibraryOrder);
 
   // User Profile (stored as JSON string)
   Future<void> saveUserProfile(Map<String, dynamic> profileJson) async {
@@ -406,8 +396,18 @@ class StorageService {
     await _prefs.setString(_keyServerOrder, jsonString);
   }
 
-  List<String>? getServerOrder() {
-    final jsonString = _prefs.getString(_keyServerOrder);
+  List<String>? getServerOrder() => _getStringList(_keyServerOrder);
+
+  /// Clear server order
+  Future<void> clearServerOrder() async {
+    await _prefs.remove(_keyServerOrder);
+  }
+
+  // Private helper methods
+
+  /// Helper to read and decode JSON `List<String>` from preferences
+  List<String>? _getStringList(String key) {
+    final jsonString = _prefs.getString(key);
     if (jsonString == null) return null;
 
     try {
@@ -417,13 +417,6 @@ class StorageService {
       return null;
     }
   }
-
-  /// Clear server order
-  Future<void> clearServerOrder() async {
-    await _prefs.remove(_keyServerOrder);
-  }
-
-  // Private helper methods
 
   /// Helper to read and decode JSON Map from preferences
   ///

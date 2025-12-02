@@ -6,10 +6,7 @@ class AudioDevice {
   /// Human-readable description of the device.
   final String description;
 
-  const AudioDevice({
-    required this.name,
-    this.description = '',
-  });
+  const AudioDevice({required this.name, this.description = ''});
 
   /// Default/auto audio device.
   static const auto = AudioDevice(name: 'auto', description: 'Auto');

@@ -36,11 +36,7 @@ class SubtitleTrack {
   });
 
   /// Create a subtitle track from an external URI.
-  factory SubtitleTrack.uri(
-    String uri, {
-    String? title,
-    String? language,
-  }) {
+  factory SubtitleTrack.uri(String uri, {String? title, String? language}) {
     return SubtitleTrack(
       id: 'external:$uri',
       title: title,

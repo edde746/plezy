@@ -245,55 +245,16 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                 const SizedBox(height: 12),
                 const Divider(),
                 const SizedBox(height: 8),
-                if (widget.log.error != null) ...[
-                  Text(
-                    t.logs.error,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: widget.levelColor,
-                      fontWeight: FontWeight.bold,
-                    ),
+                if (widget.log.error != null)
+                  _buildDetailSection(
+                    title: t.logs.error,
+                    content: widget.log.error.toString(),
                   ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[900]
-                          : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: SelectableText(
-                      widget.log.error.toString(),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
-                    ),
-                  ),
-                ],
                 if (widget.log.stackTrace != null) ...[
                   const SizedBox(height: 12),
-                  Text(
-                    t.logs.stackTrace,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: widget.levelColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[900]
-                          : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: SelectableText(
-                      widget.log.stackTrace.toString(),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
-                    ),
+                  _buildDetailSection(
+                    title: t.logs.stackTrace,
+                    content: widget.log.stackTrace.toString(),
                   ),
                 ],
               ],
@@ -301,6 +262,37 @@ class _LogEntryCardState extends State<_LogEntryCard> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDetailSection({required String title, required String content}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: widget.levelColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[900]
+                : Colors.grey[200],
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: SelectableText(
+            content,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+          ),
+        ),
+      ],
     );
   }
 }

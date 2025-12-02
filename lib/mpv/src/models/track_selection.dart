@@ -9,16 +9,10 @@ class TrackSelection {
   /// Currently selected subtitle track.
   final SubtitleTrack? subtitle;
 
-  const TrackSelection({
-    this.audio,
-    this.subtitle,
-  });
+  const TrackSelection({this.audio, this.subtitle});
 
   /// Creates a copy with the given fields replaced.
-  TrackSelection copyWith({
-    AudioTrack? audio,
-    SubtitleTrack? subtitle,
-  }) {
+  TrackSelection copyWith({AudioTrack? audio, SubtitleTrack? subtitle}) {
     return TrackSelection(
       audio: audio ?? this.audio,
       subtitle: subtitle ?? this.subtitle,

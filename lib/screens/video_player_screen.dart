@@ -249,22 +249,53 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       player = Player();
 
       // Configure player properties
-      await player!.setProperty('target-colorspace-hint', 'yes'); // Enable HDR passthrough
+      await player!.setProperty(
+        'target-colorspace-hint',
+        'yes',
+      ); // Enable HDR passthrough
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
       await player!.setProperty('sub-fonts-dir', 'assets');
       await player!.setProperty('sub-font', 'Go Noto Current-Regular');
-      await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
-      await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
-      await player!.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
+      await player!.setProperty(
+        'demuxer-max-bytes',
+        bufferSizeBytes.toString(),
+      );
+      await player!.setProperty(
+        'msg-level',
+        debugLoggingEnabled ? 'all=debug' : 'all=error',
+      );
+      await player!.setProperty(
+        'hwdec',
+        _getHwdecValue(enableHardwareDecoding),
+      );
 
       // Subtitle styling
-      await player!.setProperty('sub-font-size', settingsService.getSubtitleFontSize().toString());
-      await player!.setProperty('sub-color', settingsService.getSubtitleTextColor());
-      await player!.setProperty('sub-border-size', settingsService.getSubtitleBorderSize().toString());
-      await player!.setProperty('sub-border-color', settingsService.getSubtitleBorderColor());
-      final bgOpacity = (settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt();
-      final bgColor = settingsService.getSubtitleBackgroundColor().replaceFirst('#', '');
-      await player!.setProperty('sub-back-color', '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor');
+      await player!.setProperty(
+        'sub-font-size',
+        settingsService.getSubtitleFontSize().toString(),
+      );
+      await player!.setProperty(
+        'sub-color',
+        settingsService.getSubtitleTextColor(),
+      );
+      await player!.setProperty(
+        'sub-border-size',
+        settingsService.getSubtitleBorderSize().toString(),
+      );
+      await player!.setProperty(
+        'sub-border-color',
+        settingsService.getSubtitleBorderColor(),
+      );
+      final bgOpacity =
+          (settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt();
+      final bgColor = settingsService.getSubtitleBackgroundColor().replaceFirst(
+        '#',
+        '',
+      );
+      await player!.setProperty(
+        'sub-back-color',
+        '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
+      );
       await player!.setProperty('sub-ass-override', 'no');
 
       // Platform-specific settings
@@ -554,9 +585,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       final client = _getClientForMetadata(context);
 
       // Initialize playback service
-      final playbackService = PlaybackInitializationService(
-        client: client,
-      );
+      final playbackService = PlaybackInitializationService(client: client);
 
       // Get playback data (video URL and available versions)
       final result = await playbackService.getPlaybackData(
@@ -1146,44 +1175,44 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             children: [
               // Video player
               Center(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Update player size when layout changes
-                      final newSize = Size(
-                        constraints.maxWidth,
-                        constraints.maxHeight,
-                      );
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Update player size when layout changes
+                    final newSize = Size(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
+                    );
 
-                      // Update player size in video filter manager
-                      if (_videoFilterManager != null) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            _videoFilterManager!.updatePlayerSize(newSize);
-                          }
-                        });
-                      }
+                    // Update player size in video filter manager
+                    if (_videoFilterManager != null) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          _videoFilterManager!.updatePlayerSize(newSize);
+                        }
+                      });
+                    }
 
-                      return Video(
-                        player: player!,
-                        fit: _videoFilterManager?.currentBoxFit ?? BoxFit.contain,
-                        controls: (context) => plexVideoControlsBuilder(
-                          player!,
-                          widget.metadata,
-                          onNext: _nextEpisode != null ? _playNext : null,
-                          onPrevious: _previousEpisode != null
-                              ? _playPrevious
-                              : null,
-                          availableVersions: _availableVersions,
-                          selectedMediaIndex: widget.selectedMediaIndex,
-                          boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
-                          onCycleBoxFitMode: _cycleBoxFitMode,
-                          onAudioTrackChanged: _onAudioTrackChanged,
-                          onSubtitleTrackChanged: _onSubtitleTrackChanged,
-                        ),
-                      );
-                    },
-                  ),
+                    return Video(
+                      player: player!,
+                      fit: _videoFilterManager?.currentBoxFit ?? BoxFit.contain,
+                      controls: (context) => plexVideoControlsBuilder(
+                        player!,
+                        widget.metadata,
+                        onNext: _nextEpisode != null ? _playNext : null,
+                        onPrevious: _previousEpisode != null
+                            ? _playPrevious
+                            : null,
+                        availableVersions: _availableVersions,
+                        selectedMediaIndex: widget.selectedMediaIndex,
+                        boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
+                        onCycleBoxFitMode: _cycleBoxFitMode,
+                        onAudioTrackChanged: _onAudioTrackChanged,
+                        onSubtitleTrackChanged: _onSubtitleTrackChanged,
+                      ),
+                    );
+                  },
                 ),
+              ),
               // Play Next Dialog
               if (_showPlayNextDialog && _nextEpisode != null)
                 Positioned.fill(

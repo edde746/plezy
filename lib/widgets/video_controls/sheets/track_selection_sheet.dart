@@ -115,7 +115,8 @@ class TrackSelectionSheet<T> extends StatelessWidget {
                     final selectedTrack = getCurrentTrack(currentTrack);
 
                     // Determine if "Off" is selected (null or explicit off)
-                    final isOffSelected = selectedTrack == null ||
+                    final isOffSelected =
+                        selectedTrack == null ||
                         (isOffTrack?.call(selectedTrack) ?? false);
 
                     final itemCount =

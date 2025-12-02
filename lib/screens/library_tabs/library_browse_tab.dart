@@ -181,12 +181,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
       // Load items
       await _loadItems();
     } catch (e) {
-      if (currentRequestId != _requestId) return;
-
-      setState(() {
-        _errorMessage = _getErrorMessage(e);
-        _isLoading = false;
-      });
+      _handleLoadError(e, currentRequestId);
     }
   }
 
@@ -255,13 +250,17 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
         _isLoading = false;
       });
     } catch (e) {
-      if (currentRequestId != _requestId) return;
-
-      setState(() {
-        _errorMessage = _getErrorMessage(e);
-        _isLoading = false;
-      });
+      _handleLoadError(e, currentRequestId);
     }
+  }
+
+  void _handleLoadError(dynamic error, int currentRequestId) {
+    if (currentRequestId != _requestId) return;
+
+    setState(() {
+      _errorMessage = _getErrorMessage(error);
+      _isLoading = false;
+    });
   }
 
   String _getDefaultGrouping() {
@@ -591,21 +590,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
                 padding: const EdgeInsets.all(8),
                 itemCount:
                     _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index >= _items.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  final item = _items[index];
-                  return MediaCard(
-                    key: Key(item.ratingKey),
-                    item: item,
-                    onRefresh: updateItem,
-                    focusNode: index == 0 ? _firstItemFocusNode : null,
-                  );
-                },
+                itemBuilder: (context, index) => _buildMediaCardItem(index),
               ),
             );
           } else {
@@ -624,23 +609,28 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
                 ),
                 itemCount:
                     _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index >= _items.length) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final item = _items[index];
-                  return MediaCard(
-                    key: Key(item.ratingKey),
-                    item: item,
-                    onRefresh: updateItem,
-                    focusNode: index == 0 ? _firstItemFocusNode : null,
-                  );
-                },
+                itemBuilder: (context, index) => _buildMediaCardItem(index),
               ),
             );
           }
         },
       ),
+    );
+  }
+
+  Widget _buildMediaCardItem(int index) {
+    if (index >= _items.length) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final item = _items[index];
+    return MediaCard(
+      key: Key(item.ratingKey),
+      item: item,
+      onRefresh: updateItem,
+      focusNode: index == 0 ? _firstItemFocusNode : null,
     );
   }
 }

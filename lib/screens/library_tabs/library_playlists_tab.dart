@@ -75,15 +75,8 @@ class _LibraryPlaylistsTabState
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
             itemCount: items.length,
-            itemBuilder: (context, index) {
-              final playlist = items[index];
-              return MediaCard(
-                key: Key(playlist.ratingKey),
-                item: playlist,
-                onListRefresh: loadItems,
-                focusNode: index == 0 ? _firstItemFocusNode : null,
-              );
-            },
+            itemBuilder: (context, index) =>
+                _buildPlaylistItem(items[index], index),
           );
         } else {
           return GridView.builder(
@@ -98,18 +91,20 @@ class _LibraryPlaylistsTabState
               mainAxisSpacing: 0,
             ),
             itemCount: items.length,
-            itemBuilder: (context, index) {
-              final playlist = items[index];
-              return MediaCard(
-                key: Key(playlist.ratingKey),
-                item: playlist,
-                onListRefresh: loadItems,
-                focusNode: index == 0 ? _firstItemFocusNode : null,
-              );
-            },
+            itemBuilder: (context, index) =>
+                _buildPlaylistItem(items[index], index),
           );
         }
       },
+    );
+  }
+
+  Widget _buildPlaylistItem(PlexPlaylist playlist, int index) {
+    return MediaCard(
+      key: Key(playlist.ratingKey),
+      item: playlist,
+      onListRefresh: loadItems,
+      focusNode: index == 0 ? _firstItemFocusNode : null,
     );
   }
 }

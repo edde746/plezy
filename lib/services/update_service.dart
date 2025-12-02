@@ -139,21 +139,21 @@ class UpdateService {
     return updateInfo;
   }
 
+  /// Parse version string into list of integers
+  /// Handles versions like "1.2.3+4" by taking only the numeric parts
+  static List<int> _parseVersionParts(String version) {
+    return version.split('.').map((p) {
+      final numPart = p.split('+').first.split('-').first;
+      return int.tryParse(numPart) ?? 0;
+    }).toList();
+  }
+
   /// Compare two version strings
   /// Returns true if newVersion is newer than currentVersion
   static bool _isNewerVersion(String newVersion, String currentVersion) {
     try {
-      // Split by '.' and parse as integers
-      final newParts = newVersion.split('.').map((p) {
-        // Handle versions like "1.2.3+4" by taking only the numeric part
-        final numPart = p.split('+').first.split('-').first;
-        return int.tryParse(numPart) ?? 0;
-      }).toList();
-
-      final currentParts = currentVersion.split('.').map((p) {
-        final numPart = p.split('+').first.split('-').first;
-        return int.tryParse(numPart) ?? 0;
-      }).toList();
+      final newParts = _parseVersionParts(newVersion);
+      final currentParts = _parseVersionParts(currentVersion);
 
       // Compare each part
       final maxLength = newParts.length > currentParts.length

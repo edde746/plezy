@@ -205,24 +205,28 @@ class PlayerNative implements Player {
       final id = track['id']?.toString() ?? '';
 
       if (type == 'audio') {
-        audioTracks.add(AudioTrack(
-          id: id,
-          title: track['title'] as String?,
-          language: track['lang'] as String?,
-          codec: track['codec'] as String?,
-          channels: (track['demux-channel-count'] as num?)?.toInt(),
-          sampleRate: (track['demux-samplerate'] as num?)?.toInt(),
-          isDefault: track['default'] as bool? ?? false,
-        ));
+        audioTracks.add(
+          AudioTrack(
+            id: id,
+            title: track['title'] as String?,
+            language: track['lang'] as String?,
+            codec: track['codec'] as String?,
+            channels: (track['demux-channel-count'] as num?)?.toInt(),
+            sampleRate: (track['demux-samplerate'] as num?)?.toInt(),
+            isDefault: track['default'] as bool? ?? false,
+          ),
+        );
       } else if (type == 'sub') {
-        subtitleTracks.add(SubtitleTrack(
-          id: id,
-          title: track['title'] as String?,
-          language: track['lang'] as String?,
-          codec: track['codec'] as String?,
-          isExternal: track['external'] as bool? ?? false,
-          uri: track['external-filename'] as String?,
-        ));
+        subtitleTracks.add(
+          SubtitleTrack(
+            id: id,
+            title: track['title'] as String?,
+            language: track['lang'] as String?,
+            codec: track['codec'] as String?,
+            isExternal: track['external'] as bool? ?? false,
+            uri: track['external-filename'] as String?,
+          ),
+        );
       }
     }
 
@@ -235,9 +239,9 @@ class PlayerNative implements Player {
 
     if (id != null && id != 'no') {
       selectedTrack = _state.tracks.audio.cast<AudioTrack?>().firstWhere(
-            (t) => t?.id == id,
-            orElse: () => null,
-          );
+        (t) => t?.id == id,
+        orElse: () => null,
+      );
     }
 
     _state = _state.copyWith(
@@ -251,11 +255,10 @@ class PlayerNative implements Player {
     SubtitleTrack? selectedTrack;
 
     if (id != null && id != 'no') {
-      selectedTrack =
-          _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere(
-                (t) => t?.id == id,
-                orElse: () => null,
-              );
+      selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere(
+        (t) => t?.id == id,
+        orElse: () => null,
+      );
     }
 
     _state = _state.copyWith(

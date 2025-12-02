@@ -9,11 +9,7 @@ class Media {
   /// Optional start position for playback.
   final Duration? start;
 
-  const Media(
-    this.uri, {
-    this.headers,
-    this.start,
-  });
+  const Media(this.uri, {this.headers, this.start});
 
   @override
   String toString() => 'Media($uri)';

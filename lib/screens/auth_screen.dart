@@ -349,17 +349,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 24),
-                              OutlinedButton(
-                                onPressed: _retryAuthentication,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 24,
-                                  ),
-                                ),
-                                child: Text(t.auth.retry),
-                              ),
+                              _buildRetryButton(),
                             ] else ...[
                               // Browser auth flow - show spinner and waiting message
                               const Center(child: CircularProgressIndicator()),
@@ -369,17 +359,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(color: Colors.grey),
                               ),
-                              const SizedBox(height: 24),
-                              OutlinedButton(
-                                onPressed: _retryAuthentication,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 24,
-                                  ),
-                                ),
-                                child: Text(t.auth.retry),
-                              ),
+                              _buildRetryButton(),
                             ],
                           ] else ...[
                             // Initial state buttons
@@ -529,6 +509,22 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRetryButton() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 24),
+        OutlinedButton(
+          onPressed: _retryAuthentication,
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+          ),
+          child: Text(t.auth.retry),
+        ),
+      ],
     );
   }
 }

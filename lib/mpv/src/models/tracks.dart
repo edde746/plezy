@@ -9,16 +9,10 @@ class Tracks {
   /// Available subtitle tracks.
   final List<SubtitleTrack> subtitle;
 
-  const Tracks({
-    this.audio = const [],
-    this.subtitle = const [],
-  });
+  const Tracks({this.audio = const [], this.subtitle = const []});
 
   /// Creates a copy with the given fields replaced.
-  Tracks copyWith({
-    List<AudioTrack>? audio,
-    List<SubtitleTrack>? subtitle,
-  }) {
+  Tracks copyWith({List<AudioTrack>? audio, List<SubtitleTrack>? subtitle}) {
     return Tracks(
       audio: audio ?? this.audio,
       subtitle: subtitle ?? this.subtitle,
