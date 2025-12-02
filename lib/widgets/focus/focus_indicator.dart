@@ -136,10 +136,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (widget.onKeyEvent != null) {
-      return widget.onKeyEvent!(node, event);
-    }
-    return KeyEventResult.ignored;
+    return widget.onKeyEvent?.call(node, event) ?? KeyEventResult.ignored;
   }
 
   @override
