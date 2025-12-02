@@ -121,6 +121,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Window resize pause state
   Timer? _resizeDebounceTimer;
   bool _wasPlayingBeforeResize = false;
+  // Auto-skip state
+  bool _autoSkipIntro = true;
+  bool _autoSkipCredits = true;
+  int _autoSkipDelay = 5;
+  Timer? _autoSkipTimer;
+  double _autoSkipProgress = 0.0;
 
   @override
   void initState() {
@@ -171,6 +177,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           setState(() {
             _currentMarker = foundMarker;
           });
+
+          // Start auto-skip timer for new marker
+          if (foundMarker != null) {
+            _startAutoSkipTimer(foundMarker);
+          } else {
+            _cancelAutoSkipTimer();
+          }
         }
       }
     });
@@ -209,6 +222,75 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     if (_currentMarker != null) {
       widget.player.seek(_currentMarker!.endTime);
     }
+    _cancelAutoSkipTimer();
+  }
+
+  void _startAutoSkipTimer(PlexMarker marker) {
+    _cancelAutoSkipTimer();
+
+    final shouldAutoSkip =
+        (marker.isCredits && _autoSkipCredits) ||
+        (!marker.isCredits && _autoSkipIntro);
+
+    if (!shouldAutoSkip || _autoSkipDelay <= 0) return;
+
+    _autoSkipProgress = 0.0;
+    const tickDuration = Duration(milliseconds: 50);
+    final totalTicks = (_autoSkipDelay * 1000) / tickDuration.inMilliseconds;
+
+    if (totalTicks <= 0) return;
+
+    _autoSkipTimer = Timer.periodic(tickDuration, (timer) {
+      if (!mounted || _currentMarker != marker) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        _autoSkipProgress = (timer.tick / totalTicks).clamp(0.0, 1.0);
+      });
+
+      if (timer.tick >= totalTicks) {
+        timer.cancel();
+        try {
+          _performAutoSkip();
+        } catch (e) {
+          // Handle any errors during skip gracefully
+        }
+      }
+    });
+  }
+
+  void _cancelAutoSkipTimer() {
+    _autoSkipTimer?.cancel();
+    _autoSkipTimer = null;
+    if (mounted) {
+      setState(() {
+        _autoSkipProgress = 0.0;
+      });
+    }
+  }
+
+  /// Perform the appropriate skip action based on marker type and next episode availability
+  void _performAutoSkip() {
+    if (_currentMarker == null) return;
+
+    final isCredits = _currentMarker!.isCredits;
+    final hasNextEpisode = widget.onNext != null;
+    final showNextEpisode = isCredits && hasNextEpisode;
+
+    if (showNextEpisode) {
+      widget.onNext?.call();
+    } else {
+      _skipMarker();
+    }
+  }
+
+  /// Check if auto-skip should be active for the current marker
+  bool _shouldShowAutoSkip() {
+    if (_currentMarker == null) return false;
+    return (_currentMarker!.isCredits && _autoSkipCredits) ||
+        (!_currentMarker!.isCredits && _autoSkipIntro);
   }
 
   Future<void> _loadSeekTimes() async {
@@ -219,6 +301,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _audioSyncOffset = settingsService.getAudioSyncOffset();
         _subtitleSyncOffset = settingsService.getSubtitleSyncOffset();
         _isRotationLocked = settingsService.getRotationLocked();
+        _autoSkipIntro = settingsService.getAutoSkipIntro();
+        _autoSkipCredits = settingsService.getAutoSkipCredits();
+        _autoSkipDelay = settingsService.getAutoSkipDelay();
       });
 
       // Apply rotation lock setting
@@ -267,6 +352,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
     _resizeDebounceTimer?.cancel();
+    _autoSkipTimer?.cancel();
     _seekThrottle.cancel();
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
@@ -395,6 +481,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     });
     if (_showControls) {
       _startHideTimer();
+      // Cancel auto-skip when user manually shows controls
+      _cancelAutoSkipTimer();
     } else if (Platform.isLinux) {
       // On Linux, fully hide after animation completes (200ms)
       Future.delayed(const Duration(milliseconds: 250), () {
@@ -892,9 +980,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
     // Show "Next Episode" for credits when next episode is available
     final bool showNextEpisode = isCredits && hasNextEpisode;
-    final String buttonText = showNextEpisode
+    final String baseButtonText = showNextEpisode
         ? 'Next Episode'
         : (isCredits ? 'Skip Credits' : 'Skip Intro');
+
+    final isAutoSkipActive = _autoSkipTimer?.isActive ?? false;
+    final shouldShowAutoSkip = _shouldShowAutoSkip();
+
+    final int remainingSeconds = isAutoSkipActive && shouldShowAutoSkip
+        ? (_autoSkipDelay - (_autoSkipProgress * _autoSkipDelay)).ceil().clamp(
+            0,
+            _autoSkipDelay,
+          )
+        : 0;
+
+    final String buttonText =
+        isAutoSkipActive && shouldShowAutoSkip && remainingSeconds > 0
+        ? '$baseButtonText ($remainingSeconds)'
+        : baseButtonText;
     final IconData buttonIcon = showNextEpisode
         ? Icons.skip_next
         : Icons.fast_forward;
@@ -902,36 +1005,74 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: showNextEpisode ? widget.onNext : _skipMarker,
+        onTap: () {
+          if (isAutoSkipActive) {
+            _cancelAutoSkipTimer();
+          }
+          // Always perform the skip action when tapped
+          _performAutoSkip();
+        },
         borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        child: Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                buttonText,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    buttonText,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(buttonIcon, color: Colors.black, size: 20),
+                ],
+              ),
+            ),
+            // Progress indicator overlay
+            if (isAutoSkipActive && shouldShowAutoSkip)
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: (_autoSkipProgress * 100).round(),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: ((1.0 - _autoSkipProgress) * 100).round(),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.transparent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Icon(buttonIcon, color: Colors.black, size: 20),
-            ],
-          ),
+          ],
         ),
       ),
     );

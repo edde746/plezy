@@ -133,7 +133,14 @@
     "validationErrorEnterNumber": "请输入一个有效的数字",
     "validationErrorDuration": "时长必须介于 ${min} 和 ${max} ${unit} 之间",
     "shortcutAlreadyAssigned": "快捷键已被分配给 ${action}",
-    "shortcutUpdated": "快捷键已为 ${action} 更新"
+    "shortcutUpdated": "快捷键已为 ${action} 更新",
+    "autoSkip": "自动跳过",
+    "autoSkipIntro": "自动跳过片头",
+    "autoSkipIntroDescription": "几秒钟后自动跳过片头标记",
+    "autoSkipCredits": "自动跳过片尾",
+    "autoSkipCreditsDescription": "自动跳过片尾并播放下一集",
+    "autoSkipDelay": "自动跳过延迟",
+    "autoSkipDelayDescription": "自动跳过前等待 ${seconds} 秒"
   },
   "search": {
     "hint": "搜索电影、系列、音乐...",

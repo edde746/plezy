@@ -1,4 +1,5 @@
 import '../client/plex_client.dart';
+import '../models/plex_media_info.dart';
 import '../models/plex_metadata.dart';
 import '../i18n/strings.g.dart';
 
@@ -31,7 +32,8 @@ class PlaybackInitializationService {
       // Return result with available versions and video URL
       return PlaybackInitializationResult(
         availableVersions: playbackData.availableVersions,
-        videoUrl: playbackData.videoUrl!,
+        videoUrl: playbackData.videoUrl,
+        mediaInfo: playbackData.mediaInfo,
       );
     } catch (e) {
       if (e is PlaybackException) {
@@ -46,10 +48,12 @@ class PlaybackInitializationService {
 class PlaybackInitializationResult {
   final List<dynamic> availableVersions;
   final String? videoUrl;
+  final PlexMediaInfo? mediaInfo;
 
   PlaybackInitializationResult({
     required this.availableVersions,
     this.videoUrl,
+    this.mediaInfo,
   });
 }
 

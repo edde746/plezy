@@ -133,7 +133,14 @@
     "validationErrorEnterNumber": "Vänligen ange ett giltigt nummer",
     "validationErrorDuration": "Tiden måste vara mellan ${min} och ${max} ${unit}",
     "shortcutAlreadyAssigned": "Genväg redan tilldelad ${action}",
-    "shortcutUpdated": "Genväg uppdaterad för ${action}"
+    "shortcutUpdated": "Genväg uppdaterad för ${action}",
+    "autoSkip": "Auto Hoppa Över",
+    "autoSkipIntro": "Hoppa Över Intro Automatiskt",
+    "autoSkipIntroDescription": "Hoppa automatiskt över intro-markörer efter några sekunder",
+    "autoSkipCredits": "Hoppa Över Credits Automatiskt",
+    "autoSkipCreditsDescription": "Hoppa automatiskt över credits och spela nästa avsnitt",
+    "autoSkipDelay": "Fördröjning Auto Hoppa Över",
+    "autoSkipDelayDescription": "Vänta ${seconds} sekunder innan automatisk överhoppning"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
