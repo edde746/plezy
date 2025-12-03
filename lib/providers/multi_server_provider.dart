@@ -67,6 +67,7 @@ class MultiServerProvider extends ChangeNotifier {
   /// Clear all server connections
   void clearAllConnections() {
     _serverManager.disconnectAll();
+    _aggregationService.clearCache(); // Clear cached data when servers change
     appLogger.d('MultiServerProvider: All connections cleared');
     notifyListeners();
   }
@@ -79,6 +80,7 @@ class MultiServerProvider extends ChangeNotifier {
   }) async {
     // Clear existing connections first
     _serverManager.disconnectAll();
+    _aggregationService.clearCache(); // Clear cached data when servers change
     appLogger.d(
       'MultiServerProvider: Cleared connections, reconnecting to ${servers.length} servers',
     );

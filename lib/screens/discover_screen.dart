@@ -59,6 +59,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   List<PlexHub> _hubs = [];
   bool _isLoading = true;
   bool _isInitialLoad = true;
+  bool _isOnDeckLoaded = false;
+  bool _areHubsLoading = true;
   String? _errorMessage;
   final PageController _heroController = PageController();
   final ScrollController _scrollController = ScrollController();
@@ -276,6 +278,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     appLogger.d('Loading discover content from all servers');
     setState(() {
       _isLoading = true;
+      _isOnDeckLoaded = false;
+      _areHubsLoading = true;
       _errorMessage = null;
     });
 
@@ -290,16 +294,45 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         throw Exception('No servers available');
       }
 
-      // Fetch on deck and hubs from all servers in parallel for optimal performance
-      final results = await Future.wait([
-        multiServerProvider.aggregationService.getOnDeckFromAllServers(
-          limit: 20,
-        ),
-        multiServerProvider.aggregationService.getHubsFromAllServers(),
-      ]);
+      // Start OnDeck and libraries fetch in parallel
+      final onDeckFuture = multiServerProvider.aggregationService
+          .getOnDeckFromAllServers(limit: 20);
+      final librariesFuture = multiServerProvider.aggregationService
+          .getLibrariesFromAllServersGrouped();
 
-      final onDeck = results[0] as List<PlexMetadata>;
-      final allHubs = results[1] as List<PlexHub>;
+      // Wait for OnDeck to complete and show it immediately
+      final onDeck = await onDeckFuture;
+
+      setState(() {
+        _onDeck = onDeck;
+        _isOnDeckLoaded = true;
+        _isLoading = false; // Show content, but hubs still loading
+
+        // Reset hero index to avoid sync issues
+        _currentHeroIndex = 0;
+      });
+
+      // Focus the hero on initial load
+      if (_isInitialLoad && onDeck.isNotEmpty) {
+        _isInitialLoad = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _heroFocusNode.requestFocus();
+          }
+        });
+      }
+
+      // Sync PageController to first page after OnDeck loads
+      if (_heroController.hasClients && onDeck.isNotEmpty) {
+        _heroController.jumpToPage(0);
+      }
+
+      // Wait for libraries and then fetch hubs
+      final librariesByServer = await librariesFuture;
+
+      // Fetch hubs using the pre-fetched libraries
+      final allHubs = await multiServerProvider.aggregationService
+          .getHubsFromAllServers(librariesByServer: librariesByServer);
 
       // Filter out duplicate hubs that we already fetch separately
       final filteredHubs = allHubs.where((hub) {
@@ -316,28 +349,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         'Received ${onDeck.length} on deck items and ${filteredHubs.length} hubs from all servers',
       );
       setState(() {
-        _onDeck = onDeck;
         _hubs = filteredHubs;
-        _isLoading = false;
-
-        // Reset hero index to avoid sync issues
-        _currentHeroIndex = 0;
+        _areHubsLoading = false;
       });
-
-      // Sync PageController to first page after data loads
-      if (_heroController.hasClients && onDeck.isNotEmpty) {
-        _heroController.jumpToPage(0);
-      }
-
-      // Focus the hero on initial load
-      if (_isInitialLoad && onDeck.isNotEmpty) {
-        _isInitialLoad = false;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _heroFocusNode.requestFocus();
-          }
-        });
-      }
 
       appLogger.d('Discover content loaded successfully');
     } catch (e) {
@@ -345,6 +359,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       setState(() {
         _errorMessage = 'Failed to load content: $e';
         _isLoading = false;
+        _areHubsLoading = false;
       });
     }
   }
@@ -721,7 +736,53 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ),
                     ),
 
-                  if (_onDeck.isEmpty && _hubs.isEmpty)
+                  // Show loading skeleton for hubs while they're loading
+                  if (_areHubsLoading && _hubs.isEmpty)
+                    for (int i = 0; i < 3; i++)
+                      SliverToBoxAdapter(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Hub title skeleton
+                              Container(
+                                width: 200,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              // Hub items skeleton
+                              SizedBox(
+                                height: 200,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: 5,
+                                  itemBuilder: (context, index) {
+                                    return Container(
+                                      margin: const EdgeInsets.only(right: 12),
+                                      width: 140,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                  if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
                     SliverFillRemaining(
                       child: Center(
                         child: Column(

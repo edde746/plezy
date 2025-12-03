@@ -21,7 +21,6 @@ import 'providers/playback_state_provider.dart';
 import 'services/multi_server_manager.dart';
 import 'services/data_aggregation_service.dart';
 import 'services/server_registry.dart';
-import 'utils/language_codes.dart';
 import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
 import 'i18n/strings.g.dart';
@@ -40,20 +39,22 @@ void main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 500 << 20; // 500MB
   PaintingBinding.instance.imageCache.maximumSize = 500; // 500 images
 
+  // Initialize services in parallel where possible
+  final futures = <Future<void>>[];
+
   // Initialize window_manager for desktop platforms
   if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    await windowManager.ensureInitialized();
+    futures.add(windowManager.ensureInitialized());
   }
 
-  // Configure macOS window with custom titlebar
-  await MacOSTitlebarService.setupCustomTitlebar();
+  // Configure macOS window with custom titlebar (depends on window manager)
+  futures.add(MacOSTitlebarService.setupCustomTitlebar());
 
-  // Note: Orientation will be set dynamically based on device type in MainApp
+  // Initialize storage service
+  futures.add(StorageService.getInstance().then((_) {}));
 
-  await StorageService.getInstance();
-
-  // Initialize language codes for track selection
-  await LanguageCodes.initialize();
+  // Wait for all parallel services to complete
+  await Future.wait(futures);
 
   // Initialize logger level based on debug setting
   final debugEnabled = settings.getEnableDebugLogging();
@@ -90,12 +91,16 @@ class MainApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (context) => ServerStateProvider()),
         // Existing providers
-        ChangeNotifierProvider(
-          create: (context) => UserProfileProvider()..initialize(),
-        ),
+        ChangeNotifierProvider(create: (context) => UserProfileProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(create: (context) => SettingsProvider()),
-        ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider()),
+        ChangeNotifierProvider(
+          create: (context) => SettingsProvider(),
+          lazy: true,
+        ),
+        ChangeNotifierProvider(
+          create: (context) => HiddenLibrariesProvider(),
+          lazy: true,
+        ),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
       ],
       child: Consumer<ThemeProvider>(
@@ -155,7 +160,7 @@ class _SetupScreenState extends State<SetupScreen> {
     _loadSavedCredentials();
   }
 
-  void _checkForUpdatesOnStartup() async {
+  Future<void> _checkForUpdatesOnStartup() async {
     // Delay slightly to allow UI to settle
     await Future.delayed(const Duration(milliseconds: 500));
 
@@ -284,10 +289,7 @@ class _SetupScreenState extends State<SetupScreen> {
         appLogger.i('Successfully connected to $connectedCount servers');
 
         if (mounted) {
-          // Check for updates BEFORE navigation
-          _checkForUpdatesOnStartup();
-
-          // Navigate to main screen
+          // Navigate to main screen immediately
           // Get first connected client for backward compatibility
           final firstClient =
               multiServerProvider.serverManager.onlineClients.values.first;
@@ -298,6 +300,9 @@ class _SetupScreenState extends State<SetupScreen> {
               builder: (context) => MainScreen(client: firstClient),
             ),
           );
+
+          // Check for updates in background after navigation
+          _checkForUpdatesOnStartup();
         }
       } else {
         // All connections failed

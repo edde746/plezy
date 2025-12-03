@@ -80,7 +80,8 @@ class PlaybackInitializationService {
         externalSubtitles.add(
           SubtitleTrack.uri(
             url,
-            title: plexTrack.displayTitle ??
+            title:
+                plexTrack.displayTitle ??
                 plexTrack.language ??
                 'Track ${plexTrack.id}',
             language: plexTrack.languageCode,

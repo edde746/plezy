@@ -12,7 +12,28 @@ import 'plex_auth_service.dart';
 class DataAggregationService {
   final MultiServerManager _serverManager;
 
+  // Cache for libraries with TTL
+  Map<String, List<PlexLibrary>>? _cachedLibrariesByServer;
+  DateTime? _librariesCacheTime;
+  static const Duration _librariesCacheTTL = Duration(hours: 1);
+
   DataAggregationService(this._serverManager);
+
+  /// Clear the libraries cache (useful for server changes or logout)
+  void clearCache() {
+    _cachedLibrariesByServer = null;
+    _librariesCacheTime = null;
+  }
+
+  /// Check if libraries cache is still valid
+  bool get _isLibrariesCacheValid {
+    if (_cachedLibrariesByServer == null || _librariesCacheTime == null) {
+      return false;
+    }
+
+    final cacheAge = DateTime.now().difference(_librariesCacheTime!);
+    return cacheAge < _librariesCacheTTL;
+  }
 
   /// Fetch libraries from all online servers
   /// Libraries are automatically tagged with server info by PlexClient
@@ -53,8 +74,67 @@ class DataAggregationService {
     return result;
   }
 
-  /// Fetch recommendation hubs from all servers
-  Future<List<PlexHub>> getHubsFromAllServers({int? limit}) async {
+  /// Fetch libraries from all servers and cache them for hub fetching
+  /// This allows libraries to be fetched in parallel with other operations
+  Future<Map<String, List<PlexLibrary>>> getLibrariesFromAllServersGrouped({
+    bool forceRefresh = false,
+  }) async {
+    // Return cached libraries if still valid and not forcing refresh
+    if (!forceRefresh && _isLibrariesCacheValid) {
+      appLogger.d('Using cached libraries data');
+      return _cachedLibrariesByServer!;
+    }
+
+    final clients = _serverManager.onlineClients;
+
+    if (clients.isEmpty) {
+      appLogger.w('No online servers available for fetching libraries');
+      return {};
+    }
+
+    appLogger.d('Fetching libraries from ${clients.length} servers');
+
+    final libraryFutures = clients.entries.map((entry) async {
+      final serverId = entry.key;
+      final client = entry.value;
+      try {
+        final libraries = await client.getLibraries();
+        appLogger.d(
+          'Fetched ${libraries.length} libraries for server $serverId',
+        );
+        return MapEntry(serverId, libraries);
+      } catch (e) {
+        appLogger.e(
+          'Failed to fetch libraries from server $serverId',
+          error: e,
+        );
+        return MapEntry(serverId, <PlexLibrary>[]);
+      }
+    });
+
+    final libraryResults = await Future.wait(libraryFutures);
+
+    final librariesByServer = Map.fromEntries(libraryResults);
+    final totalLibraries = libraryResults.fold<int>(
+      0,
+      (sum, entry) => sum + entry.value.length,
+    );
+
+    // Cache the results
+    _cachedLibrariesByServer = librariesByServer;
+    _librariesCacheTime = DateTime.now();
+
+    appLogger.d(
+      'Fetched $totalLibraries libraries from ${clients.length} servers',
+    );
+    return librariesByServer;
+  }
+
+  /// Fetch recommendation hubs from all servers using pre-fetched libraries
+  Future<List<PlexHub>> getHubsFromAllServers({
+    int? limit,
+    Map<String, List<PlexLibrary>>? librariesByServer,
+  }) async {
     final clients = _serverManager.onlineClients;
 
     if (clients.isEmpty) {
@@ -62,21 +142,29 @@ class DataAggregationService {
       return [];
     }
 
+    // Use pre-fetched libraries or fetch them if not provided
+    final libraries =
+        librariesByServer ?? await getLibrariesFromAllServersGrouped();
+
     appLogger.d('Fetching hubs from ${clients.length} servers');
 
     final allHubs = <PlexHub>[];
 
-    // Fetch from all servers in parallel
+    // Fetch from all servers in parallel using cached libraries
     final hubFutures = clients.entries.map((entry) async {
       final serverId = entry.key;
       final client = entry.value;
 
       try {
-        // Get libraries for this server
-        final libraries = await client.getLibraries();
+        // Use pre-fetched libraries for this server
+        final serverLibraries = libraries[serverId] ?? <PlexLibrary>[];
+        if (serverLibraries.isEmpty) {
+          appLogger.w('No libraries available for server $serverId');
+          return <PlexHub>[];
+        }
 
         // Filter to only visible movie/show libraries
-        final visibleLibraries = libraries.where((library) {
+        final visibleLibraries = serverLibraries.where((library) {
           if (library.type != 'movie' && library.type != 'show') {
             return false;
           }
@@ -90,7 +178,11 @@ class DataAggregationService {
         final libraryHubFutures = visibleLibraries.map((library) async {
           try {
             // Hubs are now tagged with server info at the source
-            return await client.getLibraryHubs(library.key);
+            final hubs = await client.getLibraryHubs(library.key);
+            appLogger.d(
+              'Fetched ${hubs.length} hubs for ${library.title} on $serverId',
+            );
+            return hubs;
           } catch (e) {
             appLogger.w(
               'Failed to fetch hubs for library ${library.title}: $e',
@@ -239,9 +331,14 @@ class DataAggregationService {
       final serverId = entry.key;
       final client = entry.value;
       final server = _serverManager.getServer(serverId);
+      final sw = Stopwatch()..start();
 
       try {
-        return await operation(serverId, client, server);
+        final result = await operation(serverId, client, server);
+        appLogger.d(
+          '$operationName for server $serverId completed in ${sw.elapsedMilliseconds}ms with ${result.length} items',
+        );
+        return result;
       } catch (e, stackTrace) {
         appLogger.e(
           'Failed $operationName from server $serverId',
@@ -249,6 +346,9 @@ class DataAggregationService {
           stackTrace: stackTrace,
         );
         _serverManager.updateServerStatus(serverId, false);
+        appLogger.d(
+          '$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms',
+        );
         return <T>[];
       }
     });

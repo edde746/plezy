@@ -16,6 +16,7 @@ class UserProfileProvider extends ChangeNotifier {
   PlexUserProfile? _profileSettings;
   bool _isLoading = false;
   String? _error;
+  bool _isInitialized = false;
 
   PlexHome? get home => _home;
   PlexHomeUser? get currentUser => _currentUser;
@@ -56,6 +57,12 @@ class UserProfileProvider extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
+    // Prevent duplicate initialization
+    if (_isInitialized) {
+      appLogger.d('UserProfileProvider: Already initialized, skipping');
+      return;
+    }
+
     appLogger.d('UserProfileProvider: Initializing...');
     try {
       _authService = await PlexAuthService.create();
@@ -90,6 +97,7 @@ class UserProfileProvider extends ChangeNotifier {
         // Don't set error here, cached profile (if any) was already loaded
       }
 
+      _isInitialized = true;
       appLogger.d('UserProfileProvider: Initialization complete');
     } catch (e) {
       appLogger.e(
@@ -100,6 +108,7 @@ class UserProfileProvider extends ChangeNotifier {
       // Ensure services are null on failure
       _authService = null;
       _storageService = null;
+      _isInitialized = false; // Allow retry on failure
     }
   }
 
