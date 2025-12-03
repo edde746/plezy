@@ -938,7 +938,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               return _FocusableSeasonCard(
                                 season: season,
                                 client: _getClientForMetadata(context),
-                                onTap: () async {
+                                onTap: ({bool isKeyboard = false}) async {
                                   final watchStateChanged =
                                       await Navigator.push<bool>(
                                         context,
@@ -946,6 +946,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                           builder: (context) =>
                                               SeasonDetailScreen(
                                                 season: season,
+                                                focusFirstEpisode: isKeyboard,
                                               ),
                                         ),
                                       );
@@ -1166,7 +1167,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 class _FocusableSeasonCard extends StatefulWidget {
   final PlexMetadata season;
   final PlexClient client;
-  final VoidCallback onTap;
+  final void Function({bool isKeyboard}) onTap;
   final VoidCallback onRefresh;
 
   const _FocusableSeasonCard({
@@ -1187,7 +1188,7 @@ class _FocusableSeasonCardState extends State<_FocusableSeasonCard>
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
 
   @override
-  void onKeyboardTap() => widget.onTap();
+  void onKeyboardTap() => widget.onTap(isKeyboard: true);
 
   @override
   void onKeyboardLongPress() {
@@ -1245,14 +1246,14 @@ class _FocusableSeasonCardState extends State<_FocusableSeasonCard>
             key: _contextMenuKey,
             item: season,
             onRefresh: (ratingKey) => widget.onRefresh(),
-            onTap: widget.onTap,
+            onTap: () => widget.onTap(isKeyboard: false),
             child: Semantics(
               label: "media-season-${season.ratingKey}",
               identifier: "media-season-${season.ratingKey}",
               button: true,
               hint: "Tap to view ${season.title}",
               child: InkWell(
-                onTap: widget.onTap,
+                onTap: () => widget.onTap(isKeyboard: false),
                 focusColor: Colors.transparent,
                 child: Padding(
                   padding: const EdgeInsets.all(12),

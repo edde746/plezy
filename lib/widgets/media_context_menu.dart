@@ -371,7 +371,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await _navigateToRelated(
           context,
           metadata!.parentRatingKey,
-          (metadata) => SeasonDetailScreen(season: metadata),
+          (metadata) => SeasonDetailScreen(
+            season: metadata,
+            focusFirstEpisode: _openedFromKeyboard,
+          ),
           t.messages.errorLoadingSeason,
         );
         break;

@@ -116,7 +116,7 @@ class _MediaCardState extends State<MediaCard> {
     return baseLabel;
   }
 
-  void _handleTap(BuildContext context) async {
+  void _handleTap(BuildContext context, {bool isKeyboard = false}) async {
     // Handle playlists
     if (widget.item is PlexPlaylist) {
       await Navigator.push(
@@ -175,7 +175,10 @@ class _MediaCardState extends State<MediaCard> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SeasonDetailScreen(season: widget.item),
+          builder: (context) => SeasonDetailScreen(
+            season: widget.item,
+            focusFirstEpisode: isKeyboard,
+          ),
         ),
       );
       // Season screen doesn't return a refresh flag, but we can refresh anyway
@@ -210,7 +213,8 @@ class _MediaCardState extends State<MediaCard> {
             width: widget.width,
             height: widget.height,
             semanticLabel: semanticLabel,
-            onTap: () => _handleTap(context),
+            onTap: ({bool isKeyboard = false}) =>
+                _handleTap(context, isKeyboard: isKeyboard),
             onLongPress: _showContextMenu,
             focusNode: widget.focusNode,
             hubId: widget.hubId,
@@ -219,7 +223,8 @@ class _MediaCardState extends State<MediaCard> {
         : _MediaCardList(
             item: widget.item,
             semanticLabel: semanticLabel,
-            onTap: () => _handleTap(context),
+            onTap: ({bool isKeyboard = false}) =>
+                _handleTap(context, isKeyboard: isKeyboard),
             onLongPress: _showContextMenu,
             density: settingsProvider.libraryDensity,
           );
@@ -245,7 +250,7 @@ class _MediaCardGrid extends StatefulWidget {
   final double? width;
   final double? height;
   final String semanticLabel;
-  final VoidCallback onTap;
+  final void Function({bool isKeyboard}) onTap;
   final VoidCallback onLongPress;
 
   /// External FocusNode for hub navigation (provided by HubSection)
@@ -279,7 +284,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
   bool _isFocused = false;
 
   @override
-  void onKeyboardTap() => widget.onTap();
+  void onKeyboardTap() => widget.onTap(isKeyboard: true);
 
   @override
   void onKeyboardLongPress() => widget.onLongPress();
@@ -438,7 +443,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
             label: widget.semanticLabel,
             button: true,
             child: InkWell(
-              onTap: widget.onTap,
+              onTap: () => widget.onTap(isKeyboard: false),
               borderRadius: BorderRadius.circular(8),
               focusColor: Colors.transparent, // We use our own focus indicator
               child: Padding(
@@ -590,7 +595,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
 class _MediaCardList extends StatefulWidget {
   final dynamic item; // Can be PlexMetadata or PlexPlaylist
   final String semanticLabel;
-  final VoidCallback onTap;
+  final void Function({bool isKeyboard}) onTap;
   final VoidCallback onLongPress;
   final LibraryDensity density;
 
@@ -609,7 +614,7 @@ class _MediaCardList extends StatefulWidget {
 class _MediaCardListState extends State<_MediaCardList>
     with KeyboardLongPressMixin {
   @override
-  void onKeyboardTap() => widget.onTap();
+  void onKeyboardTap() => widget.onTap(isKeyboard: true);
 
   @override
   void onKeyboardLongPress() => widget.onLongPress();
@@ -832,7 +837,7 @@ class _MediaCardListState extends State<_MediaCardList>
           label: widget.semanticLabel,
           button: true,
           child: InkWell(
-            onTap: widget.onTap,
+            onTap: () => widget.onTap(isKeyboard: false),
             borderRadius: BorderRadius.circular(8),
             focusColor: Colors.transparent, // We use our own focus indicator
             child: Padding(

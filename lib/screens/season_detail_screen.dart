@@ -17,7 +17,15 @@ import '../i18n/strings.g.dart';
 class SeasonDetailScreen extends StatefulWidget {
   final PlexMetadata season;
 
-  const SeasonDetailScreen({super.key, required this.season});
+  /// Whether to focus the first episode after loading.
+  /// Should be true when navigating via keyboard, false for mouse/tap.
+  final bool focusFirstEpisode;
+
+  const SeasonDetailScreen({
+    super.key,
+    required this.season,
+    this.focusFirstEpisode = false,
+  });
 
   @override
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
@@ -72,8 +80,8 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
         _isLoadingEpisodes = false;
       });
 
-      // Focus the first episode after loading
-      if (episodes.isNotEmpty) {
+      // Focus the first episode after loading (only if keyboard navigation)
+      if (episodes.isNotEmpty && widget.focusFirstEpisode) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _firstEpisodeFocusNode.requestFocus();
         });
