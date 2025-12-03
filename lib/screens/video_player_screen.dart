@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,17 +25,10 @@ import '../utils/app_logger.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/language_codes.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../i18n/strings.g.dart';
-
-Map<String, dynamic>? _isoLangTable;
-
-/// Load the table into memory at widget startup (in initState for example)
-Future<void> loadIsoTable() async {
-  final data = await rootBundle.loadString('lib/data/iso_6369_codes.json');
-  _isoLangTable = json.decode(data) as Map<String, dynamic>;
-}
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -101,8 +93,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void initState() {
     super.initState();
-
-    loadIsoTable();
 
     appLogger.d('VideoPlayerScreen initialized for: ${widget.metadata.title}');
     if (widget.preferredAudioTrack != null) {
@@ -228,11 +218,25 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   /// Converts a 2-letter code like "fr", "nl", "ca" to a Plex 3-letter code, or returns null if unknown
   String? _iso6391ToPlex6392(String? code) {
-    if (code == null || code.isEmpty || _isoLangTable == null) return null;
+    if (code == null || code.isEmpty) return null;
     // Takes the base "fr" from "fr-FR"
     final lang = code.split('-').first.toLowerCase();
-    final langEntry = _isoLangTable![lang] as Map<String, dynamic>?;
-    return langEntry?['639-2'] as String?;
+
+    // Use LanguageCodes utility to get variations and find the 639-2 code
+    try {
+      final variations = LanguageCodes.getVariations(lang);
+      // The getVariations method returns all variations including 639-2 codes
+      // We need to find the 3-letter code from the variations
+      for (final variation in variations) {
+        if (variation.length == 3) {
+          return variation;
+        }
+      }
+      return null;
+    } catch (e) {
+      // If LanguageCodes is not initialized or fails, return null
+      return null;
+    }
   }
 
   Future<void> _initializePlayer() async {
@@ -388,6 +392,56 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           _isPlayerInitialized = false;
         });
       }
+    }
+  }
+
+  /// Add external subtitle tracks to the player
+  Future<void> _addExternalSubtitles(
+    List<SubtitleTrack> externalSubtitles,
+  ) async {
+    if (player == null || externalSubtitles.isEmpty) return;
+
+    appLogger.d(
+      'Adding ${externalSubtitles.length} external subtitle(s) to player',
+    );
+
+    // Wait for media to be ready
+    await _waitForMediaReady();
+
+    for (final subtitleTrack in externalSubtitles) {
+      if (subtitleTrack.uri == null) continue;
+
+      try {
+        await player!.addSubtitleTrack(
+          uri: subtitleTrack.uri!,
+          title: subtitleTrack.title,
+          language: subtitleTrack.language,
+          select: false, // Don't auto-select
+        );
+        appLogger.d(
+          'Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}',
+        );
+      } catch (e) {
+        appLogger.w(
+          'Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}',
+          error: e,
+        );
+      }
+    }
+  }
+
+  /// Wait for media to be ready (duration > 0)
+  Future<void> _waitForMediaReady() async {
+    if (player == null) return;
+
+    int attempts = 0;
+    while (player!.state.duration.inMilliseconds == 0 && attempts < 100) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      attempts++;
+    }
+
+    if (attempts >= 100) {
+      appLogger.w('Media ready timeout - proceeding anyway');
     }
   }
 
@@ -619,6 +673,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           );
           // Update video filter once dimensions are available
           _videoFilterManager!.updateVideoFilter();
+        }
+
+        // Add external subtitles to the player
+        if (result.externalSubtitles.isNotEmpty) {
+          await _addExternalSubtitles(result.externalSubtitles);
         }
       }
 
