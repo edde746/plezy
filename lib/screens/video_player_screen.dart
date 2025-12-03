@@ -70,6 +70,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   StreamSubscription<Tracks>? _trackLoadingSubscription;
   bool _isReplacingWithVideo =
       false; // Flag to skip orientation restoration during video-to-video navigation
+  bool _isDisposingForNavigation = false;
 
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
@@ -1167,6 +1168,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _progressTracker?.sendProgress('stopped');
     _progressTracker?.stopTracking();
 
+    // Ensure the native player is fully disposed before creating the next one
+    await disposePlayerForNavigation();
+
     // Navigate to the episode using pushReplacement to destroy current player
     if (mounted) {
       navigateToVideoPlayer(
@@ -1177,6 +1181,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         preferredPlaybackRate: currentRate,
         usePushReplacement: true,
       );
+    }
+  }
+
+  /// Dispose the player before replacing the video to avoid race conditions
+  Future<void> disposePlayerForNavigation() async {
+    if (_isDisposingForNavigation) return;
+    _isDisposingForNavigation = true;
+
+    try {
+      _progressTracker?.sendProgress('stopped');
+      _progressTracker?.stopTracking();
+      await player?.dispose();
+    } catch (e) {
+      appLogger.d('Error disposing player before navigation', error: e);
+    } finally {
+      player = null;
+      _isPlayerInitialized = false;
     }
   }
 

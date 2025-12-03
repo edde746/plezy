@@ -1103,6 +1103,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
       // Set flag on parent VideoPlayerScreen to skip orientation restoration
       videoPlayerState?.setReplacingWithVideo();
+      // Dispose the existing player before spinning up the replacement to avoid race conditions
+      await videoPlayerState?.disposePlayerForNavigation();
 
       // Navigate to new player screen with the selected version
       // Use PageRouteBuilder with zero-duration transitions to prevent orientation reset
