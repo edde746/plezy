@@ -478,9 +478,14 @@ class MpvPlayerCore: NSObject {
     func dispose() {
         NotificationCenter.default.removeObserver(self)
 
-        if let mpv = mpv {
-            mpv_terminate_destroy(mpv)
-            self.mpv = nil
+        let mpvHandle = mpv
+        mpv = nil
+
+        queue.sync {
+            if let handle = mpvHandle {
+                mpv_set_wakeup_callback(handle, nil, nil)
+                mpv_terminate_destroy(handle)
+            }
         }
         metalLayer?.removeFromSuperlayer()
         metalLayer = nil

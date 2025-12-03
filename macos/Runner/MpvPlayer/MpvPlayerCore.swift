@@ -428,9 +428,16 @@ class MpvPlayerCore: NSObject {
     // MARK: - Cleanup
 
     func dispose() {
-        if let mpv = mpv {
-            mpv_terminate_destroy(mpv)
-            self.mpv = nil
+        // Capture handle before clearing to avoid weak captures during deinit
+        let mpvHandle = mpv
+        mpv = nil
+
+        // Tear down on the mpv queue to avoid races with wakeup callbacks still firing
+        queue.sync {
+            if let handle = mpvHandle {
+                mpv_set_wakeup_callback(handle, nil, nil)
+                mpv_terminate_destroy(handle)
+            }
         }
         metalLayer?.removeFromSuperlayer()
         metalLayer = nil
