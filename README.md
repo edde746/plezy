@@ -41,6 +41,7 @@ Plezy is a modern Plex media client that provides a seamless streaming experienc
 
 ### 🎬 Video Playback
 - Wide codec support including HEVC, AV1, VP9, and more
+- HDR and Dolby Vision support (iOS, macOS & Windows)
 - Advanced subtitle rendering with full ASS/SSA support
 - Audio and subtitle track selection with user profile preferences
 - Playback progress sync and resume functionality
@@ -77,25 +78,6 @@ flutter run
 
 ## Development
 
-### Code Quality
-
-Before submitting changes, ensure your code passes all quality checks:
-
-```bash
-# Format code (including generated files)
-dart format .
-
-# Analyze code for issues
-flutter analyze
-
-# Run tests (if available)
-flutter test
-```
-
-**Note**: CI checks exclude generated files (`.g.dart`, `.freezed.dart`) from formatting and analysis checks. You can run `dart format .` locally to format everything, but only your hand-written code will be validated in CI.
-
-These checks are automatically run in CI for all pull requests.
-
 ### Code Generation
 
 The project uses code generation for JSON serialization. After modifying model classes, run:
@@ -104,24 +86,10 @@ The project uses code generation for JSON serialization. After modifying model c
 dart run build_runner build --delete-conflicting-outputs
 ```
 
-## Building for Production
-
-### Android
-```bash
-flutter build apk --release
-# or
-flutter build appbundle --release
-```
-
-### Desktop
-```bash
-flutter build macos --release
-flutter build windows --release
-flutter build linux --release
-```
-
 ## Acknowledgments
 
 - Built with [Flutter](https://flutter.dev)
-- Media playback powered by [MediaKit](https://github.com/media-kit/media-kit)
 - Designed for [Plex Media Server](https://www.plex.tv)
+- Playback powered by [mpv](https://mpv.io)
+  - [MPVKit](https://github.com/mpvkit/MPVKit)
+  - [mpv-android](https://github.com/mpv-android/mpv-android)
