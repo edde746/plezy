@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../models/plex_hub.dart';
-import '../../widgets/hub_section.dart';
-import '../../widgets/hub_navigation_controller.dart';
+
+import '../../client/plex_client.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/item_updatable.dart';
+import '../../models/plex_hub.dart';
+import '../../models/plex_metadata.dart';
+import '../../widgets/hub_navigation_controller.dart';
+import '../../widgets/hub_section.dart';
 import 'base_library_tab.dart';
 
 /// Recommended tab for library screen
-/// Shows library-specific hubs and recommendations
+/// Shows library-specific hubs and recommendations, including dedicated Continue Watching
 class LibraryRecommendedTab extends BaseLibraryTab<PlexHub> {
   const LibraryRecommendedTab({super.key, required super.library});
 
@@ -15,7 +19,8 @@ class LibraryRecommendedTab extends BaseLibraryTab<PlexHub> {
 }
 
 class _LibraryRecommendedTabState
-    extends BaseLibraryTabState<PlexHub, LibraryRecommendedTab> {
+    extends BaseLibraryTabState<PlexHub, LibraryRecommendedTab>
+    with ItemUpdatable {
   final HubNavigationController _hubNavigationController =
       HubNavigationController();
 
@@ -32,6 +37,22 @@ class _LibraryRecommendedTabState
   }
 
   @override
+  PlexClient get client => getClientForLibrary();
+
+  @override
+  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+    // Update the item in any hub that contains it
+    for (final hub in items) {
+      final itemIndex = hub.items.indexWhere(
+        (item) => item.ratingKey == ratingKey,
+      );
+      if (itemIndex != -1) {
+        hub.items[itemIndex] = updatedMetadata;
+      }
+    }
+  }
+
+  @override
   IconData get emptyIcon => Icons.recommend;
 
   @override
@@ -45,8 +66,47 @@ class _LibraryRecommendedTabState
     // Use server-specific client for this library
     final client = getClientForLibrary();
 
-    // Hubs are now tagged with server info at the source
-    return await client.getLibraryHubs(widget.library.key, limit: 12);
+    // Load both continue watching items and regular hubs in parallel
+    final results = await Future.wait([
+      client.getOnDeckForLibrary(widget.library.key),
+      client.getLibraryHubs(widget.library.key, limit: 12),
+    ]);
+
+    final continueWatchingItems = results[0] as List<PlexMetadata>;
+    final hubs = results[1] as List<PlexHub>;
+
+    // Filter out any existing Continue Watching hubs since we're adding our own
+    final filteredHubs = hubs.where((hub) {
+      final title = hub.title.toLowerCase();
+      final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+      return !title.contains('continue watching') &&
+          !title.contains('on deck') &&
+          !hubId.contains('ondeck') &&
+          !hubId.contains('continue');
+    }).toList();
+
+    final finalHubs = <PlexHub>[];
+
+    // Add Continue Watching as the first hub if there are items
+    if (continueWatchingItems.isNotEmpty) {
+      final continueWatchingHub = PlexHub(
+        hubKey: 'library_continue_watching_${widget.library.key}',
+        title: t.discover.continueWatching,
+        type: 'mixed',
+        hubIdentifier: '_library_continue_watching_',
+        size: continueWatchingItems.length,
+        more: false,
+        items: continueWatchingItems,
+        serverId: widget.library.serverId,
+        serverName: widget.library.serverName,
+      );
+      finalHubs.add(continueWatchingHub);
+    }
+
+    // Add the filtered regular hubs
+    finalHubs.addAll(filteredHubs);
+
+    return finalHubs;
   }
 
   @override
@@ -58,14 +118,28 @@ class _LibraryRecommendedTabState
         itemCount: items.length,
         itemBuilder: (context, index) {
           final hub = items[index];
+          final isContinueWatching =
+              hub.hubIdentifier == '_library_continue_watching_';
+
           return HubSection(
             hub: hub,
             icon: _getHubIcon(hub),
             navigationOrder: index,
+            isInContinueWatching: isContinueWatching,
+            onRefresh: updateItem,
+            onRemoveFromContinueWatching: isContinueWatching
+                ? _refreshContinueWatching
+                : null,
           );
         },
       ),
     );
+  }
+
+  /// Refresh the Continue Watching section
+  void _refreshContinueWatching() {
+    // Reload all data to refresh the continue watching section
+    loadItems();
   }
 
   IconData _getHubIcon(PlexHub hub) {

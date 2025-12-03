@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../config/plex_config.dart';
+import '../models/play_queue_response.dart';
 import '../models/plex_file_info.dart';
 import '../models/plex_filter.dart';
 import '../models/plex_hub.dart';
@@ -13,7 +14,6 @@ import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_video_playback_data.dart';
-import '../models/play_queue_response.dart';
 import '../network/endpoint_failover_interceptor.dart';
 import '../utils/app_logger.dart';
 import '../utils/log_redaction_manager.dart';
@@ -601,6 +601,16 @@ class PlexClient {
       }).toList();
     }
     return [];
+  }
+
+  /// Get on deck items filtered by a specific library section
+  Future<List<PlexMetadata>> getOnDeckForLibrary(String sectionId) async {
+    final allOnDeck = await getOnDeck();
+
+    // Filter items to only include those from the specified library section
+    return allOnDeck.where((item) {
+      return item.librarySectionID == int.tryParse(sectionId);
+    }).toList();
   }
 
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)
