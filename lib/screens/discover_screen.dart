@@ -59,7 +59,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   List<PlexHub> _hubs = [];
   bool _isLoading = true;
   bool _isInitialLoad = true;
-  bool _isOnDeckLoaded = false;
   bool _areHubsLoading = true;
   String? _errorMessage;
   final PageController _heroController = PageController();
@@ -278,7 +277,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     appLogger.d('Loading discover content from all servers');
     setState(() {
       _isLoading = true;
-      _isOnDeckLoaded = false;
       _areHubsLoading = true;
       _errorMessage = null;
     });
@@ -305,7 +303,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
       setState(() {
         _onDeck = onDeck;
-        _isOnDeckLoaded = true;
         _isLoading = false; // Show content, but hubs still loading
 
         // Reset hero index to avoid sync issues
