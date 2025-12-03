@@ -168,6 +168,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard>
       return Builder(
         builder: (context) {
           final client = _getClientForItem(context);
+          final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
 
           return ClipRRect(
             borderRadius: BorderRadius.circular(6),
@@ -175,6 +176,8 @@ class _PlaylistItemCardState extends State<PlaylistItemCard>
               imageUrl: client.getThumbnailUrl(posterUrl),
               width: 60,
               height: 90,
+              memCacheWidth: (60 * devicePixelRatio).round(),
+              memCacheHeight: (90 * devicePixelRatio).round(),
               fit: BoxFit.cover,
               placeholder: (context, url) => _buildPlaceholder(),
               errorWidget: (context, url, error) => _buildPlaceholder(),

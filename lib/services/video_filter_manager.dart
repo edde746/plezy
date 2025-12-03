@@ -27,7 +27,6 @@ class VideoFilterManager {
   /// Current player viewport size
   Size? _playerSize;
 
-
   /// Debounced video filter update with leading edge execution
   late final Debounce _debouncedUpdateVideoFilter;
 
@@ -86,7 +85,6 @@ class VideoFilterManager {
       debouncedUpdateVideoFilter();
     }
   }
-
 
   /// Update the video scaling and positioning based on current display mode
   void updateVideoFilter() async {

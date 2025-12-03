@@ -1032,6 +1032,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               heroItem.art ?? heroItem.grandparentArt,
                             ),
                             fit: BoxFit.cover,
+                            memCacheWidth:
+                                (MediaQuery.of(context).size.width *
+                                        MediaQuery.of(context).devicePixelRatio)
+                                    .clamp(900, 2400)
+                                    .round(),
+                            memCacheHeight:
+                                (MediaQuery.of(context).size.height *
+                                        MediaQuery.of(
+                                          context,
+                                        ).devicePixelRatio *
+                                        0.7)
+                                    .clamp(600, 1600)
+                                    .round(),
                             placeholder: (context, url) => Container(
                               color: Theme.of(
                                 context,
@@ -1099,6 +1112,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   ),
                                   filterQuality: FilterQuality.medium,
                                   fit: BoxFit.contain,
+                                  memCacheWidth:
+                                      (400 *
+                                              MediaQuery.of(
+                                                context,
+                                              ).devicePixelRatio)
+                                          .clamp(200, 800)
+                                          .round(),
                                   alignment: isLargeScreen
                                       ? Alignment.bottomLeft
                                       : Alignment.bottomCenter,
