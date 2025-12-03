@@ -753,19 +753,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _mediaControlsManager?.clear();
     _mediaControlsManager?.dispose();
 
-    // Clear video filter and reset subtitle margins before disposing player
-    try {
-      if (player != null) {
-        player!.setProperty('vf', '');
-        player!.setProperty('sub-margin-x', '0');
-        player!.setProperty('sub-margin-y', '0');
-        player!.setProperty('sub-scale', '1.0');
-      }
-    } catch (e) {
-      // Non-critical: Cleanup operations during disposal
-      appLogger.d('Error during player cleanup in dispose', error: e);
-    }
-
     // Restore system UI and orientation preferences (skip if navigating to another video)
     if (!_isReplacingWithVideo) {
       OrientationHelper.restoreSystemUI();
