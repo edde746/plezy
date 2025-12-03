@@ -36,8 +36,7 @@ void main() async {
   LocaleSettings.setLocale(savedLocale);
 
   // Configure image cache for large libraries
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 500 << 20; // 500MB
-  PaintingBinding.instance.imageCache.maximumSize = 500; // 500 images
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20; // 200MB
 
   // Initialize services in parallel where possible
   final futures = <Future<void>>[];
