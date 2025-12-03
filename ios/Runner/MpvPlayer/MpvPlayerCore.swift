@@ -1,5 +1,5 @@
-import UIKit
 import Libmpv
+import UIKit
 
 /// Protocol for receiving player events
 protocol MpvPlayerDelegate: AnyObject {
@@ -27,7 +27,7 @@ private class MetalLayer: CAMetalLayer {
             if Thread.isMainThread {
                 super.wantsExtendedDynamicRangeContent = newValue
             } else {
-                DispatchQueue.main.async {
+                DispatchQueue.main.sync {
                     super.wantsExtendedDynamicRangeContent = newValue
                 }
             }
@@ -41,6 +41,7 @@ class MpvPlayerCore: NSObject {
     // MARK: - Properties
 
     private var metalLayer: MetalLayer?
+    private var containerView: UIView?  // Container for proper EDR activation
     private var mpv: OpaquePointer?
     private weak var window: UIWindow?
     private lazy var queue = DispatchQueue(label: "mpv", qos: .userInitiated)
@@ -48,6 +49,10 @@ class MpvPlayerCore: NSObject {
     weak var delegate: MpvPlayerDelegate?
 
     private(set) var isInitialized = false
+
+    // HDR settings
+    private var hdrEnabled = true  // User preference for HDR
+    private var lastSigPeak: Double = 0.0  // Last known sig-peak for re-evaluation
 
     // MARK: - Initialization
 
@@ -59,25 +64,36 @@ class MpvPlayerCore: NSObject {
 
         self.window = window
 
+        // Create container view for proper EDR activation
+        // EDR requires the CAMetalLayer to be in a UIView hierarchy, not just window.layer
+        let container = UIView(frame: window.bounds)
+        container.backgroundColor = .clear
+        container.isUserInteractionEnabled = false
+
         // Create Metal layer for video rendering
         let layer = MetalLayer()
-        layer.frame = window.bounds
+        layer.frame = container.bounds
         layer.contentsScale = UIScreen.main.nativeScale
         layer.framebufferOnly = true
         layer.backgroundColor = UIColor.black.cgColor
 
+        container.layer.addSublayer(layer)
+        containerView = container
         metalLayer = layer
 
-        // Add Metal layer to WINDOW layer (behind Flutter's view controller)
-        window.layer.insertSublayer(layer, at: 0)
+        // Add container view to window (behind Flutter's root view controller)
+        window.insertSubview(container, at: 0)
 
-        print("[MpvPlayerCore] Metal layer added to window, frame: \(layer.frame)")
+        print(
+            "[MpvPlayerCore] Metal layer added to window via container view, frame: \(layer.frame)")
 
         // Initialize MPV with this Metal layer
         guard setupMpv() else {
             print("[MpvPlayerCore] Failed to setup MPV")
             layer.removeFromSuperlayer()
+            container.removeFromSuperview()
             metalLayer = nil
+            containerView = nil
             return false
         }
 
@@ -100,9 +116,9 @@ class MpvPlayerCore: NSObject {
 
         // Logging
         #if DEBUG
-        checkError(mpv_request_log_messages(mpv, "info"))
+            checkError(mpv_request_log_messages(mpv, "info"))
         #else
-        checkError(mpv_request_log_messages(mpv, "warn"))
+            checkError(mpv_request_log_messages(mpv, "warn"))
         #endif
 
         // Set the Metal layer as the render target (must use local var for &)
@@ -114,21 +130,29 @@ class MpvPlayerCore: NSObject {
         checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
         checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
+        checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "yes"))
 
         // Initialize MPV
         let initResult = mpv_initialize(mpv)
         if initResult < 0 {
-            print("[MpvPlayerCore] mpv_initialize failed: \(String(cString: mpv_error_string(initResult)))")
+            print(
+                "[MpvPlayerCore] mpv_initialize failed: \(String(cString: mpv_error_string(initResult)))"
+            )
             mpv_terminate_destroy(mpv)
             mpv = nil
             return false
         }
 
         // Set up wakeup callback for event handling
-        mpv_set_wakeup_callback(mpv, { ctx in
-            let core = Unmanaged<MpvPlayerCore>.fromOpaque(ctx!).takeUnretainedValue()
-            core.readEvents()
-        }, UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()))
+        mpv_set_wakeup_callback(
+            mpv,
+            { ctx in
+                let core = Unmanaged<MpvPlayerCore>.fromOpaque(ctx!).takeUnretainedValue()
+                core.readEvents()
+            }, UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()))
+
+        // Observe video-params/sig-peak for HDR detection
+        mpv_observe_property(mpv, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
 
         print("[MpvPlayerCore] MPV initialized successfully")
         return true
@@ -171,7 +195,31 @@ class MpvPlayerCore: NSObject {
 
     func setProperty(_ name: String, value: String) {
         guard mpv != nil else { return }
+
+        // Handle custom HDR toggle property
+        if name == "hdr-enabled" {
+            let enabled = value == "yes" || value == "true" || value == "1"
+            setHDREnabled(enabled)
+            return
+        }
+
         mpv_set_property_string(mpv, name, value)
+    }
+
+    /// Enable or disable HDR mode
+    func setHDREnabled(_ enabled: Bool) {
+        hdrEnabled = enabled
+        print("[MpvPlayerCore] HDR enabled: \(enabled)")
+
+        // Update MPV's target-colorspace-hint
+        if mpv != nil {
+            mpv_set_property_string(mpv, "target-colorspace-hint", enabled ? "yes" : "no")
+        }
+
+        // Re-evaluate EDR mode with current sig-peak
+        DispatchQueue.main.async {
+            self.updateEDRMode(sigPeak: self.lastSigPeak)
+        }
     }
 
     func getProperty(_ name: String) -> String? {
@@ -204,27 +252,27 @@ class MpvPlayerCore: NSObject {
     // MARK: - Visibility
 
     func setVisible(_ visible: Bool) {
-        guard let layer = metalLayer else { return }
+        guard let container = containerView else { return }
 
         if visible {
-            // Re-insert at the bottom of the window layer stack
-            layer.removeFromSuperlayer()
-            if let windowLayer = window?.layer {
-                windowLayer.insertSublayer(layer, at: 0)
-            }
+            // Re-insert at the bottom of the window view stack
+            container.removeFromSuperview()
+            window?.insertSubview(container, at: 0)
         }
 
-        layer.isHidden = !visible
+        container.isHidden = !visible
         print("[MpvPlayerCore] setVisible(\(visible))")
     }
 
     func updateFrame(_ frame: CGRect? = nil) {
-        guard let metalLayer = metalLayer else { return }
+        guard let metalLayer = metalLayer, let container = containerView else { return }
 
         if let frame = frame {
-            metalLayer.frame = frame
+            container.frame = frame
+            metalLayer.frame = container.bounds
         } else if let window = window {
-            metalLayer.frame = window.bounds
+            container.frame = window.bounds
+            metalLayer.frame = container.bounds
         }
 
         // Update drawable size for proper scaling
@@ -234,7 +282,7 @@ class MpvPlayerCore: NSObject {
             height: metalLayer.frame.height * scale
         )
 
-        print("[MpvPlayerCore] updateFrame: \(metalLayer.frame)")
+        print("[MpvPlayerCore] updateFrame: \(container.frame)")
     }
 
     // MARK: - Private Helpers
@@ -244,7 +292,7 @@ class MpvPlayerCore: NSObject {
 
         // Build array of C strings for mpv_command
         var cargs: [UnsafeMutablePointer<CChar>?] = ([cmd] + args).map { strdup($0) }
-        cargs.append(nil) // null-terminate
+        cargs.append(nil)  // null-terminate
         defer {
             for ptr in cargs {
                 free(ptr)
@@ -300,7 +348,9 @@ class MpvPlayerCore: NSObject {
             if let msgPtr = event.data?.assumingMemoryBound(to: mpv_event_log_message.self) {
                 let msg = msgPtr.pointee
                 if let prefix = msg.prefix, let level = msg.level, let text = msg.text {
-                    print("[MPV:\(String(cString: prefix))] \(String(cString: level)): \(String(cString: text))", terminator: "")
+                    print(
+                        "[MPV:\(String(cString: prefix))] \(String(cString: level)): \(String(cString: text))",
+                        terminator: "")
                 }
             }
 
@@ -339,9 +389,41 @@ class MpvPlayerCore: NSObject {
             break
         }
 
+        // Handle sig-peak for HDR/EDR activation
+        if name == "video-params/sig-peak", let sigPeak = value as? Double {
+            lastSigPeak = sigPeak
+            DispatchQueue.main.async {
+                self.updateEDRMode(sigPeak: sigPeak)
+            }
+        }
+
         DispatchQueue.main.async {
             self.delegate?.onPropertyChange(name: name, value: value)
         }
+    }
+
+    // MARK: - HDR/EDR Support
+
+    private func updateEDRMode(sigPeak: Double) {
+        guard let layer = metalLayer else { return }
+
+        // Check if screen supports EDR (iOS 16+)
+        var edrHeadroom: CGFloat = 1.0
+        if #available(iOS 16.0, *) {
+            edrHeadroom = containerView?.window?.screen.potentialEDRHeadroom ?? 1.0
+        }
+
+        let isHDRContent = sigPeak > 1.0
+        let screenSupportsEDR = edrHeadroom > 1.0
+        let shouldEnableEDR = hdrEnabled && isHDRContent && screenSupportsEDR
+
+        if #available(iOS 16.0, *) {
+            layer.wantsExtendedDynamicRangeContent = shouldEnableEDR
+        }
+
+        print(
+            "[MpvPlayerCore] EDR mode: \(shouldEnableEDR) (hdrEnabled: \(hdrEnabled), sigPeak: \(sigPeak), headroom: \(edrHeadroom))"
+        )
     }
 
     private func convertNode(_ node: mpv_node) -> Any? {
@@ -373,7 +455,8 @@ class MpvPlayerCore: NSObject {
             var dict = [String: Any]()
             for i in 0..<Int(list.num) {
                 if let key = list.keys?[i].map({ String(cString: $0) }),
-                   let val = convertNode(list.values[i]) {
+                    let val = convertNode(list.values[i])
+                {
                     dict[key] = val
                 }
             }
@@ -401,6 +484,8 @@ class MpvPlayerCore: NSObject {
         }
         metalLayer?.removeFromSuperlayer()
         metalLayer = nil
+        containerView?.removeFromSuperview()
+        containerView = nil
         isInitialized = false
         print("[MpvPlayerCore] Disposed")
     }

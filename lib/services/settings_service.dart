@@ -18,6 +18,7 @@ class SettingsService {
   static const String _keyKeyboardShortcuts = 'keyboard_shortcuts';
   static const String _keyKeyboardHotkeys = 'keyboard_hotkeys';
   static const String _keyEnableHardwareDecoding = 'enable_hardware_decoding';
+  static const String _keyEnableHDR = 'enable_hdr';
   static const String _keyPreferredVideoCodec = 'preferred_video_codec';
   static const String _keyPreferredAudioCodec = 'preferred_audio_codec';
   static const String _keyLibraryDensity = 'library_density';
@@ -103,6 +104,15 @@ class SettingsService {
   bool getEnableHardwareDecoding() {
     return _prefs.getBool(_keyEnableHardwareDecoding) ??
         true; // Default enabled
+  }
+
+  // HDR (High Dynamic Range)
+  Future<void> setEnableHDR(bool enabled) async {
+    await _prefs.setBool(_keyEnableHDR, enabled);
+  }
+
+  bool getEnableHDR() {
+    return _prefs.getBool(_keyEnableHDR) ?? true; // Default enabled
   }
 
   // Preferred Video Codec
@@ -852,6 +862,7 @@ class SettingsService {
       _prefs.remove(_keyKeyboardShortcuts),
       _prefs.remove(_keyKeyboardHotkeys),
       _prefs.remove(_keyEnableHardwareDecoding),
+      _prefs.remove(_keyEnableHDR),
       _prefs.remove(_keyPreferredVideoCodec),
       _prefs.remove(_keyPreferredAudioCodec),
       _prefs.remove(_keyLibraryDensity),

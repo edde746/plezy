@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../../mpv/mpv.dart';
@@ -102,12 +104,32 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   _SettingsView _currentView = _SettingsView.menu;
   late int _audioSyncOffset;
   late int _subtitleSyncOffset;
+  bool _enableHDR = true;
 
   @override
   void initState() {
     super.initState();
     _audioSyncOffset = widget.audioSyncOffset;
     _subtitleSyncOffset = widget.subtitleSyncOffset;
+    _loadHDRSetting();
+  }
+
+  Future<void> _loadHDRSetting() async {
+    final settings = await SettingsService.getInstance();
+    setState(() {
+      _enableHDR = settings.getEnableHDR();
+    });
+  }
+
+  Future<void> _toggleHDR() async {
+    final newValue = !_enableHDR;
+    final settings = await SettingsService.getInstance();
+    await settings.setEnableHDR(newValue);
+    setState(() {
+      _enableHDR = newValue;
+    });
+    // Apply to player immediately
+    await widget.player.setProperty('hdr-enabled', newValue ? 'yes' : 'no');
   }
 
   void _navigateTo(_SettingsView view) {
@@ -251,6 +273,22 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           isHighlighted: _subtitleSyncOffset != 0,
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),
+
+        // HDR Toggle (iOS and macOS only)
+        if (Platform.isIOS || Platform.isMacOS)
+          ListTile(
+            leading: Icon(
+              Icons.hdr_strong,
+              color: _enableHDR ? Colors.amber : Colors.white70,
+            ),
+            title: const Text('HDR', style: TextStyle(color: Colors.white)),
+            trailing: Switch(
+              value: _enableHDR,
+              onChanged: (_) => _toggleHDR(),
+              activeColor: Colors.amber,
+            ),
+            onTap: _toggleHDR,
+          ),
 
         // Audio Output Device (Desktop only)
         if (isDesktop)

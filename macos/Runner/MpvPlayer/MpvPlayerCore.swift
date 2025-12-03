@@ -48,6 +48,10 @@ class MpvPlayerCore: NSObject {
 
     private(set) var isInitialized = false
 
+    // HDR settings
+    private var hdrEnabled = true  // User preference for HDR
+    private var lastSigPeak: Double = 0.0  // Last known sig-peak for re-evaluation
+
     // MARK: - Initialization
 
     func initialize(in window: NSWindow) -> Bool {
@@ -118,6 +122,7 @@ class MpvPlayerCore: NSObject {
         checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
         checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
+        checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "yes"))
 
         // Initialize MPV
         let initResult = mpv_initialize(mpv)
@@ -134,6 +139,9 @@ class MpvPlayerCore: NSObject {
             core.readEvents()
         }, UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()))
 
+        // Observe video-params/sig-peak for HDR detection
+        mpv_observe_property(mpv, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
+
         print("[MpvPlayerCore] MPV initialized successfully")
         return true
     }
@@ -142,7 +150,31 @@ class MpvPlayerCore: NSObject {
 
     func setProperty(_ name: String, value: String) {
         guard mpv != nil else { return }
+
+        // Handle custom HDR toggle property
+        if name == "hdr-enabled" {
+            let enabled = value == "yes" || value == "true" || value == "1"
+            setHDREnabled(enabled)
+            return
+        }
+
         mpv_set_property_string(mpv, name, value)
+    }
+
+    /// Enable or disable HDR mode
+    func setHDREnabled(_ enabled: Bool) {
+        hdrEnabled = enabled
+        print("[MpvPlayerCore] HDR enabled: \(enabled)")
+
+        // Update MPV's target-colorspace-hint
+        if mpv != nil {
+            mpv_set_property_string(mpv, "target-colorspace-hint", enabled ? "yes" : "no")
+        }
+
+        // Re-evaluate EDR mode with current sig-peak
+        DispatchQueue.main.async {
+            self.updateEDRMode(sigPeak: self.lastSigPeak)
+        }
     }
 
     func getProperty(_ name: String) -> String? {
@@ -312,9 +344,39 @@ class MpvPlayerCore: NSObject {
             break
         }
 
+        // Handle sig-peak for HDR/EDR activation
+        if name == "video-params/sig-peak", let sigPeak = value as? Double {
+            lastSigPeak = sigPeak
+            DispatchQueue.main.async {
+                self.updateEDRMode(sigPeak: sigPeak)
+            }
+        }
+
         DispatchQueue.main.async {
             self.delegate?.onPropertyChange(name: name, value: value)
         }
+    }
+
+    // MARK: - HDR/EDR Support
+
+    private func updateEDRMode(sigPeak: Double) {
+        guard let layer = metalLayer else { return }
+
+        // Check if screen supports EDR
+        var edrHeadroom: CGFloat = 1.0
+        if let screen = window?.screen ?? NSScreen.main {
+            edrHeadroom = screen.maximumExtendedDynamicRangeColorComponentValue
+        }
+
+        let isHDRContent = sigPeak > 1.0
+        let screenSupportsEDR = edrHeadroom > 1.0
+        let shouldEnableEDR = hdrEnabled && isHDRContent && screenSupportsEDR
+
+        layer.wantsExtendedDynamicRangeContent = shouldEnableEDR
+
+        print(
+            "[MpvPlayerCore] EDR mode: \(shouldEnableEDR) (hdrEnabled: \(hdrEnabled), sigPeak: \(sigPeak), headroom: \(edrHeadroom))"
+        )
     }
 
     private func convertNode(_ node: mpv_node) -> Any? {

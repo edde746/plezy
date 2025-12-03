@@ -248,11 +248,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Create player
       player = Player();
 
-      // Configure player properties
-      await player!.setProperty(
-        'target-colorspace-hint',
-        'yes',
-      ); // Enable HDR passthrough
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
       await player!.setProperty('sub-fonts-dir', 'assets');
       await player!.setProperty('sub-font', 'Go Noto Current-Regular');
@@ -301,6 +296,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Platform-specific settings
       if (Platform.isIOS) {
         await player!.setProperty('audio-exclusive', 'yes');
+      }
+
+      // HDR is controlled via custom hdr-enabled property on iOS/macOS
+      if (Platform.isIOS || Platform.isMacOS) {
+        final enableHDR = settingsService.getEnableHDR();
+        await player!.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
       }
 
       // Apply audio sync offset
