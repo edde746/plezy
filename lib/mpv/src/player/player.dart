@@ -178,6 +178,13 @@ abstract class Player {
   /// controls are hidden. On other platforms, this is a no-op.
   Future<void> setControlsVisible(bool visible);
 
+  /// Update the video frame/surface dimensions.
+  ///
+  /// On iOS/macOS, this updates the Metal layer's frame to match the current
+  /// window size. Call this when the layout changes (e.g., device rotation).
+  /// On other platforms, this is a no-op.
+  Future<void> updateFrame();
+
   // ============================================
   // Lifecycle
   // ============================================

@@ -1184,14 +1184,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                       constraints.maxHeight,
                     );
 
-                    // Update player size in video filter manager
-                    if (_videoFilterManager != null) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          _videoFilterManager!.updatePlayerSize(newSize);
-                        }
-                      });
-                    }
+                    // Update player size in video filter manager and native layer
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted && player != null) {
+                        _videoFilterManager?.updatePlayerSize(newSize);
+                        // Update Metal layer frame on iOS/macOS for rotation
+                        player!.updateFrame();
+                      }
+                    });
 
                     return Video(
                       player: player!,

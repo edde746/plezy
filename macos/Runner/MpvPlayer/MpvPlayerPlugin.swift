@@ -76,6 +76,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
         case "isInitialized":
             result(playerCore?.isInitialized ?? false)
 
+        case "updateFrame":
+            handleUpdateFrame(result: result)
+
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -194,6 +197,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
                 self?.playerCore?.updateFrame()
             }
 
+            result(nil)
+        }
+    }
+
+    private func handleUpdateFrame(result: @escaping FlutterResult) {
+        DispatchQueue.main.async { [weak self] in
+            self?.playerCore?.updateFrame()
             result(nil)
         }
     }

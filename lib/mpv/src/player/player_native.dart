@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
@@ -489,6 +490,16 @@ class PlayerNative implements Player {
   @override
   Future<void> setControlsVisible(bool visible) async {
     // No-op on most platforms. Override on Linux for transparency workaround.
+  }
+
+  @override
+  Future<void> updateFrame() async {
+    _checkDisposed();
+    if (!_initialized) return;
+    // Only iOS and macOS use Metal layer that needs frame updates
+    if (Platform.isIOS || Platform.isMacOS) {
+      await _methodChannel.invokeMethod('updateFrame');
+    }
   }
 
   // ============================================
