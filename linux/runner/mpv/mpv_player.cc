@@ -70,6 +70,11 @@ bool MpvPlayer::Initialize(GtkGLArea* gl_area) {
   mpv_set_option_string(mpv_, "vo", "libmpv");  // Render via mpv_render_context_render()
   mpv_set_option_string(mpv_, "hwdec", "auto");
   mpv_set_option_string(mpv_, "keep-open", "yes");
+
+  // HDR tone mapping - ensures HDR content is properly converted to SDR
+  mpv_set_option_string(mpv_, "tone-mapping", "auto");
+  mpv_set_option_string(mpv_, "target-colorspace-hint", "no");
+  mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
   mpv_set_option_string(mpv_, "idle", "yes");
   mpv_set_option_string(mpv_, "input-default-bindings", "no");
   mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
