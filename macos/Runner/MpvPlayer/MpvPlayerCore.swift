@@ -26,7 +26,7 @@ private class MetalLayer: CAMetalLayer {
             if Thread.isMainThread {
                 super.wantsExtendedDynamicRangeContent = newValue
             } else {
-                DispatchQueue.main.sync {
+                DispatchQueue.main.async {
                     super.wantsExtendedDynamicRangeContent = newValue
                 }
             }
@@ -117,7 +117,7 @@ class MpvPlayerCore: NSObject {
         checkError(mpv_set_option_string(mpv, "vo", "gpu-next"))
         checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
         checkError(mpv_set_option_string(mpv, "gpu-context", "moltenvk"))
-        // hwdec is set from Flutter via setProperty based on user preference
+        checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
 
         // Initialize MPV
         let initResult = mpv_initialize(mpv)
