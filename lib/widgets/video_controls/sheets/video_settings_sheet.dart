@@ -274,8 +274,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),
 
-        // HDR Toggle (iOS and macOS only)
-        if (Platform.isIOS || Platform.isMacOS)
+        // HDR Toggle (iOS, macOS, and Windows)
+        if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
           ListTile(
             leading: Icon(
               Icons.hdr_strong,

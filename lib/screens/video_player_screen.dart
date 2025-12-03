@@ -298,8 +298,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         await player!.setProperty('audio-exclusive', 'yes');
       }
 
-      // HDR is controlled via custom hdr-enabled property on iOS/macOS
-      if (Platform.isIOS || Platform.isMacOS) {
+      // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
+      if (Platform.isIOS || Platform.isMacOS || Platform.isWindows) {
         final enableHDR = settingsService.getEnableHDR();
         await player!.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
       }

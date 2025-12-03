@@ -77,6 +77,13 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
   mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
   mpv_set_option_string(mpv_, "osc", "no");
 
+  // HDR passthrough - let mpv handle color space
+  mpv_set_option_string(mpv_, "target-colorspace-hint", "yes");
+
+  // Fallback tone mapping when display doesn't support HDR
+  mpv_set_option_string(mpv_, "tone-mapping", "auto");
+  mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
+
   // Enable logging
   mpv_request_log_messages(mpv_, "v");
 
@@ -95,6 +102,9 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
   }
 
   LogToFile("MPV: Initialization successful");
+
+  // Observe video-params/sig-peak for HDR detection
+  mpv_observe_property(mpv_, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE);
 
   // Start event loop.
   StartEventLoop();
@@ -134,6 +144,14 @@ void MpvPlayer::Command(const std::vector<std::string>& args) {
 
 void MpvPlayer::SetProperty(const std::string& name, const std::string& value) {
   if (!mpv_) return;
+
+  // Handle custom HDR toggle property (same pattern as iOS/macOS)
+  if (name == "hdr-enabled") {
+    bool enabled = (value == "yes" || value == "true" || value == "1");
+    SetHDREnabled(enabled);
+    return;
+  }
+
   mpv_set_property_string(mpv_, name.c_str(), value.c_str());
 }
 
@@ -297,6 +315,14 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
           break;
       }
 
+      // Handle sig-peak for HDR detection
+      if (strcmp(prop->name, "video-params/sig-peak") == 0 &&
+          prop->format == MPV_FORMAT_DOUBLE && prop->data) {
+        double sigPeak = *static_cast<double*>(prop->data);
+        last_sig_peak_ = sigPeak;
+        UpdateHDRMode(sigPeak);
+      }
+
       SendPropertyChange(prop->name, &node);
       break;
     }
@@ -378,6 +404,37 @@ void MpvPlayer::SendEvent(const std::string& name,
   if (event_callback_) {
     event_callback_(event);
   }
+}
+
+void MpvPlayer::SetHDREnabled(bool enabled) {
+  hdr_enabled_ = enabled;
+  char msg[128];
+  snprintf(msg, sizeof(msg), "[MpvPlayer] HDR enabled: %s", enabled ? "true" : "false");
+  LogToFile(msg);
+
+  if (mpv_) {
+    mpv_set_property_string(mpv_, "target-colorspace-hint", enabled ? "yes" : "no");
+  }
+
+  UpdateHDRMode(last_sig_peak_);
+}
+
+void MpvPlayer::UpdateHDRMode(double sigPeak) {
+  bool isHDRContent = sigPeak > 1.0;
+
+  char msg[256];
+  snprintf(msg, sizeof(msg),
+           "[MpvPlayer] HDR mode update (hdrEnabled: %s, sigPeak: %.2f, isHDR: %s)",
+           hdr_enabled_ ? "true" : "false",
+           sigPeak,
+           isHDRContent ? "true" : "false");
+  LogToFile(msg);
+
+  // On Windows, mpv handles HDR passthrough automatically when:
+  // - target-colorspace-hint=yes
+  // - Windows HDR is enabled in Display Settings
+  // - Display supports HDR
+  // No explicit DXGI calls needed - mpv's gpu/d3d11 handles it
 }
 
 }  // namespace mpv

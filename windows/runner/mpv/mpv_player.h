@@ -83,6 +83,14 @@ class MpvPlayer {
 
   uint64_t next_reply_userdata_ = 1;
   std::map<std::string, uint64_t> observed_properties_;
+
+  // HDR state
+  bool hdr_enabled_ = true;      // User preference
+  double last_sig_peak_ = 0.0;   // Last known sig-peak for HDR content detection
+
+  // HDR methods
+  void SetHDREnabled(bool enabled);
+  void UpdateHDRMode(double sigPeak);
 };
 
 }  // namespace mpv
