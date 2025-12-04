@@ -202,9 +202,13 @@ class _HubSectionState extends State<HubSection> {
                       children: [
                         Icon(widget.icon),
                         const SizedBox(width: 8),
-                        Text(
-                          widget.hub.title,
-                          style: Theme.of(context).textTheme.titleLarge,
+                        Expanded(
+                          child: Text(
+                            widget.hub.title,
+                            style: Theme.of(context).textTheme.titleLarge,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
                         if (widget.hub.more) ...[
                           const SizedBox(width: 4),

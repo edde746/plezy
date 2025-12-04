@@ -1040,12 +1040,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                         mediaQuery.devicePixelRatio)
                                     .clamp(900, 2400)
                                     .round(),
-                            memCacheHeight:
-                                (mediaQuery.size.height *
-                                        mediaQuery.devicePixelRatio *
-                                        0.7)
-                                    .clamp(600, 1600)
-                                    .round(),
                             placeholder: (context, url) => Container(
                               color: Theme.of(
                                 context,
