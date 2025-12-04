@@ -1035,11 +1035,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           return CachedNetworkImage(
                             imageUrl: imageUrl,
                             fit: BoxFit.cover,
-                            memCacheWidth:
-                                (mediaQuery.size.width *
-                                        mediaQuery.devicePixelRatio)
-                                    .clamp(900, 2400)
-                                    .round(),
                             placeholder: (context, url) => Container(
                               color: Theme.of(
                                 context,
