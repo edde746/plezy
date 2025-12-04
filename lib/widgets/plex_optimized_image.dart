@@ -196,25 +196,6 @@ class PlexPosterImage extends PlexOptimizedImage {
   }) : super(fallbackIcon: Icons.movie, imageType: ImageType.poster);
 }
 
-/// Specialized version for art/background images
-class PlexArtImage extends PlexOptimizedImage {
-  const PlexArtImage({
-    super.key,
-    required super.client,
-    required super.imagePath,
-    super.width,
-    super.height,
-    super.fit = BoxFit.cover,
-    super.filterQuality = FilterQuality.medium,
-    super.placeholder,
-    super.errorWidget,
-    super.fadeInDuration = const Duration(milliseconds: 300),
-    super.enableTranscoding = true,
-    super.cacheKey,
-    super.alignment = Alignment.center,
-  }) : super(fallbackIcon: Icons.wallpaper, imageType: ImageType.art);
-}
-
 /// Specialized version for episode thumbnails
 class PlexThumbImage extends PlexOptimizedImage {
   const PlexThumbImage({
