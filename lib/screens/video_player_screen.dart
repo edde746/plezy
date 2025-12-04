@@ -254,8 +254,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       player = Player();
 
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
-      await player!.setProperty('sub-fonts-dir', 'assets');
-      await player!.setProperty('sub-font', 'Go Noto Current-Regular');
       await player!.setProperty(
         'demuxer-max-bytes',
         bufferSizeBytes.toString(),
