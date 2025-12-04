@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
@@ -162,6 +163,13 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
   /// Handle back key press - focus bottom navigation
   KeyEventResult _handleBackKey(FocusNode node, KeyEvent event) {
     if (isBackKeyEvent(event)) {
+      // Allow backspace to work normally in search field when it has content
+      if (event.logicalKey == LogicalKeyboardKey.backspace &&
+          _searchFocusNode.hasFocus &&
+          _searchController.text.isNotEmpty) {
+        return KeyEventResult.ignored;
+      }
+
       BackNavigationScope.of(context)?.focusBottomNav();
       return KeyEventResult.handled;
     }
