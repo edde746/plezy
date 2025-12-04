@@ -1,8 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../i18n/strings.g.dart';
+import '../widgets/plex_optimized_image.dart';
+import '../utils/plex_image_helper.dart';
+import '../widgets/plex_optimized_image.dart';
 import '../mixins/keyboard_long_press_mixin.dart';
 import '../widgets/focus/focus_indicator.dart';
 import '../client/plex_client.dart';
@@ -419,8 +423,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       Builder(
                         builder: (context) {
                           final client = _getClientForMetadata(context);
+                          final mediaQuery = MediaQuery.of(context);
+                          final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+                            client: client,
+                            thumbPath: metadata.art,
+                            maxWidth: mediaQuery.size.width,
+                            maxHeight: mediaQuery.size.height * 0.6,
+                            devicePixelRatio: mediaQuery.devicePixelRatio,
+                            imageType: ImageType.art,
+                          );
+
                           return CachedNetworkImage(
-                            imageUrl: client.getThumbnailUrl(metadata.art),
+                            imageUrl: imageUrl,
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
                               color: Theme.of(
@@ -480,13 +494,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       final client = _getClientForMetadata(
                                         context,
                                       );
+                                      final dpr = MediaQuery.of(
+                                        context,
+                                      ).devicePixelRatio;
+                                      final logoUrl =
+                                          PlexImageHelper.getOptimizedImageUrl(
+                                            client: client,
+                                            thumbPath: metadata.clearLogo,
+                                            maxWidth: 400,
+                                            maxHeight: 120,
+                                            devicePixelRatio: dpr,
+                                            imageType: ImageType.logo,
+                                          );
+
                                       return CachedNetworkImage(
-                                        imageUrl: client.getThumbnailUrl(
-                                          metadata.clearLogo,
-                                        ),
+                                        imageUrl: logoUrl,
                                         filterQuality: FilterQuality.medium,
                                         fit: BoxFit.contain,
                                         alignment: Alignment.centerLeft,
+                                        memCacheWidth: (400 * dpr)
+                                            .clamp(200, 800)
+                                            .round(),
                                         placeholder: (context, url) => Align(
                                           alignment: Alignment.centerLeft,
                                           child: Text(
@@ -1263,10 +1291,9 @@ class _FocusableSeasonCardState extends State<_FocusableSeasonCard>
                       if (season.thumb != null)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(6),
-                          child: CachedNetworkImage(
-                            imageUrl: widget.client.getThumbnailUrl(
-                              season.thumb,
-                            ),
+                          child: PlexPosterImage(
+                            client: widget.client,
+                            imagePath: season.thumb,
                             width: 80,
                             height: 120,
                             fit: BoxFit.cover,

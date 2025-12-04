@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../client/plex_client.dart';
+import '../widgets/plex_optimized_image.dart';
 import '../widgets/focus/focus_indicator.dart';
 import '../models/plex_metadata.dart';
 import '../utils/keyboard_utils.dart';
@@ -299,32 +299,26 @@ class _EpisodeCardState extends State<_EpisodeCard>
                           child: AspectRatio(
                             aspectRatio: 16 / 9,
                             child: episode.thumb != null
-                                ? Builder(
-                                    builder: (context) {
-                                      return CachedNetworkImage(
-                                        imageUrl: widget.client.getThumbnailUrl(
-                                          episode.thumb,
+                                ? PlexThumbImage(
+                                    client: widget.client,
+                                    imagePath: episode.thumb,
+                                    filterQuality: FilterQuality.medium,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                          child: const Icon(
+                                            Icons.movie,
+                                            size: 32,
+                                          ),
                                         ),
-                                        filterQuality: FilterQuality.medium,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) =>
-                                            Container(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .surfaceContainerHighest,
-                                            ),
-                                        errorWidget: (context, url, error) =>
-                                            Container(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .surfaceContainerHighest,
-                                              child: const Icon(
-                                                Icons.movie,
-                                                size: 32,
-                                              ),
-                                            ),
-                                      );
-                                    },
                                   )
                                 : Container(
                                     color: Theme.of(

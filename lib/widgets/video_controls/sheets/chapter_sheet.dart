@@ -6,6 +6,7 @@ import '../../../models/plex_media_info.dart';
 import '../../../utils/duration_formatter.dart';
 import '../../../utils/provider_extensions.dart';
 import 'base_video_control_sheet.dart';
+import '../../plex_optimized_image.dart';
 
 /// Bottom sheet for selecting chapters
 class ChapterSheet extends StatelessWidget {
@@ -98,22 +99,17 @@ class ChapterSheet extends StatelessWidget {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(4),
-                            child: Builder(
-                              builder: (context) {
-                                final client = _getClientForChapters(context);
-                                return Image.network(
-                                  client.getThumbnailUrl(chapter.thumb),
-                                  width: 60,
-                                  height: 34,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(
-                                        Icons.image,
-                                        color: Colors.white54,
-                                        size: 34,
-                                      ),
-                                );
-                              },
+                            child: PlexThumbImage(
+                              client: _getClientForChapters(context),
+                              imagePath: chapter.thumb,
+                              width: 60,
+                              height: 34,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) => const Icon(
+                                Icons.image,
+                                color: Colors.white54,
+                                size: 34,
+                              ),
                             ),
                           ),
                           if (isCurrentChapter)

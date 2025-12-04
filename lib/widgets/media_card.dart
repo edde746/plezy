@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'focus/focus_indicator.dart';
 import 'hub_navigation_controller.dart';
@@ -22,6 +21,7 @@ import '../screens/collection_detail_screen.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
 import 'media_context_menu.dart';
+import 'plex_optimized_image.dart';
 
 class MediaCard extends StatefulWidget {
   final dynamic item; // Can be PlexMetadata or PlexPlaylist
@@ -972,48 +972,30 @@ Widget _buildPosterImage(BuildContext context, dynamic item) {
   if (item is PlexPlaylist) {
     posterUrl = item.displayImage;
     fallbackIcon = Icons.playlist_play;
+
+    return PlexPlaylistImage(
+      client: _getClientForItem(context, item),
+      imagePath: posterUrl,
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.cover,
+    );
   } else if (item is PlexMetadata) {
     final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
     posterUrl = item.posterThumb(useSeasonPoster: useSeasonPoster);
-  }
 
-  if (posterUrl != null) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final client = _getClientForItem(context, item);
-        final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-        // Fall back to a reasonable size if constraints are unbounded.
-        final targetWidth =
-            (constraints.maxWidth.isFinite ? constraints.maxWidth : 160) *
-            devicePixelRatio;
-        final targetHeight =
-            (constraints.maxHeight.isFinite ? constraints.maxHeight : 240) *
-            devicePixelRatio;
-
-        return CachedNetworkImage(
-          imageUrl: client.getThumbnailUrl(posterUrl!),
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-          // Decode close to the rendered size to keep memory in check when
-          // many posters load at once.
-          memCacheWidth: targetWidth.clamp(120, 800).round(),
-          memCacheHeight: targetHeight.clamp(180, 1200).round(),
-          filterQuality: FilterQuality.medium,
-          fadeInDuration: const Duration(milliseconds: 300),
-          placeholder: (context, url) => const SkeletonLoader(),
-          errorWidget: (context, url, error) => Container(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Center(child: Icon(fallbackIcon, size: 40)),
-          ),
-        );
-      },
-    );
-  } else {
-    return SkeletonLoader(
-      child: Center(child: Icon(fallbackIcon, size: 40, color: Colors.white54)),
+    return PlexPosterImage(
+      client: _getClientForItem(context, item),
+      imagePath: posterUrl,
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.cover,
     );
   }
+
+  return SkeletonLoader(
+    child: Center(child: Icon(fallbackIcon, size: 40, color: Colors.white54)),
+  );
 }
 
 /// Overlay widget for poster showing watched indicator and progress bar

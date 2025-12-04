@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../client/plex_client.dart';
+import '../widgets/plex_optimized_image.dart';
+import '../utils/plex_image_helper.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_hub.dart';
 import '../providers/multi_server_provider.dart';
@@ -1024,21 +1026,27 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: Builder(
                         builder: (context) {
                           final client = _getClientForItem(heroItem);
+                          final mediaQuery = MediaQuery.of(context);
+                          final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+                            client: client,
+                            thumbPath: heroItem.art ?? heroItem.grandparentArt,
+                            maxWidth: mediaQuery.size.width,
+                            maxHeight: mediaQuery.size.height * 0.7,
+                            devicePixelRatio: mediaQuery.devicePixelRatio,
+                            imageType: ImageType.art,
+                          );
+
                           return CachedNetworkImage(
-                            imageUrl: client.getThumbnailUrl(
-                              heroItem.art ?? heroItem.grandparentArt,
-                            ),
+                            imageUrl: imageUrl,
                             fit: BoxFit.cover,
                             memCacheWidth:
-                                (MediaQuery.of(context).size.width *
-                                        MediaQuery.of(context).devicePixelRatio)
+                                (mediaQuery.size.width *
+                                        mediaQuery.devicePixelRatio)
                                     .clamp(900, 2400)
                                     .round(),
                             memCacheHeight:
-                                (MediaQuery.of(context).size.height *
-                                        MediaQuery.of(
-                                          context,
-                                        ).devicePixelRatio *
+                                (mediaQuery.size.height *
+                                        mediaQuery.devicePixelRatio *
                                         0.7)
                                     .clamp(600, 1600)
                                     .round(),
@@ -1103,19 +1111,26 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             child: Builder(
                               builder: (context) {
                                 final client = _getClientForItem(heroItem);
+                                final dpr = MediaQuery.of(
+                                  context,
+                                ).devicePixelRatio;
+                                final logoUrl =
+                                    PlexImageHelper.getOptimizedImageUrl(
+                                      client: client,
+                                      thumbPath: heroItem.clearLogo,
+                                      maxWidth: 400,
+                                      maxHeight: 120,
+                                      devicePixelRatio: dpr,
+                                      imageType: ImageType.logo,
+                                    );
+
                                 return CachedNetworkImage(
-                                  imageUrl: client.getThumbnailUrl(
-                                    heroItem.clearLogo,
-                                  ),
+                                  imageUrl: logoUrl,
                                   filterQuality: FilterQuality.medium,
                                   fit: BoxFit.contain,
-                                  memCacheWidth:
-                                      (400 *
-                                              MediaQuery.of(
-                                                context,
-                                              ).devicePixelRatio)
-                                          .clamp(200, 800)
-                                          .round(),
+                                  memCacheWidth: (400 * dpr)
+                                      .clamp(200, 800)
+                                      .round(),
                                   alignment: isLargeScreen
                                       ? Alignment.bottomLeft
                                       : Alignment.bottomCenter,

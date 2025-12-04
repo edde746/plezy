@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../client/plex_client.dart';
 import '../mixins/keyboard_long_press_mixin.dart';
 import '../models/plex_metadata.dart';
@@ -8,6 +7,7 @@ import '../utils/provider_extensions.dart';
 import '../i18n/strings.g.dart';
 import 'focus/focus_indicator.dart';
 import 'media_context_menu.dart';
+import 'plex_optimized_image.dart';
 
 /// Custom list item widget for playlist items
 /// Shows drag handle, poster, title/metadata, duration, and remove button
@@ -164,29 +164,18 @@ class _PlaylistItemCardState extends State<PlaylistItemCard>
 
   Widget _buildPosterImage(BuildContext context) {
     final posterUrl = widget.item.posterThumb();
-    if (posterUrl != null) {
-      return Builder(
-        builder: (context) {
-          final client = _getClientForItem(context);
-          final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
-
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: CachedNetworkImage(
-              imageUrl: client.getThumbnailUrl(posterUrl),
-              width: 60,
-              height: 90,
-              memCacheWidth: (60 * devicePixelRatio).round(),
-              memCacheHeight: (90 * devicePixelRatio).round(),
-              fit: BoxFit.cover,
-              placeholder: (context, url) => _buildPlaceholder(),
-              errorWidget: (context, url, error) => _buildPlaceholder(),
-            ),
-          );
-        },
-      );
-    }
-    return _buildPlaceholder();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: PlexPosterImage(
+        client: _getClientForItem(context),
+        imagePath: posterUrl,
+        width: 60,
+        height: 90,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => _buildPlaceholder(),
+        errorWidget: (context, url, error) => _buildPlaceholder(),
+      ),
+    );
   }
 
   Widget _buildPlaceholder() {
