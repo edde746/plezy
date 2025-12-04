@@ -91,14 +91,15 @@ class VideoFilterManager {
     try {
       // Clear all video filters and manual scaling first
       await player.setProperty('video-aspect-override', 'no');
+      await player.setProperty('sub-ass-force-margins', 'no');
+      await player.setProperty('panscan', '0');
 
       if (_boxFitMode == 1) {
         // Cover mode - use panscan to fill screen while maintaining aspect ratio
         await player.setProperty('panscan', '1.0');
-        appLogger.d('Cover mode: panscan=1.0 (player: $_playerSize)');
+        await player.setProperty('sub-ass-force-margins', 'yes');
       } else if (_boxFitMode == 2) {
         // Fill/stretch mode - override aspect ratio to match player (stretches video)
-        await player.setProperty('panscan', '0');
         if (_playerSize != null) {
           final playerAspect = _playerSize!.width / _playerSize!.height;
           await player.setProperty(
@@ -109,10 +110,6 @@ class VideoFilterManager {
             'Stretch mode: aspect-override=$playerAspect (player: $_playerSize)',
           );
         }
-      } else {
-        // Contain mode (0) - letterbox/pillarbox, no scaling
-        await player.setProperty('panscan', '0');
-        appLogger.d('Contain mode: panscan=0 (player: $_playerSize)');
       }
     } catch (e) {
       appLogger.w('Failed to update video filter', error: e);
