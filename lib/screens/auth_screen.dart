@@ -436,24 +436,57 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(height: 48),
                     if (_isAuthenticating) ...[
-                      const Center(child: CircularProgressIndicator()),
-                      const SizedBox(height: 16),
-                      Text(
-                        t.auth.waitingForAuth,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 24),
-                      OutlinedButton(
-                        onPressed: _retryAuthentication,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 24,
+                      if (_useQrFlow && _qrAuthUrl != null) ...[
+                        // QR code flow - show QR code and scan instruction
+                        Text(
+                          t.auth.scanQRCodeInstruction,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 24),
+                        Center(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: QrImageView(
+                              data: _qrAuthUrl!,
+                              size: 200,
+                              version: QrVersions.auto,
+                              backgroundColor: Colors.white,
+                            ),
                           ),
                         ),
-                        child: Text(t.auth.retry),
-                      ),
+                        const SizedBox(height: 24),
+                        OutlinedButton(
+                          onPressed: _retryAuthentication,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 24,
+                            ),
+                          ),
+                          child: Text(t.auth.retry),
+                        ),
+                      ] else ...[
+                        // Browser auth flow - show spinner and waiting message
+                        const Center(child: CircularProgressIndicator()),
+                        const SizedBox(height: 16),
+                        Text(
+                          t.auth.waitingForAuth,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 24),
+                        OutlinedButton(
+                          onPressed: _retryAuthentication,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 24,
+                            ),
+                          ),
+                          child: Text(t.auth.retry),
+                        ),
+                      ],
                     ] else ...[
                       // add QR button here
                       ElevatedButton(
