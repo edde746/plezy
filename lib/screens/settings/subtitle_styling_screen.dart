@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
-import '../i18n/strings.g.dart';
-import '../services/settings_service.dart';
-import '../widgets/desktop_app_bar.dart';
+import '../../i18n/strings.g.dart';
+import '../../services/settings_service.dart';
+import '../../widgets/desktop_app_bar.dart';
 
 class SubtitleStylingScreen extends StatefulWidget {
   const SubtitleStylingScreen({super.key});

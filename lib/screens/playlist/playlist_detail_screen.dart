@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
-import '../models/plex_playlist.dart';
-import '../models/plex_metadata.dart';
-import '../providers/settings_provider.dart';
-import '../providers/playback_state_provider.dart';
-import '../utils/app_logger.dart';
-import '../utils/provider_extensions.dart';
-import '../utils/video_player_navigation.dart';
-import '../utils/grid_size_calculator.dart';
-import '../widgets/media_card.dart';
-import '../widgets/playlist_item_card.dart';
-import '../widgets/desktop_app_bar.dart';
-import '../i18n/strings.g.dart';
-import '../utils/dialogs.dart';
-import 'base_media_list_detail_screen.dart';
+import '../../models/plex_playlist.dart';
+import '../../models/plex_metadata.dart';
+import '../../providers/settings_provider.dart';
+import '../../providers/playback_state_provider.dart';
+import '../../utils/app_logger.dart';
+import '../../utils/provider_extensions.dart';
+import '../../utils/video_player_navigation.dart';
+import '../../utils/grid_size_calculator.dart';
+import '../../widgets/media_card.dart';
+import 'playlist_item_card.dart';
+import '../../widgets/desktop_app_bar.dart';
+import '../../i18n/strings.g.dart';
+import '../../utils/dialogs.dart';
+import '../base_media_list_detail_screen.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {

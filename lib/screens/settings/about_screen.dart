@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../widgets/desktop_app_bar.dart';
-import '../i18n/strings.g.dart';
+import '../../widgets/desktop_app_bar.dart';
+import '../../i18n/strings.g.dart';
 import 'licenses_screen.dart';
 
 class AboutScreen extends StatefulWidget {

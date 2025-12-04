@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/plex_metadata.dart';
-import '../../utils/library_refresh_notifier.dart';
-import '../../i18n/strings.g.dart';
-import '../../widgets/adaptive_media_grid.dart';
+import '../../../models/plex_metadata.dart';
+import '../../../utils/library_refresh_notifier.dart';
+import '../../../i18n/strings.g.dart';
+import '../adaptive_media_grid.dart';
 import 'base_library_tab.dart';
 
 /// Collections tab for library screen

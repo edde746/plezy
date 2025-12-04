@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../i18n/strings.g.dart';
+import '../../i18n/strings.g.dart';
 
 /// Dialog for entering a PIN to access a protected profile
 class PinEntryDialog extends StatefulWidget {

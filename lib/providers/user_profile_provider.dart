@@ -7,7 +7,7 @@ import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
-import '../widgets/pin_entry_dialog.dart';
+import '../screens/profile/pin_entry_dialog.dart';
 import 'plex_client_provider.dart';
 
 class UserProfileProvider extends ChangeNotifier {

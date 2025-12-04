@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/plex_metadata.dart';
-import '../providers/settings_provider.dart';
-import '../services/settings_service.dart' show ViewMode;
-import '../utils/grid_size_calculator.dart';
-import 'media_card.dart';
+import '../../models/plex_metadata.dart';
+import '../../providers/settings_provider.dart';
+import '../../services/settings_service.dart' show ViewMode;
+import '../../utils/grid_size_calculator.dart';
+import '../../widgets/media_card.dart';
 
 /// A widget that automatically switches between grid and list view
 /// based on user settings, providing a consistent layout pattern

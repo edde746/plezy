@@ -16,7 +16,7 @@ import '../utils/content_rating_formatter.dart';
 import '../utils/duration_formatter.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
-import '../screens/playlist_detail_screen.dart';
+import '../screens/playlist/playlist_detail_screen.dart';
 import '../screens/collection_detail_screen.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';

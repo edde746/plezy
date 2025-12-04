@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../i18n/strings.g.dart';
+import '../../i18n/strings.g.dart';
 import 'empty_state_widget.dart';
 import 'error_state_widget.dart';
 

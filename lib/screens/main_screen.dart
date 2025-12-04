@@ -15,9 +15,9 @@ import '../providers/playback_state_provider.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import 'discover_screen.dart';
-import 'libraries_screen.dart';
+import 'libraries/libraries_screen.dart';
 import 'search_screen.dart';
-import 'settings_screen.dart';
+import 'settings/settings_screen.dart';
 
 /// InheritedWidget that provides back navigation functionality to child screens
 class BackNavigationScope extends InheritedWidget {

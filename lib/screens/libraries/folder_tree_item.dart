@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/plex_metadata.dart';
-import '../utils/keyboard_utils.dart';
+import '../../models/plex_metadata.dart';
+import '../../utils/keyboard_utils.dart';
 
 /// Individual item in the folder tree
 /// Can be either a folder (expandable) or a file (tappable)

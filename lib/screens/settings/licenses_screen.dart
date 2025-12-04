@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../widgets/desktop_app_bar.dart';
-import '../i18n/strings.g.dart';
+import '../../widgets/desktop_app_bar.dart';
+import '../../i18n/strings.g.dart';
 
 class MergedLicenseEntry {
   final String packageName;

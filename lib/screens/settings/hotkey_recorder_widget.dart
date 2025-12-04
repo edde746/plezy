@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
-import '../i18n/strings.g.dart';
+import '../../i18n/strings.g.dart';
 
 class HotKeyRecorderWidget extends StatefulWidget {
   final String actionName;

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../models/plex_filter.dart';
-import '../widgets/app_bar_back_button.dart';
-import '../widgets/bottom_sheet_header.dart';
-import '../utils/provider_extensions.dart';
-import '../utils/keyboard_utils.dart';
-import '../i18n/strings.g.dart';
+import '../../models/plex_filter.dart';
+import '../../widgets/app_bar_back_button.dart';
+import '../../widgets/bottom_sheet_header.dart';
+import '../../utils/provider_extensions.dart';
+import '../../utils/keyboard_utils.dart';
+import '../../i18n/strings.g.dart';
 
 class FiltersBottomSheet extends StatefulWidget {
   final List<PlexFilter> filters;

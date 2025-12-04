@@ -10,7 +10,7 @@ import '../utils/app_logger.dart';
 import '../utils/grid_cross_axis_extent.dart';
 import '../widgets/media_card.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../widgets/sort_bottom_sheet.dart';
+import 'libraries/sort_bottom_sheet.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
 

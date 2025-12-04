@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-import '../i18n/strings.g.dart';
-import '../utils/app_logger.dart';
-import '../widgets/desktop_app_bar.dart';
+import '../../i18n/strings.g.dart';
+import '../../utils/app_logger.dart';
+import '../../widgets/desktop_app_bar.dart';
 
 class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../i18n/strings.g.dart';
-import '../models/plex_home_user.dart';
+import '../../i18n/strings.g.dart';
+import '../../models/plex_home_user.dart';
 import 'user_avatar_widget.dart';
 
 enum UserAttribute { admin, restricted, protected }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/plex_sort.dart';
-import '../widgets/bottom_sheet_header.dart';
-import '../utils/keyboard_utils.dart';
-import '../i18n/strings.g.dart';
+import '../../models/plex_sort.dart';
+import '../../widgets/bottom_sheet_header.dart';
+import '../../utils/keyboard_utils.dart';
+import '../../i18n/strings.g.dart';
 
 class SortBottomSheet extends StatefulWidget {
   final List<PlexSort> sortOptions;

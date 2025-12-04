@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../services/plex_client.dart';
-import '../mixins/keyboard_long_press_mixin.dart';
-import '../models/plex_metadata.dart';
-import '../utils/duration_formatter.dart';
-import '../utils/provider_extensions.dart';
-import '../i18n/strings.g.dart';
-import 'focus/focus_indicator.dart';
-import 'media_context_menu.dart';
-import 'plex_optimized_image.dart';
+import '../../mixins/keyboard_long_press_mixin.dart';
+import '../../models/plex_metadata.dart';
+import '../../utils/duration_formatter.dart';
+import '../../utils/provider_extensions.dart';
+import '../../i18n/strings.g.dart';
+import '../../widgets/focus/focus_indicator.dart';
+import '../../widgets/media_context_menu.dart';
+import '../../widgets/plex_optimized_image.dart';
 
 /// Custom list item widget for playlist items
 /// Shows drag handle, poster, title/metadata, duration, and remove button

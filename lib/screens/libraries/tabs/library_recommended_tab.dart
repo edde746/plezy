@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../services/plex_client.dart';
-import '../../i18n/strings.g.dart';
-import '../../mixins/item_updatable.dart';
-import '../../models/plex_hub.dart';
-import '../../models/plex_metadata.dart';
-import '../../widgets/hub_navigation_controller.dart';
-import '../../widgets/hub_section.dart';
+import '../../../../services/plex_client.dart';
+import '../../../i18n/strings.g.dart';
+import '../../../mixins/item_updatable.dart';
+import '../../../models/plex_hub.dart';
+import '../../../models/plex_metadata.dart';
+import '../../../widgets/hub_navigation_controller.dart';
+import '../../../widgets/hub_section.dart';
 import 'base_library_tab.dart';
 
 /// Recommended tab for library screen

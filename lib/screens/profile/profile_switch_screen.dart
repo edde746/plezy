@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/plex_home_user.dart';
-import '../providers/user_profile_provider.dart';
-import '../utils/provider_extensions.dart';
-import '../widgets/profile_list_tile.dart';
-import '../widgets/desktop_app_bar.dart';
-import '../i18n/strings.g.dart';
+import '../../models/plex_home_user.dart';
+import '../../providers/user_profile_provider.dart';
+import '../../utils/provider_extensions.dart';
+import 'profile_list_tile.dart';
+import '../../widgets/desktop_app_bar.dart';
+import '../../i18n/strings.g.dart';
 
 class ProfileSwitchScreen extends StatelessWidget {
   const ProfileSwitchScreen({super.key});

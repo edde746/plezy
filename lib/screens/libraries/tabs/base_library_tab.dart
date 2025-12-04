@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../models/plex_library.dart';
-import '../../utils/app_logger.dart';
-import '../../mixins/library_tab_state.dart';
-import '../../mixins/refreshable.dart';
-import '../../widgets/content_state_builder.dart';
+import '../../../models/plex_library.dart';
+import '../../../utils/app_logger.dart';
+import '../../../mixins/library_tab_state.dart';
+import '../../../mixins/refreshable.dart';
+import '../content_state_builder.dart';
 
 /// Base class for library tab screens that provides common state management
 /// and lifecycle handling for tabs that display library content.
