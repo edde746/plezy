@@ -7,6 +7,7 @@ import 'horizontal_scroll_with_arrows.dart';
 import 'hub_navigation_controller.dart';
 import '../i18n/strings.g.dart';
 import 'focus/focus_indicator.dart';
+import '../utils/keyboard_utils.dart';
 
 /// Shared hub section widget used in both discover and library screens
 /// Displays a hub title with icon and a horizontal scrollable list of items
@@ -162,10 +163,7 @@ class _HubSectionState extends State<HubSection> {
 
   KeyEventResult _handleHeaderKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent && widget.hub.more) {
-      if (event.logicalKey == LogicalKeyboardKey.enter ||
-          event.logicalKey == LogicalKeyboardKey.space ||
-          event.logicalKey == LogicalKeyboardKey.select ||
-          event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+      if (isKeyboardActivationKey(event.logicalKey)) {
         _navigateToHubDetail();
         return KeyEventResult.handled;
       }

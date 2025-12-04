@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../utils/keyboard_utils.dart';
 
 /// A mixin that provides keyboard long-press detection for focusable widgets.
 ///
@@ -42,19 +43,11 @@ mixin KeyboardLongPressMixin<T extends StatefulWidget> on State<T> {
   /// Override to handle long press action (e.g., show context menu)
   void onKeyboardLongPress();
 
-  /// Check if the given key is an activation key
-  bool _isActivationKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.space ||
-        key == LogicalKeyboardKey.select ||
-        key == LogicalKeyboardKey.gameButtonA;
-  }
-
   /// Call this from your onKeyEvent handler to enable long-press detection.
   /// Returns [KeyEventResult.handled] if the event was an activation key,
   /// [KeyEventResult.ignored] otherwise.
   KeyEventResult handleKeyboardLongPress(KeyEvent event) {
-    if (!_isActivationKey(event.logicalKey)) {
+    if (!isKeyboardActivationKey(event.logicalKey)) {
       return KeyEventResult.ignored;
     }
 

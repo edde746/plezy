@@ -1498,10 +1498,7 @@ class _FocusableContextMenuSheetState
     }
 
     // Select with Enter/Space
-    if (event.logicalKey == LogicalKeyboardKey.enter ||
-        event.logicalKey == LogicalKeyboardKey.space ||
-        event.logicalKey == LogicalKeyboardKey.select ||
-        event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+    if (isKeyboardActivationKey(event.logicalKey)) {
       Navigator.pop(context, widget.actions[_focusedIndex].value);
       return KeyEventResult.handled;
     }
@@ -1628,10 +1625,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
     }
 
     // Select with Enter/Space
-    if (event.logicalKey == LogicalKeyboardKey.enter ||
-        event.logicalKey == LogicalKeyboardKey.space ||
-        event.logicalKey == LogicalKeyboardKey.select ||
-        event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+    if (isKeyboardActivationKey(event.logicalKey)) {
       Navigator.pop(context, widget.actions[_focusedIndex].value);
       return KeyEventResult.handled;
     }

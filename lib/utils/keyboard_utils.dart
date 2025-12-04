@@ -13,3 +13,11 @@ bool isBackKeyEvent(KeyEvent event) {
   if (event is! KeyDownEvent) return false;
   return isBackKey(event.logicalKey);
 }
+
+/// Check if the given key should activate/select an item
+bool isKeyboardActivationKey(LogicalKeyboardKey key) {
+  return key == LogicalKeyboardKey.enter ||
+      key == LogicalKeyboardKey.space ||
+      key == LogicalKeyboardKey.select ||
+      key == LogicalKeyboardKey.gameButtonA;
+}

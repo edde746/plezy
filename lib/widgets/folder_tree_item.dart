@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/plex_metadata.dart';
+import '../utils/keyboard_utils.dart';
 
 /// Individual item in the folder tree
 /// Can be either a folder (expandable) or a file (tappable)
@@ -54,15 +55,9 @@ class _FolderTreeItemState extends State<FolderTreeItem> {
     }
   }
 
-  bool _isActivationKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.space ||
-        key == LogicalKeyboardKey.select ||
-        key == LogicalKeyboardKey.gameButtonA;
-  }
-
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && _isActivationKey(event.logicalKey)) {
+    if (event is KeyDownEvent &&
+        isKeyboardActivationKey(event.logicalKey)) {
       _isKeyboardActivation = true;
       return KeyEventResult.ignored; // Let InkWell handle the activation
     }

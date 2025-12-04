@@ -1028,10 +1028,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       focusNode: _libraryDropdownFocusNode,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.space ||
-              event.logicalKey == LogicalKeyboardKey.select ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+          if (isKeyboardActivationKey(event.logicalKey)) {
             _libraryDropdownKey.currentState?.showButtonMenu();
             return KeyEventResult.handled;
           }
@@ -1133,10 +1130,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent) {
           // Activation keys
-          if (event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.space ||
-              event.logicalKey == LogicalKeyboardKey.select ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+          if (isKeyboardActivationKey(event.logicalKey)) {
             onPressed();
             return KeyEventResult.handled;
           }
@@ -1668,24 +1662,17 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             if (index < maxIndex) onMove(1);
             return KeyEventResult.handled;
           }
-          if (event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.space ||
-              event.logicalKey == LogicalKeyboardKey.select ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+          if (isKeyboardActivationKey(event.logicalKey)) {
             onEndMove();
             return KeyEventResult.handled;
           }
-          if (event.logicalKey == LogicalKeyboardKey.escape ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonB) {
+          if (isBackKey(event.logicalKey)) {
             onCancelMove();
             return KeyEventResult.handled;
           }
         } else {
           // Not moving - Enter/Space starts move
-          if (event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.space ||
-              event.logicalKey == LogicalKeyboardKey.select ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+          if (isKeyboardActivationKey(event.logicalKey)) {
             onStartMove();
             return KeyEventResult.handled;
           }
@@ -1749,10 +1736,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
         // Handle activation
-        if (event.logicalKey == LogicalKeyboardKey.enter ||
-            event.logicalKey == LogicalKeyboardKey.space ||
-            event.logicalKey == LogicalKeyboardKey.select ||
-            event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+        if (isKeyboardActivationKey(event.logicalKey)) {
           onPressed();
           return KeyEventResult.handled;
         }

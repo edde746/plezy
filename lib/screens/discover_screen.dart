@@ -133,10 +133,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   KeyEventResult _handleHeroKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent) {
       // Enter/Space to play current hero item
-      if (event.logicalKey == LogicalKeyboardKey.enter ||
-          event.logicalKey == LogicalKeyboardKey.space ||
-          event.logicalKey == LogicalKeyboardKey.select ||
-          event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+      if (isKeyboardActivationKey(event.logicalKey)) {
         if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
           navigateToVideoPlayer(context, metadata: _onDeck[_currentHeroIndex]);
           return KeyEventResult.handled;

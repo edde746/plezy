@@ -438,10 +438,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     return Focus(
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.space ||
-              event.logicalKey == LogicalKeyboardKey.select ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonA) {
+          if (isKeyboardActivationKey(event.logicalKey)) {
             onPressed();
             return KeyEventResult.handled;
           }
