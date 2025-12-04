@@ -1707,7 +1707,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
                               color: isFocused
                                   ? Theme.of(
                                       context,
-                                    ).colorScheme.primary.withOpacity(0.1)
+                                    ).colorScheme.primary.withValues(alpha: 0.1)
                                   : null,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,

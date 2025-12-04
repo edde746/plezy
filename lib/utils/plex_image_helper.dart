@@ -226,26 +226,4 @@ class PlexImageHelper {
     return '${serverPrefix}transcode_${width}x${height}_${originalPath.hashCode}';
   }
 
-  /// Extract the underlying image URL if the provided path is already a
-  /// Plex photo transcode URL. This prevents double-transcoding logos/art
-  /// which can distort their aspect ratios.
-  static String _extractOriginalFromTranscode(String path) {
-    if (!path.contains('/photo/:/transcode') || !path.contains('url=')) {
-      return path;
-    }
-
-    try {
-      final uri = Uri.parse(
-        path.startsWith('http') ? path : 'http://_dummy$path',
-      );
-      final urlParam = uri.queryParameters['url'];
-      if (urlParam == null || urlParam.isEmpty) {
-        return path;
-      }
-
-      return Uri.decodeComponent(urlParam);
-    } catch (_) {
-      return path;
-    }
-  }
 }

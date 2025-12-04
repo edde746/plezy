@@ -1,12 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../i18n/strings.g.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../utils/plex_image_helper.dart';
-import '../widgets/plex_optimized_image.dart';
 import '../mixins/keyboard_long_press_mixin.dart';
 import '../widgets/focus/focus_indicator.dart';
 import '../client/plex_client.dart';
