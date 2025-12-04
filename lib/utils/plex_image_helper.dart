@@ -225,5 +225,4 @@ class PlexImageHelper {
     final serverPrefix = serverId != null ? '${serverId}_' : '';
     return '${serverPrefix}transcode_${width}x${height}_${originalPath.hashCode}';
   }
-
 }

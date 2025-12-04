@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
@@ -158,8 +159,24 @@ class PlayerNative implements Player {
         break;
 
       case 'track-list':
+        List? trackList;
         if (value is List) {
-          final tracks = _parseTrackList(value);
+          trackList = value;
+        } else if (value is String) {
+          // Android - JSON string that needs parsing
+          try {
+            final decoded = jsonDecode(value);
+            if (decoded is List) {
+              trackList = decoded;
+            }
+          } catch (e) {
+            // Invalid JSON, ignore
+            break;
+          }
+        }
+
+        if (trackList != null) {
+          final tracks = _parseTrackList(trackList);
           _state = _state.copyWith(tracks: tracks);
           _tracksController.add(tracks);
         }
@@ -283,7 +300,10 @@ class PlayerNative implements Player {
       await _observeProperty('duration', 'double');
       await _observeProperty('pause', 'flag');
       await _observeProperty('paused-for-cache', 'flag');
-      await _observeProperty('track-list', 'node');
+      await _observeProperty(
+        'track-list',
+        Platform.isAndroid ? 'string' : 'node',
+      );
       await _observeProperty('eof-reached', 'flag');
       await _observeProperty('volume', 'double');
       await _observeProperty('aid', 'string');

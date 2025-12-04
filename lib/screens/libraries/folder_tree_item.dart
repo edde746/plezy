@@ -56,8 +56,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        isKeyboardActivationKey(event.logicalKey)) {
+    if (event is KeyDownEvent && isKeyboardActivationKey(event.logicalKey)) {
       _isKeyboardActivation = true;
       return KeyEventResult.ignored; // Let InkWell handle the activation
     }
