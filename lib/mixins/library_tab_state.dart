@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../client/plex_client.dart';
+import '../services/plex_client.dart';
 import '../models/plex_library.dart';
 import '../utils/provider_extensions.dart';
 

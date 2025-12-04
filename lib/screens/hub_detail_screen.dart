@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';

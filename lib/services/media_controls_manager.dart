@@ -1,7 +1,7 @@
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
-import '../client/plex_client.dart';
+import 'plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 

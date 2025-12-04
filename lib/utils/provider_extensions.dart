@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../client/plex_client.dart';
+import '../services/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../models/plex_library.dart';
 import '../models/plex_user_profile.dart';

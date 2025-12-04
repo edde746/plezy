@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import '../client/plex_client.dart';
+import 'plex_client.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';

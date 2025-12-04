@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../mpv/mpv.dart';
 
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';

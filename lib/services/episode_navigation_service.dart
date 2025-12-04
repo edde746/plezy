@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../mpv/mpv.dart';
-import '../client/plex_client.dart';
+import 'plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';

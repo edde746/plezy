@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'focus/focus_indicator.dart';
 import 'hub_navigation_controller.dart';
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../mixins/keyboard_long_press_mixin.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';

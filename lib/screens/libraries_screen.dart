@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../models/plex_library.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';

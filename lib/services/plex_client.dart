@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
-import '../config/plex_config.dart';
+import '../models/plex_config.dart';
 import '../models/play_queue_response.dart';
 import '../models/plex_file_info.dart';
 import '../models/plex_filter.dart';
@@ -14,7 +14,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_video_playback_data.dart';
-import '../network/endpoint_failover_interceptor.dart';
+import '../utils/endpoint_failover_interceptor.dart';
 import '../utils/app_logger.dart';
 import '../utils/log_redaction_manager.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/item_updatable.dart';
 import '../../models/plex_hub.dart';

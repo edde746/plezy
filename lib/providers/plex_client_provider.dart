@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../client/plex_client.dart';
+import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
 
 class PlexClientProvider extends ChangeNotifier {

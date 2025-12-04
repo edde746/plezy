@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/plex_metadata.dart';
 import '../models/play_queue_response.dart';
-import '../client/plex_client.dart';
+import '../services/plex_client.dart';
 
 /// Playback mode types
 ///

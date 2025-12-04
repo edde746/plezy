@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../client/plex_client.dart';
+import '../services/plex_client.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/multi_server_manager.dart';
 import '../services/plex_auth_service.dart';

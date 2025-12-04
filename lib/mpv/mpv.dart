@@ -44,19 +44,19 @@
 library;
 
 // Player
-export 'src/player/player.dart';
-export 'src/player/player_state.dart';
-export 'src/player/player_streams.dart';
+export 'player/player.dart';
+export 'player/player_state.dart';
+export 'player/player_streams.dart';
 
 // Models
-export 'src/models/media.dart';
-export 'src/models/audio_device.dart';
-export 'src/models/audio_track.dart';
-export 'src/models/subtitle_track.dart';
-export 'src/models/tracks.dart';
-export 'src/models/track_selection.dart';
-export 'src/models/player_log.dart';
-export 'src/models/player_log_level.dart';
+export 'models/media.dart';
+export 'models/audio_device.dart';
+export 'models/audio_track.dart';
+export 'models/subtitle_track.dart';
+export 'models/tracks.dart';
+export 'models/track_selection.dart';
+export 'models/player_log.dart';
+export 'models/player_log_level.dart';
 
 // Video
-export 'src/video/video.dart';
+export 'video/video.dart';

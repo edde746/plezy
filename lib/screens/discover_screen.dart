@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_hub.dart';

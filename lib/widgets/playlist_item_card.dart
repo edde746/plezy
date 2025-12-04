@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../mixins/keyboard_long_press_mixin.dart';
 import '../models/plex_metadata.dart';
 import '../utils/duration_formatter.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../mpv/mpv.dart';
-import '../../../client/plex_client.dart';
+import '../../../services/plex_client.dart';
 import '../../../models/plex_media_info.dart';
 import '../../../utils/duration_formatter.dart';
 import '../../../utils/provider_extensions.dart';

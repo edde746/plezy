@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:uuid/uuid.dart';
 import 'storage_service.dart';
-import '../client/plex_client.dart';
+import 'plex_client.dart';
 import '../models/plex_user_profile.dart';
 import '../models/plex_home.dart';
 import '../models/user_switch_response.dart';

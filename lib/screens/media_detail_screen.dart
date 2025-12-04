@@ -7,7 +7,7 @@ import '../widgets/plex_optimized_image.dart';
 import '../utils/plex_image_helper.dart';
 import '../mixins/keyboard_long_press_mixin.dart';
 import '../widgets/focus/focus_indicator.dart';
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/playback_state_provider.dart';
 import '../theme/theme_helper.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/settings_service.dart' show LibraryDensity;
-import '../constants/layout_constants.dart';
+import 'layout_constants.dart';
 
 /// Utility class for calculating consistent grid sizes across the app
 class GridSizeCalculator {

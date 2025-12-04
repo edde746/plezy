@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
 import 'media_card.dart';
 

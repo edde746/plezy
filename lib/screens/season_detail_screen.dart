@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../widgets/focus/focus_indicator.dart';
 import '../models/plex_metadata.dart';

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import '../mpv/mpv.dart';
 
-import '../client/plex_client.dart';
+import 'plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 

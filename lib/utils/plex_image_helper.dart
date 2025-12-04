@@ -1,5 +1,5 @@
 import 'dart:math';
-import '../client/plex_client.dart';
+import '../services/plex_client.dart';
 
 /// Image types for different transcoding strategies
 enum ImageType {

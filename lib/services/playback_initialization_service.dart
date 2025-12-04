@@ -1,4 +1,4 @@
-import '../client/plex_client.dart';
+import 'plex_client.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_metadata.dart';
 import '../mpv/mpv.dart';

@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-import '../client/plex_client.dart';
-import '../config/plex_config.dart';
+import 'plex_client.dart';
+import '../models/plex_config.dart';
 import '../utils/app_logger.dart';
 import 'plex_auth_service.dart';
 import 'storage_service.dart';
