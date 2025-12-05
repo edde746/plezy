@@ -114,3 +114,6 @@ maestro/**/*.png
 # Web related
 **/web/.dart_tool/
 **/web/firebase-debug.log
+
+**/.github/
+**/.apm/
