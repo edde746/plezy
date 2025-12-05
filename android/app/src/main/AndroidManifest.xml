@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
 
     <!-- Android TV support: Declare TV compatibility
-         Note: This manifest declaration is still required for Android TV (as of 2024).
+         Note: This manifest declaration is still currently required for Android TV.
          The deprecated item is the androidx.leanback UI library, which we don't use.
          See: https://developer.android.com/training/tv/get-started/create -->
     <uses-feature
