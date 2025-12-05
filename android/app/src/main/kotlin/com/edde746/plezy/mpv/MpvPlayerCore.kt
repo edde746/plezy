@@ -8,6 +8,8 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.view.TextureView
 import dev.jdtech.mpv.MPVLib
 
 interface MpvPlayerDelegate {
@@ -24,10 +26,57 @@ class MpvPlayerCore(private val activity: Activity) :
     }
 
     private var surfaceView: SurfaceView? = null
+    private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? =
+        null
     private var voInUse: String = "gpu"
     var delegate: MpvPlayerDelegate? = null
     var isInitialized: Boolean = false
         private set
+
+    private fun ensureFlutterOverlayOnTop() {
+        val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+        contentView.post {
+            var flutterContainer: ViewGroup? = null
+
+            // First pass: look for FlutterView by name (debug builds)
+            for (i in 0 until contentView.childCount) {
+                val child = contentView.getChildAt(i)
+                if (child is ViewGroup && child.javaClass.name.contains("FlutterView")) {
+                    flutterContainer = child
+                    break
+                }
+            }
+
+            // Fallback for release (FlutterView may be obfuscated): pick the last ViewGroup
+            // that is not our mpv SurfaceView and has children.
+            if (flutterContainer == null) {
+                for (i in contentView.childCount - 1 downTo 0) {
+                    val child = contentView.getChildAt(i)
+                    if (child is ViewGroup && child != surfaceView?.parent && child.childCount > 0) {
+                        flutterContainer = child
+                        break
+                    }
+                }
+            }
+
+            flutterContainer?.let { container ->
+                contentView.bringChildToFront(container)
+                for (j in 0 until container.childCount) {
+                    val flutterChild = container.getChildAt(j)
+                    if (flutterChild is SurfaceView) {
+                        flutterChild.setZOrderOnTop(true)
+                        flutterChild.setZOrderMediaOverlay(true)
+                        flutterChild.holder.setFormat(PixelFormat.TRANSLUCENT)
+                        break
+                    } else if (flutterChild is TextureView) {
+                        // TextureView uses alpha composition; ensure it stays above.
+                        flutterChild.isOpaque = false
+                        break
+                    }
+                }
+            }
+        }
+    }
 
     fun initialize(): Boolean {
         if (isInitialized) {
@@ -43,6 +92,9 @@ class MpvPlayerCore(private val activity: Activity) :
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 setBackgroundColor(Color.BLACK)
+                // Keep video composited in the normal view hierarchy (avoid hardware overlay promotion)
+                // so Flutter controls reliably draw above it in release builds.
+                alpha = 0.999f
                 holder.addCallback(this@MpvPlayerCore)
 
                 // Critical: Ensure SurfaceView renders BEHIND Flutter's view
@@ -58,20 +110,27 @@ class MpvPlayerCore(private val activity: Activity) :
             for (i in 0 until contentView.childCount) {
                 val child = contentView.getChildAt(i)
                 if (child is ViewGroup && child.javaClass.name.contains("FlutterView")) {
+                    contentView.bringChildToFront(child)
                     // Look inside FlutterView for FlutterSurfaceView
                     for (j in 0 until child.childCount) {
                         val flutterChild = child.getChildAt(j)
                         if (flutterChild is SurfaceView) {
                             // Put Flutter in media overlay layer (above our video which is in normal layer)
+                            flutterChild.setZOrderOnTop(true)
                             flutterChild.setZOrderMediaOverlay(true)
                             flutterChild.holder.setFormat(PixelFormat.TRANSLUCENT)
-                            Log.d(TAG, "Set FlutterSurfaceView to MediaOverlay with TRANSLUCENT: ${flutterChild.javaClass.name}")
                             break
                         }
                     }
                     break
                 }
             }
+            // Repeat after layout settles to catch late-added Flutter surfaces (release builds)
+            ensureFlutterOverlayOnTop()
+            overlayLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+                ensureFlutterOverlayOnTop()
+            }
+            contentView.viewTreeObserver.addOnGlobalLayoutListener(overlayLayoutListener)
 
             Log.d(TAG, "SurfaceView added to content view")
 
@@ -114,6 +173,8 @@ class MpvPlayerCore(private val activity: Activity) :
         MPVLib.setOptionString("force-window", "yes")
         // Restore video output after surface is available
         MPVLib.setPropertyString("vo", voInUse)
+        // Reassert overlay order whenever the surface is recreated
+        ensureFlutterOverlayOnTop()
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -222,6 +283,10 @@ class MpvPlayerCore(private val activity: Activity) :
         MPVLib.removeObserver(this)
 
         surfaceView?.holder?.removeCallback(this)
+        overlayLayoutListener?.let { listener ->
+            val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
+            contentView.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+        }
 
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
         surfaceView?.let { contentView.removeView(it) }
