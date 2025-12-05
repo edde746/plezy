@@ -23,6 +23,7 @@ import 'services/data_aggregation_service.dart';
 import 'services/server_registry.dart';
 import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
+import 'utils/language_codes.dart';
 import 'i18n/strings.g.dart';
 
 void main() async {
@@ -51,6 +52,9 @@ void main() async {
 
   // Initialize storage service
   futures.add(StorageService.getInstance().then((_) {}));
+
+  // Initialize language codes for track selection
+  futures.add(LanguageCodes.initialize());
 
   // Wait for all parallel services to complete
   await Future.wait(futures);
