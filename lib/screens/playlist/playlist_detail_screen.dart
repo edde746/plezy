@@ -240,9 +240,12 @@ class _PlaylistDetailScreenState
         widget.playlist.ratingKey,
       );
 
-      // Navigate to selected item (should be first in the queue response)
+      // Navigate to selected item
       if (mounted) {
-        await navigateToVideoPlayer(context, metadata: playQueue.items!.first);
+        await navigateToVideoPlayer(
+          context,
+          metadata: playQueue.selectedItem ?? playQueue.items!.first,
+        );
       }
     } catch (e) {
       appLogger.e('Failed to play from item', error: e);
