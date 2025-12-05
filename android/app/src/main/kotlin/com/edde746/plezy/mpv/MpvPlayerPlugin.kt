@@ -48,7 +48,6 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         activityBinding = binding
-        binding.addOnUserLeaveHintListener { playerCore?.onPause() }
         Log.d(TAG, "Attached to activity")
     }
 

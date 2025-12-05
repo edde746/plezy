@@ -24,6 +24,7 @@ class MpvPlayerCore(private val activity: Activity) :
     }
 
     private var surfaceView: SurfaceView? = null
+    private var voInUse: String = "gpu"
     var delegate: MpvPlayerDelegate? = null
     var isInitialized: Boolean = false
         private set
@@ -111,6 +112,8 @@ class MpvPlayerCore(private val activity: Activity) :
         Log.d(TAG, "Surface created")
         MPVLib.attachSurface(holder.surface)
         MPVLib.setOptionString("force-window", "yes")
+        // Restore video output after surface is available
+        MPVLib.setPropertyString("vo", voInUse)
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -120,6 +123,8 @@ class MpvPlayerCore(private val activity: Activity) :
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         Log.d(TAG, "Surface destroyed")
+        // Disable video output before detaching (like mpv-android)
+        MPVLib.setPropertyString("vo", "null")
         MPVLib.setOptionString("force-window", "no")
         MPVLib.detachSurface()
     }
@@ -207,20 +212,6 @@ class MpvPlayerCore(private val activity: Activity) :
             surfaceView?.visibility = if (visible) View.VISIBLE else View.INVISIBLE
             Log.d(TAG, "setVisible($visible)")
         }
-    }
-
-    // Lifecycle handling
-
-    fun onPause() {
-        if (!isInitialized) return
-        Log.d(TAG, "onPause - disabling video")
-        setProperty("vid", "no")
-    }
-
-    fun onResume() {
-        if (!isInitialized) return
-        Log.d(TAG, "onResume - enabling video")
-        setProperty("vid", "auto")
     }
 
     // Cleanup
