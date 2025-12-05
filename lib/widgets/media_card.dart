@@ -14,6 +14,8 @@ import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/duration_formatter.dart';
+import '../utils/platform_detector.dart';
+import '../utils/tv_ui_helper.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
@@ -447,7 +449,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
               borderRadius: BorderRadius.circular(8),
               focusColor: Colors.transparent, // We use our own focus indicator
               child: Padding(
-                padding: const EdgeInsets.all(8),
+                padding: TVUIHelper.getCardPadding(context),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -460,7 +462,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
                       )
                     else
                       Expanded(child: _buildPosterWithOverlay(context)),
-                    const SizedBox(height: 4),
+                    SizedBox(height: TVUIHelper.getSpacing(context, 4)),
                     // Text content
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,9 +474,9 @@ class _MediaCardGridState extends State<_MediaCardGrid>
                               : (widget.item as PlexMetadata).displayTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                            fontSize: TVUIHelper.getFontSize(context, 13),
                             height: 1.1,
                           ),
                         ),
@@ -493,7 +495,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: tokens(context).textMuted,
-                                        fontSize: 11,
+                                        fontSize: TVUIHelper.getFontSize(context, 11),
                                         height: 1.1,
                                       ),
                                 );
@@ -518,7 +520,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
                                     style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(
                                           color: tokens(context).textMuted,
-                                          fontSize: 11,
+                                          fontSize: TVUIHelper.getFontSize(context, 11),
                                           height: 1.1,
                                         ),
                                   );
@@ -534,7 +536,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: tokens(context).textMuted,
-                                        fontSize: 11,
+                                        fontSize: TVUIHelper.getFontSize(context, 11),
                                         height: 1.1,
                                       ),
                                 );
@@ -546,7 +548,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: tokens(context).textMuted,
-                                        fontSize: 11,
+                                        fontSize: TVUIHelper.getFontSize(context, 11),
                                         height: 1.1,
                                       ),
                                 );
@@ -556,7 +558,7 @@ class _MediaCardGridState extends State<_MediaCardGrid>
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: tokens(context).textMuted,
-                                        fontSize: 11,
+                                        fontSize: TVUIHelper.getFontSize(context, 11),
                                         height: 1.1,
                                       ),
                                 );
@@ -868,7 +870,9 @@ class _MediaCardListState extends State<_MediaCardList>
                       children: [
                         // Title
                         Text(
-                          widget.item.displayTitle,
+                          widget.item is PlexPlaylist
+                              ? (widget.item as PlexPlaylist).title
+                              : (widget.item as PlexMetadata).displayTitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -912,9 +916,9 @@ class _MediaCardListState extends State<_MediaCardList>
                           const SizedBox(height: 4),
                         ],
                         // Summary
-                        if (widget.item.summary != null) ...[
+                        if (widget.item is PlexMetadata && (widget.item as PlexMetadata).summary != null) ...[
                           Text(
-                            widget.item.summary!,
+                            (widget.item as PlexMetadata).summary!,
                             maxLines: _summaryMaxLines,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodySmall

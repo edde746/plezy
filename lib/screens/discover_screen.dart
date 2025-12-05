@@ -611,9 +611,234 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   shadowColor: Colors.transparent,
                   scrolledUnderElevation: 0,
                   actions: [
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: _loadContent,
+                    Focus(
+                      canRequestFocus: !PlatformDetector.isTVSync(),
+                      child: IconButton(
+                        icon: const Icon(Icons.refresh),
+                        onPressed: _loadContent,
+                      ),
+                    ),
+                    Consumer<UserProfileProvider>(
+                      builder: (context, userProvider, child) {
+                        return PopupMenuButton<String>(
+                          icon: userProvider.currentUser?.thumb != null
+                              ? UserAvatarWidget(
+                                  user: userProvider.currentUser!,
+                                  size: 32,
+                                  showIndicators: false,
+                                )
+                              : const Icon(Icons.account_circle, size: 32),
+                          onSelected: (value) {
+                            if (value == 'switch_profile') {
+                              _handleSwitchProfile(context);
+                            } else if (value == 'switch_server') {
+                              _handleSwitchServer();
+                            } else if (value == 'logout') {
+                              _handleLogout();
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            // Only show Switch Profile if multiple users available
+                            if (userProvider.hasMultipleUsers)
+                              PopupMenuItem(
+                                value: 'switch_profile',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.people),
+                                    SizedBox(width: 8),
+                                    Text(t.discover.switchProfile),
+                                  ],
+                                ),
+                              ),
+                            PopupMenuItem(
+                              value: 'switch_server',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.swap_horiz),
+                                  SizedBox(width: 8),
+                                  Text(t.discover.switchServer),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'logout',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.logout),
+                                  SizedBox(width: 8),
+                                  Text(t.discover.logout),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                if (_isLoading)
+                  const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                if (_errorMessage != null)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(_errorMessage!),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadContent,
+                            child: Text(t.common.retry),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (!_isLoading && _errorMessage == null) ...[
+                  // Hero Section (Continue Watching) - Hidden on TV for now
+                  Consumer<SettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      final isTV = PlatformDetector.isTVSync();
+                      if (_onDeck.isNotEmpty && settingsProvider.showHeroSection && !isTV) {
+                        return _buildHeroSection();
+                      }
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    },
+                  ),
+
+                  // On Deck / Continue Watching
+                  if (_onDeck.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.play_circle_outline),
+                            const SizedBox(width: 8),
+                            Text(
+                              t.discover.continueWatching,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ],
+                    ),
+                    Consumer<UserProfileProvider>(
+                      builder: (context, userProvider, child) {
+                        return PopupMenuButton<String>(
+                          icon: userProvider.currentUser?.thumb != null
+                              ? UserAvatarWidget(
+                                  user: userProvider.currentUser!,
+                                  size: 32,
+                                  showIndicators: false,
+                                )
+                              : const Icon(Icons.account_circle, size: 32),
+                          onSelected: (value) {
+                            if (value == 'switch_profile') {
+                              _handleSwitchProfile(context);
+                            } else if (value == 'switch_server') {
+                              _handleSwitchServer();
+                            } else if (value == 'logout') {
+                              _handleLogout();
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            // Only show Switch Profile if multiple users available
+                            if (userProvider.hasMultipleUsers)
+                              PopupMenuItem(
+                                value: 'switch_profile',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.people),
+                                    SizedBox(width: 8),
+                                    Text(t.discover.switchProfile),
+                                  ],
+                                ),
+                              ),
+                            PopupMenuItem(
+                              value: 'switch_server',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.swap_horiz),
+                                  SizedBox(width: 8),
+                                  Text(t.discover.switchServer),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'logout',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.logout),
+                                  SizedBox(width: 8),
+                                  Text(t.discover.logout),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                if (_isLoading)
+                  const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                if (_errorMessage != null)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(_errorMessage!),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadContent,
+                            child: Text(t.common.retry),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (!_isLoading && _errorMessage == null) ...[
+                  // Hero Section (Continue Watching) - Hidden on TV for now
+                  Consumer<SettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      final isTV = PlatformDetector.isTVSync();
+                      if (_onDeck.isNotEmpty && settingsProvider.showHeroSection && !isTV) {
+                        return _buildHeroSection();
+                      }
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    },
+                  ),
+
+                  // On Deck / Continue Watching
+                  if (_onDeck.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.play_circle_outline),
+                            const SizedBox(width: 8),
+                            Text(
+                              t.discover.continueWatching,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ],
                     ),
                     Consumer<UserProfileProvider>(
                       builder: (context, userProvider, child) {
@@ -846,6 +1071,126 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   return _buildHeroItem(_onDeck[index]);
                 },
               ),
+              // Navigation arrows for TV (non-focusable, visual only)
+              if (PlatformDetector.isTVSync() && _onDeck.length > 1) ...[
+                // Left arrow
+                if (_currentHeroIndex > 0)
+                  Positioned(
+                    left: 16,
+                    top: 0,
+                    bottom: 80,
+                    child: Center(
+                      child: Focus(
+                        canRequestFocus: false,
+                        child: IconButton(
+                          icon: const Icon(Icons.chevron_left, size: 48),
+                          color: Colors.white,
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black.withValues(alpha: 0.5),
+                          ),
+                          onPressed: () {
+                            if (_currentHeroIndex > 0) {
+                              _heroController.previousPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                // Right arrow
+                if (_currentHeroIndex < _onDeck.length - 1)
+                  Positioned(
+                    right: 16,
+                    top: 0,
+                    bottom: 80,
+                    child: Center(
+                      child: Focus(
+                        canRequestFocus: false,
+                        child: IconButton(
+                          icon: const Icon(Icons.chevron_right, size: 48),
+                          color: Colors.white,
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black.withValues(alpha: 0.5),
+                          ),
+                          onPressed: () {
+                            if (_currentHeroIndex < _onDeck.length - 1) {
+                              _heroController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+              // Page indicators with animated progress and pause/play button
+              Positioned(
+                bottom: 16,
+                left: -26,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Pause/Play button
+                    GestureDetector(
+                      onTap: () {
+                        if (_isAutoScrollPaused) {
+                          _resumeAutoScroll();
+                        } else {
+                          _pauseAutoScroll();
+                        }
+                      },
+                      child: Icon(
+                        _isAutoScrollPaused ? Icons.play_arrow : Icons.pause,
+                        color: Colors.white,
+                        size: 18,
+                        semanticLabel:
+                            '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
+                      ),
+                    ),
+                    // Spacer to separate indicators from button
+                    const SizedBox(width: 8),
+                    // Page indicators (limited to 5 dots)
+                    ...() {
+                      final range = _getVisibleDotRange();
+                      return List.generate(range.end - range.start + 1, (i) {
+                        final index = range.start + i;
+                        final isActive = _currentHeroIndex == index;
+                        final dotSize = _getDotSize(
+                          index,
+                          range.start,
+                          range.end,
+                        );
+
+    return SliverToBoxAdapter(
+      child: Focus(
+        focusNode: _heroFocusNode,
+        onKeyEvent: _handleHeroKeyEvent,
+        child: SizedBox(
+          height: 500,
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _heroController,
+                itemCount: _onDeck.length,
+                onPageChanged: (index) {
+                  // Validate index is within bounds before updating
+                  if (index >= 0 && index < _onDeck.length) {
+                    setState(() {
+                      _currentHeroIndex = index;
+                    });
+                    _resetAutoScrollTimer();
+                  }
+                },
+                itemBuilder: (context, index) {
+                  return _buildHeroItem(_onDeck[index]);
+                },
+              ),
               // Page indicators with animated progress and pause/play button
               Positioned(
                 bottom: 16,
@@ -959,6 +1304,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showName = heroItem.grandparentTitle ?? heroItem.title;
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 800;
+    final isTV = PlatformDetector.isTVSync();
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.type.toLowerCase() == 'movie'
@@ -970,28 +1316,51 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ? "${heroItem.grandparentTitle}, ${heroItem.title}"
         : heroItem.title;
 
-    return Semantics(
-      label: heroLabel,
-      button: true,
-      hint: t.accessibility.tapToPlay,
-      child: GestureDetector(
-        onTap: () {
-          appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
-          navigateToVideoPlayer(context, metadata: heroItem);
-        },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipRRect(
+    return Focus(
+      onKeyEvent: PlatformDetector.isTVSync() ? (node, event) {
+        if (event is KeyDownEvent) {
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            if (_currentHeroIndex > 0) {
+              _heroController.previousPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+              return KeyEventResult.handled;
+            }
+          } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            if (_currentHeroIndex < _onDeck.length - 1) {
+              _heroController.nextPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+              return KeyEventResult.handled;
+            }
+          }
+        }
+        return KeyEventResult.ignored;
+      } : null,
+      child: Semantics(
+        label: heroLabel,
+        button: true,
+        hint: t.accessibility.tapToPlay,
+        child: GestureDetector(
+          onTap: () {
+            appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
+            navigateToVideoPlayer(context, metadata: heroItem);
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Stack(
               fit: StackFit.expand,
@@ -1288,6 +1657,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ),
           ),
         ),
+      ),
       ),
     );
   }
