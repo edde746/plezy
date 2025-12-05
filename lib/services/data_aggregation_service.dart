@@ -134,6 +134,7 @@ class DataAggregationService {
   Future<List<PlexHub>> getHubsFromAllServers({
     int? limit,
     Map<String, List<PlexLibrary>>? librariesByServer,
+    Set<String>? hiddenLibraryKeys,
   }) async {
     final clients = _serverManager.onlineClients;
 
@@ -169,6 +170,11 @@ class DataAggregationService {
             return false;
           }
           if (library.hidden != null && library.hidden != 0) {
+            return false;
+          }
+          // Check app-level hidden libraries
+          if (hiddenLibraryKeys != null &&
+              hiddenLibraryKeys.contains(library.globalKey)) {
             return false;
           }
           return true;

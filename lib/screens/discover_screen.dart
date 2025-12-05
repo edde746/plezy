@@ -325,9 +325,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Wait for libraries and then fetch hubs
       final librariesByServer = await librariesFuture;
 
-      // Fetch hubs using the pre-fetched libraries
+      // Get hidden libraries to filter from hubs
+      final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
+        context,
+        listen: false,
+      );
+
+      // Fetch hubs using the pre-fetched libraries and hidden keys
       final allHubs = await multiServerProvider.aggregationService
-          .getHubsFromAllServers(librariesByServer: librariesByServer);
+          .getHubsFromAllServers(
+            librariesByServer: librariesByServer,
+            hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+          );
 
       // Filter out duplicate hubs that we already fetch separately
       final filteredHubs = allHubs.where((hub) {
