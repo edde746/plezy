@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import '../mpv/mpv.dart';
 import 'settings_service.dart';
-import '../utils/keyboard_utils.dart';
 import '../utils/player_utils.dart';
 
 class KeyboardShortcutsService {
@@ -159,8 +158,8 @@ class KeyboardShortcutsService {
   }) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-    // Handle back navigation keys first
-    if (isBackKey(event.logicalKey)) {
+    // Handle back navigation keys (Escape)
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
       onBack?.call();
       return KeyEventResult.handled;
     }

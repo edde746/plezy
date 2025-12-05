@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
@@ -10,7 +9,6 @@ import '../providers/playback_state_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/collection_playlist_play_helper.dart';
-import '../utils/keyboard_utils.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../utils/video_player_navigation.dart';
 import '../screens/media_detail_screen.dart';
@@ -371,10 +369,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await _navigateToRelated(
           context,
           metadata!.parentRatingKey,
-          (metadata) => SeasonDetailScreen(
-            season: metadata,
-            focusFirstEpisode: _openedFromKeyboard,
-          ),
+          (metadata) => SeasonDetailScreen(season: metadata),
           t.messages.errorLoadingSeason,
         );
         break;
@@ -1446,111 +1441,29 @@ class _FocusableContextMenuSheet extends StatefulWidget {
 
 class _FocusableContextMenuSheetState
     extends State<_FocusableContextMenuSheet> {
-  late List<FocusNode> _focusNodes;
-  int _focusedIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNodes = List.generate(
-      widget.actions.length,
-      (index) => FocusNode(debugLabel: 'ContextMenuItem$index'),
-    );
-
-    if (widget.focusFirstItem && widget.actions.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _focusNodes[0].requestFocus();
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final node in _focusNodes) {
-      node.dispose();
-    }
-    super.dispose();
-  }
-
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
-    // Close on back keys
-    if (isBackKey(event.logicalKey)) {
-      Navigator.pop(context);
-      return KeyEventResult.handled;
-    }
-
-    // Navigate with arrow keys
-    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-      if (_focusedIndex > 0) {
-        _focusedIndex--;
-        _focusNodes[_focusedIndex].requestFocus();
-      }
-      return KeyEventResult.handled;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-      if (_focusedIndex < widget.actions.length - 1) {
-        _focusedIndex++;
-        _focusNodes[_focusedIndex].requestFocus();
-      }
-      return KeyEventResult.handled;
-    }
-
-    // Select with Enter/Space
-    if (isKeyboardActivationKey(event.logicalKey)) {
-      Navigator.pop(context, widget.actions[_focusedIndex].value);
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      onKeyEvent: _handleKeyEvent,
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                widget.title,
-                style: Theme.of(context).textTheme.titleMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              widget.title,
+              style: Theme.of(context).textTheme.titleMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            ...widget.actions.asMap().entries.map((entry) {
-              final index = entry.key;
-              final action = entry.value;
-              return Focus(
-                focusNode: _focusNodes[index],
-                onFocusChange: (hasFocus) {
-                  if (hasFocus) {
-                    setState(() => _focusedIndex = index);
-                  }
-                },
-                child: Builder(
-                  builder: (context) {
-                    final isFocused = Focus.of(context).hasFocus;
-                    return ListTile(
-                      leading: Icon(action.icon),
-                      title: Text(action.label),
-                      onTap: () => Navigator.pop(context, action.value),
-                      selected: isFocused,
-                      selectedTileColor: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.1),
-                    );
-                  },
-                ),
-              );
-            }),
-          ],
-        ),
+          ),
+          ...widget.actions.map((action) {
+            return ListTile(
+              leading: Icon(action.icon),
+              title: Text(action.label),
+              onTap: () => Navigator.pop(context, action.value),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -1573,66 +1486,6 @@ class _FocusablePopupMenu extends StatefulWidget {
 }
 
 class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
-  late List<FocusNode> _focusNodes;
-  int _focusedIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNodes = List.generate(
-      widget.actions.length,
-      (index) => FocusNode(debugLabel: 'PopupMenuItem$index'),
-    );
-
-    if (widget.focusFirstItem && widget.actions.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _focusNodes[0].requestFocus();
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final node in _focusNodes) {
-      node.dispose();
-    }
-    super.dispose();
-  }
-
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
-    // Close on back keys
-    if (isBackKey(event.logicalKey)) {
-      Navigator.pop(context);
-      return KeyEventResult.handled;
-    }
-
-    // Navigate with arrow keys
-    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-      if (_focusedIndex > 0) {
-        _focusedIndex--;
-        _focusNodes[_focusedIndex].requestFocus();
-      }
-      return KeyEventResult.handled;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-      if (_focusedIndex < widget.actions.length - 1) {
-        _focusedIndex++;
-        _focusNodes[_focusedIndex].requestFocus();
-      }
-      return KeyEventResult.handled;
-    }
-
-    // Select with Enter/Space
-    if (isKeyboardActivationKey(event.logicalKey)) {
-      Navigator.pop(context, widget.actions[_focusedIndex].value);
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -1667,60 +1520,36 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
         Positioned(
           left: left,
           top: top,
-          child: Focus(
-            autofocus: !widget.focusFirstItem,
-            onKeyEvent: _handleKeyEvent,
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(8),
-              clipBehavior: Clip.antiAlias,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minWidth: menuWidth,
-                  maxWidth: menuWidth,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: widget.actions.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final action = entry.value;
-                    return Focus(
-                      focusNode: _focusNodes[index],
-                      onFocusChange: (hasFocus) {
-                        if (hasFocus) {
-                          setState(() => _focusedIndex = index);
-                        }
-                      },
-                      child: Builder(
-                        builder: (context) {
-                          final isFocused = Focus.of(context).hasFocus;
-                          return InkWell(
-                            onTap: () => Navigator.pop(context, action.value),
-                            child: Container(
-                              color: isFocused
-                                  ? Theme.of(
-                                      context,
-                                    ).colorScheme.primary.withValues(alpha: 0.1)
-                                  : null,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(action.icon, size: 20),
-                                  const SizedBox(width: 12),
-                                  Expanded(child: Text(action.label)),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(8),
+            clipBehavior: Clip.antiAlias,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: menuWidth,
+                maxWidth: menuWidth,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: widget.actions.map((action) {
+                  return InkWell(
+                    onTap: () => Navigator.pop(context, action.value),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                    );
-                  }).toList(),
-                ),
+                      child: Row(
+                        children: [
+                          Icon(action.icon, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text(action.label)),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           ),

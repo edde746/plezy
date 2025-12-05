@@ -4,13 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
-import '../main_screen.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
-import '../../utils/keyboard_utils.dart';
 import '../../widgets/desktop_app_bar.dart';
 import 'hotkey_recorder_widget.dart';
 import 'about_screen.dart';
@@ -69,15 +67,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  /// Handle back key press - focus bottom navigation
-  KeyEventResult _handleBackKey(FocusNode node, KeyEvent event) {
-    if (isBackKeyEvent(event)) {
-      BackNavigationScope.of(context)?.focusBottomNav();
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -85,34 +74,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return Scaffold(
-      body: Focus(
-        onKeyEvent: _handleBackKey,
-        child: CustomScrollView(
-          slivers: [
-            CustomAppBar(title: Text(t.settings.title), pinned: true),
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildAppearanceSection(),
+      body: CustomScrollView(
+        slivers: [
+          CustomAppBar(title: Text(t.settings.title), pinned: true),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _buildAppearanceSection(),
+                const SizedBox(height: 24),
+                _buildVideoPlaybackSection(),
+                const SizedBox(height: 24),
+                _buildKeyboardShortcutsSection(),
+                const SizedBox(height: 24),
+                _buildAdvancedSection(),
+                const SizedBox(height: 24),
+                if (UpdateService.isUpdateCheckEnabled) ...[
+                  _buildUpdateSection(),
                   const SizedBox(height: 24),
-                  _buildVideoPlaybackSection(),
-                  const SizedBox(height: 24),
-                  _buildKeyboardShortcutsSection(),
-                  const SizedBox(height: 24),
-                  _buildAdvancedSection(),
-                  const SizedBox(height: 24),
-                  if (UpdateService.isUpdateCheckEnabled) ...[
-                    _buildUpdateSection(),
-                    const SizedBox(height: 24),
-                  ],
-                  _buildAboutSection(),
-                  const SizedBox(height: 24),
-                ]),
-              ),
+                ],
+                _buildAboutSection(),
+                const SizedBox(height: 24),
+              ]),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

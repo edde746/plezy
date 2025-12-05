@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../../../../services/plex_client.dart';
@@ -10,7 +9,6 @@ import '../../../models/plex_sort.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/grid_size_calculator.dart';
-import '../../../utils/keyboard_utils.dart';
 import '../../../widgets/media_card.dart';
 import '../folder_tree_view.dart';
 import '../filters_bottom_sheet.dart';
@@ -89,11 +87,6 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
   int _requestId = 0;
   static const int _pageSize = 500;
 
-  /// Focus node for the first item in the list/grid
-  final FocusNode _firstItemFocusNode = FocusNode(
-    debugLabel: 'BrowseFirstItem',
-  );
-
   @override
   void initState() {
     super.initState();
@@ -112,15 +105,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
   @override
   void dispose() {
     _cancelToken?.cancel();
-    _firstItemFocusNode.dispose();
     super.dispose();
-  }
-
-  /// Focus the first item in the list/grid
-  void focusFirstItem() {
-    if (_items.isNotEmpty) {
-      _firstItemFocusNode.requestFocus();
-    }
   }
 
   Future<void> _loadContent() async {
@@ -328,48 +313,35 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
       context: context,
       builder: (sheetContext) {
         final options = _getGroupingOptions();
-        return Focus(
-          autofocus: true,
-          onKeyEvent: (node, event) {
-            if (isBackKeyEvent(event)) {
-              Navigator.pop(sheetContext);
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          child: FocusTraversalGroup(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: options.length,
-              itemBuilder: (context, index) {
-                final grouping = options[index];
-                return RadioListTile<String>(
-                  autofocus: index == 0,
-                  title: Text(_getGroupingLabel(grouping)),
-                  value: grouping,
-                  groupValue: _selectedGrouping,
-                  onChanged: (value) async {
-                    if (value != null) {
-                      setState(() {
-                        _selectedGrouping = value;
-                      });
+        return ListView.builder(
+          shrinkWrap: true,
+          itemCount: options.length,
+          itemBuilder: (context, index) {
+            final grouping = options[index];
+            return RadioListTile<String>(
+              title: Text(_getGroupingLabel(grouping)),
+              value: grouping,
+              groupValue: _selectedGrouping,
+              onChanged: (value) async {
+                if (value != null) {
+                  setState(() {
+                    _selectedGrouping = value;
+                  });
 
-                      final storage = await StorageService.getInstance();
-                      await storage.saveLibraryGrouping(
-                        widget.library.globalKey,
-                        value,
-                      );
+                  final storage = await StorageService.getInstance();
+                  await storage.saveLibraryGrouping(
+                    widget.library.globalKey,
+                    value,
+                  );
 
-                      if (!sheetContext.mounted) return;
+                  if (!sheetContext.mounted) return;
 
-                      Navigator.pop(sheetContext);
-                      _loadItems();
-                    }
-                  },
-                );
+                  Navigator.pop(sheetContext);
+                  _loadItems();
+                }
               },
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -435,52 +407,30 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     required String label,
     required VoidCallback onPressed,
   }) {
-    return Focus(
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent) {
-          if (isKeyboardActivationKey(event.logicalKey)) {
-            onPressed();
-            return KeyEventResult.handled;
-          }
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Builder(
-        builder: (context) {
-          final isFocused = Focus.of(context).hasFocus;
-          final colorScheme = Theme.of(context).colorScheme;
-          // When focused: inverse colors (white bg + dark text in dark mode, dark bg + light text in light mode)
-          final backgroundColor = isFocused
-              ? colorScheme.onSurface
-              : colorScheme.surfaceContainerHighest;
-          final foregroundColor = isFocused
-              ? colorScheme.surface
-              : colorScheme.onSurfaceVariant;
-          return InkWell(
-            onTap: onPressed,
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 16, color: foregroundColor),
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium?.copyWith(color: foregroundColor),
-                  ),
-                ],
-              ),
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelMedium
+                  ?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
@@ -627,7 +577,6 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
       key: Key(item.ratingKey),
       item: item,
       onRefresh: updateItem,
-      focusNode: index == 0 ? _firstItemFocusNode : null,
     );
   }
 }

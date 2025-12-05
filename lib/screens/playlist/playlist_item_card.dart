@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../services/plex_client.dart';
-import '../../mixins/keyboard_long_press_mixin.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/duration_formatter.dart';
 import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
-import '../../widgets/focus/focus_indicator.dart';
 import '../../widgets/media_context_menu.dart';
 import '../../widgets/plex_optimized_image.dart';
 
@@ -33,17 +31,8 @@ class PlaylistItemCard extends StatefulWidget {
   State<PlaylistItemCard> createState() => _PlaylistItemCardState();
 }
 
-class _PlaylistItemCardState extends State<PlaylistItemCard>
-    with KeyboardLongPressMixin {
+class _PlaylistItemCardState extends State<PlaylistItemCard> {
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
-
-  @override
-  void onKeyboardTap() => widget.onTap?.call();
-
-  @override
-  void onKeyboardLongPress() {
-    _contextMenuKey.currentState?.showContextMenu(context);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,103 +42,92 @@ class _PlaylistItemCardState extends State<PlaylistItemCard>
       item: item,
       onRefresh: widget.onRefresh,
       onTap: widget.onTap,
-      child: FocusableWrapper(
-        onKeyEvent: (node, event) => handleKeyboardLongPress(event),
-        builder: (context, isFocused) => FocusIndicator(
-          isFocused: isFocused,
-          borderRadius: 12,
-          child: Card(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: InkWell(
-              onTap: widget.onTap,
-              focusColor: Colors.transparent,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    // Drag handle (if reorderable)
-                    if (widget.canReorder)
-                      ReorderableDragStartListener(
-                        index: widget.index,
-                        child: const Padding(
-                          padding: EdgeInsets.only(right: 12),
-                          child: Icon(Icons.drag_indicator, color: Colors.grey),
-                        ),
-                      ),
-
-                    // Poster thumbnail
-                    _buildPosterImage(context),
-
-                    const SizedBox(width: 12),
-
-                    // Title and metadata
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Title
-                          Text(
-                            item.displayTitle,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          // Subtitle (episode info or type)
-                          Text(
-                            _buildSubtitle(),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[400],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-
-                          // Progress indicator if partially watched
-                          if (item.viewOffset != null && item.duration != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: LinearProgressIndicator(
-                                value: item.viewOffset! / item.duration!,
-                                backgroundColor: Colors.grey[800],
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.primary,
-                                ),
-                                minHeight: 3,
-                              ),
-                            ),
-                        ],
-                      ),
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: InkWell(
+          onTap: widget.onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                // Drag handle (if reorderable)
+                if (widget.canReorder)
+                  ReorderableDragStartListener(
+                    index: widget.index,
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 12),
+                      child: Icon(Icons.drag_indicator, color: Colors.grey),
                     ),
+                  ),
 
-                    const SizedBox(width: 12),
+                // Poster thumbnail
+                _buildPosterImage(context),
 
-                    // Duration
-                    if (item.duration != null)
+                const SizedBox(width: 12),
+
+                // Title and metadata
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Title
                       Text(
-                        formatDurationTextual(item.duration!),
-                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                        item.displayTitle,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
 
-                    const SizedBox(width: 8),
+                      const SizedBox(height: 4),
 
-                    // Remove button
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: widget.onRemove,
-                      tooltip: t.playlists.removeItem,
-                      color: Colors.grey[400],
-                    ),
-                  ],
+                      // Subtitle (episode info or type)
+                      Text(
+                        _buildSubtitle(),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      // Progress indicator if partially watched
+                      if (item.viewOffset != null && item.duration != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: LinearProgressIndicator(
+                            value: item.viewOffset! / item.duration!,
+                            backgroundColor: Colors.grey[800],
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context).colorScheme.primary,
+                            ),
+                            minHeight: 3,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
+
+                const SizedBox(width: 12),
+
+                // Duration
+                if (item.duration != null)
+                  Text(
+                    formatDurationTextual(item.duration!),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  ),
+
+                const SizedBox(width: 8),
+
+                // Remove button
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: widget.onRemove,
+                  tooltip: t.playlists.removeItem,
+                  color: Colors.grey[400],
+                ),
+              ],
             ),
           ),
         ),

@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'focus/focus_indicator.dart';
-import 'hub_navigation_controller.dart';
 import '../../services/plex_client.dart';
-import '../mixins/keyboard_long_press_mixin.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../providers/multi_server_provider.dart';
@@ -36,15 +32,6 @@ class MediaCard extends StatefulWidget {
   final String?
   collectionId; // The collection ID if displaying within a collection
 
-  /// External FocusNode for hub navigation (provided by HubSection)
-  final FocusNode? focusNode;
-
-  /// Hub section ID for focus memory tracking
-  final String? hubId;
-
-  /// Item index within the hub section
-  final int? itemIndex;
-
   const MediaCard({
     super.key,
     required this.item,
@@ -56,9 +43,6 @@ class MediaCard extends StatefulWidget {
     this.forceGridMode = false,
     this.isInContinueWatching = false,
     this.collectionId,
-    this.focusNode,
-    this.hubId,
-    this.itemIndex,
   });
 
   @override
@@ -116,7 +100,7 @@ class _MediaCardState extends State<MediaCard> {
     return baseLabel;
   }
 
-  void _handleTap(BuildContext context, {bool isKeyboard = false}) async {
+  void _handleTap(BuildContext context) async {
     // Handle playlists
     if (widget.item is PlexPlaylist) {
       await Navigator.push(
@@ -177,7 +161,6 @@ class _MediaCardState extends State<MediaCard> {
         MaterialPageRoute(
           builder: (context) => SeasonDetailScreen(
             season: widget.item,
-            focusFirstEpisode: isKeyboard,
           ),
         ),
       );
@@ -213,18 +196,13 @@ class _MediaCardState extends State<MediaCard> {
             width: widget.width,
             height: widget.height,
             semanticLabel: semanticLabel,
-            onTap: ({bool isKeyboard = false}) =>
-                _handleTap(context, isKeyboard: isKeyboard),
+            onTap: () => _handleTap(context),
             onLongPress: _showContextMenu,
-            focusNode: widget.focusNode,
-            hubId: widget.hubId,
-            itemIndex: widget.itemIndex,
           )
         : _MediaCardList(
             item: widget.item,
             semanticLabel: semanticLabel,
-            onTap: ({bool isKeyboard = false}) =>
-                _handleTap(context, isKeyboard: isKeyboard),
+            onTap: () => _handleTap(context),
             onLongPress: _showContextMenu,
             density: settingsProvider.libraryDensity,
           );
@@ -245,22 +223,13 @@ class _MediaCardState extends State<MediaCard> {
 }
 
 /// Grid layout for media cards
-class _MediaCardGrid extends StatefulWidget {
+class _MediaCardGrid extends StatelessWidget {
   final dynamic item; // Can be PlexMetadata or PlexPlaylist
   final double? width;
   final double? height;
   final String semanticLabel;
-  final void Function({bool isKeyboard}) onTap;
+  final VoidCallback onTap;
   final VoidCallback onLongPress;
-
-  /// External FocusNode for hub navigation (provided by HubSection)
-  final FocusNode? focusNode;
-
-  /// Hub section ID for focus memory tracking
-  final String? hubId;
-
-  /// Item index within the hub section
-  final int? itemIndex;
 
   const _MediaCardGrid({
     required this.item,
@@ -269,308 +238,141 @@ class _MediaCardGrid extends StatefulWidget {
     required this.semanticLabel,
     required this.onTap,
     required this.onLongPress,
-    this.focusNode,
-    this.hubId,
-    this.itemIndex,
   });
 
   @override
-  State<_MediaCardGrid> createState() => _MediaCardGridState();
-}
-
-class _MediaCardGridState extends State<_MediaCardGrid>
-    with KeyboardLongPressMixin {
-  FocusNode? _ownFocusNode;
-  bool _isFocused = false;
-
-  @override
-  void onKeyboardTap() => widget.onTap(isKeyboard: true);
-
-  @override
-  void onKeyboardLongPress() => widget.onLongPress();
-
-  /// Returns the effective focus node (external if provided, otherwise our own)
-  FocusNode get _focusNode {
-    if (widget.focusNode != null) return widget.focusNode!;
-    _ownFocusNode ??= FocusNode();
-    return _ownFocusNode!;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(_handleFocusChange);
-  }
-
-  @override
-  void didUpdateWidget(_MediaCardGrid oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // If focusNode changed, update listener
-    if (oldWidget.focusNode != widget.focusNode) {
-      oldWidget.focusNode?.removeListener(_handleFocusChange);
-      _focusNode.addListener(_handleFocusChange);
-    }
-  }
-
-  @override
-  void dispose() {
-    _focusNode.removeListener(_handleFocusChange);
-    // Only dispose if we created the node
-    _ownFocusNode?.dispose();
-    super.dispose();
-  }
-
-  void _handleFocusChange() {
-    if (_isFocused != _focusNode.hasFocus) {
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
-      if (_focusNode.hasFocus) {
-        // Update focus memory if we're in a hub section
-        if (widget.hubId != null && widget.itemIndex != null) {
-          final controller = HubNavigationScope.maybeOf(context);
-          controller?.rememberFocusedIndex(widget.hubId!, widget.itemIndex!);
-        }
-
-        // Scroll to center only if item is not fully visible
-        _scrollToCenterIfNeeded();
-      }
-    }
-  }
-
-  /// Scrolls to center the item only if it's not already fully visible.
-  /// This prevents unnecessary scrolling when navigating horizontally
-  /// within the same row while still centering when scrolling is needed.
-  void _scrollToCenterIfNeeded() {
-    // For hub sections (nested scrollables), use simple centering
-    // The smart scroll logic doesn't work well with horizontal+vertical nesting
-    if (widget.hubId != null) {
-      Scrollable.ensureVisible(
-        context,
-        alignment: 0.5,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-      );
-      return;
-    }
-
-    // For non-hub contexts (like library browse), use smart scrolling
-    final scrollable = Scrollable.maybeOf(context);
-    if (scrollable == null) {
-      // Fallback to simple centering
-      Scrollable.ensureVisible(
-        context,
-        alignment: 0.5,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-      );
-      return;
-    }
-
-    final renderObject = context.findRenderObject();
-    if (renderObject == null || renderObject is! RenderBox) return;
-
-    final box = renderObject;
-    final scrollRenderObject = scrollable.context.findRenderObject();
-    if (scrollRenderObject == null) return;
-
-    // Get item's position relative to the scroll view
-    final transform = box.getTransformTo(scrollRenderObject);
-    final itemRect = MatrixUtils.transformRect(
-      transform,
-      Offset.zero & box.size,
-    );
-
-    // Get viewport bounds
-    final position = scrollable.position;
-    final viewportHeight = position.viewportDimension;
-
-    // Check if item is fully visible (with margin for focus indicator)
-    const focusMargin = 4.0;
-    final isFullyVisible =
-        itemRect.top >= focusMargin &&
-        itemRect.bottom <= viewportHeight - focusMargin;
-
-    if (!isFullyVisible) {
-      // Item is not fully visible, scroll to center it
-      Scrollable.ensureVisible(
-        context,
-        alignment: 0.5,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    // Handle long-press detection for activation keys
-    final longPressResult = handleKeyboardLongPress(event);
-    if (longPressResult == KeyEventResult.handled) {
-      return longPressResult;
-    }
-
-    if (event is KeyDownEvent) {
-      // Handle up/down for hub navigation
-      if (widget.hubId != null) {
-        final controller = HubNavigationScope.maybeOf(context);
-        if (controller != null) {
-          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-            if (controller.navigateToAdjacentHub(widget.hubId!, -1)) {
-              return KeyEventResult.handled;
-            }
-          } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-            if (controller.navigateToAdjacentHub(widget.hubId!, 1)) {
-              return KeyEventResult.handled;
-            }
-          }
-        }
-      }
-    }
-    return KeyEventResult.ignored;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Focus(
-      focusNode: _focusNode,
-      onKeyEvent: _handleKeyEvent,
-      child: FocusIndicator(
-        isFocused: _isFocused,
-        borderRadius: 8,
-        child: SizedBox(
-          width: widget.width,
-          child: Semantics(
-            label: widget.semanticLabel,
-            button: true,
-            child: InkWell(
-              onTap: () => widget.onTap(isKeyboard: false),
-              borderRadius: BorderRadius.circular(8),
-              focusColor: Colors.transparent, // We use our own focus indicator
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
+    return SizedBox(
+      width: width,
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Poster
+                if (height != null)
+                  SizedBox(
+                    width: double.infinity,
+                    height: height,
+                    child: _buildPosterWithOverlay(context),
+                  )
+                else
+                  Expanded(child: _buildPosterWithOverlay(context)),
+                const SizedBox(height: 4),
+                // Text content
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    // Poster
-                    if (widget.height != null)
-                      SizedBox(
-                        width: double.infinity,
-                        height: widget.height,
-                        child: _buildPosterWithOverlay(context),
-                      )
-                    else
-                      Expanded(child: _buildPosterWithOverlay(context)),
-                    const SizedBox(height: 4),
-                    // Text content
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.item is PlexPlaylist
-                              ? (widget.item as PlexPlaylist).title
-                              : (widget.item as PlexMetadata).displayTitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            height: 1.1,
-                          ),
-                        ),
-                        if (widget.item is PlexPlaylist)
-                          Builder(
-                            builder: (context) {
-                              final playlist = widget.item as PlexPlaylist;
-                              if (playlist.leafCount != null &&
-                                  playlist.leafCount! > 0) {
-                                return Text(
-                                  t.playlists.itemCount(
-                                    count: playlist.leafCount!,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: tokens(context).textMuted,
-                                        fontSize: 11,
-                                        height: 1.1,
-                                      ),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            },
-                          )
-                        else if (widget.item is PlexMetadata) ...[
-                          Builder(
-                            builder: (context) {
-                              final metadata = widget.item as PlexMetadata;
-
-                              // For collections, show item count
-                              if (metadata.type.toLowerCase() == 'collection') {
-                                final count =
-                                    metadata.childCount ?? metadata.leafCount;
-                                if (count != null && count > 0) {
-                                  return Text(
-                                    t.playlists.itemCount(count: count),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: tokens(context).textMuted,
-                                          fontSize: 11,
-                                          height: 1.1,
-                                        ),
-                                  );
-                                }
-                              }
-
-                              // For other media types, show subtitle/parent/year
-                              if (metadata.displaySubtitle != null) {
-                                return Text(
-                                  metadata.displaySubtitle!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: tokens(context).textMuted,
-                                        fontSize: 11,
-                                        height: 1.1,
-                                      ),
-                                );
-                              } else if (metadata.parentTitle != null) {
-                                return Text(
-                                  metadata.parentTitle!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: tokens(context).textMuted,
-                                        fontSize: 11,
-                                        height: 1.1,
-                                      ),
-                                );
-                              } else if (metadata.year != null) {
-                                return Text(
-                                  '${metadata.year}',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: tokens(context).textMuted,
-                                        fontSize: 11,
-                                        height: 1.1,
-                                      ),
-                                );
-                              }
-
-                              return const SizedBox.shrink();
-                            },
-                          ),
-                        ],
-                      ],
+                    Text(
+                      item is PlexPlaylist
+                          ? (item as PlexPlaylist).title
+                          : (item as PlexMetadata).displayTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        height: 1.1,
+                      ),
                     ),
+                    if (item is PlexPlaylist)
+                      Builder(
+                        builder: (context) {
+                          final playlist = item as PlexPlaylist;
+                          if (playlist.leafCount != null &&
+                              playlist.leafCount! > 0) {
+                            return Text(
+                              t.playlists.itemCount(
+                                count: playlist.leafCount!,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: tokens(context).textMuted,
+                                    fontSize: 11,
+                                    height: 1.1,
+                                  ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      )
+                    else if (item is PlexMetadata) ...[
+                      Builder(
+                        builder: (context) {
+                          final metadata = item as PlexMetadata;
+
+                          // For collections, show item count
+                          if (metadata.type.toLowerCase() == 'collection') {
+                            final count =
+                                metadata.childCount ?? metadata.leafCount;
+                            if (count != null && count > 0) {
+                              return Text(
+                                t.playlists.itemCount(count: count),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: tokens(context).textMuted,
+                                      fontSize: 11,
+                                      height: 1.1,
+                                    ),
+                              );
+                            }
+                          }
+
+                          // For other media types, show subtitle/parent/year
+                          if (metadata.displaySubtitle != null) {
+                            return Text(
+                              metadata.displaySubtitle!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: tokens(context).textMuted,
+                                    fontSize: 11,
+                                    height: 1.1,
+                                  ),
+                            );
+                          } else if (metadata.parentTitle != null) {
+                            return Text(
+                              metadata.parentTitle!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: tokens(context).textMuted,
+                                    fontSize: 11,
+                                    height: 1.1,
+                                  ),
+                            );
+                          } else if (metadata.year != null) {
+                            return Text(
+                              '${metadata.year}',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: tokens(context).textMuted,
+                                    fontSize: 11,
+                                    height: 1.1,
+                                  ),
+                            );
+                          }
+
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ],
                   ],
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -583,19 +385,19 @@ class _MediaCardGridState extends State<_MediaCardGrid>
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: _buildPosterImage(context, widget.item),
+          child: _buildPosterImage(context, item),
         ),
-        _PosterOverlay(item: widget.item),
+        _PosterOverlay(item: item),
       ],
     );
   }
 }
 
 /// List layout for media cards
-class _MediaCardList extends StatefulWidget {
+class _MediaCardList extends StatelessWidget {
   final dynamic item; // Can be PlexMetadata or PlexPlaylist
   final String semanticLabel;
-  final void Function({bool isKeyboard}) onTap;
+  final VoidCallback onTap;
   final VoidCallback onLongPress;
   final LibraryDensity density;
 
@@ -607,71 +409,8 @@ class _MediaCardList extends StatefulWidget {
     required this.density,
   });
 
-  @override
-  State<_MediaCardList> createState() => _MediaCardListState();
-}
-
-class _MediaCardListState extends State<_MediaCardList>
-    with KeyboardLongPressMixin {
-  @override
-  void onKeyboardTap() => widget.onTap(isKeyboard: true);
-
-  @override
-  void onKeyboardLongPress() => widget.onLongPress();
-
-  /// Scrolls to center the item only if it's not already fully visible.
-  /// This prevents unnecessary scrolling when navigating horizontally
-  /// within the same row while still centering when scrolling is needed.
-  void _scrollToCenterIfNeeded(BuildContext ctx) {
-    final scrollable = Scrollable.maybeOf(ctx);
-    if (scrollable == null) {
-      // Fallback to simple centering
-      Scrollable.ensureVisible(
-        ctx,
-        alignment: 0.5,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-      );
-      return;
-    }
-
-    final renderObject = ctx.findRenderObject();
-    if (renderObject == null || renderObject is! RenderBox) return;
-
-    final box = renderObject;
-    final scrollRenderObject = scrollable.context.findRenderObject();
-    if (scrollRenderObject == null) return;
-
-    // Get item's position relative to the scroll view
-    final transform = box.getTransformTo(scrollRenderObject);
-    final itemRect = MatrixUtils.transformRect(
-      transform,
-      Offset.zero & box.size,
-    );
-
-    // Get viewport bounds
-    final position = scrollable.position;
-    final viewportHeight = position.viewportDimension;
-
-    // Check if item is fully visible (with margin for focus indicator)
-    const focusMargin = 4.0;
-    final isFullyVisible =
-        itemRect.top >= focusMargin &&
-        itemRect.bottom <= viewportHeight - focusMargin;
-
-    if (!isFullyVisible) {
-      // Item is not fully visible, scroll to center it
-      Scrollable.ensureVisible(
-        ctx,
-        alignment: 0.5,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
   double get _posterWidth {
-    switch (widget.density) {
+    switch (density) {
       case LibraryDensity.compact:
         return 80;
       case LibraryDensity.normal:
@@ -686,7 +425,7 @@ class _MediaCardListState extends State<_MediaCardList>
   }
 
   double get _titleFontSize {
-    switch (widget.density) {
+    switch (density) {
       case LibraryDensity.compact:
         return 14;
       case LibraryDensity.normal:
@@ -697,7 +436,7 @@ class _MediaCardListState extends State<_MediaCardList>
   }
 
   double get _metadataFontSize {
-    switch (widget.density) {
+    switch (density) {
       case LibraryDensity.compact:
         return 11;
       case LibraryDensity.normal:
@@ -708,7 +447,7 @@ class _MediaCardListState extends State<_MediaCardList>
   }
 
   double get _subtitleFontSize {
-    switch (widget.density) {
+    switch (density) {
       case LibraryDensity.compact:
         return 12;
       case LibraryDensity.normal:
@@ -724,7 +463,7 @@ class _MediaCardListState extends State<_MediaCardList>
   }
 
   int get _summaryMaxLines {
-    switch (widget.density) {
+    switch (density) {
       case LibraryDensity.compact:
         return 2;
       case LibraryDensity.normal:
@@ -737,8 +476,8 @@ class _MediaCardListState extends State<_MediaCardList>
   String _buildMetadataLine() {
     final parts = <String>[];
 
-    if (widget.item is PlexPlaylist) {
-      final playlist = widget.item as PlexPlaylist;
+    if (item is PlexPlaylist) {
+      final playlist = item as PlexPlaylist;
       // Add item count
       if (playlist.leafCount != null && playlist.leafCount! > 0) {
         parts.add(t.playlists.itemCount(count: playlist.leafCount!));
@@ -753,8 +492,8 @@ class _MediaCardListState extends State<_MediaCardList>
       if (playlist.smart) {
         parts.add(t.playlists.smartPlaylist);
       }
-    } else if (widget.item is PlexMetadata) {
-      final metadata = widget.item as PlexMetadata;
+    } else if (item is PlexMetadata) {
+      final metadata = item as PlexMetadata;
 
       // For collections, show item count
       if (metadata.type.toLowerCase() == 'collection') {
@@ -799,11 +538,11 @@ class _MediaCardListState extends State<_MediaCardList>
   }
 
   String? _buildSubtitleText() {
-    if (widget.item is PlexPlaylist) {
+    if (item is PlexPlaylist) {
       // Playlists don't have subtitles
       return null;
-    } else if (widget.item is PlexMetadata) {
-      final metadata = widget.item as PlexMetadata;
+    } else if (item is PlexMetadata) {
+      final metadata = item as PlexMetadata;
 
       // For TV episodes, show S#E# format
       if (metadata.parentIndex != null && metadata.index != null) {
@@ -827,112 +566,103 @@ class _MediaCardListState extends State<_MediaCardList>
     final metadataLine = _buildMetadataLine();
     final subtitle = _buildSubtitleText();
 
-    return FocusableWrapper(
-      onKeyEvent: (node, event) => handleKeyboardLongPress(event),
-      onScrollIntoView: _scrollToCenterIfNeeded,
-      builder: (context, isFocused) => FocusIndicator(
-        isFocused: isFocused,
-        borderRadius: 8,
-        child: Semantics(
-          label: widget.semanticLabel,
-          button: true,
-          child: InkWell(
-            onTap: () => widget.onTap(isKeyboard: false),
-            borderRadius: BorderRadius.circular(8),
-            focusColor: Colors.transparent, // We use our own focus indicator
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Poster (responsive size based on density)
-                  SizedBox(
-                    width: _posterWidth,
-                    height: _posterHeight,
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: _buildPosterImage(context, widget.item),
-                        ),
-                        _PosterOverlay(item: widget.item),
-                      ],
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Poster (responsive size based on density)
+              SizedBox(
+                width: _posterWidth,
+                height: _posterHeight,
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: _buildPosterImage(context, item),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Metadata
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        // Title
-                        Text(
-                          widget.item.displayTitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: _titleFontSize,
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        // Metadata info line (rating, duration, score, studio)
-                        if (metadataLine.isNotEmpty) ...[
-                          Text(
-                            metadataLine,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: tokens(
-                                    context,
-                                  ).textMuted.withValues(alpha: 0.9),
-                                  fontSize: _metadataFontSize,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                          ),
-                          const SizedBox(height: 2),
-                        ],
-                        // Subtitle (S#E# or year/parent title)
-                        if (subtitle != null) ...[
-                          Text(
-                            subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: tokens(
-                                    context,
-                                  ).textMuted.withValues(alpha: 0.85),
-                                  fontSize: _subtitleFontSize,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                        ],
-                        // Summary
-                        if (widget.item.summary != null) ...[
-                          Text(
-                            widget.item.summary!,
-                            maxLines: _summaryMaxLines,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: tokens(
-                                    context,
-                                  ).textMuted.withValues(alpha: 0.7),
-                                  fontSize: _summaryFontSize,
-                                  height: 1.3,
-                                ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
+                    _PosterOverlay(item: item),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              // Metadata
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      item.displayTitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: _titleFontSize,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Metadata info line (rating, duration, score, studio)
+                    if (metadataLine.isNotEmpty) ...[
+                      Text(
+                        metadataLine,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(
+                              color: tokens(
+                                context,
+                              ).textMuted.withValues(alpha: 0.9),
+                              fontSize: _metadataFontSize,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                    ],
+                    // Subtitle (S#E# or year/parent title)
+                    if (subtitle != null) ...[
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(
+                              color: tokens(
+                                context,
+                              ).textMuted.withValues(alpha: 0.85),
+                              fontSize: _subtitleFontSize,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    // Summary
+                    if (item.summary != null) ...[
+                      Text(
+                        item.summary!,
+                        maxLines: _summaryMaxLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(
+                              color: tokens(
+                                context,
+                              ).textMuted.withValues(alpha: 0.7),
+                              fontSize: _summaryFontSize,
+                              height: 1.3,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

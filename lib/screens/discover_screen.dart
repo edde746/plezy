@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
@@ -14,7 +13,6 @@ import '../providers/playback_state_provider.dart';
 import '../widgets/desktop_app_bar.dart';
 import 'profile/user_avatar_widget.dart';
 import '../widgets/hub_section.dart';
-import '../widgets/hub_navigation_controller.dart';
 import 'profile/profile_switch_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/settings_provider.dart';
@@ -22,12 +20,10 @@ import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
 import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
-import '../utils/keyboard_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
 import 'auth_screen.dart';
-import 'main_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final VoidCallback? onBecameVisible;
@@ -59,7 +55,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   List<PlexMetadata> _onDeck = [];
   List<PlexHub> _hubs = [];
   bool _isLoading = true;
-  bool _isInitialLoad = true;
   bool _areHubsLoading = true;
   String? _errorMessage;
   final PageController _heroController = PageController();
@@ -68,10 +63,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Timer? _autoScrollTimer;
   late AnimationController _indicatorAnimationController;
   bool _isAutoScrollPaused = false;
-  final HubNavigationController _hubNavigationController =
-      HubNavigationController();
-  late final FocusNode _heroFocusNode;
-  bool _heroIsFocused = false;
 
   /// Get the correct PlexClient for an item's server
   PlexClient _getClientForItem(PlexMetadata? item) {
@@ -99,78 +90,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       vsync: this,
       duration: _heroAutoScrollDuration,
     );
-    _heroFocusNode = FocusNode(debugLabel: 'HeroSection');
-    _heroFocusNode.addListener(_handleHeroFocusChange);
     _loadContent();
     _startAutoScroll();
-  }
-
-  void _handleHeroFocusChange() {
-    if (_heroIsFocused != _heroFocusNode.hasFocus) {
-      setState(() {
-        _heroIsFocused = _heroFocusNode.hasFocus;
-      });
-      if (_heroFocusNode.hasFocus) {
-        // Scroll to the very top when hero is focused
-        _scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-        );
-      }
-    }
-  }
-
-  /// Handle back key press - focus bottom navigation
-  KeyEventResult _handleBackKey(FocusNode node, KeyEvent event) {
-    if (isBackKeyEvent(event)) {
-      BackNavigationScope.of(context)?.focusBottomNav();
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
-  KeyEventResult _handleHeroKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent) {
-      // Enter/Space to play current hero item
-      if (isKeyboardActivationKey(event.logicalKey)) {
-        if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
-          navigateToVideoPlayer(context, metadata: _onDeck[_currentHeroIndex]);
-          return KeyEventResult.handled;
-        }
-      }
-
-      // Left arrow to go to previous hero item
-      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-        if (_onDeck.isNotEmpty && _currentHeroIndex > 0) {
-          _heroController.previousPage(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-          return KeyEventResult.handled;
-        }
-      }
-
-      // Right arrow to go to next hero item
-      if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-        if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length - 1) {
-          _heroController.nextPage(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-          return KeyEventResult.handled;
-        }
-      }
-
-      // Down arrow to navigate to first hub section
-      if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        // Try to navigate to the first hub section
-        if (_hubNavigationController.navigateToAdjacentHub('_hero_', 1)) {
-          return KeyEventResult.handled;
-        }
-      }
-    }
-    return KeyEventResult.ignored;
   }
 
   @override
@@ -179,9 +100,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroController.dispose();
     _scrollController.dispose();
     _indicatorAnimationController.dispose();
-    _hubNavigationController.dispose();
-    _heroFocusNode.removeListener(_handleHeroFocusChange);
-    _heroFocusNode.dispose();
     super.dispose();
   }
 
@@ -307,16 +225,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _currentHeroIndex = 0;
       });
 
-      // Focus the hero on initial load
-      if (_isInitialLoad && onDeck.isNotEmpty) {
-        _isInitialLoad = false;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _heroFocusNode.requestFocus();
-          }
-        });
-      }
-
       // Sync PageController to first page after OnDeck loads
       if (_heroController.hasClients && onDeck.isNotEmpty) {
         _heroController.jumpToPage(0);
@@ -415,13 +323,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     appLogger.d('DiscoverScreen.fullRefresh() called - reloading all content');
     // Reload all content including On Deck and content hubs
     _loadContent();
-  }
-
-  /// Focus the hero section (for keyboard navigation)
-  void focusHero() {
-    if (_onDeck.isNotEmpty) {
-      _heroFocusNode.requestFocus();
-    }
   }
 
   /// Get icon for hub based on its title
@@ -604,360 +505,337 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Focus(
-          onKeyEvent: _handleBackKey,
-          child: HubNavigationScope(
-            controller: _hubNavigationController,
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                DesktopSliverAppBar(
-                  title: Text(t.discover.title),
-                  floating: true,
-                  pinned: true,
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  surfaceTintColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  scrolledUnderElevation: 0,
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: _loadContent,
-                    ),
-                    Consumer<UserProfileProvider>(
-                      builder: (context, userProvider, child) {
-                        return PopupMenuButton<String>(
-                          icon: userProvider.currentUser?.thumb != null
-                              ? UserAvatarWidget(
-                                  user: userProvider.currentUser!,
-                                  size: 32,
-                                  showIndicators: false,
-                                )
-                              : const Icon(Icons.account_circle, size: 32),
-                          onSelected: (value) {
-                            if (value == 'switch_profile') {
-                              _handleSwitchProfile(context);
-                            } else if (value == 'logout') {
-                              _handleLogout();
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            // Only show Switch Profile if multiple users available
-                            if (userProvider.hasMultipleUsers)
-                              PopupMenuItem(
-                                value: 'switch_profile',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.people),
-                                    SizedBox(width: 8),
-                                    Text(t.discover.switchProfile),
-                                  ],
-                                ),
-                              ),
-                            PopupMenuItem(
-                              value: 'logout',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.logout),
-                                  SizedBox(width: 8),
-                                  Text(t.discover.logout),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            DesktopSliverAppBar(
+              title: Text(t.discover.title),
+              floating: true,
+              pinned: true,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              surfaceTintColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              scrolledUnderElevation: 0,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadContent,
                 ),
-                if (_isLoading)
-                  const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
+                Consumer<UserProfileProvider>(
+                  builder: (context, userProvider, child) {
+                    return PopupMenuButton<String>(
+                      icon: userProvider.currentUser?.thumb != null
+                          ? UserAvatarWidget(
+                              user: userProvider.currentUser!,
+                              size: 32,
+                              showIndicators: false,
+                            )
+                          : const Icon(Icons.account_circle, size: 32),
+                      onSelected: (value) {
+                        if (value == 'switch_profile') {
+                          _handleSwitchProfile(context);
+                        } else if (value == 'logout') {
+                          _handleLogout();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        // Only show Switch Profile if multiple users available
+                        if (userProvider.hasMultipleUsers)
+                          PopupMenuItem(
+                            value: 'switch_profile',
+                            child: Row(
+                              children: [
+                                Icon(Icons.people),
+                                SizedBox(width: 8),
+                                Text(t.discover.switchProfile),
+                              ],
+                            ),
+                          ),
+                        PopupMenuItem(
+                          value: 'logout',
+                          child: Row(
+                            children: [
+                              Icon(Icons.logout),
+                              SizedBox(width: 8),
+                              Text(t.discover.logout),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+            if (_isLoading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            if (_errorMessage != null)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(_errorMessage!),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadContent,
+                        child: Text(t.common.retry),
+                      ),
+                    ],
                   ),
-                if (_errorMessage != null)
-                  SliverFillRemaining(
-                    child: Center(
+                ),
+              ),
+            if (!_isLoading && _errorMessage == null) ...[
+              // Hero Section (Continue Watching)
+              Consumer<SettingsProvider>(
+                builder: (context, settingsProvider, child) {
+                  if (_onDeck.isNotEmpty &&
+                      settingsProvider.showHeroSection) {
+                    return _buildHeroSection();
+                  }
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                },
+              ),
+
+              // On Deck / Continue Watching
+              if (_onDeck.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: HubSection(
+                    hub: PlexHub(
+                      hubKey: 'continue_watching',
+                      title: t.discover.continueWatching,
+                      type: 'mixed',
+                      hubIdentifier: '_continue_watching_',
+                      size: _onDeck.length,
+                      more: false,
+                      items: _onDeck,
+                    ),
+                    icon: Icons.play_circle_outline,
+                    onRefresh: updateItem,
+                    onRemoveFromContinueWatching: _refreshContinueWatching,
+                    isInContinueWatching: true,
+                  ),
+                ),
+
+              // Recommendation Hubs (Trending, Top in Genre, etc.)
+              for (int i = 0; i < _hubs.length; i++)
+                SliverToBoxAdapter(
+                  child: HubSection(
+                    hub: _hubs[i],
+                    icon: _getHubIcon(_hubs[i].title),
+                    onRefresh: updateItem,
+                  ),
+                ),
+
+              // Show loading skeleton for hubs while they're loading
+              if (_areHubsLoading && _hubs.isEmpty)
+                for (int i = 0; i < 3; i++)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: Colors.red,
+                          // Hub title skeleton
+                          Container(
+                            width: 200,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                           ),
                           const SizedBox(height: 16),
-                          Text(_errorMessage!),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _loadContent,
-                            child: Text(t.common.retry),
+                          // Hub items skeleton
+                          SizedBox(
+                            height: 200,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: 5,
+                              itemBuilder: (context, index) {
+                                return Container(
+                                  margin: const EdgeInsets.only(right: 12),
+                                  width: 140,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                if (!_isLoading && _errorMessage == null) ...[
-                  // Hero Section (Continue Watching)
-                  Consumer<SettingsProvider>(
-                    builder: (context, settingsProvider, child) {
-                      if (_onDeck.isNotEmpty &&
-                          settingsProvider.showHeroSection) {
-                        return _buildHeroSection();
-                      }
-                      return const SliverToBoxAdapter(child: SizedBox.shrink());
-                    },
+
+              if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.movie_outlined,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 16),
+                        Text(t.discover.noContentAvailable),
+                        SizedBox(height: 8),
+                        Text(
+                          t.discover.addMediaToLibraries,
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   ),
+                ),
 
-                  // On Deck / Continue Watching
-                  if (_onDeck.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: HubSection(
-                        hub: PlexHub(
-                          hubKey: 'continue_watching',
-                          title: t.discover.continueWatching,
-                          type: 'mixed',
-                          hubIdentifier: '_continue_watching_',
-                          size: _onDeck.length,
-                          more: false,
-                          items: _onDeck,
-                        ),
-                        icon: Icons.play_circle_outline,
-                        onRefresh: updateItem,
-                        onRemoveFromContinueWatching: _refreshContinueWatching,
-                        isInContinueWatching: true,
-                        navigationOrder: 1, // After hero
-                      ),
-                    ),
-
-                  // Recommendation Hubs (Trending, Top in Genre, etc.)
-                  for (int i = 0; i < _hubs.length; i++)
-                    SliverToBoxAdapter(
-                      child: HubSection(
-                        hub: _hubs[i],
-                        icon: _getHubIcon(_hubs[i].title),
-                        onRefresh: updateItem,
-                        navigationOrder: 2 + i, // After continue watching
-                      ),
-                    ),
-
-                  // Show loading skeleton for hubs while they're loading
-                  if (_areHubsLoading && _hubs.isEmpty)
-                    for (int i = 0; i < 3; i++)
-                      SliverToBoxAdapter(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Hub title skeleton
-                              Container(
-                                width: 200,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              // Hub items skeleton
-                              SizedBox(
-                                height: 200,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: 5,
-                                  itemBuilder: (context, index) {
-                                    return Container(
-                                      margin: const EdgeInsets.only(right: 12),
-                                      width: 140,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                  if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
-                    SliverFillRemaining(
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.movie_outlined,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
-                            SizedBox(height: 16),
-                            Text(t.discover.noContentAvailable),
-                            SizedBox(height: 8),
-                            Text(
-                              t.discover.addMediaToLibraries,
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                ],
-              ],
-            ),
-          ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
+          ],
         ),
       ),
     );
   }
 
   Widget _buildHeroSection() {
-    // Register hero section with navigation controller
-    // This allows pressing up from first hub to return to hero
-    _hubNavigationController.register(
-      HubSectionRegistration(
-        hubId: '_hero_',
-        itemCount: 1,
-        focusItem: (_) => _heroFocusNode.requestFocus(),
-        order: 0, // Hero is first
-      ),
-    );
-
     return SliverToBoxAdapter(
-      child: Focus(
-        focusNode: _heroFocusNode,
-        onKeyEvent: _handleHeroKeyEvent,
-        child: SizedBox(
-          height: 500,
-          child: Stack(
-            children: [
-              PageView.builder(
-                controller: _heroController,
-                itemCount: _onDeck.length,
-                onPageChanged: (index) {
-                  // Validate index is within bounds before updating
-                  if (index >= 0 && index < _onDeck.length) {
-                    setState(() {
-                      _currentHeroIndex = index;
-                    });
-                    _resetAutoScrollTimer();
-                  }
-                },
-                itemBuilder: (context, index) {
-                  return _buildHeroItem(_onDeck[index]);
-                },
-              ),
-              // Page indicators with animated progress and pause/play button
-              Positioned(
-                bottom: 16,
-                left: -26,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Pause/Play button
-                    GestureDetector(
-                      onTap: () {
-                        if (_isAutoScrollPaused) {
-                          _resumeAutoScroll();
-                        } else {
-                          _pauseAutoScroll();
-                        }
-                      },
-                      child: Icon(
-                        _isAutoScrollPaused ? Icons.play_arrow : Icons.pause,
-                        color: Colors.white,
-                        size: 18,
-                        semanticLabel:
-                            '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
-                      ),
+      child: SizedBox(
+        height: 500,
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _heroController,
+              itemCount: _onDeck.length,
+              onPageChanged: (index) {
+                // Validate index is within bounds before updating
+                if (index >= 0 && index < _onDeck.length) {
+                  setState(() {
+                    _currentHeroIndex = index;
+                  });
+                  _resetAutoScrollTimer();
+                }
+              },
+              itemBuilder: (context, index) {
+                return _buildHeroItem(_onDeck[index]);
+              },
+            ),
+            // Page indicators with animated progress and pause/play button
+            Positioned(
+              bottom: 16,
+              left: -26,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Pause/Play button
+                  GestureDetector(
+                    onTap: () {
+                      if (_isAutoScrollPaused) {
+                        _resumeAutoScroll();
+                      } else {
+                        _pauseAutoScroll();
+                      }
+                    },
+                    child: Icon(
+                      _isAutoScrollPaused ? Icons.play_arrow : Icons.pause,
+                      color: Colors.white,
+                      size: 18,
+                      semanticLabel:
+                          '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
                     ),
-                    // Spacer to separate indicators from button
-                    const SizedBox(width: 8),
-                    // Page indicators (limited to 5 dots)
-                    ...() {
-                      final range = _getVisibleDotRange();
-                      return List.generate(range.end - range.start + 1, (i) {
-                        final index = range.start + i;
-                        final isActive = _currentHeroIndex == index;
-                        final dotSize = _getDotSize(
-                          index,
-                          range.start,
-                          range.end,
-                        );
+                  ),
+                  // Spacer to separate indicators from button
+                  const SizedBox(width: 8),
+                  // Page indicators (limited to 5 dots)
+                  ...() {
+                    final range = _getVisibleDotRange();
+                    return List.generate(range.end - range.start + 1, (i) {
+                      final index = range.start + i;
+                      final isActive = _currentHeroIndex == index;
+                      final dotSize = _getDotSize(
+                        index,
+                        range.start,
+                        range.end,
+                      );
 
-                        if (isActive) {
-                          // Animated progress indicator for active page
-                          return AnimatedBuilder(
-                            animation: _indicatorAnimationController,
-                            builder: (context, child) {
-                              // Fill width animates based on dot size
-                              final maxWidth =
-                                  dotSize *
-                                  3; // 24px for normal, 15px for small
-                              final fillWidth =
-                                  dotSize +
-                                  ((maxWidth - dotSize) *
-                                      _indicatorAnimationController.value);
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 4,
+                      if (isActive) {
+                        // Animated progress indicator for active page
+                        return AnimatedBuilder(
+                          animation: _indicatorAnimationController,
+                          builder: (context, child) {
+                            // Fill width animates based on dot size
+                            final maxWidth =
+                                dotSize *
+                                3; // 24px for normal, 15px for small
+                            final fillWidth =
+                                dotSize +
+                                ((maxWidth - dotSize) *
+                                    _indicatorAnimationController.value);
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              width: maxWidth,
+                              height: dotSize,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(
+                                  dotSize / 2,
                                 ),
-                                width: maxWidth,
-                                height: dotSize,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  borderRadius: BorderRadius.circular(
-                                    dotSize / 2,
-                                  ),
-                                ),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Container(
-                                    width: fillWidth,
-                                    height: dotSize,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(
-                                        dotSize / 2,
-                                      ),
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Container(
+                                  width: fillWidth,
+                                  height: dotSize,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(
+                                      dotSize / 2,
                                     ),
                                   ),
                                 ),
-                              );
-                            },
-                          );
-                        } else {
-                          // Static indicator for inactive pages
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: dotSize,
-                            height: dotSize,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(dotSize / 2),
-                            ),
-                          );
-                        }
-                      });
-                    }(),
-                  ],
-                ),
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        // Static indicator for inactive pages
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: dotSize,
+                          height: dotSize,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(dotSize / 2),
+                          ),
+                        );
+                      }
+                    });
+                  }(),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

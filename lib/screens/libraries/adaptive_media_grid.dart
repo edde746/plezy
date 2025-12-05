@@ -22,16 +22,12 @@ class AdaptiveMediaGrid extends StatelessWidget {
   /// Child aspect ratio for grid items (width / height)
   final double childAspectRatio;
 
-  /// Optional focus node for the first item (for keyboard navigation)
-  final FocusNode? firstItemFocusNode;
-
   const AdaptiveMediaGrid({
     super.key,
     required this.items,
     this.onRefresh,
     this.padding = const EdgeInsets.fromLTRB(8, 8, 8, 8),
     this.childAspectRatio = 2 / 3.3,
-    this.firstItemFocusNode,
   });
 
   @override
@@ -39,45 +35,39 @@ class AdaptiveMediaGrid extends StatelessWidget {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
         if (settingsProvider.viewMode == ViewMode.list) {
-          return FocusTraversalGroup(
-            child: ListView.builder(
-              padding: padding,
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return MediaCard(
-                  key: Key(item.ratingKey),
-                  item: item,
-                  onListRefresh: onRefresh,
-                  focusNode: index == 0 ? firstItemFocusNode : null,
-                );
-              },
-            ),
+          return ListView.builder(
+            padding: padding,
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return MediaCard(
+                key: Key(item.ratingKey),
+                item: item,
+                onListRefresh: onRefresh,
+              );
+            },
           );
         } else {
-          return FocusTraversalGroup(
-            child: GridView.builder(
-              padding: padding,
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-                  context,
-                  settingsProvider.libraryDensity,
-                ),
-                childAspectRatio: childAspectRatio,
-                crossAxisSpacing: 0,
-                mainAxisSpacing: 0,
+          return GridView.builder(
+            padding: padding,
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
+                context,
+                settingsProvider.libraryDensity,
               ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return MediaCard(
-                  key: Key(item.ratingKey),
-                  item: item,
-                  onListRefresh: onRefresh,
-                  focusNode: index == 0 ? firstItemFocusNode : null,
-                );
-              },
+              childAspectRatio: childAspectRatio,
+              crossAxisSpacing: 0,
+              mainAxisSpacing: 0,
             ),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return MediaCard(
+                key: Key(item.ratingKey),
+                item: item,
+                onListRefresh: onRefresh,
+              );
+            },
           );
         }
       },

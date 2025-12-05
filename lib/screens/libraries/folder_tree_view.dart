@@ -150,10 +150,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     }
   }
 
-  Future<void> _handleItemTap(
-    PlexMetadata item, {
-    bool isKeyboard = false,
-  }) async {
+  Future<void> _handleItemTap(PlexMetadata item) async {
     final itemType = item.type.toLowerCase();
 
     // For episodes, start playback directly
@@ -166,8 +163,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              SeasonDetailScreen(season: item, focusFirstEpisode: isKeyboard),
+          builder: (context) => SeasonDetailScreen(season: item),
         ),
       );
       widget.onRefresh?.call(item.ratingKey);
@@ -219,10 +215,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
           isExpanded: isExpanded,
           isLoading: isLoading,
           onExpand: isFolder ? () => _toggleFolder(item) : null,
-          onTap: !isFolder
-              ? ({bool isKeyboard = false}) =>
-                    _handleItemTap(item, isKeyboard: isKeyboard)
-              : null,
+          onTap: !isFolder ? () => _handleItemTap(item) : null,
         ),
       );
 
