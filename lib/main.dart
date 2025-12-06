@@ -10,6 +10,7 @@ import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/update_service.dart';
 import 'services/settings_service.dart';
+import 'services/tv_detection_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';
 import 'providers/multi_server_provider.dart';
@@ -45,6 +46,11 @@ void main() async {
   // Initialize window_manager for desktop platforms
   if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
     futures.add(windowManager.ensureInitialized());
+  }
+
+  // Initialize TV detection for Android
+  if (Platform.isAndroid) {
+    futures.add(TvDetectionService.getInstance().then((_) {}));
   }
 
   // Configure macOS window with custom titlebar (depends on window manager)

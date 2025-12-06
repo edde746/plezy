@@ -89,9 +89,10 @@ class HubSection extends StatelessWidget {
               final posterWidth = cardWidth - 16;
               // 2:3 poster aspect ratio (height is 1.5x width)
               final posterHeight = posterWidth * 1.5;
-              // Container height = poster + padding + spacing + text
+              // Container height = poster + padding + spacing + text + ListView padding
               // 8px top padding + posterHeight + 4px spacing + ~26px text + 8px bottom padding
-              final containerHeight = posterHeight + 46;
+              // + 10px for ListView vertical padding (5px top + 5px bottom)
+              final containerHeight = posterHeight + 56;
 
               return SizedBox(
                 height: containerHeight,

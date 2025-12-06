@@ -70,8 +70,12 @@ class DesktopSliverAppBar extends StatelessWidget {
       leading: DesktopAppBarHelper.buildAdjustedLeading(
         effectiveLeading,
         includeGestureDetector: true,
+        context: context,
       ),
-      leadingWidth: DesktopAppBarHelper.calculateLeadingWidth(effectiveLeading),
+      leadingWidth: DesktopAppBarHelper.calculateLeadingWidth(
+        effectiveLeading,
+        context: context,
+      ),
       automaticallyImplyLeading:
           false, // Always false since we handle it manually
       elevation: elevation,

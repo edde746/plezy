@@ -159,9 +159,7 @@ class _MediaCardState extends State<MediaCard> {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SeasonDetailScreen(
-            season: widget.item,
-          ),
+          builder: (context) => SeasonDetailScreen(season: widget.item),
         ),
       );
       // Season screen doesn't return a refresh flag, but we can refresh anyway
@@ -289,9 +287,7 @@ class _MediaCardGrid extends StatelessWidget {
                           if (playlist.leafCount != null &&
                               playlist.leafCount! > 0) {
                             return Text(
-                              t.playlists.itemCount(
-                                count: playlist.leafCount!,
-                              ),
+                              t.playlists.itemCount(count: playlist.leafCount!),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.bodySmall
@@ -616,14 +612,13 @@ class _MediaCardList extends StatelessWidget {
                         metadataLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(
-                              color: tokens(
-                                context,
-                              ).textMuted.withValues(alpha: 0.9),
-                              fontSize: _metadataFontSize,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(
+                            context,
+                          ).textMuted.withValues(alpha: 0.9),
+                          fontSize: _metadataFontSize,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       const SizedBox(height: 2),
                     ],
@@ -633,13 +628,12 @@ class _MediaCardList extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(
-                              color: tokens(
-                                context,
-                              ).textMuted.withValues(alpha: 0.85),
-                              fontSize: _subtitleFontSize,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(
+                            context,
+                          ).textMuted.withValues(alpha: 0.85),
+                          fontSize: _subtitleFontSize,
+                        ),
                       ),
                       const SizedBox(height: 4),
                     ],
@@ -649,14 +643,13 @@ class _MediaCardList extends StatelessWidget {
                         item.summary!,
                         maxLines: _summaryMaxLines,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(
-                              color: tokens(
-                                context,
-                              ).textMuted.withValues(alpha: 0.7),
-                              fontSize: _summaryFontSize,
-                              height: 1.3,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens(
+                            context,
+                          ).textMuted.withValues(alpha: 0.7),
+                          fontSize: _summaryFontSize,
+                          height: 1.3,
+                        ),
                       ),
                     ],
                   ],

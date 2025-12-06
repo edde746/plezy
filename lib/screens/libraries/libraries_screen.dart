@@ -8,10 +8,10 @@ import '../../models/plex_sort.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../widgets/desktop_app_bar.dart';
 import 'context_menu_wrapper.dart';
-import 'server_badge.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/item_updatable.dart';
@@ -24,7 +24,9 @@ import 'tabs/library_collections_tab.dart';
 import 'tabs/library_playlists_tab.dart';
 
 class LibrariesScreen extends StatefulWidget {
-  const LibrariesScreen({super.key});
+  final VoidCallback? onLibraryOrderChanged;
+
+  const LibrariesScreen({super.key, this.onLibraryOrderChanged});
 
   @override
   State<LibrariesScreen> createState() => _LibrariesScreenState();
@@ -291,6 +293,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final storage = await StorageService.getInstance();
     final libraryKeys = _allLibraries.map((lib) => lib.globalKey).toList();
     await storage.saveLibraryOrder(libraryKeys);
+    widget.onLibraryOrderChanged?.call();
+  }
+
+  /// Public method to load a library by key (called from MainScreen side nav)
+  void loadLibraryByKey(String libraryGlobalKey) {
+    _loadLibraryContent(libraryGlobalKey);
   }
 
   Future<void> _loadLibraryContent(String libraryGlobalKey) async {
@@ -753,113 +761,75 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
-  /// Build grouped dropdown menu items with server sections
+  /// Get set of library names that appear more than once (not globally unique)
+  Set<String> _getNonUniqueLibraryNames(List<PlexLibrary> libraries) {
+    final nameCounts = <String, int>{};
+    for (final lib in libraries) {
+      nameCounts[lib.title] = (nameCounts[lib.title] ?? 0) + 1;
+    }
+    return nameCounts.entries
+        .where((e) => e.value > 1)
+        .map((e) => e.key)
+        .toSet();
+  }
+
+  /// Build dropdown menu items with server subtitle for non-unique names
   List<PopupMenuEntry<String>> _buildGroupedLibraryMenuItems(
     List<PlexLibrary> visibleLibraries,
   ) {
-    final List<PopupMenuEntry<String>> menuItems = [];
+    // Find which library names are not unique
+    final nonUniqueNames = _getNonUniqueLibraryNames(visibleLibraries);
 
-    if (!_hasMultipleServers) {
-      // Single server: flat list
-      return visibleLibraries.map((library) {
-        final isSelected = library.globalKey == _selectedLibraryGlobalKey;
-        return PopupMenuItem<String>(
-          value: library.globalKey,
-          child: Row(
-            children: [
-              Icon(
-                _getLibraryIcon(library.type),
-                size: 20,
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                library.title,
-                style: TextStyle(
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList();
-    }
+    return visibleLibraries.map((library) {
+      final isSelected = library.globalKey == _selectedLibraryGlobalKey;
+      final showServerName = nonUniqueNames.contains(library.title) &&
+          library.serverName != null;
 
-    // Multiple servers: group by server
-    final Map<String, List<PlexLibrary>> groupedLibraries = {};
-    for (final library in visibleLibraries) {
-      final serverKey = library.serverId ?? 'unknown';
-      groupedLibraries.putIfAbsent(serverKey, () => []).add(library);
-    }
-
-    // Use ordered server keys
-    final serverKeys = _getOrderedServerIds(visibleLibraries);
-    for (int i = 0; i < serverKeys.length; i++) {
-      final serverKey = serverKeys[i];
-      final libraries = groupedLibraries[serverKey]!;
-      final serverName = libraries.first.serverName ?? 'Unknown Server';
-
-      // Add server header
-      menuItems.add(
-        PopupMenuItem<String>(
-          enabled: false,
-          height: 24,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Text(
-            serverName,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.primary,
+      return PopupMenuItem<String>(
+        value: library.globalKey,
+        child: Row(
+          children: [
+            Icon(
+              _getLibraryIcon(library.type),
+              size: 20,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    library.title,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                  ),
+                  if (showServerName)
+                    Text(
+                      library.serverName!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withValues(alpha: 0.6),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       );
-
-      // Add libraries for this server
-      for (final library in libraries) {
-        final isSelected = library.globalKey == _selectedLibraryGlobalKey;
-        menuItems.add(
-          PopupMenuItem<String>(
-            value: library.globalKey,
-            child: Row(
-              children: [
-                const SizedBox(width: 12), // Indent library items
-                Icon(
-                  _getLibraryIcon(library.type),
-                  size: 20,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  library.title,
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      // Add divider between server groups (except after last)
-      if (i < serverKeys.length - 1) {
-        menuItems.add(const PopupMenuDivider());
-      }
-    }
-
-    return menuItems;
+    }).toList();
   }
 
   Widget _buildTabChip(String label, int index) {
@@ -885,6 +855,33 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       ),
       showCheckmark: false,
     );
+  }
+
+  /// Build the app bar title - either dropdown on mobile or simple title on desktop
+  Widget _buildAppBarTitle(List<PlexLibrary> visibleLibraries) {
+    // No libraries or no selection
+    if (visibleLibraries.isEmpty || _selectedLibraryGlobalKey == null) {
+      return Text(t.libraries.title);
+    }
+
+    // On desktop/TV with side nav, show tabs in app bar (library name is in side nav)
+    if (PlatformDetector.shouldUseSideNavigation(context)) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildTabChip(t.libraries.tabs.recommended, 0),
+          const SizedBox(width: 8),
+          _buildTabChip(t.libraries.tabs.browse, 1),
+          const SizedBox(width: 8),
+          _buildTabChip(t.libraries.tabs.collections, 2),
+          const SizedBox(width: 8),
+          _buildTabChip(t.libraries.tabs.playlists, 3),
+        ],
+      );
+    }
+
+    // On mobile, show the dropdown
+    return _buildLibraryDropdownTitle(visibleLibraries);
   }
 
   Widget _buildLibraryDropdownTitle(List<PlexLibrary> visibleLibraries) {
@@ -955,10 +952,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       body: CustomScrollView(
         slivers: [
           DesktopSliverAppBar(
-            title:
-                visibleLibraries.isNotEmpty && _selectedLibraryGlobalKey != null
-                ? _buildLibraryDropdownTitle(visibleLibraries)
-                : Text(t.libraries.title),
+            title: _buildAppBarTitle(visibleLibraries),
             floating: true,
             pinned: true,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -1023,8 +1017,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               ),
             )
           else ...[
-            // Tab selector chips
-            if (_selectedLibraryGlobalKey != null)
+            // Tab selector chips (only on mobile - desktop has them in app bar)
+            if (_selectedLibraryGlobalKey != null &&
+                !PlatformDetector.shouldUseSideNavigation(context))
               SliverToBoxAdapter(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -1127,77 +1122,11 @@ class _LibraryManagementSheet extends StatefulWidget {
 
 class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   late List<PlexLibrary> _tempLibraries;
-  List<String>? _serverOrder;
 
   @override
   void initState() {
     super.initState();
     _tempLibraries = List.from(widget.allLibraries);
-    _loadServerOrder();
-  }
-
-  /// Load server order from storage
-  Future<void> _loadServerOrder() async {
-    final storage = await StorageService.getInstance();
-    final savedOrder = storage.getServerOrder();
-
-    if (mounted) {
-      setState(() {
-        _serverOrder = savedOrder;
-      });
-    }
-  }
-
-  /// Save server order to storage
-  Future<void> _saveServerOrder(List<String> serverIds) async {
-    final storage = await StorageService.getInstance();
-    await storage.saveServerOrder(serverIds);
-
-    if (mounted) {
-      setState(() {
-        _serverOrder = serverIds;
-      });
-    }
-  }
-
-  /// Get ordered list of server IDs
-  List<String> _getOrderedServerIds() {
-    // Get unique server IDs from libraries
-    final serverIds = _tempLibraries
-        .where((lib) => lib.serverId != null)
-        .map((lib) => lib.serverId!)
-        .toSet()
-        .toList();
-
-    if (_serverOrder == null || _serverOrder!.isEmpty) {
-      return serverIds;
-    }
-
-    // Apply saved order, but include any new servers not in the saved order
-    final ordered = <String>[];
-    for (final id in _serverOrder!) {
-      if (serverIds.contains(id)) {
-        ordered.add(id);
-      }
-    }
-
-    // Add any servers not in saved order
-    for (final id in serverIds) {
-      if (!ordered.contains(id)) {
-        ordered.add(id);
-      }
-    }
-
-    return ordered;
-  }
-
-  /// Check if libraries come from multiple servers
-  bool get _hasMultipleServers {
-    final uniqueServerIds = _tempLibraries
-        .where((lib) => lib.serverId != null)
-        .map((lib) => lib.serverId)
-        .toSet();
-    return uniqueServerIds.length > 1;
   }
 
   void _reorderLibraries(int oldIndex, int newIndex) {
@@ -1301,6 +1230,18 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     }
   }
 
+  /// Get set of library names that appear more than once (not globally unique)
+  Set<String> _getNonUniqueLibraryNames() {
+    final nameCounts = <String, int>{};
+    for (final lib in _tempLibraries) {
+      nameCounts[lib.title] = (nameCounts[lib.title] ?? 0) + 1;
+    }
+    return nameCounts.entries
+        .where((e) => e.value > 1)
+        .map((e) => e.key)
+        .toSet();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Watch provider to rebuild when hidden libraries change
@@ -1346,12 +1287,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
             // Library list (grouped by server if multiple servers)
             Expanded(
-              child: _hasMultipleServers
-                  ? _buildGroupedLibraryList(
-                      scrollController,
-                      hiddenLibraryKeys,
-                    )
-                  : _buildFlatLibraryList(scrollController, hiddenLibraryKeys),
+              child: _buildFlatLibraryList(scrollController, hiddenLibraryKeys),
             ),
           ],
         );
@@ -1359,11 +1295,13 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     );
   }
 
-  /// Build flat library list (single server)
+  /// Build flat library list with server subtitle for non-unique names
   Widget _buildFlatLibraryList(
     ScrollController scrollController,
     Set<String> hiddenLibraryKeys,
   ) {
+    final nonUniqueNames = _getNonUniqueLibraryNames();
+
     return ReorderableListView.builder(
       scrollController: scrollController,
       onReorder: _reorderLibraries,
@@ -1372,83 +1310,13 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       buildDefaultDragHandles: false,
       itemBuilder: (context, index) {
         final library = _tempLibraries[index];
-        return _buildLibraryTile(library, index, hiddenLibraryKeys);
-      },
-    );
-  }
-
-  /// Build grouped library list (multiple servers)
-  Widget _buildGroupedLibraryList(
-    ScrollController scrollController,
-    Set<String> hiddenLibraryKeys,
-  ) {
-    // Group libraries by server
-    final Map<String, List<PlexLibrary>> groupedLibraries = {};
-    for (final library in _tempLibraries) {
-      final serverKey = library.serverId ?? 'unknown';
-      groupedLibraries.putIfAbsent(serverKey, () => []).add(library);
-    }
-
-    // Use ordered server keys
-    final serverKeys = _getOrderedServerIds();
-
-    return ReorderableListView.builder(
-      scrollController: scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      buildDefaultDragHandles: false,
-      onReorder: (oldIndex, newIndex) {
-        // Reorder servers
-        final reorderedServerIds = List<String>.from(serverKeys);
-        if (newIndex > oldIndex) {
-          newIndex -= 1;
-        }
-        final serverId = reorderedServerIds.removeAt(oldIndex);
-        reorderedServerIds.insert(newIndex, serverId);
-        _saveServerOrder(reorderedServerIds);
-      },
-      itemCount: serverKeys.length,
-      itemBuilder: (context, serverIndex) {
-        final serverKey = serverKeys[serverIndex];
-        final libraries = groupedLibraries[serverKey]!;
-        final serverName = libraries.first.serverName ?? 'Unknown Server';
-
-        return Column(
-          key: ValueKey(serverKey),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Server header with drag handle
-            ListTile(
-              leading: ReorderableDragStartListener(
-                index: serverIndex,
-                child: Icon(
-                  Icons.drag_indicator,
-                  color: IconTheme.of(context).color?.withValues(alpha: 0.5),
-                ),
-              ),
-              title: Text(
-                serverName,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-
-            // Libraries for this server (not reorderable)
-            ...libraries.asMap().entries.map((entry) {
-              final index = entry.key;
-              final library = entry.value;
-              return _buildLibraryTile(
-                library,
-                index,
-                hiddenLibraryKeys,
-                showServerBadge: false,
-                enableDrag: false,
-              );
-            }),
-          ],
+        final showServerName = nonUniqueNames.contains(library.title) &&
+            library.serverName != null;
+        return _buildLibraryTile(
+          library,
+          index,
+          hiddenLibraryKeys,
+          showServerName: showServerName,
         );
       },
     );
@@ -1459,8 +1327,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     PlexLibrary library,
     int index,
     Set<String> hiddenLibraryKeys, {
-    bool showServerBadge = true,
-    bool enableDrag = true,
+    bool showServerName = false,
   }) {
     final isHidden = hiddenLibraryKeys.contains(library.globalKey);
 
@@ -1471,28 +1338,31 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         leading: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (enableDrag)
-              ReorderableDragStartListener(
-                index: index,
-                child: Icon(
-                  Icons.drag_indicator,
-                  color: IconTheme.of(context).color?.withValues(alpha: 0.5),
-                ),
+            ReorderableDragStartListener(
+              index: index,
+              child: Icon(
+                Icons.drag_indicator,
+                color: IconTheme.of(context).color?.withValues(alpha: 0.5),
               ),
-            if (enableDrag) const SizedBox(width: 8),
-            if (!enableDrag) const SizedBox(width: 12),
+            ),
+            const SizedBox(width: 8),
             Icon(_getLibraryIcon(library.type)),
           ],
         ),
-        title: Row(
-          children: [
-            Expanded(child: Text(library.title)),
-            if (showServerBadge &&
-                _hasMultipleServers &&
-                library.serverName != null)
-              ServerBadge(serverName: library.serverName, showFullName: true),
-          ],
-        ),
+        title: Text(library.title),
+        subtitle: showServerName
+            ? Text(
+                library.serverName!,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withValues(alpha: 0.6),
+                ),
+              )
+            : null,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

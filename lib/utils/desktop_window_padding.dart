@@ -2,6 +2,23 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import '../services/fullscreen_state_manager.dart';
 
+/// InheritedWidget to indicate that a side navigation is present in the widget tree.
+/// When present, app bars should skip their left padding since the side nav
+/// already handles the macOS traffic lights area.
+class SideNavigationScope extends InheritedWidget {
+  const SideNavigationScope({
+    super.key,
+    required super.child,
+  });
+
+  static bool isPresent(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<SideNavigationScope>() != null;
+  }
+
+  @override
+  bool updateShouldNotify(SideNavigationScope oldWidget) => false;
+}
+
 /// Padding values for desktop window controls
 class DesktopWindowPadding {
   /// Left padding for macOS traffic lights (normal window mode)
@@ -45,11 +62,25 @@ class DesktopAppBarHelper {
   /// Builds leading widget with appropriate left padding for macOS traffic lights
   ///
   /// [includeGestureDetector] - If true, wraps in GestureDetector to prevent window dragging
+  /// [context] - Required to check if side navigation is visible
   static Widget? buildAdjustedLeading(
     Widget? leading, {
     bool includeGestureDetector = false,
+    BuildContext? context,
   }) {
     if (!Platform.isMacOS || leading == null) {
+      return leading;
+    }
+
+    // Skip left padding when side navigation scope is present in widget tree
+    if (context != null && SideNavigationScope.isPresent(context)) {
+      if (includeGestureDetector) {
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanDown: (_) {},
+          child: leading,
+        );
+      }
       return leading;
     }
 
@@ -94,8 +125,14 @@ class DesktopAppBarHelper {
   }
 
   /// Calculates the leading width for SliverAppBar to account for macOS traffic lights
-  static double? calculateLeadingWidth(Widget? leading) {
+  /// [context] - Required to check if side navigation is visible
+  static double? calculateLeadingWidth(Widget? leading, {BuildContext? context}) {
     if (!Platform.isMacOS || leading == null) {
+      return null;
+    }
+
+    // Skip extra width when side navigation scope is present in widget tree
+    if (context != null && SideNavigationScope.isPresent(context)) {
       return null;
     }
 
@@ -125,6 +162,8 @@ class DesktopAppBarHelper {
 
 /// A widget that adds padding to account for desktop window controls.
 /// On macOS, adds left padding for traffic lights (reduced in fullscreen).
+/// When side navigation is visible, left padding is skipped as the side nav
+/// already occupies the traffic lights area.
 class DesktopTitleBarPadding extends StatelessWidget {
   final Widget child;
   final double? leftPadding;
@@ -141,6 +180,19 @@ class DesktopTitleBarPadding extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!Platform.isMacOS) {
       return child;
+    }
+
+    // Skip left padding when side navigation scope is present in widget tree
+    // (side nav already handles the traffic lights area)
+    if (SideNavigationScope.isPresent(context)) {
+      final right = rightPadding ?? 0.0;
+      if (right == 0.0) {
+        return child;
+      }
+      return Padding(
+        padding: EdgeInsets.only(right: right),
+        child: child,
+      );
     }
 
     return ListenableBuilder(

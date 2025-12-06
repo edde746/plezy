@@ -4,6 +4,7 @@ import '../../services/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/platform_detector.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
 import '../providers/multi_server_provider.dart';
@@ -12,6 +13,8 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
+import '../utils/desktop_window_padding.dart';
+import '../widgets/side_navigation_rail.dart';
 import 'discover_screen.dart';
 import 'libraries/libraries_screen.dart';
 import 'search_screen.dart';
@@ -28,12 +31,14 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> with RouteAware {
   int _currentIndex = 0;
+  String? _selectedLibraryGlobalKey;
 
   late final List<Widget> _screens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
+  final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
 
   @override
   void initState() {
@@ -44,7 +49,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
         key: _discoverKey,
         onBecameVisible: _onDiscoverBecameVisible,
       ),
-      LibrariesScreen(key: _librariesKey),
+      LibrariesScreen(
+        key: _librariesKey,
+        onLibraryOrderChanged: _onLibraryOrderChanged,
+      ),
       SearchScreen(key: _searchKey),
       SettingsScreen(key: _settingsKey),
     ];
@@ -95,6 +103,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     if (discoverState != null && discoverState is Refreshable) {
       (discoverState as Refreshable).refresh();
     }
+  }
+
+  void _onLibraryOrderChanged() {
+    // Refresh side navigation when library order changes
+    _sideNavKey.currentState?.reloadLibraries();
   }
 
   /// Invalidate all cached data across all screens when profile is switched
@@ -167,8 +180,42 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     }
   }
 
+  /// Handle library selection from side navigation rail
+  void _selectLibrary(String libraryGlobalKey) {
+    setState(() {
+      _selectedLibraryGlobalKey = libraryGlobalKey;
+      _currentIndex = 1; // Switch to Libraries tab
+    });
+    // Tell LibrariesScreen to load this library
+    final librariesState = _librariesKey.currentState;
+    if (librariesState != null) {
+      (librariesState as dynamic).loadLibraryByKey(libraryGlobalKey);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
+
+    if (useSideNav) {
+      return SideNavigationScope(
+        child: Row(
+          children: [
+            SideNavigationRail(
+              key: _sideNavKey,
+              selectedIndex: _currentIndex,
+              selectedLibraryKey: _selectedLibraryGlobalKey,
+              onDestinationSelected: _selectTab,
+              onLibrarySelected: _selectLibrary,
+            ),
+            Expanded(
+              child: IndexedStack(index: _currentIndex, children: _screens),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
