@@ -115,26 +115,20 @@ class GamepadService {
 
     if (isPressed && !wasPressed) {
       _pressedButtons.add(key);
-      appLogger.d('GamepadService: Button pressed: "$key"');
 
       if (_isButtonA(key)) {
-        appLogger.d('GamepadService: A button pressed');
         // Use enter instead of gameButtonA so it works with Flutter's built-in
         // widgets (buttons, list tiles, etc.) which listen for enter
         _simulateKeyPress(LogicalKeyboardKey.enter);
       } else if (_isButtonB(key)) {
-        appLogger.d('GamepadService: B button pressed');
         // Use escape instead of gameButtonB so it works with Flutter's built-in
         // widgets (bottom sheets, dialogs, menus) which only listen for escape
         _simulateKeyPress(LogicalKeyboardKey.escape);
       } else if (_isButtonX(key)) {
-        appLogger.d('GamepadService: X button pressed');
         _simulateKeyPress(LogicalKeyboardKey.gameButtonX);
       } else if (_isL1(key)) {
-        appLogger.d('GamepadService: L1 pressed');
         onL1Pressed?.call();
       } else if (_isR1(key)) {
-        appLogger.d('GamepadService: R1 pressed');
         onR1Pressed?.call();
       }
     } else if (!isPressed && wasPressed) {
@@ -153,8 +147,6 @@ class GamepadService {
   }
 
   void _moveFocus(TraversalDirection direction) {
-    appLogger.d('GamepadService: Moving focus $direction');
-
     // Convert direction to arrow key and simulate a key press
     // This allows widgets like HubSection that intercept key events to handle navigation
     final logicalKey = _directionToKey(direction);
@@ -178,10 +170,7 @@ class GamepadService {
     // Schedule on next frame to ensure we're on the main thread
     SchedulerBinding.instance.addPostFrameCallback((_) {
       final focusNode = FocusManager.instance.primaryFocus;
-      if (focusNode == null) {
-        appLogger.d('GamepadService: No focused node to send key to');
-        return;
-      }
+      if (focusNode == null) return;
 
       // Create a synthetic key down event
       final keyDownEvent = KeyDownEvent(
@@ -199,12 +188,9 @@ class GamepadService {
         // The Focus widget stores its handler in onKeyEvent
         if (node.onKeyEvent != null) {
           result = node.onKeyEvent!(node, keyDownEvent);
-          appLogger.d('GamepadService: Node ${node.debugLabel} returned $result');
         }
         node = node.parent;
       }
-
-      appLogger.d('GamepadService: Final key event result: $result');
 
       // Send key up event
       final keyUpEvent = KeyUpEvent(
