@@ -4,12 +4,11 @@ import '../../mpv/mpv.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/desktop_window_padding.dart';
-import '../../utils/duration_formatter.dart';
 import '../../utils/player_utils.dart';
 import '../../utils/video_control_icons.dart';
 import '../../i18n/strings.g.dart';
-import '../app_bar_back_button.dart';
-import 'widgets/timeline_slider.dart';
+import 'widgets/video_controls_header.dart';
+import 'widgets/video_timeline_bar.dart';
 
 /// Mobile video controls layout for Plex video player
 ///
@@ -67,44 +66,10 @@ class MobileVideoControls extends StatelessWidget {
       bottom: false, // Only respect top safe area when in portrait
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            AppBarBackButton(
-              style: BackButtonStyle.video,
-              semanticLabel: t.videoControls.backButton,
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    metadata.grandparentTitle ?? metadata.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (metadata.parentIndex != null && metadata.index != null)
-                    Text(
-                      'S${metadata.parentIndex} · E${metadata.index} · ${metadata.title}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            // Track and chapter controls in top right
-            trackChapterControls,
-          ],
+        child: VideoControlsHeader(
+          metadata: metadata,
+          style: VideoHeaderStyle.multiLine,
+          trailing: trackChapterControls,
         ),
       ),
     );
@@ -171,54 +136,13 @@ class MobileVideoControls extends StatelessWidget {
       top: false, // Only respect bottom safe area when in portrait
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: StreamBuilder<Duration>(
-          stream: player.streams.position,
-          initialData: player.state.position,
-          builder: (context, positionSnapshot) {
-            return StreamBuilder<Duration>(
-              stream: player.streams.duration,
-              initialData: player.state.duration,
-              builder: (context, durationSnapshot) {
-                final position = positionSnapshot.data ?? Duration.zero;
-                final duration = durationSnapshot.data ?? Duration.zero;
-
-                return Column(
-                  children: [
-                    TimelineSlider(
-                      position: position,
-                      duration: duration,
-                      chapters: chapters,
-                      chaptersLoaded: chaptersLoaded,
-                      onSeek: onSeek,
-                      onSeekEnd: onSeekEnd,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            formatDurationTimestamp(position),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            formatDurationTimestamp(duration),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
+        child: VideoTimelineBar(
+          player: player,
+          chapters: chapters,
+          chaptersLoaded: chaptersLoaded,
+          onSeek: onSeek,
+          onSeekEnd: onSeekEnd,
+          horizontalLayout: false,
         ),
       ),
     );

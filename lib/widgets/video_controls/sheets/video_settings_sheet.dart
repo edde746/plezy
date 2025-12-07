@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
+import '../../../utils/duration_formatter.dart';
 import '../../../utils/platform_detector.dart';
 import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
@@ -178,25 +179,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return '${speed.toStringAsFixed(2)}x';
   }
 
-  String _formatAudioSync(int offsetMs) {
-    if (offsetMs == 0) return '0ms';
-    final sign = offsetMs >= 0 ? '+' : '';
-    return '$sign${offsetMs}ms';
-  }
-
   String _formatSleepTimer(SleepTimerService sleepTimer) {
     if (!sleepTimer.isActive) return 'Off';
     final remaining = sleepTimer.remainingTime;
     if (remaining == null) return 'Off';
-
-    final minutes = remaining.inMinutes;
-    final seconds = remaining.inSeconds.remainder(60);
-
-    if (minutes > 0) {
-      return 'Active (${minutes}m ${seconds}s)';
-    } else {
-      return 'Active (${seconds}s)';
-    }
+    return 'Active (${formatDurationWithSeconds(remaining)})';
   }
 
   Widget _buildMenuView() {
@@ -239,7 +226,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         _SettingsMenuItem(
           icon: Icons.sync,
           title: 'Audio Sync',
-          valueText: _formatAudioSync(_audioSyncOffset),
+          valueText: formatSyncOffset(_audioSyncOffset.toDouble()),
           isHighlighted: _audioSyncOffset != 0,
           onTap: () => _navigateTo(_SettingsView.audioSync),
         ),
@@ -248,7 +235,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         _SettingsMenuItem(
           icon: Icons.subtitles,
           title: 'Subtitle Sync',
-          valueText: _formatAudioSync(_subtitleSyncOffset),
+          valueText: formatSyncOffset(_subtitleSyncOffset.toDouble()),
           isHighlighted: _subtitleSyncOffset != 0,
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),

@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../services/plex_client.dart';
+import '../../services/play_queue_launcher.dart';
 import '../../models/plex_playlist.dart';
 import '../../models/plex_metadata.dart';
-import '../../providers/playback_state_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/provider_extensions.dart';
-import '../../utils/video_player_navigation.dart';
 import '../../widgets/media_grid_sliver.dart';
 import 'playlist_item_card.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/dialogs.dart';
 import '../base_media_list_detail_screen.dart';
-import 'package:provider/provider.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -205,61 +203,21 @@ class _PlaylistDetailScreenState
   Future<void> _playFromItem(int index) async {
     if (items.isEmpty || index < 0 || index >= items.length) return;
 
-    try {
-      final client = _getClientForPlaylist();
+    final plexClient = _getClientForPlaylist();
+    final selectedItem = items[index];
 
-      final selectedItem = items[index];
+    final launcher = PlayQueueLauncher(
+      context: context,
+      client: plexClient,
+      serverId: widget.playlist.serverId,
+      serverName: widget.playlist.serverName,
+    );
 
-      // Create play queue from playlist, starting at the selected item
-      final playQueue = await client.createPlayQueue(
-        playlistID: int.parse(widget.playlist.ratingKey),
-        type: 'video',
-        key: selectedItem.key,
-      );
-
-      if (playQueue == null ||
-          playQueue.items == null ||
-          playQueue.items!.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.messages.failedToCreatePlayQueue)),
-          );
-        }
-        return;
-      }
-
-      if (!mounted) return;
-
-      // Set play queue in provider
-      final playbackState = context.read<PlaybackStateProvider>();
-      playbackState.setClient(client);
-      await playbackState.setPlaybackFromPlayQueue(
-        playQueue,
-        widget.playlist.ratingKey,
-      );
-
-      // Navigate to selected item
-      if (mounted) {
-        await navigateToVideoPlayer(
-          context,
-          metadata: playQueue.selectedItem ?? playQueue.items!.first,
-        );
-      }
-    } catch (e) {
-      appLogger.e('Failed to play from item', error: e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t.messages.failedPlayback(
-                action: t.discover.play,
-                error: e.toString(),
-              ),
-            ),
-          ),
-        );
-      }
-    }
+    await launcher.launchFromPlaylistItem(
+      playlist: widget.playlist,
+      selectedItem: selectedItem,
+      showLoadingIndicator: true,
+    );
   }
 
   @override
