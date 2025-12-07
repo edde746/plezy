@@ -26,6 +26,7 @@ import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/language_codes.dart';
 import 'i18n/strings.g.dart';
+import 'focus/input_mode_tracker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -115,14 +116,16 @@ class MainApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return TranslationProvider(
-            child: MaterialApp(
-              title: t.app.title,
-              debugShowCheckedModeBanner: false,
-              theme: themeProvider.lightTheme,
-              darkTheme: themeProvider.darkTheme,
-              themeMode: themeProvider.materialThemeMode,
-              navigatorObservers: [routeObserver],
-              home: const OrientationAwareSetup(),
+            child: InputModeTracker(
+              child: MaterialApp(
+                title: t.app.title,
+                debugShowCheckedModeBanner: false,
+                theme: themeProvider.lightTheme,
+                darkTheme: themeProvider.darkTheme,
+                themeMode: themeProvider.materialThemeMode,
+                navigatorObservers: [routeObserver],
+                home: const OrientationAwareSetup(),
+              ),
             ),
           );
         },

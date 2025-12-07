@@ -62,6 +62,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   bool _openedFromKeyboard = false;
+  bool _isContextMenuOpen = false;
+
+  bool get isContextMenuOpen => _isContextMenuOpen;
 
   /// Show the context menu programmatically.
   /// Used for keyboard/gamepad long-press activation.
@@ -111,8 +114,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     return context.getClientForServer(serverId);
   }
 
+  void _handleTap() {
+    if (_isContextMenuOpen) return;
+    widget.onTap?.call();
+  }
+
   void _showContextMenu(BuildContext context) async {
-    final client = _getClientForItem();
+    if (_isContextMenuOpen) return;
+    _isContextMenuOpen = true;
 
     final isPlaylist = widget.item is PlexPlaylist;
     final metadata = isPlaylist ? null : widget.item as PlexMetadata;
@@ -305,98 +314,104 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       );
     }
 
-    if (!context.mounted) return;
+    try {
+      final client = _getClientForItem();
 
-    switch (selected) {
-      case 'watch':
-        await _executeAction(
-          context,
-          () => client.markAsWatched(metadata!.ratingKey),
-          t.messages.markedAsWatched,
-        );
-        break;
+      if (!context.mounted) return;
 
-      case 'unwatch':
-        await _executeAction(
-          context,
-          () => client.markAsUnwatched(metadata!.ratingKey),
-          t.messages.markedAsUnwatched,
-        );
-        break;
+      switch (selected) {
+        case 'watch':
+          await _executeAction(
+            context,
+            () => client.markAsWatched(metadata!.ratingKey),
+            t.messages.markedAsWatched,
+          );
+          break;
 
-      case 'remove_from_continue_watching':
-        // Remove from Continue Watching without affecting watch status or progress
-        // This preserves the progression for partially watched items
-        // and doesn't mark unwatched next episodes as watched
-        try {
-          await client.removeFromOnDeck(metadata!.ratingKey);
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.messages.removedFromContinueWatching)),
-            );
-            // Use specific callback if provided, otherwise fallback to onRefresh
-            if (widget.onRemoveFromContinueWatching != null) {
-              widget.onRemoveFromContinueWatching!();
-            } else {
-              widget.onRefresh?.call(metadata.ratingKey);
+        case 'unwatch':
+          await _executeAction(
+            context,
+            () => client.markAsUnwatched(metadata!.ratingKey),
+            t.messages.markedAsUnwatched,
+          );
+          break;
+
+        case 'remove_from_continue_watching':
+          // Remove from Continue Watching without affecting watch status or progress
+          // This preserves the progression for partially watched items
+          // and doesn't mark unwatched next episodes as watched
+          try {
+            await client.removeFromOnDeck(metadata!.ratingKey);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(t.messages.removedFromContinueWatching)),
+              );
+              // Use specific callback if provided, otherwise fallback to onRefresh
+              if (widget.onRemoveFromContinueWatching != null) {
+                widget.onRemoveFromContinueWatching!();
+              } else {
+                widget.onRefresh?.call(metadata.ratingKey);
+              }
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(t.messages.errorLoading(error: e.toString())),
+                ),
+              );
             }
           }
-        } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(t.messages.errorLoading(error: e.toString())),
-              ),
-            );
-          }
-        }
-        break;
+          break;
 
-      case 'remove_from_collection':
-        await _handleRemoveFromCollection(context, metadata!);
-        break;
+        case 'remove_from_collection':
+          await _handleRemoveFromCollection(context, metadata!);
+          break;
 
-      case 'series':
-        await _navigateToRelated(
-          context,
-          metadata!.grandparentRatingKey,
-          (metadata) => MediaDetailScreen(metadata: metadata),
-          t.messages.errorLoadingSeries,
-        );
-        break;
+        case 'series':
+          await _navigateToRelated(
+            context,
+            metadata!.grandparentRatingKey,
+            (metadata) => MediaDetailScreen(metadata: metadata),
+            t.messages.errorLoadingSeries,
+          );
+          break;
 
-      case 'season':
-        await _navigateToRelated(
-          context,
-          metadata!.parentRatingKey,
-          (metadata) => SeasonDetailScreen(season: metadata),
-          t.messages.errorLoadingSeason,
-        );
-        break;
+        case 'season':
+          await _navigateToRelated(
+            context,
+            metadata!.parentRatingKey,
+            (metadata) => SeasonDetailScreen(season: metadata),
+            t.messages.errorLoadingSeason,
+          );
+          break;
 
-      case 'fileinfo':
-        await _showFileInfo(context);
-        break;
+        case 'fileinfo':
+          await _showFileInfo(context);
+          break;
 
-      case 'add_to':
-        await _showAddToSubmenu(context);
-        break;
+        case 'add_to':
+          await _showAddToSubmenu(context);
+          break;
 
-      case 'shuffle_play':
-        await _handleShufflePlayWithQueue(context);
-        break;
+        case 'shuffle_play':
+          await _handleShufflePlayWithQueue(context);
+          break;
 
-      case 'play':
-        await _handlePlay(context, isCollection, isPlaylist);
-        break;
+        case 'play':
+          await _handlePlay(context, isCollection, isPlaylist);
+          break;
 
-      case 'shuffle':
-        await _handleShuffle(context, isCollection, isPlaylist);
-        break;
+        case 'shuffle':
+          await _handleShuffle(context, isCollection, isPlaylist);
+          break;
 
-      case 'delete':
-        await _handleDelete(context, isCollection, isPlaylist);
-        break;
+        case 'delete':
+          await _handleDelete(context, isCollection, isPlaylist);
+          break;
+      }
+    } finally {
+      _isContextMenuOpen = false;
     }
   }
 
@@ -1208,7 +1223,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: _handleTap,
       onTapDown: _storeTapPosition,
       onLongPress: () => _showContextMenu(context),
       onSecondaryTapDown: _storeTapPosition,

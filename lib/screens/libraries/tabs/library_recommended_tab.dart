@@ -11,7 +11,14 @@ import 'base_library_tab.dart';
 /// Recommended tab for library screen
 /// Shows library-specific hubs and recommendations, including dedicated Continue Watching
 class LibraryRecommendedTab extends BaseLibraryTab<PlexHub> {
-  const LibraryRecommendedTab({super.key, required super.library});
+  const LibraryRecommendedTab({
+    super.key,
+    required super.library,
+    super.onDataLoaded,
+    super.isActive,
+    super.suppressAutoFocus,
+    super.onBack,
+  });
 
   @override
   State<LibraryRecommendedTab> createState() => _LibraryRecommendedTabState();
@@ -20,6 +27,9 @@ class LibraryRecommendedTab extends BaseLibraryTab<PlexHub> {
 class _LibraryRecommendedTabState
     extends BaseLibraryTabState<PlexHub, LibraryRecommendedTab>
     with ItemUpdatable {
+  /// GlobalKeys for each hub section to enable vertical navigation
+  final List<GlobalKey<HubSectionState>> _hubKeys = [];
+
   @override
   PlexClient get client => getClientForLibrary();
 
@@ -47,6 +57,9 @@ class _LibraryRecommendedTabState
 
   @override
   Future<List<PlexHub>> loadData() async {
+    // Clear hub keys before loading new hubs to prevent stale references
+    _hubKeys.clear();
+
     // Use server-specific client for this library
     final client = getClientForLibrary();
 
@@ -93,8 +106,45 @@ class _LibraryRecommendedTabState
     return finalHubs;
   }
 
+  /// Ensure we have enough GlobalKeys for all hubs
+  void _ensureHubKeys(int count) {
+    while (_hubKeys.length < count) {
+      _hubKeys.add(GlobalKey<HubSectionState>());
+    }
+  }
+
+  /// Handle vertical navigation between hubs
+  bool _handleVerticalNavigation(int hubIndex, bool isUp) {
+    final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
+
+    // Check if target is valid
+    if (targetIndex < 0 || targetIndex >= _hubKeys.length) {
+      // At boundary, block navigation
+      return true;
+    }
+
+    // Navigate to target hub with column memory
+    final targetState = _hubKeys[targetIndex].currentState;
+    if (targetState != null) {
+      targetState.requestFocusFromMemory();
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Focus the first item in the first hub (for tab activation)
+  @override
+  void focusFirstItem() {
+    if (_hubKeys.isNotEmpty && items.isNotEmpty) {
+      _hubKeys[0].currentState?.requestFocusAt(0);
+    }
+  }
+
   @override
   Widget buildContent(List<PlexHub> items) {
+    _ensureHubKeys(items.length);
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: items.length,
@@ -104,6 +154,7 @@ class _LibraryRecommendedTabState
             hub.hubIdentifier == '_library_continue_watching_';
 
         return HubSection(
+          key: index < _hubKeys.length ? _hubKeys[index] : null,
           hub: hub,
           icon: _getHubIcon(hub),
           isInContinueWatching: isContinueWatching,
@@ -111,6 +162,8 @@ class _LibraryRecommendedTabState
           onRemoveFromContinueWatching: isContinueWatching
               ? _refreshContinueWatching
               : null,
+          onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
+          onBack: widget.onBack,
         );
       },
     );

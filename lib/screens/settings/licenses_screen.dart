@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../focus/dpad_navigator.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../i18n/strings.g.dart';
 
@@ -65,13 +67,28 @@ class _LicensesScreenState extends State<LicensesScreen> {
     }
   }
 
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
+      Navigator.pop(context);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Focus(
+        autofocus: true,
+        onKeyEvent: _handleKeyEvent,
+        child: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
     }
 
-    return Scaffold(
+    return Focus(
+      autofocus: true,
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
       body: CustomScrollView(
         slivers: [
           CustomAppBar(title: Text(t.screens.licenses), pinned: true),
@@ -107,6 +124,7 @@ class _LicensesScreenState extends State<LicensesScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -126,12 +144,23 @@ class _LicenseDetailScreen extends StatelessWidget {
 
   const _LicenseDetailScreen({required this.mergedLicense});
 
+  KeyEventResult _handleKeyEvent(BuildContext context, FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
+      Navigator.pop(context);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     final packageName = mergedLicense.packageName;
     final licenseEntries = mergedLicense.licenseEntries;
 
-    return Scaffold(
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) => _handleKeyEvent(context, node, event),
+      child: Scaffold(
       body: CustomScrollView(
         slivers: [
           CustomAppBar(title: Text(packageName), pinned: true),
@@ -215,6 +244,7 @@ class _LicenseDetailScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

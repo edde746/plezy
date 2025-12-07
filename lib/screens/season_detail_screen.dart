@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/plex_client.dart';
+import '../focus/dpad_navigator.dart';
+import '../focus/input_mode_tracker.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
 import '../utils/provider_extensions.dart';
@@ -80,9 +83,19 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     }
   }
 
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
+      Navigator.pop(context, _watchStateChanged);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Focus(
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
       body: CustomScrollView(
         slivers: [
           CustomAppBar(
@@ -123,6 +136,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                 return _EpisodeCard(
                   episode: episode,
                   client: _client,
+                  autofocus: index == 0 && InputModeTracker.isKeyboardMode(context),
                   onTap: () async {
                     await navigateToVideoPlayer(context, metadata: episode);
                     // Refresh episodes when returning from video player
@@ -134,6 +148,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
             ),
         ],
       ),
+      ),
     );
   }
 }
@@ -144,12 +159,14 @@ class _EpisodeCard extends StatelessWidget {
   final PlexClient client;
   final VoidCallback onTap;
   final Future<void> Function(String) onRefresh;
+  final bool autofocus;
 
   const _EpisodeCard({
     required this.episode,
     required this.client,
     required this.onTap,
     required this.onRefresh,
+    this.autofocus = false,
   });
 
   @override
@@ -168,6 +185,7 @@ class _EpisodeCard extends StatelessWidget {
       onTap: onTap,
       child: InkWell(
         key: Key(episode.ratingKey),
+        autofocus: autofocus,
         onTap: onTap,
         hoverColor: Theme.of(
           context,

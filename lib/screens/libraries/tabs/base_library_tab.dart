@@ -25,11 +25,31 @@ abstract class BaseLibraryTab<T> extends StatefulWidget {
   final String? viewMode;
   final String? density;
 
+  /// Callback invoked when data has finished loading successfully.
+  /// Used by parent to trigger focus on the first item.
+  final VoidCallback? onDataLoaded;
+
+  /// Whether this tab is currently the active/visible tab.
+  /// Used for internal focus management.
+  final bool isActive;
+
+  /// Whether to suppress auto-focus when tab becomes active.
+  /// Used when navigating via tab bar to keep focus on the tab chips.
+  final bool suppressAutoFocus;
+
+  /// Called when the user presses BACK in the tab content.
+  /// Used to navigate focus back to the tab bar.
+  final VoidCallback? onBack;
+
   const BaseLibraryTab({
     super.key,
     required this.library,
     this.viewMode,
     this.density,
+    this.onDataLoaded,
+    this.isActive = false,
+    this.suppressAutoFocus = false,
+    this.onBack,
   });
 }
 
@@ -54,6 +74,10 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
   bool _isLoading = false;
   String? _errorMessage;
   StreamSubscription<void>? _refreshSubscription;
+
+  // Focus management
+  bool _hasLoadedData = false;
+  bool _hasFocused = false;
 
   // Getters for subclasses
   List<T> get items => _items;
@@ -87,7 +111,21 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
     super.didUpdateWidget(oldWidget);
     // Reload if library changed
     if (oldWidget.library.globalKey != widget.library.globalKey) {
+      // Reset focus state for new library
+      _hasFocused = false;
+      _hasLoadedData = false;
+      // Immediately clear stale data before async load
+      setState(() {
+        _items = [];
+        _isLoading = true;
+        _errorMessage = null;
+      });
       loadItems();
+    }
+
+    // Check if we should focus (became active after data loaded)
+    if (widget.isActive && !oldWidget.isActive) {
+      _tryFocus();
     }
   }
 
@@ -112,11 +150,32 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
   /// Return null if no refresh stream is needed
   Stream<void>? getRefreshStream() => null;
 
+  /// Try to focus the first item if conditions are met (active + loaded + not yet focused)
+  void _tryFocus() {
+    // Don't auto-focus if suppressed (e.g., when navigating via tab bar)
+    if (widget.suppressAutoFocus) return;
+
+    if (widget.isActive && _hasLoadedData && !_hasFocused && _items.isNotEmpty) {
+      _hasFocused = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          focusFirstItem();
+        }
+      });
+    }
+  }
+
+  /// Focus the first item in the tab. Subclasses should override this.
+  void focusFirstItem() {
+    // Default implementation - subclasses should override
+  }
+
   /// Load items with error handling and state management
   Future<void> loadItems() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _items = []; // Clear items to prevent showing stale data during load
     });
 
     try {
@@ -128,6 +187,17 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
         _items = loadedItems;
         _isLoading = false;
       });
+
+      // Mark data as loaded and try to focus
+      _hasLoadedData = true;
+      _tryFocus();
+
+      // Notify parent that data has loaded
+      if (widget.onDataLoaded != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          widget.onDataLoaded!();
+        });
+      }
     } catch (e) {
       if (!mounted) return;
 

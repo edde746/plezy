@@ -1,7 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../focus/dpad_navigator.dart';
+import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../utils/plex_image_helper.dart';
@@ -352,6 +355,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     }
   }
 
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
+      Navigator.pop(context, _watchStateChanged);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Use full metadata if loaded, otherwise use passed metadata
@@ -360,9 +371,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
     // Show loading state while fetching full metadata
     if (_isLoadingMetadata) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(child: CircularProgressIndicator()),
+      return Focus(
+        onKeyEvent: _handleKeyEvent,
+        child: Scaffold(
+          appBar: AppBar(),
+          body: const Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
@@ -371,7 +385,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     final isDesktop = size.width > 600;
     final headerHeight = isDesktop ? size.height * 0.6 : size.height * 0.4;
 
-    return Scaffold(
+    return Focus(
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -719,6 +735,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         child: SizedBox(
                           height: 48,
                           child: FilledButton.icon(
+                            autofocus: InputModeTracker.isKeyboardMode(context),
                             onPressed: () async {
                               // For TV shows, play the OnDeck episode if available
                               // Otherwise, play the first episode of the first season
@@ -1089,6 +1106,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

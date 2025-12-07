@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../../../../services/plex_client.dart';
@@ -9,7 +10,8 @@ import '../../../models/plex_sort.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/grid_size_calculator.dart';
-import '../../../widgets/media_card.dart';
+import '../../../widgets/focusable_media_card.dart';
+import '../../../widgets/focusable_filter_chip.dart';
 import '../folder_tree_view.dart';
 import '../filters_bottom_sheet.dart';
 import '../sort_bottom_sheet.dart';
@@ -29,11 +31,31 @@ class LibraryBrowseTab extends StatefulWidget {
   final String? viewMode;
   final String? density;
 
+  /// Callback invoked when data has finished loading successfully.
+  /// Used by parent to trigger focus on the first item.
+  final VoidCallback? onDataLoaded;
+
+  /// Whether this tab is currently the active/visible tab.
+  /// Used for internal focus management.
+  final bool isActive;
+
+  /// Whether to suppress auto-focus when tab becomes active.
+  /// Used when navigating via tab bar to keep focus on the tab chips.
+  final bool suppressAutoFocus;
+
+  /// Called when the user presses BACK in the tab content.
+  /// Used to navigate focus back to the tab bar.
+  final VoidCallback? onBack;
+
   const LibraryBrowseTab({
     super.key,
     required this.library,
     this.viewMode,
     this.density,
+    this.onDataLoaded,
+    this.isActive = false,
+    this.suppressAutoFocus = false,
+    this.onBack,
   });
 
   @override
@@ -87,6 +109,18 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
   int _requestId = 0;
   static const int _pageSize = 500;
 
+  // Focus node for the first item (for programmatic focus)
+  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'browse_first_item');
+
+  // Focus nodes for filter chips
+  final FocusNode _groupingChipFocusNode = FocusNode(debugLabel: 'grouping_chip');
+  final FocusNode _filtersChipFocusNode = FocusNode(debugLabel: 'filters_chip');
+  final FocusNode _sortChipFocusNode = FocusNode(debugLabel: 'sort_chip');
+
+  // Focus management
+  bool _hasLoadedData = false;
+  bool _hasFocused = false;
+
   @override
   void initState() {
     super.initState();
@@ -98,14 +132,57 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     super.didUpdateWidget(oldWidget);
     // Reload if library changed
     if (oldWidget.library.globalKey != widget.library.globalKey) {
+      // Reset focus state for new library
+      _hasFocused = false;
+      _hasLoadedData = false;
       _loadContent();
+    }
+
+    // Check if we should focus (became active after data loaded)
+    if (widget.isActive && !oldWidget.isActive) {
+      _tryFocus();
     }
   }
 
   @override
   void dispose() {
     _cancelToken?.cancel();
+    _firstItemFocusNode.dispose();
+    _groupingChipFocusNode.dispose();
+    _filtersChipFocusNode.dispose();
+    _sortChipFocusNode.dispose();
     super.dispose();
+  }
+
+  /// Try to focus the first item if conditions are met (active + loaded + not yet focused)
+  void _tryFocus() {
+    // Don't auto-focus if suppressed (e.g., when navigating via tab bar)
+    if (widget.suppressAutoFocus) return;
+
+    if (widget.isActive && _hasLoadedData && !_hasFocused && _items.isNotEmpty) {
+      _hasFocused = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          focusFirstItem();
+        }
+      });
+    }
+  }
+
+  /// Focus the first item in the grid/list (for tab activation)
+  void focusFirstItem() {
+    if (_items.isNotEmpty) {
+      // Request immediately, then once more on the next frame to handle cases
+      // where the grid/list attaches after the initial focus attempt.
+      void request() {
+        if (mounted && _items.isNotEmpty && !_firstItemFocusNode.hasFocus) {
+          _firstItemFocusNode.requestFocus();
+        }
+      }
+
+      request();
+      WidgetsBinding.instance.addPostFrameCallback((_) => request());
+    }
   }
 
   Future<void> _loadContent() async {
@@ -123,6 +200,13 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
       _items = [];
       _currentPage = 0;
       _hasMoreItems = true;
+      // Clear filter/sort state while loading to prevent showing stale options
+      _filters = [];
+      _sortOptions = [];
+      _selectedFilters = {};
+      _selectedSort = null;
+      _isSortDescending = false;
+      _selectedGrouping = _getDefaultGrouping();
     });
 
     try {
@@ -234,6 +318,19 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
         _currentPage++;
         _isLoading = false;
       });
+
+      // On initial load (not pagination), mark data as loaded and try to focus
+      if (!loadMore) {
+        _hasLoadedData = true;
+        _tryFocus();
+
+        // Notify parent
+        if (widget.onDataLoaded != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            widget.onDataLoaded!();
+          });
+        }
+      }
     } catch (e) {
       _handleLoadError(e, currentRequestId);
     }
@@ -402,37 +499,31 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     );
   }
 
-  Widget _buildFilterChip({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelMedium
-                  ?.copyWith(color: colorScheme.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
+  /// Navigate focus from chips down to the first grid item
+  void _navigateToGrid() {
+    if (_items.isNotEmpty) {
+      _firstItemFocusNode.requestFocus();
+    }
+  }
+
+  /// Navigate focus from grid up to the grouping chip
+  void _navigateToChips() {
+    _groupingChipFocusNode.requestFocus();
+  }
+
+  /// Calculate the number of columns in the current grid based on screen width
+  int _getGridColumnCount(BuildContext context, SettingsProvider settingsProvider) {
+    final screenWidth = MediaQuery.of(context).size.width - 16; // Subtract padding
+    final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(
+      context,
+      settingsProvider.libraryDensity,
     );
+    return (screenWidth / maxCrossAxisExtent).floor().clamp(1, 100);
+  }
+
+  /// Check if the given index is in the first row of the grid
+  bool _isFirstRow(int index, int columnCount) {
+    return index < columnCount;
   }
 
   @override
@@ -451,15 +542,20 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Grouping chip
-                _buildFilterChip(
+                FocusableFilterChip(
+                  focusNode: _groupingChipFocusNode,
                   icon: Icons.category,
                   label: _getGroupingLabel(_selectedGrouping),
                   onPressed: _showGroupingBottomSheet,
+                  onNavigateDown: _navigateToGrid,
+                  onNavigateUp: widget.onBack,
+                  onBack: widget.onBack,
                 ),
                 const SizedBox(width: 8),
                 // Filters chip
                 if (_filters.isNotEmpty && _selectedGrouping != 'folders')
-                  _buildFilterChip(
+                  FocusableFilterChip(
+                    focusNode: _filtersChipFocusNode,
                     icon: Icons.filter_alt,
                     label: _selectedFilters.isEmpty
                         ? t.libraries.filters
@@ -467,15 +563,22 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
                             count: _selectedFilters.length,
                           ),
                     onPressed: _showFiltersBottomSheet,
+                    onNavigateDown: _navigateToGrid,
+                    onNavigateUp: widget.onBack,
+                    onBack: widget.onBack,
                   ),
                 if (_filters.isNotEmpty && _selectedGrouping != 'folders')
                   const SizedBox(width: 8),
                 // Sort chip
                 if (_sortOptions.isNotEmpty && _selectedGrouping != 'folders')
-                  _buildFilterChip(
+                  FocusableFilterChip(
+                    focusNode: _sortChipFocusNode,
                     icon: Icons.sort,
                     label: _selectedSort?.title ?? t.libraries.sort,
                     onPressed: _showSortBottomSheet,
+                    onNavigateDown: _navigateToGrid,
+                    onNavigateUp: widget.onBack,
+                    onBack: widget.onBack,
                   ),
               ],
             ),
@@ -531,32 +634,35 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, child) {
           if (settingsProvider.viewMode == ViewMode.list) {
-            return ClipRect(
-              child: ListView.builder(
-                clipBehavior: Clip.none, // Allow focus indicator to overflow
-                padding: const EdgeInsets.all(8),
-                itemCount:
-                    _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
-                itemBuilder: (context, index) => _buildMediaCardItem(index),
+            // In list view, only the first item can navigate up to chips
+            return ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount:
+                  _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
+              itemBuilder: (context, index) => _buildMediaCardItem(
+                index,
+                isFirstRow: index == 0,
               ),
             );
           } else {
-            return ClipRect(
-              child: GridView.builder(
-                clipBehavior: Clip.none, // Allow focus indicator to overflow
-                padding: const EdgeInsets.all(8),
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-                    context,
-                    settingsProvider.libraryDensity,
-                  ),
-                  childAspectRatio: 2 / 3.3,
-                  crossAxisSpacing: 0,
-                  mainAxisSpacing: 0,
+            // In grid view, calculate columns and pass to item builder
+            final columnCount = _getGridColumnCount(context, settingsProvider);
+            return GridView.builder(
+              padding: const EdgeInsets.all(8),
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
+                  context,
+                  settingsProvider.libraryDensity,
                 ),
-                itemCount:
-                    _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
-                itemBuilder: (context, index) => _buildMediaCardItem(index),
+                childAspectRatio: 2 / 3.3,
+                crossAxisSpacing: 0,
+                mainAxisSpacing: 0,
+              ),
+              itemCount:
+                  _items.length + (_hasMoreItems && _isLoading ? 1 : 0),
+              itemBuilder: (context, index) => _buildMediaCardItem(
+                index,
+                isFirstRow: _isFirstRow(index, columnCount),
               ),
             );
           }
@@ -565,7 +671,7 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
     );
   }
 
-  Widget _buildMediaCardItem(int index) {
+  Widget _buildMediaCardItem(int index, {required bool isFirstRow}) {
     if (index >= _items.length) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
@@ -573,10 +679,13 @@ class _LibraryBrowseTabState extends State<LibraryBrowseTab>
       );
     }
     final item = _items[index];
-    return MediaCard(
+    return FocusableMediaCard(
       key: Key(item.ratingKey),
       item: item,
+      focusNode: index == 0 ? _firstItemFocusNode : null,
       onRefresh: updateItem,
+      onNavigateUp: isFirstRow ? _navigateToChips : null,
+      onBack: widget.onBack,
     );
   }
 }

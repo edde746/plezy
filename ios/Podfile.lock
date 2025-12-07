@@ -1,6 +1,8 @@
 PODS:
   - connectivity_plus (0.0.1):
     - Flutter
+  - device_info_plus (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
   - os_media_controls (0.0.1):
     - Flutter
@@ -20,6 +22,7 @@ PODS:
 
 DEPENDENCIES:
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
+  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
   - os_media_controls (from `.symlinks/plugins/os_media_controls/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
@@ -31,6 +34,8 @@ DEPENDENCIES:
 EXTERNAL SOURCES:
   connectivity_plus:
     :path: ".symlinks/plugins/connectivity_plus/ios"
+  device_info_plus:
+    :path: ".symlinks/plugins/device_info_plus/ios"
   Flutter:
     :path: Flutter
   os_media_controls:
@@ -48,6 +53,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
+  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   os_media_controls: 86dceab6245a5325af90fc0fdebe243c42d789b4
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499

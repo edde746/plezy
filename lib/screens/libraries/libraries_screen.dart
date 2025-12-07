@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import '../../focus/dpad_navigator.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../../services/plex_client.dart';
 import '../../models/plex_library.dart';
 import '../../models/plex_metadata.dart';
@@ -11,6 +14,8 @@ import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focusable_tab_chip.dart';
+import '../main_screen.dart';
 import 'context_menu_wrapper.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
@@ -63,6 +68,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   bool _isInitialLoad = true;
   List<String>? _serverOrder; // Cached server order from storage
 
+  /// When true, suppress auto-focus in tabs (used when navigating via tab bar)
+  bool _suppressAutoFocus = false;
+
   Map<String, String> _selectedFilters = {};
   PlexSort? _selectedSort;
   bool _isSortDescending = false;
@@ -73,8 +81,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   int _requestId = 0;
   static const int _pageSize = 1000;
 
+  /// Flag to prevent _onTabChanged from focusing when we're programmatically changing tabs
+  bool _isRestoringTab = false;
+
+  /// Track which tabs have loaded data (used to trigger focus after tab restore)
+  final Set<int> _loadedTabs = {};
+
   /// Key for the library dropdown popup menu button
   final _libraryDropdownKey = GlobalKey<PopupMenuButtonState<String>>();
+
+  // Focus nodes for tab chips
+  final _recommendedTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_recommended');
+  final _browseTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_browse');
+  final _collectionsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_collections');
+  final _playlistsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_playlists');
 
   @override
   void initState() {
@@ -85,17 +105,147 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   void _onTabChanged() {
-    // Save tab index when changed
+    // Save tab index when changed (but not when restoring from storage)
     if (_selectedLibraryGlobalKey != null && !_tabController.indexIsChanging) {
-      StorageService.getInstance().then((storage) {
-        storage.saveLibraryTab(
-          _selectedLibraryGlobalKey!,
-          _tabController.index,
-        );
-      });
+      // Only save if this was a user-initiated tab change, not a restore
+      if (!_isRestoringTab) {
+        StorageService.getInstance().then((storage) {
+          storage.saveLibraryTab(
+            _selectedLibraryGlobalKey!,
+            _tabController.index,
+          );
+        });
+
+        // Focus first item in the current tab (only for user-initiated changes)
+        // But not when navigating via tab bar (suppressAutoFocus is true)
+        if (!_suppressAutoFocus) {
+          _focusCurrentTab();
+        }
+      }
     }
     // Rebuild to update chip selection state
     setState(() {});
+  }
+
+  /// Focus the first item in the currently active tab
+  void _focusCurrentTab() {
+    // Re-enable auto-focus since user is navigating into tab content
+    setState(() {
+      _suppressAutoFocus = false;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      State? tabState;
+      switch (_tabController.index) {
+        case 0:
+          tabState = _recommendedTabKey.currentState;
+          break;
+        case 1:
+          tabState = _browseTabKey.currentState;
+          break;
+        case 2:
+          tabState = _collectionsTabKey.currentState;
+          break;
+        case 3:
+          tabState = _playlistsTabKey.currentState;
+          break;
+      }
+
+      if (tabState != null) {
+        (tabState as dynamic).focusFirstItem();
+      } else {
+        // State not available yet, retry after another frame
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _focusCurrentTabImmediate();
+        });
+      }
+    });
+  }
+
+  /// Focus without additional frame delay (used for retry)
+  void _focusCurrentTabImmediate() {
+    State? tabState;
+    switch (_tabController.index) {
+      case 0:
+        tabState = _recommendedTabKey.currentState;
+        break;
+      case 1:
+        tabState = _browseTabKey.currentState;
+        break;
+      case 2:
+        tabState = _collectionsTabKey.currentState;
+        break;
+      case 3:
+        tabState = _playlistsTabKey.currentState;
+        break;
+    }
+
+    if (tabState != null) {
+      (tabState as dynamic).focusFirstItem();
+    }
+  }
+
+  /// Handle when a tab's data has finished loading
+  void _handleTabDataLoaded(int tabIndex) {
+    // Track that this tab has loaded
+    _loadedTabs.add(tabIndex);
+
+    // Don't auto-focus if suppressed (e.g., when navigating via tab bar)
+    if (_suppressAutoFocus) return;
+
+    // Only focus if this is the currently active tab
+    if (_tabController.index == tabIndex && mounted) {
+      // Use post-frame callback to ensure the widget tree is fully built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _tabController.index == tabIndex && !_suppressAutoFocus) {
+          _focusCurrentTab();
+        }
+      });
+    }
+  }
+
+  /// Called by parent when the Libraries screen becomes visible.
+  /// If the active tab has already loaded data (often the case after preloading
+  /// while on another main tab), re-request focus so the first item is focused
+  /// once the screen is actually shown.
+  void focusActiveTabIfReady() {
+    if (_selectedLibraryGlobalKey == null) return;
+    _focusCurrentTab();
+  }
+
+  /// Focus the currently selected tab chip in the tab bar.
+  /// Called when BACK is pressed in tab content.
+  void focusTabBar() {
+    setState(() {
+      _suppressAutoFocus = true;
+    });
+    final focusNode = _getTabChipFocusNode(_tabController.index);
+    focusNode.requestFocus();
+  }
+
+  /// Get the focus node for a tab chip by index
+  FocusNode _getTabChipFocusNode(int index) {
+    switch (index) {
+      case 0:
+        return _recommendedTabChipFocusNode;
+      case 1:
+        return _browseTabChipFocusNode;
+      case 2:
+        return _collectionsTabChipFocusNode;
+      case 3:
+        return _playlistsTabChipFocusNode;
+      default:
+        return _recommendedTabChipFocusNode;
+    }
+  }
+
+  /// Handle BACK from tab bar - navigate to sidenav
+  void _onTabBarBack() {
+    final focusScope = MainScreenFocusScope.of(context);
+    focusScope?.focusSidebar();
   }
 
   @override
@@ -103,6 +253,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _cancelToken?.cancel();
+    _recommendedTabChipFocusNode.dispose();
+    _browseTabChipFocusNode.dispose();
+    _collectionsTabChipFocusNode.dispose();
+    _playlistsTabChipFocusNode.dispose();
     super.dispose();
   }
 
@@ -329,6 +483,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _updateState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;
       _errorMessage = null;
+      // Clear loaded tabs tracking for new library
+      _loadedTabs.clear();
       // Only clear filters when explicitly changing library (not on initial load)
       if (isChangingLibrary) {
         _selectedFilters.clear();
@@ -347,10 +503,27 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // Restore saved tab index for this library
     final savedTabIndex = storage.getLibraryTab(libraryGlobalKey);
     if (savedTabIndex != null && savedTabIndex >= 0 && savedTabIndex < 4) {
+      // Set flag to prevent _onTabChanged from triggering focus
+      _isRestoringTab = true;
       _updateState(() {
         _tabController.index = savedTabIndex;
       });
+      // Clear flag after the tab change has been processed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _isRestoringTab = false;
+      });
     }
+
+    // Focus is handled by onDataLoaded callbacks from each tab.
+    // However, on first load the tab might finish loading before the tab index
+    // is restored. Check if the current tab has already loaded and focus if so.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          _selectedLibraryGlobalKey == libraryGlobalKey &&
+          _loadedTabs.contains(_tabController.index)) {
+        _focusCurrentTab();
+      }
+    });
 
     // Clear filters in storage when changing library
     if (isChangingLibrary) {
@@ -834,26 +1007,45 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   Widget _buildTabChip(String label, int index) {
     final isSelected = _tabController.index == index;
-    final t = tokens(context);
+    const tabCount = 4; // Recommended, Browse, Collections, Playlists
 
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) {
+    return FocusableTabChip(
+      label: label,
+      isSelected: isSelected,
+      focusNode: _getTabChipFocusNode(index),
+      onSelect: () {
+        if (isSelected) {
+          // Already selected - navigate to tab content
+          _focusCurrentTab();
+        } else {
+          // Switch to this tab
           setState(() {
             _tabController.index = index;
           });
         }
       },
-      backgroundColor: t.surface,
-      selectedColor: t.text,
-      side: BorderSide(color: t.outline),
-      labelStyle: TextStyle(
-        color: isSelected ? t.bg : t.text,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-      ),
-      showCheckmark: false,
+      onNavigateLeft: index > 0
+          ? () {
+              final newIndex = index - 1;
+              setState(() {
+                _suppressAutoFocus = true;
+                _tabController.index = newIndex;
+              });
+              _getTabChipFocusNode(newIndex).requestFocus();
+            }
+          : null,
+      onNavigateRight: index < tabCount - 1
+          ? () {
+              final newIndex = index + 1;
+              setState(() {
+                _suppressAutoFocus = true;
+                _tabController.index = newIndex;
+              });
+              _getTabChipFocusNode(newIndex).requestFocus();
+            }
+          : null,
+      onNavigateDown: _focusCurrentTab,
+      onBack: _onTabBarBack,
     );
   }
 
@@ -1047,6 +1239,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             if (_selectedLibraryGlobalKey != null)
               SliverFillRemaining(
                 child: TabBarView(
+                  key: ValueKey(_selectedLibraryGlobalKey),
                   controller: _tabController,
                   children: [
                     LibraryRecommendedTab(
@@ -1054,24 +1247,40 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                       library: _allLibraries.firstWhere(
                         (lib) => lib.globalKey == _selectedLibraryGlobalKey,
                       ),
+                      isActive: _tabController.index == 0,
+                      suppressAutoFocus: _suppressAutoFocus,
+                      onDataLoaded: () => _handleTabDataLoaded(0),
+                      onBack: focusTabBar,
                     ),
                     LibraryBrowseTab(
                       key: _browseTabKey,
                       library: _allLibraries.firstWhere(
                         (lib) => lib.globalKey == _selectedLibraryGlobalKey,
                       ),
+                      isActive: _tabController.index == 1,
+                      suppressAutoFocus: _suppressAutoFocus,
+                      onDataLoaded: () => _handleTabDataLoaded(1),
+                      onBack: focusTabBar,
                     ),
                     LibraryCollectionsTab(
                       key: _collectionsTabKey,
                       library: _allLibraries.firstWhere(
                         (lib) => lib.globalKey == _selectedLibraryGlobalKey,
                       ),
+                      isActive: _tabController.index == 2,
+                      suppressAutoFocus: _suppressAutoFocus,
+                      onDataLoaded: () => _handleTabDataLoaded(2),
+                      onBack: focusTabBar,
                     ),
                     LibraryPlaylistsTab(
                       key: _playlistsTabKey,
                       library: _allLibraries.firstWhere(
                         (lib) => lib.globalKey == _selectedLibraryGlobalKey,
                       ),
+                      isActive: _tabController.index == 3,
+                      suppressAutoFocus: _suppressAutoFocus,
+                      onDataLoaded: () => _handleTabDataLoaded(3),
+                      onBack: focusTabBar,
                     ),
                   ],
                 ),
@@ -1123,10 +1332,124 @@ class _LibraryManagementSheet extends StatefulWidget {
 class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   late List<PlexLibrary> _tempLibraries;
 
+  // Keyboard navigation state
+  int _focusedIndex = 0;
+  int _focusedColumn = 0; // 0 = row, 1 = visibility button, 2 = options button
+  int? _movingIndex; // Non-null when in move mode
+  int? _originalIndex; // Original position before move (for cancel)
+  List<PlexLibrary>? _originalOrder; // Original order before move (for cancel)
+  final FocusNode _listFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
     _tempLibraries = List.from(widget.allLibraries);
+  }
+
+  @override
+  void dispose() {
+    _listFocusNode.dispose();
+    super.dispose();
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    final key = event.logicalKey;
+
+    if (_movingIndex != null) {
+      // Move mode - arrows reorder the item
+      if (key.isUpKey && _movingIndex! > 0) {
+        setState(() {
+          final item = _tempLibraries.removeAt(_movingIndex!);
+          _tempLibraries.insert(_movingIndex! - 1, item);
+          _movingIndex = _movingIndex! - 1;
+          _focusedIndex = _movingIndex!;
+        });
+        return KeyEventResult.handled;
+      }
+      if (key.isDownKey && _movingIndex! < _tempLibraries.length - 1) {
+        setState(() {
+          final item = _tempLibraries.removeAt(_movingIndex!);
+          _tempLibraries.insert(_movingIndex! + 1, item);
+          _movingIndex = _movingIndex! + 1;
+          _focusedIndex = _movingIndex!;
+        });
+        return KeyEventResult.handled;
+      }
+      if (key.isSelectKey) {
+        // Confirm move - apply the reorder
+        widget.onReorder(_tempLibraries);
+        setState(() {
+          _movingIndex = null;
+          _originalIndex = null;
+          _originalOrder = null;
+        });
+        return KeyEventResult.handled;
+      }
+      if (key.isBackKey) {
+        // Cancel move - restore original position
+        setState(() {
+          if (_originalOrder != null) {
+            _tempLibraries = List.from(_originalOrder!);
+          }
+          _focusedIndex = _originalIndex ?? 0;
+          _movingIndex = null;
+          _originalIndex = null;
+          _originalOrder = null;
+        });
+        return KeyEventResult.handled;
+      }
+    } else {
+      // Navigation mode
+      if (key.isUpKey && _focusedIndex > 0) {
+        setState(() {
+          _focusedIndex--;
+          _focusedColumn = 0; // Reset to row when changing rows
+        });
+        return KeyEventResult.handled;
+      }
+      if (key.isDownKey && _focusedIndex < _tempLibraries.length - 1) {
+        setState(() {
+          _focusedIndex++;
+          _focusedColumn = 0; // Reset to row when changing rows
+        });
+        return KeyEventResult.handled;
+      }
+      if (key.isLeftKey && _focusedColumn > 0) {
+        setState(() => _focusedColumn--);
+        return KeyEventResult.handled;
+      }
+      if (key.isRightKey && _focusedColumn < 2) {
+        setState(() => _focusedColumn++);
+        return KeyEventResult.handled;
+      }
+      if (key.isSelectKey) {
+        if (_focusedColumn == 0) {
+          // Enter move mode
+          setState(() {
+            _movingIndex = _focusedIndex;
+            _originalIndex = _focusedIndex;
+            _originalOrder = List.from(_tempLibraries);
+          });
+        } else if (_focusedColumn == 1) {
+          // Toggle visibility
+          final library = _tempLibraries[_focusedIndex];
+          widget.onToggleVisibility(library);
+        } else if (_focusedColumn == 2) {
+          // Show options menu
+          final library = _tempLibraries[_focusedIndex];
+          _showLibraryMenuBottomSheet(context, library);
+        }
+        return KeyEventResult.handled;
+      }
+      if (key.isBackKey) {
+        Navigator.pop(context);
+        return KeyEventResult.handled;
+      }
+    }
+
+    return KeyEventResult.ignored;
   }
 
   void _reorderLibraries(int oldIndex, int newIndex) {
@@ -1287,8 +1610,14 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
             // Library list (grouped by server if multiple servers)
             Expanded(
-              child: _buildFlatLibraryList(scrollController, hiddenLibraryKeys),
+              child: Focus(
+                focusNode: _listFocusNode,
+                autofocus: InputModeTracker.isKeyboardMode(context),
+                onKeyEvent: _handleKeyEvent,
+                child: _buildFlatLibraryList(scrollController, hiddenLibraryKeys),
+              ),
             ),
+
           ],
         );
       },
@@ -1301,6 +1630,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     Set<String> hiddenLibraryKeys,
   ) {
     final nonUniqueNames = _getNonUniqueLibraryNames();
+    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
     return ReorderableListView.builder(
       scrollController: scrollController,
@@ -1312,11 +1642,16 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         final library = _tempLibraries[index];
         final showServerName = nonUniqueNames.contains(library.title) &&
             library.serverName != null;
+        final isFocused = isKeyboardMode && index == _focusedIndex;
+        final isMoving = index == _movingIndex;
         return _buildLibraryTile(
           library,
           index,
           hiddenLibraryKeys,
           showServerName: showServerName,
+          isFocused: isFocused,
+          isMoving: isMoving,
+          focusedColumn: isFocused ? _focusedColumn : null,
         );
       },
     );
@@ -1328,57 +1663,97 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     int index,
     Set<String> hiddenLibraryKeys, {
     bool showServerName = false,
+    bool isFocused = false,
+    bool isMoving = false,
+    int? focusedColumn,
   }) {
     final isHidden = hiddenLibraryKeys.contains(library.globalKey);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Determine background color based on state
+    Color? tileColor;
+    if (isMoving) {
+      tileColor = colorScheme.primaryContainer;
+    } else if (isFocused && focusedColumn == 0) {
+      // Only highlight row when row itself is focused (column 0)
+      tileColor = colorScheme.surfaceContainerHighest;
+    }
+
+    // Button focus states
+    final isVisibilityButtonFocused = isFocused && focusedColumn == 1;
+    final isOptionsButtonFocused = isFocused && focusedColumn == 2;
 
     return Opacity(
       key: ValueKey(library.globalKey),
       opacity: isHidden ? 0.5 : 1.0,
-      child: ListTile(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ReorderableDragStartListener(
-              index: index,
-              child: Icon(
-                Icons.drag_indicator,
-                color: IconTheme.of(context).color?.withValues(alpha: 0.5),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(_getLibraryIcon(library.type)),
-          ],
+      child: Container(
+        decoration: BoxDecoration(
+          color: tileColor,
         ),
-        title: Text(library.title),
-        subtitle: showServerName
-            ? Text(
-                library.serverName!,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(alpha: 0.6),
+        child: ListTile(
+          leading: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ReorderableDragStartListener(
+                index: index,
+                child: Icon(
+                  isMoving ? Icons.swap_vert : Icons.drag_indicator,
+                  color: isMoving
+                      ? colorScheme.primary
+                      : IconTheme.of(context).color?.withValues(alpha: 0.5),
                 ),
-              )
-            : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
-              tooltip: isHidden
-                  ? t.libraries.showLibrary
-                  : t.libraries.hideLibrary,
-              onPressed: () => widget.onToggleVisibility(library),
-            ),
-            IconButton(
-              icon: const Icon(Icons.more_vert),
-              tooltip: t.libraries.libraryOptions,
-              onPressed: () => _showLibraryMenuBottomSheet(context, library),
-            ),
-          ],
+              ),
+              const SizedBox(width: 8),
+              Icon(_getLibraryIcon(library.type)),
+            ],
+          ),
+          title: Text(library.title),
+          subtitle: showServerName
+              ? Text(
+                  library.serverName!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.color
+                        ?.withValues(alpha: 0.6),
+                  ),
+                )
+              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: isVisibilityButtonFocused
+                    ? BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(20),
+                      )
+                    : null,
+                child: IconButton(
+                  icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
+                  tooltip: isHidden
+                      ? t.libraries.showLibrary
+                      : t.libraries.hideLibrary,
+                  onPressed: () => widget.onToggleVisibility(library),
+                ),
+              ),
+              Container(
+                decoration: isOptionsButtonFocused
+                    ? BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(20),
+                      )
+                    : null,
+                child: IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: t.libraries.libraryOptions,
+                  onPressed: () => _showLibraryMenuBottomSheet(context, library),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

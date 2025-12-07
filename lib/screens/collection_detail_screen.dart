@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../focus/dpad_navigator.dart';
 import '../models/plex_metadata.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/media_card.dart';
@@ -112,9 +114,20 @@ class _CollectionDetailScreenState
     }
   }
 
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
+      Navigator.pop(context);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Focus(
+      autofocus: true,
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
       body: CustomScrollView(
         slivers: [
           CustomAppBar(
@@ -154,6 +167,7 @@ class _CollectionDetailScreenState
               ),
             ),
         ],
+      ),
       ),
     );
   }

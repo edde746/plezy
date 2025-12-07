@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../i18n/strings.g.dart';
@@ -20,6 +21,30 @@ import 'libraries/libraries_screen.dart';
 import 'search_screen.dart';
 import 'settings/settings_screen.dart';
 
+/// Provides access to the main screen's focus control.
+class MainScreenFocusScope extends InheritedWidget {
+  final VoidCallback focusSidebar;
+  final VoidCallback focusContent;
+  final bool isSidebarFocused;
+
+  const MainScreenFocusScope({
+    super.key,
+    required this.focusSidebar,
+    required this.focusContent,
+    required this.isSidebarFocused,
+    required super.child,
+  });
+
+  static MainScreenFocusScope? of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
+  }
+
+  @override
+  bool updateShouldNotify(MainScreenFocusScope oldWidget) {
+    return isSidebarFocused != oldWidget.isSidebarFocused;
+  }
+}
+
 class MainScreen extends StatefulWidget {
   final PlexClient client;
 
@@ -39,6 +64,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
+
+  // Focus management for sidebar/content switching
+  final FocusScopeNode _sidebarFocusScope = FocusScopeNode(debugLabel: 'Sidebar');
+  final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
+  bool _isSidebarFocused = false;
 
   @override
   void initState() {
@@ -77,7 +107,51 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
+    _sidebarFocusScope.dispose();
+    _contentFocusScope.dispose();
     super.dispose();
+  }
+
+  void _focusSidebar() {
+    setState(() => _isSidebarFocused = true);
+    _sidebarFocusScope.requestFocus();
+    // Focus the active item after the focus scope has focus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sideNavKey.currentState?.focusActiveItem();
+    });
+  }
+
+  void _focusContent() {
+    setState(() => _isSidebarFocused = false);
+    _contentFocusScope.requestFocus();
+    // When content regains focus while on Libraries, retry focusing the active tab
+    if (_currentIndex == 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final librariesState = _librariesKey.currentState;
+        if (librariesState != null) {
+          (librariesState as dynamic).focusActiveTabIfReady();
+        }
+      });
+    }
+  }
+
+  KeyEventResult _handleBackKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    final isBackKey = event.logicalKey == LogicalKeyboardKey.escape ||
+        event.logicalKey == LogicalKeyboardKey.goBack ||
+        event.logicalKey == LogicalKeyboardKey.browserBack ||
+        event.logicalKey == LogicalKeyboardKey.gameButtonB;
+
+    if (!isBackKey) return KeyEventResult.ignored;
+
+    // Toggle focus between sidebar and content
+    if (_isSidebarFocused) {
+      _focusContent();
+    } else {
+      _focusSidebar();
+    }
+    return KeyEventResult.handled;
   }
 
   @override
@@ -164,12 +238,20 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   }
 
   void _selectTab(int index) {
+    final previousIndex = _currentIndex;
     setState(() {
       _currentIndex = index;
     });
     // Notify discover screen when it becomes visible via tab switch
     if (index == 0) {
       _onDiscoverBecameVisible();
+    }
+    // Ensure the libraries screen applies focus when brought into view
+    if (index == 1 && previousIndex != 1) {
+      final librariesState = _librariesKey.currentState;
+      if (librariesState != null) {
+        (librariesState as dynamic).focusActiveTabIfReady();
+      }
     }
     // Focus search input when selecting Search tab
     if (index == 2) {
@@ -190,6 +272,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     final librariesState = _librariesKey.currentState;
     if (librariesState != null) {
       (librariesState as dynamic).loadLibraryByKey(libraryGlobalKey);
+      (librariesState as dynamic).focusActiveTabIfReady();
     }
   }
 
@@ -198,20 +281,41 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
 
     if (useSideNav) {
-      return SideNavigationScope(
-        child: Row(
-          children: [
-            SideNavigationRail(
-              key: _sideNavKey,
-              selectedIndex: _currentIndex,
-              selectedLibraryKey: _selectedLibraryGlobalKey,
-              onDestinationSelected: _selectTab,
-              onLibrarySelected: _selectLibrary,
+      return Focus(
+        onKeyEvent: (node, event) => _handleBackKey(event),
+        child: MainScreenFocusScope(
+          focusSidebar: _focusSidebar,
+          focusContent: _focusContent,
+          isSidebarFocused: _isSidebarFocused,
+          child: SideNavigationScope(
+            child: Row(
+              children: [
+                FocusScope(
+                  node: _sidebarFocusScope,
+                  child: SideNavigationRail(
+                    key: _sideNavKey,
+                    selectedIndex: _currentIndex,
+                    selectedLibraryKey: _selectedLibraryGlobalKey,
+                    onDestinationSelected: (index) {
+                      _selectTab(index);
+                      _focusContent();
+                    },
+                    onLibrarySelected: (key) {
+                      _selectLibrary(key);
+                      _focusContent();
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: FocusScope(
+                    node: _contentFocusScope,
+                    autofocus: true,
+                    child: IndexedStack(index: _currentIndex, children: _screens),
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: IndexedStack(index: _currentIndex, children: _screens),
-            ),
-          ],
+          ),
         ),
       );
     }

@@ -5,7 +5,7 @@ import '../../../providers/settings_provider.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../services/settings_service.dart' show ViewMode;
 import '../../../utils/grid_size_calculator.dart';
-import '../../../widgets/media_card.dart';
+import '../../../widgets/focusable_media_card.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_library_tab.dart';
 
@@ -17,6 +17,10 @@ class LibraryPlaylistsTab extends BaseLibraryTab<PlexPlaylist> {
     required super.library,
     super.viewMode,
     super.density,
+    super.onDataLoaded,
+    super.isActive,
+    super.suppressAutoFocus,
+    super.onBack,
   });
 
   @override
@@ -25,6 +29,23 @@ class LibraryPlaylistsTab extends BaseLibraryTab<PlexPlaylist> {
 
 class _LibraryPlaylistsTabState
     extends BaseLibraryTabState<PlexPlaylist, LibraryPlaylistsTab> {
+  // Focus node for the first item (for programmatic focus)
+  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'playlists_first_item');
+
+  @override
+  void dispose() {
+    _firstItemFocusNode.dispose();
+    super.dispose();
+  }
+
+  /// Focus the first item in the grid/list (for tab activation)
+  @override
+  void focusFirstItem() {
+    if (items.isNotEmpty) {
+      _firstItemFocusNode.requestFocus();
+    }
+  }
+
   @override
   IconData get emptyIcon => Icons.playlist_play;
 
@@ -82,10 +103,12 @@ class _LibraryPlaylistsTabState
   }
 
   Widget _buildPlaylistItem(PlexPlaylist playlist, int index) {
-    return MediaCard(
+    return FocusableMediaCard(
       key: Key(playlist.ratingKey),
       item: playlist,
+      focusNode: index == 0 ? _firstItemFocusNode : null,
       onListRefresh: loadItems,
+      onBack: widget.onBack,
     );
   }
 }

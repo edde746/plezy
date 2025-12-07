@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
@@ -23,6 +24,7 @@ import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
+import '../focus/dpad_navigator.dart';
 import 'auth_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -64,6 +66,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   late AnimationController _indicatorAnimationController;
   bool _isAutoScrollPaused = false;
 
+  // Hub navigation keys
+  GlobalKey<HubSectionState>? _continueWatchingHubKey;
+  final List<GlobalKey<HubSectionState>> _hubKeys = [];
+
+  // Hero and app bar focus
+  late FocusNode _heroFocusNode;
+  late FocusNode _refreshButtonFocusNode;
+  late FocusNode _userButtonFocusNode;
+  bool _isHeroFocused = false;
+  bool _isRefreshFocused = false;
+  bool _isUserFocused = false;
+
   /// Get the correct PlexClient for an item's server
   PlexClient _getClientForItem(PlexMetadata? item) {
     // Items should always have a serverId, but if not, fall back to first available server
@@ -83,6 +97,69 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return context.getClientForServer(serverId);
   }
 
+  /// Update hub keys when hubs list changes
+  void _updateHubKeys() {
+    _hubKeys.clear();
+    for (int i = 0; i < _hubs.length; i++) {
+      _hubKeys.add(GlobalKey<HubSectionState>());
+    }
+    // Create continue watching hub key if needed
+    if (_onDeck.isNotEmpty) {
+      _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
+    }
+  }
+
+  /// Get all hub states (continue watching + other hubs)
+  List<GlobalKey<HubSectionState>> get _allHubKeys {
+    final keys = <GlobalKey<HubSectionState>>[];
+    if (_continueWatchingHubKey != null && _onDeck.isNotEmpty) {
+      keys.add(_continueWatchingHubKey!);
+    }
+    keys.addAll(_hubKeys);
+    return keys;
+  }
+
+  /// Handle vertical navigation between hubs
+  /// Returns true if the navigation was handled
+  bool _handleVerticalNavigation(int hubIndex, bool isUp) {
+    final keys = _allHubKeys;
+    if (keys.isEmpty) return false;
+
+    // UP from first hub: Navigate to hero section
+    if (isUp && hubIndex == 0) {
+      _heroFocusNode.requestFocus();
+      // Scroll to top to show hero fully
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+      return true;
+    }
+
+    int targetIndex;
+    if (isUp) {
+      targetIndex = hubIndex - 1;
+    } else {
+      targetIndex = hubIndex + 1;
+    }
+
+    // Check if target is valid
+    if (targetIndex < 0 || targetIndex >= keys.length) {
+      // At boundary, block navigation (return true to consume the event)
+      return true;
+    }
+
+    // Navigate to target hub, clamping to available items
+    final targetState = keys[targetIndex].currentState;
+    if (targetState != null) {
+      targetState.requestFocusFromMemory();
+      return true;
+    }
+
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -90,8 +167,163 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       vsync: this,
       duration: _heroAutoScrollDuration,
     );
+    _heroFocusNode = FocusNode(debugLabel: 'hero_section');
+    _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
+    _userButtonFocusNode = FocusNode(debugLabel: 'user_button');
+    _heroFocusNode.addListener(_onHeroFocusChange);
+    _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
+    _userButtonFocusNode.addListener(_onUserFocusChange);
     _loadContent();
     _startAutoScroll();
+  }
+
+  void _onHeroFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isHeroFocused = _heroFocusNode.hasFocus;
+      });
+    }
+  }
+
+  void _onRefreshFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isRefreshFocused = _refreshButtonFocusNode.hasFocus;
+      });
+    }
+  }
+
+  void _onUserFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isUserFocused = _userButtonFocusNode.hasFocus;
+      });
+    }
+  }
+
+  /// Handle key events for the hero section
+  KeyEventResult _handleHeroKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // DOWN: Move to first hub
+    if (key.isDownKey) {
+      final keys = _allHubKeys;
+      if (keys.isNotEmpty) {
+        keys.first.currentState?.requestFocusFromMemory();
+      }
+      return KeyEventResult.handled;
+    }
+
+    // UP: Move to app bar (refresh button)
+    if (key.isUpKey) {
+      _refreshButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT: Navigate hero carousel to previous
+    if (key.isLeftKey) {
+      if (_currentHeroIndex > 0) {
+        _heroController.previousPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: Navigate hero carousel to next
+    if (key.isRightKey) {
+      if (_currentHeroIndex < _onDeck.length - 1) {
+        _heroController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+      return KeyEventResult.handled;
+    }
+
+    // SELECT: Play current hero item
+    if (key.isSelectKey) {
+      if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
+        navigateToVideoPlayer(context, metadata: _onDeck[_currentHeroIndex]);
+      }
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  /// Handle key events for the refresh button in app bar
+  KeyEventResult _handleRefreshKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // DOWN: Return to hero
+    if (key.isDownKey) {
+      _heroFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: Move to user button
+    if (key.isRightKey) {
+      _userButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT/UP: Block at boundary
+    if (key.isLeftKey || key.isUpKey) {
+      return KeyEventResult.handled;
+    }
+
+    // SELECT: Trigger refresh
+    if (key.isSelectKey) {
+      _loadContent();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  /// Handle key events for the user button in app bar
+  KeyEventResult _handleUserKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // DOWN: Return to hero
+    if (key.isDownKey) {
+      _heroFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT: Move to refresh button
+    if (key.isLeftKey) {
+      _refreshButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT/UP: Block at boundary
+    if (key.isRightKey || key.isUpKey) {
+      return KeyEventResult.handled;
+    }
+
+    // SELECT: Show user menu
+    if (key.isSelectKey) {
+      final userProvider = context.read<UserProfileProvider>();
+      _showUserMenu(context, userProvider);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -100,6 +332,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroController.dispose();
     _scrollController.dispose();
     _indicatorAnimationController.dispose();
+    _heroFocusNode.removeListener(_onHeroFocusChange);
+    _heroFocusNode.dispose();
+    _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
+    _refreshButtonFocusNode.dispose();
+    _userButtonFocusNode.removeListener(_onUserFocusChange);
+    _userButtonFocusNode.dispose();
     super.dispose();
   }
 
@@ -223,6 +461,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
         // Reset hero index to avoid sync issues
         _currentHeroIndex = 0;
+
+        // Create continue watching hub key if needed
+        if (_onDeck.isNotEmpty) {
+          _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
+        }
       });
 
       // Sync PageController to first page after OnDeck loads
@@ -263,6 +506,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       setState(() {
         _hubs = filteredHubs;
         _areHubsLoading = false;
+        _updateHubKeys();
       });
 
       appLogger.d('Discover content loaded successfully');
@@ -501,6 +745,60 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
+  /// Show user menu programmatically (for D-pad select)
+  void _showUserMenu(BuildContext context, UserProfileProvider userProvider) {
+    final RenderBox? button = _userButtonFocusNode.context
+        ?.findRenderObject() as RenderBox?;
+    if (button == null) return;
+
+    final RenderBox overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu<String>(
+      context: context,
+      position: position,
+      items: [
+        if (userProvider.hasMultipleUsers)
+          PopupMenuItem(
+            value: 'switch_profile',
+            child: Row(
+              children: [
+                Icon(Icons.people),
+                SizedBox(width: 8),
+                Text(t.discover.switchProfile),
+              ],
+            ),
+          ),
+        PopupMenuItem(
+          value: 'logout',
+          child: Row(
+            children: [
+              Icon(Icons.logout),
+              SizedBox(width: 8),
+              Text(t.discover.logout),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == 'switch_profile') {
+        _handleSwitchProfile(context);
+      } else if (value == 'logout') {
+        _handleLogout();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -517,51 +815,75 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               shadowColor: Colors.transparent,
               scrolledUnderElevation: 0,
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _loadContent,
+                Focus(
+                  focusNode: _refreshButtonFocusNode,
+                  onKeyEvent: _handleRefreshKeyEvent,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _isRefreshFocused
+                          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: _loadContent,
+                    ),
+                  ),
                 ),
                 Consumer<UserProfileProvider>(
                   builder: (context, userProvider, child) {
-                    return PopupMenuButton<String>(
-                      icon: userProvider.currentUser?.thumb != null
-                          ? UserAvatarWidget(
-                              user: userProvider.currentUser!,
-                              size: 32,
-                              showIndicators: false,
-                            )
-                          : const Icon(Icons.account_circle, size: 32),
-                      onSelected: (value) {
-                        if (value == 'switch_profile') {
-                          _handleSwitchProfile(context);
-                        } else if (value == 'logout') {
-                          _handleLogout();
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        // Only show Switch Profile if multiple users available
-                        if (userProvider.hasMultipleUsers)
-                          PopupMenuItem(
-                            value: 'switch_profile',
-                            child: Row(
-                              children: [
-                                Icon(Icons.people),
-                                SizedBox(width: 8),
-                                Text(t.discover.switchProfile),
-                              ],
-                            ),
-                          ),
-                        PopupMenuItem(
-                          value: 'logout',
-                          child: Row(
-                            children: [
-                              Icon(Icons.logout),
-                              SizedBox(width: 8),
-                              Text(t.discover.logout),
-                            ],
-                          ),
+                    return Focus(
+                      focusNode: _userButtonFocusNode,
+                      onKeyEvent: _handleUserKeyEvent,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: _isUserFocused
+                              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ],
+                        child: PopupMenuButton<String>(
+                          icon: userProvider.currentUser?.thumb != null
+                              ? UserAvatarWidget(
+                                  user: userProvider.currentUser!,
+                                  size: 32,
+                                  showIndicators: false,
+                                )
+                              : const Icon(Icons.account_circle, size: 32),
+                          onSelected: (value) {
+                            if (value == 'switch_profile') {
+                              _handleSwitchProfile(context);
+                            } else if (value == 'logout') {
+                              _handleLogout();
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            // Only show Switch Profile if multiple users available
+                            if (userProvider.hasMultipleUsers)
+                              PopupMenuItem(
+                                value: 'switch_profile',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.people),
+                                    SizedBox(width: 8),
+                                    Text(t.discover.switchProfile),
+                                  ],
+                                ),
+                              ),
+                            PopupMenuItem(
+                              value: 'logout',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.logout),
+                                  SizedBox(width: 8),
+                                  Text(t.discover.logout),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -609,6 +931,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               if (_onDeck.isNotEmpty)
                 SliverToBoxAdapter(
                   child: HubSection(
+                    key: _continueWatchingHubKey,
                     hub: PlexHub(
                       hubKey: 'continue_watching',
                       title: t.discover.continueWatching,
@@ -622,6 +945,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     onRefresh: updateItem,
                     onRemoveFromContinueWatching: _refreshContinueWatching,
                     isInContinueWatching: true,
+                    onVerticalNavigation: (isUp) =>
+                        _handleVerticalNavigation(0, isUp),
                   ),
                 ),
 
@@ -629,9 +954,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               for (int i = 0; i < _hubs.length; i++)
                 SliverToBoxAdapter(
                   child: HubSection(
+                    key: i < _hubKeys.length ? _hubKeys[i] : null,
                     hub: _hubs[i],
                     icon: _getHubIcon(_hubs[i].title),
                     onRefresh: updateItem,
+                    // Hub index is i + 1 if continue watching exists, otherwise i
+                    onVerticalNavigation: (isUp) => _handleVerticalNavigation(
+                      _onDeck.isNotEmpty ? i + 1 : i,
+                      isUp,
+                    ),
                   ),
                 ),
 
@@ -714,11 +1045,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   Widget _buildHeroSection() {
     return SliverToBoxAdapter(
-      child: SizedBox(
-        height: 500,
-        child: Stack(
-          children: [
-            PageView.builder(
+      child: Focus(
+        focusNode: _heroFocusNode,
+        autofocus: true,
+        onKeyEvent: _handleHeroKeyEvent,
+        child: SizedBox(
+          height: 500,
+          child: Stack(
+            children: [
+              PageView.builder(
               controller: _heroController,
               itemCount: _onDeck.length,
               onPageChanged: (index) {
@@ -836,6 +1171,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -1194,62 +1530,76 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ? heroItem.viewOffset! / heroItem.duration!
         : 0.0;
 
-    return InkWell(
-      onTap: () {
-        appLogger.d('Playing: ${heroItem.title}');
-        navigateToVideoPlayer(context, metadata: heroItem);
-      },
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+    // Wrap with AnimatedContainer for focus outline
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: _isHeroFocused
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
+          width: 3,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.play_arrow, size: 20, color: Colors.black),
-            const SizedBox(width: 8),
-            if (hasProgress) ...[
-              // Progress bar
-              Container(
-                width: 40,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: progress,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(2),
+      ),
+      padding: EdgeInsets.all(_isHeroFocused ? 4 : 0),
+      child: InkWell(
+        onTap: () {
+          appLogger.d('Playing: ${heroItem.title}');
+          navigateToVideoPlayer(context, metadata: heroItem);
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.play_arrow, size: 20, color: Colors.black),
+              const SizedBox(width: 8),
+              if (hasProgress) ...[
+                // Progress bar
+                Container(
+                  width: 40,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: progress,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                t.discover.minutesLeft(minutes: minutesLeft),
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(width: 8),
+                Text(
+                  t.discover.minutesLeft(minutes: minutesLeft),
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ] else
-              Text(
-                t.discover.play,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              ] else
+                Text(
+                  t.discover.play,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

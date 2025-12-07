@@ -9,11 +9,13 @@ import '../utils/platform_detector.dart';
 class HorizontalScrollWithArrows extends StatefulWidget {
   final Widget Function(ScrollController) builder;
   final double scrollAmount;
+  final ScrollController? controller;
 
   const HorizontalScrollWithArrows({
     super.key,
     required this.builder,
     this.scrollAmount = 0.8, // Scroll by 80% of viewport width by default
+    this.controller,
   });
 
   @override
@@ -24,6 +26,7 @@ class HorizontalScrollWithArrows extends StatefulWidget {
 class _HorizontalScrollWithArrowsState
     extends State<HorizontalScrollWithArrows> {
   late final ScrollController _scrollController;
+  late final bool _ownsController;
   bool _isHovering = false;
   bool _canScrollLeft = false;
   bool _canScrollRight = false;
@@ -31,7 +34,8 @@ class _HorizontalScrollWithArrowsState
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
+    _ownsController = widget.controller == null;
+    _scrollController = widget.controller ?? ScrollController();
     _scrollController.addListener(_updateScrollState);
     // Initial state update after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
@@ -40,7 +44,9 @@ class _HorizontalScrollWithArrowsState
   @override
   void dispose() {
     _scrollController.removeListener(_updateScrollState);
-    _scrollController.dispose();
+    if (_ownsController) {
+      _scrollController.dispose();
+    }
     super.dispose();
   }
 

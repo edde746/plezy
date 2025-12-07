@@ -1,18 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../focus/dpad_navigator.dart';
+import '../focus/focus_theme.dart';
+import '../focus/input_mode_tracker.dart';
+import '../focus/locked_hub_controller.dart';
 import '../models/plex_hub.dart';
+import '../models/plex_playlist.dart';
 import '../screens/hub_detail_screen.dart';
+import '../screens/media_detail_screen.dart';
+import '../screens/season_detail_screen.dart';
+import '../screens/playlist/playlist_detail_screen.dart';
+import '../utils/video_player_navigation.dart';
 import 'media_card.dart';
 import 'horizontal_scroll_with_arrows.dart';
 import '../i18n/strings.g.dart';
 
 /// Shared hub section widget used in both discover and library screens
 /// Displays a hub title with icon and a horizontal scrollable list of items
-class HubSection extends StatelessWidget {
+///
+/// Uses a "locked" focus pattern where:
+/// - A single Focus widget at the hub level intercepts ALL arrow keys
+/// - Visual focus index is tracked in state (not Flutter's focus system)
+/// - Children render focus visuals based on the passed index
+/// - Focus never "escapes" to random elements
+class HubSection extends StatefulWidget {
   final PlexHub hub;
   final IconData icon;
   final void Function(String)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final bool isInContinueWatching;
+
+  /// Callback for vertical navigation (up/down). Return true if handled.
+  final bool Function(bool isUp)? onVerticalNavigation;
+
+  /// Called when the user presses BACK.
+  /// Used to navigate focus back to the tab bar.
+  final VoidCallback? onBack;
 
   const HubSection({
     super.key,
@@ -21,113 +44,375 @@ class HubSection extends StatelessWidget {
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.isInContinueWatching = false,
+    this.onVerticalNavigation,
+    this.onBack,
   });
+
+  @override
+  State<HubSection> createState() => HubSectionState();
+}
+
+class HubSectionState extends State<HubSection> {
+  late FocusNode _hubFocusNode;
+  final ScrollController _scrollController = ScrollController();
+
+  /// Current visual focus index (not tied to Flutter's focus system)
+  int _focusedIndex = 0;
+
+  /// Item extent for scroll calculations
+  double _itemExtent = 0;
+  static const double _leadingPadding = 12.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _hubFocusNode = FocusNode(
+      debugLabel: 'hub_${widget.hub.hubKey}',
+    );
+    _hubFocusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(HubSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Clamp focus index if item count changed
+    if (widget.hub.items.length != oldWidget.hub.items.length) {
+      final maxIndex = widget.hub.items.isEmpty ? 0 : widget.hub.items.length - 1;
+      if (_focusedIndex > maxIndex) {
+        _focusedIndex = maxIndex;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _hubFocusNode.removeListener(_onFocusChange);
+    _hubFocusNode.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    // Rebuild to update visual focus state
+    if (mounted) setState(() {});
+  }
+
+  /// Request focus on this hub at a specific item index
+  void requestFocusAt(int index) {
+    if (widget.hub.items.isEmpty) return;
+
+    final clamped = index.clamp(0, widget.hub.items.length - 1);
+    _focusedIndex = clamped;
+    // Remember this position for this specific hub
+    HubFocusMemory.setForHub(widget.hub.hubKey, clamped);
+    _scrollToIndex(clamped);
+    _hubFocusNode.requestFocus();
+    if (mounted) setState(() {});
+
+    // Scroll the hub into view in the parent scroll view
+    _scrollHubIntoView();
+  }
+
+  /// Request focus using the stored memory for this hub
+  void requestFocusFromMemory() {
+    final index = HubFocusMemory.getForHub(
+      widget.hub.hubKey,
+      widget.hub.items.length,
+    );
+    requestFocusAt(index);
+  }
+
+  /// Scroll this hub into view in the parent scroll view
+  void _scrollHubIntoView() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.3, // Position hub near top third of viewport
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  /// Check if this hub currently has focus
+  bool get hasFocusedItem => _hubFocusNode.hasFocus;
+
+  /// Get the number of items in this hub
+  int get itemCount => widget.hub.items.length;
+
+  /// Scroll to center the item at the given index
+  void _scrollToIndex(int index, {bool animate = true}) {
+    if (!_scrollController.hasClients || _itemExtent <= 0) return;
+
+    final viewport = _scrollController.position.viewportDimension;
+    final targetCenter = _leadingPadding + (index * _itemExtent) + (_itemExtent / 2);
+    final desiredOffset = (targetCenter - (viewport / 2)).clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
+    );
+
+    if (animate) {
+      _scrollController.animateTo(
+        desiredOffset,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+      );
+    } else {
+      _scrollController.jumpTo(desiredOffset);
+    }
+  }
+
+  /// Handle ALL key events at the hub level
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    // Handle key down and repeat events
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+    final itemCount = widget.hub.items.length;
+    if (itemCount == 0) return KeyEventResult.ignored;
+
+    // Left: move to previous item, ALWAYS consume to prevent escape
+    if (key.isLeftKey) {
+      if (_focusedIndex > 0) {
+        _focusedIndex--;
+        HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
+        _scrollToIndex(_focusedIndex);
+        setState(() {});
+      }
+      return KeyEventResult.handled;
+    }
+
+    // Right: move to next item, ALWAYS consume to prevent escape
+    if (key.isRightKey) {
+      if (_focusedIndex < itemCount - 1) {
+        _focusedIndex++;
+        HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
+        _scrollToIndex(_focusedIndex);
+        setState(() {});
+      }
+      return KeyEventResult.handled;
+    }
+
+    // Up/Down: delegate to parent for vertical hub navigation, ALWAYS consume
+    if (key.isUpKey) {
+      widget.onVerticalNavigation?.call(true);
+      return KeyEventResult.handled;
+    }
+    if (key.isDownKey) {
+      widget.onVerticalNavigation?.call(false);
+      return KeyEventResult.handled;
+    }
+
+    // Select: activate the current item
+    if (key.isSelectKey) {
+      _activateCurrentItem();
+      return KeyEventResult.handled;
+    }
+
+    // Context menu key: show context menu
+    if (key.isContextMenuKey) {
+      _showContextMenuForCurrentItem();
+      return KeyEventResult.handled;
+    }
+
+    // Back key: navigate to tab bar
+    if (key.isBackKey && widget.onBack != null) {
+      widget.onBack!();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  /// Context menu keys for each item to trigger long press actions
+  final Map<int, GlobalKey<_LockedHubItemWrapperState>> _itemWrapperKeys = {};
+
+  GlobalKey<_LockedHubItemWrapperState> _getItemWrapperKey(int index) {
+    return _itemWrapperKeys.putIfAbsent(
+      index,
+      () => GlobalKey<_LockedHubItemWrapperState>(),
+    );
+  }
+
+  void _activateCurrentItem() {
+    if (_focusedIndex >= widget.hub.items.length) return;
+    final item = widget.hub.items[_focusedIndex];
+    _navigateToItem(item);
+  }
+
+  void _showContextMenuForCurrentItem() {
+    // Trigger long press on the wrapper which will bubble to MediaContextMenu
+    _itemWrapperKeys[_focusedIndex]?.currentState?.triggerLongPress();
+  }
+
+  Future<void> _navigateToItem(dynamic item) async {
+    // Handle playlists
+    if (item is PlexPlaylist) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PlaylistDetailScreen(playlist: item),
+        ),
+      );
+      return;
+    }
+
+    final itemType = item.type.toLowerCase();
+
+    // For episodes, start playback directly
+    if (itemType == 'episode') {
+      final result = await navigateToVideoPlayer(context, metadata: item);
+      if (result == true) {
+        widget.onRefresh?.call(item.ratingKey);
+      }
+    } else if (itemType == 'season') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SeasonDetailScreen(season: item),
+        ),
+      );
+      widget.onRefresh?.call(item.ratingKey);
+    } else {
+      // For all other types (shows, movies), show detail screen
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MediaDetailScreen(metadata: item),
+        ),
+      );
+      if (result == true) {
+        widget.onRefresh?.call(item.ratingKey);
+      }
+    }
+  }
 
   void _navigateToHubDetail(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => HubDetailScreen(hub: hub)),
+      MaterialPageRoute(builder: (context) => HubDetailScreen(hub: widget.hub)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasFocus = _hubFocusNode.hasFocus;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Hub header
+        // Hub header (NOT focusable - titles should not be focusable)
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-          child: InkWell(
-            onTap: hub.more ? () => _navigateToHubDetail(context) : null,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 4,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      hub.title,
-                      style: Theme.of(context).textTheme.titleLarge,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+          child: ExcludeFocus(
+            child: InkWell(
+              onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(widget.icon),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.hub.title,
+                        style: Theme.of(context).textTheme.titleLarge,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
-                  if (hub.more) ...[
-                    const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right, size: 20),
+                    if (widget.hub.more) ...[
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right, size: 20),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
         ),
 
-        // Hub items (horizontal scroll)
-        if (hub.items.isNotEmpty)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // Responsive card width based on screen size
-              final screenWidth = constraints.maxWidth;
-              final cardWidth = screenWidth > 1600
-                  ? 220.0
-                  : screenWidth > 1200
-                  ? 200.0
-                  : screenWidth > 800
-                  ? 190.0
-                  : 160.0;
+        // Hub items with locked focus control
+        if (widget.hub.items.isNotEmpty)
+          Focus(
+            focusNode: _hubFocusNode,
+            onKeyEvent: _handleKeyEvent,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Responsive card width based on screen size
+                final screenWidth = constraints.maxWidth;
+                final cardWidth = screenWidth > 1600
+                    ? 220.0
+                    : screenWidth > 1200
+                        ? 200.0
+                        : screenWidth > 800
+                            ? 190.0
+                            : 160.0;
 
-              // MediaCard has 8px padding on all sides (16px total horizontally)
-              // So actual poster width is cardWidth - 16
-              final posterWidth = cardWidth - 16;
-              // 2:3 poster aspect ratio (height is 1.5x width)
-              final posterHeight = posterWidth * 1.5;
-              // Container height = poster + padding + spacing + text + ListView padding
-              // 8px top padding + posterHeight + 4px spacing + ~26px text + 8px bottom padding
-              // + 10px for ListView vertical padding (5px top + 5px bottom)
-              final containerHeight = posterHeight + 56;
+                // Store item extent for scroll calculations
+                _itemExtent = cardWidth + 4; // 4px total horizontal padding
 
-              return SizedBox(
-                height: containerHeight,
-                child: HorizontalScrollWithArrows(
-                  builder: (scrollController) => ListView.builder(
-                    controller: scrollController,
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 5,
+                // MediaCard has 8px padding on all sides (16px total horizontally)
+                final posterWidth = cardWidth - 16;
+                // 2:3 poster aspect ratio
+                final posterHeight = posterWidth * 1.5;
+                // Container height calculation
+                final containerHeight = posterHeight + 66;
+
+                return SizedBox(
+                  height: containerHeight,
+                  child: HorizontalScrollWithArrows(
+                    controller: _scrollController,
+                    builder: (scrollController) => ListView.builder(
+                      controller: scrollController,
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      itemCount: widget.hub.items.length,
+                      itemBuilder: (context, index) {
+                        final item = widget.hub.items[index];
+                        final isItemFocused = hasFocus && index == _focusedIndex;
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: _LockedHubItemWrapper(
+                            key: _getItemWrapperKey(index),
+                            isFocused: isItemFocused,
+                            onTap: () => _onItemTapped(index),
+                            onLongPress: () {
+                              // Long press on item - this will be caught by
+                              // MediaContextMenu inside MediaCard
+                            },
+                            child: MediaCard(
+                              key: Key(item.ratingKey),
+                              item: item,
+                              width: cardWidth,
+                              height: posterHeight,
+                              onRefresh: widget.onRefresh,
+                              onRemoveFromContinueWatching:
+                                  widget.onRemoveFromContinueWatching,
+                              forceGridMode: true,
+                              isInContinueWatching: widget.isInContinueWatching,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    itemCount: hub.items.length,
-                    itemBuilder: (context, index) {
-                      final item = hub.items[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 2,
-                        ),
-                        child: MediaCard(
-                          key: Key(item.ratingKey),
-                          item: item,
-                          width: cardWidth,
-                          height: posterHeight,
-                          onRefresh: onRefresh,
-                          onRemoveFromContinueWatching:
-                              onRemoveFromContinueWatching,
-                          forceGridMode: true,
-                          isInContinueWatching: isInContinueWatching,
-                        ),
-                      );
-                    },
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           )
         else
           Padding(
@@ -140,6 +425,69 @@ class HubSection extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  /// Called when an item is tapped (mouse/touch)
+  void _onItemTapped(int index) {
+    // Update focus to tapped item and request hub focus
+    _focusedIndex = index;
+    HubFocusMemory.setForHub(widget.hub.hubKey, index);
+    _hubFocusNode.requestFocus();
+    setState(() {});
+  }
+}
+
+/// Wrapper that provides visual focus decoration without using Flutter's focus system.
+class _LockedHubItemWrapper extends StatefulWidget {
+  final bool isFocused;
+  final Widget child;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+
+  const _LockedHubItemWrapper({
+    super.key,
+    required this.isFocused,
+    required this.child,
+    this.onTap,
+    this.onLongPress,
+  });
+
+  @override
+  State<_LockedHubItemWrapper> createState() => _LockedHubItemWrapperState();
+}
+
+class _LockedHubItemWrapperState extends State<_LockedHubItemWrapper> {
+  /// Trigger long press programmatically (for D-pad context menu key)
+  void triggerLongPress() {
+    widget.onLongPress?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = FocusTheme.getAnimationDuration(context);
+    // Only show focus effects during keyboard/d-pad navigation
+    final showFocus =
+        widget.isFocused && InputModeTracker.isKeyboardMode(context);
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
+      child: AnimatedScale(
+        scale: showFocus ? FocusTheme.focusScale : 1.0,
+        duration: duration,
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: duration,
+          curve: Curves.easeOutCubic,
+          decoration: FocusTheme.focusDecoration(
+            context,
+            isFocused: showFocus,
+            borderRadius: FocusTheme.defaultBorderRadius,
+          ),
+          child: widget.child,
+        ),
+      ),
     );
   }
 }

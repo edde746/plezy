@@ -13,6 +13,10 @@ class LibraryCollectionsTab extends BaseLibraryTab<PlexMetadata> {
     required super.library,
     super.viewMode,
     super.density,
+    super.onDataLoaded,
+    super.isActive,
+    super.suppressAutoFocus,
+    super.onBack,
   });
 
   @override
@@ -21,6 +25,23 @@ class LibraryCollectionsTab extends BaseLibraryTab<PlexMetadata> {
 
 class _LibraryCollectionsTabState
     extends BaseLibraryTabState<PlexMetadata, LibraryCollectionsTab> {
+  // Focus node for the first item (for programmatic focus)
+  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'collections_first_item');
+
+  @override
+  void dispose() {
+    _firstItemFocusNode.dispose();
+    super.dispose();
+  }
+
+  /// Focus the first item in the grid/list (for tab activation)
+  @override
+  void focusFirstItem() {
+    if (items.isNotEmpty) {
+      _firstItemFocusNode.requestFocus();
+    }
+  }
+
   @override
   IconData get emptyIcon => Icons.collections;
 
@@ -48,6 +69,8 @@ class _LibraryCollectionsTabState
     return AdaptiveMediaGrid(
       items: items,
       onRefresh: loadItems,
+      firstItemFocusNode: _firstItemFocusNode,
+      onBack: widget.onBack,
     );
   }
 }

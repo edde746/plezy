@@ -46,14 +46,24 @@ class MediaCard extends StatefulWidget {
   });
 
   @override
-  State<MediaCard> createState() => _MediaCardState();
+  State<MediaCard> createState() => MediaCardState();
 }
 
-class _MediaCardState extends State<MediaCard> {
+class MediaCardState extends State<MediaCard> {
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
 
   void _showContextMenu() {
     _contextMenuKey.currentState?.showContextMenu(context);
+  }
+
+  /// Public method to trigger tap action (for keyboard/gamepad SELECT)
+  void handleTap() {
+    _handleTap(context);
+  }
+
+  /// Public method to show context menu (for keyboard/gamepad context menu key)
+  void showContextMenu() {
+    _showContextMenu();
   }
 
   String _buildSemanticLabel() {
@@ -101,6 +111,11 @@ class _MediaCardState extends State<MediaCard> {
   }
 
   void _handleTap(BuildContext context) async {
+    // Ignore taps while context menu is open to avoid double-activating
+    if (_contextMenuKey.currentState?.isContextMenuOpen == true) {
+      return;
+    }
+
     // Handle playlists
     if (widget.item is PlexPlaylist) {
       await Navigator.push(
@@ -246,6 +261,7 @@ class _MediaCardGrid extends StatelessWidget {
         label: semanticLabel,
         button: true,
         child: InkWell(
+          canRequestFocus: false, // Keyboard handled by FocusableMediaCard
           onTap: onTap,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
@@ -566,6 +582,7 @@ class _MediaCardList extends StatelessWidget {
       label: semanticLabel,
       button: true,
       child: InkWell(
+        canRequestFocus: false, // Keyboard handled by FocusableMediaCard
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(

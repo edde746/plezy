@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../../focus/dpad_navigator.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../i18n/strings.g.dart';
 import 'licenses_screen.dart';
@@ -29,12 +31,23 @@ class _AboutScreenState extends State<AboutScreen> {
     });
   }
 
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
+      Navigator.pop(context);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     final appName = _appName;
     final appVersion = _appVersion;
 
-    return Scaffold(
+    return Focus(
+      autofocus: true,
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
       body: CustomScrollView(
         slivers: [
           CustomAppBar(title: Text(t.about.title), pinned: true),
@@ -96,6 +109,7 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
