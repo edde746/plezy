@@ -21,7 +21,8 @@
     <application
         android:label="Plezy"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:banner="@drawable/banner">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -42,7 +43,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
-                <!-- Allow app to appear in Android TV launcher -->
+                <!-- Android TV support: Make app appear in TV launcher -->
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
             </intent-filter>
         </activity>

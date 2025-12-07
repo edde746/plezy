@@ -55,6 +55,5 @@ duplication-report/
 **/fastlane/report.xml
 maestro/**/*.png
 
-# APM and GitHub workflows (local development)
+# APM (local dev)
 .apm/
-.github/

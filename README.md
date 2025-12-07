@@ -22,6 +22,14 @@ Plezy is a modern Plex media client that provides a seamless streaming experienc
 - [macOS (Universal)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.zip)
 - [Linux (x64)](https://github.com/edde746/plezy/releases/latest/download/plezy-linux.tar.gz)
 
+### Android TV
+Plezy now supports Android TV! The app can be sideloaded on Android TV devices and will appear in your TV launcher. To install:
+1. Download the latest APK from the [Releases page](https://github.com/edde746/plezy/releases)
+2. Transfer it to your Android TV device
+3. Install using a file manager or sideloading tool
+
+The app includes a custom TV banner and is optimized to work with TV remote controls.
+
 > Download the latest release from the [Releases page](https://github.com/edde746/plezy/releases)
 
 ## Features
