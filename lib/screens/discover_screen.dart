@@ -747,8 +747,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Show user menu programmatically (for D-pad select)
   void _showUserMenu(BuildContext context, UserProfileProvider userProvider) {
-    final RenderBox? button = _userButtonFocusNode.context
-        ?.findRenderObject() as RenderBox?;
+    final RenderBox? button =
+        _userButtonFocusNode.context?.findRenderObject() as RenderBox?;
     if (button == null) return;
 
     final RenderBox overlay =
@@ -821,7 +821,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   child: Container(
                     decoration: BoxDecoration(
                       color: _isRefreshFocused
-                          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.08)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -839,7 +841,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: _isUserFocused
-                              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.08)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -919,8 +923,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               // Hero Section (Continue Watching)
               Consumer<SettingsProvider>(
                 builder: (context, settingsProvider, child) {
-                  if (_onDeck.isNotEmpty &&
-                      settingsProvider.showHeroSection) {
+                  if (_onDeck.isNotEmpty && settingsProvider.showHeroSection) {
                     return _buildHeroSection();
                   }
                   return const SliverToBoxAdapter(child: SizedBox.shrink());
@@ -1054,124 +1057,124 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           child: Stack(
             children: [
               PageView.builder(
-              controller: _heroController,
-              itemCount: _onDeck.length,
-              onPageChanged: (index) {
-                // Validate index is within bounds before updating
-                if (index >= 0 && index < _onDeck.length) {
-                  setState(() {
-                    _currentHeroIndex = index;
-                  });
-                  _resetAutoScrollTimer();
-                }
-              },
-              itemBuilder: (context, index) {
-                return _buildHeroItem(_onDeck[index]);
-              },
-            ),
-            // Page indicators with animated progress and pause/play button
-            Positioned(
-              bottom: 16,
-              left: -26,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Pause/Play button
-                  GestureDetector(
-                    onTap: () {
-                      if (_isAutoScrollPaused) {
-                        _resumeAutoScroll();
-                      } else {
-                        _pauseAutoScroll();
-                      }
-                    },
-                    child: Icon(
-                      _isAutoScrollPaused ? Icons.play_arrow : Icons.pause,
-                      color: Colors.white,
-                      size: 18,
-                      semanticLabel:
-                          '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
+                controller: _heroController,
+                itemCount: _onDeck.length,
+                onPageChanged: (index) {
+                  // Validate index is within bounds before updating
+                  if (index >= 0 && index < _onDeck.length) {
+                    setState(() {
+                      _currentHeroIndex = index;
+                    });
+                    _resetAutoScrollTimer();
+                  }
+                },
+                itemBuilder: (context, index) {
+                  return _buildHeroItem(_onDeck[index]);
+                },
+              ),
+              // Page indicators with animated progress and pause/play button
+              Positioned(
+                bottom: 16,
+                left: -26,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Pause/Play button
+                    GestureDetector(
+                      onTap: () {
+                        if (_isAutoScrollPaused) {
+                          _resumeAutoScroll();
+                        } else {
+                          _pauseAutoScroll();
+                        }
+                      },
+                      child: Icon(
+                        _isAutoScrollPaused ? Icons.play_arrow : Icons.pause,
+                        color: Colors.white,
+                        size: 18,
+                        semanticLabel:
+                            '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
+                      ),
                     ),
-                  ),
-                  // Spacer to separate indicators from button
-                  const SizedBox(width: 8),
-                  // Page indicators (limited to 5 dots)
-                  ...() {
-                    final range = _getVisibleDotRange();
-                    return List.generate(range.end - range.start + 1, (i) {
-                      final index = range.start + i;
-                      final isActive = _currentHeroIndex == index;
-                      final dotSize = _getDotSize(
-                        index,
-                        range.start,
-                        range.end,
-                      );
+                    // Spacer to separate indicators from button
+                    const SizedBox(width: 8),
+                    // Page indicators (limited to 5 dots)
+                    ...() {
+                      final range = _getVisibleDotRange();
+                      return List.generate(range.end - range.start + 1, (i) {
+                        final index = range.start + i;
+                        final isActive = _currentHeroIndex == index;
+                        final dotSize = _getDotSize(
+                          index,
+                          range.start,
+                          range.end,
+                        );
 
-                      if (isActive) {
-                        // Animated progress indicator for active page
-                        return AnimatedBuilder(
-                          animation: _indicatorAnimationController,
-                          builder: (context, child) {
-                            // Fill width animates based on dot size
-                            final maxWidth =
-                                dotSize *
-                                3; // 24px for normal, 15px for small
-                            final fillWidth =
-                                dotSize +
-                                ((maxWidth - dotSize) *
-                                    _indicatorAnimationController.value);
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              width: maxWidth,
-                              height: dotSize,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.4),
-                                borderRadius: BorderRadius.circular(
-                                  dotSize / 2,
+                        if (isActive) {
+                          // Animated progress indicator for active page
+                          return AnimatedBuilder(
+                            animation: _indicatorAnimationController,
+                            builder: (context, child) {
+                              // Fill width animates based on dot size
+                              final maxWidth =
+                                  dotSize *
+                                  3; // 24px for normal, 15px for small
+                              final fillWidth =
+                                  dotSize +
+                                  ((maxWidth - dotSize) *
+                                      _indicatorAnimationController.value);
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
                                 ),
-                              ),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  width: fillWidth,
-                                  height: dotSize,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(
-                                      dotSize / 2,
+                                width: maxWidth,
+                                height: dotSize,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  borderRadius: BorderRadius.circular(
+                                    dotSize / 2,
+                                  ),
+                                ),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    width: fillWidth,
+                                    height: dotSize,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(
+                                        dotSize / 2,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        );
-                      } else {
-                        // Static indicator for inactive pages
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: dotSize,
-                          height: dotSize,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(dotSize / 2),
-                          ),
-                        );
-                      }
-                    });
-                  }(),
-                ],
+                              );
+                            },
+                          );
+                        } else {
+                          // Static indicator for inactive pages
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: dotSize,
+                            height: dotSize,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(dotSize / 2),
+                            ),
+                          );
+                        }
+                      });
+                    }(),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );

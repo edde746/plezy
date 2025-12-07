@@ -144,7 +144,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
     final posterUrl = widget.item.posterThumb();
     return ClipRRect(
       borderRadius: BorderRadius.circular(6),
-      child: PlexPosterImage(
+      child: PlexOptimizedImage.poster(
         client: _getClientForItem(context),
         imagePath: posterUrl,
         width: 60,

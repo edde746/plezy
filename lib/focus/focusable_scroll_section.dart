@@ -31,7 +31,7 @@ class FocusableScrollSection extends StatefulWidget {
   /// Builder for each focusable item.
   /// The [focusNode] should be passed to a FocusableWrapper or Focus widget.
   final Widget Function(BuildContext context, int index, FocusNode focusNode)
-      itemBuilder;
+  itemBuilder;
 
   /// Optional scroll controller for external control.
   final ScrollController? scrollController;
@@ -108,9 +108,7 @@ class _FocusableScrollSectionState extends State<FocusableScrollSection> {
   void _createFocusNodes() {
     _disposeFocusNodes();
     for (int i = 0; i < widget.itemCount; i++) {
-      final node = FocusNode(
-        debugLabel: '${widget.sectionId}_item_$i',
-      );
+      final node = FocusNode(debugLabel: '${widget.sectionId}_item_$i');
       node.addListener(() => _handleItemFocusChange(i, node.hasFocus));
       _itemFocusNodes.add(node);
     }
@@ -180,8 +178,7 @@ class _FocusableScrollSectionState extends State<FocusableScrollSection> {
       // Check if section lost focus entirely
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final stillHasFocus =
-            _itemFocusNodes.any((node) => node.hasFocus);
+        final stillHasFocus = _itemFocusNodes.any((node) => node.hasFocus);
         if (_hasFocus && !stillHasFocus) {
           _hasFocus = false;
           widget.onSectionBlurred?.call();

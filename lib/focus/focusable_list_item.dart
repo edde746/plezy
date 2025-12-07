@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'focusable_wrapper.dart';
-import 'focus_theme.dart';
 
 /// A focusable list item for settings screens and menus.
 ///

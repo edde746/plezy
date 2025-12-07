@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../focus/dpad_navigator.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../../i18n/strings.g.dart';
 
 class MergedLicenseEntry {
@@ -67,64 +65,53 @@ class _LicensesScreenState extends State<LicensesScreen> {
     }
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
-      Navigator.pop(context);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Focus(
-        autofocus: true,
-        onKeyEvent: _handleKeyEvent,
-        child: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      return FocusedScrollScaffold(
+        title: Text(t.screens.licenses),
+        slivers: const [
+          SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ],
       );
     }
 
-    return Focus(
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(title: Text(t.screens.licenses), pinned: true),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final mergedLicense = _mergedLicenses[index];
-                final packageName = mergedLicense.packageName;
+    return FocusedScrollScaffold(
+      title: Text(t.screens.licenses),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final mergedLicense = _mergedLicenses[index];
+              final packageName = mergedLicense.packageName;
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    title: Text(
-                      packageName,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  title: Text(
+                    packageName,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    subtitle: mergedLicense.licenseEntries.length > 1
-                        ? Text(
-                            t.licenses.licensesCount(
-                              count: mergedLicense.licenseEntries.length,
-                            ),
-                          )
-                        : null,
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _showLicenseDetail(mergedLicense),
                   ),
-                );
-              }, childCount: _mergedLicenses.length),
-            ),
+                  subtitle: mergedLicense.licenseEntries.length > 1
+                      ? Text(
+                          t.licenses.licensesCount(
+                            count: mergedLicense.licenseEntries.length,
+                          ),
+                        )
+                      : null,
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showLicenseDetail(mergedLicense),
+                ),
+              );
+            }, childCount: _mergedLicenses.length),
           ),
-        ],
-      ),
-      ),
+        ),
+      ],
     );
   }
 
@@ -144,108 +131,92 @@ class _LicenseDetailScreen extends StatelessWidget {
 
   const _LicenseDetailScreen({required this.mergedLicense});
 
-  KeyEventResult _handleKeyEvent(BuildContext context, FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
-      Navigator.pop(context);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
     final packageName = mergedLicense.packageName;
     final licenseEntries = mergedLicense.licenseEntries;
 
-    return Focus(
-      autofocus: true,
-      onKeyEvent: (node, event) => _handleKeyEvent(context, node, event),
-      child: Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(title: Text(packageName), pinned: true),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Package info card
-                if (mergedLicense.allPackageNames.length > 1)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            t.licenses.relatedPackages,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            mergedLicense.allPackageNames.join(', '),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
+    return FocusedScrollScaffold(
+      title: Text(packageName),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              // Package info card
+              if (mergedLicense.allPackageNames.length > 1)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t.licenses.relatedPackages,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          mergedLicense.allPackageNames.join(', '),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
                     ),
                   ),
-                if (mergedLicense.allPackageNames.length > 1)
-                  const SizedBox(height: 16),
+                ),
+              if (mergedLicense.allPackageNames.length > 1)
+                const SizedBox(height: 16),
 
-                // License cards
-                ...licenseEntries.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final license = entry.value;
-                  final isMultipleLicenses = licenseEntries.length > 1;
+              // License cards
+              ...licenseEntries.asMap().entries.map((entry) {
+                final index = entry.key;
+                final license = entry.value;
+                final isMultipleLicenses = licenseEntries.length > 1;
 
-                  return Column(
-                    children: [
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isMultipleLicenses
-                                    ? t.licenses.licenseNumber(
-                                        number: index + 1,
-                                      )
-                                    : t.licenses.license,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 16),
-                              ...license.paragraphs.map((paragraph) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: SelectableText(
-                                    paragraph.text,
-                                    style: TextStyle(
-                                      fontFamily: paragraph.indent > 0
-                                          ? 'monospace'
-                                          : null,
-                                      fontSize: 14,
-                                    ),
+                return Column(
+                  children: [
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isMultipleLicenses
+                                  ? t.licenses.licenseNumber(number: index + 1)
+                                  : t.licenses.license,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 16),
+                            ...license.paragraphs.map((paragraph) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: SelectableText(
+                                  paragraph.text,
+                                  style: TextStyle(
+                                    fontFamily: paragraph.indent > 0
+                                        ? 'monospace'
+                                        : null,
+                                    fontSize: 14,
                                   ),
-                                );
-                              }),
-                            ],
-                          ),
+                                ),
+                              );
+                            }),
+                          ],
                         ),
                       ),
-                      if (index < licenseEntries.length - 1)
-                        const SizedBox(height: 16),
-                    ],
-                  );
-                }),
-              ]),
-            ),
+                    ),
+                    if (index < licenseEntries.length - 1)
+                      const SizedBox(height: 16),
+                  ],
+                );
+              }),
+            ]),
           ),
-        ],
-      ),
-      ),
+        ),
+      ],
     );
   }
 }

@@ -6,6 +6,7 @@ import '../../../models/plex_media_info.dart';
 import '../../../utils/duration_formatter.dart';
 import '../../../utils/provider_extensions.dart';
 import 'base_video_control_sheet.dart';
+import 'video_control_sheet_launcher.dart';
 import '../../plex_optimized_image.dart';
 
 /// Bottom sheet for selecting chapters
@@ -32,7 +33,7 @@ class ChapterSheet extends StatelessWidget {
     VoidCallback? onOpen,
     VoidCallback? onClose,
   }) {
-    BaseVideoControlSheet.showSheet(
+    VideoControlSheetLauncher.show(
       context: context,
       onOpen: onOpen,
       onClose: onClose,
@@ -99,7 +100,7 @@ class ChapterSheet extends StatelessWidget {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(4),
-                            child: PlexThumbImage(
+                            child: PlexOptimizedImage.thumb(
                               client: _getClientForChapters(context),
                               imagePath: chapter.thumb,
                               width: 60,

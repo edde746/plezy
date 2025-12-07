@@ -330,37 +330,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           if (_isAuthenticating) ...[
-                            if (_useQrFlow && _qrAuthUrl != null) ...[
-                              // QR code flow - hint text above QR code
-                              Text(
-                                t.auth.scanQRCodeInstruction,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                              const SizedBox(height: 24),
-                              Center(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: QrImageView(
-                                    data: _qrAuthUrl!,
-                                    size: 300,
-                                    version: QrVersions.auto,
-                                    backgroundColor: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              _buildRetryButton(),
-                            ] else ...[
-                              // Browser auth flow - show spinner and waiting message
-                              const Center(child: CircularProgressIndicator()),
-                              const SizedBox(height: 16),
-                              Text(
-                                t.auth.waitingForAuth,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                              _buildRetryButton(),
-                            ],
+                            if (_useQrFlow && _qrAuthUrl != null)
+                              _buildQrAuthWidget(qrSize: 300)
+                            else
+                              _buildBrowserAuthWidget(),
                           ] else ...[
                             // Initial state buttons
                             ElevatedButton(
@@ -436,57 +409,10 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(height: 48),
                     if (_isAuthenticating) ...[
-                      if (_useQrFlow && _qrAuthUrl != null) ...[
-                        // QR code flow - show QR code and scan instruction
-                        Text(
-                          t.auth.scanQRCodeInstruction,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        const SizedBox(height: 24),
-                        Center(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: QrImageView(
-                              data: _qrAuthUrl!,
-                              size: 200,
-                              version: QrVersions.auto,
-                              backgroundColor: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        OutlinedButton(
-                          onPressed: _retryAuthentication,
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 24,
-                            ),
-                          ),
-                          child: Text(t.auth.retry),
-                        ),
-                      ] else ...[
-                        // Browser auth flow - show spinner and waiting message
-                        const Center(child: CircularProgressIndicator()),
-                        const SizedBox(height: 16),
-                        Text(
-                          t.auth.waitingForAuth,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        const SizedBox(height: 24),
-                        OutlinedButton(
-                          onPressed: _retryAuthentication,
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 24,
-                            ),
-                          ),
-                          child: Text(t.auth.retry),
-                        ),
-                      ],
+                      if (_useQrFlow && _qrAuthUrl != null)
+                        _buildQrAuthWidget(qrSize: 200)
+                      else
+                        _buildBrowserAuthWidget(),
                     ] else ...[
                       // add QR button here
                       ElevatedButton(
@@ -557,6 +483,50 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           child: Text(t.auth.retry),
         ),
+      ],
+    );
+  }
+
+  /// Builds the QR code authentication widget
+  Widget _buildQrAuthWidget({required double qrSize}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          t.auth.scanQRCodeInstruction,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.grey),
+        ),
+        const SizedBox(height: 24),
+        Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: QrImageView(
+              data: _qrAuthUrl!,
+              size: qrSize,
+              version: QrVersions.auto,
+              backgroundColor: Colors.white,
+            ),
+          ),
+        ),
+        _buildRetryButton(),
+      ],
+    );
+  }
+
+  /// Builds the browser authentication waiting widget
+  Widget _buildBrowserAuthWidget() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Center(child: CircularProgressIndicator()),
+        const SizedBox(height: 16),
+        Text(
+          t.auth.waitingForAuth,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.grey),
+        ),
+        _buildRetryButton(),
       ],
     );
   }

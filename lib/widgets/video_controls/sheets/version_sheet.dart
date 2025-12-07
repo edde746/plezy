@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/plex_media_version.dart';
 import 'base_video_control_sheet.dart';
+import 'video_control_sheet_launcher.dart';
 
 /// Bottom sheet for selecting video version
 class VersionSheet extends StatelessWidget {
@@ -23,7 +24,7 @@ class VersionSheet extends StatelessWidget {
     VoidCallback? onOpen,
     VoidCallback? onClose,
   }) {
-    BaseVideoControlSheet.showSheet(
+    VideoControlSheetLauncher.show(
       context: context,
       onOpen: onOpen,
       onClose: onClose,

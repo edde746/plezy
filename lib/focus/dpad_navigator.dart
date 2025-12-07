@@ -37,11 +37,7 @@ class DpadNavigator extends StatelessWidget {
       return child;
     }
 
-    return Focus(
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: child,
-    );
+    return Focus(autofocus: true, onKeyEvent: _handleKeyEvent, child: child);
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {

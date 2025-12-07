@@ -86,6 +86,31 @@ class _HorizontalScrollWithArrowsState
     );
   }
 
+  Widget _buildArrowButton({
+    required double position,
+    required IconData icon,
+    required VoidCallback onPressed,
+    required bool canScroll,
+  }) {
+    return Positioned(
+      left: position < 0 ? null : position,
+      right: position < 0 ? -position : null,
+      top: 0,
+      bottom: 0,
+      child: Center(
+        child: AnimatedOpacity(
+          opacity: (_isHovering && canScroll) ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: IgnorePointer(
+            ignoring: !(_isHovering && canScroll),
+            child: _NavigationArrow(icon: icon, onPressed: onPressed),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final child = widget.builder(_scrollController);
@@ -101,45 +126,17 @@ class _HorizontalScrollWithArrowsState
       child: Stack(
         children: [
           child,
-          // Left arrow
-          Positioned(
-            left: 8,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: AnimatedOpacity(
-                opacity: (_isHovering && _canScrollLeft) ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                child: IgnorePointer(
-                  ignoring: !(_isHovering && _canScrollLeft),
-                  child: _NavigationArrow(
-                    icon: Icons.chevron_left,
-                    onPressed: _scrollLeft,
-                  ),
-                ),
-              ),
-            ),
+          _buildArrowButton(
+            position: 8,
+            icon: Icons.chevron_left,
+            onPressed: _scrollLeft,
+            canScroll: _canScrollLeft,
           ),
-          // Right arrow
-          Positioned(
-            right: 8,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: AnimatedOpacity(
-                opacity: (_isHovering && _canScrollRight) ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                child: IgnorePointer(
-                  ignoring: !(_isHovering && _canScrollRight),
-                  child: _NavigationArrow(
-                    icon: Icons.chevron_right,
-                    onPressed: _scrollRight,
-                  ),
-                ),
-              ),
-            ),
+          _buildArrowButton(
+            position: -8,
+            icon: Icons.chevron_right,
+            onPressed: _scrollRight,
+            canScroll: _canScrollRight,
           ),
         ],
       ),

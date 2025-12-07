@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../services/plex_client.dart';
-import '../focus/dpad_navigator.dart';
+import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
@@ -83,71 +82,65 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     }
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
-      Navigator.pop(context, _watchStateChanged);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Focus(
-      onKeyEvent: _handleKeyEvent,
+      onKeyEvent: (_, event) =>
+          handleBackKeyNavigation(context, event, result: _watchStateChanged),
       child: Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(
-            title: Text(widget.season.title),
-            pinned: true,
-            onBackPressed: () => Navigator.pop(context, _watchStateChanged),
-          ),
-          if (_isLoadingEpisodes)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_episodes.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.movie_outlined,
-                      size: 64,
-                      color: tokens(context).textMuted,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      t.messages.noEpisodesFoundGeneral,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        body: CustomScrollView(
+          slivers: [
+            CustomAppBar(
+              title: Text(widget.season.title),
+              pinned: true,
+              onBackPressed: () => Navigator.pop(context, _watchStateChanged),
+            ),
+            if (_isLoadingEpisodes)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_episodes.isEmpty)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.movie_outlined,
+                        size: 64,
                         color: tokens(context).textMuted,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        t.messages.noEpisodesFoundGeneral,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: tokens(context).textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final episode = _episodes[index];
+                  return _EpisodeCard(
+                    episode: episode,
+                    client: _client,
+                    autofocus:
+                        index == 0 && InputModeTracker.isKeyboardMode(context),
+                    onTap: () async {
+                      await navigateToVideoPlayer(context, metadata: episode);
+                      // Refresh episodes when returning from video player
+                      _loadEpisodes();
+                    },
+                    onRefresh: updateItem,
+                  );
+                }, childCount: _episodes.length),
               ),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final episode = _episodes[index];
-                return _EpisodeCard(
-                  episode: episode,
-                  client: _client,
-                  autofocus: index == 0 && InputModeTracker.isKeyboardMode(context),
-                  onTap: () async {
-                    await navigateToVideoPlayer(context, metadata: episode);
-                    // Refresh episodes when returning from video player
-                    _loadEpisodes();
-                  },
-                  onRefresh: updateItem,
-                );
-              }, childCount: _episodes.length),
-            ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -168,6 +161,40 @@ class _EpisodeCard extends StatelessWidget {
     required this.onRefresh,
     this.autofocus = false,
   });
+
+  Widget _buildEpisodeMetaRow(BuildContext context) {
+    return Row(
+      children: [
+        if (episode.duration != null)
+          Text(
+            formatDurationTimestamp(Duration(milliseconds: episode.duration!)),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens(context).textMuted,
+              fontSize: 12,
+            ),
+          ),
+        if (episode.duration != null && episode.isWatched) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              '•',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: tokens(context).textMuted,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Text(
+            '${t.discover.watched} ✓',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens(context).textMuted,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +237,7 @@ class _EpisodeCard extends StatelessWidget {
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
                         child: episode.thumb != null
-                            ? PlexThumbImage(
+                            ? PlexOptimizedImage.thumb(
                                 client: client,
                                 imagePath: episode.thumb,
                                 filterQuality: FilterQuality.medium,
@@ -352,42 +379,7 @@ class _EpisodeCard extends StatelessWidget {
 
                     // Metadata row (duration, watched status)
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        if (episode.duration != null)
-                          Text(
-                            formatDurationTimestamp(
-                              Duration(milliseconds: episode.duration!),
-                            ),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: tokens(context).textMuted,
-                                  fontSize: 12,
-                                ),
-                          ),
-                        if (episode.duration != null && episode.isWatched) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Text(
-                              '•',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: tokens(context).textMuted,
-                                    fontSize: 12,
-                                  ),
-                            ),
-                          ),
-                          Text(
-                            '${t.discover.watched} ✓',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: tokens(context).textMuted,
-                                  fontSize: 12,
-                                ),
-                          ),
-                        ],
-                      ],
-                    ),
+                    _buildEpisodeMetaRow(context),
                   ],
                 ),
               ),

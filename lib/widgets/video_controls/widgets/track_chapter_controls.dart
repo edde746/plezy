@@ -13,6 +13,7 @@ import '../sheets/chapter_sheet.dart';
 import '../sheets/subtitle_track_sheet.dart';
 import '../sheets/version_sheet.dart';
 import '../sheets/video_settings_sheet.dart';
+import '../helpers/track_filter_helper.dart';
 import '../video_control_button.dart';
 
 /// Row of track and chapter control buttons for the video player
@@ -191,18 +192,12 @@ class TrackChapterControls extends StatelessWidget {
 
   bool _hasMultipleAudioTracks(Tracks? tracks) {
     if (tracks == null) return false;
-    final audioTracks = tracks.audio
-        .where((track) => track.id != 'auto' && track.id != 'no')
-        .toList();
-    return audioTracks.length > 1;
+    return TrackFilterHelper.hasMultipleTracks<AudioTrack>(tracks.audio);
   }
 
   bool _hasSubtitles(Tracks? tracks) {
     if (tracks == null) return false;
-    final subtitles = tracks.subtitle
-        .where((track) => track.id != 'auto' && track.id != 'no')
-        .toList();
-    return subtitles.isNotEmpty;
+    return TrackFilterHelper.hasTracks<SubtitleTrack>(tracks.subtitle);
   }
 
   IconData _getBoxFitIcon(int mode) {

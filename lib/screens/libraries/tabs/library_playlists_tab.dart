@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../models/plex_playlist.dart';
-import '../../../providers/settings_provider.dart';
 import '../../../utils/library_refresh_notifier.dart';
-import '../../../services/settings_service.dart' show ViewMode;
-import '../../../utils/grid_size_calculator.dart';
+import '../../../mixins/library_tab_focus_mixin.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../i18n/strings.g.dart';
+import '../adaptive_media_grid.dart';
 import 'base_library_tab.dart';
 
 /// Playlists tab for library screen
@@ -28,23 +26,13 @@ class LibraryPlaylistsTab extends BaseLibraryTab<PlexPlaylist> {
 }
 
 class _LibraryPlaylistsTabState
-    extends BaseLibraryTabState<PlexPlaylist, LibraryPlaylistsTab> {
-  // Focus node for the first item (for programmatic focus)
-  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'playlists_first_item');
+    extends BaseLibraryTabState<PlexPlaylist, LibraryPlaylistsTab>
+    with LibraryTabFocusMixin {
+  @override
+  String get focusNodeDebugLabel => 'playlists_first_item';
 
   @override
-  void dispose() {
-    _firstItemFocusNode.dispose();
-    super.dispose();
-  }
-
-  /// Focus the first item in the grid/list (for tab activation)
-  @override
-  void focusFirstItem() {
-    if (items.isNotEmpty) {
-      _firstItemFocusNode.requestFocus();
-    }
-  }
+  int get itemCount => items.length;
 
   @override
   IconData get emptyIcon => Icons.playlist_play;
@@ -72,42 +60,19 @@ class _LibraryPlaylistsTabState
 
   @override
   Widget buildContent(List<PlexPlaylist> items) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        if (settingsProvider.viewMode == ViewMode.list) {
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-            itemCount: items.length,
-            itemBuilder: (context, index) =>
-                _buildPlaylistItem(items[index], index),
-          );
-        } else {
-          return GridView.builder(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-                context,
-                settingsProvider.libraryDensity,
-              ),
-              childAspectRatio: 2 / 3.3,
-              crossAxisSpacing: 0,
-              mainAxisSpacing: 0,
-            ),
-            itemCount: items.length,
-            itemBuilder: (context, index) =>
-                _buildPlaylistItem(items[index], index),
-          );
-        }
+    return AdaptiveMediaGrid<PlexPlaylist>(
+      items: items,
+      itemBuilder: (context, playlist, index) {
+        return FocusableMediaCard(
+          key: Key(playlist.ratingKey),
+          item: playlist,
+          focusNode: index == 0 ? firstItemFocusNode : null,
+          onListRefresh: loadItems,
+          onBack: widget.onBack,
+        );
       },
-    );
-  }
-
-  Widget _buildPlaylistItem(PlexPlaylist playlist, int index) {
-    return FocusableMediaCard(
-      key: Key(playlist.ratingKey),
-      item: playlist,
-      focusNode: index == 0 ? _firstItemFocusNode : null,
-      onListRefresh: loadItems,
+      onRefresh: loadItems,
+      firstItemFocusNode: firstItemFocusNode,
       onBack: widget.onBack,
     );
   }

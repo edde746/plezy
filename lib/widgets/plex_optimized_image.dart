@@ -38,6 +38,60 @@ class PlexOptimizedImage extends StatelessWidget {
     this.imageType = ImageType.poster,
   });
 
+  /// Named constructor for poster images with default fallback icon
+  const PlexOptimizedImage.poster({
+    super.key,
+    required this.client,
+    required this.imagePath,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.filterQuality = FilterQuality.medium,
+    this.placeholder,
+    this.errorWidget,
+    this.fadeInDuration = const Duration(milliseconds: 300),
+    this.enableTranscoding = true,
+    this.cacheKey,
+    this.alignment = Alignment.center,
+  }) : fallbackIcon = Icons.movie,
+       imageType = ImageType.poster;
+
+  /// Named constructor for episode thumbnails
+  const PlexOptimizedImage.thumb({
+    super.key,
+    required this.client,
+    required this.imagePath,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.filterQuality = FilterQuality.medium,
+    this.placeholder,
+    this.errorWidget,
+    this.fadeInDuration = const Duration(milliseconds: 300),
+    this.enableTranscoding = true,
+    this.cacheKey,
+    this.alignment = Alignment.center,
+  }) : fallbackIcon = Icons.video_library,
+       imageType = ImageType.thumb;
+
+  /// Named constructor for playlist images
+  const PlexOptimizedImage.playlist({
+    super.key,
+    required this.client,
+    required this.imagePath,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.filterQuality = FilterQuality.medium,
+    this.placeholder,
+    this.errorWidget,
+    this.fadeInDuration = const Duration(milliseconds: 300),
+    this.enableTranscoding = true,
+    this.cacheKey,
+    this.alignment = Alignment.center,
+  }) : fallbackIcon = Icons.playlist_play,
+       imageType = ImageType.poster;
+
   @override
   Widget build(BuildContext context) {
     double resolvedDimension(
@@ -175,61 +229,4 @@ class PlexOptimizedImage extends StatelessWidget {
     final urlHash = imageUrl.hashCode;
     return 'plex_optimized_${memWidth}x${memHeight}_$urlHash';
   }
-}
-
-/// Specialized version for posters with default fallback icon
-class PlexPosterImage extends PlexOptimizedImage {
-  const PlexPosterImage({
-    super.key,
-    required super.client,
-    required super.imagePath,
-    super.width,
-    super.height,
-    super.fit = BoxFit.cover,
-    super.filterQuality = FilterQuality.medium,
-    super.placeholder,
-    super.errorWidget,
-    super.fadeInDuration = const Duration(milliseconds: 300),
-    super.enableTranscoding = true,
-    super.cacheKey,
-    super.alignment = Alignment.center,
-  }) : super(fallbackIcon: Icons.movie, imageType: ImageType.poster);
-}
-
-/// Specialized version for episode thumbnails
-class PlexThumbImage extends PlexOptimizedImage {
-  const PlexThumbImage({
-    super.key,
-    required super.client,
-    required super.imagePath,
-    super.width,
-    super.height,
-    super.fit = BoxFit.cover,
-    super.filterQuality = FilterQuality.medium,
-    super.placeholder,
-    super.errorWidget,
-    super.fadeInDuration = const Duration(milliseconds: 300),
-    super.enableTranscoding = true,
-    super.cacheKey,
-    super.alignment = Alignment.center,
-  }) : super(fallbackIcon: Icons.video_library, imageType: ImageType.thumb);
-}
-
-/// Specialized version for playlist images
-class PlexPlaylistImage extends PlexOptimizedImage {
-  const PlexPlaylistImage({
-    super.key,
-    required super.client,
-    required super.imagePath,
-    super.width,
-    super.height,
-    super.fit = BoxFit.cover,
-    super.filterQuality = FilterQuality.medium,
-    super.placeholder,
-    super.errorWidget,
-    super.fadeInDuration = const Duration(milliseconds: 300),
-    super.enableTranscoding = true,
-    super.cacheKey,
-    super.alignment = Alignment.center,
-  }) : super(fallbackIcon: Icons.playlist_play, imageType: ImageType.poster);
 }

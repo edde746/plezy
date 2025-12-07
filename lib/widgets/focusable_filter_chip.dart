@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../focus/dpad_navigator.dart';
-import '../focus/focus_theme.dart';
+import '../focus/focusable_chip_mixin.dart';
 import '../focus/input_mode_tracker.dart';
+import 'focus_builders.dart';
 
 /// A focusable filter chip that shows a color change when focused.
 ///
@@ -41,41 +42,30 @@ class FocusableFilterChip extends StatefulWidget {
   State<FocusableFilterChip> createState() => _FocusableFilterChipState();
 }
 
-class _FocusableFilterChipState extends State<FocusableFilterChip> {
-  FocusNode? _internalFocusNode;
-  bool _isFocused = false;
+class _FocusableFilterChipState extends State<FocusableFilterChip>
+    with FocusableChipStateMixin<FocusableFilterChip> {
+  @override
+  FocusNode? get widgetFocusNode => widget.focusNode;
 
-  FocusNode get _focusNode {
-    return widget.focusNode ??
-        (_internalFocusNode ??= FocusNode(debugLabel: 'filter_chip_${widget.label}'));
-  }
+  @override
+  String get debugLabel => 'filter_chip_${widget.label}';
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(_onFocusChange);
+    initFocusNode();
   }
 
   @override
   void didUpdateWidget(FocusableFilterChip oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode != widget.focusNode) {
-      oldWidget.focusNode?.removeListener(_onFocusChange);
-      _focusNode.addListener(_onFocusChange);
-    }
+    updateFocusNode(oldWidget.focusNode);
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _internalFocusNode?.dispose();
+    disposeFocusNode();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (mounted) {
-      setState(() => _isFocused = _focusNode.hasFocus);
-    }
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
@@ -96,7 +86,8 @@ class _FocusableFilterChipState extends State<FocusableFilterChip> {
     }
 
     // UP arrow navigates to tab bar
-    if (event.logicalKey == LogicalKeyboardKey.arrowUp && widget.onNavigateUp != null) {
+    if (event.logicalKey == LogicalKeyboardKey.arrowUp &&
+        widget.onNavigateUp != null) {
       widget.onNavigateUp!();
       return KeyEventResult.handled;
     }
@@ -113,44 +104,37 @@ class _FocusableFilterChipState extends State<FocusableFilterChip> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final duration = FocusTheme.getAnimationDuration(context);
     // Only show focus effects during keyboard/d-pad navigation
-    final showFocus = _isFocused && InputModeTracker.isKeyboardMode(context);
+    final showFocus = isFocused && InputModeTracker.isKeyboardMode(context);
 
     // Use primary color when focused, surface color when not
-    final backgroundColor =
-        showFocus ? colorScheme.primary : colorScheme.surfaceContainerHighest;
-    final foregroundColor =
-        showFocus ? colorScheme.onPrimary : colorScheme.onSurfaceVariant;
+    final backgroundColor = showFocus
+        ? colorScheme.primary
+        : colorScheme.surfaceContainerHighest;
+    final foregroundColor = showFocus
+        ? colorScheme.onPrimary
+        : colorScheme.onSurfaceVariant;
 
-    return Focus(
-      focusNode: _focusNode,
+    return FocusBuilders.buildFocusableChip(
+      context: context,
+      focusNode: focusNode,
+      isFocused: isFocused,
       onKeyEvent: _handleKeyEvent,
-      child: GestureDetector(
-        onTap: widget.onPressed,
-        child: AnimatedContainer(
-          duration: duration,
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(20),
+      onTap: widget.onPressed,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      backgroundColor: backgroundColor,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: foregroundColor),
+          const SizedBox(width: 6),
+          Text(
+            widget.label,
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: foregroundColor),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: foregroundColor),
-              const SizedBox(width: 6),
-              Text(
-                widget.label,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.copyWith(color: foregroundColor),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }

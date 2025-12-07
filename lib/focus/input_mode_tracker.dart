@@ -28,8 +28,8 @@ class InputModeTracker extends StatefulWidget {
 
   /// Get the current input mode.
   static InputMode of(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<_InputModeProvider>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<_InputModeProvider>();
     return provider?.mode ?? InputMode.pointer;
   }
 
@@ -44,8 +44,9 @@ class InputModeTracker extends StatefulWidget {
 
 class _InputModeTrackerState extends State<InputModeTracker> {
   // Default to keyboard mode on Android TV, pointer mode elsewhere
-  InputMode _mode =
-      TvDetectionService.isTVSync() ? InputMode.keyboard : InputMode.pointer;
+  InputMode _mode = TvDetectionService.isTVSync()
+      ? InputMode.keyboard
+      : InputMode.pointer;
 
   @override
   void initState() {
@@ -82,10 +83,7 @@ class _InputModeTrackerState extends State<InputModeTracker> {
       onPointerDown: (_) => _setMode(InputMode.pointer),
       onPointerHover: (_) => _setMode(InputMode.pointer),
       behavior: HitTestBehavior.translucent,
-      child: _InputModeProvider(
-        mode: _mode,
-        child: widget.child,
-      ),
+      child: _InputModeProvider(mode: _mode, child: widget.child),
     );
   }
 }
@@ -94,10 +92,7 @@ class _InputModeTrackerState extends State<InputModeTracker> {
 class _InputModeProvider extends InheritedWidget {
   final InputMode mode;
 
-  const _InputModeProvider({
-    required this.mode,
-    required super.child,
-  });
+  const _InputModeProvider({required this.mode, required super.child});
 
   @override
   bool updateShouldNotify(_InputModeProvider oldWidget) {

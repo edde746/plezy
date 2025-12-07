@@ -297,91 +297,15 @@ class _MediaCardGrid extends StatelessWidget {
                       ),
                     ),
                     if (item is PlexPlaylist)
-                      Builder(
-                        builder: (context) {
-                          final playlist = item as PlexPlaylist;
-                          if (playlist.leafCount != null &&
-                              playlist.leafCount! > 0) {
-                            return Text(
-                              t.playlists.itemCount(count: playlist.leafCount!),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: tokens(context).textMuted,
-                                    fontSize: 11,
-                                    height: 1.1,
-                                  ),
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
+                      _MediaCardHelpers.buildPlaylistMeta(
+                        context,
+                        item as PlexPlaylist,
                       )
-                    else if (item is PlexMetadata) ...[
-                      Builder(
-                        builder: (context) {
-                          final metadata = item as PlexMetadata;
-
-                          // For collections, show item count
-                          if (metadata.type.toLowerCase() == 'collection') {
-                            final count =
-                                metadata.childCount ?? metadata.leafCount;
-                            if (count != null && count > 0) {
-                              return Text(
-                                t.playlists.itemCount(count: count),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: tokens(context).textMuted,
-                                      fontSize: 11,
-                                      height: 1.1,
-                                    ),
-                              );
-                            }
-                          }
-
-                          // For other media types, show subtitle/parent/year
-                          if (metadata.displaySubtitle != null) {
-                            return Text(
-                              metadata.displaySubtitle!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: tokens(context).textMuted,
-                                    fontSize: 11,
-                                    height: 1.1,
-                                  ),
-                            );
-                          } else if (metadata.parentTitle != null) {
-                            return Text(
-                              metadata.parentTitle!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: tokens(context).textMuted,
-                                    fontSize: 11,
-                                    height: 1.1,
-                                  ),
-                            );
-                          } else if (metadata.year != null) {
-                            return Text(
-                              '${metadata.year}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: tokens(context).textMuted,
-                                    fontSize: 11,
-                                    height: 1.1,
-                                  ),
-                            );
-                          }
-
-                          return const SizedBox.shrink();
-                        },
+                    else if (item is PlexMetadata)
+                      _MediaCardHelpers.buildMetadataSubtitle(
+                        context,
+                        item as PlexMetadata,
                       ),
-                    ],
                   ],
                 ),
               ],
@@ -713,7 +637,7 @@ Widget _buildPosterImage(BuildContext context, dynamic item) {
     posterUrl = item.displayImage;
     fallbackIcon = Icons.playlist_play;
 
-    return PlexPlaylistImage(
+    return PlexOptimizedImage.playlist(
       client: _getClientForItem(context, item),
       imagePath: posterUrl,
       width: double.infinity,
@@ -724,7 +648,7 @@ Widget _buildPosterImage(BuildContext context, dynamic item) {
     final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
     posterUrl = item.posterThumb(useSeasonPoster: useSeasonPoster);
 
-    return PlexPosterImage(
+    return PlexOptimizedImage.poster(
       client: _getClientForItem(context, item),
       imagePath: posterUrl,
       width: double.infinity,
@@ -751,8 +675,93 @@ class _PosterOverlay extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final metadata = item as PlexMetadata;
+    return _MediaCardHelpers.buildWatchProgress(context, item as PlexMetadata);
+  }
+}
 
+/// Helper methods for building media card metadata and subtitles
+class _MediaCardHelpers {
+  /// Builds playlist metadata (item count)
+  static Widget buildPlaylistMeta(BuildContext context, PlexPlaylist playlist) {
+    if (playlist.leafCount != null && playlist.leafCount! > 0) {
+      return Text(
+        t.playlists.itemCount(count: playlist.leafCount!),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: tokens(context).textMuted,
+          fontSize: 11,
+          height: 1.1,
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  /// Builds metadata subtitle (for collections, episodes, movies, shows)
+  static Widget buildMetadataSubtitle(
+    BuildContext context,
+    PlexMetadata metadata,
+  ) {
+    // For collections, show item count
+    if (metadata.type.toLowerCase() == 'collection') {
+      final count = metadata.childCount ?? metadata.leafCount;
+      if (count != null && count > 0) {
+        return Text(
+          t.playlists.itemCount(count: count),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: tokens(context).textMuted,
+            fontSize: 11,
+            height: 1.1,
+          ),
+        );
+      }
+    }
+
+    // For other media types, show subtitle/parent/year
+    if (metadata.displaySubtitle != null) {
+      return Text(
+        metadata.displaySubtitle!,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: tokens(context).textMuted,
+          fontSize: 11,
+          height: 1.1,
+        ),
+      );
+    } else if (metadata.parentTitle != null) {
+      return Text(
+        metadata.parentTitle!,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: tokens(context).textMuted,
+          fontSize: 11,
+          height: 1.1,
+        ),
+      );
+    } else if (metadata.year != null) {
+      return Text(
+        '${metadata.year}',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: tokens(context).textMuted,
+          fontSize: 11,
+          height: 1.1,
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  /// Builds watch progress overlay (checkmark for watched, progress bar for in-progress)
+  static Widget buildWatchProgress(
+    BuildContext context,
+    PlexMetadata metadata,
+  ) {
     return Stack(
       children: [
         // Watched indicator (checkmark)

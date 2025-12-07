@@ -10,7 +10,6 @@ import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
-import 'video_sheet_header.dart';
 
 enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice }
 
@@ -80,20 +79,16 @@ class VideoSettingsSheet extends StatefulWidget {
     VoidCallback? onOpen,
     VoidCallback? onClose,
   }) {
-    onOpen?.call();
-    return showModalBottomSheet(
+    return BaseVideoControlSheet.showSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: BaseVideoControlSheet.getBottomSheetConstraints(context),
+      onOpen: onOpen,
+      onClose: onClose,
       builder: (context) => VideoSettingsSheet(
         player: player,
         audioSyncOffset: audioSyncOffset,
         subtitleSyncOffset: subtitleSyncOffset,
       ),
-    ).whenComplete(() {
-      onClose?.call();
-    });
+    );
   }
 
   @override
@@ -202,22 +197,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     } else {
       return 'Active (${seconds}s)';
     }
-  }
-
-  Widget _buildHeader() {
-    final sleepTimer = SleepTimerService();
-    final isIconActive =
-        _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive ||
-            _audioSyncOffset != 0 ||
-            _subtitleSyncOffset != 0);
-
-    return VideoSheetHeader(
-      title: _getTitle(),
-      icon: _getIcon(),
-      iconColor: isIconActive ? Colors.amber : Colors.white,
-      onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
-    );
   }
 
   Widget _buildMenuView() {
@@ -443,34 +422,34 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.75,
-        child: Column(
-          children: [
-            _buildHeader(),
-            const Divider(color: Colors.white24, height: 1),
-            Expanded(
-              child: () {
-                switch (_currentView) {
-                  case _SettingsView.menu:
-                    return _buildMenuView();
-                  case _SettingsView.speed:
-                    return _buildSpeedView();
-                  case _SettingsView.sleep:
-                    return _buildSleepView();
-                  case _SettingsView.audioSync:
-                    return _buildAudioSyncView();
-                  case _SettingsView.subtitleSync:
-                    return _buildSubtitleSyncView();
-                  case _SettingsView.audioDevice:
-                    return _buildAudioDeviceView();
-                }
-              }(),
-            ),
-          ],
-        ),
-      ),
+    final sleepTimer = SleepTimerService();
+    final isIconActive =
+        _currentView == _SettingsView.menu &&
+        (sleepTimer.isActive ||
+            _audioSyncOffset != 0 ||
+            _subtitleSyncOffset != 0);
+
+    return BaseVideoControlSheet(
+      title: _getTitle(),
+      icon: _getIcon(),
+      iconColor: isIconActive ? Colors.amber : Colors.white,
+      onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
+      child: () {
+        switch (_currentView) {
+          case _SettingsView.menu:
+            return _buildMenuView();
+          case _SettingsView.speed:
+            return _buildSpeedView();
+          case _SettingsView.sleep:
+            return _buildSleepView();
+          case _SettingsView.audioSync:
+            return _buildAudioSyncView();
+          case _SettingsView.subtitleSync:
+            return _buildSubtitleSyncView();
+          case _SettingsView.audioDevice:
+            return _buildAudioDeviceView();
+        }
+      }(),
     );
   }
 }

@@ -20,7 +20,6 @@ import 'context_menu_wrapper.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/item_updatable.dart';
-import '../../theme/theme_helper.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/error_message_utils.dart';
 import 'tabs/library_browse_tab.dart';
@@ -66,7 +65,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   String? _errorMessage;
   String? _selectedLibraryGlobalKey;
   bool _isInitialLoad = true;
-  List<String>? _serverOrder; // Cached server order from storage
 
   /// When true, suppress auto-focus in tabs (used when navigating via tab bar)
   bool _suppressAutoFocus = false;
@@ -91,10 +89,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _libraryDropdownKey = GlobalKey<PopupMenuButtonState<String>>();
 
   // Focus nodes for tab chips
-  final _recommendedTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_recommended');
+  final _recommendedTabChipFocusNode = FocusNode(
+    debugLabel: 'tab_chip_recommended',
+  );
   final _browseTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_browse');
-  final _collectionsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_collections');
-  final _playlistsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_playlists');
+  final _collectionsTabChipFocusNode = FocusNode(
+    debugLabel: 'tab_chip_collections',
+  );
+  final _playlistsTabChipFocusNode = FocusNode(
+    debugLabel: 'tab_chip_playlists',
+  );
 
   @override
   void initState() {
@@ -200,7 +204,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     if (_tabController.index == tabIndex && mounted) {
       // Use post-frame callback to ensure the widget tree is fully built
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _tabController.index == tabIndex && !_suppressAutoFocus) {
+        if (mounted &&
+            _tabController.index == tabIndex &&
+            !_suppressAutoFocus) {
           _focusCurrentTab();
         }
       });
@@ -283,37 +289,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     return uniqueServerIds.length > 1;
   }
 
-  /// Get ordered list of server IDs from libraries
-  List<String> _getOrderedServerIds(List<PlexLibrary> libraries) {
-    // Get unique server IDs from libraries
-    final serverIds = libraries
-        .where((lib) => lib.serverId != null)
-        .map((lib) => lib.serverId!)
-        .toSet()
-        .toList();
-
-    if (_serverOrder == null || _serverOrder!.isEmpty) {
-      return serverIds;
-    }
-
-    // Apply saved order, but include any new servers not in the saved order
-    final ordered = <String>[];
-    for (final id in _serverOrder!) {
-      if (serverIds.contains(id)) {
-        ordered.add(id);
-      }
-    }
-
-    // Add any servers not in saved order
-    for (final id in serverIds) {
-      if (!ordered.contains(id)) {
-        ordered.add(id);
-      }
-    }
-
-    return ordered;
-  }
-
   Future<void> _loadLibraries() async {
     // Extract context dependencies before async gap
     final multiServerProvider = Provider.of<MultiServerProvider>(
@@ -355,13 +330,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         savedOrder,
       );
 
-      // Load saved server order
-      final savedServerOrder = storage.getServerOrder();
-
       _updateState(() {
         _allLibraries =
             orderedLibraries; // Store all libraries with ordering applied
-        _serverOrder = savedServerOrder;
         _isLoadingLibraries = false;
       });
 
@@ -955,8 +926,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     return visibleLibraries.map((library) {
       final isSelected = library.globalKey == _selectedLibraryGlobalKey;
-      final showServerName = nonUniqueNames.contains(library.title) &&
-          library.serverName != null;
+      final showServerName =
+          nonUniqueNames.contains(library.title) && library.serverName != null;
 
       return PopupMenuItem<String>(
         value: library.globalKey,
@@ -965,9 +936,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             Icon(
               _getLibraryIcon(library.type),
               size: 20,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
+              color: isSelected ? Theme.of(context).colorScheme.primary : null,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -978,7 +947,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   Text(
                     library.title,
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : null,
@@ -989,11 +960,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                       library.serverName!,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.color
-                            ?.withValues(alpha: 0.6),
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                       ),
                     ),
                 ],
@@ -1614,10 +1583,12 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                 focusNode: _listFocusNode,
                 autofocus: InputModeTracker.isKeyboardMode(context),
                 onKeyEvent: _handleKeyEvent,
-                child: _buildFlatLibraryList(scrollController, hiddenLibraryKeys),
+                child: _buildFlatLibraryList(
+                  scrollController,
+                  hiddenLibraryKeys,
+                ),
               ),
             ),
-
           ],
         );
       },
@@ -1640,7 +1611,8 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       buildDefaultDragHandles: false,
       itemBuilder: (context, index) {
         final library = _tempLibraries[index];
-        final showServerName = nonUniqueNames.contains(library.title) &&
+        final showServerName =
+            nonUniqueNames.contains(library.title) &&
             library.serverName != null;
         final isFocused = isKeyboardMode && index == _focusedIndex;
         final isMoving = index == _movingIndex;
@@ -1687,9 +1659,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       key: ValueKey(library.globalKey),
       opacity: isHidden ? 0.5 : 1.0,
       child: Container(
-        decoration: BoxDecoration(
-          color: tileColor,
-        ),
+        decoration: BoxDecoration(color: tileColor),
         child: ListTile(
           leading: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1713,11 +1683,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                   library.serverName!,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withValues(alpha: 0.6),
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                   ),
                 )
               : null,
@@ -1732,7 +1700,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                       )
                     : null,
                 child: IconButton(
-                  icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility),
+                  icon: Icon(
+                    isHidden ? Icons.visibility_off : Icons.visibility,
+                  ),
                   tooltip: isHidden
                       ? t.libraries.showLibrary
                       : t.libraries.hideLibrary,
@@ -1749,7 +1719,8 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                 child: IconButton(
                   icon: const Icon(Icons.more_vert),
                   tooltip: t.libraries.libraryOptions,
-                  onPressed: () => _showLibraryMenuBottomSheet(context, library),
+                  onPressed: () =>
+                      _showLibraryMenuBottomSheet(context, library),
                 ),
               ),
             ],

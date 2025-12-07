@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
-import '../focus/focus_theme.dart';
-import '../focus/input_mode_tracker.dart';
 import '../focus/locked_hub_controller.dart';
 import '../models/plex_hub.dart';
-import '../models/plex_playlist.dart';
 import '../screens/hub_detail_screen.dart';
-import '../screens/media_detail_screen.dart';
-import '../screens/season_detail_screen.dart';
-import '../screens/playlist/playlist_detail_screen.dart';
-import '../utils/video_player_navigation.dart';
+import '../utils/media_navigation_helper.dart';
+import 'focus_builders.dart';
 import 'media_card.dart';
 import 'horizontal_scroll_with_arrows.dart';
 import '../i18n/strings.g.dart';
@@ -66,9 +61,7 @@ class HubSectionState extends State<HubSection> {
   @override
   void initState() {
     super.initState();
-    _hubFocusNode = FocusNode(
-      debugLabel: 'hub_${widget.hub.hubKey}',
-    );
+    _hubFocusNode = FocusNode(debugLabel: 'hub_${widget.hub.hubKey}');
     _hubFocusNode.addListener(_onFocusChange);
   }
 
@@ -77,7 +70,9 @@ class HubSectionState extends State<HubSection> {
     super.didUpdateWidget(oldWidget);
     // Clamp focus index if item count changed
     if (widget.hub.items.length != oldWidget.hub.items.length) {
-      final maxIndex = widget.hub.items.isEmpty ? 0 : widget.hub.items.length - 1;
+      final maxIndex = widget.hub.items.isEmpty
+          ? 0
+          : widget.hub.items.length - 1;
       if (_focusedIndex > maxIndex) {
         _focusedIndex = maxIndex;
       }
@@ -146,7 +141,8 @@ class HubSectionState extends State<HubSection> {
     if (!_scrollController.hasClients || _itemExtent <= 0) return;
 
     final viewport = _scrollController.position.viewportDimension;
-    final targetCenter = _leadingPadding + (index * _itemExtent) + (_itemExtent / 2);
+    final targetCenter =
+        _leadingPadding + (index * _itemExtent) + (_itemExtent / 2);
     final desiredOffset = (targetCenter - (viewport / 2)).clamp(
       0.0,
       _scrollController.position.maxScrollExtent,
@@ -249,45 +245,7 @@ class HubSectionState extends State<HubSection> {
   }
 
   Future<void> _navigateToItem(dynamic item) async {
-    // Handle playlists
-    if (item is PlexPlaylist) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PlaylistDetailScreen(playlist: item),
-        ),
-      );
-      return;
-    }
-
-    final itemType = item.type.toLowerCase();
-
-    // For episodes, start playback directly
-    if (itemType == 'episode') {
-      final result = await navigateToVideoPlayer(context, metadata: item);
-      if (result == true) {
-        widget.onRefresh?.call(item.ratingKey);
-      }
-    } else if (itemType == 'season') {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SeasonDetailScreen(season: item),
-        ),
-      );
-      widget.onRefresh?.call(item.ratingKey);
-    } else {
-      // For all other types (shows, movies), show detail screen
-      final result = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MediaDetailScreen(metadata: item),
-        ),
-      );
-      if (result == true) {
-        widget.onRefresh?.call(item.ratingKey);
-      }
-    }
+    await navigateToMediaItem(context, item, onRefresh: widget.onRefresh);
   }
 
   void _navigateToHubDetail(BuildContext context) {
@@ -310,13 +268,12 @@ class HubSectionState extends State<HubSection> {
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
           child: ExcludeFocus(
             child: InkWell(
-              onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,
+              onTap: widget.hub.more
+                  ? () => _navigateToHubDetail(context)
+                  : null,
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -353,10 +310,10 @@ class HubSectionState extends State<HubSection> {
                 final cardWidth = screenWidth > 1600
                     ? 220.0
                     : screenWidth > 1200
-                        ? 200.0
-                        : screenWidth > 800
-                            ? 190.0
-                            : 160.0;
+                    ? 200.0
+                    : screenWidth > 800
+                    ? 190.0
+                    : 160.0;
 
                 // Store item extent for scroll calculations
                 _itemExtent = cardWidth + 4; // 4px total horizontal padding
@@ -382,7 +339,8 @@ class HubSectionState extends State<HubSection> {
                       itemCount: widget.hub.items.length,
                       itemBuilder: (context, index) {
                         final item = widget.hub.items[index];
-                        final isItemFocused = hasFocus && index == _focusedIndex;
+                        final isItemFocused =
+                            hasFocus && index == _focusedIndex;
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -465,29 +423,12 @@ class _LockedHubItemWrapperState extends State<_LockedHubItemWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    final duration = FocusTheme.getAnimationDuration(context);
-    // Only show focus effects during keyboard/d-pad navigation
-    final showFocus =
-        widget.isFocused && InputModeTracker.isKeyboardMode(context);
-
-    return GestureDetector(
+    return FocusBuilders.buildLockedFocusWrapper(
+      context: context,
+      isFocused: widget.isFocused,
       onTap: widget.onTap,
       onLongPress: widget.onLongPress,
-      child: AnimatedScale(
-        scale: showFocus ? FocusTheme.focusScale : 1.0,
-        duration: duration,
-        curve: Curves.easeOutCubic,
-        child: AnimatedContainer(
-          duration: duration,
-          curve: Curves.easeOutCubic,
-          decoration: FocusTheme.focusDecoration(
-            context,
-            isFocused: showFocus,
-            borderRadius: FocusTheme.defaultBorderRadius,
-          ),
-          child: widget.child,
-        ),
-      ),
+      child: widget.child,
     );
   }
 }

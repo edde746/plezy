@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../mpv/mpv.dart';
 import 'base_video_control_sheet.dart';
+import 'video_control_sheet_launcher.dart';
+import '../helpers/track_filter_helper.dart';
+import '../helpers/track_selection_helper.dart';
 
 /// Generic track selection sheet for audio and subtitle tracks
 ///
@@ -50,7 +53,7 @@ class TrackSelectionSheet<T> extends StatelessWidget {
     VoidCallback? onOpen,
     VoidCallback? onClose,
   }) {
-    BaseVideoControlSheet.showSheet(
+    VideoControlSheetLauncher.show(
       context: context,
       onOpen: onOpen,
       onClose: onClose,
@@ -70,15 +73,6 @@ class TrackSelectionSheet<T> extends StatelessWidget {
     );
   }
 
-  String _getEmptyMessage() {
-    if (T == SubtitleTrack) {
-      return 'No subtitles available';
-    } else if (T == AudioTrack) {
-      return 'No audio tracks available';
-    }
-    return 'No tracks available';
-  }
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Tracks>(
@@ -86,26 +80,16 @@ class TrackSelectionSheet<T> extends StatelessWidget {
       initialData: player.state.tracks,
       builder: (context, snapshot) {
         final tracks = snapshot.data;
-        final availableTracks = extractTracks(tracks).where((track) {
-          // Filter out 'auto' and 'no' tracks from the list
-          if (track is AudioTrack) {
-            return track.id != 'auto' && track.id != 'no';
-          } else if (track is SubtitleTrack) {
-            return track.id != 'auto' && track.id != 'no';
-          }
-          return true;
-        }).toList();
+        final availableTracks = TrackFilterHelper.extractAndFilterTracks<T>(
+          tracks,
+          extractTracks,
+        );
 
         return BaseVideoControlSheet(
           title: title,
           icon: icon,
           child: availableTracks.isEmpty
-              ? Center(
-                  child: Text(
-                    _getEmptyMessage(),
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                )
+              ? TrackSelectionHelper.buildEmptyState<T>()
               : StreamBuilder<TrackSelection>(
                   stream: player.streams.track,
                   initialData: player.state.track,
@@ -115,9 +99,10 @@ class TrackSelectionSheet<T> extends StatelessWidget {
                     final selectedTrack = getCurrentTrack(currentTrack);
 
                     // Determine if "Off" is selected (null or explicit off)
-                    final isOffSelected =
-                        selectedTrack == null ||
-                        (isOffTrack?.call(selectedTrack) ?? false);
+                    final isOffSelected = TrackSelectionHelper.isOffSelected(
+                      selectedTrack,
+                      isOffTrack,
+                    );
 
                     final itemCount =
                         availableTracks.length + (showOffOption ? 1 : 0);
@@ -127,18 +112,8 @@ class TrackSelectionSheet<T> extends StatelessWidget {
                       itemBuilder: (context, index) {
                         // First item is "Off" if enabled
                         if (showOffOption && index == 0) {
-                          return ListTile(
-                            title: Text(
-                              'Off',
-                              style: TextStyle(
-                                color: isOffSelected
-                                    ? Colors.blue
-                                    : Colors.white,
-                              ),
-                            ),
-                            trailing: isOffSelected
-                                ? const Icon(Icons.check, color: Colors.blue)
-                                : null,
+                          return TrackSelectionHelper.buildOffTile<T>(
+                            isSelected: isOffSelected,
                             onTap: () {
                               if (createOffTrack != null) {
                                 final offTrack = createOffTrack!();
@@ -155,39 +130,17 @@ class TrackSelectionSheet<T> extends StatelessWidget {
                         final track = availableTracks[trackIndex];
 
                         // Check if this track is selected
-                        String trackId;
-                        if (track is AudioTrack) {
-                          trackId = track.id;
-                        } else if (track is SubtitleTrack) {
-                          trackId = track.id;
-                        } else {
-                          trackId = '';
-                        }
-
-                        String selectedId;
-                        if (selectedTrack == null) {
-                          selectedId = '';
-                        } else if (selectedTrack is AudioTrack) {
-                          selectedId = selectedTrack.id;
-                        } else if (selectedTrack is SubtitleTrack) {
-                          selectedId = selectedTrack.id;
-                        } else {
-                          selectedId = '';
-                        }
+                        final trackId = TrackSelectionHelper.getTrackId(track);
+                        final selectedId = selectedTrack == null
+                            ? ''
+                            : TrackSelectionHelper.getTrackId(selectedTrack);
 
                         final isSelected = trackId == selectedId;
                         final label = buildLabel(track, trackIndex);
 
-                        return ListTile(
-                          title: Text(
-                            label,
-                            style: TextStyle(
-                              color: isSelected ? Colors.blue : Colors.white,
-                            ),
-                          ),
-                          trailing: isSelected
-                              ? const Icon(Icons.check, color: Colors.blue)
-                              : null,
+                        return TrackSelectionHelper.buildTrackTile<T>(
+                          label: label,
+                          isSelected: isSelected,
                           onTap: () {
                             setTrack(track);
                             onTrackChanged?.call(track);

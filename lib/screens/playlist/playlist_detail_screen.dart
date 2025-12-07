@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../../focus/dpad_navigator.dart';
 import '../../services/plex_client.dart';
 import '../../models/plex_playlist.dart';
 import '../../models/plex_metadata.dart';
-import '../../providers/settings_provider.dart';
 import '../../providers/playback_state_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/video_player_navigation.dart';
-import '../../utils/grid_size_calculator.dart';
-import '../../widgets/media_card.dart';
+import '../../widgets/media_grid_sliver.dart';
 import 'playlist_item_card.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/dialogs.dart';
 import '../base_media_list_detail_screen.dart';
+import 'package:provider/provider.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -266,102 +262,61 @@ class _PlaylistDetailScreenState
     }
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
-      Navigator.pop(context);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return FocusedScrollScaffold(
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(widget.playlist.title, style: const TextStyle(fontSize: 16)),
+          if (widget.playlist.smart)
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Icon(Icons.auto_awesome, size: 12, color: Colors.blue[300]),
+                const SizedBox(width: 4),
                 Text(
-                  widget.playlist.title,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                if (widget.playlist.smart)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.auto_awesome,
-                        size: 12,
-                        color: Colors.blue[300],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        t.playlists.smartPlaylist,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.blue[300],
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ],
+                  t.playlists.smartPlaylist,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.blue[300],
+                    fontWeight: FontWeight.normal,
                   ),
+                ),
               ],
             ),
-            pinned: true,
-            actions: buildAppBarActions(
-              onDelete: widget.playlist.smart ? null : _deletePlaylist,
-              deleteTooltip: t.playlists.delete,
-              showDelete: !widget.playlist.smart,
-            ),
-          ),
-          ...buildStateSlivers(),
-          if (items.isNotEmpty)
-            if (widget.playlist.smart)
-              // Smart playlists: Use grid view (cannot be reordered)
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent:
-                        GridSizeCalculator.getMaxCrossAxisExtent(
-                          context,
-                          context.watch<SettingsProvider>().libraryDensity,
-                        ),
-                    childAspectRatio: 2 / 3.3,
-                    crossAxisSpacing: 0,
-                    mainAxisSpacing: 0,
-                  ),
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    return MediaCard(item: items[index], onRefresh: updateItem);
-                  }, childCount: items.length),
-                ),
-              )
-            else
-              // Regular playlists: Use reorderable list view
-              SliverReorderableList(
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return PlaylistItemCard(
-                    key: ValueKey(item.playlistItemID ?? item.ratingKey),
-                    item: item,
-                    index: index,
-                    onRemove: () => _removeItem(index),
-                    onTap: () => _playFromItem(index),
-                    onRefresh: updateItem,
-                    canReorder: !widget.playlist.smart,
-                  );
-                },
-                itemCount: items.length,
-                onReorder: _onReorder,
-              ),
         ],
       ),
+      actions: buildAppBarActions(
+        onDelete: widget.playlist.smart ? null : _deletePlaylist,
+        deleteTooltip: t.playlists.delete,
+        showDelete: !widget.playlist.smart,
       ),
+      slivers: [
+        ...buildStateSlivers(),
+        if (items.isNotEmpty)
+          if (widget.playlist.smart)
+            // Smart playlists: Use grid view (cannot be reordered)
+            MediaGridSliver(items: items, onRefresh: updateItem)
+          else
+            // Regular playlists: Use reorderable list view
+            SliverReorderableList(
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return PlaylistItemCard(
+                  key: ValueKey(item.playlistItemID ?? item.ratingKey),
+                  item: item,
+                  index: index,
+                  onRemove: () => _removeItem(index),
+                  onTap: () => _playFromItem(index),
+                  onRefresh: updateItem,
+                  canReorder: !widget.playlist.smart,
+                );
+              },
+              itemCount: items.length,
+              onReorder: _onReorder,
+            ),
+      ],
     );
   }
 }

@@ -86,7 +86,8 @@ class LockedHubController extends ChangeNotifier {
     if (!scrollController.hasClients) return;
 
     final viewport = scrollController.position.viewportDimension;
-    final targetCenter = leadingPadding + (index * itemExtent) + (itemExtent / 2);
+    final targetCenter =
+        leadingPadding + (index * itemExtent) + (itemExtent / 2);
     final desiredOffset = (targetCenter - (viewport / 2)).clamp(
       0.0,
       scrollController.position.maxScrollExtent,

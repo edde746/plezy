@@ -7,9 +7,8 @@ import '../mixins/refreshable.dart';
 import '../models/plex_metadata.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
-import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
-import '../utils/grid_cross_axis_extent.dart';
+import '../utils/sliver_adaptive_media_builder.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_card.dart';
 
@@ -255,45 +254,23 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
             else
               Consumer<SettingsProvider>(
                 builder: (context, settingsProvider, child) {
-                  if (settingsProvider.viewMode == ViewMode.list) {
-                    return SliverPadding(
-                      padding: const EdgeInsets.all(16),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final item = _searchResults[index];
-                          return MediaCard(
-                            key: Key(item.ratingKey),
-                            item: item,
-                            onRefresh: updateItem,
-                          );
-                        }, childCount: _searchResults.length),
-                      ),
-                    );
-                  } else {
-                    return SliverPadding(
-                      padding: const EdgeInsets.all(16),
-                      sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: getMaxCrossAxisExtentWithPadding(
-                            context,
-                            settingsProvider.libraryDensity,
-                            32,
-                          ),
-                          childAspectRatio: 2 / 3.3,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                        ),
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final item = _searchResults[index];
-                          return MediaCard(
-                            key: Key(item.ratingKey),
-                            item: item,
-                            onRefresh: updateItem,
-                          );
-                        }, childCount: _searchResults.length),
-                      ),
-                    );
-                  }
+                  return buildAdaptiveMediaSliverBuilder<PlexMetadata>(
+                    context: context,
+                    items: _searchResults,
+                    itemBuilder: (context, item, index) {
+                      return MediaCard(
+                        key: Key(item.ratingKey),
+                        item: item,
+                        onRefresh: updateItem,
+                      );
+                    },
+                    viewMode: settingsProvider.viewMode,
+                    density: settingsProvider.libraryDensity,
+                    padding: const EdgeInsets.all(16),
+                    childAspectRatio: 2 / 3.3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  );
                 },
               ),
           ],

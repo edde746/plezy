@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../focus/dpad_navigator.dart';
-import '../focus/focus_theme.dart';
+import '../focus/focusable_chip_mixin.dart';
 import '../focus/input_mode_tracker.dart';
+import 'focus_builders.dart';
 
 /// A focusable tab chip that shows a color change when focused or selected.
 ///
@@ -50,41 +51,30 @@ class FocusableTabChip extends StatefulWidget {
   State<FocusableTabChip> createState() => _FocusableTabChipState();
 }
 
-class _FocusableTabChipState extends State<FocusableTabChip> {
-  FocusNode? _internalFocusNode;
-  bool _isFocused = false;
+class _FocusableTabChipState extends State<FocusableTabChip>
+    with FocusableChipStateMixin<FocusableTabChip> {
+  @override
+  FocusNode? get widgetFocusNode => widget.focusNode;
 
-  FocusNode get _focusNode {
-    return widget.focusNode ??
-        (_internalFocusNode ??= FocusNode(debugLabel: 'tab_chip_${widget.label}'));
-  }
+  @override
+  String get debugLabel => 'tab_chip_${widget.label}';
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(_onFocusChange);
+    initFocusNode();
   }
 
   @override
   void didUpdateWidget(FocusableTabChip oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode != widget.focusNode) {
-      oldWidget.focusNode?.removeListener(_onFocusChange);
-      _focusNode.addListener(_onFocusChange);
-    }
+    updateFocusNode(oldWidget.focusNode);
   }
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _internalFocusNode?.dispose();
+    disposeFocusNode();
     super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (mounted) {
-      setState(() => _isFocused = _focusNode.hasFocus);
-    }
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
@@ -130,9 +120,8 @@ class _FocusableTabChipState extends State<FocusableTabChip> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final duration = FocusTheme.getAnimationDuration(context);
     // Only show focus effects during keyboard/d-pad navigation
-    final showFocus = _isFocused && InputModeTracker.isKeyboardMode(context);
+    final showFocus = isFocused && InputModeTracker.isKeyboardMode(context);
 
     // Determine background color based on focus and selection state
     // - Selected + Focused: slightly dimmed primary (to show focus distinction)
@@ -162,26 +151,19 @@ class _FocusableTabChipState extends State<FocusableTabChip> {
 
     final isHighlighted = showFocus || widget.isSelected;
 
-    return Focus(
-      focusNode: _focusNode,
+    return FocusBuilders.buildFocusableChip(
+      context: context,
+      focusNode: focusNode,
+      isFocused: isFocused,
       onKeyEvent: _handleKeyEvent,
-      child: GestureDetector(
-        onTap: widget.onSelect,
-        child: AnimatedContainer(
-          duration: duration,
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            widget.label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: foregroundColor,
-                  fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
-                ),
-          ),
+      onTap: widget.onSelect,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      backgroundColor: backgroundColor,
+      child: Text(
+        widget.label,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: foregroundColor,
+          fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
         ),
       ),
     );

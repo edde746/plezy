@@ -35,64 +35,106 @@ class UserAvatarWidget extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildTextLabels(ThemeData theme) {
+  /// Helper method to build a circular badge with an icon
+  ///
+  /// [icon] - The icon to display in the badge
+  /// [color] - The background color of the badge
+  /// [iconColor] - The color of the icon
+  /// [position] - The position of the badge ('topRight' or 'bottomRight')
+  /// [sizeRatio] - The size ratio relative to the avatar size (default 0.3)
+  Widget _buildBadge({
+    required BuildContext context,
+    required IconData icon,
+    required Color color,
+    required Color iconColor,
+    required String position,
+    double sizeRatio = 0.3,
+  }) {
+    final badgeSize = size * sizeRatio;
+    final iconSize =
+        size * (sizeRatio * 0.67); // Approximately 2/3 of badge size
+
+    return Positioned(
+      top: position == 'topRight' ? 0 : null,
+      bottom: position == 'bottomRight' ? 0 : null,
+      right: 0,
+      child: Container(
+        width: badgeSize,
+        height: badgeSize,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.surface,
+            width: 1,
+          ),
+        ),
+        child: Icon(icon, size: iconSize, color: iconColor),
+      ),
+    );
+  }
+
+  /// Helper method to build a text label chip
+  ///
+  /// [text] - The text to display in the chip
+  /// [backgroundColor] - The background color of the chip
+  /// [textColor] - The color of the text
+  Widget _buildLabelChip({
+    required BuildContext context,
+    required String text,
+    required Color backgroundColor,
+    required Color textColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: textColor,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildTextLabels(BuildContext context, ThemeData theme) {
     if (!useTextLabels || !showIndicators) return [];
 
     final labels = <Widget>[];
 
     if (user.isAdminUser) {
       labels.add(
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            t.userStatus.admin,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+        _buildLabelChip(
+          context: context,
+          text: t.userStatus.admin,
+          backgroundColor: theme.colorScheme.primary,
+          textColor: theme.colorScheme.onPrimary,
         ),
       );
     }
 
     if (user.isRestrictedUser && !user.isAdminUser) {
       labels.add(
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.warning ?? Colors.orange,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            t.userStatus.restricted,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+        _buildLabelChip(
+          context: context,
+          text: t.userStatus.restricted,
+          backgroundColor: theme.colorScheme.warning ?? Colors.orange,
+          textColor: theme.colorScheme.onPrimary,
         ),
       );
     }
 
     if (user.requiresPassword) {
       labels.add(
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.secondary,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            t.userStatus.protected,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSecondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+        _buildLabelChip(
+          context: context,
+          text: t.userStatus.protected,
+          backgroundColor: theme.colorScheme.secondary,
+          textColor: theme.colorScheme.onSecondary,
         ),
       );
     }
@@ -110,7 +152,7 @@ class UserAvatarWidget extends StatelessWidget {
     ];
   }
 
-  Widget _buildAvatar(ThemeData theme) {
+  Widget _buildAvatar(BuildContext context, ThemeData theme) {
     return SizedBox(
       width: size,
       height: size,
@@ -123,9 +165,8 @@ class UserAvatarWidget extends StatelessWidget {
               width: size,
               height: size,
               fit: BoxFit.cover,
-              placeholder: (context, url) => _buildPlaceholderAvatar(theme),
-              errorWidget: (context, url, error) =>
-                  _buildPlaceholderAvatar(theme),
+              placeholder: (ctx, url) => _buildPlaceholderAvatar(theme),
+              errorWidget: (ctx, url, error) => _buildPlaceholderAvatar(theme),
             ),
           ),
 
@@ -133,74 +174,33 @@ class UserAvatarWidget extends StatelessWidget {
           if (showIndicators && !useTextLabels) ...[
             // Admin badge
             if (user.isAdminUser)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  width: size * 0.3,
-                  height: size * 0.3,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: theme.colorScheme.surface,
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.admin_panel_settings,
-                    size: size * 0.2,
-                    color: theme.colorScheme.onPrimary,
-                  ),
-                ),
+              _buildBadge(
+                context: context,
+                icon: Icons.admin_panel_settings,
+                color: theme.colorScheme.primary,
+                iconColor: theme.colorScheme.onPrimary,
+                position: 'topRight',
               ),
 
             // Restricted badge
             if (user.isRestrictedUser && !user.isAdminUser)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  width: size * 0.3,
-                  height: size * 0.3,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.warning ?? Colors.orange,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: theme.colorScheme.surface,
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.security,
-                    size: size * 0.2,
-                    color: theme.colorScheme.onPrimary,
-                  ),
-                ),
+              _buildBadge(
+                context: context,
+                icon: Icons.security,
+                color: theme.colorScheme.warning ?? Colors.orange,
+                iconColor: theme.colorScheme.onPrimary,
+                position: 'topRight',
               ),
 
             // Password indicator
             if (user.requiresPassword)
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: size * 0.25,
-                  height: size * 0.25,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: theme.colorScheme.surface,
-                      width: 1,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.lock,
-                    size: size * 0.15,
-                    color: theme.colorScheme.onSecondary,
-                  ),
-                ),
+              _buildBadge(
+                context: context,
+                icon: Icons.lock,
+                color: theme.colorScheme.secondary,
+                iconColor: theme.colorScheme.onSecondary,
+                position: 'bottomRight',
+                sizeRatio: 0.25,
               ),
           ],
         ],
@@ -218,12 +218,15 @@ class UserAvatarWidget extends StatelessWidget {
         onTap: onTap,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [_buildAvatar(theme), ..._buildTextLabels(theme)],
+          children: [
+            _buildAvatar(context, theme),
+            ..._buildTextLabels(context, theme),
+          ],
         ),
       );
     } else {
       // Return just the avatar (original behavior)
-      return GestureDetector(onTap: onTap, child: _buildAvatar(theme));
+      return GestureDetector(onTap: onTap, child: _buildAvatar(context, theme));
     }
   }
 }

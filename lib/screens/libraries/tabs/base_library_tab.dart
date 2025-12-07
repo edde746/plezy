@@ -83,6 +83,17 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
   List<T> get items => _items;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get hasLoadedData => _hasLoadedData;
+
+  // Setters for subclasses that override loadItems with custom logic
+  @protected
+  set items(List<T> value) => _items = value;
+  @protected
+  set isLoading(bool value) => _isLoading = value;
+  @protected
+  set errorMessage(String? value) => _errorMessage = value;
+  @protected
+  set hasLoadedData(bool value) => _hasLoadedData = value;
 
   @override
   void initState() {
@@ -125,7 +136,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
 
     // Check if we should focus (became active after data loaded)
     if (widget.isActive && !oldWidget.isActive) {
-      _tryFocus();
+      tryFocus();
     }
   }
 
@@ -151,11 +162,15 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
   Stream<void>? getRefreshStream() => null;
 
   /// Try to focus the first item if conditions are met (active + loaded + not yet focused)
-  void _tryFocus() {
+  @protected
+  void tryFocus() {
     // Don't auto-focus if suppressed (e.g., when navigating via tab bar)
     if (widget.suppressAutoFocus) return;
 
-    if (widget.isActive && _hasLoadedData && !_hasFocused && _items.isNotEmpty) {
+    if (widget.isActive &&
+        _hasLoadedData &&
+        !_hasFocused &&
+        _items.isNotEmpty) {
       _hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -190,7 +205,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
 
       // Mark data as loaded and try to focus
       _hasLoadedData = true;
-      _tryFocus();
+      tryFocus();
 
       // Notify parent that data has loaded
       if (widget.onDataLoaded != null) {

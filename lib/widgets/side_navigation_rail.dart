@@ -13,6 +13,83 @@ import '../services/storage_service.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
 
+/// Reusable navigation rail item widget that handles focus, selection, and interaction
+class NavigationRailItem extends StatelessWidget {
+  final IconData icon;
+  final IconData? selectedIcon;
+  final Widget label;
+  final bool isSelected;
+  final bool isFocused;
+  final VoidCallback onTap;
+  final FocusNode focusNode;
+  final bool autofocus;
+  final EdgeInsets padding;
+  final BorderRadius borderRadius;
+  final double iconSize;
+
+  const NavigationRailItem({
+    super.key,
+    required this.icon,
+    this.selectedIcon,
+    required this.label,
+    required this.isSelected,
+    required this.isFocused,
+    required this.onTap,
+    required this.focusNode,
+    this.autofocus = false,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    this.borderRadius = const BorderRadius.all(Radius.circular(12)),
+    this.iconSize = 22,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = tokens(context);
+
+    return Focus(
+      focusNode: focusNode,
+      autofocus: autofocus,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        if (event.logicalKey.isSelectKey) {
+          onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: borderRadius,
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? t.text.withValues(alpha: 0.1)
+                  : isFocused
+                  ? t.text.withValues(alpha: 0.08)
+                  : null,
+              borderRadius: borderRadius,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isSelected && selectedIcon != null ? selectedIcon! : icon,
+                  size: iconSize,
+                  color: isSelected ? t.text : t.textMuted,
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: label),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Side navigation rail for Desktop and Android TV platforms
 class SideNavigationRail extends StatefulWidget {
   final int selectedIndex;
@@ -61,18 +138,26 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _searchFocusNode = FocusNode(debugLabel: 'nav_search');
     _settingsFocusNode = FocusNode(debugLabel: 'nav_settings');
 
-    _homeFocusNode.addListener(() => _onFocusChange(_homeFocusNode, () {
-      setState(() => _isHomeFocused = _homeFocusNode.hasFocus);
-    }));
-    _librariesFocusNode.addListener(() => _onFocusChange(_librariesFocusNode, () {
-      setState(() => _isLibrariesFocused = _librariesFocusNode.hasFocus);
-    }));
-    _searchFocusNode.addListener(() => _onFocusChange(_searchFocusNode, () {
-      setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
-    }));
-    _settingsFocusNode.addListener(() => _onFocusChange(_settingsFocusNode, () {
-      setState(() => _isSettingsFocused = _settingsFocusNode.hasFocus);
-    }));
+    _homeFocusNode.addListener(
+      () => _onFocusChange(_homeFocusNode, () {
+        setState(() => _isHomeFocused = _homeFocusNode.hasFocus);
+      }),
+    );
+    _librariesFocusNode.addListener(
+      () => _onFocusChange(_librariesFocusNode, () {
+        setState(() => _isLibrariesFocused = _librariesFocusNode.hasFocus);
+      }),
+    );
+    _searchFocusNode.addListener(
+      () => _onFocusChange(_searchFocusNode, () {
+        setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
+      }),
+    );
+    _settingsFocusNode.addListener(
+      () => _onFocusChange(_settingsFocusNode, () {
+        setState(() => _isSettingsFocused = _settingsFocusNode.hasFocus);
+      }),
+    );
 
     _loadLibraries();
   }
@@ -95,24 +180,21 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
   /// Get or create a focus node for a library item
   FocusNode _getLibraryFocusNode(String globalKey) {
-    return _libraryFocusNodes.putIfAbsent(
-      globalKey,
-      () {
-        final node = FocusNode(debugLabel: 'nav_library_$globalKey');
-        node.addListener(() {
-          if (mounted) {
-            setState(() {
-              if (node.hasFocus) {
-                _focusedLibraryKeys.add(globalKey);
-              } else {
-                _focusedLibraryKeys.remove(globalKey);
-              }
-            });
-          }
-        });
-        return node;
-      },
-    );
+    return _libraryFocusNodes.putIfAbsent(globalKey, () {
+      final node = FocusNode(debugLabel: 'nav_library_$globalKey');
+      node.addListener(() {
+        if (mounted) {
+          setState(() {
+            if (node.hasFocus) {
+              _focusedLibraryKeys.add(globalKey);
+            } else {
+              _focusedLibraryKeys.remove(globalKey);
+            }
+          });
+        }
+      });
+      return node;
+    });
   }
 
   /// Focus the currently selected nav item
@@ -338,58 +420,28 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }) {
     final t = tokens(context);
 
-    return Focus(
-      focusNode: focusNode,
-      autofocus: autofocus,
-      onKeyEvent: (node, event) {
-        if (event is! KeyDownEvent) return KeyEventResult.ignored;
-        if (event.logicalKey.isSelectKey) {
-          onTap();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? t.text.withValues(alpha: 0.1)
-                  : isFocused
-                      ? t.text.withValues(alpha: 0.08)
-                      : null,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  isSelected ? selectedIcon : icon,
-                  size: 22,
-                  color: isSelected ? t.text : t.textMuted,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? t.text : t.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return NavigationRailItem(
+      icon: icon,
+      selectedIcon: selectedIcon,
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: isSelected ? t.text : t.textMuted,
         ),
       ),
+      isSelected: isSelected,
+      isFocused: isFocused,
+      onTap: onTap,
+      focusNode: focusNode,
+      autofocus: autofocus,
     );
   }
 
   Widget _buildLibrariesSection(List<PlexLibrary> visibleLibraries, dynamic t) {
-    final isLibrariesSelected = widget.selectedIndex == 1 && widget.selectedLibraryKey == null;
+    final isLibrariesSelected =
+        widget.selectedIndex == 1 && widget.selectedLibraryKey == null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,13 +469,16 @@ class SideNavigationRailState extends State<SideNavigationRail> {
               },
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: isLibrariesSelected
                       ? t.text.withValues(alpha: 0.1)
                       : _isLibrariesFocused
-                          ? t.text.withValues(alpha: 0.08)
-                          : null,
+                      ? t.text.withValues(alpha: 0.08)
+                      : null,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -444,12 +499,16 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                           fontWeight: widget.selectedIndex == 1
                               ? FontWeight.w600
                               : FontWeight.w400,
-                          color: widget.selectedIndex == 1 ? t.text : t.textMuted,
+                          color: widget.selectedIndex == 1
+                              ? t.text
+                              : t.textMuted,
                         ),
                       ),
                     ),
                     Icon(
-                      _librariesExpanded ? Icons.expand_less : Icons.expand_more,
+                      _librariesExpanded
+                          ? Icons.expand_less
+                          : Icons.expand_more,
                       size: 20,
                       color: t.textMuted,
                     ),
@@ -527,82 +586,43 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     final isFocused = _focusedLibraryKeys.contains(library.globalKey);
     final focusNode = _getLibraryFocusNode(library.globalKey);
 
-    return Focus(
-      focusNode: focusNode,
-      onKeyEvent: (node, event) {
-        if (event is! KeyDownEvent) return KeyEventResult.ignored;
-        if (event.logicalKey.isSelectKey) {
-          widget.onLibrarySelected(library.globalKey);
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => widget.onLibrarySelected(library.globalKey),
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.only(
-              left: 28,
-              right: 12,
-              top: 10,
-              bottom: 10,
+    return NavigationRailItem(
+      icon: _getLibraryIcon(library.type),
+      selectedIcon: _getLibraryIconFilled(library.type),
+      label: SizedBox(
+        height: 32, // Fixed height for consistent item sizing
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              library.title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? t.text : t.textMuted,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? t.text.withValues(alpha: 0.1)
-                  : isFocused
-                      ? t.text.withValues(alpha: 0.08)
-                      : null,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  isSelected
-                      ? _getLibraryIconFilled(library.type)
-                      : _getLibraryIcon(library.type),
-                  size: 18,
-                  color: isSelected ? t.text : t.textMuted,
+            if (showServerName)
+              Text(
+                library.serverName!,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: t.textMuted.withValues(alpha: 0.4),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SizedBox(
-                    height: 32, // Fixed height for consistent item sizing
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          library.title,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: isSelected ? t.text : t.textMuted,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (showServerName)
-                          Text(
-                            library.serverName!,
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: t.textMuted.withValues(alpha: 0.4),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+                overflow: TextOverflow.ellipsis,
+              ),
+          ],
         ),
       ),
+      isSelected: isSelected,
+      isFocused: isFocused,
+      onTap: () => widget.onLibrarySelected(library.globalKey),
+      focusNode: focusNode,
+      padding: const EdgeInsets.only(left: 28, right: 12, top: 10, bottom: 10),
+      borderRadius: BorderRadius.circular(8),
+      iconSize: 18,
     );
   }
 }

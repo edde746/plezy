@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'focus_theme.dart';
@@ -9,18 +11,28 @@ import 'input_mode_tracker.dart';
 /// - Visual focus indicator (border + scale animation)
 /// - Keyboard/D-pad event handling (Enter/Select to activate)
 /// - Optional auto-scroll to keep focused item visible
+/// - Long-press detection for SELECT key
+/// - Navigation callbacks (UP, BACK)
 class FocusableWrapper extends StatefulWidget {
   /// The child widget to wrap.
   final Widget child;
 
   /// Called when the item is selected (Enter/Select/GamepadA).
+  /// For short press when [enableLongPress] is true.
   final VoidCallback? onSelect;
 
-  /// Called when long press is triggered (context menu key).
+  /// Called when long press is triggered (hold SELECT key or context menu key).
+  /// Only triggered if [enableLongPress] is true.
   final VoidCallback? onLongPress;
 
   /// Called when focus changes.
   final ValueChanged<bool>? onFocusChange;
+
+  /// Called when the user presses UP and there's no focusable item above.
+  final VoidCallback? onNavigateUp;
+
+  /// Called when the user presses BACK.
+  final VoidCallback? onBack;
 
   /// Whether this widget should request focus when first built.
   final bool autofocus;
@@ -37,6 +49,10 @@ class FocusableWrapper extends StatefulWidget {
   /// Alignment for auto-scroll (0.0 = start, 0.5 = center, 1.0 = end).
   final double scrollAlignment;
 
+  /// Whether to use comfortable zone scrolling (only scroll if item is outside middle 60%).
+  /// If false, always scrolls to [scrollAlignment].
+  final bool useComfortableZone;
+
   /// Optional semantic label for accessibility.
   final String? semanticLabel;
 
@@ -47,20 +63,33 @@ class FocusableWrapper extends StatefulWidget {
   /// This is called before the default key handling.
   final KeyEventResult Function(FocusNode node, KeyEvent event)? onKeyEvent;
 
+  /// Whether to enable long-press detection for SELECT key.
+  /// When enabled, holding SELECT triggers [onLongPress] after 500ms.
+  /// Short press triggers [onSelect].
+  final bool enableLongPress;
+
+  /// Duration for long-press detection.
+  final Duration longPressDuration;
+
   const FocusableWrapper({
     super.key,
     required this.child,
     this.onSelect,
     this.onLongPress,
     this.onFocusChange,
+    this.onNavigateUp,
+    this.onBack,
     this.autofocus = false,
     this.focusNode,
     this.borderRadius = FocusTheme.defaultBorderRadius,
     this.autoScroll = true,
     this.scrollAlignment = 0.5,
+    this.useComfortableZone = false,
     this.semanticLabel,
     this.canRequestFocus = true,
     this.onKeyEvent,
+    this.enableLongPress = false,
+    this.longPressDuration = const Duration(milliseconds: 500),
   });
 
   @override
@@ -75,6 +104,10 @@ class _FocusableWrapperState extends State<FocusableWrapper>
 
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
+
+  // Long-press detection for SELECT key
+  Timer? _longPressTimer;
+  bool _isSelectKeyDown = false;
 
   @override
   void initState() {
@@ -102,13 +135,13 @@ class _FocusableWrapperState extends State<FocusableWrapper>
       duration: const Duration(milliseconds: 150),
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: FocusTheme.focusScale,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: FocusTheme.focusScale)
+        .animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
   }
 
   @override
@@ -131,6 +164,7 @@ class _FocusableWrapperState extends State<FocusableWrapper>
 
   @override
   void dispose() {
+    _longPressTimer?.cancel();
     _animationController.dispose();
     if (_ownsNode) {
       _focusNode.dispose();
@@ -163,11 +197,43 @@ class _FocusableWrapperState extends State<FocusableWrapper>
 
   void _scrollIntoView() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || !_isFocused) return;
 
       final renderObject = context.findRenderObject();
       if (renderObject == null) return;
 
+      if (widget.useComfortableZone) {
+        // Check if item is already in the comfortable zone
+        final scrollable = Scrollable.maybeOf(context);
+        if (scrollable == null) return;
+
+        final viewport = scrollable.context.findRenderObject() as RenderBox?;
+        if (viewport == null) return;
+
+        // Get item's position relative to viewport
+        final itemBox = renderObject as RenderBox;
+        final itemPosition = itemBox.localToGlobal(
+          Offset.zero,
+          ancestor: viewport,
+        );
+
+        // Check if item is already in the comfortable zone
+        final viewportHeight = viewport.size.height;
+        final itemHeight = itemBox.size.height;
+        final itemVerticalCenter = itemPosition.dy + itemHeight / 2;
+
+        // Define comfortable zone - if item center is within middle 60% of viewport, don't scroll
+        final comfortZoneTop = viewportHeight * 0.2;
+        final comfortZoneBottom = viewportHeight * 0.8;
+
+        if (itemVerticalCenter >= comfortZoneTop &&
+            itemVerticalCenter <= comfortZoneBottom) {
+          // Item is in comfortable zone, no need to scroll
+          return;
+        }
+      }
+
+      // Item is outside comfortable zone or comfortable zone disabled, scroll to alignment
       Scrollable.ensureVisible(
         context,
         alignment: widget.scrollAlignment,
@@ -178,7 +244,7 @@ class _FocusableWrapperState extends State<FocusableWrapper>
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
 
     // Call custom key handler first
     if (widget.onKeyEvent != null) {
@@ -188,15 +254,65 @@ class _FocusableWrapperState extends State<FocusableWrapper>
       }
     }
 
-    // Handle Select/Enter for activation
-    if (_isSelectKey(event.logicalKey)) {
-      widget.onSelect?.call();
+    // Handle SELECT key with optional long-press detection
+    if (_isSelectKey(key)) {
+      if (widget.enableLongPress) {
+        if (event is KeyDownEvent) {
+          // Only start timer on initial press, not repeats
+          if (!_isSelectKeyDown) {
+            _isSelectKeyDown = true;
+            _longPressTimer?.cancel();
+            _longPressTimer = Timer(widget.longPressDuration, () {
+              // Long press detected
+              if (mounted) {
+                widget.onLongPress?.call();
+              }
+            });
+          }
+          return KeyEventResult.handled;
+        } else if (event is KeyRepeatEvent) {
+          // Consume repeat events to prevent system sounds
+          return KeyEventResult.handled;
+        } else if (event is KeyUpEvent) {
+          final timerWasActive = _longPressTimer?.isActive ?? false;
+          _longPressTimer?.cancel();
+          if (timerWasActive && _isSelectKeyDown) {
+            // Timer still active - short press
+            widget.onSelect?.call();
+          }
+          // If timer already fired, long press was triggered - do nothing on key up
+          _isSelectKeyDown = false;
+          return KeyEventResult.handled;
+        }
+      } else {
+        // Simple select handling without long-press
+        if (event is KeyDownEvent) {
+          widget.onSelect?.call();
+          return KeyEventResult.handled;
+        }
+      }
+    }
+
+    // Ignore key repeat events for other keys
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    // Context menu key
+    if (_isContextMenuKey(key)) {
+      widget.onLongPress?.call();
       return KeyEventResult.handled;
     }
 
-    // Handle context menu key
-    if (_isContextMenuKey(event.logicalKey)) {
-      widget.onLongPress?.call();
+    // UP arrow - if callback provided, navigate up
+    if (key == LogicalKeyboardKey.arrowUp && widget.onNavigateUp != null) {
+      widget.onNavigateUp!();
+      return KeyEventResult.handled;
+    }
+
+    // BACK key
+    if (_isBackKey(key) && widget.onBack != null) {
+      widget.onBack!();
       return KeyEventResult.handled;
     }
 
@@ -213,6 +329,13 @@ class _FocusableWrapperState extends State<FocusableWrapper>
   bool _isContextMenuKey(LogicalKeyboardKey key) {
     return key == LogicalKeyboardKey.contextMenu ||
         key == LogicalKeyboardKey.gameButtonX;
+  }
+
+  bool _isBackKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.escape ||
+        key == LogicalKeyboardKey.goBack ||
+        key == LogicalKeyboardKey.browserBack ||
+        key == LogicalKeyboardKey.gameButtonB;
   }
 
   @override

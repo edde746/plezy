@@ -6,13 +6,11 @@ import '../services/fullscreen_state_manager.dart';
 /// When present, app bars should skip their left padding since the side nav
 /// already handles the macOS traffic lights area.
 class SideNavigationScope extends InheritedWidget {
-  const SideNavigationScope({
-    super.key,
-    required super.child,
-  });
+  const SideNavigationScope({super.key, required super.child});
 
   static bool isPresent(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<SideNavigationScope>() != null;
+    return context.dependOnInheritedWidgetOfExactType<SideNavigationScope>() !=
+        null;
   }
 
   @override
@@ -126,7 +124,10 @@ class DesktopAppBarHelper {
 
   /// Calculates the leading width for SliverAppBar to account for macOS traffic lights
   /// [context] - Required to check if side navigation is visible
-  static double? calculateLeadingWidth(Widget? leading, {BuildContext? context}) {
+  static double? calculateLeadingWidth(
+    Widget? leading, {
+    BuildContext? context,
+  }) {
     if (!Platform.isMacOS || leading == null) {
       return null;
     }

@@ -162,7 +162,8 @@ class _LibraryRecommendedTabState
           onRemoveFromContinueWatching: isContinueWatching
               ? _refreshContinueWatching
               : null,
-          onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
+          onVerticalNavigation: (isUp) =>
+              _handleVerticalNavigation(index, isUp),
           onBack: widget.onBack,
         );
       },

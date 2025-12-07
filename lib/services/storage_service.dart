@@ -1,10 +1,9 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../utils/log_redaction_manager.dart';
+import 'base_shared_preferences_service.dart';
 
-class StorageService {
+class StorageService extends BaseSharedPreferencesService {
   static const String _keyServerUrl = 'server_url';
   static const String _keyToken = 'token';
   static const String _keyPlexToken = 'plex_token';
@@ -23,21 +22,16 @@ class StorageService {
   static const String _keyEnabledServers = 'enabled_servers';
   static const String _keyServerOrder = 'server_order';
 
-  static StorageService? _instance;
-  late SharedPreferences _prefs;
-
   StorageService._();
 
   static Future<StorageService> getInstance() async {
-    if (_instance == null) {
-      _instance = StorageService._();
-      await _instance!._init();
-    }
-    return _instance!;
+    return BaseSharedPreferencesService.initializeInstance(
+      () => StorageService._(),
+    );
   }
 
-  Future<void> _init() async {
-    _prefs = await SharedPreferences.getInstance();
+  @override
+  Future<void> onInit() async {
     // Seed known values so logs can redact immediately on startup.
     LogRedactionManager.registerServerUrl(getServerUrl());
     LogRedactionManager.registerToken(getToken());
@@ -46,36 +40,36 @@ class StorageService {
 
   // Server URL
   Future<void> saveServerUrl(String url) async {
-    await _prefs.setString(_keyServerUrl, url);
+    await prefs.setString(_keyServerUrl, url);
     LogRedactionManager.registerServerUrl(url);
   }
 
   String? getServerUrl() {
-    return _prefs.getString(_keyServerUrl);
+    return prefs.getString(_keyServerUrl);
   }
 
   // Per-Server Endpoint URL (for multi-server connection caching)
   Future<void> saveServerEndpoint(String serverId, String url) async {
-    await _prefs.setString('server_endpoint_$serverId', url);
+    await prefs.setString('server_endpoint_$serverId', url);
     LogRedactionManager.registerServerUrl(url);
   }
 
   String? getServerEndpoint(String serverId) {
-    return _prefs.getString('server_endpoint_$serverId');
+    return prefs.getString('server_endpoint_$serverId');
   }
 
   Future<void> clearServerEndpoint(String serverId) async {
-    await _prefs.remove('server_endpoint_$serverId');
+    await prefs.remove('server_endpoint_$serverId');
   }
 
   // Server Access Token
   Future<void> saveToken(String token) async {
-    await _prefs.setString(_keyToken, token);
+    await prefs.setString(_keyToken, token);
     LogRedactionManager.registerToken(token);
   }
 
   String? getToken() {
-    return _prefs.getString(_keyToken);
+    return prefs.getString(_keyToken);
   }
 
   // Alias for server access token for clarity
@@ -89,18 +83,18 @@ class StorageService {
 
   // Plex.tv Token (for API access)
   Future<void> savePlexToken(String token) async {
-    await _prefs.setString(_keyPlexToken, token);
+    await prefs.setString(_keyPlexToken, token);
     LogRedactionManager.registerToken(token);
   }
 
   String? getPlexToken() {
-    return _prefs.getString(_keyPlexToken);
+    return prefs.getString(_keyPlexToken);
   }
 
   // Server Data (full PlexServer object as JSON)
   Future<void> saveServerData(Map<String, dynamic> serverJson) async {
     final jsonString = json.encode(serverJson);
-    await _prefs.setString(_keyServerData, jsonString);
+    await prefs.setString(_keyServerData, jsonString);
   }
 
   Map<String, dynamic>? getServerData() {
@@ -109,11 +103,11 @@ class StorageService {
 
   // Client Identifier
   Future<void> saveClientIdentifier(String clientId) async {
-    await _prefs.setString(_keyClientId, clientId);
+    await prefs.setString(_keyClientId, clientId);
   }
 
   String? getClientIdentifier() {
-    return _prefs.getString(_keyClientId);
+    return prefs.getString(_keyClientId);
   }
 
   // Save all credentials at once
@@ -137,15 +131,15 @@ class StorageService {
   // Clear all credentials
   Future<void> clearCredentials() async {
     await Future.wait([
-      _prefs.remove(_keyServerUrl),
-      _prefs.remove(_keyToken),
-      _prefs.remove(_keyPlexToken),
-      _prefs.remove(_keyServerData),
-      _prefs.remove(_keyClientId),
-      _prefs.remove(_keyUserProfile),
-      _prefs.remove(_keyCurrentUserUUID),
-      _prefs.remove(_keyHomeUsersCache),
-      _prefs.remove(_keyHomeUsersCacheExpiry),
+      prefs.remove(_keyServerUrl),
+      prefs.remove(_keyToken),
+      prefs.remove(_keyPlexToken),
+      prefs.remove(_keyServerData),
+      prefs.remove(_keyClientId),
+      prefs.remove(_keyUserProfile),
+      prefs.remove(_keyCurrentUserUUID),
+      prefs.remove(_keyHomeUsersCache),
+      prefs.remove(_keyHomeUsersCacheExpiry),
       clearMultiServerData(),
     ]);
     LogRedactionManager.clearTrackedValues();
@@ -161,16 +155,16 @@ class StorageService {
   }
 
   int? getSelectedLibraryIndex() {
-    return _prefs.getInt(_keySelectedLibraryIndex);
+    return prefs.getInt(_keySelectedLibraryIndex);
   }
 
   // Selected Library Key (replaces index-based selection)
   Future<void> saveSelectedLibraryKey(String key) async {
-    await _prefs.setString(_keySelectedLibraryKey, key);
+    await prefs.setString(_keySelectedLibraryKey, key);
   }
 
   String? getSelectedLibraryKey() {
-    return _prefs.getString(_keySelectedLibraryKey);
+    return prefs.getString(_keySelectedLibraryKey);
   }
 
   // Library Filters (stored as JSON string)
@@ -182,7 +176,7 @@ class StorageService {
     final key = sectionId != null
         ? 'library_filters_$sectionId'
         : _keyLibraryFilters;
-    await _prefs.setString(key, jsonString);
+    await prefs.setString(key, jsonString);
   }
 
   Map<String, String> getLibraryFilters({String? sectionId}) {
@@ -192,9 +186,9 @@ class StorageService {
 
     // Prefer per-library filters when available
     final jsonString =
-        _prefs.getString(scopedKey) ??
+        prefs.getString(scopedKey) ??
         // Legacy support: fall back to global filters if present
-        _prefs.getString(_keyLibraryFilters);
+        prefs.getString(_keyLibraryFilters);
     if (jsonString == null) return {};
 
     final decoded = _decodeJsonStringToMap(jsonString);
@@ -208,7 +202,7 @@ class StorageService {
     bool descending = false,
   }) async {
     final sortData = {'key': sortKey, 'descending': descending};
-    await _prefs.setString('library_sort_$sectionId', json.encode(sortData));
+    await prefs.setString('library_sort_$sectionId', json.encode(sortData));
   }
 
   Map<String, dynamic>? getLibrarySort(String sectionId) {
@@ -217,31 +211,31 @@ class StorageService {
 
   // Library Grouping (per-library, e.g., 'movies', 'shows', 'seasons', 'episodes')
   Future<void> saveLibraryGrouping(String sectionId, String grouping) async {
-    await _prefs.setString('library_grouping_$sectionId', grouping);
+    await prefs.setString('library_grouping_$sectionId', grouping);
   }
 
   String? getLibraryGrouping(String sectionId) {
-    return _prefs.getString('library_grouping_$sectionId');
+    return prefs.getString('library_grouping_$sectionId');
   }
 
   // Library Tab (per-library, saves last selected tab index)
   Future<void> saveLibraryTab(String sectionId, int tabIndex) async {
-    await _prefs.setInt('library_tab_$sectionId', tabIndex);
+    await prefs.setInt('library_tab_$sectionId', tabIndex);
   }
 
   int? getLibraryTab(String sectionId) {
-    return _prefs.getInt('library_tab_$sectionId');
+    return prefs.getInt('library_tab_$sectionId');
   }
 
   // Hidden Libraries (stored as JSON array of library section IDs)
   Future<void> saveHiddenLibraries(Set<String> libraryKeys) async {
     final list = libraryKeys.toList();
     final jsonString = json.encode(list);
-    await _prefs.setString(_keyHiddenLibraries, jsonString);
+    await prefs.setString(_keyHiddenLibraries, jsonString);
   }
 
   Set<String> getHiddenLibraries() {
-    final jsonString = _prefs.getString(_keyHiddenLibraries);
+    final jsonString = prefs.getString(_keyHiddenLibraries);
     if (jsonString == null) return {};
 
     try {
@@ -255,22 +249,22 @@ class StorageService {
   // Clear library preferences
   Future<void> clearLibraryPreferences() async {
     await Future.wait([
-      _prefs.remove(_keySelectedLibraryIndex),
-      _prefs.remove(_keyLibraryFilters),
-      _prefs.remove(_keyLibraryOrder),
-      _prefs.remove(_keyHiddenLibraries),
+      prefs.remove(_keySelectedLibraryIndex),
+      prefs.remove(_keyLibraryFilters),
+      prefs.remove(_keyLibraryOrder),
+      prefs.remove(_keyHiddenLibraries),
     ]);
 
     // Also clear all library sort preferences
-    final keys = _prefs.getKeys();
+    final keys = prefs.getKeys();
     final sortKeys = keys.where((key) => key.startsWith('library_sort_'));
-    await Future.wait(sortKeys.map((key) => _prefs.remove(key)));
+    await Future.wait(sortKeys.map((key) => prefs.remove(key)));
   }
 
   // Library Order (stored as JSON list of library keys)
   Future<void> saveLibraryOrder(List<String> libraryKeys) async {
     final jsonString = json.encode(libraryKeys);
-    await _prefs.setString(_keyLibraryOrder, jsonString);
+    await prefs.setString(_keyLibraryOrder, jsonString);
   }
 
   List<String>? getLibraryOrder() => _getStringList(_keyLibraryOrder);
@@ -278,7 +272,7 @@ class StorageService {
   // User Profile (stored as JSON string)
   Future<void> saveUserProfile(Map<String, dynamic> profileJson) async {
     final jsonString = json.encode(profileJson);
-    await _prefs.setString(_keyUserProfile, jsonString);
+    await prefs.setString(_keyUserProfile, jsonString);
   }
 
   Map<String, dynamic>? getUserProfile() {
@@ -287,27 +281,27 @@ class StorageService {
 
   // Current User UUID
   Future<void> saveCurrentUserUUID(String uuid) async {
-    await _prefs.setString(_keyCurrentUserUUID, uuid);
+    await prefs.setString(_keyCurrentUserUUID, uuid);
   }
 
   String? getCurrentUserUUID() {
-    return _prefs.getString(_keyCurrentUserUUID);
+    return prefs.getString(_keyCurrentUserUUID);
   }
 
   // Home Users Cache (stored as JSON string with expiry)
   Future<void> saveHomeUsersCache(Map<String, dynamic> homeData) async {
     final jsonString = json.encode(homeData);
-    await _prefs.setString(_keyHomeUsersCache, jsonString);
+    await prefs.setString(_keyHomeUsersCache, jsonString);
 
     // Set cache expiry to 1 hour from now
     final expiry = DateTime.now()
         .add(const Duration(hours: 1))
         .millisecondsSinceEpoch;
-    await _prefs.setInt(_keyHomeUsersCacheExpiry, expiry);
+    await prefs.setInt(_keyHomeUsersCacheExpiry, expiry);
   }
 
   Map<String, dynamic>? getHomeUsersCache() {
-    final expiry = _prefs.getInt(_keyHomeUsersCacheExpiry);
+    final expiry = prefs.getInt(_keyHomeUsersCacheExpiry);
     if (expiry == null || DateTime.now().millisecondsSinceEpoch > expiry) {
       // Cache expired, clear it
       clearHomeUsersCache();
@@ -319,14 +313,14 @@ class StorageService {
 
   Future<void> clearHomeUsersCache() async {
     await Future.wait([
-      _prefs.remove(_keyHomeUsersCache),
-      _prefs.remove(_keyHomeUsersCacheExpiry),
+      prefs.remove(_keyHomeUsersCache),
+      prefs.remove(_keyHomeUsersCacheExpiry),
     ]);
   }
 
   // Clear current user UUID (for server switching)
   Future<void> clearCurrentUserUUID() async {
-    await _prefs.remove(_keyCurrentUserUUID);
+    await prefs.remove(_keyCurrentUserUUID);
   }
 
   // Clear all user-related data (for logout)
@@ -346,38 +340,38 @@ class StorageService {
 
   /// Get servers list as JSON string
   String? getServersListJson() {
-    return _prefs.getString(_keyServersList);
+    return prefs.getString(_keyServersList);
   }
 
   /// Save servers list as JSON string
   Future<void> saveServersListJson(String serversJson) async {
-    await _prefs.setString(_keyServersList, serversJson);
+    await prefs.setString(_keyServersList, serversJson);
   }
 
   /// Get enabled servers as JSON string
   String? getEnabledServersJson() {
-    return _prefs.getString(_keyEnabledServers);
+    return prefs.getString(_keyEnabledServers);
   }
 
   /// Save enabled servers as JSON string
   Future<void> saveEnabledServersJson(String enabledJson) async {
-    await _prefs.setString(_keyEnabledServers, enabledJson);
+    await prefs.setString(_keyEnabledServers, enabledJson);
   }
 
   /// Clear servers list
   Future<void> clearServersList() async {
-    await _prefs.remove(_keyServersList);
+    await prefs.remove(_keyServersList);
   }
 
   /// Clear enabled servers
   Future<void> clearEnabledServers() async {
-    await _prefs.remove(_keyEnabledServers);
+    await prefs.remove(_keyEnabledServers);
   }
 
   /// Clear all multi-server data
   Future<void> clearMultiServerData() async {
     // Clear all server endpoint caches
-    final keys = _prefs.getKeys();
+    final keys = prefs.getKeys();
     final endpointKeys = keys.where(
       (key) => key.startsWith('server_endpoint_'),
     );
@@ -386,28 +380,28 @@ class StorageService {
       clearServersList(),
       clearEnabledServers(),
       clearServerOrder(),
-      ...endpointKeys.map((key) => _prefs.remove(key)),
+      ...endpointKeys.map((key) => prefs.remove(key)),
     ]);
   }
 
   /// Server Order (stored as JSON list of server IDs)
   Future<void> saveServerOrder(List<String> serverIds) async {
     final jsonString = json.encode(serverIds);
-    await _prefs.setString(_keyServerOrder, jsonString);
+    await prefs.setString(_keyServerOrder, jsonString);
   }
 
   List<String>? getServerOrder() => _getStringList(_keyServerOrder);
 
   /// Clear server order
   Future<void> clearServerOrder() async {
-    await _prefs.remove(_keyServerOrder);
+    await prefs.remove(_keyServerOrder);
   }
 
   // Private helper methods
 
   /// Helper to read and decode JSON `List<String>` from preferences
   List<String>? _getStringList(String key) {
-    final jsonString = _prefs.getString(key);
+    final jsonString = prefs.getString(key);
     if (jsonString == null) return null;
 
     try {
@@ -427,7 +421,7 @@ class StorageService {
     String key, {
     bool legacyStringOk = false,
   }) {
-    final jsonString = _prefs.getString(key);
+    final jsonString = prefs.getString(key);
     if (jsonString == null) return null;
 
     return _decodeJsonStringToMap(jsonString, legacyStringOk: legacyStringOk);

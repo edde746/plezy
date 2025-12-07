@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../../focus/dpad_navigator.dart';
-import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
 import '../../i18n/strings.g.dart';
 import 'licenses_screen.dart';
 
@@ -31,86 +29,72 @@ class _AboutScreenState extends State<AboutScreen> {
     });
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
-      Navigator.pop(context);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
     final appName = _appName;
     final appVersion = _appVersion;
 
-    return Focus(
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(title: Text(t.about.title), pinned: true),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // App Icon and Name
-                Center(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 24),
-                      Image.asset('assets/plezy.png', width: 80, height: 80),
-                      const SizedBox(height: 16),
-                      Text(
-                        appName,
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        t.about.versionLabel(version: appVersion),
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        t.about.appDescription,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // Open Source Licenses
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.description),
-                    title: Text(t.about.openSourceLicenses),
-                    subtitle: Text(t.about.viewLicensesDescription),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.push(
+    return FocusedScrollScaffold(
+      title: Text(t.about.title),
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              // App Icon and Name
+              Center(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 24),
+                    Image.asset('assets/plezy.png', width: 80, height: 80),
+                    const SizedBox(height: 16),
+                    Text(
+                      appName,
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      t.about.versionLabel(version: appVersion),
+                      style: Theme.of(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const LicensesScreen(),
-                        ),
-                      );
-                    },
-                  ),
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      t.about.appDescription,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
+              ),
 
-                const SizedBox(height: 24),
-              ]),
-            ),
+              const SizedBox(height: 40),
+
+              // Open Source Licenses
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.description),
+                  title: Text(t.about.openSourceLicenses),
+                  subtitle: Text(t.about.viewLicensesDescription),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LicensesScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 24),
+            ]),
           ),
-        ],
-      ),
-      ),
+        ),
+      ],
     );
   }
 }

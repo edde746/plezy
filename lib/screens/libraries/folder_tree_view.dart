@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/plex_metadata.dart';
-import '../media_detail_screen.dart';
-import '../season_detail_screen.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/media_navigation_helper.dart';
 import '../../utils/provider_extensions.dart';
-import '../../utils/video_player_navigation.dart';
 import '../../i18n/strings.g.dart';
 import 'folder_tree_item.dart';
 import 'empty_state_widget.dart';
@@ -151,34 +149,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   }
 
   Future<void> _handleItemTap(PlexMetadata item) async {
-    final itemType = item.type.toLowerCase();
-
-    // For episodes, start playback directly
-    if (itemType == 'episode') {
-      final result = await navigateToVideoPlayer(context, metadata: item);
-      if (result == true) {
-        widget.onRefresh?.call(item.ratingKey);
-      }
-    } else if (itemType == 'season') {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SeasonDetailScreen(season: item),
-        ),
-      );
-      widget.onRefresh?.call(item.ratingKey);
-    } else {
-      // For all other types (shows, movies), show detail screen
-      final result = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MediaDetailScreen(metadata: item),
-        ),
-      );
-      if (result == true) {
-        widget.onRefresh?.call(item.ratingKey);
-      }
-    }
+    await navigateToMediaItem(context, item, onRefresh: widget.onRefresh);
   }
 
   bool _isFolder(PlexMetadata item) {

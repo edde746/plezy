@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../focus/dpad_navigator.dart';
 import '../models/plex_metadata.dart';
-import '../providers/settings_provider.dart';
-import '../widgets/media_card.dart';
-import '../widgets/desktop_app_bar.dart';
+import '../widgets/media_grid_sliver.dart';
+import '../widgets/focused_scroll_scaffold.dart';
 import '../i18n/strings.g.dart';
-import '../utils/grid_size_calculator.dart';
 import '../utils/dialogs.dart';
 import '../utils/app_logger.dart';
 import 'base_media_list_detail_screen.dart';
@@ -114,61 +109,22 @@ class _CollectionDetailScreenState
     }
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
-      Navigator.pop(context);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(
-            title: Text(widget.collection.title),
-            pinned: true,
-            actions: buildAppBarActions(onDelete: _deleteCollection),
+    return FocusedScrollScaffold(
+      title: Text(widget.collection.title),
+      actions: buildAppBarActions(onDelete: _deleteCollection),
+      slivers: [
+        ...buildStateSlivers(),
+        if (items.isNotEmpty)
+          MediaGridSliver(
+            items: items,
+            onRefresh: updateItem,
+            collectionId: widget.collection.ratingKey,
+            onListRefresh: loadItems,
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           ),
-          ...buildStateSlivers(),
-          if (items.isNotEmpty)
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              sliver: Consumer<SettingsProvider>(
-                builder: (context, settingsProvider, child) {
-                  return SliverGrid(
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent:
-                          GridSizeCalculator.getMaxCrossAxisExtent(
-                            context,
-                            settingsProvider.libraryDensity,
-                          ),
-                      childAspectRatio: 2 / 3.3,
-                      crossAxisSpacing: 0,
-                      mainAxisSpacing: 0,
-                    ),
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final item = items[index];
-                      return MediaCard(
-                        key: Key(item.ratingKey),
-                        item: item,
-                        onRefresh: updateItem,
-                        collectionId: widget.collection.ratingKey,
-                        onListRefresh: loadItems,
-                      );
-                    }, childCount: items.length),
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
-      ),
+      ],
     );
   }
 }

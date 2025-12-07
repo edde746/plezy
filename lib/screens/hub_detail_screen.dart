@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../focus/dpad_navigator.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';
-import '../providers/settings_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
-import '../utils/grid_cross_axis_extent.dart';
-import '../widgets/media_card.dart';
-import '../widgets/desktop_app_bar.dart';
+import '../widgets/media_grid_sliver.dart';
+import '../widgets/focused_scroll_scaffold.dart';
 import 'libraries/sort_bottom_sheet.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
@@ -242,87 +237,51 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
     _loadMoreItems();
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey.isBackKey) {
-      Navigator.pop(context);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(
-            title: Text(widget.hub.title),
-            pinned: true,
-            actions: [
-              IconButton(
-                icon: Icon(Icons.swap_vert, semanticLabel: t.libraries.sort),
-                onPressed: _showSortBottomSheet,
-              ),
-            ],
-          ),
-          if (_errorMessage != null)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(_errorMessage!),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadMoreItems,
-                      child: Text(t.common.retry),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (_filteredItems.isEmpty && _isLoading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_filteredItems.isEmpty)
-            SliverFillRemaining(
-              child: Center(child: Text(t.hubDetail.noItemsFound)),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: getMaxCrossAxisExtentWithPadding(
-                    context,
-                    context.watch<SettingsProvider>().libraryDensity,
-                    16,
+    return FocusedScrollScaffold(
+      title: Text(widget.hub.title),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.swap_vert, semanticLabel: t.libraries.sort),
+          onPressed: _showSortBottomSheet,
+        ),
+      ],
+      slivers: [
+        if (_errorMessage != null)
+          SliverFillRemaining(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(_errorMessage!),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadMoreItems,
+                    child: Text(t.common.retry),
                   ),
-                  childAspectRatio: 2 / 3.3,
-                  crossAxisSpacing: 0,
-                  mainAxisSpacing: 0,
-                ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return MediaCard(
-                    item: _filteredItems[index],
-                    onRefresh: _handleItemRefresh,
-                  );
-                }, childCount: _filteredItems.length),
+                ],
               ),
             ),
-        ],
-      ),
-      ),
+          )
+        else if (_filteredItems.isEmpty && _isLoading)
+          const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_filteredItems.isEmpty)
+          SliverFillRemaining(
+            child: Center(child: Text(t.hubDetail.noItemsFound)),
+          )
+        else
+          MediaGridSliver(
+            items: _filteredItems,
+            onRefresh: _handleItemRefresh,
+            usePaddingAwareExtent: true,
+            horizontalPadding: 16,
+          ),
+      ],
     );
   }
 }

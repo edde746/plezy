@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:plezy/utils/app_logger.dart';
 import '../i18n/strings.g.dart';
+import 'base_shared_preferences_service.dart';
 
 enum ThemeMode { system, light, dark }
 
@@ -11,7 +11,7 @@ enum LibraryDensity { compact, normal, comfortable }
 
 enum ViewMode { grid, list }
 
-class SettingsService {
+class SettingsService extends BaseSharedPreferencesService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
   static const String _keyBufferSize = 'buffer_size';
@@ -46,30 +46,21 @@ class SettingsService {
   static const String _keyAutoSkipCredits = 'auto_skip_credits';
   static const String _keyAutoSkipDelay = 'auto_skip_delay';
 
-  static SettingsService? _instance;
-  late SharedPreferences _prefs;
-
   SettingsService._();
 
   static Future<SettingsService> getInstance() async {
-    if (_instance == null) {
-      _instance = SettingsService._();
-      await _instance!._init();
-    }
-    return _instance!;
-  }
-
-  Future<void> _init() async {
-    _prefs = await SharedPreferences.getInstance();
+    return BaseSharedPreferencesService.initializeInstance(
+      () => SettingsService._(),
+    );
   }
 
   // Theme Mode
   Future<void> setThemeMode(ThemeMode mode) async {
-    await _prefs.setString(_keyThemeMode, mode.name);
+    await prefs.setString(_keyThemeMode, mode.name);
   }
 
   ThemeMode getThemeMode() {
-    final modeString = _prefs.getString(_keyThemeMode);
+    final modeString = prefs.getString(_keyThemeMode);
     return ThemeMode.values.firstWhere(
       (mode) => mode.name == modeString,
       orElse: () => ThemeMode.system,
@@ -78,68 +69,67 @@ class SettingsService {
 
   // Debug Logging
   Future<void> setEnableDebugLogging(bool enabled) async {
-    await _prefs.setBool(_keyEnableDebugLogging, enabled);
+    await prefs.setBool(_keyEnableDebugLogging, enabled);
     // Update logger level immediately when setting changes
     setLoggerLevel(enabled);
   }
 
   bool getEnableDebugLogging() {
-    return _prefs.getBool(_keyEnableDebugLogging) ?? false;
+    return prefs.getBool(_keyEnableDebugLogging) ?? false;
   }
 
   // Buffer Size (in MB)
   Future<void> setBufferSize(int sizeInMB) async {
-    await _prefs.setInt(_keyBufferSize, sizeInMB);
+    await prefs.setInt(_keyBufferSize, sizeInMB);
   }
 
   int getBufferSize() {
-    return _prefs.getInt(_keyBufferSize) ?? 128; // Default 128MB
+    return prefs.getInt(_keyBufferSize) ?? 128; // Default 128MB
   }
 
   // Hardware Decoding
   Future<void> setEnableHardwareDecoding(bool enabled) async {
-    await _prefs.setBool(_keyEnableHardwareDecoding, enabled);
+    await prefs.setBool(_keyEnableHardwareDecoding, enabled);
   }
 
   bool getEnableHardwareDecoding() {
-    return _prefs.getBool(_keyEnableHardwareDecoding) ??
-        true; // Default enabled
+    return prefs.getBool(_keyEnableHardwareDecoding) ?? true; // Default enabled
   }
 
   // HDR (High Dynamic Range)
   Future<void> setEnableHDR(bool enabled) async {
-    await _prefs.setBool(_keyEnableHDR, enabled);
+    await prefs.setBool(_keyEnableHDR, enabled);
   }
 
   bool getEnableHDR() {
-    return _prefs.getBool(_keyEnableHDR) ?? true; // Default enabled
+    return prefs.getBool(_keyEnableHDR) ?? true; // Default enabled
   }
 
   // Preferred Video Codec
   Future<void> setPreferredVideoCodec(String codec) async {
-    await _prefs.setString(_keyPreferredVideoCodec, codec);
+    await prefs.setString(_keyPreferredVideoCodec, codec);
   }
 
   String getPreferredVideoCodec() {
-    return _prefs.getString(_keyPreferredVideoCodec) ?? 'auto';
+    return prefs.getString(_keyPreferredVideoCodec) ?? 'auto';
   }
 
   // Preferred Audio Codec
   Future<void> setPreferredAudioCodec(String codec) async {
-    await _prefs.setString(_keyPreferredAudioCodec, codec);
+    await prefs.setString(_keyPreferredAudioCodec, codec);
   }
 
   String getPreferredAudioCodec() {
-    return _prefs.getString(_keyPreferredAudioCodec) ?? 'auto';
+    return prefs.getString(_keyPreferredAudioCodec) ?? 'auto';
   }
 
   // Library Density
   Future<void> setLibraryDensity(LibraryDensity density) async {
-    await _prefs.setString(_keyLibraryDensity, density.name);
+    await prefs.setString(_keyLibraryDensity, density.name);
   }
 
   LibraryDensity getLibraryDensity() {
-    final densityString = _prefs.getString(_keyLibraryDensity);
+    final densityString = prefs.getString(_keyLibraryDensity);
     return LibraryDensity.values.firstWhere(
       (density) => density.name == densityString,
       orElse: () => LibraryDensity.normal,
@@ -148,11 +138,11 @@ class SettingsService {
 
   // View Mode
   Future<void> setViewMode(ViewMode mode) async {
-    await _prefs.setString(_keyViewMode, mode.name);
+    await prefs.setString(_keyViewMode, mode.name);
   }
 
   ViewMode getViewMode() {
-    final modeString = _prefs.getString(_keyViewMode);
+    final modeString = prefs.getString(_keyViewMode);
     return ViewMode.values.firstWhere(
       (mode) => mode.name == modeString,
       orElse: () => ViewMode.grid,
@@ -161,86 +151,86 @@ class SettingsService {
 
   // Use Season Poster
   Future<void> setUseSeasonPoster(bool enabled) async {
-    await _prefs.setBool(_keyUseSeasonPoster, enabled);
+    await prefs.setBool(_keyUseSeasonPoster, enabled);
   }
 
   bool getUseSeasonPoster() {
-    return _prefs.getBool(_keyUseSeasonPoster) ??
+    return prefs.getBool(_keyUseSeasonPoster) ??
         false; // Default: false (use series poster)
   }
 
   // Show Hero Section
   Future<void> setShowHeroSection(bool enabled) async {
-    await _prefs.setBool(_keyShowHeroSection, enabled);
+    await prefs.setBool(_keyShowHeroSection, enabled);
   }
 
   bool getShowHeroSection() {
-    return _prefs.getBool(_keyShowHeroSection) ??
+    return prefs.getBool(_keyShowHeroSection) ??
         true; // Default: true (show hero section)
   }
 
   // Seek Time Small (in seconds)
   Future<void> setSeekTimeSmall(int seconds) async {
-    await _prefs.setInt(_keySeekTimeSmall, seconds);
+    await prefs.setInt(_keySeekTimeSmall, seconds);
   }
 
   int getSeekTimeSmall() {
-    return _prefs.getInt(_keySeekTimeSmall) ?? 10; // Default: 10 seconds
+    return prefs.getInt(_keySeekTimeSmall) ?? 10; // Default: 10 seconds
   }
 
   // Seek Time Large (in seconds)
   Future<void> setSeekTimeLarge(int seconds) async {
-    await _prefs.setInt(_keySeekTimeLarge, seconds);
+    await prefs.setInt(_keySeekTimeLarge, seconds);
   }
 
   int getSeekTimeLarge() {
-    return _prefs.getInt(_keySeekTimeLarge) ?? 30; // Default: 30 seconds
+    return prefs.getInt(_keySeekTimeLarge) ?? 30; // Default: 30 seconds
   }
 
   // Sleep Timer Duration (in minutes)
   Future<void> setSleepTimerDuration(int minutes) async {
-    await _prefs.setInt(_keySleepTimerDuration, minutes);
+    await prefs.setInt(_keySleepTimerDuration, minutes);
   }
 
   int getSleepTimerDuration() {
-    return _prefs.getInt(_keySleepTimerDuration) ?? 30; // Default: 30 minutes
+    return prefs.getInt(_keySleepTimerDuration) ?? 30; // Default: 30 minutes
   }
 
   // Audio Sync Offset (in milliseconds)
   Future<void> setAudioSyncOffset(int milliseconds) async {
-    await _prefs.setInt(_keyAudioSyncOffset, milliseconds);
+    await prefs.setInt(_keyAudioSyncOffset, milliseconds);
   }
 
   int getAudioSyncOffset() {
-    return _prefs.getInt(_keyAudioSyncOffset) ?? 0; // Default: 0ms (no offset)
+    return prefs.getInt(_keyAudioSyncOffset) ?? 0; // Default: 0ms (no offset)
   }
 
   // Subtitle Sync Offset (in milliseconds)
   Future<void> setSubtitleSyncOffset(int milliseconds) async {
-    await _prefs.setInt(_keySubtitleSyncOffset, milliseconds);
+    await prefs.setInt(_keySubtitleSyncOffset, milliseconds);
   }
 
   int getSubtitleSyncOffset() {
-    return _prefs.getInt(_keySubtitleSyncOffset) ??
+    return prefs.getInt(_keySubtitleSyncOffset) ??
         0; // Default: 0ms (no offset)
   }
 
   // Volume (0.0 to 100.0)
   Future<void> setVolume(double volume) async {
-    await _prefs.setDouble(_keyVolume, volume);
+    await prefs.setDouble(_keyVolume, volume);
   }
 
   double getVolume() {
-    return _prefs.getDouble(_keyVolume) ?? 100.0; // Default: full volume
+    return prefs.getDouble(_keyVolume) ?? 100.0; // Default: full volume
   }
 
   // Rotation Lock (mobile only)
   Future<void> setRotationLocked(bool locked) async {
-    await _prefs.setBool(_keyRotationLocked, locked);
+    await prefs.setBool(_keyRotationLocked, locked);
   }
 
   bool getRotationLocked() {
-    return _prefs.getBool(_keyRotationLocked) ??
+    return prefs.getBool(_keyRotationLocked) ??
         true; // Default: locked (landscape only)
   }
 
@@ -248,56 +238,56 @@ class SettingsService {
 
   // Font Size (30-80, default 55)
   Future<void> setSubtitleFontSize(int size) async {
-    await _prefs.setInt(_keySubtitleFontSize, size);
+    await prefs.setInt(_keySubtitleFontSize, size);
   }
 
   int getSubtitleFontSize() {
-    return _prefs.getInt(_keySubtitleFontSize) ?? 55;
+    return prefs.getInt(_keySubtitleFontSize) ?? 55;
   }
 
   // Text Color (hex format #RRGGBB, default white)
   Future<void> setSubtitleTextColor(String color) async {
-    await _prefs.setString(_keySubtitleTextColor, color);
+    await prefs.setString(_keySubtitleTextColor, color);
   }
 
   String getSubtitleTextColor() {
-    return _prefs.getString(_keySubtitleTextColor) ?? '#FFFFFF';
+    return prefs.getString(_keySubtitleTextColor) ?? '#FFFFFF';
   }
 
   // Border Size (0-5, default 3)
   Future<void> setSubtitleBorderSize(int size) async {
-    await _prefs.setInt(_keySubtitleBorderSize, size);
+    await prefs.setInt(_keySubtitleBorderSize, size);
   }
 
   int getSubtitleBorderSize() {
-    return _prefs.getInt(_keySubtitleBorderSize) ?? 3;
+    return prefs.getInt(_keySubtitleBorderSize) ?? 3;
   }
 
   // Border Color (hex format #RRGGBB, default black)
   Future<void> setSubtitleBorderColor(String color) async {
-    await _prefs.setString(_keySubtitleBorderColor, color);
+    await prefs.setString(_keySubtitleBorderColor, color);
   }
 
   String getSubtitleBorderColor() {
-    return _prefs.getString(_keySubtitleBorderColor) ?? '#000000';
+    return prefs.getString(_keySubtitleBorderColor) ?? '#000000';
   }
 
   // Background Color (hex format #RRGGBB, default black)
   Future<void> setSubtitleBackgroundColor(String color) async {
-    await _prefs.setString(_keySubtitleBackgroundColor, color);
+    await prefs.setString(_keySubtitleBackgroundColor, color);
   }
 
   String getSubtitleBackgroundColor() {
-    return _prefs.getString(_keySubtitleBackgroundColor) ?? '#000000';
+    return prefs.getString(_keySubtitleBackgroundColor) ?? '#000000';
   }
 
   // Background Opacity (0-100, default 0 for transparent)
   Future<void> setSubtitleBackgroundOpacity(int opacity) async {
-    await _prefs.setInt(_keySubtitleBackgroundOpacity, opacity);
+    await prefs.setInt(_keySubtitleBackgroundOpacity, opacity);
   }
 
   int getSubtitleBackgroundOpacity() {
-    return _prefs.getInt(_keySubtitleBackgroundOpacity) ?? 0;
+    return prefs.getInt(_keySubtitleBackgroundOpacity) ?? 0;
   }
 
   // Keyboard Shortcuts (Legacy String-based)
@@ -357,11 +347,11 @@ class SettingsService {
 
   Future<void> setKeyboardShortcuts(Map<String, String> shortcuts) async {
     final jsonString = json.encode(shortcuts);
-    await _prefs.setString(_keyKeyboardShortcuts, jsonString);
+    await prefs.setString(_keyKeyboardShortcuts, jsonString);
   }
 
   Map<String, String> getKeyboardShortcuts() {
-    final jsonString = _prefs.getString(_keyKeyboardShortcuts);
+    final jsonString = prefs.getString(_keyKeyboardShortcuts);
     if (jsonString == null) return getDefaultKeyboardShortcuts();
 
     try {
@@ -401,11 +391,11 @@ class SettingsService {
       serializedHotkeys[entry.key] = _serializeHotKey(entry.value);
     }
     final jsonString = json.encode(serializedHotkeys);
-    await _prefs.setString(_keyKeyboardHotkeys, jsonString);
+    await prefs.setString(_keyKeyboardHotkeys, jsonString);
   }
 
   Future<Map<String, HotKey>> getKeyboardHotkeys() async {
-    final jsonString = _prefs.getString(_keyKeyboardHotkeys);
+    final jsonString = prefs.getString(_keyKeyboardHotkeys);
     if (jsonString == null) {
       return getDefaultKeyboardHotkeys();
     }
@@ -763,7 +753,7 @@ class SettingsService {
     preferences[seriesRatingKey] = mediaIndex;
 
     final jsonString = json.encode(preferences);
-    await _prefs.setString(_keyMediaVersionPreferences, jsonString);
+    await prefs.setString(_keyMediaVersionPreferences, jsonString);
   }
 
   /// Get saved media version preference for a series
@@ -779,12 +769,12 @@ class SettingsService {
     preferences.remove(seriesRatingKey);
 
     final jsonString = json.encode(preferences);
-    await _prefs.setString(_keyMediaVersionPreferences, jsonString);
+    await prefs.setString(_keyMediaVersionPreferences, jsonString);
   }
 
   /// Get all media version preferences
   Map<String, int> _getMediaVersionPreferences() {
-    final jsonString = _prefs.getString(_keyMediaVersionPreferences);
+    final jsonString = prefs.getString(_keyMediaVersionPreferences);
     if (jsonString == null) return {};
 
     final decoded = _decodeJsonStringToMap(jsonString);
@@ -802,11 +792,11 @@ class SettingsService {
 
   // App Locale
   Future<void> setAppLocale(AppLocale locale) async {
-    await _prefs.setString(_keyAppLocale, locale.languageCode);
+    await prefs.setString(_keyAppLocale, locale.languageCode);
   }
 
   AppLocale getAppLocale() {
-    final localeString = _prefs.getString(_keyAppLocale);
+    final localeString = prefs.getString(_keyAppLocale);
     if (localeString == null) return AppLocale.en; // Default to English
 
     return AppLocale.values.firstWhere(
@@ -819,71 +809,71 @@ class SettingsService {
 
   /// Remember Track Selections - Save per-media audio/subtitle language preferences
   Future<void> setRememberTrackSelections(bool value) async {
-    await _prefs.setBool(_keyRememberTrackSelections, value);
+    await prefs.setBool(_keyRememberTrackSelections, value);
   }
 
   bool getRememberTrackSelections() {
-    return _prefs.getBool(_keyRememberTrackSelections) ?? true;
+    return prefs.getBool(_keyRememberTrackSelections) ?? true;
   }
 
   // Auto Skip Intro
   Future<void> setAutoSkipIntro(bool value) async {
-    await _prefs.setBool(_keyAutoSkipIntro, value);
+    await prefs.setBool(_keyAutoSkipIntro, value);
   }
 
   bool getAutoSkipIntro() {
-    return _prefs.getBool(_keyAutoSkipIntro) ?? true; // Default: enabled
+    return prefs.getBool(_keyAutoSkipIntro) ?? true; // Default: enabled
   }
 
   // Auto Skip Credits
   Future<void> setAutoSkipCredits(bool value) async {
-    await _prefs.setBool(_keyAutoSkipCredits, value);
+    await prefs.setBool(_keyAutoSkipCredits, value);
   }
 
   bool getAutoSkipCredits() {
-    return _prefs.getBool(_keyAutoSkipCredits) ?? true; // Default: enabled
+    return prefs.getBool(_keyAutoSkipCredits) ?? true; // Default: enabled
   }
 
   // Auto Skip Delay (in seconds)
   Future<void> setAutoSkipDelay(int seconds) async {
-    await _prefs.setInt(_keyAutoSkipDelay, seconds);
+    await prefs.setInt(_keyAutoSkipDelay, seconds);
   }
 
   int getAutoSkipDelay() {
-    return _prefs.getInt(_keyAutoSkipDelay) ?? 5; // Default: 5 seconds
+    return prefs.getInt(_keyAutoSkipDelay) ?? 5; // Default: 5 seconds
   }
 
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
-      _prefs.remove(_keyThemeMode),
-      _prefs.remove(_keyEnableDebugLogging),
-      _prefs.remove(_keyBufferSize),
-      _prefs.remove(_keyKeyboardShortcuts),
-      _prefs.remove(_keyKeyboardHotkeys),
-      _prefs.remove(_keyEnableHardwareDecoding),
-      _prefs.remove(_keyEnableHDR),
-      _prefs.remove(_keyPreferredVideoCodec),
-      _prefs.remove(_keyPreferredAudioCodec),
-      _prefs.remove(_keyLibraryDensity),
-      _prefs.remove(_keyViewMode),
-      _prefs.remove(_keyUseSeasonPoster),
-      _prefs.remove(_keyShowHeroSection),
-      _prefs.remove(_keySeekTimeSmall),
-      _prefs.remove(_keySeekTimeLarge),
-      _prefs.remove(_keyMediaVersionPreferences),
-      _prefs.remove(_keySleepTimerDuration),
-      _prefs.remove(_keyAudioSyncOffset),
-      _prefs.remove(_keySubtitleSyncOffset),
-      _prefs.remove(_keyVolume),
-      _prefs.remove(_keySubtitleFontSize),
-      _prefs.remove(_keySubtitleTextColor),
-      _prefs.remove(_keySubtitleBorderSize),
-      _prefs.remove(_keySubtitleBorderColor),
-      _prefs.remove(_keySubtitleBackgroundColor),
-      _prefs.remove(_keySubtitleBackgroundOpacity),
-      _prefs.remove(_keyAppLocale),
-      _prefs.remove(_keyRememberTrackSelections),
+      prefs.remove(_keyThemeMode),
+      prefs.remove(_keyEnableDebugLogging),
+      prefs.remove(_keyBufferSize),
+      prefs.remove(_keyKeyboardShortcuts),
+      prefs.remove(_keyKeyboardHotkeys),
+      prefs.remove(_keyEnableHardwareDecoding),
+      prefs.remove(_keyEnableHDR),
+      prefs.remove(_keyPreferredVideoCodec),
+      prefs.remove(_keyPreferredAudioCodec),
+      prefs.remove(_keyLibraryDensity),
+      prefs.remove(_keyViewMode),
+      prefs.remove(_keyUseSeasonPoster),
+      prefs.remove(_keyShowHeroSection),
+      prefs.remove(_keySeekTimeSmall),
+      prefs.remove(_keySeekTimeLarge),
+      prefs.remove(_keyMediaVersionPreferences),
+      prefs.remove(_keySleepTimerDuration),
+      prefs.remove(_keyAudioSyncOffset),
+      prefs.remove(_keySubtitleSyncOffset),
+      prefs.remove(_keyVolume),
+      prefs.remove(_keySubtitleFontSize),
+      prefs.remove(_keySubtitleTextColor),
+      prefs.remove(_keySubtitleBorderSize),
+      prefs.remove(_keySubtitleBorderColor),
+      prefs.remove(_keySubtitleBackgroundColor),
+      prefs.remove(_keySubtitleBackgroundOpacity),
+      prefs.remove(_keyAppLocale),
+      prefs.remove(_keyRememberTrackSelections),
     ]);
   }
 

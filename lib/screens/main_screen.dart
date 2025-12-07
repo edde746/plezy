@@ -66,8 +66,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
 
   // Focus management for sidebar/content switching
-  final FocusScopeNode _sidebarFocusScope = FocusScopeNode(debugLabel: 'Sidebar');
-  final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
+  final FocusScopeNode _sidebarFocusScope = FocusScopeNode(
+    debugLabel: 'Sidebar',
+  );
+  final FocusScopeNode _contentFocusScope = FocusScopeNode(
+    debugLabel: 'Content',
+  );
   bool _isSidebarFocused = false;
 
   @override
@@ -138,7 +142,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   KeyEventResult _handleBackKey(KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-    final isBackKey = event.logicalKey == LogicalKeyboardKey.escape ||
+    final isBackKey =
+        event.logicalKey == LogicalKeyboardKey.escape ||
         event.logicalKey == LogicalKeyboardKey.goBack ||
         event.logicalKey == LogicalKeyboardKey.browserBack ||
         event.logicalKey == LogicalKeyboardKey.gameButtonB;
@@ -310,7 +315,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
                   child: FocusScope(
                     node: _contentFocusScope,
                     autofocus: true,
-                    child: IndexedStack(index: _currentIndex, children: _screens),
+                    child: IndexedStack(
+                      index: _currentIndex,
+                      children: _screens,
+                    ),
                   ),
                 ),
               ],
