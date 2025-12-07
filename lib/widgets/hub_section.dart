@@ -223,13 +223,13 @@ class HubSectionState extends State<HubSection> {
     return KeyEventResult.ignored;
   }
 
-  /// Context menu keys for each item to trigger long press actions
-  final Map<int, GlobalKey<_LockedHubItemWrapperState>> _itemWrapperKeys = {};
+  /// GlobalKeys for MediaCards to access their state (for context menu)
+  final Map<int, GlobalKey<MediaCardState>> _mediaCardKeys = {};
 
-  GlobalKey<_LockedHubItemWrapperState> _getItemWrapperKey(int index) {
-    return _itemWrapperKeys.putIfAbsent(
+  GlobalKey<MediaCardState> _getMediaCardKey(int index) {
+    return _mediaCardKeys.putIfAbsent(
       index,
-      () => GlobalKey<_LockedHubItemWrapperState>(),
+      () => GlobalKey<MediaCardState>(),
     );
   }
 
@@ -240,8 +240,7 @@ class HubSectionState extends State<HubSection> {
   }
 
   void _showContextMenuForCurrentItem() {
-    // Trigger long press on the wrapper which will bubble to MediaContextMenu
-    _itemWrapperKeys[_focusedIndex]?.currentState?.triggerLongPress();
+    _mediaCardKeys[_focusedIndex]?.currentState?.showContextMenu();
   }
 
   Future<void> _navigateToItem(dynamic item) async {
@@ -345,15 +344,12 @@ class HubSectionState extends State<HubSection> {
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
                           child: _LockedHubItemWrapper(
-                            key: _getItemWrapperKey(index),
                             isFocused: isItemFocused,
                             onTap: () => _onItemTapped(index),
-                            onLongPress: () {
-                              // Long press on item - this will be caught by
-                              // MediaContextMenu inside MediaCard
-                            },
+                            onLongPress: () =>
+                                _mediaCardKeys[index]?.currentState?.showContextMenu(),
                             child: MediaCard(
-                              key: Key(item.ratingKey),
+                              key: _getMediaCardKey(index),
                               item: item,
                               width: cardWidth,
                               height: posterHeight,
@@ -397,14 +393,13 @@ class HubSectionState extends State<HubSection> {
 }
 
 /// Wrapper that provides visual focus decoration without using Flutter's focus system.
-class _LockedHubItemWrapper extends StatefulWidget {
+class _LockedHubItemWrapper extends StatelessWidget {
   final bool isFocused;
   final Widget child;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
   const _LockedHubItemWrapper({
-    super.key,
     required this.isFocused,
     required this.child,
     this.onTap,
@@ -412,23 +407,13 @@ class _LockedHubItemWrapper extends StatefulWidget {
   });
 
   @override
-  State<_LockedHubItemWrapper> createState() => _LockedHubItemWrapperState();
-}
-
-class _LockedHubItemWrapperState extends State<_LockedHubItemWrapper> {
-  /// Trigger long press programmatically (for D-pad context menu key)
-  void triggerLongPress() {
-    widget.onLongPress?.call();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return FocusBuilders.buildLockedFocusWrapper(
       context: context,
-      isFocused: widget.isFocused,
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      child: widget.child,
+      isFocused: isFocused,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: child,
     );
   }
 }
