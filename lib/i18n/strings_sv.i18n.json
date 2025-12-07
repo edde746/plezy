@@ -414,6 +414,7 @@
     "serverDebugCopied": "Server-felsökningsdata kopierad till urklipp",
     "copyDebugData": "Kopiera felsökningsdata",
     "noServersFound": "Inga servrar hittades",
+    "noServersFoundForAccount": "Inga servrar hittades för ${username} (${email})",
     "malformedServerData": "Hittade ${count} server(ar) med felformaterad data. Inga giltiga servrar tillgängliga.",
     "incompleteServerInfo": "Vissa servrar har ofullständig information och hoppades över. Vänligen kontrollera ditt Plex.tv-konto.",
     "incompleteConnectionInfo": "Server-anslutningsinformation är ofullständig. Försök igen.",

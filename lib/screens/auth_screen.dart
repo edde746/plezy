@@ -48,7 +48,11 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     try {
-      // Fetch all servers for this user
+      // Fetch user info and servers for this user
+      final userInfo = await _authService.getUserInfo(plexToken);
+      final username = userInfo['username'] as String? ?? '';
+      final email = userInfo['email'] as String? ?? '';
+
       final servers = await _authService.fetchServers(plexToken);
       final storage = await StorageService.getInstance();
 
@@ -56,7 +60,10 @@ class _AuthScreenState extends State<AuthScreen> {
         await storage.clearCredentials();
         setState(() {
           _isAuthenticating = false;
-          _errorMessage = t.serverSelection.noServersFound;
+          _errorMessage = t.serverSelection.noServersFoundForAccount(
+            username: username,
+            email: email,
+          );
         });
         return;
       }

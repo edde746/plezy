@@ -414,6 +414,7 @@
     "serverDebugCopied": "Dati di debug del server copiati negli appunti",
     "copyDebugData": "Copia dati di debug",
     "noServersFound": "Nessun server trovato",
+    "noServersFoundForAccount": "Nessun server trovato per ${username} (${email})",
     "malformedServerData": "Trovato ${count} server con dati difettosi. Nessun server valido disponibile.",
     "incompleteServerInfo": "Alcuni server presentano informazioni incomplete e sono stati ignorati. Controlla il tuo account Plex.tv.",
     "incompleteConnectionInfo": "Le informazioni di connessione al server sono incomplete. Riprova.",

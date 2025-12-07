@@ -414,6 +414,7 @@
     "serverDebugCopied": "Server debug gegevens gekopieerd naar klembord",
     "copyDebugData": "Kopieer debug gegevens",
     "noServersFound": "Geen servers gevonden",
+    "noServersFoundForAccount": "Geen servers gevonden voor ${username} (${email})",
     "malformedServerData": "${count} server(s) gevonden met verkeerde data. Geen geldige servers beschikbaar.",
     "incompleteServerInfo": "Sommige servers hebben incomplete informatie en zijn overgeslagen. Controleer je Plex.tv account.",
     "incompleteConnectionInfo": "Server verbinding informatie is incompleet. Probeer opnieuw.",

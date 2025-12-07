@@ -414,6 +414,7 @@
     "serverDebugCopied": "服务器调试数据已复制到剪贴板",
     "copyDebugData": "复制调试数据",
     "noServersFound": "未找到服务器",
+    "noServersFoundForAccount": "未找到 ${username} (${email}) 的服务器",
     "malformedServerData": "找到 ${count} 个数据格式错误的服务器。没有可用的有效服务器。",
     "incompleteServerInfo": "某些服务器信息不完整，已被跳过。请检查你的 Plex.tv 账户。",
     "incompleteConnectionInfo": "服务器连接信息不完整。请重试。",
