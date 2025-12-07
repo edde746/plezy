@@ -48,18 +48,27 @@ class TrackSelectionHelper {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      title: Text(
-        'Off',
-        style: TextStyle(color: isSelected ? Colors.blue : Colors.white),
-      ),
-      trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
+    return _buildSelectableTile(
+      label: 'Off',
+      isSelected: isSelected,
       onTap: onTap,
     );
   }
 
   /// Build a track selection list tile
   static Widget buildTrackTile<T>({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return _buildSelectableTile(
+      label: label,
+      isSelected: isSelected,
+      onTap: onTap,
+    );
+  }
+
+  static Widget _buildSelectableTile({
     required String label,
     required bool isSelected,
     required VoidCallback onTap,

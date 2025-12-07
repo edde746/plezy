@@ -4,28 +4,9 @@ import '../../../mpv/mpv.dart';
 ///
 /// This keeps track-filter rules in one place and eliminates duplication.
 class TrackFilterHelper {
-  /// Filter out 'auto' and 'no' tracks from a list of audio tracks
-  static List<AudioTrack> filterAudioTracks(List<AudioTrack> tracks) {
-    return tracks
-        .where((track) => track.id != 'auto' && track.id != 'no')
-        .toList();
-  }
-
-  /// Filter out 'auto' and 'no' tracks from a list of subtitle tracks
-  static List<SubtitleTrack> filterSubtitleTracks(List<SubtitleTrack> tracks) {
-    return tracks
-        .where((track) => track.id != 'auto' && track.id != 'no')
-        .toList();
-  }
-
   /// Generic method to filter tracks based on type
   static List<T> filterTracks<T>(List<T> tracks) {
-    if (T == AudioTrack) {
-      return filterAudioTracks(tracks as List<AudioTrack>) as List<T>;
-    } else if (T == SubtitleTrack) {
-      return filterSubtitleTracks(tracks as List<SubtitleTrack>) as List<T>;
-    }
-    return tracks;
+    return tracks.where(_isAllowedTrack).toList();
   }
 
   /// Extract and filter tracks from Tracks object
@@ -44,5 +25,15 @@ class TrackFilterHelper {
   /// Check if a track list has any tracks (excluding auto/no)
   static bool hasTracks<T>(List<T> tracks) {
     return filterTracks<T>(tracks).isNotEmpty;
+  }
+
+  static bool _isAllowedTrack<T>(T track) {
+    final id = switch (track) {
+      AudioTrack t => t.id,
+      SubtitleTrack t => t.id,
+      _ => '',
+    };
+
+    return id != 'auto' && id != 'no';
   }
 }

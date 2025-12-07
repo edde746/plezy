@@ -20,7 +20,7 @@ class PlexOptimizedImage extends StatelessWidget {
   final IconData? fallbackIcon;
   final ImageType imageType;
 
-  const PlexOptimizedImage({
+  const PlexOptimizedImage._({
     super.key,
     required this.client,
     required this.imagePath,
@@ -38,59 +38,171 @@ class PlexOptimizedImage extends StatelessWidget {
     this.imageType = ImageType.poster,
   });
 
-  /// Named constructor for poster images with default fallback icon
-  const PlexOptimizedImage.poster({
-    super.key,
-    required this.client,
-    required this.imagePath,
-    this.width,
-    this.height,
-    this.fit = BoxFit.cover,
-    this.filterQuality = FilterQuality.medium,
-    this.placeholder,
-    this.errorWidget,
-    this.fadeInDuration = const Duration(milliseconds: 300),
-    this.enableTranscoding = true,
-    this.cacheKey,
-    this.alignment = Alignment.center,
-  }) : fallbackIcon = Icons.movie,
-       imageType = ImageType.poster;
+  /// Generic constructor for optimized images.
+  const factory PlexOptimizedImage({
+    Key? key,
+    required PlexClient client,
+    required String? imagePath,
+    double? width,
+    double? height,
+    BoxFit fit,
+    FilterQuality filterQuality,
+    Widget Function(BuildContext, String)? placeholder,
+    Widget Function(BuildContext, String, dynamic)? errorWidget,
+    Duration fadeInDuration,
+    bool enableTranscoding,
+    String? cacheKey,
+    Alignment alignment,
+    IconData? fallbackIcon,
+    ImageType imageType,
+  }) = PlexOptimizedImage._;
 
-  /// Named constructor for episode thumbnails
-  const PlexOptimizedImage.thumb({
-    super.key,
-    required this.client,
-    required this.imagePath,
-    this.width,
-    this.height,
-    this.fit = BoxFit.cover,
-    this.filterQuality = FilterQuality.medium,
-    this.placeholder,
-    this.errorWidget,
-    this.fadeInDuration = const Duration(milliseconds: 300),
-    this.enableTranscoding = true,
-    this.cacheKey,
-    this.alignment = Alignment.center,
-  }) : fallbackIcon = Icons.video_library,
-       imageType = ImageType.thumb;
+  /// Named constructor for poster images with default fallback icon.
+  const factory PlexOptimizedImage.poster({
+    Key? key,
+    required PlexClient client,
+    required String? imagePath,
+    double? width,
+    double? height,
+    BoxFit fit,
+    FilterQuality filterQuality,
+    Widget Function(BuildContext, String)? placeholder,
+    Widget Function(BuildContext, String, dynamic)? errorWidget,
+    Duration fadeInDuration,
+    bool enableTranscoding,
+    String? cacheKey,
+    Alignment alignment,
+  }) = PlexOptimizedImage._poster;
 
-  /// Named constructor for playlist images
-  const PlexOptimizedImage.playlist({
-    super.key,
-    required this.client,
-    required this.imagePath,
-    this.width,
-    this.height,
-    this.fit = BoxFit.cover,
-    this.filterQuality = FilterQuality.medium,
-    this.placeholder,
-    this.errorWidget,
-    this.fadeInDuration = const Duration(milliseconds: 300),
-    this.enableTranscoding = true,
-    this.cacheKey,
-    this.alignment = Alignment.center,
-  }) : fallbackIcon = Icons.playlist_play,
-       imageType = ImageType.poster;
+  /// Named constructor for episode thumbnails.
+  const factory PlexOptimizedImage.thumb({
+    Key? key,
+    required PlexClient client,
+    required String? imagePath,
+    double? width,
+    double? height,
+    BoxFit fit,
+    FilterQuality filterQuality,
+    Widget Function(BuildContext, String)? placeholder,
+    Widget Function(BuildContext, String, dynamic)? errorWidget,
+    Duration fadeInDuration,
+    bool enableTranscoding,
+    String? cacheKey,
+    Alignment alignment,
+  }) = PlexOptimizedImage._thumb;
+
+  /// Named constructor for playlist images.
+  const factory PlexOptimizedImage.playlist({
+    Key? key,
+    required PlexClient client,
+    required String? imagePath,
+    double? width,
+    double? height,
+    BoxFit fit,
+    FilterQuality filterQuality,
+    Widget Function(BuildContext, String)? placeholder,
+    Widget Function(BuildContext, String, dynamic)? errorWidget,
+    Duration fadeInDuration,
+    bool enableTranscoding,
+    String? cacheKey,
+    Alignment alignment,
+  }) = PlexOptimizedImage._playlist;
+
+  const PlexOptimizedImage._poster({
+    Key? key,
+    required PlexClient client,
+    required String? imagePath,
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    FilterQuality filterQuality = FilterQuality.medium,
+    Widget Function(BuildContext, String)? placeholder,
+    Widget Function(BuildContext, String, dynamic)? errorWidget,
+    Duration fadeInDuration = const Duration(milliseconds: 300),
+    bool enableTranscoding = true,
+    String? cacheKey,
+    Alignment alignment = Alignment.center,
+  }) : this._(
+         key: key,
+         client: client,
+         imagePath: imagePath,
+         width: width,
+         height: height,
+         fit: fit,
+         filterQuality: filterQuality,
+         placeholder: placeholder,
+         errorWidget: errorWidget,
+         fadeInDuration: fadeInDuration,
+         enableTranscoding: enableTranscoding,
+         cacheKey: cacheKey,
+         alignment: alignment,
+         fallbackIcon: Icons.movie,
+         imageType: ImageType.poster,
+       );
+
+  const PlexOptimizedImage._thumb({
+    Key? key,
+    required PlexClient client,
+    required String? imagePath,
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    FilterQuality filterQuality = FilterQuality.medium,
+    Widget Function(BuildContext, String)? placeholder,
+    Widget Function(BuildContext, String, dynamic)? errorWidget,
+    Duration fadeInDuration = const Duration(milliseconds: 300),
+    bool enableTranscoding = true,
+    String? cacheKey,
+    Alignment alignment = Alignment.center,
+  }) : this._(
+         key: key,
+         client: client,
+         imagePath: imagePath,
+         width: width,
+         height: height,
+         fit: fit,
+         filterQuality: filterQuality,
+         placeholder: placeholder,
+         errorWidget: errorWidget,
+         fadeInDuration: fadeInDuration,
+         enableTranscoding: enableTranscoding,
+         cacheKey: cacheKey,
+         alignment: alignment,
+         fallbackIcon: Icons.video_library,
+         imageType: ImageType.thumb,
+       );
+
+  const PlexOptimizedImage._playlist({
+    Key? key,
+    required PlexClient client,
+    required String? imagePath,
+    double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    FilterQuality filterQuality = FilterQuality.medium,
+    Widget Function(BuildContext, String)? placeholder,
+    Widget Function(BuildContext, String, dynamic)? errorWidget,
+    Duration fadeInDuration = const Duration(milliseconds: 300),
+    bool enableTranscoding = true,
+    String? cacheKey,
+    Alignment alignment = Alignment.center,
+  }) : this._(
+         key: key,
+         client: client,
+         imagePath: imagePath,
+         width: width,
+         height: height,
+         fit: fit,
+         filterQuality: filterQuality,
+         placeholder: placeholder,
+         errorWidget: errorWidget,
+         fadeInDuration: fadeInDuration,
+         enableTranscoding: enableTranscoding,
+         cacheKey: cacheKey,
+         alignment: alignment,
+         fallbackIcon: Icons.playlist_play,
+         imageType: ImageType.poster,
+       );
 
   @override
   Widget build(BuildContext context) {

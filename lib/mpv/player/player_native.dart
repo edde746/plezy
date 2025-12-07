@@ -254,37 +254,45 @@ class PlayerNative implements Player {
   }
 
   void _updateSelectedAudioTrack(dynamic trackId) {
+    _updateSelectedTrack<AudioTrack>(
+      trackId,
+      _state.tracks.audio.cast<AudioTrack?>().toList(),
+      (selection, track) => selection.copyWith(audio: track),
+    );
+  }
+
+  void _updateSelectedSubtitleTrack(dynamic trackId) {
+    _updateSelectedTrack<SubtitleTrack>(
+      trackId,
+      _state.tracks.subtitle.cast<SubtitleTrack?>().toList(),
+      (selection, track) => selection.copyWith(subtitle: track),
+    );
+  }
+
+  void _updateSelectedTrack<T>(
+    dynamic trackId,
+    List<T?> tracks,
+    TrackSelection Function(TrackSelection, T?) selectionSetter,
+  ) {
     final id = trackId?.toString();
-    AudioTrack? selectedTrack;
+    T? selectedTrack;
 
     if (id != null && id != 'no') {
-      selectedTrack = _state.tracks.audio.cast<AudioTrack?>().firstWhere(
-        (t) => t?.id == id,
+      selectedTrack = tracks.firstWhere(
+        (track) => _getTrackId(track) == id,
         orElse: () => null,
       );
     }
 
     _state = _state.copyWith(
-      track: _state.track.copyWith(audio: selectedTrack),
+      track: selectionSetter(_state.track, selectedTrack),
     );
     _trackController.add(_state.track);
   }
 
-  void _updateSelectedSubtitleTrack(dynamic trackId) {
-    final id = trackId?.toString();
-    SubtitleTrack? selectedTrack;
-
-    if (id != null && id != 'no') {
-      selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere(
-        (t) => t?.id == id,
-        orElse: () => null,
-      );
-    }
-
-    _state = _state.copyWith(
-      track: _state.track.copyWith(subtitle: selectedTrack),
-    );
-    _trackController.add(_state.track);
+  String? _getTrackId<T>(T? track) {
+    final dynamic t = track;
+    return t?.id?.toString();
   }
 
   Future<void> _ensureInitialized() async {

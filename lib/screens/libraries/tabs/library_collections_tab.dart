@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../utils/library_refresh_notifier.dart';
-import '../../../mixins/library_tab_focus_mixin.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../i18n/strings.g.dart';
-import '../adaptive_media_grid.dart';
 import 'base_library_tab.dart';
+import 'library_grid_tab_state.dart';
 
 /// Collections tab for library screen
 /// Shows collections for the current library
@@ -26,13 +25,9 @@ class LibraryCollectionsTab extends BaseLibraryTab<PlexMetadata> {
 }
 
 class _LibraryCollectionsTabState
-    extends BaseLibraryTabState<PlexMetadata, LibraryCollectionsTab>
-    with LibraryTabFocusMixin {
+    extends LibraryGridTabState<PlexMetadata, LibraryCollectionsTab> {
   @override
   String get focusNodeDebugLabel => 'collections_first_item';
-
-  @override
-  int get itemCount => items.length;
 
   @override
   IconData get emptyIcon => Icons.collections;
@@ -57,20 +52,13 @@ class _LibraryCollectionsTabState
   }
 
   @override
-  Widget buildContent(List<PlexMetadata> items) {
-    return AdaptiveMediaGrid<PlexMetadata>(
-      items: items,
-      itemBuilder: (context, item, index) {
-        return FocusableMediaCard(
-          key: Key(item.ratingKey),
-          item: item,
-          focusNode: index == 0 ? firstItemFocusNode : null,
-          onListRefresh: loadItems,
-          onBack: widget.onBack,
-        );
-      },
-      onRefresh: loadItems,
-      firstItemFocusNode: firstItemFocusNode,
+  @override
+  Widget buildGridItem(BuildContext context, PlexMetadata item, int index) {
+    return FocusableMediaCard(
+      key: Key(item.ratingKey),
+      item: item,
+      focusNode: index == 0 ? firstItemFocusNode : null,
+      onListRefresh: loadItems,
       onBack: widget.onBack,
     );
   }

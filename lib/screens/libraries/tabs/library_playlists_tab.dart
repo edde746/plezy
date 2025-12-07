@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../models/plex_playlist.dart';
 import '../../../utils/library_refresh_notifier.dart';
-import '../../../mixins/library_tab_focus_mixin.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../i18n/strings.g.dart';
-import '../adaptive_media_grid.dart';
 import 'base_library_tab.dart';
+import 'library_grid_tab_state.dart';
 
 /// Playlists tab for library screen
 /// Shows playlists that contain items from the current library
@@ -26,13 +25,9 @@ class LibraryPlaylistsTab extends BaseLibraryTab<PlexPlaylist> {
 }
 
 class _LibraryPlaylistsTabState
-    extends BaseLibraryTabState<PlexPlaylist, LibraryPlaylistsTab>
-    with LibraryTabFocusMixin {
+    extends LibraryGridTabState<PlexPlaylist, LibraryPlaylistsTab> {
   @override
   String get focusNodeDebugLabel => 'playlists_first_item';
-
-  @override
-  int get itemCount => items.length;
 
   @override
   IconData get emptyIcon => Icons.playlist_play;
@@ -59,20 +54,12 @@ class _LibraryPlaylistsTabState
   }
 
   @override
-  Widget buildContent(List<PlexPlaylist> items) {
-    return AdaptiveMediaGrid<PlexPlaylist>(
-      items: items,
-      itemBuilder: (context, playlist, index) {
-        return FocusableMediaCard(
-          key: Key(playlist.ratingKey),
-          item: playlist,
-          focusNode: index == 0 ? firstItemFocusNode : null,
-          onListRefresh: loadItems,
-          onBack: widget.onBack,
-        );
-      },
-      onRefresh: loadItems,
-      firstItemFocusNode: firstItemFocusNode,
+  Widget buildGridItem(BuildContext context, PlexPlaylist playlist, int index) {
+    return FocusableMediaCard(
+      key: Key(playlist.ratingKey),
+      item: playlist,
+      focusNode: index == 0 ? firstItemFocusNode : null,
+      onListRefresh: loadItems,
       onBack: widget.onBack,
     );
   }
