@@ -41,4 +41,18 @@ class FocusTheme {
       ),
     );
   }
+
+  /// Build focus decoration with background color instead of border.
+  /// Useful for video controls where it should match the native hover style.
+  static BoxDecoration focusBackgroundDecoration({
+    required bool isFocused,
+    double borderRadius = defaultBorderRadius,
+  }) {
+    return BoxDecoration(
+      borderRadius: BorderRadius.circular(borderRadius),
+      color: isFocused
+          ? Colors.white.withValues(alpha: 0.2)
+          : Colors.transparent,
+    );
+  }
 }

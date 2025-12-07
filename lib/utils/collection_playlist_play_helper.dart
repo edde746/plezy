@@ -16,8 +16,12 @@ Future<void> playCollectionOrPlaylist({
   final launcher = PlayQueueLauncher(
     context: context,
     client: client,
-    serverId: item is PlexMetadata ? item.serverId : (item as PlexPlaylist).serverId,
-    serverName: item is PlexMetadata ? item.serverName : (item as PlexPlaylist).serverName,
+    serverId: item is PlexMetadata
+        ? item.serverId
+        : (item as PlexPlaylist).serverId,
+    serverName: item is PlexMetadata
+        ? item.serverName
+        : (item as PlexPlaylist).serverName,
   );
 
   await launcher.launchFromCollectionOrPlaylist(

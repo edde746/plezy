@@ -7,6 +7,8 @@ import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/duration_formatter.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../widgets/focusable_bottom_sheet.dart';
+import '../../../widgets/focusable_list_tile.dart';
 import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
@@ -22,6 +24,7 @@ class _SettingsMenuItem extends StatelessWidget {
   final VoidCallback onTap;
   final bool isHighlighted;
   final bool allowValueOverflow;
+  final FocusNode? focusNode;
 
   const _SettingsMenuItem({
     required this.icon,
@@ -30,6 +33,7 @@ class _SettingsMenuItem extends StatelessWidget {
     required this.onTap,
     this.isHighlighted = false,
     this.allowValueOverflow = false,
+    this.focusNode,
   });
 
   @override
@@ -43,7 +47,8 @@ class _SettingsMenuItem extends StatelessWidget {
       overflow: allowValueOverflow ? TextOverflow.ellipsis : null,
     );
 
-    return ListTile(
+    return FocusableListTile(
+      focusNode: focusNode,
       leading: Icon(icon, color: isHighlighted ? Colors.amber : Colors.white70),
       title: Text(title, style: const TextStyle(color: Colors.white)),
       trailing: Row(
@@ -101,13 +106,21 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late int _audioSyncOffset;
   late int _subtitleSyncOffset;
   bool _enableHDR = true;
+  late final FocusNode _initialFocusNode;
 
   @override
   void initState() {
     super.initState();
     _audioSyncOffset = widget.audioSyncOffset;
     _subtitleSyncOffset = widget.subtitleSyncOffset;
+    _initialFocusNode = FocusNode(debugLabel: 'VideoSettingsInitialFocus');
     _loadHDRSetting();
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
   }
 
   Future<void> _loadHDRSetting() async {
@@ -199,6 +212,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           builder: (context, snapshot) {
             final currentRate = snapshot.data ?? 1.0;
             return _SettingsMenuItem(
+              focusNode: _initialFocusNode,
               icon: Icons.speed,
               title: 'Playback Speed',
               valueText: _formatSpeed(currentRate),
@@ -416,27 +430,30 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             _audioSyncOffset != 0 ||
             _subtitleSyncOffset != 0);
 
-    return BaseVideoControlSheet(
-      title: _getTitle(),
-      icon: _getIcon(),
-      iconColor: isIconActive ? Colors.amber : Colors.white,
-      onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
-      child: () {
-        switch (_currentView) {
-          case _SettingsView.menu:
-            return _buildMenuView();
-          case _SettingsView.speed:
-            return _buildSpeedView();
-          case _SettingsView.sleep:
-            return _buildSleepView();
-          case _SettingsView.audioSync:
-            return _buildAudioSyncView();
-          case _SettingsView.subtitleSync:
-            return _buildSubtitleSyncView();
-          case _SettingsView.audioDevice:
-            return _buildAudioDeviceView();
-        }
-      }(),
+    return FocusableBottomSheet(
+      initialFocusNode: _initialFocusNode,
+      child: BaseVideoControlSheet(
+        title: _getTitle(),
+        icon: _getIcon(),
+        iconColor: isIconActive ? Colors.amber : Colors.white,
+        onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
+        child: () {
+          switch (_currentView) {
+            case _SettingsView.menu:
+              return _buildMenuView();
+            case _SettingsView.speed:
+              return _buildSpeedView();
+            case _SettingsView.sleep:
+              return _buildSleepView();
+            case _SettingsView.audioSync:
+              return _buildAudioSyncView();
+            case _SettingsView.subtitleSync:
+              return _buildSubtitleSyncView();
+            case _SettingsView.audioDevice:
+              return _buildAudioDeviceView();
+          }
+        }(),
+      ),
     );
   }
 }

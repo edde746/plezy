@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../models/plex_media_info.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../focus/focusable_wrapper.dart';
 import '../painters/chapter_marker_painter.dart';
 
 /// Timeline slider with chapter markers for video playback
@@ -16,6 +18,15 @@ class TimelineSlider extends StatelessWidget {
   final ValueChanged<Duration> onSeek;
   final ValueChanged<Duration> onSeekEnd;
 
+  /// Optional FocusNode for D-pad/keyboard navigation.
+  final FocusNode? focusNode;
+
+  /// Custom key event handler for focus navigation.
+  final KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent;
+
+  /// Called when focus changes.
+  final ValueChanged<bool>? onFocusChange;
+
   const TimelineSlider({
     super.key,
     required this.position,
@@ -24,11 +35,14 @@ class TimelineSlider extends StatelessWidget {
     required this.chaptersLoaded,
     required this.onSeek,
     required this.onSeekEnd,
+    this.focusNode,
+    this.onKeyEvent,
+    this.onFocusChange,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    Widget slider = Stack(
       alignment: Alignment.center,
       children: [
         // Chapter markers layer
@@ -106,5 +120,22 @@ class TimelineSlider extends StatelessWidget {
           ),
       ],
     );
+
+    // Wrap with FocusableWrapper when focusNode is provided
+    if (focusNode != null) {
+      slider = FocusableWrapper(
+        focusNode: focusNode,
+        onKeyEvent: onKeyEvent,
+        onFocusChange: onFocusChange,
+        borderRadius: 8,
+        autoScroll: false,
+        useBackgroundFocus: true,
+        disableScale: true,
+        semanticLabel: t.videoControls.timelineSlider,
+        child: slider,
+      );
+    }
+
+    return slider;
   }
 }

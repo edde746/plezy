@@ -3,7 +3,13 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:rate_limiter/rate_limiter.dart';
-import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
+import 'package:flutter/services.dart'
+    show
+        SystemChrome,
+        DeviceOrientation,
+        LogicalKeyboardKey,
+        KeyDownEvent,
+        KeyRepeatEvent;
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -21,7 +27,7 @@ import '../../utils/player_utils.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/video_control_icons.dart';
 import '../../i18n/strings.g.dart';
-import 'widgets/volume_control.dart';
+import '../../focus/input_mode_tracker.dart';
 import 'widgets/track_chapter_controls.dart';
 import 'mobile_video_controls.dart';
 import 'desktop_video_controls.dart';
@@ -98,6 +104,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   int _subtitleSyncOffset = 0; // Default, loaded from settings
   bool _isRotationLocked = true; // Default locked (landscape only)
 
+  // GlobalKey to access DesktopVideoControls state for focus management
+  final GlobalKey<DesktopVideoControlsState> _desktopControlsKey =
+      GlobalKey<DesktopVideoControlsState>();
+
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata() {
     return context.getClientForServer(widget.metadata.serverId!);
@@ -151,6 +161,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // Add window listener for tracking fullscreen state (for button icon)
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.addListener(this);
+    }
+    // Focus play/pause button on first frame if in keyboard mode
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusPlayPauseIfKeyboardMode();
+    });
+  }
+
+  /// Focus play/pause button if we're in keyboard navigation mode (desktop only)
+  void _focusPlayPauseIfKeyboardMode() {
+    if (!mounted) return;
+    final isMobile = PlatformDetector.isMobile(context);
+    if (!isMobile && InputModeTracker.isKeyboardMode(context)) {
+      _desktopControlsKey.currentState?.requestPlayPauseFocus();
     }
   }
 
@@ -734,6 +757,76 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
+  /// Check if a key is a directional key (arrow keys)
+  bool _isDirectionalKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight;
+  }
+
+  /// Check if a key is a back/escape key
+  bool _isBackKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.escape ||
+        key == LogicalKeyboardKey.goBack ||
+        key == LogicalKeyboardKey.browserBack ||
+        key == LogicalKeyboardKey.gameButtonB;
+  }
+
+  /// Check if a key is a select/enter key
+  bool _isSelectKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.gameButtonA;
+  }
+
+  /// Show controls and focus play/pause on keyboard input (desktop only)
+  void _showControlsWithFocus() {
+    if (!_showControls) {
+      setState(() {
+        _showControls = true;
+        _controlsFullyHidden = false;
+      });
+      if (Platform.isLinux) {
+        widget.player.setControlsVisible(true);
+      }
+      if (Platform.isMacOS) {
+        _updateTrafficLightVisibility();
+      }
+    }
+    _startHideTimer();
+
+    // Request focus on play/pause button after controls are shown
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _desktopControlsKey.currentState?.requestPlayPauseFocus();
+    });
+  }
+
+  /// Hide controls when navigating up from timeline (keyboard mode)
+  void _hideControlsFromKeyboard() {
+    if (_showControls) {
+      setState(() {
+        _showControls = false;
+      });
+      // Return focus to the main focus node
+      _focusNode.requestFocus();
+      if (Platform.isMacOS) {
+        _updateTrafficLightVisibility();
+      }
+      if (Platform.isLinux) {
+        Future.delayed(const Duration(milliseconds: 250), () {
+          if (mounted && !_showControls) {
+            setState(() {
+              _controlsFullyHidden = true;
+            });
+            widget.player.setControlsVisible(false);
+          }
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = PlatformDetector.isMobile(context);
@@ -742,6 +835,50 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       focusNode: _focusNode,
       autofocus: true,
       onKeyEvent: (node, event) {
+        // Only handle KeyDown and KeyRepeat events
+        if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+          return KeyEventResult.ignored;
+        }
+
+        // Reset hide timer on any keyboard/controller input when controls are visible
+        if (_showControls) {
+          _restartHideTimerIfPlaying();
+        }
+
+        final key = event.logicalKey;
+
+        // Handle Back/Escape: show controls if hidden, navigate back if visible
+        if (_isBackKey(key)) {
+          if (!_showControls) {
+            _showControlsWithFocus();
+            return KeyEventResult.handled;
+          }
+          // Controls visible - navigate back
+          Navigator.of(context).pop(true);
+          return KeyEventResult.handled;
+        }
+
+        // Handle Select/Enter when controls are hidden: pause and show controls
+        // Only intercept if this Focus node itself has primary focus (not a descendant)
+        if (_isSelectKey(key) && !_showControls && _focusNode.hasPrimaryFocus) {
+          widget.player.playOrPause();
+          _showControlsWithFocus();
+          return KeyEventResult.handled;
+        }
+
+        // On desktop, show controls and focus play/pause on directional input
+        if (!isMobile && _isDirectionalKey(key)) {
+          // If controls are hidden, show them and focus play/pause
+          if (!_showControls) {
+            _showControlsWithFocus();
+            return KeyEventResult.handled;
+          }
+          // If controls are shown, let the event propagate to the focused control
+          // The DesktopVideoControls will handle navigation
+          return KeyEventResult.ignored;
+        }
+
+        // Pass other events to the keyboard shortcuts service
         if (_keyboardService == null) return KeyEventResult.ignored;
 
         return _keyboardService!.handleVideoPlayerKeyEvent(
@@ -795,73 +932,100 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 offstage: Platform.isLinux && _controlsFullyHidden,
                 child: IgnorePointer(
                   ignoring: !_showControls,
-                  child: AnimatedOpacity(
-                    opacity: _showControls ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: GestureDetector(
-                      onTap: _toggleControls,
-                      behavior: HitTestBehavior.deferToChild,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.7),
-                              Colors.transparent,
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.7),
-                            ],
-                            stops: const [0.0, 0.2, 0.8, 1.0],
+                  child: FocusScope(
+                    // Prevent focus from entering controls when hidden
+                    canRequestFocus: _showControls,
+                    child: AnimatedOpacity(
+                      opacity: _showControls ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: GestureDetector(
+                        onTap: _toggleControls,
+                        behavior: HitTestBehavior.deferToChild,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.7),
+                                Colors.transparent,
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.7),
+                              ],
+                              stops: const [0.0, 0.2, 0.8, 1.0],
+                            ),
                           ),
-                        ),
-                        child: isMobile
-                            ? Listener(
-                                behavior: HitTestBehavior.translucent,
-                                onPointerDown: (_) =>
-                                    _restartHideTimerIfPlaying(),
-                                child: MobileVideoControls(
-                                  player: widget.player,
-                                  metadata: widget.metadata,
-                                  chapters: _chapters,
-                                  chaptersLoaded: _chaptersLoaded,
-                                  seekTimeSmall: _seekTimeSmall,
-                                  trackChapterControls:
-                                      _buildTrackChapterControlsWidget(),
-                                  onSeek: _throttledSeek,
-                                  onSeekEnd: _finalizeSeek,
-                                  onPlayPause:
-                                      () {}, // Not used, handled internally
-                                  onCancelAutoHide: () => _hideTimer?.cancel(),
-                                  onStartAutoHide: _startHideTimer,
-                                ),
-                              )
-                            : Listener(
-                                behavior: HitTestBehavior.translucent,
-                                onPointerDown: (_) =>
-                                    _restartHideTimerIfPlaying(),
-                                child: DesktopVideoControls(
-                                  player: widget.player,
-                                  metadata: widget.metadata,
-                                  onNext: widget.onNext,
-                                  onPrevious: widget.onPrevious,
-                                  chapters: _chapters,
-                                  chaptersLoaded: _chaptersLoaded,
-                                  seekTimeSmall: _seekTimeSmall,
-                                  volumeControl: VolumeControl(
+                          child: isMobile
+                              ? Listener(
+                                  behavior: HitTestBehavior.translucent,
+                                  onPointerDown: (_) =>
+                                      _restartHideTimerIfPlaying(),
+                                  child: MobileVideoControls(
                                     player: widget.player,
+                                    metadata: widget.metadata,
+                                    chapters: _chapters,
+                                    chaptersLoaded: _chaptersLoaded,
+                                    seekTimeSmall: _seekTimeSmall,
+                                    trackChapterControls:
+                                        _buildTrackChapterControlsWidget(),
+                                    onSeek: _throttledSeek,
+                                    onSeekEnd: _finalizeSeek,
+                                    onPlayPause:
+                                        () {}, // Not used, handled internally
+                                    onCancelAutoHide: () =>
+                                        _hideTimer?.cancel(),
+                                    onStartAutoHide: _startHideTimer,
                                   ),
-                                  trackChapterControls:
-                                      _buildTrackChapterControlsWidget(),
-                                  onSeekToPreviousChapter:
-                                      _seekToPreviousChapter,
-                                  onSeekToNextChapter: _seekToNextChapter,
-                                  onSeek: _throttledSeek,
-                                  onSeekEnd: _finalizeSeek,
-                                  getReplayIcon: getReplayIcon,
-                                  getForwardIcon: getForwardIcon,
+                                )
+                              : Listener(
+                                  behavior: HitTestBehavior.translucent,
+                                  onPointerDown: (_) =>
+                                      _restartHideTimerIfPlaying(),
+                                  child: DesktopVideoControls(
+                                    key: _desktopControlsKey,
+                                    player: widget.player,
+                                    metadata: widget.metadata,
+                                    onNext: widget.onNext,
+                                    onPrevious: widget.onPrevious,
+                                    chapters: _chapters,
+                                    chaptersLoaded: _chaptersLoaded,
+                                    seekTimeSmall: _seekTimeSmall,
+                                    onSeekToPreviousChapter:
+                                        _seekToPreviousChapter,
+                                    onSeekToNextChapter: _seekToNextChapter,
+                                    onSeek: _throttledSeek,
+                                    onSeekEnd: _finalizeSeek,
+                                    getReplayIcon: getReplayIcon,
+                                    getForwardIcon: getForwardIcon,
+                                    onFocusActivity: _restartHideTimerIfPlaying,
+                                    onHideControls: _hideControlsFromKeyboard,
+                                    // Track chapter controls data
+                                    availableVersions: widget.availableVersions,
+                                    selectedMediaIndex:
+                                        widget.selectedMediaIndex,
+                                    boxFitMode: widget.boxFitMode,
+                                    audioSyncOffset: _audioSyncOffset,
+                                    subtitleSyncOffset: _subtitleSyncOffset,
+                                    isFullscreen: _isFullscreen,
+                                    onCycleBoxFitMode: widget.onCycleBoxFitMode,
+                                    onToggleFullscreen: _toggleFullscreen,
+                                    onSwitchVersion: _switchMediaVersion,
+                                    onAudioTrackChanged:
+                                        widget.onAudioTrackChanged,
+                                    onSubtitleTrackChanged:
+                                        widget.onSubtitleTrackChanged,
+                                    onLoadSeekTimes: () async {
+                                      if (mounted) {
+                                        await _loadSeekTimes();
+                                      }
+                                    },
+                                    onCancelAutoHide: () =>
+                                        _hideTimer?.cancel(),
+                                    onStartAutoHide: _startHideTimer,
+                                    serverId: widget.metadata.serverId ?? '',
+                                  ),
                                 ),
-                              ),
+                        ),
                       ),
                     ),
                   ),

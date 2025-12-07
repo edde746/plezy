@@ -58,7 +58,9 @@ class PlayQueueLauncher {
     final isPlaylist = item is PlexPlaylist;
 
     if (!isCollection && !isPlaylist) {
-      return PlayQueueError(Exception('Item must be either a collection or playlist'));
+      return PlayQueueError(
+        Exception('Item must be either a collection or playlist'),
+      );
     }
 
     return _executeWithLoading(
@@ -153,7 +155,9 @@ class PlayQueueLauncher {
     final itemType = metadata.type.toLowerCase();
 
     if (itemType != 'show' && itemType != 'season') {
-      return PlayQueueError(Exception('Shuffle play only works for shows and seasons'));
+      return PlayQueueError(
+        Exception('Shuffle play only works for shows and seasons'),
+      );
     }
 
     return _executeWithLoading(

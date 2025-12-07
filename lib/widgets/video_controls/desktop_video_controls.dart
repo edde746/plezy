@@ -1,18 +1,23 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../mpv/mpv.dart';
 import '../../models/plex_media_info.dart';
+import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../i18n/strings.g.dart';
+import '../../focus/focusable_wrapper.dart';
 import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
+import 'widgets/volume_control.dart';
+import 'widgets/track_chapter_controls.dart';
 
 /// Desktop-specific video controls layout with top bar and bottom controls
-class DesktopVideoControls extends StatelessWidget {
+class DesktopVideoControls extends StatefulWidget {
   final Player player;
   final PlexMetadata metadata;
   final VoidCallback? onNext;
@@ -24,10 +29,34 @@ class DesktopVideoControls extends StatelessWidget {
   final VoidCallback onSeekToNextChapter;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<Duration> onSeekEnd;
-  final Widget volumeControl;
-  final Widget trackChapterControls;
   final IconData Function(int) getReplayIcon;
   final IconData Function(int) getForwardIcon;
+
+  /// Called when focus activity occurs (to reset hide timer)
+  final VoidCallback? onFocusActivity;
+
+  /// Called to request focus on play/pause button (e.g., when controls shown via keyboard)
+  final VoidCallback? onRequestPlayPauseFocus;
+
+  /// Called when user navigates up from timeline (to hide controls)
+  final VoidCallback? onHideControls;
+
+  // Track chapter controls parameters
+  final List<PlexMediaVersion> availableVersions;
+  final int selectedMediaIndex;
+  final int boxFitMode;
+  final int audioSyncOffset;
+  final int subtitleSyncOffset;
+  final bool isFullscreen;
+  final VoidCallback? onCycleBoxFitMode;
+  final VoidCallback? onToggleFullscreen;
+  final Function(int)? onSwitchVersion;
+  final Function(AudioTrack)? onAudioTrackChanged;
+  final Function(SubtitleTrack)? onSubtitleTrackChanged;
+  final VoidCallback? onLoadSeekTimes;
+  final VoidCallback? onCancelAutoHide;
+  final VoidCallback? onStartAutoHide;
+  final String serverId;
 
   const DesktopVideoControls({
     super.key,
@@ -42,11 +71,253 @@ class DesktopVideoControls extends StatelessWidget {
     required this.onSeekToNextChapter,
     required this.onSeek,
     required this.onSeekEnd,
-    required this.volumeControl,
-    required this.trackChapterControls,
     required this.getReplayIcon,
     required this.getForwardIcon,
+    this.onFocusActivity,
+    this.onRequestPlayPauseFocus,
+    this.onHideControls,
+    this.availableVersions = const [],
+    this.selectedMediaIndex = 0,
+    this.boxFitMode = 0,
+    this.audioSyncOffset = 0,
+    this.subtitleSyncOffset = 0,
+    this.isFullscreen = false,
+    this.onCycleBoxFitMode,
+    this.onToggleFullscreen,
+    this.onSwitchVersion,
+    this.onAudioTrackChanged,
+    this.onSubtitleTrackChanged,
+    this.onLoadSeekTimes,
+    this.onCancelAutoHide,
+    this.onStartAutoHide,
+    this.serverId = '',
   });
+
+  @override
+  State<DesktopVideoControls> createState() => DesktopVideoControlsState();
+}
+
+class DesktopVideoControlsState extends State<DesktopVideoControls> {
+  // Focus nodes for playback control buttons
+  late final FocusNode _prevItemFocusNode;
+  late final FocusNode _prevChapterFocusNode;
+  late final FocusNode _playPauseFocusNode;
+  late final FocusNode _nextChapterFocusNode;
+  late final FocusNode _nextItemFocusNode;
+  late final FocusNode _timelineFocusNode;
+
+  // Focus node for volume control
+  late final FocusNode _volumeFocusNode;
+
+  // Focus nodes for track/chapter controls (max 8 buttons possible)
+  late final List<FocusNode> _trackControlFocusNodes;
+
+  // List of button focus nodes for horizontal navigation
+  late final List<FocusNode> _buttonFocusNodes;
+
+  @override
+  void initState() {
+    super.initState();
+    _prevItemFocusNode = FocusNode(debugLabel: 'PrevItem');
+    _prevChapterFocusNode = FocusNode(debugLabel: 'PrevChapter');
+    _playPauseFocusNode = FocusNode(debugLabel: 'PlayPause');
+    _nextChapterFocusNode = FocusNode(debugLabel: 'NextChapter');
+    _nextItemFocusNode = FocusNode(debugLabel: 'NextItem');
+    _timelineFocusNode = FocusNode(debugLabel: 'Timeline');
+    _volumeFocusNode = FocusNode(debugLabel: 'Volume');
+
+    // Create focus nodes for track controls (up to 8 buttons)
+    _trackControlFocusNodes = List.generate(
+      8,
+      (i) => FocusNode(debugLabel: 'TrackControl$i'),
+    );
+
+    _buttonFocusNodes = [
+      _prevItemFocusNode,
+      _prevChapterFocusNode,
+      _playPauseFocusNode,
+      _nextChapterFocusNode,
+      _nextItemFocusNode,
+    ];
+  }
+
+  @override
+  void dispose() {
+    _prevItemFocusNode.dispose();
+    _prevChapterFocusNode.dispose();
+    _playPauseFocusNode.dispose();
+    _nextChapterFocusNode.dispose();
+    _nextItemFocusNode.dispose();
+    _timelineFocusNode.dispose();
+    _volumeFocusNode.dispose();
+    for (final node in _trackControlFocusNodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  /// Request focus on the play/pause button (called when controls shown via keyboard)
+  void requestPlayPauseFocus() {
+    _playPauseFocusNode.requestFocus();
+  }
+
+  /// Get focus node for volume control
+  FocusNode get volumeFocusNode => _volumeFocusNode;
+
+  /// Get focus nodes for track controls
+  List<FocusNode> get trackControlFocusNodes => _trackControlFocusNodes;
+
+  /// Handle left navigation from first track control - go to volume
+  void navigateFromTrackToVolume() {
+    _volumeFocusNode.requestFocus();
+    widget.onFocusActivity?.call();
+  }
+
+  void _onFocusChange(bool hasFocus) {
+    if (hasFocus) {
+      widget.onFocusActivity?.call();
+    }
+  }
+
+  /// Handle key events for horizontal button navigation
+  KeyEventResult _handleButtonKeyEvent(
+    FocusNode node,
+    KeyEvent event,
+    int index,
+  ) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // LEFT arrow - move to previous button
+    if (key == LogicalKeyboardKey.arrowLeft) {
+      if (index > 0) {
+        _buttonFocusNodes[index - 1].requestFocus();
+        widget.onFocusActivity?.call();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.handled; // At start, consume to prevent bubbling
+    }
+
+    // RIGHT arrow - move to next button or to volume
+    if (key == LogicalKeyboardKey.arrowRight) {
+      if (index < _buttonFocusNodes.length - 1) {
+        _buttonFocusNodes[index + 1].requestFocus();
+        widget.onFocusActivity?.call();
+        return KeyEventResult.handled;
+      }
+      // At end of playback buttons - move to volume
+      _volumeFocusNode.requestFocus();
+      widget.onFocusActivity?.call();
+      return KeyEventResult.handled;
+    }
+
+    // UP arrow - move focus to timeline
+    if (key == LogicalKeyboardKey.arrowUp) {
+      _timelineFocusNode.requestFocus();
+      widget.onFocusActivity?.call();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  /// Handle key events for volume control navigation
+  KeyEventResult _handleVolumeKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // LEFT arrow - move back to last playback button
+    if (key == LogicalKeyboardKey.arrowLeft) {
+      _nextItemFocusNode.requestFocus();
+      widget.onFocusActivity?.call();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT arrow - move to first track control button
+    if (key == LogicalKeyboardKey.arrowRight) {
+      if (_trackControlFocusNodes.isNotEmpty) {
+        _trackControlFocusNodes[0].requestFocus();
+        widget.onFocusActivity?.call();
+      }
+      return KeyEventResult.handled;
+    }
+
+    // UP arrow - move focus to timeline
+    if (key == LogicalKeyboardKey.arrowUp) {
+      _timelineFocusNode.requestFocus();
+      widget.onFocusActivity?.call();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  /// Handle key events for timeline navigation
+  KeyEventResult _handleTimelineKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+    final duration = widget.player.state.duration;
+    final position = widget.player.state.position;
+
+    // UP arrow - hide controls
+    if (key == LogicalKeyboardKey.arrowUp) {
+      widget.onHideControls?.call();
+      return KeyEventResult.handled;
+    }
+
+    // DOWN arrow - move focus to play/pause button
+    if (key == LogicalKeyboardKey.arrowDown) {
+      _playPauseFocusNode.requestFocus();
+      widget.onFocusActivity?.call();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT/RIGHT for smooth scrubbing
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight) {
+      if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
+
+      // Base step: 0.5% of duration, minimum 500ms
+      final baseStep = Duration(
+        milliseconds: (duration.inMilliseconds * 0.005)
+            .clamp(500, 15000)
+            .toInt(),
+      );
+
+      // Accelerate on key repeat
+      final step = event is KeyRepeatEvent
+          ? Duration(
+              milliseconds: (baseStep.inMilliseconds * 2).clamp(500, 30000),
+            )
+          : baseStep;
+
+      final isForward = key == LogicalKeyboardKey.arrowRight;
+      final newPosition = isForward ? position + step : position - step;
+
+      // Clamp to valid range
+      final clampedPosition = Duration(
+        milliseconds: newPosition.inMilliseconds.clamp(
+          0,
+          duration.inMilliseconds,
+        ),
+      );
+
+      widget.onSeek(clampedPosition);
+      widget.onFocusActivity?.call();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +355,7 @@ class DesktopVideoControls extends StatelessWidget {
     final topBar = Padding(
       padding: EdgeInsets.only(left: leftPadding, right: 16),
       child: VideoControlsHeader(
-        metadata: metadata,
+        metadata: widget.metadata,
         style: Platform.isMacOS
             ? VideoHeaderStyle.singleLine
             : VideoHeaderStyle.multiLine,
@@ -101,116 +372,161 @@ class DesktopVideoControls extends StatelessWidget {
         children: [
           // Row 1: Timeline with time indicators
           VideoTimelineBar(
-            player: player,
-            chapters: chapters,
-            chaptersLoaded: chaptersLoaded,
-            onSeek: onSeek,
-            onSeekEnd: onSeekEnd,
+            player: widget.player,
+            chapters: widget.chapters,
+            chaptersLoaded: widget.chaptersLoaded,
+            onSeek: widget.onSeek,
+            onSeekEnd: widget.onSeekEnd,
             horizontalLayout: true,
+            focusNode: _timelineFocusNode,
+            onKeyEvent: _handleTimelineKeyEvent,
+            onFocusChange: _onFocusChange,
           ),
           const SizedBox(height: 4),
           // Row 2: Playback controls and options
           Row(
             children: [
               // Previous item
-              Semantics(
-                label: t.videoControls.previousButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.skip_previous,
-                    color: onPrevious != null ? Colors.white : Colors.white54,
-                  ),
-                  onPressed: onPrevious,
-                ),
+              _buildFocusableButton(
+                focusNode: _prevItemFocusNode,
+                index: 0,
+                icon: Icons.skip_previous,
+                color: widget.onPrevious != null
+                    ? Colors.white
+                    : Colors.white54,
+                onPressed: widget.onPrevious,
+                semanticLabel: t.videoControls.previousButton,
               ),
               // Previous chapter (or skip backward if no chapters)
-              Semantics(
-                label: chapters.isEmpty
-                    ? t.videoControls.seekBackwardButton(seconds: seekTimeSmall)
+              _buildFocusableButton(
+                focusNode: _prevChapterFocusNode,
+                index: 1,
+                icon: widget.chapters.isEmpty
+                    ? widget.getReplayIcon(widget.seekTimeSmall)
+                    : Icons.fast_rewind,
+                onPressed: widget.onSeekToPreviousChapter,
+                semanticLabel: widget.chapters.isEmpty
+                    ? t.videoControls.seekBackwardButton(
+                        seconds: widget.seekTimeSmall,
+                      )
                     : t.videoControls.previousChapterButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    chapters.isEmpty
-                        ? getReplayIcon(seekTimeSmall)
-                        : Icons.fast_rewind,
-                    color: Colors.white,
-                  ),
-                  onPressed: onSeekToPreviousChapter,
-                ),
               ),
               // Play/Pause
               StreamBuilder<bool>(
-                stream: player.streams.playing,
-                initialData: player.state.playing,
+                stream: widget.player.streams.playing,
+                initialData: widget.player.state.playing,
                 builder: (context, snapshot) {
                   final isPlaying = snapshot.data ?? false;
-                  return Semantics(
-                    label: isPlaying
+                  return _buildFocusableButton(
+                    focusNode: _playPauseFocusNode,
+                    index: 2,
+                    icon: isPlaying ? Icons.pause : Icons.play_arrow,
+                    iconSize: 32,
+                    onPressed: () {
+                      if (isPlaying) {
+                        widget.player.pause();
+                      } else {
+                        widget.player.play();
+                      }
+                    },
+                    semanticLabel: isPlaying
                         ? t.videoControls.pauseButton
                         : t.videoControls.playButton,
-                    button: true,
-                    excludeSemantics: true,
-                    child: IconButton(
-                      icon: Icon(
-                        isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                      iconSize: 32,
-                      onPressed: () {
-                        if (isPlaying) {
-                          player.pause();
-                        } else {
-                          player.play();
-                        }
-                      },
-                    ),
                   );
                 },
               ),
               // Next chapter (or skip forward if no chapters)
-              Semantics(
-                label: chapters.isEmpty
-                    ? t.videoControls.seekForwardButton(seconds: seekTimeSmall)
+              _buildFocusableButton(
+                focusNode: _nextChapterFocusNode,
+                index: 3,
+                icon: widget.chapters.isEmpty
+                    ? widget.getForwardIcon(widget.seekTimeSmall)
+                    : Icons.fast_forward,
+                onPressed: widget.onSeekToNextChapter,
+                semanticLabel: widget.chapters.isEmpty
+                    ? t.videoControls.seekForwardButton(
+                        seconds: widget.seekTimeSmall,
+                      )
                     : t.videoControls.nextChapterButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    chapters.isEmpty
-                        ? getForwardIcon(seekTimeSmall)
-                        : Icons.fast_forward,
-                    color: Colors.white,
-                  ),
-                  onPressed: onSeekToNextChapter,
-                ),
               ),
               // Next item
-              Semantics(
-                label: t.videoControls.nextButton,
-                button: true,
-                excludeSemantics: true,
-                child: IconButton(
-                  icon: Icon(
-                    Icons.skip_next,
-                    color: onNext != null ? Colors.white : Colors.white54,
-                  ),
-                  onPressed: onNext,
-                ),
+              _buildFocusableButton(
+                focusNode: _nextItemFocusNode,
+                index: 4,
+                icon: Icons.skip_next,
+                color: widget.onNext != null ? Colors.white : Colors.white54,
+                onPressed: widget.onNext,
+                semanticLabel: t.videoControls.nextButton,
               ),
               const Spacer(),
               // Volume control
-              volumeControl,
+              VolumeControl(
+                player: widget.player,
+                focusNode: _volumeFocusNode,
+                onKeyEvent: _handleVolumeKeyEvent,
+                onFocusChange: _onFocusChange,
+                onFocusActivity: widget.onFocusActivity,
+              ),
               const SizedBox(width: 16),
               // Audio track, subtitle, and chapter controls
-              trackChapterControls,
+              TrackChapterControls(
+                player: widget.player,
+                chapters: widget.chapters,
+                chaptersLoaded: widget.chaptersLoaded,
+                availableVersions: widget.availableVersions,
+                selectedMediaIndex: widget.selectedMediaIndex,
+                boxFitMode: widget.boxFitMode,
+                audioSyncOffset: widget.audioSyncOffset,
+                subtitleSyncOffset: widget.subtitleSyncOffset,
+                isRotationLocked: false, // Desktop doesn't have rotation lock
+                isFullscreen: widget.isFullscreen,
+                serverId: widget.serverId,
+                onCycleBoxFitMode: widget.onCycleBoxFitMode,
+                onToggleFullscreen: widget.onToggleFullscreen,
+                onSwitchVersion: widget.onSwitchVersion,
+                onAudioTrackChanged: widget.onAudioTrackChanged,
+                onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
+                onLoadSeekTimes: widget.onLoadSeekTimes,
+                onCancelAutoHide: widget.onCancelAutoHide,
+                onStartAutoHide: widget.onStartAutoHide,
+                focusNodes: _trackControlFocusNodes,
+                onFocusChange: _onFocusChange,
+                onNavigateLeft: navigateFromTrackToVolume,
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFocusableButton({
+    required FocusNode focusNode,
+    required int index,
+    required IconData icon,
+    required VoidCallback? onPressed,
+    required String semanticLabel,
+    Color color = Colors.white,
+    double iconSize = 24,
+  }) {
+    return FocusableWrapper(
+      focusNode: focusNode,
+      onSelect: onPressed,
+      onKeyEvent: (node, event) => _handleButtonKeyEvent(node, event, index),
+      onFocusChange: _onFocusChange,
+      borderRadius: 20,
+      autoScroll: false,
+      useBackgroundFocus: true,
+      semanticLabel: semanticLabel,
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        excludeSemantics: true,
+        child: IconButton(
+          icon: Icon(icon, color: color, size: iconSize),
+          iconSize: iconSize,
+          onPressed: onPressed,
+        ),
       ),
     );
   }

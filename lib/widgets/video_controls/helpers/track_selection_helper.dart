@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../mpv/mpv.dart';
+import '../../../widgets/focusable_list_tile.dart';
 
 /// Helper class for shared track selection logic
 ///
@@ -47,11 +48,13 @@ class TrackSelectionHelper {
   static Widget buildOffTile<T>({
     required bool isSelected,
     required VoidCallback onTap,
+    FocusNode? focusNode,
   }) {
     return _buildSelectableTile(
       label: 'Off',
       isSelected: isSelected,
       onTap: onTap,
+      focusNode: focusNode,
     );
   }
 
@@ -60,11 +63,13 @@ class TrackSelectionHelper {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    FocusNode? focusNode,
   }) {
     return _buildSelectableTile(
       label: label,
       isSelected: isSelected,
       onTap: onTap,
+      focusNode: focusNode,
     );
   }
 
@@ -72,8 +77,10 @@ class TrackSelectionHelper {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    FocusNode? focusNode,
   }) {
-    return ListTile(
+    return FocusableListTile(
+      focusNode: focusNode,
       title: Text(
         label,
         style: TextStyle(color: isSelected ? Colors.blue : Colors.white),

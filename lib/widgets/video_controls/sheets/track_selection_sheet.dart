@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../mpv/mpv.dart';
+import '../../../widgets/focusable_bottom_sheet.dart';
 import 'base_video_control_sheet.dart';
 import 'video_control_sheet_launcher.dart';
 import '../helpers/track_filter_helper.dart';
@@ -9,7 +10,7 @@ import '../helpers/track_selection_helper.dart';
 /// Generic track selection sheet for audio and subtitle tracks
 ///
 /// Type parameter [T] should be either [AudioTrack] or [SubtitleTrack]
-class TrackSelectionSheet<T> extends StatelessWidget {
+class TrackSelectionSheet<T> extends StatefulWidget {
   final Player player;
   final String title;
   final IconData icon;
@@ -74,85 +75,120 @@ class TrackSelectionSheet<T> extends StatelessWidget {
   }
 
   @override
+  State<TrackSelectionSheet<T>> createState() => _TrackSelectionSheetState<T>();
+}
+
+class _TrackSelectionSheetState<T> extends State<TrackSelectionSheet<T>> {
+  late final FocusNode _initialFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialFocusNode = FocusNode(debugLabel: 'TrackSelectionInitialFocus');
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Tracks>(
-      stream: player.streams.tracks,
-      initialData: player.state.tracks,
-      builder: (context, snapshot) {
-        final tracks = snapshot.data;
-        final availableTracks = TrackFilterHelper.extractAndFilterTracks<T>(
-          tracks,
-          extractTracks,
-        );
+    return FocusableBottomSheet(
+      initialFocusNode: _initialFocusNode,
+      child: StreamBuilder<Tracks>(
+        stream: widget.player.streams.tracks,
+        initialData: widget.player.state.tracks,
+        builder: (context, snapshot) {
+          final tracks = snapshot.data;
+          final availableTracks = TrackFilterHelper.extractAndFilterTracks<T>(
+            tracks,
+            widget.extractTracks,
+          );
 
-        return BaseVideoControlSheet(
-          title: title,
-          icon: icon,
-          child: availableTracks.isEmpty
-              ? TrackSelectionHelper.buildEmptyState<T>()
-              : StreamBuilder<TrackSelection>(
-                  stream: player.streams.track,
-                  initialData: player.state.track,
-                  builder: (context, selectedSnapshot) {
-                    final currentTrack =
-                        selectedSnapshot.data ?? player.state.track;
-                    final selectedTrack = getCurrentTrack(currentTrack);
+          return BaseVideoControlSheet(
+            title: widget.title,
+            icon: widget.icon,
+            child: availableTracks.isEmpty
+                ? TrackSelectionHelper.buildEmptyState<T>()
+                : StreamBuilder<TrackSelection>(
+                    stream: widget.player.streams.track,
+                    initialData: widget.player.state.track,
+                    builder: (context, selectedSnapshot) {
+                      final currentTrack =
+                          selectedSnapshot.data ?? widget.player.state.track;
+                      final selectedTrack = widget.getCurrentTrack(
+                        currentTrack,
+                      );
 
-                    // Determine if "Off" is selected (null or explicit off)
-                    final isOffSelected = TrackSelectionHelper.isOffSelected(
-                      selectedTrack,
-                      isOffTrack,
-                    );
+                      // Determine if "Off" is selected (null or explicit off)
+                      final isOffSelected = TrackSelectionHelper.isOffSelected(
+                        selectedTrack,
+                        widget.isOffTrack,
+                      );
 
-                    final itemCount =
-                        availableTracks.length + (showOffOption ? 1 : 0);
+                      final itemCount =
+                          availableTracks.length +
+                          (widget.showOffOption ? 1 : 0);
 
-                    return ListView.builder(
-                      itemCount: itemCount,
-                      itemBuilder: (context, index) {
-                        // First item is "Off" if enabled
-                        if (showOffOption && index == 0) {
-                          return TrackSelectionHelper.buildOffTile<T>(
-                            isSelected: isOffSelected,
+                      return ListView.builder(
+                        itemCount: itemCount,
+                        itemBuilder: (context, index) {
+                          // First item is "Off" if enabled
+                          if (widget.showOffOption && index == 0) {
+                            return TrackSelectionHelper.buildOffTile<T>(
+                              isSelected: isOffSelected,
+                              focusNode: _initialFocusNode,
+                              onTap: () {
+                                if (widget.createOffTrack != null) {
+                                  final offTrack = widget.createOffTrack!();
+                                  widget.setTrack(offTrack);
+                                  widget.onTrackChanged?.call(offTrack);
+                                }
+                                Navigator.pop(context);
+                              },
+                            );
+                          }
+
+                          // Subsequent items are tracks
+                          final trackIndex = widget.showOffOption
+                              ? index - 1
+                              : index;
+                          final track = availableTracks[trackIndex];
+
+                          // Check if this track is selected
+                          final trackId = TrackSelectionHelper.getTrackId(
+                            track,
+                          );
+                          final selectedId = selectedTrack == null
+                              ? ''
+                              : TrackSelectionHelper.getTrackId(selectedTrack);
+
+                          final isSelected = trackId == selectedId;
+                          final label = widget.buildLabel(track, trackIndex);
+
+                          // Focus the first actual track if no "Off" option
+                          final shouldFocus =
+                              !widget.showOffOption && index == 0;
+
+                          return TrackSelectionHelper.buildTrackTile<T>(
+                            label: label,
+                            isSelected: isSelected,
+                            focusNode: shouldFocus ? _initialFocusNode : null,
                             onTap: () {
-                              if (createOffTrack != null) {
-                                final offTrack = createOffTrack!();
-                                setTrack(offTrack);
-                                onTrackChanged?.call(offTrack);
-                              }
+                              widget.setTrack(track);
+                              widget.onTrackChanged?.call(track);
                               Navigator.pop(context);
                             },
                           );
-                        }
-
-                        // Subsequent items are tracks
-                        final trackIndex = showOffOption ? index - 1 : index;
-                        final track = availableTracks[trackIndex];
-
-                        // Check if this track is selected
-                        final trackId = TrackSelectionHelper.getTrackId(track);
-                        final selectedId = selectedTrack == null
-                            ? ''
-                            : TrackSelectionHelper.getTrackId(selectedTrack);
-
-                        final isSelected = trackId == selectedId;
-                        final label = buildLabel(track, trackIndex);
-
-                        return TrackSelectionHelper.buildTrackTile<T>(
-                          label: label,
-                          isSelected: isSelected,
-                          onTap: () {
-                            setTrack(track);
-                            onTrackChanged?.call(track);
-                            Navigator.pop(context);
-                          },
-                        );
-                      },
-                    );
-                  },
-                ),
-        );
-      },
+                        },
+                      );
+                    },
+                  ),
+          );
+        },
+      ),
     );
   }
 }

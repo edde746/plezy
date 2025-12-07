@@ -71,6 +71,14 @@ class FocusableWrapper extends StatefulWidget {
   /// Duration for long-press detection.
   final Duration longPressDuration;
 
+  /// Whether to use background color instead of border for focus indicator.
+  /// Useful for video controls where outline doesn't look good.
+  final bool useBackgroundFocus;
+
+  /// Whether to disable the scale animation on focus.
+  /// Useful for elements like sliders where scaling looks odd.
+  final bool disableScale;
+
   const FocusableWrapper({
     super.key,
     required this.child,
@@ -90,6 +98,8 @@ class FocusableWrapper extends StatefulWidget {
     this.onKeyEvent,
     this.enableLongPress = false,
     this.longPressDuration = const Duration(milliseconds: 500),
+    this.useBackgroundFocus = false,
+    this.disableScale = false,
   });
 
   @override
@@ -349,6 +359,18 @@ class _FocusableWrapperState extends State<FocusableWrapper>
       _animationController.duration = duration;
     }
 
+    // Choose decoration based on useBackgroundFocus
+    final decoration = widget.useBackgroundFocus
+        ? FocusTheme.focusBackgroundDecoration(
+            isFocused: showFocus,
+            borderRadius: widget.borderRadius,
+          )
+        : FocusTheme.focusDecoration(
+            context,
+            isFocused: showFocus,
+            borderRadius: widget.borderRadius,
+          );
+
     Widget result = Focus(
       focusNode: _focusNode,
       autofocus: widget.autofocus,
@@ -357,16 +379,13 @@ class _FocusableWrapperState extends State<FocusableWrapper>
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
+          final shouldScale = showFocus && !widget.disableScale;
           return Transform.scale(
-            scale: showFocus ? _scaleAnimation.value : 1.0,
+            scale: shouldScale ? _scaleAnimation.value : 1.0,
             child: AnimatedContainer(
               duration: duration,
               curve: Curves.easeOutCubic,
-              decoration: FocusTheme.focusDecoration(
-                context,
-                isFocused: showFocus,
-                borderRadius: widget.borderRadius,
-              ),
+              decoration: decoration,
               child: widget.child,
             ),
           );

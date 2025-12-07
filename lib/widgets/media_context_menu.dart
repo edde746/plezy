@@ -13,6 +13,8 @@ import '../utils/library_refresh_notifier.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../widgets/file_info_bottom_sheet.dart';
+import '../widgets/focusable_bottom_sheet.dart';
+import '../widgets/focusable_list_tile.dart';
 import '../i18n/strings.g.dart';
 
 /// Helper class to store menu action data
@@ -1383,29 +1385,49 @@ class _FocusableContextMenuSheet extends StatefulWidget {
 
 class _FocusableContextMenuSheetState
     extends State<_FocusableContextMenuSheet> {
+  late final FocusNode _initialFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialFocusNode = FocusNode(debugLabel: 'ContextMenuSheetInitialFocus');
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              widget.title,
-              style: Theme.of(context).textTheme.titleMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    return FocusableBottomSheet(
+      initialFocusNode: widget.focusFirstItem ? _initialFocusNode : null,
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                widget.title,
+                style: Theme.of(context).textTheme.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-          ...widget.actions.map((action) {
-            return ListTile(
-              leading: Icon(action.icon),
-              title: Text(action.label),
-              onTap: () => Navigator.pop(context, action.value),
-            );
-          }),
-        ],
+            ...widget.actions.asMap().entries.map((entry) {
+              final index = entry.key;
+              final action = entry.value;
+              return FocusableListTile(
+                focusNode: index == 0 ? _initialFocusNode : null,
+                leading: Icon(action.icon),
+                title: Text(action.label),
+                onTap: () => Navigator.pop(context, action.value),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -1428,6 +1450,27 @@ class _FocusablePopupMenu extends StatefulWidget {
 }
 
 class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
+  late final FocusNode _initialFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialFocusNode = FocusNode(debugLabel: 'PopupMenuInitialFocus');
+    if (widget.focusFirstItem) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _initialFocusNode.requestFocus();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -1474,22 +1517,14 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: widget.actions.map((action) {
-                  return InkWell(
+                children: widget.actions.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final action = entry.value;
+                  return FocusableListTile(
+                    focusNode: index == 0 ? _initialFocusNode : null,
+                    leading: Icon(action.icon, size: 20),
+                    title: Text(action.label),
                     onTap: () => Navigator.pop(context, action.value),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(action.icon, size: 20),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text(action.label)),
-                        ],
-                      ),
-                    ),
                   );
                 }).toList(),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../models/plex_media_info.dart';
@@ -21,6 +22,15 @@ class VideoTimelineBar extends StatelessWidget {
   /// If false, timestamps are shown in a row below the slider (mobile layout).
   final bool horizontalLayout;
 
+  /// Optional FocusNode for D-pad/keyboard navigation.
+  final FocusNode? focusNode;
+
+  /// Custom key event handler for focus navigation.
+  final KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent;
+
+  /// Called when focus changes.
+  final ValueChanged<bool>? onFocusChange;
+
   const VideoTimelineBar({
     super.key,
     required this.player,
@@ -29,6 +39,9 @@ class VideoTimelineBar extends StatelessWidget {
     required this.onSeek,
     required this.onSeekEnd,
     this.horizontalLayout = true,
+    this.focusNode,
+    this.onKeyEvent,
+    this.onFocusChange,
   });
 
   @override
@@ -60,9 +73,7 @@ class VideoTimelineBar extends StatelessWidget {
       children: [
         _buildTimestamp(position),
         const SizedBox(width: 12),
-        Expanded(
-          child: _buildSlider(position, duration),
-        ),
+        Expanded(child: _buildSlider(position, duration)),
         const SizedBox(width: 12),
         _buildTimestamp(duration),
       ],
@@ -77,10 +88,7 @@ class VideoTimelineBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildTimestamp(position),
-              _buildTimestamp(duration),
-            ],
+            children: [_buildTimestamp(position), _buildTimestamp(duration)],
           ),
         ),
       ],
@@ -90,10 +98,7 @@ class VideoTimelineBar extends StatelessWidget {
   Widget _buildTimestamp(Duration time) {
     return Text(
       formatDurationTimestamp(time),
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 14,
-      ),
+      style: const TextStyle(color: Colors.white, fontSize: 14),
     );
   }
 
@@ -105,6 +110,9 @@ class VideoTimelineBar extends StatelessWidget {
       chaptersLoaded: chaptersLoaded,
       onSeek: onSeek,
       onSeekEnd: onSeekEnd,
+      focusNode: focusNode,
+      onKeyEvent: onKeyEvent,
+      onFocusChange: onFocusChange,
     );
   }
 }
