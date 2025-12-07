@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/tv_detection_service.dart';
+import '../services/gamepad_service.dart';
 
 /// Tracks whether the user is navigating via keyboard/d-pad or pointer (mouse/touch).
 ///
@@ -51,13 +52,21 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   @override
   void initState() {
     super.initState();
+    // Initialize focus highlight strategy based on starting mode
+    _updateFocusHighlightStrategy(_mode);
     // Listen to hardware keyboard events globally
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+    RawKeyboard.instance.addListener(_handleRawKeyEvent);
+
+    // Register callback for gamepad input to switch to keyboard mode
+    GamepadService.onGamepadInput = () => _setMode(InputMode.keyboard);
   }
 
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
+    RawKeyboard.instance.removeListener(_handleRawKeyEvent);
+    GamepadService.onGamepadInput = null;
     super.dispose();
   }
 
@@ -70,9 +79,28 @@ class _InputModeTrackerState extends State<InputModeTracker> {
     return false;
   }
 
+  void _handleRawKeyEvent(RawKeyEvent event) {
+    if (event is RawKeyDownEvent) {
+      _setMode(InputMode.keyboard);
+    }
+  }
+
   void _setMode(InputMode mode) {
     if (_mode != mode) {
       setState(() => _mode = mode);
+    }
+    _updateFocusHighlightStrategy(mode);
+  }
+
+  // Keep Material focus highlights in sync with our input mode so keyboard/gamepad
+  // navigation immediately shows focus without waiting for a real keypress.
+  void _updateFocusHighlightStrategy(InputMode mode) {
+    final desiredStrategy = mode == InputMode.keyboard
+        ? FocusHighlightStrategy.alwaysTraditional
+        : FocusHighlightStrategy.automatic;
+
+    if (FocusManager.instance.highlightStrategy != desiredStrategy) {
+      FocusManager.instance.highlightStrategy = desiredStrategy;
     }
   }
 

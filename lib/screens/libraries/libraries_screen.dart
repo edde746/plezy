@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
+import '../../services/gamepad_service.dart';
 import '../../../services/plex_client.dart';
 import '../../models/plex_library.dart';
 import '../../models/plex_metadata.dart';
@@ -106,6 +107,30 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_onTabChanged);
     _loadLibraries();
+
+    // Register L1/R1 callbacks for tab navigation
+    GamepadService.onL1Pressed = _goToPreviousTab;
+    GamepadService.onR1Pressed = _goToNextTab;
+  }
+
+  void _goToPreviousTab() {
+    if (_tabController.index > 0) {
+      setState(() {
+        _suppressAutoFocus = true;
+        _tabController.index = _tabController.index - 1;
+      });
+      _getTabChipFocusNode(_tabController.index).requestFocus();
+    }
+  }
+
+  void _goToNextTab() {
+    if (_tabController.index < _tabController.length - 1) {
+      setState(() {
+        _suppressAutoFocus = true;
+        _tabController.index = _tabController.index + 1;
+      });
+      _getTabChipFocusNode(_tabController.index).requestFocus();
+    }
   }
 
   void _onTabChanged() {
@@ -263,6 +288,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _browseTabChipFocusNode.dispose();
     _collectionsTabChipFocusNode.dispose();
     _playlistsTabChipFocusNode.dispose();
+    // Clear L1/R1 callbacks
+    GamepadService.onL1Pressed = null;
+    GamepadService.onR1Pressed = null;
     super.dispose();
   }
 

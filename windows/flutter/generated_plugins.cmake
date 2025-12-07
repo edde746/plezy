@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
+  gamepads_windows
   hotkey_manager_windows
   os_media_controls
   screen_retriever_windows

@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  gamepads_linux
   hotkey_manager_linux
   os_media_controls
   screen_retriever_linux
