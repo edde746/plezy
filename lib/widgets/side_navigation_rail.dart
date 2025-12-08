@@ -65,10 +65,12 @@ class NavigationRailItem extends StatelessWidget {
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              color: isSelected
-                  ? t.text.withValues(alpha: 0.1)
+              color: isSelected && isFocused
+                  ? t.text.withValues(alpha: 0.15) // Selected + focused
+                  : isSelected
+                  ? t.text.withValues(alpha: 0.1) // Just selected
                   : isFocused
-                  ? t.text.withValues(alpha: 0.08)
+                  ? t.text.withValues(alpha: 0.12) // Just focused (more visible)
                   : null,
               borderRadius: borderRadius,
             ),

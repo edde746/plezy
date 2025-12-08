@@ -99,6 +99,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
       // Set up data invalidation callback for profile switching
       userProfileProvider.setDataInvalidationCallback(_invalidateAllScreens);
+
+      // Focus content initially (replaces autofocus which caused focus stealing issues)
+      if (!_isSidebarFocused) {
+        _contentFocusScope.requestFocus();
+      }
     });
   }
 
@@ -142,6 +147,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   KeyEventResult _handleBackKey(KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
+    // Handle all back keys - this handler is only reached if lower widgets
+    // (e.g., LibrariesScreen tab content/chips) don't handle the back key first
     final isBackKey =
         event.logicalKey == LogicalKeyboardKey.escape ||
         event.logicalKey == LogicalKeyboardKey.goBack ||
@@ -286,42 +293,51 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
 
     if (useSideNav) {
-      return Focus(
-        onKeyEvent: (node, event) => _handleBackKey(event),
-        child: MainScreenFocusScope(
-          focusSidebar: _focusSidebar,
-          focusContent: _focusContent,
-          isSidebarFocused: _isSidebarFocused,
-          child: SideNavigationScope(
-            child: Row(
-              children: [
-                FocusScope(
-                  node: _sidebarFocusScope,
-                  child: SideNavigationRail(
-                    key: _sideNavKey,
-                    selectedIndex: _currentIndex,
-                    selectedLibraryKey: _selectedLibraryGlobalKey,
-                    onDestinationSelected: (index) {
-                      _selectTab(index);
-                      _focusContent();
-                    },
-                    onLibrarySelected: (key) {
-                      _selectLibrary(key);
-                      _focusContent();
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: FocusScope(
-                    node: _contentFocusScope,
-                    autofocus: true,
-                    child: IndexedStack(
-                      index: _currentIndex,
-                      children: _screens,
+      return PopScope(
+        canPop: false, // Prevent system back from popping on Android TV
+        onPopInvokedWithResult: (didPop, result) {
+          // No-op: back key events bubble through widget tree and are handled
+          // by content screens (e.g., LibrariesScreen) or MainScreen's _handleBackKey.
+          // We only use PopScope to prevent the system from popping the route.
+        },
+        child: Focus(
+          onKeyEvent: (node, event) => _handleBackKey(event),
+          child: MainScreenFocusScope(
+            focusSidebar: _focusSidebar,
+            focusContent: _focusContent,
+            isSidebarFocused: _isSidebarFocused,
+            child: SideNavigationScope(
+              child: Row(
+                children: [
+                  FocusScope(
+                    node: _sidebarFocusScope,
+                    child: SideNavigationRail(
+                      key: _sideNavKey,
+                      selectedIndex: _currentIndex,
+                      selectedLibraryKey: _selectedLibraryGlobalKey,
+                      onDestinationSelected: (index) {
+                        _selectTab(index);
+                        _focusContent();
+                      },
+                      onLibrarySelected: (key) {
+                        _selectLibrary(key);
+                        _focusContent();
+                      },
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: FocusScope(
+                      node: _contentFocusScope,
+                      // No autofocus - we control focus programmatically to prevent
+                      // autofocus from stealing focus back after setState() rebuilds
+                      child: IndexedStack(
+                        index: _currentIndex,
+                        children: _screens,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
