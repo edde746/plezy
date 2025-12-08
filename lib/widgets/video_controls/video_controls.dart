@@ -829,7 +829,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = PlatformDetector.isMobile(context);
+    // Use desktop controls for desktop platforms AND Android TV
+    final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
 
     return Focus(
       focusNode: _focusNode,
