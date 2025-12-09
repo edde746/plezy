@@ -70,7 +70,9 @@ class NavigationRailItem extends StatelessWidget {
                   : isSelected
                   ? t.text.withValues(alpha: 0.1) // Just selected
                   : isFocused
-                  ? t.text.withValues(alpha: 0.12) // Just focused (more visible)
+                  ? t.text.withValues(
+                      alpha: 0.12,
+                    ) // Just focused (more visible)
                   : null,
               borderRadius: borderRadius,
             ),
@@ -120,12 +122,14 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   late FocusNode _homeFocusNode;
   late FocusNode _librariesFocusNode;
   late FocusNode _searchFocusNode;
+  late FocusNode _downloadsFocusNode;
   late FocusNode _settingsFocusNode;
 
   // Focus state tracking
   bool _isHomeFocused = false;
   bool _isLibrariesFocused = false;
   bool _isSearchFocused = false;
+  bool _isDownloadsFocused = false;
   bool _isSettingsFocused = false;
 
   // Map to store library item focus nodes and states
@@ -138,6 +142,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _homeFocusNode = FocusNode(debugLabel: 'nav_home');
     _librariesFocusNode = FocusNode(debugLabel: 'nav_libraries');
     _searchFocusNode = FocusNode(debugLabel: 'nav_search');
+    _downloadsFocusNode = FocusNode(debugLabel: 'nav_downloads');
     _settingsFocusNode = FocusNode(debugLabel: 'nav_settings');
 
     _homeFocusNode.addListener(
@@ -153,6 +158,11 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _searchFocusNode.addListener(
       () => _onFocusChange(_searchFocusNode, () {
         setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
+      }),
+    );
+    _downloadsFocusNode.addListener(
+      () => _onFocusChange(_downloadsFocusNode, () {
+        setState(() => _isDownloadsFocused = _downloadsFocusNode.hasFocus);
       }),
     );
     _settingsFocusNode.addListener(
@@ -173,6 +183,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _homeFocusNode.dispose();
     _librariesFocusNode.dispose();
     _searchFocusNode.dispose();
+    _downloadsFocusNode.dispose();
     _settingsFocusNode.dispose();
     for (final node in _libraryFocusNodes.values) {
       node.dispose();
@@ -218,6 +229,9 @@ class SideNavigationRailState extends State<SideNavigationRail> {
           _searchFocusNode.requestFocus();
           break;
         case 3:
+          _downloadsFocusNode.requestFocus();
+          break;
+        case 4:
           _settingsFocusNode.requestFocus();
           break;
       }
@@ -390,14 +404,27 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
                     const SizedBox(height: 8),
 
+                    // Downloads
+                    _buildNavItem(
+                      icon: Icons.download_outlined,
+                      selectedIcon: Icons.download,
+                      label: 'Downloads',
+                      isSelected: widget.selectedIndex == 3,
+                      isFocused: _isDownloadsFocused,
+                      onTap: () => widget.onDestinationSelected(3),
+                      focusNode: _downloadsFocusNode,
+                    ),
+
+                    const SizedBox(height: 8),
+
                     // Settings
                     _buildNavItem(
                       icon: Icons.settings_outlined,
                       selectedIcon: Icons.settings,
                       label: Translations.of(context).navigation.settings,
-                      isSelected: widget.selectedIndex == 3,
+                      isSelected: widget.selectedIndex == 4,
                       isFocused: _isSettingsFocused,
-                      onTap: () => widget.onDestinationSelected(3),
+                      onTap: () => widget.onDestinationSelected(4),
                       focusNode: _settingsFocusNode,
                     ),
                   ],

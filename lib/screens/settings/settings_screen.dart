@@ -1,8 +1,10 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../services/download_service.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -93,6 +95,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildUpdateSection(),
                   const SizedBox(height: 24),
                 ],
+                _buildDownloadsSection(), // Added
+                const SizedBox(height: 24), // Added
                 _buildAboutSection(),
                 const SizedBox(height: 24),
               ]),
@@ -465,6 +469,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _checkForUpdates();
                     }
                   },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDownloadsSection() {
+    final downloadService = context.watch<DownloadService>();
+    // Use FutureBuilder to get the path (or just watch if it's a provider field, but currently it's a future prop)
+    // Actually downloadService.downloadPath is a Future getter.
+    // Better to make it a property in the service or use FutureBuilder.
+    // FutureBuilder is fine.
+
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              "Downloads",
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          FutureBuilder<String>(
+            future: downloadService.downloadPath,
+            builder: (context, snapshot) {
+              final path = snapshot.data ?? "Loading...";
+              return ListTile(
+                leading: const Icon(Icons.folder_open),
+                title: const Text("Download Location"),
+                subtitle: Text(path),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  String? selectedDirectory = await FilePicker.platform
+                      .getDirectoryPath();
+                  if (selectedDirectory != null) {
+                    await downloadService.setDownloadPath(selectedDirectory);
+                  }
+                },
+              );
+            },
           ),
         ],
       ),

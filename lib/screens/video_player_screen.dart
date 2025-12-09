@@ -37,6 +37,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final SubtitleTrack? preferredSubtitleTrack;
   final double? preferredPlaybackRate;
   final int selectedMediaIndex;
+  final String? fileOverride;
 
   const VideoPlayerScreen({
     super.key,
@@ -45,6 +46,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredSubtitleTrack,
     this.preferredPlaybackRate,
     this.selectedMediaIndex = 0,
+    this.fileOverride,
   });
 
   @override
@@ -213,7 +215,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           }
 
           _updateMediaControlsPlaybackState();
-          appLogger.d('Media controls restored and wakelock re-enabled on app resume');
+          appLogger.d(
+            'Media controls restored and wakelock re-enabled on app resume',
+          );
         }
         break;
       case AppLifecycleState.detached:
@@ -647,6 +651,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
+
+      // Use overrides if provided for offline playback
+      if (widget.fileOverride != null) {
+        // Direct file playback
+        await player!.open(Media(widget.fileOverride!));
+
+        if (mounted) {
+          setState(() {
+            _isPlayerInitialized = true;
+            // Offline, so no versions/info/external subs for now
+            _availableVersions = [];
+            _currentMediaInfo = null;
+          });
+        }
+        return;
+      }
 
       // Initialize playback service
       final playbackService = PlaybackInitializationService(client: client);

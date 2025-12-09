@@ -49,10 +49,10 @@ class PlexMetadata with MultiServerFields {
 
   // Multi-server support fields (from MultiServerFields mixin)
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(includeFromJson: true, includeToJson: true)
   final String? serverId;
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(includeFromJson: true, includeToJson: true)
   final String? serverName;
 
   // Transient field for clear logo (extracted from Image array)

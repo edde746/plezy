@@ -37,6 +37,7 @@ dependencies:
   path_provider: ^2.1.0
   path: ^1.9.0
   gamepads: ^0.1.9
+  file_picker: ^10.3.7
 
 dev_dependencies:
   flutter_test:

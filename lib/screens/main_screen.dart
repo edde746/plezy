@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
+import '../../services/download_service.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
@@ -20,6 +21,7 @@ import 'discover_screen.dart';
 import 'libraries/libraries_screen.dart';
 import 'search_screen.dart';
 import 'settings/settings_screen.dart';
+import 'downloads_screen.dart';
 
 /// Provides access to the main screen's focus control.
 class MainScreenFocusScope extends InheritedWidget {
@@ -62,6 +64,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
+  final GlobalKey<State<DownloadsScreen>> _downloadsKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
 
@@ -88,6 +91,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
         onLibraryOrderChanged: _onLibraryOrderChanged,
       ),
       SearchScreen(key: _searchKey),
+      DownloadsScreen(key: _downloadsKey),
       SettingsScreen(key: _settingsKey),
     ];
 
@@ -104,6 +108,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       if (!_isSidebarFocused) {
         _contentFocusScope.requestFocus();
       }
+
+      // Inject ClientLocator for DownloadService to handle retries/resume
+      context.read<DownloadService>().clientLocator = (serverId) {
+        try {
+          return context.getClientForServer(serverId);
+        } catch (_) {
+          return null;
+        }
+      };
     });
   }
 
@@ -247,6 +260,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     if (searchState != null) {
       (searchState as dynamic).fullRefresh();
     }
+
+    // Full refresh downloads screen (optional, but good if we clear downloads on user switch)
+    // Actually, downloads are locally persisted. We might want to clear them or filter by user?
+    // Current impl shares downloads.
+    final downloadsState = _downloadsKey.currentState;
+    if (downloadsState != null) {}
   }
 
   void _selectTab(int index) {
@@ -364,6 +383,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
             icon: const Icon(Icons.search),
             selectedIcon: const Icon(Icons.search),
             label: t.navigation.search,
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.download_outlined),
+            selectedIcon: Icon(Icons.download),
+            label: 'Downloads',
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),

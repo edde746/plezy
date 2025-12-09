@@ -8,6 +8,7 @@ import '../i18n/strings.g.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../utils/plex_image_helper.dart';
 import '../../services/plex_client.dart';
+import '../../services/download_service.dart';
 import '../models/plex_metadata.dart';
 import '../providers/playback_state_provider.dart';
 import '../theme/theme_helper.dart';
@@ -883,6 +884,81 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                             maximumSize: const Size(48, 48),
                           ),
                         ),
+                        if (metadata.type.toLowerCase() == 'movie' ||
+                            metadata.type.toLowerCase() == 'episode' ||
+                            metadata.type.toLowerCase() == 'show' ||
+                            metadata.type.toLowerCase() == 'season') ...[
+                          const SizedBox(width: 12),
+                          Consumer<DownloadService>(
+                            builder: (context, downloadService, child) {
+                              final isDownloaded = downloadService.isDownloaded(
+                                metadata.ratingKey,
+                              );
+                              final isDownloading = downloadService
+                                  .isDownloading(metadata.ratingKey);
+
+                              // For shows/seasons, we don't show "Downloaded" state as clearly
+                              // on the main button yet, or maybe we do if *all* are downloaded?
+                              // For now, let's keep it simple: always enabled for containers to allow more downloads,
+                              // unless maybe we want to show a partial state.
+                              // Let's stick to simple behavior:
+                              // If it's a container (show/season), always enable and show "Download".
+                              final isContainer =
+                                  metadata.type.toLowerCase() == 'show' ||
+                                  metadata.type.toLowerCase() == 'season';
+
+                              return IconButton.filledTonal(
+                                onPressed:
+                                    (!isContainer &&
+                                        (isDownloaded || isDownloading))
+                                    ? null
+                                    : () {
+                                        if (isContainer) {
+                                          _showDownloadOptionsDialog(
+                                            context,
+                                            metadata,
+                                          );
+                                        } else {
+                                          final client = _getClientForMetadata(
+                                            context,
+                                          );
+                                          context
+                                              .read<DownloadService>()
+                                              .download(client, metadata);
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).clearSnackBars();
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Download started'),
+                                              duration: Duration(seconds: 2),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                icon: Icon(
+                                  (isDownloaded && !isContainer)
+                                      ? Icons.download_done
+                                      : (isDownloading && !isContainer)
+                                      ? Icons.downloading
+                                      : Icons.download,
+                                ),
+                                tooltip: (isDownloaded && !isContainer)
+                                    ? 'Downloaded'
+                                    : (isDownloading && !isContainer)
+                                    ? 'Downloading'
+                                    : 'Download',
+                                iconSize: 20,
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(48, 48),
+                                  maximumSize: const Size(48, 48),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ],
                     ),
 
@@ -1164,6 +1240,134 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     }
 
     return t.discover.play;
+  }
+
+  void _showDownloadOptionsDialog(BuildContext context, PlexMetadata metadata) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Download ${metadata.title}'),
+        content: const Text('Choose download options:'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _handleBulkDownload(context, metadata, false);
+            },
+            child: const Text('All Episodes'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _handleBulkDownload(context, metadata, true);
+            },
+            child: const Text('Unwatched Only'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(t.common.cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleBulkDownload(
+    BuildContext context,
+    PlexMetadata metadata,
+    bool onlyUnwatched,
+  ) async {
+    final client = _getClientForMetadata(context);
+    final downloadService = context.read<DownloadService>();
+    final type = metadata.type.toLowerCase();
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Fetching episodes...')));
+
+    try {
+      List<PlexMetadata> episodes = [];
+
+      if (type == 'show') {
+        // ... (existing code omitted for brevity in instruction, will be in implementation)
+        // Actually replace_file_content requires exact replacement.
+        // Wait, I can't easily replace the whole method block without context.
+        // I'll target the start of the method.
+      }
+
+      // ... I'll do this in chunks.
+    } catch (e) {}
+
+    try {
+      List<PlexMetadata> episodes = [];
+
+      if (type == 'show') {
+        if (onlyUnwatched) {
+          episodes = await client.getAllUnwatchedEpisodes(metadata.ratingKey);
+        } else {
+          // Fetch all episodes via seasons
+          final seasons = await client.getChildren(metadata.ratingKey);
+          for (final season in seasons) {
+            if (season.type == 'season') {
+              // Ensure it's a season
+              final seasonEpisodes = await client.getChildren(season.ratingKey);
+              episodes.addAll(seasonEpisodes.where((e) => e.type == 'episode'));
+            }
+          }
+        }
+      } else if (type == 'season') {
+        if (onlyUnwatched) {
+          episodes = await client.getUnwatchedEpisodesInSeason(
+            metadata.ratingKey,
+          );
+        } else {
+          final seasonEpisodes = await client.getChildren(metadata.ratingKey);
+          episodes = seasonEpisodes.where((e) => e.type == 'episode').toList();
+        }
+      }
+
+      if (episodes.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No episodes found to download')),
+          );
+        }
+        return;
+      }
+
+      // Preserve server info on episodes
+      episodes = episodes
+          .map(
+            (e) => e.copyWith(
+              serverId: metadata.serverId,
+              serverName: metadata.serverName,
+            ),
+          )
+          .toList();
+
+      int queuedCount = 0;
+      for (final episode in episodes) {
+        // Check if already downloaded/queueing to avoid duplicates (service handles this check too but good to know count)
+        if (!downloadService.isDownloaded(episode.ratingKey) &&
+            !downloadService.isDownloading(episode.ratingKey)) {
+          downloadService.download(client, episode);
+          queuedCount++;
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Queued $queuedCount episodes for download')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error queuing downloads: $e')));
+      }
+    }
   }
 }
 

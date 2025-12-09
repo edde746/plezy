@@ -32,6 +32,7 @@ Future<bool?> navigateToVideoPlayer(
   double? preferredPlaybackRate,
   int? selectedMediaIndex,
   bool usePushReplacement = false,
+  String? fileOverride,
 }) async {
   // Extract navigator before any async operations
   final navigator = Navigator.of(context);
@@ -60,6 +61,7 @@ Future<bool?> navigateToVideoPlayer(
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredPlaybackRate: preferredPlaybackRate,
       selectedMediaIndex: mediaIndex,
+      fileOverride: fileOverride,
     ),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,
