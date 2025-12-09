@@ -317,7 +317,7 @@ class PlayerNative implements Player {
       await _observeProperty('paused-for-cache', 'flag');
       await _observeProperty(
         'track-list',
-        Platform.isAndroid ? 'string' : 'node',
+        (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node',
       );
       await _observeProperty('eof-reached', 'flag');
       await _observeProperty('volume', 'double');
