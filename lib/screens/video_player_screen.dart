@@ -1260,7 +1260,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
                     return Video(
                       player: player!,
-                      fit: _videoFilterManager?.currentBoxFit ?? BoxFit.contain,
                       controls: (context) => plexVideoControlsBuilder(
                         player!,
                         widget.metadata,

@@ -14,16 +14,12 @@ import '../player/video_rect_support.dart';
 ///
 /// Video(
 ///   player: player,
-///   fit: BoxFit.contain,
 ///   controls: (context) => MyCustomControls(),
 /// )
 /// ```
 class Video extends StatefulWidget {
   /// The player instance.
   final Player player;
-
-  /// How the video should be inscribed into the widget's box.
-  final BoxFit fit;
 
   /// Builder for custom video controls overlay.
   final Widget Function(BuildContext context)? controls;
@@ -34,7 +30,6 @@ class Video extends StatefulWidget {
   const Video({
     super.key,
     required this.player,
-    this.fit = BoxFit.contain,
     this.controls,
     this.backgroundColor = Colors.black,
   });

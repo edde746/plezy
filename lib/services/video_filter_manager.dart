@@ -49,20 +49,6 @@ class VideoFilterManager {
   /// Current player size
   Size? get playerSize => _playerSize;
 
-  /// Get current BoxFit based on mode
-  BoxFit get currentBoxFit {
-    switch (_boxFitMode) {
-      case 0:
-        return BoxFit.contain;
-      case 1:
-        return BoxFit.cover;
-      case 2:
-        return BoxFit.fill;
-      default:
-        return BoxFit.contain;
-    }
-  }
-
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void cycleBoxFitMode() {
     _boxFitMode = (_boxFitMode + 1) % 3;
