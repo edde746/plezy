@@ -74,7 +74,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   late FocusNode _heroFocusNode;
   late FocusNode _refreshButtonFocusNode;
   late FocusNode _userButtonFocusNode;
-  bool _isHeroFocused = false;
   bool _isRefreshFocused = false;
   bool _isUserFocused = false;
 
@@ -170,19 +169,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
     _userButtonFocusNode = FocusNode(debugLabel: 'user_button');
-    _heroFocusNode.addListener(_onHeroFocusChange);
     _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
     _userButtonFocusNode.addListener(_onUserFocusChange);
     _loadContent();
     _startAutoScroll();
-  }
-
-  void _onHeroFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isHeroFocused = _heroFocusNode.hasFocus;
-      });
-    }
   }
 
   void _onRefreshFocusChange() {
@@ -332,7 +322,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroController.dispose();
     _scrollController.dispose();
     _indicatorAnimationController.dispose();
-    _heroFocusNode.removeListener(_onHeroFocusChange);
     _heroFocusNode.dispose();
     _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
     _refreshButtonFocusNode.dispose();
@@ -1533,76 +1522,62 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ? heroItem.viewOffset! / heroItem.duration!
         : 0.0;
 
-    // Wrap with AnimatedContainer for focus outline
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: _isHeroFocused
-              ? Theme.of(context).colorScheme.primary
-              : Colors.transparent,
-          width: 3,
+    return InkWell(
+      onTap: () {
+        appLogger.d('Playing: ${heroItem.title}');
+        navigateToVideoPlayer(context, metadata: heroItem);
+      },
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
         ),
-      ),
-      padding: EdgeInsets.all(_isHeroFocused ? 4 : 0),
-      child: InkWell(
-        onTap: () {
-          appLogger.d('Playing: ${heroItem.title}');
-          navigateToVideoPlayer(context, metadata: heroItem);
-        },
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.play_arrow, size: 20, color: Colors.black),
-              const SizedBox(width: 8),
-              if (hasProgress) ...[
-                // Progress bar
-                Container(
-                  width: 40,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: Colors.black26,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: progress,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.play_arrow, size: 20, color: Colors.black),
+            const SizedBox(width: 8),
+            if (hasProgress) ...[
+              // Progress bar
+              Container(
+                width: 40,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: progress,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  t.discover.minutesLeft(minutes: minutesLeft),
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                t.discover.minutesLeft(minutes: minutesLeft),
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-              ] else
-                Text(
-                  t.discover.play,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+            ] else
+              Text(
+                t.discover.play,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
