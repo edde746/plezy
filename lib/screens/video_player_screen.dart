@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../mpv/mpv.dart';
 
@@ -180,13 +181,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // Clear media controls when app truly goes to background
         // (we don't support background playback)
         OsMediaControls.clear();
+        // Disable wakelock when app goes to background
+        WakelockPlus.disable();
         appLogger.d(
-          'Media controls cleared due to app being paused/backgrounded',
+          'Media controls cleared and wakelock disabled due to app being paused/backgrounded',
         );
         break;
       case AppLifecycleState.resumed:
-        // Restore media controls when app is resumed
+        // Restore media controls and wakelock when app is resumed
         if (_isPlayerInitialized && mounted) {
+          // Re-enable wakelock since we're back in the video player
+          WakelockPlus.enable();
+
           // Restore media metadata
           final client = _getClientForMetadata(context);
           if (_mediaControlsManager != null) {
@@ -207,7 +213,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           }
 
           _updateMediaControlsPlaybackState();
-          appLogger.d('Media controls restored on app resume');
+          appLogger.d('Media controls restored and wakelock re-enabled on app resume');
         }
         break;
       case AppLifecycleState.detached:
@@ -330,6 +336,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         setState(() {
           _isPlayerInitialized = true;
         });
+
+        // Enable wakelock to prevent screen from turning off during playback
+        WakelockPlus.enable();
+        appLogger.d('Wakelock enabled for video playback');
       }
 
       // Get the video URL and start playback
@@ -750,6 +760,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Clear media controls and dispose manager
     _mediaControlsManager?.clear();
     _mediaControlsManager?.dispose();
+
+    // Disable wakelock when leaving the video player
+    WakelockPlus.disable();
+    appLogger.d('Wakelock disabled');
 
     // Restore system UI and orientation preferences (skip if navigating to another video)
     if (!_isReplacingWithVideo) {

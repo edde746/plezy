@@ -33,6 +33,7 @@ dependencies:
       url: https://github.com/edde746/os-media-controls
       ref: 75dc5642cd148c54c03fe96976702b8d31c48599
   rate_limiter: ^1.0.0
+  wakelock_plus: ^1.2.10
   path_provider: ^2.1.0
   path: ^1.9.0
   gamepads: ^0.1.9
