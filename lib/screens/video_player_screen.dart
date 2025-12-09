@@ -1440,7 +1440,7 @@ String _getHwdecValue(bool enabled) {
   if (Platform.isMacOS || Platform.isIOS) {
     return 'videotoolbox';
   } else if (Platform.isAndroid) {
-    return 'mediacodec-copy';
+    return 'auto-safe';
   } else {
     return 'auto'; // Windows, Linux
   }
