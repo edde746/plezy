@@ -70,7 +70,9 @@ class NavigationRailItem extends StatelessWidget {
                   : isSelected
                   ? t.text.withValues(alpha: 0.1) // Just selected
                   : isFocused
-                  ? t.text.withValues(alpha: 0.12) // Just focused (more visible)
+                  ? t.text.withValues(
+                      alpha: 0.12,
+                    ) // Just focused (more visible)
                   : null,
               borderRadius: borderRadius,
             ),
@@ -96,6 +98,7 @@ class NavigationRailItem extends StatelessWidget {
 class SideNavigationRail extends StatefulWidget {
   final int selectedIndex;
   final String? selectedLibraryKey;
+  final bool isOfflineMode;
   final ValueChanged<int> onDestinationSelected;
   final ValueChanged<String> onLibrarySelected;
 
@@ -103,6 +106,7 @@ class SideNavigationRail extends StatefulWidget {
     super.key,
     required this.selectedIndex,
     this.selectedLibraryKey,
+    this.isOfflineMode = false,
     required this.onDestinationSelected,
     required this.onLibrarySelected,
   });
@@ -120,12 +124,14 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   late FocusNode _homeFocusNode;
   late FocusNode _librariesFocusNode;
   late FocusNode _searchFocusNode;
+  late FocusNode _downloadsFocusNode;
   late FocusNode _settingsFocusNode;
 
   // Focus state tracking
   bool _isHomeFocused = false;
   bool _isLibrariesFocused = false;
   bool _isSearchFocused = false;
+  bool _isDownloadsFocused = false;
   bool _isSettingsFocused = false;
 
   // Map to store library item focus nodes and states
@@ -138,6 +144,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _homeFocusNode = FocusNode(debugLabel: 'nav_home');
     _librariesFocusNode = FocusNode(debugLabel: 'nav_libraries');
     _searchFocusNode = FocusNode(debugLabel: 'nav_search');
+    _downloadsFocusNode = FocusNode(debugLabel: 'nav_downloads');
     _settingsFocusNode = FocusNode(debugLabel: 'nav_settings');
 
     _homeFocusNode.addListener(
@@ -153,6 +160,11 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _searchFocusNode.addListener(
       () => _onFocusChange(_searchFocusNode, () {
         setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
+      }),
+    );
+    _downloadsFocusNode.addListener(
+      () => _onFocusChange(_downloadsFocusNode, () {
+        setState(() => _isDownloadsFocused = _downloadsFocusNode.hasFocus);
       }),
     );
     _settingsFocusNode.addListener(
@@ -173,6 +185,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _homeFocusNode.dispose();
     _librariesFocusNode.dispose();
     _searchFocusNode.dispose();
+    _downloadsFocusNode.dispose();
     _settingsFocusNode.dispose();
     for (final node in _libraryFocusNodes.values) {
       node.dispose();
@@ -218,6 +231,9 @@ class SideNavigationRailState extends State<SideNavigationRail> {
           _searchFocusNode.requestFocus();
           break;
         case 3:
+          _downloadsFocusNode.requestFocus();
+          break;
+        case 4:
           _settingsFocusNode.requestFocus();
           break;
       }
@@ -359,45 +375,69 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   children: [
-                    // Home
+                    // In offline mode, only show Downloads and Settings
+                    if (!widget.isOfflineMode) ...[
+                      // Home
+                      _buildNavItem(
+                        icon: Icons.home_outlined,
+                        selectedIcon: Icons.home,
+                        label: Translations.of(context).navigation.home,
+                        isSelected: widget.selectedIndex == 0,
+                        isFocused: _isHomeFocused,
+                        onTap: () => widget.onDestinationSelected(0),
+                        focusNode: _homeFocusNode,
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Libraries section
+                      _buildLibrariesSection(visibleLibraries, t),
+
+                      const SizedBox(height: 8),
+
+                      // Search
+                      _buildNavItem(
+                        icon: Icons.search,
+                        selectedIcon: Icons.search,
+                        label: Translations.of(context).navigation.search,
+                        isSelected: widget.selectedIndex == 2,
+                        isFocused: _isSearchFocused,
+                        onTap: () => widget.onDestinationSelected(2),
+                        focusNode: _searchFocusNode,
+                      ),
+
+                      const SizedBox(height: 8),
+                    ],
+
+                    // Downloads (index 0 in offline mode, 3 in online mode)
                     _buildNavItem(
-                      icon: Icons.home_outlined,
-                      selectedIcon: Icons.home,
-                      label: Translations.of(context).navigation.home,
-                      isSelected: widget.selectedIndex == 0,
-                      isFocused: _isHomeFocused,
-                      onTap: () => widget.onDestinationSelected(0),
-                      focusNode: _homeFocusNode,
+                      icon: Icons.download_outlined,
+                      selectedIcon: Icons.download,
+                      label: Translations.of(context).navigation.downloads,
+                      isSelected: widget.isOfflineMode
+                          ? widget.selectedIndex == 0
+                          : widget.selectedIndex == 3,
+                      isFocused: _isDownloadsFocused,
+                      onTap: () => widget.onDestinationSelected(
+                        widget.isOfflineMode ? 0 : 3,
+                      ),
+                      focusNode: _downloadsFocusNode,
                     ),
 
                     const SizedBox(height: 8),
 
-                    // Libraries section
-                    _buildLibrariesSection(visibleLibraries, t),
-
-                    const SizedBox(height: 8),
-
-                    // Search
-                    _buildNavItem(
-                      icon: Icons.search,
-                      selectedIcon: Icons.search,
-                      label: Translations.of(context).navigation.search,
-                      isSelected: widget.selectedIndex == 2,
-                      isFocused: _isSearchFocused,
-                      onTap: () => widget.onDestinationSelected(2),
-                      focusNode: _searchFocusNode,
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Settings
+                    // Settings (index 1 in offline mode, 4 in online mode)
                     _buildNavItem(
                       icon: Icons.settings_outlined,
                       selectedIcon: Icons.settings,
                       label: Translations.of(context).navigation.settings,
-                      isSelected: widget.selectedIndex == 3,
+                      isSelected: widget.isOfflineMode
+                          ? widget.selectedIndex == 1
+                          : widget.selectedIndex == 4,
                       isFocused: _isSettingsFocused,
-                      onTap: () => widget.onDestinationSelected(3),
+                      onTap: () => widget.onDestinationSelected(
+                        widget.isOfflineMode ? 1 : 4,
+                      ),
                       focusNode: _settingsFocusNode,
                     ),
                   ],

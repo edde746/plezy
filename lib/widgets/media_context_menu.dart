@@ -6,12 +6,16 @@ import '../services/play_queue_launcher.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/download_provider.dart';
+import '../providers/offline_mode_provider.dart';
+import '../providers/offline_watch_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/collection_playlist_play_helper.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
+import '../utils/smart_deletion_handler.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/focusable_bottom_sheet.dart';
 import '../widgets/focusable_list_tile.dart';
@@ -264,6 +268,39 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
+      // Download options (for episodes, movies, shows, and seasons)
+      if (itemType == 'episode' ||
+          itemType == 'movie' ||
+          itemType == 'show' ||
+          itemType == 'season') {
+        final downloadProvider = Provider.of<DownloadProvider>(
+          context,
+          listen: false,
+        );
+        final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+        final isDownloaded = downloadProvider.isDownloaded(globalKey);
+
+        if (isDownloaded) {
+          // Show delete download option
+          menuActions.add(
+            _MenuAction(
+              value: 'delete_download',
+              icon: Icons.delete,
+              label: t.downloads.deleteDownload,
+            ),
+          );
+        } else {
+          // Show download option
+          menuActions.add(
+            _MenuAction(
+              value: 'download',
+              icon: Icons.download,
+              label: t.downloads.downloadNow,
+            ),
+          );
+        }
+      }
+
       // Add to... (for episodes, movies, shows, and seasons)
       if (itemType == 'episode' ||
           itemType == 'movie' ||
@@ -320,21 +357,55 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (!context.mounted) return;
 
+      // Check if we're in offline mode for watch actions
+      final offlineModeProvider = context.read<OfflineModeProvider>();
+      final isOffline = offlineModeProvider.isOffline;
+
       switch (selected) {
         case 'watch':
-          await _executeAction(
-            context,
-            () => client.markAsWatched(metadata!.ratingKey),
-            t.messages.markedAsWatched,
-          );
+          if (isOffline && metadata?.serverId != null) {
+            // Offline mode: queue action for later sync
+            final offlineWatch = context.read<OfflineWatchProvider>();
+            await offlineWatch.markAsWatched(
+              serverId: metadata!.serverId!,
+              ratingKey: metadata.ratingKey,
+            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(t.messages.markedAsWatchedOffline)),
+              );
+              widget.onRefresh?.call(metadata.ratingKey);
+            }
+          } else {
+            await _executeAction(
+              context,
+              () => client.markAsWatched(metadata!.ratingKey),
+              t.messages.markedAsWatched,
+            );
+          }
           break;
 
         case 'unwatch':
-          await _executeAction(
-            context,
-            () => client.markAsUnwatched(metadata!.ratingKey),
-            t.messages.markedAsUnwatched,
-          );
+          if (isOffline && metadata?.serverId != null) {
+            // Offline mode: queue action for later sync
+            final offlineWatch = context.read<OfflineWatchProvider>();
+            await offlineWatch.markAsUnwatched(
+              serverId: metadata!.serverId!,
+              ratingKey: metadata.ratingKey,
+            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(t.messages.markedAsUnwatchedOffline)),
+              );
+              widget.onRefresh?.call(metadata.ratingKey);
+            }
+          } else {
+            await _executeAction(
+              context,
+              () => client.markAsUnwatched(metadata!.ratingKey),
+              t.messages.markedAsUnwatched,
+            );
+          }
           break;
 
         case 'remove_from_continue_watching':
@@ -410,6 +481,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'delete':
           await _handleDelete(context, isCollection, isPlaylist);
           break;
+
+        case 'download':
+          await _handleDownload(context);
+          break;
+
+        case 'delete_download':
+          await _handleDeleteDownload(context);
+          break;
       }
     } finally {
       _isContextMenuOpen = false;
@@ -451,7 +530,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final client = _getClientForItem();
 
     try {
-      final metadata = await client.getMetadata(ratingKey);
+      final metadata = await client.getMetadataWithImages(ratingKey);
       if (metadata != null && context.mounted) {
         await Navigator.push(
           context,
@@ -750,7 +829,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (sectionId == null) {
         try {
           appLogger.d('  - Fetching full metadata for: ${metadata.ratingKey}');
-          final fullMetadata = await client.getMetadata(metadata.ratingKey);
+          final fullMetadata = await client.getMetadataWithImages(
+            metadata.ratingKey,
+          );
           if (fullMetadata != null) {
             sectionId = fullMetadata.librarySectionID;
             appLogger.d('  - Section ID from full metadata: $sectionId');
@@ -777,7 +858,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           appLogger.d(
             '  - Trying to get from parent: ${metadata.grandparentRatingKey}',
           );
-          final parentMeta = await client.getMetadata(
+          final parentMeta = await client.getMetadataWithImages(
             metadata.grandparentRatingKey!,
           );
           sectionId = parentMeta?.librarySectionID;
@@ -1144,6 +1225,98 @@ class MediaContextMenuState extends State<MediaContextMenu> {
                   : t.playlists.errorDeleting,
             ),
           ),
+        );
+      }
+    }
+  }
+
+  /// Handle download action
+  Future<void> _handleDownload(BuildContext context) async {
+    final downloadProvider = Provider.of<DownloadProvider>(
+      context,
+      listen: false,
+    );
+    final metadata = widget.item as PlexMetadata;
+    final client = _getClientForItem();
+
+    try {
+      final count = await downloadProvider.queueDownload(metadata, client);
+      if (context.mounted) {
+        // Show appropriate message based on count
+        final message = count > 1
+            ? t.downloads.episodesQueued(count: count)
+            : t.downloads.downloadQueued;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+    } on CellularDownloadBlockedException {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.settings.cellularDownloadBlocked)),
+        );
+      }
+    } catch (e) {
+      appLogger.e('Failed to queue download', error: e);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        );
+      }
+    }
+  }
+
+  /// Handle delete download action
+  Future<void> _handleDeleteDownload(BuildContext context) async {
+    final downloadProvider = Provider.of<DownloadProvider>(
+      context,
+      listen: false,
+    );
+    final metadata = widget.item as PlexMetadata;
+    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.downloads.deleteDownload),
+        content: Text(t.downloads.deleteConfirm(title: metadata.title)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(t.common.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(t.common.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      // Use smart deletion handler (shows progress only if >500ms)
+      await SmartDeletionHandler.deleteWithProgress(
+        context: context,
+        provider: downloadProvider,
+        globalKey: globalKey,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t.downloads.downloadDeleted)));
+        // Refresh the view if needed
+        widget.onRefresh?.call(metadata.ratingKey);
+      }
+    } catch (e) {
+      appLogger.e('Failed to delete download', error: e);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
         );
       }
     }

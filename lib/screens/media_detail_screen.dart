@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +11,10 @@ import '../widgets/plex_optimized_image.dart';
 import '../utils/plex_image_helper.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
+import '../models/download_status.dart';
 import '../providers/playback_state_provider.dart';
+import '../providers/download_provider.dart';
+import '../providers/offline_watch_provider.dart';
 import '../theme/theme_helper.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_rating_formatter.dart';
@@ -24,8 +29,13 @@ import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
   final PlexMetadata metadata;
+  final bool isOffline;
 
-  const MediaDetailScreen({super.key, required this.metadata});
+  const MediaDetailScreen({
+    super.key,
+    required this.metadata,
+    this.isOffline = false,
+  });
 
   @override
   State<MediaDetailScreen> createState() => _MediaDetailScreenState();
@@ -53,8 +63,64 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     super.dispose();
   }
 
+  /// Build title text widget for clear logo fallback
+  Widget _buildTitleText(BuildContext context, String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.displaySmall?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8),
+          ],
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  /// Build radial progress indicator for download button
+  /// If progressPercent is null or 0, shows indeterminate spinner
+  Widget _buildRadialProgress(double? progressPercent) {
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Background circle (only show if we have determinate progress)
+          if (progressPercent != null && progressPercent > 0)
+            CircularProgressIndicator(
+              value: 1.0,
+              strokeWidth: 2.0,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              ),
+            ),
+          // Progress circle (indeterminate if no progress, determinate otherwise)
+          CircularProgressIndicator(
+            value: (progressPercent != null && progressPercent > 0)
+                ? progressPercent
+                : null, // null = indeterminate
+            strokeWidth: 2.0,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Get the correct PlexClient for this metadata's server
-  PlexClient _getClientForMetadata(BuildContext context) {
+  /// Returns null in offline mode or if serverId is null
+  PlexClient? _getClientForMetadata(BuildContext context) {
+    if (widget.isOffline || widget.metadata.serverId == null) {
+      return null;
+    }
     return context.getClientForServer(widget.metadata.serverId!);
   }
 
@@ -63,9 +129,34 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       _isLoadingMetadata = true;
     });
 
+    // Offline mode: use passed metadata directly, load seasons from downloads
+    if (widget.isOffline) {
+      final type = widget.metadata.type.toLowerCase();
+
+      setState(() {
+        _fullMetadata = widget.metadata;
+        _isLoadingMetadata = false;
+      });
+
+      if (type == 'show') {
+        _loadSeasonsFromDownloads();
+        // Get offline OnDeck episode
+        _loadOfflineOnDeckEpisode();
+      }
+      return;
+    }
+
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
+      if (client == null) {
+        // No client available, use passed metadata
+        setState(() {
+          _fullMetadata = widget.metadata;
+          _isLoadingMetadata = false;
+        });
+        return;
+      }
 
       // Fetch full metadata with clearLogo and OnDeck episode
       final result = await client.getMetadataWithImagesAndOnDeck(
@@ -129,7 +220,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
 
-      final seasons = await client.getChildren(widget.metadata.ratingKey);
+      final seasons =
+          await client?.getChildren(widget.metadata.ratingKey) ?? [];
       // Preserve serverId for each season
       final seasonsWithServerId = seasons
           .map(
@@ -150,12 +242,73 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     }
   }
 
+  /// Load seasons from downloaded episodes (offline mode)
+  void _loadSeasonsFromDownloads() {
+    setState(() {
+      _isLoadingSeasons = true;
+    });
+
+    final downloadProvider = context.read<DownloadProvider>();
+    final episodes = downloadProvider.getDownloadedEpisodesForShow(
+      widget.metadata.ratingKey,
+    );
+
+    // Group episodes by season
+    final Map<int, List<PlexMetadata>> seasonMap = {};
+    for (final episode in episodes) {
+      final seasonNum = episode.parentIndex ?? 0;
+      seasonMap.putIfAbsent(seasonNum, () => []).add(episode);
+    }
+
+    // Create season metadata from episodes
+    final seasons = seasonMap.entries.map((entry) {
+      final firstEp = entry.value.first;
+      return PlexMetadata(
+        ratingKey: firstEp.parentRatingKey ?? '',
+        key: '/library/metadata/${firstEp.parentRatingKey}',
+        type: 'season',
+        title: firstEp.parentTitle ?? 'Season ${entry.key}',
+        index: entry.key,
+        thumb: firstEp.parentThumb,
+        parentRatingKey: firstEp.grandparentRatingKey,
+        serverId: widget.metadata.serverId,
+        serverName: widget.metadata.serverName,
+      );
+    }).toList()..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+
+    setState(() {
+      _seasons = seasons;
+      _isLoadingSeasons = false;
+    });
+  }
+
+  /// Load the next unwatched episode for offline mode (offline OnDeck)
+  Future<void> _loadOfflineOnDeckEpisode() async {
+    final offlineWatchProvider = context.read<OfflineWatchProvider>();
+    final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(
+      widget.metadata.ratingKey,
+    );
+
+    if (nextEpisode != null && mounted) {
+      setState(() {
+        _onDeckEpisode = nextEpisode;
+      });
+      appLogger.d(
+        'Offline OnDeck: S${nextEpisode.parentIndex}E${nextEpisode.index} - ${nextEpisode.title}',
+      );
+    }
+  }
+
   /// Update watch state without full screen rebuild
   /// This preserves scroll position and only updates watch-related data
   Future<void> _updateWatchState() async {
+    // Skip in offline mode
+    if (widget.isOffline) return;
+
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
+      if (client == null) return;
 
       final metadata = await client.getMetadataWithImages(
         widget.metadata.ratingKey,
@@ -199,12 +352,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   Future<void> _playFirstEpisode() async {
     try {
-      // Use server-specific client for this metadata
-      final client = _getClientForMetadata(context);
-
       // If seasons aren't loaded yet, wait for them or load them
       if (_seasons.isEmpty && !_isLoadingSeasons) {
-        await _loadSeasons();
+        if (widget.isOffline) {
+          _loadSeasonsFromDownloads();
+        } else {
+          await _loadSeasons();
+        }
       }
 
       // Wait for seasons to finish loading if they're currently loading
@@ -225,7 +379,24 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       final firstSeason = _seasons.first;
 
       // Get episodes of the first season
-      final episodes = await client.getChildren(firstSeason.ratingKey);
+      List<PlexMetadata> episodes;
+      if (widget.isOffline) {
+        // In offline mode, get episodes from downloads
+        final downloadProvider = context.read<DownloadProvider>();
+        final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(
+          widget.metadata.ratingKey,
+        );
+        // Filter to episodes of this season
+        episodes =
+            allEpisodes
+                .where((ep) => ep.parentIndex == firstSeason.index)
+                .toList()
+              ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+      } else {
+        final client = _getClientForMetadata(context);
+        if (client == null) return;
+        episodes = await client.getChildren(firstSeason.ratingKey);
+      }
 
       if (episodes.isEmpty) {
         if (mounted) {
@@ -244,12 +415,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         serverName: widget.metadata.serverName,
       );
       if (mounted) {
-        // Client already retrieved earlier in the method
         appLogger.d('Playing first episode: ${episodeWithServerId.title}');
-        await navigateToVideoPlayer(context, metadata: episodeWithServerId);
+        await navigateToVideoPlayer(
+          context,
+          metadata: episodeWithServerId,
+          isOffline: widget.isOffline,
+        );
         appLogger.d('Returned from playback, refreshing metadata');
-        // Refresh metadata when returning from video player
-        _loadFullMetadata();
+        // Refresh metadata when returning from video player (skip if offline)
+        if (!widget.isOffline) {
+          _loadFullMetadata();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -261,11 +437,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   }
 
   /// Handle shuffle play using play queues
+  /// Note: Shuffle requires server connectivity (play queue API)
   Future<void> _handleShufflePlayWithQueue(
     BuildContext context,
     PlexMetadata metadata,
   ) async {
+    // Shuffle requires server connectivity
+    if (widget.isOffline) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Shuffle not available offline')),
+        );
+      }
+      return;
+    }
+
     final client = _getClientForMetadata(context);
+    if (client == null) return;
 
     final playbackState = context.read<PlaybackStateProvider>();
     final itemType = metadata.type.toLowerCase();
@@ -401,6 +589,37 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     if (metadata.art != null)
                       Builder(
                         builder: (context) {
+                          // Check for offline local file first
+                          if (widget.isOffline &&
+                              widget.metadata.serverId != null) {
+                            final localPath = context
+                                .read<DownloadProvider>()
+                                .getArtworkLocalPath(
+                                  widget.metadata.serverId!,
+                                  metadata.art,
+                                );
+                            if (localPath != null &&
+                                File(localPath).existsSync()) {
+                              return Image.file(
+                                File(localPath),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                    ),
+                              );
+                            }
+                            // Offline but no local file - show placeholder
+                            return Container(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                            );
+                          }
+
+                          // Online - use network image
                           final client = _getClientForMetadata(context);
                           final mediaQuery = MediaQuery.of(context);
                           final imageUrl = PlexImageHelper.getOptimizedImageUrl(
@@ -470,6 +689,37 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   width: 400,
                                   child: Builder(
                                     builder: (context) {
+                                      // Check for offline local file first
+                                      if (widget.isOffline &&
+                                          widget.metadata.serverId != null) {
+                                        final localPath = context
+                                            .read<DownloadProvider>()
+                                            .getArtworkLocalPath(
+                                              widget.metadata.serverId!,
+                                              metadata.clearLogo,
+                                            );
+                                        if (localPath != null &&
+                                            File(localPath).existsSync()) {
+                                          return Image.file(
+                                            File(localPath),
+                                            fit: BoxFit.contain,
+                                            alignment: Alignment.centerLeft,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    _buildTitleText(
+                                                      context,
+                                                      metadata.title,
+                                                    ),
+                                          );
+                                        }
+                                        // Offline but no local file - show title text
+                                        return _buildTitleText(
+                                          context,
+                                          metadata.title,
+                                        );
+                                      }
+
+                                      // Online - use network image
                                       final client = _getClientForMetadata(
                                         context,
                                       );
@@ -520,29 +770,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                           ),
                                         ),
                                         errorWidget: (context, url, error) {
-                                          return Align(
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              metadata.title,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .displaySmall
-                                                  ?.copyWith(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                    shadows: [
-                                                      Shadow(
-                                                        color: Colors.black
-                                                            .withValues(
-                                                              alpha: 0.5,
-                                                            ),
-                                                        blurRadius: 8,
-                                                      ),
-                                                    ],
-                                                  ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                          return _buildTitleText(
+                                            context,
+                                            metadata.title,
                                           );
                                         },
                                       );
@@ -748,12 +978,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                     await navigateToVideoPlayer(
                                       context,
                                       metadata: _onDeckEpisode!,
+                                      isOffline: widget.isOffline,
                                     );
                                     appLogger.d(
                                       'Returned from playback, refreshing metadata',
                                     );
                                     // Refresh metadata when returning from video player
-                                    _loadFullMetadata();
+                                    if (!widget.isOffline) {
+                                      _loadFullMetadata();
+                                    }
                                   } else {
                                     // No on deck episode, fetch first episode of first season
                                     await _playFirstEpisode();
@@ -764,15 +997,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   await navigateToVideoPlayer(
                                     context,
                                     metadata: metadata,
+                                    isOffline: widget.isOffline,
                                   );
                                   appLogger.d(
                                     'Returned from playback, refreshing metadata',
                                   );
                                   // Refresh metadata when returning from video player
-                                  _loadFullMetadata();
+                                  if (!widget.isOffline) {
+                                    _loadFullMetadata();
+                                  }
                                 }
                               },
-                              icon: const Icon(Icons.play_arrow, size: 20),
+                              icon: Icon(
+                                _getPlayButtonIcon(metadata),
+                                size: 20,
+                              ),
                               label: Text(
                                 _getPlayButtonLabel(metadata),
                                 style: const TextStyle(fontSize: 16),
@@ -806,21 +1045,449 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           ),
                           const SizedBox(width: 12),
                         ],
+                        // Download button (hide in offline mode - already downloaded)
+                        if (!widget.isOffline)
+                          Consumer<DownloadProvider>(
+                            builder: (context, downloadProvider, _) {
+                              final globalKey =
+                                  '${metadata.serverId}:${metadata.ratingKey}';
+                              final progress = downloadProvider.getProgress(
+                                globalKey,
+                              );
+                              final isQueueing = downloadProvider.isQueueing(
+                                globalKey,
+                              );
+
+                              // Debug logging
+                              if (progress != null) {
+                                appLogger.d(
+                                  'UI rebuilding for $globalKey: status=${progress.status}, progress=${progress.progress}%',
+                                );
+                              }
+
+                              // State 1: Queueing (building download queue)
+                              if (isQueueing) {
+                                return IconButton.filledTonal(
+                                  onPressed: null,
+                                  icon: const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  iconSize: 20,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                    maximumSize: const Size(48, 48),
+                                  ),
+                                );
+                              }
+
+                              // State 2: Queued (waiting to download)
+                              if (progress?.status == DownloadStatus.queued) {
+                                final currentFile = progress?.currentFile;
+                                final tooltip =
+                                    currentFile != null &&
+                                        currentFile.contains('episodes')
+                                    ? 'Queued $currentFile'
+                                    : 'Queued';
+
+                                return IconButton.filledTonal(
+                                  onPressed: null,
+                                  tooltip: tooltip,
+                                  icon: const Icon(Icons.schedule),
+                                  iconSize: 20,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                    maximumSize: const Size(48, 48),
+                                  ),
+                                );
+                              }
+
+                              // State 3: Downloading (active download)
+                              if (progress?.status ==
+                                  DownloadStatus.downloading) {
+                                // Show episode count in tooltip for shows/seasons
+                                final currentFile = progress?.currentFile;
+                                final tooltip =
+                                    currentFile != null &&
+                                        currentFile.contains('episodes')
+                                    ? 'Downloading $currentFile'
+                                    : 'Downloading...';
+
+                                return IconButton.filledTonal(
+                                  onPressed: null,
+                                  tooltip: tooltip,
+                                  icon: _buildRadialProgress(
+                                    progress?.progressPercent,
+                                  ),
+                                  iconSize: 20,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                    maximumSize: const Size(48, 48),
+                                  ),
+                                );
+                              }
+
+                              // State 4: Paused (can resume)
+                              if (progress?.status == DownloadStatus.paused) {
+                                return IconButton.filledTonal(
+                                  onPressed: () async {
+                                    final client = _getClientForMetadata(
+                                      context,
+                                    );
+                                    if (client == null) return;
+                                    await downloadProvider.resumeDownload(
+                                      globalKey,
+                                      client,
+                                    );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Download resumed'),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.pause_circle_outline),
+                                  tooltip: 'Resume download',
+                                  iconSize: 20,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                    maximumSize: const Size(48, 48),
+                                    foregroundColor: Colors.amber,
+                                  ),
+                                );
+                              }
+
+                              // State 5: Failed (can retry)
+                              if (progress?.status == DownloadStatus.failed) {
+                                return IconButton.filledTonal(
+                                  onPressed: () async {
+                                    final client = _getClientForMetadata(
+                                      context,
+                                    );
+                                    if (client == null) return;
+
+                                    // Delete failed download and retry
+                                    await downloadProvider.deleteDownload(
+                                      globalKey,
+                                    );
+                                    try {
+                                      await downloadProvider.queueDownload(
+                                        metadata,
+                                        client,
+                                      );
+
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              t.downloads.downloadQueued,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } on CellularDownloadBlockedException {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              t
+                                                  .settings
+                                                  .cellularDownloadBlocked,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.error_outline),
+                                  tooltip: 'Retry download',
+                                  iconSize: 20,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                    maximumSize: const Size(48, 48),
+                                    foregroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+
+                              // State 6: Cancelled (can delete or retry)
+                              if (progress?.status ==
+                                  DownloadStatus.cancelled) {
+                                return IconButton.filledTonal(
+                                  onPressed: () async {
+                                    // Show options: Delete or Retry
+                                    final action = await showDialog<String>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Cancelled Download'),
+                                        content: const Text(
+                                          'This download was cancelled. What would you like to do?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(
+                                              context,
+                                              'delete',
+                                            ),
+                                            child: Text(t.common.delete),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, 'retry'),
+                                            child: const Text('Retry'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (action == 'delete' && context.mounted) {
+                                      await downloadProvider.deleteDownload(
+                                        globalKey,
+                                      );
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              t.downloads.downloadDeleted,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } else if (action == 'retry' &&
+                                        context.mounted) {
+                                      final client = _getClientForMetadata(
+                                        context,
+                                      );
+                                      if (client == null) return;
+                                      await downloadProvider.deleteDownload(
+                                        globalKey,
+                                      );
+                                      try {
+                                        await downloadProvider.queueDownload(
+                                          metadata,
+                                          client,
+                                        );
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                t.downloads.downloadQueued,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } on CellularDownloadBlockedException {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                t
+                                                    .settings
+                                                    .cellularDownloadBlocked,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.cancel_outlined),
+                                  tooltip: 'Cancelled download',
+                                  iconSize: 20,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                    maximumSize: const Size(48, 48),
+                                    foregroundColor: Colors.grey,
+                                  ),
+                                );
+                              }
+
+                              // State 7: Partial Download (some episodes downloaded, not all)
+                              if (progress?.status == DownloadStatus.partial) {
+                                final currentFile = progress?.currentFile;
+                                final tooltip = currentFile != null
+                                    ? 'Downloaded $currentFile - Click to complete'
+                                    : 'Partially downloaded - Click to complete';
+
+                                return IconButton.filledTonal(
+                                  onPressed: () async {
+                                    final client = _getClientForMetadata(
+                                      context,
+                                    );
+                                    if (client == null) return;
+
+                                    // Queue only the missing episodes
+                                    final count = await downloadProvider
+                                        .queueMissingEpisodes(metadata, client);
+
+                                    if (context.mounted) {
+                                      final message = count > 0
+                                          ? t.downloads.episodesQueued(
+                                              count: count,
+                                            )
+                                          : 'All episodes already downloaded';
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(message)),
+                                      );
+                                    }
+                                  },
+                                  tooltip: tooltip,
+                                  icon: const Icon(Icons.downloading),
+                                  iconSize: 20,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                    maximumSize: const Size(48, 48),
+                                    foregroundColor: Colors.orange,
+                                  ),
+                                );
+                              }
+
+                              // State 8: Downloaded/Completed (can delete)
+                              if (downloadProvider.isDownloaded(globalKey)) {
+                                return IconButton.filledTonal(
+                                  onPressed: () async {
+                                    // Show delete download confirmation
+                                    final confirmed = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: Text(t.downloads.deleteDownload),
+                                        content: Text(
+                                          t.downloads.deleteConfirm(
+                                            title: metadata.title,
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, false),
+                                            child: Text(t.common.cancel),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, true),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Colors.red,
+                                            ),
+                                            child: Text(t.common.delete),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirmed == true && context.mounted) {
+                                      await downloadProvider.deleteDownload(
+                                        globalKey,
+                                      );
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              t.downloads.downloadDeleted,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(Icons.file_download_done),
+                                  tooltip: t.downloads.deleteDownload,
+                                  iconSize: 20,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(48, 48),
+                                    maximumSize: const Size(48, 48),
+                                    foregroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+
+                              // State 9: Not downloaded (default - can download)
+                              return IconButton.filledTonal(
+                                onPressed: () async {
+                                  final client = _getClientForMetadata(context);
+                                  if (client == null) return;
+                                  final count = await downloadProvider
+                                      .queueDownload(metadata, client);
+                                  if (context.mounted) {
+                                    final message = count > 1
+                                        ? t.downloads.episodesQueued(
+                                            count: count,
+                                          )
+                                        : t.downloads.downloadQueued;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(message)),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.download),
+                                tooltip: t.downloads.downloadNow,
+                                iconSize: 20,
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(48, 48),
+                                  maximumSize: const Size(48, 48),
+                                ),
+                              );
+                            },
+                          ),
+                        const SizedBox(width: 12),
+                        // Mark as watched/unwatched (works offline too)
                         IconButton.filledTonal(
                           onPressed: () async {
                             try {
-                              final client = _getClientForMetadata(context);
-
-                              await client.markAsWatched(metadata.ratingKey);
-                              if (context.mounted) {
-                                _watchStateChanged = true;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(t.messages.markedAsWatched),
-                                  ),
+                              if (widget.isOffline) {
+                                // Offline mode: queue action for later sync
+                                final offlineWatch = context
+                                    .read<OfflineWatchProvider>();
+                                await offlineWatch.markAsWatched(
+                                  serverId: metadata.serverId!,
+                                  ratingKey: metadata.ratingKey,
                                 );
-                                // Update watch state without full rebuild
-                                _updateWatchState();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        t.messages.markedAsWatchedOffline,
+                                      ),
+                                    ),
+                                  );
+                                  // Refresh offline OnDeck
+                                  _loadOfflineOnDeckEpisode();
+                                }
+                              } else {
+                                // Online mode: send to server
+                                final client = _getClientForMetadata(context);
+                                if (client == null) return;
+
+                                await client.markAsWatched(metadata.ratingKey);
+                                if (context.mounted) {
+                                  _watchStateChanged = true;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(t.messages.markedAsWatched),
+                                    ),
+                                  );
+                                  // Update watch state without full rebuild
+                                  _updateWatchState();
+                                }
                               }
                             } catch (e) {
                               if (context.mounted) {
@@ -848,18 +1515,45 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         IconButton.filledTonal(
                           onPressed: () async {
                             try {
-                              final client = _getClientForMetadata(context);
-
-                              await client.markAsUnwatched(metadata.ratingKey);
-                              if (context.mounted) {
-                                _watchStateChanged = true;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(t.messages.markedAsUnwatched),
-                                  ),
+                              if (widget.isOffline) {
+                                // Offline mode: queue action for later sync
+                                final offlineWatch = context
+                                    .read<OfflineWatchProvider>();
+                                await offlineWatch.markAsUnwatched(
+                                  serverId: metadata.serverId!,
+                                  ratingKey: metadata.ratingKey,
                                 );
-                                // Update watch state without full rebuild
-                                _updateWatchState();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        t.messages.markedAsUnwatchedOffline,
+                                      ),
+                                    ),
+                                  );
+                                  // Refresh offline OnDeck
+                                  _loadOfflineOnDeckEpisode();
+                                }
+                              } else {
+                                // Online mode: send to server
+                                final client = _getClientForMetadata(context);
+                                if (client == null) return;
+
+                                await client.markAsUnwatched(
+                                  metadata.ratingKey,
+                                );
+                                if (context.mounted) {
+                                  _watchStateChanged = true;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        t.messages.markedAsUnwatched,
+                                      ),
+                                    ),
+                                  );
+                                  // Update watch state without full rebuild
+                                  _updateWatchState();
+                                }
                               }
                             } catch (e) {
                               if (context.mounted) {
@@ -943,16 +1637,31 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final season = _seasons[index];
+                            // Look up each season's artwork, not the show's
+                            String? seasonPosterPath;
+                            if (widget.isOffline && season.serverId != null) {
+                              seasonPosterPath = context
+                                  .read<DownloadProvider>()
+                                  .getArtworkLocalPath(
+                                    season.serverId!,
+                                    season.thumb,
+                                  );
+                            }
                             return _SeasonCard(
                               season: season,
                               client: _getClientForMetadata(context),
+                              isOffline: widget.isOffline,
+                              localPosterPath: seasonPosterPath,
                               onTap: () async {
                                 final watchStateChanged =
                                     await Navigator.push<bool>(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
-                                            SeasonDetailScreen(season: season),
+                                            SeasonDetailScreen(
+                                              season: season,
+                                              isOffline: widget.isOffline,
+                                            ),
                                       ),
                                     );
                                 if (watchStateChanged == true) {
@@ -1133,52 +1842,66 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   }
 
   String _getPlayButtonLabel(PlexMetadata metadata) {
-    // For TV shows
+    // For TV shows - use compact S1E1 format
     if (metadata.type.toLowerCase() == 'show') {
       if (_onDeckEpisode != null) {
         final episode = _onDeckEpisode!;
         final seasonNum = episode.parentIndex ?? 0;
         final episodeNum = episode.index ?? 0;
 
-        // Check if episode has been partially watched (viewOffset > 0)
-        if (episode.viewOffset != null && episode.viewOffset! > 0) {
-          return t.discover.resumeEpisode(
-            season: seasonNum.toString(),
-            episode: episodeNum.toString(),
-          );
-        } else {
-          return t.discover.playEpisode(
-            season: seasonNum.toString(),
-            episode: episodeNum.toString(),
-          );
-        }
+        // Use the same format for both play and resume
+        // (icon will indicate the difference)
+        return t.discover.playEpisode(
+          season: seasonNum.toString(),
+          episode: episodeNum.toString(),
+        );
       } else {
         // No on deck episode, will play first episode
         return t.discover.playEpisode(season: '1', episode: '1');
       }
     }
 
-    // For movies or episodes, check if partially watched
-    if (metadata.viewOffset != null && metadata.viewOffset! > 0) {
-      return t.discover.resume;
+    // For movies or episodes - NO TEXT, just icon
+    return '';
+  }
+
+  IconData _getPlayButtonIcon(PlexMetadata metadata) {
+    // For TV shows
+    if (metadata.type.toLowerCase() == 'show') {
+      if (_onDeckEpisode != null) {
+        final episode = _onDeckEpisode!;
+        // Check if episode has been partially watched
+        if (episode.viewOffset != null && episode.viewOffset! > 0) {
+          return Icons.restore; // Resume icon
+        }
+      }
+    } else {
+      // For movies or episodes
+      if (metadata.viewOffset != null && metadata.viewOffset! > 0) {
+        return Icons.restore; // Resume icon
+      }
     }
 
-    return t.discover.play;
+    return Icons.play_arrow; // Default play icon
   }
 }
 
 /// Season card widget
 class _SeasonCard extends StatelessWidget {
   final PlexMetadata season;
-  final PlexClient client;
+  final PlexClient? client;
   final VoidCallback onTap;
   final VoidCallback onRefresh;
+  final bool isOffline;
+  final String? localPosterPath;
 
   const _SeasonCard({
     required this.season,
-    required this.client,
+    this.client,
     required this.onTap,
     required this.onRefresh,
+    this.isOffline = false,
+    this.localPosterPath,
   });
 
   @override
@@ -1201,44 +1924,56 @@ class _SeasonCard extends StatelessWidget {
               child: Row(
                 children: [
                   // Season poster
-                  if (season.thumb != null)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: PlexOptimizedImage.poster(
-                        client: client,
-                        imagePath: season.thumb,
-                        width: 80,
-                        height: 120,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          width: 80,
-                          height: 120,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          width: 80,
-                          height: 120,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                          child: const Icon(Icons.movie, size: 32),
-                        ),
-                      ),
-                    )
-                  else
-                    Container(
-                      width: 80,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(Icons.movie, size: 32),
-                    ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: isOffline && localPosterPath != null
+                        ? Image.file(
+                            File(localPosterPath!),
+                            width: 80,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 80,
+                                  height: 120,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                                  child: const Icon(Icons.movie, size: 32),
+                                ),
+                          )
+                        : season.thumb != null
+                        ? PlexOptimizedImage.poster(
+                            client: client,
+                            imagePath: season.thumb,
+                            width: 80,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              width: 80,
+                              height: 120,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              width: 80,
+                              height: 120,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              child: const Icon(Icons.movie, size: 32),
+                            ),
+                          )
+                        : Container(
+                            width: 80,
+                            height: 120,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                            child: const Icon(Icons.movie, size: 32),
+                          ),
+                  ),
                   const SizedBox(width: 16),
 
                   // Season info
@@ -1260,39 +1995,42 @@ class _SeasonCard extends StatelessWidget {
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: Colors.grey),
                           ),
-                        const SizedBox(height: 8),
-                        if (season.viewedLeafCount != null &&
-                            season.leafCount != null)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: 200,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: LinearProgressIndicator(
-                                    value:
-                                        season.viewedLeafCount! /
-                                        season.leafCount!,
-                                    backgroundColor: tokens(context).outline,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Theme.of(context).colorScheme.primary,
+                        // Hide watch progress when offline (not tracked)
+                        if (!isOffline) ...[
+                          const SizedBox(height: 8),
+                          if (season.viewedLeafCount != null &&
+                              season.leafCount != null)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: 200,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value:
+                                          season.viewedLeafCount! /
+                                          season.leafCount!,
+                                      backgroundColor: tokens(context).outline,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Theme.of(context).colorScheme.primary,
+                                      ),
+                                      minHeight: 6,
                                     ),
-                                    minHeight: 6,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                t.discover.watchedProgress(
-                                  watched: season.viewedLeafCount.toString(),
-                                  total: season.leafCount.toString(),
+                                const SizedBox(height: 4),
+                                Text(
+                                  t.discover.watchedProgress(
+                                    watched: season.viewedLeafCount.toString(),
+                                    total: season.leafCount.toString(),
+                                  ),
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: Colors.grey),
                                 ),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.grey),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                        ],
                       ],
                     ),
                   ),

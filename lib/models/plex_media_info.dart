@@ -201,3 +201,11 @@ class PlexMarker {
     return posMs >= startTimeOffset && posMs <= endTimeOffset;
   }
 }
+
+/// Combined chapters and markers fetched in a single API call
+class PlaybackExtras {
+  final List<PlexChapter> chapters;
+  final List<PlexMarker> markers;
+
+  PlaybackExtras({required this.chapters, required this.markers});
+}

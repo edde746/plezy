@@ -16,6 +16,7 @@ import 'package:window_manager/window_manager.dart';
 import '../../mpv/mpv.dart';
 
 import '../../services/plex_client.dart';
+import '../../services/plex_api_cache.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
@@ -26,6 +27,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/player_utils.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/video_control_icons.dart';
+import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
 import 'widgets/track_chapter_controls.dart';
@@ -148,8 +150,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       leading: true,
       trailing: true,
     );
-    _loadChapters();
-    _loadMarkers();
+    _loadPlaybackExtras();
     _loadSeekTimes();
     _startHideTimer();
     _initKeyboardService();
@@ -562,29 +563,103 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
-  Future<void> _loadChapters() async {
-    final client = _getClientForMetadata();
+  Future<void> _loadPlaybackExtras() async {
+    try {
+      appLogger.d(
+        '_loadPlaybackExtras: starting for ${widget.metadata.ratingKey}',
+      );
+      final client = _getClientForMetadata();
+      appLogger.d(
+        '_loadPlaybackExtras: got client with serverId=${client.serverId}',
+      );
 
-    final chapters = await client.getChapters(widget.metadata.ratingKey);
-    if (mounted) {
-      setState(() {
-        _chapters = chapters;
-        _chaptersLoaded = true;
-      });
+      final extras = await client.getPlaybackExtras(widget.metadata.ratingKey);
+      appLogger.d(
+        '_loadPlaybackExtras: got ${extras.chapters.length} chapters',
+      );
+
+      if (mounted) {
+        setState(() {
+          _chapters = extras.chapters;
+          _markers = extras.markers;
+          _chaptersLoaded = true;
+          _markersLoaded = true;
+        });
+      }
+    } catch (e, stack) {
+      // Fallback: try to load from cache directly (for offline playback)
+      appLogger.d(
+        '_loadPlaybackExtras: client unavailable, trying cache fallback',
+      );
+      final serverId = widget.metadata.serverId;
+      if (serverId != null) {
+        final cacheKey = '/library/metadata/${widget.metadata.ratingKey}';
+        final cached = await PlexApiCache.instance.get(serverId, cacheKey);
+        if (cached != null) {
+          final extras = _parsePlaybackExtrasFromCache(cached);
+          appLogger.d(
+            '_loadPlaybackExtras: loaded ${extras.chapters.length} chapters from cache',
+          );
+          if (mounted) {
+            setState(() {
+              _chapters = extras.chapters;
+              _markers = extras.markers;
+              _chaptersLoaded = true;
+              _markersLoaded = true;
+            });
+          }
+          return;
+        }
+      }
+      appLogger.e('_loadPlaybackExtras failed', error: e, stackTrace: stack);
     }
   }
 
-  Future<void> _loadMarkers() async {
-    final client = _getClientForMetadata();
+  /// Parse PlaybackExtras from cached API response (for offline playback)
+  PlaybackExtras _parsePlaybackExtrasFromCache(Map<String, dynamic> cached) {
+    final chapters = <PlexChapter>[];
+    final markers = <PlexMarker>[];
 
-    final markers = await client.getMarkers(widget.metadata.ratingKey);
-
-    if (mounted) {
-      setState(() {
-        _markers = markers;
-        _markersLoaded = true;
-      });
+    Map<String, dynamic>? metadataJson;
+    if (cached['MediaContainer']?['Metadata'] != null &&
+        (cached['MediaContainer']['Metadata'] as List).isNotEmpty) {
+      metadataJson =
+          cached['MediaContainer']['Metadata'][0] as Map<String, dynamic>;
     }
+
+    if (metadataJson != null) {
+      // Parse chapters
+      if (metadataJson['Chapter'] != null) {
+        for (var chapter in metadataJson['Chapter'] as List) {
+          chapters.add(
+            PlexChapter(
+              id: chapter['id'] as int,
+              index: chapter['index'] as int?,
+              startTimeOffset: chapter['startTimeOffset'] as int?,
+              endTimeOffset: chapter['endTimeOffset'] as int?,
+              title: chapter['tag'] as String?,
+              thumb: chapter['thumb'] as String?,
+            ),
+          );
+        }
+      }
+
+      // Parse markers
+      if (metadataJson['Marker'] != null) {
+        for (var marker in metadataJson['Marker'] as List) {
+          markers.add(
+            PlexMarker(
+              id: marker['id'] as int,
+              type: marker['type'] as String,
+              startTimeOffset: marker['startTimeOffset'] as int,
+              endTimeOffset: marker['endTimeOffset'] as int,
+            ),
+          );
+        }
+      }
+    }
+
+    return PlaybackExtras(chapters: chapters, markers: markers);
   }
 
   Widget _buildTrackChapterControlsWidget() {
@@ -830,7 +905,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   Widget build(BuildContext context) {
     // Use desktop controls for desktop platforms AND Android TV
-    final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
+    final isMobile =
+        PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
 
     return Focus(
       focusNode: _focusNode,

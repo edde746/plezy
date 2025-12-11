@@ -20,6 +20,9 @@ class FocusableMediaCard extends StatefulWidget {
   final bool isInContinueWatching;
   final String? collectionId;
 
+  /// True for downloaded content without server access
+  final bool isOffline;
+
   /// Optional external focus node for programmatic focus control.
   /// If not provided, an internal focus node is created.
   final FocusNode? focusNode;
@@ -43,6 +46,7 @@ class FocusableMediaCard extends StatefulWidget {
     this.forceGridMode = false,
     this.isInContinueWatching = false,
     this.collectionId,
+    this.isOffline = false,
     this.focusNode,
     this.onNavigateUp,
     this.onBack,
@@ -78,6 +82,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
         forceGridMode: widget.forceGridMode,
         isInContinueWatching: widget.isInContinueWatching,
         collectionId: widget.collectionId,
+        isOffline: widget.isOffline,
       ),
     );
   }

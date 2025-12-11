@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
@@ -5,7 +6,7 @@ import '../utils/plex_image_helper.dart';
 import 'media_card.dart';
 
 class PlexOptimizedImage extends StatelessWidget {
-  final PlexClient client;
+  final PlexClient? client;
   final String? imagePath;
   final double? width;
   final double? height;
@@ -19,10 +20,11 @@ class PlexOptimizedImage extends StatelessWidget {
   final Alignment alignment;
   final IconData? fallbackIcon;
   final ImageType imageType;
+  final String? localFilePath;
 
   const PlexOptimizedImage._({
     super.key,
-    required this.client,
+    this.client,
     required this.imagePath,
     this.width,
     this.height,
@@ -36,12 +38,13 @@ class PlexOptimizedImage extends StatelessWidget {
     this.alignment = Alignment.center,
     this.fallbackIcon,
     this.imageType = ImageType.poster,
+    this.localFilePath,
   });
 
   /// Generic constructor for optimized images.
   const factory PlexOptimizedImage({
     Key? key,
-    required PlexClient client,
+    PlexClient? client,
     required String? imagePath,
     double? width,
     double? height,
@@ -55,12 +58,13 @@ class PlexOptimizedImage extends StatelessWidget {
     Alignment alignment,
     IconData? fallbackIcon,
     ImageType imageType,
+    String? localFilePath,
   }) = PlexOptimizedImage._;
 
   /// Named constructor for poster images with default fallback icon.
   const factory PlexOptimizedImage.poster({
     Key? key,
-    required PlexClient client,
+    PlexClient? client,
     required String? imagePath,
     double? width,
     double? height,
@@ -72,12 +76,13 @@ class PlexOptimizedImage extends StatelessWidget {
     bool enableTranscoding,
     String? cacheKey,
     Alignment alignment,
+    String? localFilePath,
   }) = PlexOptimizedImage._poster;
 
   /// Named constructor for episode thumbnails.
   const factory PlexOptimizedImage.thumb({
     Key? key,
-    required PlexClient client,
+    PlexClient? client,
     required String? imagePath,
     double? width,
     double? height,
@@ -89,12 +94,13 @@ class PlexOptimizedImage extends StatelessWidget {
     bool enableTranscoding,
     String? cacheKey,
     Alignment alignment,
+    String? localFilePath,
   }) = PlexOptimizedImage._thumb;
 
   /// Named constructor for playlist images.
   const factory PlexOptimizedImage.playlist({
     Key? key,
-    required PlexClient client,
+    PlexClient? client,
     required String? imagePath,
     double? width,
     double? height,
@@ -106,11 +112,12 @@ class PlexOptimizedImage extends StatelessWidget {
     bool enableTranscoding,
     String? cacheKey,
     Alignment alignment,
+    String? localFilePath,
   }) = PlexOptimizedImage._playlist;
 
   const PlexOptimizedImage._poster({
     Key? key,
-    required PlexClient client,
+    PlexClient? client,
     required String? imagePath,
     double? width,
     double? height,
@@ -122,6 +129,7 @@ class PlexOptimizedImage extends StatelessWidget {
     bool enableTranscoding = true,
     String? cacheKey,
     Alignment alignment = Alignment.center,
+    String? localFilePath,
   }) : this._(
          key: key,
          client: client,
@@ -138,11 +146,12 @@ class PlexOptimizedImage extends StatelessWidget {
          alignment: alignment,
          fallbackIcon: Icons.movie,
          imageType: ImageType.poster,
+         localFilePath: localFilePath,
        );
 
   const PlexOptimizedImage._thumb({
     Key? key,
-    required PlexClient client,
+    PlexClient? client,
     required String? imagePath,
     double? width,
     double? height,
@@ -154,6 +163,7 @@ class PlexOptimizedImage extends StatelessWidget {
     bool enableTranscoding = true,
     String? cacheKey,
     Alignment alignment = Alignment.center,
+    String? localFilePath,
   }) : this._(
          key: key,
          client: client,
@@ -170,11 +180,12 @@ class PlexOptimizedImage extends StatelessWidget {
          alignment: alignment,
          fallbackIcon: Icons.video_library,
          imageType: ImageType.thumb,
+         localFilePath: localFilePath,
        );
 
   const PlexOptimizedImage._playlist({
     Key? key,
-    required PlexClient client,
+    PlexClient? client,
     required String? imagePath,
     double? width,
     double? height,
@@ -186,6 +197,7 @@ class PlexOptimizedImage extends StatelessWidget {
     bool enableTranscoding = true,
     String? cacheKey,
     Alignment alignment = Alignment.center,
+    String? localFilePath,
   }) : this._(
          key: key,
          client: client,
@@ -202,10 +214,28 @@ class PlexOptimizedImage extends StatelessWidget {
          alignment: alignment,
          fallbackIcon: Icons.playlist_play,
          imageType: ImageType.poster,
+         localFilePath: localFilePath,
        );
 
   @override
   Widget build(BuildContext context) {
+    // Check for local file first
+    if (localFilePath != null) {
+      final file = File(localFilePath!);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          width: width,
+          height: height,
+          fit: fit,
+          filterQuality: filterQuality,
+          alignment: alignment,
+          errorBuilder: (context, error, stackTrace) =>
+              _buildErrorWidget(context, error),
+        );
+      }
+    }
+
     double resolvedDimension(
       double? explicit,
       double constraintMax,

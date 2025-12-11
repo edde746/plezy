@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
+import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../services/download_storage_service.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
@@ -31,6 +33,7 @@ class MediaCard extends StatefulWidget {
   final bool isInContinueWatching;
   final String?
   collectionId; // The collection ID if displaying within a collection
+  final bool isOffline; // True for downloaded content without server access
 
   const MediaCard({
     super.key,
@@ -43,6 +46,7 @@ class MediaCard extends StatefulWidget {
     this.forceGridMode = false,
     this.isInContinueWatching = false,
     this.collectionId,
+    this.isOffline = false,
   });
 
   @override
@@ -164,6 +168,7 @@ class MediaCardState extends State<MediaCard> {
       final result = await navigateToVideoPlayer(
         context,
         metadata: widget.item,
+        isOffline: widget.isOffline,
       );
       // Refresh parent screen if result indicates it's needed
       if (result == true) {
@@ -184,7 +189,10 @@ class MediaCardState extends State<MediaCard> {
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => MediaDetailScreen(metadata: widget.item),
+          builder: (context) => MediaDetailScreen(
+            metadata: widget.item,
+            isOffline: widget.isOffline,
+          ),
         ),
       );
       // Refresh parent screen if result indicates it's needed
@@ -192,6 +200,25 @@ class MediaCardState extends State<MediaCard> {
         widget.onRefresh?.call(widget.item.ratingKey);
       }
     }
+  }
+
+  /// Get the local poster path for offline mode
+  String? _getLocalPosterPath(BuildContext context) {
+    if (!widget.isOffline) return null;
+    if (widget.item is! PlexMetadata) return null;
+
+    final metadata = widget.item as PlexMetadata;
+    if (metadata.serverId == null) return null;
+
+    final downloadProvider = context.read<DownloadProvider>();
+    final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+
+    // Get artwork reference and resolve to local path using hash (includes serverId)
+    final artwork = downloadProvider.getArtworkPaths(globalKey);
+    return artwork?.getLocalPath(
+      DownloadStorageService.instance,
+      metadata.serverId!,
+    );
   }
 
   @override
@@ -202,6 +229,7 @@ class MediaCardState extends State<MediaCard> {
         : settingsProvider.viewMode;
 
     final semanticLabel = _buildSemanticLabel();
+    final localPosterPath = _getLocalPosterPath(context);
 
     final cardWidget = viewMode == ViewMode.grid
         ? _MediaCardGrid(
@@ -211,6 +239,8 @@ class MediaCardState extends State<MediaCard> {
             semanticLabel: semanticLabel,
             onTap: () => _handleTap(context),
             onLongPress: _showContextMenu,
+            isOffline: widget.isOffline,
+            localPosterPath: localPosterPath,
           )
         : _MediaCardList(
             item: widget.item,
@@ -218,6 +248,8 @@ class MediaCardState extends State<MediaCard> {
             onTap: () => _handleTap(context),
             onLongPress: _showContextMenu,
             density: settingsProvider.libraryDensity,
+            isOffline: widget.isOffline,
+            localPosterPath: localPosterPath,
           );
 
     // Use context menu for both PlexMetadata and PlexPlaylist items
@@ -243,6 +275,8 @@ class _MediaCardGrid extends StatelessWidget {
   final String semanticLabel;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final bool isOffline;
+  final String? localPosterPath;
 
   const _MediaCardGrid({
     required this.item,
@@ -251,6 +285,8 @@ class _MediaCardGrid extends StatelessWidget {
     required this.semanticLabel,
     required this.onTap,
     required this.onLongPress,
+    this.isOffline = false,
+    this.localPosterPath,
   });
 
   @override
@@ -321,7 +357,12 @@ class _MediaCardGrid extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: _buildPosterImage(context, item),
+          child: _buildPosterImage(
+            context,
+            item,
+            isOffline: isOffline,
+            localPosterPath: localPosterPath,
+          ),
         ),
         _PosterOverlay(item: item),
       ],
@@ -336,6 +377,8 @@ class _MediaCardList extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onLongPress;
   final LibraryDensity density;
+  final bool isOffline;
+  final String? localPosterPath;
 
   const _MediaCardList({
     required this.item,
@@ -343,6 +386,8 @@ class _MediaCardList extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     required this.density,
+    this.isOffline = false,
+    this.localPosterPath,
   });
 
   double get _posterWidth {
@@ -522,7 +567,12 @@ class _MediaCardList extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: _buildPosterImage(context, item),
+                      child: _buildPosterImage(
+                        context,
+                        item,
+                        isOffline: isOffline,
+                        localPosterPath: localPosterPath,
+                      ),
                     ),
                     _PosterOverlay(item: item),
                   ],
@@ -629,7 +679,12 @@ PlexClient _getClientForItem(BuildContext context, dynamic item) {
   return context.getClientForServer(serverId);
 }
 
-Widget _buildPosterImage(BuildContext context, dynamic item) {
+Widget _buildPosterImage(
+  BuildContext context,
+  dynamic item, {
+  bool isOffline = false,
+  String? localPosterPath,
+}) {
   String? posterUrl;
   IconData fallbackIcon = Icons.movie;
 
@@ -638,22 +693,24 @@ Widget _buildPosterImage(BuildContext context, dynamic item) {
     fallbackIcon = Icons.playlist_play;
 
     return PlexOptimizedImage.playlist(
-      client: _getClientForItem(context, item),
+      client: isOffline ? null : _getClientForItem(context, item),
       imagePath: posterUrl,
       width: double.infinity,
       height: double.infinity,
       fit: BoxFit.cover,
+      localFilePath: localPosterPath,
     );
   } else if (item is PlexMetadata) {
     final useSeasonPoster = context.watch<SettingsProvider>().useSeasonPoster;
     posterUrl = item.posterThumb(useSeasonPoster: useSeasonPoster);
 
     return PlexOptimizedImage.poster(
-      client: _getClientForItem(context, item),
+      client: isOffline ? null : _getClientForItem(context, item),
       imagePath: posterUrl,
       width: double.infinity,
       height: double.infinity,
       fit: BoxFit.cover,
+      localFilePath: localPosterPath,
     );
   }
 

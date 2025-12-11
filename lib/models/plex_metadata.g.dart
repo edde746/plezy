@@ -47,6 +47,7 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   playlistItemID: (json['playlistItemID'] as num?)?.toInt(),
   playQueueItemID: (json['playQueueItemID'] as num?)?.toInt(),
   librarySectionID: (json['librarySectionID'] as num?)?.toInt(),
+  clearLogo: json['clearLogo'] as String?,
 );
 
 Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
@@ -89,4 +90,5 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
       'playlistItemID': instance.playlistItemID,
       'playQueueItemID': instance.playQueueItemID,
       'librarySectionID': instance.librarySectionID,
+      'clearLogo': instance.clearLogo,
     };

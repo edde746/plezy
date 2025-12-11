@@ -20,9 +20,17 @@ import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/hidden_libraries_provider.dart';
 import 'providers/playback_state_provider.dart';
+import 'providers/download_provider.dart';
+import 'providers/offline_mode_provider.dart';
+import 'providers/offline_watch_provider.dart';
 import 'services/multi_server_manager.dart';
+import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
 import 'services/server_registry.dart';
+import 'services/download_manager_service.dart';
+import 'services/download_storage_service.dart';
+import 'services/plex_api_cache.dart';
+import 'database/app_database.dart';
 import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/language_codes.dart';
@@ -71,6 +79,9 @@ void main() async {
   final debugEnabled = settings.getEnableDebugLogging();
   setLoggerLevel(debugEnabled);
 
+  // Initialize download storage service with settings
+  await DownloadStorageService.instance.initialize(settings);
+
   // Start global fullscreen state monitoring
   FullscreenStateManager().startMonitoring();
 
@@ -87,15 +98,60 @@ void main() async {
 // Global RouteObserver for tracking navigation
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Initialize multi-server infrastructure
-    final serverManager = MultiServerManager();
-    final aggregationService = DataAggregationService(serverManager);
+  State<MainApp> createState() => _MainAppState();
+}
 
+class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
+  // Initialize multi-server infrastructure
+  late final MultiServerManager _serverManager;
+  late final DataAggregationService _aggregationService;
+  late final AppDatabase _appDatabase;
+  late final DownloadManagerService _downloadManager;
+  late final OfflineWatchSyncService _offlineWatchSyncService;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    _serverManager = MultiServerManager();
+    _aggregationService = DataAggregationService(_serverManager);
+    _appDatabase = AppDatabase();
+
+    // Initialize API cache with database
+    PlexApiCache.initialize(_appDatabase);
+
+    _downloadManager = DownloadManagerService(
+      database: _appDatabase,
+      storageService: DownloadStorageService.instance,
+    );
+
+    _offlineWatchSyncService = OfflineWatchSyncService(
+      database: _appDatabase,
+      serverManager: _serverManager,
+    );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App came back to foreground - trigger sync check
+      _offlineWatchSyncService.onAppResumed();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         // Legacy provider for backward compatibility
@@ -103,9 +159,60 @@ class MainApp extends StatelessWidget {
         // New multi-server providers
         ChangeNotifierProvider(
           create: (context) =>
-              MultiServerProvider(serverManager, aggregationService),
+              MultiServerProvider(_serverManager, _aggregationService),
         ),
         ChangeNotifierProvider(create: (context) => ServerStateProvider()),
+        // Offline mode provider - depends on MultiServerProvider
+        ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
+          create: (_) => OfflineModeProvider(_serverManager),
+          update: (_, multiServerProvider, previous) {
+            final provider = previous ?? OfflineModeProvider(_serverManager);
+            provider.initialize();
+            return provider;
+          },
+        ),
+        // Download provider
+        ChangeNotifierProvider(
+          create: (context) =>
+              DownloadProvider(downloadManager: _downloadManager),
+        ),
+        // Offline watch sync service
+        ChangeNotifierProvider<OfflineWatchSyncService>(
+          create: (context) {
+            final offlineModeProvider = context.read<OfflineModeProvider>();
+            final downloadProvider = context.read<DownloadProvider>();
+
+            // Wire up callback to refresh download provider after watch state sync
+            _offlineWatchSyncService.onWatchStatesRefreshed = () {
+              downloadProvider.refreshMetadataFromCache();
+            };
+
+            _offlineWatchSyncService.startConnectivityMonitoring(
+              offlineModeProvider,
+            );
+            return _offlineWatchSyncService;
+          },
+        ),
+        // Offline watch provider - depends on sync service and download provider
+        ChangeNotifierProxyProvider2<
+          OfflineWatchSyncService,
+          DownloadProvider,
+          OfflineWatchProvider
+        >(
+          create: (context) => OfflineWatchProvider(
+            syncService: _offlineWatchSyncService,
+            downloadProvider: context.read<DownloadProvider>(),
+            apiCache: PlexApiCache.instance,
+          ),
+          update: (_, syncService, downloadProvider, previous) {
+            return previous ??
+                OfflineWatchProvider(
+                  syncService: syncService,
+                  downloadProvider: downloadProvider,
+                  apiCache: PlexApiCache.instance,
+                );
+          },
+        ),
         // Existing providers
         ChangeNotifierProvider(create: (context) => UserProfileProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
@@ -307,6 +414,9 @@ class _SetupScreenState extends State<SetupScreen> {
         appLogger.i('Successfully connected to $connectedCount servers');
 
         if (mounted) {
+          // Now that Plex clients are available, trigger initial watch sync
+          context.read<OfflineWatchSyncService>().onServersConnected();
+
           // Navigate to main screen immediately
           // Get first connected client for backward compatibility
           final firstClient =
@@ -323,14 +433,17 @@ class _SetupScreenState extends State<SetupScreen> {
           _checkForUpdatesOnStartup();
         }
       } else {
-        // All connections failed
-        appLogger.w('Failed to connect to any servers');
+        // All connections failed - navigate to offline mode
+        appLogger.w('Failed to connect to any servers, entering offline mode');
 
         if (mounted) {
-          // Show auth screen to re-authenticate
+          // Navigate to MainScreen in offline mode
+          // User can still access Downloads and Settings
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const AuthScreen()),
+            MaterialPageRoute(
+              builder: (context) => const MainScreen(isOfflineMode: true),
+            ),
           );
         }
       }
@@ -342,9 +455,12 @@ class _SetupScreenState extends State<SetupScreen> {
       );
 
       if (mounted) {
+        // Navigate to MainScreen in offline mode
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const AuthScreen()),
+          MaterialPageRoute(
+            builder: (context) => const MainScreen(isOfflineMode: true),
+          ),
         );
       }
     }

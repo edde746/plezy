@@ -21,6 +21,7 @@ import '../services/settings_service.dart';
 ///   loads the saved preference for the series/movie. Defaults to 0 if no preference exists.
 /// - [usePushReplacement]: If true, replaces current route instead of pushing;
 ///   useful for episode-to-episode navigation. Defaults to false.
+/// - [isOffline]: If true, plays from downloaded content without requiring server connection.
 ///
 /// Returns a Future that completes with a boolean indicating whether the content
 /// was watched, or null if navigation was cancelled.
@@ -32,6 +33,7 @@ Future<bool?> navigateToVideoPlayer(
   double? preferredPlaybackRate,
   int? selectedMediaIndex,
   bool usePushReplacement = false,
+  bool isOffline = false,
 }) async {
   // Extract navigator before any async operations
   final navigator = Navigator.of(context);
@@ -60,6 +62,7 @@ Future<bool?> navigateToVideoPlayer(
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredPlaybackRate: preferredPlaybackRate,
       selectedMediaIndex: mediaIndex,
+      isOffline: isOffline,
     ),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,

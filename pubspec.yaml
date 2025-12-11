@@ -37,6 +37,13 @@ dependencies:
   path_provider: ^2.1.0
   path: ^1.9.0
   gamepads: ^0.1.9
+  drift: ^2.28.2
+  sqlite3_flutter_libs: ^0.5.41
+  workmanager: ^0.9.0+3
+  crypto: ^3.0.7
+  file_picker: ^8.0.0
+  saf_util: ^0.11.0
+  saf_stream: ^0.12.2
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +54,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   slang_build_runner: ^3.31.0
   dart_code_linter: ^3.1.1
+  drift_dev: ^2.14.0
 
 flutter:
   uses-material-design: true

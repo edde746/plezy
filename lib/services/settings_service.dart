@@ -45,6 +45,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyAutoSkipIntro = 'auto_skip_intro';
   static const String _keyAutoSkipCredits = 'auto_skip_credits';
   static const String _keyAutoSkipDelay = 'auto_skip_delay';
+  static const String _keyCustomDownloadPath = 'custom_download_path';
+  static const String _keyCustomDownloadPathType = 'custom_download_path_type';
+  static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
 
   SettingsService._();
 
@@ -843,6 +846,41 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getInt(_keyAutoSkipDelay) ?? 5; // Default: 5 seconds
   }
 
+  // Custom Download Path
+  Future<void> setCustomDownloadPath(
+    String? path, {
+    String type = 'file',
+  }) async {
+    if (path == null) {
+      await prefs.remove(_keyCustomDownloadPath);
+      await prefs.remove(_keyCustomDownloadPathType);
+    } else {
+      await prefs.setString(_keyCustomDownloadPath, path);
+      await prefs.setString(_keyCustomDownloadPathType, type);
+    }
+  }
+
+  String? getCustomDownloadPath() {
+    return prefs.getString(_keyCustomDownloadPath);
+  }
+
+  String getCustomDownloadPathType() {
+    return prefs.getString(_keyCustomDownloadPathType) ?? 'file';
+  }
+
+  bool hasCustomDownloadPath() {
+    return prefs.containsKey(_keyCustomDownloadPath);
+  }
+
+  // Download on WiFi Only
+  Future<void> setDownloadOnWifiOnly(bool value) async {
+    await prefs.setBool(_keyDownloadOnWifiOnly, value);
+  }
+
+  bool getDownloadOnWifiOnly() {
+    return prefs.getBool(_keyDownloadOnWifiOnly) ?? false;
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -874,6 +912,9 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keySubtitleBackgroundOpacity),
       prefs.remove(_keyAppLocale),
       prefs.remove(_keyRememberTrackSelections),
+      prefs.remove(_keyCustomDownloadPath),
+      prefs.remove(_keyCustomDownloadPathType),
+      prefs.remove(_keyDownloadOnWifiOnly),
     ]);
   }
 

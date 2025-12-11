@@ -10,14 +10,17 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../mpv/mpv.dart';
 
 import '../../services/plex_client.dart';
+import '../services/plex_api_cache.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_media_info.dart';
+import '../providers/download_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_progress_tracker.dart';
+import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import '../services/track_selection_service.dart';
 import '../services/video_filter_manager.dart';
@@ -37,6 +40,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final SubtitleTrack? preferredSubtitleTrack;
   final double? preferredPlaybackRate;
   final int selectedMediaIndex;
+  final bool isOffline;
 
   const VideoPlayerScreen({
     super.key,
@@ -45,6 +49,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredSubtitleTrack,
     this.preferredPlaybackRate,
     this.selectedMediaIndex = 0,
+    this.isOffline = false,
   });
 
   @override
@@ -193,9 +198,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           // Re-enable wakelock since we're back in the video player
           WakelockPlus.enable();
 
-          // Restore media metadata
-          final client = _getClientForMetadata(context);
-          if (_mediaControlsManager != null) {
+          // Restore media metadata (only in online mode - requires client for artwork URLs)
+          if (!widget.isOffline && _mediaControlsManager != null) {
+            final client = _getClientForMetadata(context);
             _mediaControlsManager!.updateMetadata(
               metadata: widget.metadata,
               client: client,
@@ -213,7 +218,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           }
 
           _updateMediaControlsPlaybackState();
-          appLogger.d('Media controls restored and wakelock re-enabled on app resume');
+          appLogger.d(
+            'Media controls restored and wakelock re-enabled on app resume',
+          );
         }
         break;
       case AppLifecycleState.detached:
@@ -458,15 +465,30 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   Future<void> _initializeServices() async {
     if (!mounted || player == null) return;
 
-    final client = _getClientForMetadata(context);
+    // Get client (null in offline mode)
+    final client = widget.isOffline ? null : _getClientForMetadata(context);
 
     // Initialize progress tracker
-    _progressTracker = PlaybackProgressTracker(
-      client: client,
-      metadata: widget.metadata,
-      player: player!,
-    );
-    _progressTracker!.startTracking();
+    if (widget.isOffline) {
+      // Offline mode: queue progress updates for later sync
+      final offlineWatchService = context.read<OfflineWatchSyncService>();
+      _progressTracker = PlaybackProgressTracker(
+        client: null,
+        metadata: widget.metadata,
+        player: player!,
+        isOffline: true,
+        offlineWatchService: offlineWatchService,
+      );
+      _progressTracker!.startTracking();
+    } else if (client != null) {
+      // Online mode: send progress to server
+      _progressTracker = PlaybackProgressTracker(
+        client: client,
+        metadata: widget.metadata,
+        player: player!,
+      );
+      _progressTracker!.startTracking();
+    }
 
     // Initialize media controls manager
     _mediaControlsManager = MediaControlsManager();
@@ -508,7 +530,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
     });
 
-    // Update media metadata
+    // Update media metadata (client can be null in offline mode - artwork won't be shown)
     await _mediaControlsManager!.updateMetadata(
       metadata: widget.metadata,
       client: client,
@@ -547,6 +569,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// Ensure a play queue exists for sequential episode playback
   Future<void> _ensurePlayQueue() async {
     if (!mounted) return;
+
+    // Skip play queue in offline mode (requires server connection)
+    if (widget.isOffline) return;
 
     // Only create play queues for episodes
     if (widget.metadata.type.toLowerCase() != 'episode') {
@@ -618,6 +643,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   Future<void> _loadAdjacentEpisodes() async {
     if (!mounted) return;
 
+    // Skip loading adjacent episodes in offline mode (requires server connection)
+    if (widget.isOffline) return;
+
     try {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
@@ -645,17 +673,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (!mounted) return;
 
     try {
-      // Use server-specific client for this metadata
-      final client = _getClientForMetadata(context);
+      PlaybackInitializationResult result;
 
-      // Initialize playback service
-      final playbackService = PlaybackInitializationService(client: client);
-
-      // Get playback data (video URL and available versions)
-      final result = await playbackService.getPlaybackData(
-        metadata: widget.metadata,
-        selectedMediaIndex: widget.selectedMediaIndex,
-      );
+      if (widget.isOffline) {
+        // Offline mode: get video path from downloads without requiring server
+        result = await _startOfflinePlayback();
+      } else {
+        // Online mode: use server-specific client
+        final client = _getClientForMetadata(context);
+        final playbackService = PlaybackInitializationService(
+          client: client,
+          database: PlexApiCache.instance.database,
+        );
+        result = await playbackService.getPlaybackData(
+          metadata: widget.metadata,
+          selectedMediaIndex: widget.selectedMediaIndex,
+          preferOffline: true, // Use downloaded file if available
+        );
+      }
 
       // Open video through Player
       if (result.videoUrl != null) {
@@ -674,7 +709,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         });
 
         // Initialize video filter manager with player and available versions
-        if (player != null && _availableVersions.isNotEmpty) {
+        if (player != null) {
           _videoFilterManager = VideoFilterManager(
             player: player!,
             availableVersions: _availableVersions,
@@ -716,6 +751,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         );
       }
     }
+  }
+
+  /// Start playback for offline/downloaded content
+  Future<PlaybackInitializationResult> _startOfflinePlayback() async {
+    final downloadProvider = context.read<DownloadProvider>();
+
+    // Debug: log metadata info
+    appLogger.d(
+      'Offline playback - serverId: ${widget.metadata.serverId}, ratingKey: ${widget.metadata.ratingKey}',
+    );
+
+    final globalKey =
+        '${widget.metadata.serverId}:${widget.metadata.ratingKey}';
+    appLogger.d('Looking up video with globalKey: $globalKey');
+
+    final videoPath = await downloadProvider.getVideoFilePath(globalKey);
+    if (videoPath == null) {
+      appLogger.e('Video file path not found for globalKey: $globalKey');
+      throw PlaybackException(t.messages.fileInfoNotAvailable);
+    }
+
+    appLogger.d('Starting offline playback: $videoPath');
+
+    return PlaybackInitializationResult(
+      availableVersions: [],
+      videoUrl: 'file://$videoPath',
+      mediaInfo: null,
+      externalSubtitles: const [],
+      isOffline: true,
+    );
   }
 
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../services/plex_client.dart';
+import '../../../services/download_storage_service.dart';
 import '../../../models/plex_media_info.dart';
 import '../../../utils/duration_formatter.dart';
 import '../../../utils/provider_extensions.dart';
@@ -67,9 +68,14 @@ class _ChapterSheetState extends State<ChapterSheet> {
     super.dispose();
   }
 
-  /// Get the correct PlexClient for the metadata's server
-  PlexClient _getClientForChapters(BuildContext context) {
-    return context.getClientForServer(widget.serverId!);
+  /// Get the PlexClient for chapters, or null if unavailable (offline mode)
+  PlexClient? _tryGetClientForChapters(BuildContext context) {
+    if (widget.serverId == null) return null;
+    try {
+      return context.getClientForServer(widget.serverId!);
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -117,6 +123,15 @@ class _ChapterSheetState extends State<ChapterSheet> {
                 final chapter = widget.chapters[index];
                 final isCurrentChapter = currentChapterIndex == index;
 
+                // Get local file path for offline chapter thumbnails
+                final localThumbPath =
+                    widget.serverId != null && chapter.thumb != null
+                    ? DownloadStorageService.instance.getArtworkPathSync(
+                        widget.serverId!,
+                        chapter.thumb!,
+                      )
+                    : null;
+
                 return FocusableListTile(
                   focusNode: index == 0 ? _initialFocusNode : null,
                   leading: chapter.thumb != null
@@ -125,8 +140,9 @@ class _ChapterSheetState extends State<ChapterSheet> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(4),
                               child: PlexOptimizedImage.thumb(
-                                client: _getClientForChapters(context),
+                                client: _tryGetClientForChapters(context),
                                 imagePath: chapter.thumb,
+                                localFilePath: localThumbPath,
                                 width: 60,
                                 height: 34,
                                 fit: BoxFit.cover,

@@ -1,9 +1,14 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../services/download_storage_service.dart';
+import '../../services/saf_storage_service.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
@@ -37,6 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoSkipIntro = true;
   bool _autoSkipCredits = true;
   int _autoSkipDelay = 5;
+  bool _downloadOnWifiOnly = false;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -63,6 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _autoSkipIntro = _settingsService.getAutoSkipIntro();
       _autoSkipCredits = _settingsService.getAutoSkipCredits();
       _autoSkipDelay = _settingsService.getAutoSkipDelay();
+      _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
       _isLoading = false;
     });
   }
@@ -84,6 +91,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildAppearanceSection(),
                 const SizedBox(height: 24),
                 _buildVideoPlaybackSection(),
+                const SizedBox(height: 24),
+                _buildDownloadsSection(),
                 const SizedBox(height: 24),
                 _buildKeyboardShortcutsSection(),
                 const SizedBox(height: 24),
@@ -331,6 +340,183 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildDownloadsSection() {
+    final storageService = DownloadStorageService.instance;
+    final isCustom = storageService.isUsingCustomPath();
+
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              t.settings.downloads,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          // Download location picker - not available on iOS
+          if (!Platform.isIOS)
+            FutureBuilder<String>(
+              future: storageService.getCurrentDownloadPathDisplay(),
+              builder: (context, snapshot) {
+                final currentPath = snapshot.data ?? '...';
+
+                return ListTile(
+                  leading: const Icon(Icons.folder),
+                  title: Text(
+                    isCustom
+                        ? t.settings.downloadLocationCustom
+                        : t.settings.downloadLocationDefault,
+                  ),
+                  subtitle: Text(
+                    currentPath,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showDownloadLocationDialog(),
+                );
+              },
+            ),
+          SwitchListTile(
+            secondary: const Icon(Icons.wifi),
+            title: Text(t.settings.downloadOnWifiOnly),
+            subtitle: Text(t.settings.downloadOnWifiOnlyDescription),
+            value: _downloadOnWifiOnly,
+            onChanged: (value) async {
+              setState(() => _downloadOnWifiOnly = value);
+              await _settingsService.setDownloadOnWifiOnly(value);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDownloadLocationDialog() async {
+    final storageService = DownloadStorageService.instance;
+    final isCustom = storageService.isUsingCustomPath();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t.settings.downloads),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.settings.downloadLocationDescription),
+            const SizedBox(height: 16),
+            FutureBuilder<String>(
+              future: storageService.getCurrentDownloadPathDisplay(),
+              builder: (context, snapshot) {
+                return Text(
+                  t.settings.currentPath(path: snapshot.data ?? '...'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          if (isCustom)
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(dialogContext);
+                await _resetDownloadLocation();
+              },
+              child: Text(t.settings.resetToDefault),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(t.common.cancel),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await _selectDownloadLocation();
+            },
+            child: Text(t.settings.selectFolder),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _selectDownloadLocation() async {
+    try {
+      String? selectedPath;
+      String pathType = 'file';
+
+      if (Platform.isAndroid) {
+        // Use SAF on Android
+        final safService = SafStorageService.instance;
+        selectedPath = await safService.pickDirectory();
+        if (selectedPath != null) {
+          pathType = 'saf';
+        }
+      } else {
+        // Use file_picker on desktop
+        final result = await FilePicker.platform.getDirectoryPath(
+          dialogTitle: t.settings.selectFolder,
+        );
+        selectedPath = result;
+      }
+
+      if (selectedPath != null) {
+        // Validate the path is writable (for non-SAF paths)
+        if (pathType == 'file') {
+          final dir = Directory(selectedPath);
+          final isWritable = await DownloadStorageService.instance
+              .isDirectoryWritable(dir);
+          if (!isWritable) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(t.settings.downloadLocationInvalid)),
+              );
+            }
+            return;
+          }
+        }
+
+        // Save the setting
+        await _settingsService.setCustomDownloadPath(
+          selectedPath,
+          type: pathType,
+        );
+        await DownloadStorageService.instance.refreshCustomPath();
+
+        if (mounted) {
+          setState(() {});
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(t.settings.downloadLocationChanged)),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t.settings.downloadLocationSelectError)),
+        );
+      }
+    }
+  }
+
+  Future<void> _resetDownloadLocation() async {
+    await _settingsService.setCustomDownloadPath(null);
+    await DownloadStorageService.instance.refreshCustomPath();
+
+    if (mounted) {
+      setState(() {});
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t.settings.downloadLocationReset)));
+    }
   }
 
   Widget _buildKeyboardShortcutsSection() {

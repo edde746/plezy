@@ -120,8 +120,9 @@ class PlexImageHelper {
 
   /// Creates an optimized image URL for Plex content
   /// Falls back to original URL if transcoding is not appropriate
+  /// If client is null (offline mode), returns empty string for relative paths
   static String getOptimizedImageUrl({
-    required PlexClient client,
+    PlexClient? client,
     required String? thumbPath,
     required double maxWidth,
     required double maxHeight,
@@ -138,6 +139,12 @@ class PlexImageHelper {
     // If we can't/shouldn't transcode (already a full URL), just return it.
     if (basePath.startsWith('http://') || basePath.startsWith('https://')) {
       return basePath;
+    }
+
+    // If no client (offline mode), we can't build URLs for relative paths
+    // Images should already be cached from when they were originally loaded
+    if (client == null) {
+      return '';
     }
 
     // For art/backgrounds and clear logos, prefer the original image to avoid

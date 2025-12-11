@@ -227,10 +227,7 @@ class HubSectionState extends State<HubSection> {
   final Map<int, GlobalKey<MediaCardState>> _mediaCardKeys = {};
 
   GlobalKey<MediaCardState> _getMediaCardKey(int index) {
-    return _mediaCardKeys.putIfAbsent(
-      index,
-      () => GlobalKey<MediaCardState>(),
-    );
+    return _mediaCardKeys.putIfAbsent(index, () => GlobalKey<MediaCardState>());
   }
 
   void _activateCurrentItem() {
@@ -346,8 +343,9 @@ class HubSectionState extends State<HubSection> {
                           child: _LockedHubItemWrapper(
                             isFocused: isItemFocused,
                             onTap: () => _onItemTapped(index),
-                            onLongPress: () =>
-                                _mediaCardKeys[index]?.currentState?.showContextMenu(),
+                            onLongPress: () => _mediaCardKeys[index]
+                                ?.currentState
+                                ?.showContextMenu(),
                             child: MediaCard(
                               key: _getMediaCardKey(index),
                               item: item,

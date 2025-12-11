@@ -17,6 +17,7 @@ import '../models/plex_video_playback_data.dart';
 import '../utils/endpoint_failover_interceptor.dart';
 import '../utils/app_logger.dart';
 import '../utils/log_redaction_manager.dart';
+import 'plex_api_cache.dart';
 
 /// Result of testing a connection, including success status and latency
 class ConnectionTestResult {
@@ -37,6 +38,20 @@ class PlexClient {
 
   /// Server name - all PlexMetadata items created by this client are tagged with this
   final String? serverName;
+
+  /// API response cache for offline support
+  final PlexApiCache _cache = PlexApiCache.instance;
+
+  /// Whether to operate in offline mode (use cache only)
+  bool _offlineMode = false;
+
+  /// Set offline mode - when true, only cached responses are returned
+  void setOfflineMode(bool offline) {
+    _offlineMode = offline;
+  }
+
+  /// Get current offline mode state
+  bool get isOfflineMode => _offlineMode;
 
   /// Custom response decoder that handles malformed UTF-8 gracefully
   static String _lenientUtf8Decoder(
@@ -249,17 +264,6 @@ class PlexClient {
     return null;
   }
 
-  /// Extract single PlexMetadata from response (returns first item or null)
-  /// Automatically tags the item with this client's serverId and serverName
-  PlexMetadata? _extractSingleMetadata(Response response) {
-    final metadataJson = _getFirstMetadataJson(response);
-    return metadataJson != null
-        ? PlexMetadata.fromJson(
-            metadataJson,
-          ).copyWith(serverId: serverId, serverName: serverName)
-        : null;
-  }
-
   /// Generic helper to extract and map Directory list from response
   List<T> _extractDirectoryList<T>(
     Response response,
@@ -347,10 +351,21 @@ class PlexClient {
     return _extractMetadataList(response);
   }
 
-  /// Get metadata by rating key
-  Future<PlexMetadata?> getMetadata(String ratingKey) async {
-    final response = await _dio.get('/library/metadata/$ratingKey');
-    return _extractSingleMetadata(response);
+  /// Parse list of PlexMetadata from a cached response
+  List<PlexMetadata> _parseMetadataListFromCachedResponse(
+    Map<String, dynamic> cached,
+  ) {
+    if (cached['MediaContainer'] != null &&
+        cached['MediaContainer']['Metadata'] != null) {
+      return (cached['MediaContainer']['Metadata'] as List)
+          .map(
+            (json) => PlexMetadata.fromJson(
+              json,
+            ).copyWith(serverId: serverId, serverName: serverName),
+          )
+          .toList();
+    }
+    return [];
   }
 
   /// Get the server's machine identifier
@@ -378,54 +393,146 @@ class PlexClient {
   }
 
   /// Get metadata by rating key with images (includes clearLogo and OnDeck)
+  /// Uses cache when offline or as fallback on network error
+  /// Note: OnDeck data is not relevant for offline mode
+  /// Always fetches with chapters/markers but caches at base endpoint
   Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(
     String ratingKey,
   ) async {
-    final response = await _dio.get(
-      '/library/metadata/$ratingKey',
-      queryParameters: {'includeOnDeck': 1},
-    );
+    // Cache key is always the base endpoint (no query params)
+    final cacheKey = '/library/metadata/$ratingKey';
 
-    PlexMetadata? metadata;
-    PlexMetadata? onDeckEpisode;
+    // If offline mode, return from cache only (no OnDeck in offline)
+    if (_offlineMode) {
+      final cached = await _cache.get(serverId, cacheKey);
+      if (cached != null) {
+        final metadata = _parseMetadataWithImagesFromCachedResponse(cached);
+        return {'metadata': metadata, 'onDeckEpisode': null};
+      }
+      return {'metadata': null, 'onDeckEpisode': null};
+    }
 
-    final metadataJson = _getFirstMetadataJson(response);
+    // Online: try network first
+    try {
+      // Fetch with chapters/markers/onDeck
+      final response = await _dio.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {
+          'includeChapters': 1,
+          'includeMarkers': 1,
+          'includeOnDeck': 1,
+        },
+      );
 
-    // Log the parsed metadata JSON
-    if (metadataJson != null) {
-      metadata = PlexMetadata.fromJsonWithImages(
-        metadataJson,
-      ).copyWith(serverId: serverId, serverName: serverName);
+      // Cache at base endpoint (single cache entry per item)
+      if (response.data != null) {
+        await _cache.put(serverId, cacheKey, response.data);
+      }
 
-      // Check if OnDeck is nested inside Metadata
-      if (metadataJson.containsKey('OnDeck') &&
-          metadataJson['OnDeck'] != null) {
-        final onDeckData = metadataJson['OnDeck'];
+      PlexMetadata? metadata;
+      PlexMetadata? onDeckEpisode;
 
-        // OnDeck can be either a Map with 'Metadata' key or direct metadata
-        if (onDeckData is Map && onDeckData.containsKey('Metadata')) {
-          final onDeckMetadata = onDeckData['Metadata'];
-          if (onDeckMetadata != null) {
-            onDeckEpisode = PlexMetadata.fromJson(
-              onDeckMetadata,
-            ).copyWith(serverId: serverId, serverName: serverName);
+      final metadataJson = _getFirstMetadataJson(response);
+
+      if (metadataJson != null) {
+        metadata = PlexMetadata.fromJsonWithImages(
+          metadataJson,
+        ).copyWith(serverId: serverId, serverName: serverName);
+
+        // Check if OnDeck is nested inside Metadata
+        if (metadataJson.containsKey('OnDeck') &&
+            metadataJson['OnDeck'] != null) {
+          final onDeckData = metadataJson['OnDeck'];
+
+          // OnDeck can be either a Map with 'Metadata' key or direct metadata
+          if (onDeckData is Map && onDeckData.containsKey('Metadata')) {
+            final onDeckMetadata = onDeckData['Metadata'];
+            if (onDeckMetadata != null) {
+              onDeckEpisode = PlexMetadata.fromJson(
+                onDeckMetadata,
+              ).copyWith(serverId: serverId, serverName: serverName);
+            }
           }
         }
       }
-    }
 
-    return {'metadata': metadata, 'onDeckEpisode': onDeckEpisode};
+      return {'metadata': metadata, 'onDeckEpisode': onDeckEpisode};
+    } catch (e) {
+      // Network failed - try cache as fallback (no OnDeck)
+      appLogger.w(
+        'Network request failed for metadata with OnDeck, trying cache',
+        error: e,
+      );
+      final cached = await _cache.get(serverId, cacheKey);
+      if (cached != null) {
+        final metadata = _parseMetadataWithImagesFromCachedResponse(cached);
+        return {'metadata': metadata, 'onDeckEpisode': null};
+      }
+      rethrow;
+    }
   }
 
   /// Get metadata by rating key with images (includes clearLogo)
+  /// Uses cache when offline or as fallback on network error
+  /// Always fetches with chapters/markers but caches at base endpoint
   Future<PlexMetadata?> getMetadataWithImages(String ratingKey) async {
-    final response = await _dio.get('/library/metadata/$ratingKey');
-    final metadataJson = _getFirstMetadataJson(response);
-    return metadataJson != null
-        ? PlexMetadata.fromJsonWithImages(
-            metadataJson,
-          ).copyWith(serverId: serverId, serverName: serverName)
-        : null;
+    // Cache key is always the base endpoint (no query params)
+    final cacheKey = '/library/metadata/$ratingKey';
+
+    // If offline mode, return from cache only
+    if (_offlineMode) {
+      final cached = await _cache.get(serverId, cacheKey);
+      if (cached != null) {
+        return _parseMetadataWithImagesFromCachedResponse(cached);
+      }
+      return null;
+    }
+
+    // Online: try network first
+    try {
+      // Always fetch with chapters/markers - they're included in cached response
+      final response = await _dio.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1},
+      );
+
+      // Cache at base endpoint (single cache entry per item)
+      if (response.data != null) {
+        await _cache.put(serverId, cacheKey, response.data);
+      }
+
+      final metadataJson = _getFirstMetadataJson(response);
+      return metadataJson != null
+          ? PlexMetadata.fromJsonWithImages(
+              metadataJson,
+            ).copyWith(serverId: serverId, serverName: serverName)
+          : null;
+    } catch (e) {
+      // Network failed - try cache as fallback
+      appLogger.w(
+        'Network request failed for metadata with images, trying cache',
+        error: e,
+      );
+      final cached = await _cache.get(serverId, cacheKey);
+      if (cached != null) {
+        return _parseMetadataWithImagesFromCachedResponse(cached);
+      }
+      rethrow;
+    }
+  }
+
+  /// Parse PlexMetadata with images from a cached response
+  PlexMetadata? _parseMetadataWithImagesFromCachedResponse(
+    Map<String, dynamic> cached,
+  ) {
+    if (cached['MediaContainer'] != null &&
+        cached['MediaContainer']['Metadata'] != null &&
+        (cached['MediaContainer']['Metadata'] as List).isNotEmpty) {
+      return PlexMetadata.fromJsonWithImages(
+        cached['MediaContainer']['Metadata'][0],
+      ).copyWith(serverId: serverId, serverName: serverName);
+    }
+    return null;
   }
 
   /// Set per-media language preferences (audio and subtitle)
@@ -614,9 +721,41 @@ class PlexClient {
   }
 
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)
+  /// Uses cache when offline or as fallback on network error
   Future<List<PlexMetadata>> getChildren(String ratingKey) async {
-    final response = await _dio.get('/library/metadata/$ratingKey/children');
-    return _extractMetadataList(response);
+    final endpoint = '/library/metadata/$ratingKey/children';
+
+    // If offline mode, return from cache only
+    if (_offlineMode) {
+      final cached = await _cache.get(serverId, endpoint);
+      if (cached != null) {
+        return _parseMetadataListFromCachedResponse(cached);
+      }
+      return [];
+    }
+
+    // Online: try network first
+    try {
+      final response = await _dio.get(endpoint);
+
+      // Cache the successful response
+      if (response.data != null) {
+        await _cache.put(serverId, endpoint, response.data);
+      }
+
+      return _extractMetadataList(response);
+    } catch (e) {
+      // Network failed - try cache as fallback
+      appLogger.w(
+        'Network request failed for children, trying cache',
+        error: e,
+      );
+      final cached = await _cache.get(serverId, endpoint);
+      if (cached != null) {
+        return _parseMetadataListFromCachedResponse(cached);
+      }
+      rethrow;
+    }
   }
 
   /// Get all unwatched episodes for a TV show across all seasons
@@ -747,6 +886,118 @@ class PlexClient {
     }
 
     return [];
+  }
+
+  /// Get chapters and markers from cached metadata or fetch if needed
+  /// Uses same cache key as other metadata methods for consistency
+  Future<PlaybackExtras> getPlaybackExtras(String ratingKey) async {
+    // Use same cache key as other metadata methods
+    final cacheKey = '/library/metadata/$ratingKey';
+
+    // If offline mode, return from cache only
+    if (_offlineMode) {
+      final cached = await _cache.get(serverId, cacheKey);
+      if (cached != null) {
+        return _parsePlaybackExtrasFromCachedResponse(cached);
+      }
+      return PlaybackExtras(chapters: [], markers: []);
+    }
+
+    // Online: check cache first (already has chapters/markers from other fetches)
+    appLogger.d('getPlaybackExtras: serverId=$serverId, cacheKey=$cacheKey');
+    final cached = await _cache.get(serverId, cacheKey);
+    if (cached != null) {
+      final chapters =
+          cached['MediaContainer']?['Metadata']?[0]?['Chapter'] as List?;
+      appLogger.d(
+        'getPlaybackExtras: cache hit, ${chapters?.length ?? 0} chapters',
+      );
+      return _parsePlaybackExtrasFromCachedResponse(cached);
+    }
+    appLogger.d('getPlaybackExtras: cache miss');
+
+    // Not in cache - fetch and cache
+    try {
+      final response = await _dio.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1},
+      );
+
+      // Cache at base endpoint
+      if (response.data != null) {
+        await _cache.put(serverId, cacheKey, response.data);
+      }
+
+      return _parsePlaybackExtrasFromResponse(response);
+    } catch (e) {
+      // Network failed
+      appLogger.w('Network request failed for playback extras', error: e);
+      return PlaybackExtras(chapters: [], markers: []);
+    }
+  }
+
+  /// Parse PlaybackExtras from API response
+  PlaybackExtras _parsePlaybackExtrasFromResponse(Response response) {
+    final metadataJson = _getFirstMetadataJson(response);
+    return _parsePlaybackExtrasFromMetadataJson(metadataJson);
+  }
+
+  /// Parse PlaybackExtras from cached response
+  PlaybackExtras _parsePlaybackExtrasFromCachedResponse(
+    Map<String, dynamic> cached,
+  ) {
+    Map<String, dynamic>? metadataJson;
+    if (cached['MediaContainer'] != null &&
+        cached['MediaContainer']['Metadata'] != null &&
+        (cached['MediaContainer']['Metadata'] as List).isNotEmpty) {
+      metadataJson =
+          cached['MediaContainer']['Metadata'][0] as Map<String, dynamic>;
+    }
+    return _parsePlaybackExtrasFromMetadataJson(metadataJson);
+  }
+
+  /// Parse PlaybackExtras from metadata JSON
+  PlaybackExtras _parsePlaybackExtrasFromMetadataJson(
+    Map<String, dynamic>? metadataJson,
+  ) {
+    final chapters = <PlexChapter>[];
+    final markers = <PlexMarker>[];
+
+    if (metadataJson != null) {
+      // Parse chapters
+      if (metadataJson['Chapter'] != null) {
+        final chapterList = metadataJson['Chapter'] as List<dynamic>;
+        for (var chapter in chapterList) {
+          chapters.add(
+            PlexChapter(
+              id: chapter['id'] as int,
+              index: chapter['index'] as int?,
+              startTimeOffset: chapter['startTimeOffset'] as int?,
+              endTimeOffset: chapter['endTimeOffset'] as int?,
+              title: chapter['tag'] as String?,
+              thumb: chapter['thumb'] as String?,
+            ),
+          );
+        }
+      }
+
+      // Parse markers
+      if (metadataJson['Marker'] != null) {
+        final markerList = metadataJson['Marker'] as List;
+        for (var marker in markerList) {
+          markers.add(
+            PlexMarker(
+              id: marker['id'] as int,
+              type: marker['type'] as String,
+              startTimeOffset: marker['startTimeOffset'] as int,
+              endTimeOffset: marker['endTimeOffset'] as int,
+            ),
+          );
+        }
+      }
+    }
+
+    return PlaybackExtras(chapters: chapters, markers: markers);
   }
 
   /// Get detailed media info including chapters and tracks

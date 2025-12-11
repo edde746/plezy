@@ -139,7 +139,22 @@
     "autoSkipCredits": "Auto Skip Credits",
     "autoSkipCreditsDescription": "Automatically skip credits and play next episode",
     "autoSkipDelay": "Auto Skip Delay",
-    "autoSkipDelayDescription": "Wait ${seconds} seconds before auto-skipping"
+    "autoSkipDelayDescription": "Wait ${seconds} seconds before auto-skipping",
+    "downloads": "Downloads",
+    "downloadLocationDescription": "Choose where to store downloaded content",
+    "downloadLocationDefault": "Default (App Storage)",
+    "downloadLocationCustom": "Custom Location",
+    "selectFolder": "Select Folder",
+    "resetToDefault": "Reset to Default",
+    "currentPath": "Current: ${path}",
+    "downloadLocationNotSupported": "Custom download location is not supported on iOS",
+    "downloadLocationChanged": "Download location changed",
+    "downloadLocationReset": "Download location reset to default",
+    "downloadLocationInvalid": "Selected folder is not writable",
+    "downloadLocationSelectError": "Failed to select folder",
+    "downloadOnWifiOnly": "Download on WiFi only",
+    "downloadOnWifiOnlyDescription": "Prevent downloads when on cellular data",
+    "cellularDownloadBlocked": "Downloads are disabled on cellular data. Connect to WiFi or change the setting."
   },
   "search": {
     "hint": "Search movies, shows, music...",
@@ -256,6 +271,8 @@
   "messages": {
     "markedAsWatched": "Marked as watched",
     "markedAsUnwatched": "Marked as unwatched",
+    "markedAsWatchedOffline": "Marked as watched (will sync when online)",
+    "markedAsUnwatchedOffline": "Marked as unwatched (will sync when online)",
     "removedFromContinueWatching": "Removed from Continue Watching",
     "errorLoading": "Error: ${error}",
     "fileInfoNotAvailable": "File information not available",
@@ -283,7 +300,9 @@
     "noItemsAvailable": "No items available",
     "failedToCreatePlayQueue": "Failed to create play queue",
     "failedToCreatePlayQueueNoItems": "Failed to create play queue - no items",
-    "failedPlayback": "Failed to ${action}: ${error}"
+    "failedPlayback": "Failed to ${action}: ${error}",
+    "youAreOffline": "You're Offline",
+    "offlineFeatureUnavailable": "This feature requires an internet connection. Your downloads and settings are still available."
   },
   "profile": {
     "noUsersAvailable": "No users available"
@@ -313,8 +332,8 @@
     "recentlyAdded": "Recently Added",
     "play": "Play",
     "resume": "Resume",
-    "playEpisode": "Play S${season}, E${episode}",
-    "resumeEpisode": "Resume S${season}, E${episode}",
+    "playEpisode": "S${season}E${episode}",
+    "resumeEpisode": "S${season}E${episode}",
     "pause": "Pause",
     "overview": "Overview",
     "cast": "Cast",
@@ -448,7 +467,8 @@
     "home": "Home",
     "search": "Search",
     "libraries": "Libraries",
-    "settings": "Settings"
+    "settings": "Settings",
+    "downloads": "Downloads"
   },
   "collections": {
     "title": "Collections",
@@ -512,5 +532,50 @@
     "errorAdding": "Failed to add to playlist",
     "errorReordering": "Failed to reorder playlist item",
     "errorRemoving": "Failed to remove from playlist"
+  },
+  "downloads": {
+    "title": "Downloads",
+    "manage": "Manage",
+    "tvShows": "TV Shows",
+    "movies": "Movies",
+    "queue": "Queue",
+    "noDownloads": "No downloads yet",
+    "noDownloadsDescription": "Downloaded content will appear here for offline viewing",
+    "browseContent": "Browse content",
+    "downloading": "Downloading",
+    "downloaded": "Downloaded",
+    "paused": "Paused",
+    "failed": "Failed",
+    "queued": "Queued",
+    "downloadNow": "Download",
+    "deleteDownload": "Delete download",
+    "cancelDownload": "Cancel download",
+    "pauseDownload": "Pause download",
+    "resumeDownload": "Resume download",
+    "retryDownload": "Retry download",
+    "downloadComplete": "Download complete",
+    "downloadFailed": "Download failed",
+    "downloadCancelled": "Download cancelled",
+    "downloadQueued": "Download queued",
+    "episodesQueued": "${count} episodes queued for download",
+    "downloadDeleted": "Download deleted",
+    "deleteConfirmTitle": "Delete download?",
+    "deleteConfirm": "Are you sure you want to delete \"${title}\"? This will remove the downloaded file from your device.",
+    "deleteConfirmMessage": "This will remove the downloaded file from your device.",
+    "deletingWithProgress": "Deleting ${title}... (${current} of ${total})",
+    "deletingSimple": "Deleting ${title}...",
+    "storageUsed": "Storage used",
+    "availableOffline": "Available offline",
+    "downloadingSeason": "Downloading season",
+    "downloadingEpisode": "Downloading episode"
+  },
+  "offline": {
+    "youAreOffline": "You're offline",
+    "offlineMode": "Offline mode",
+    "backOnline": "Back online",
+    "showingDownloadedContent": "Showing downloaded content only",
+    "noInternetConnection": "No internet connection",
+    "serversUnreachable": "Plex servers unreachable",
+    "connectToDownload": "Connect to the internet to download content"
   }
 }

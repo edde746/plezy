@@ -55,9 +55,8 @@ class PlexMetadata with MultiServerFields {
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverName;
 
-  // Transient field for clear logo (extracted from Image array)
-  String? _clearLogo;
-  String? get clearLogo => _clearLogo;
+  // Clear logo URL (extracted from Image array, but serialized for offline storage)
+  final String? clearLogo;
 
   /// Global unique identifier across all servers (serverId:ratingKey)
   String get globalKey => serverId != null ? '$serverId:$ratingKey' : ratingKey;
@@ -103,6 +102,7 @@ class PlexMetadata with MultiServerFields {
     this.librarySectionID,
     this.serverId,
     this.serverName,
+    this.clearLogo,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -147,8 +147,9 @@ class PlexMetadata with MultiServerFields {
     int? librarySectionID,
     String? serverId,
     String? serverName,
+    String? clearLogo,
   }) {
-    final copy = PlexMetadata(
+    return PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
       key: key ?? this.key,
       guid: guid ?? this.guid,
@@ -189,32 +190,34 @@ class PlexMetadata with MultiServerFields {
       librarySectionID: librarySectionID ?? this.librarySectionID,
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
+      clearLogo: clearLogo ?? this.clearLogo,
     );
-    // Preserve clearLogo
-    copy._clearLogo = _clearLogo;
-    return copy;
   }
 
-  // Extract clearLogo from Image array in raw JSON
-  void _extractClearLogo(Map<String, dynamic> json) {
-    if (!json.containsKey('Image')) return;
+  /// Extract clearLogo from Image array in raw JSON
+  static String? _extractClearLogoFromJson(Map<String, dynamic> json) {
+    if (!json.containsKey('Image')) return null;
 
     final images = json['Image'] as List?;
-    if (images == null) return;
+    if (images == null) return null;
 
     for (var image in images) {
       if (image is Map && image['type'] == 'clearLogo') {
-        _clearLogo = image['url'] as String?;
-        return;
+        return image['url'] as String?;
       }
     }
+    return null;
   }
 
-  // Custom factory that extracts clearLogo
+  /// Create from JSON with clearLogo extracted from Image array
   factory PlexMetadata.fromJsonWithImages(Map<String, dynamic> json) {
-    final metadata = PlexMetadata.fromJson(json);
-    metadata._extractClearLogo(json);
-    return metadata;
+    // Extract clearLogo before parsing
+    final clearLogoUrl = _extractClearLogoFromJson(json);
+    // Add it to the json so it gets parsed
+    if (clearLogoUrl != null) {
+      json['clearLogo'] = clearLogoUrl;
+    }
+    return PlexMetadata.fromJson(json);
   }
 
   // Helper to get the display title (show name for episodes/seasons, title otherwise)

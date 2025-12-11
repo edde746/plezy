@@ -3,19 +3,32 @@ import 'dart:async';
 import '../mpv/mpv.dart';
 
 import 'plex_client.dart';
+import 'offline_watch_sync_service.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 
 /// Tracks playback progress and reports it to the Plex server.
 ///
 /// Handles:
-/// - Periodic timeline updates during playback
+/// - Periodic timeline updates during playback (online) or queuing (offline)
 /// - Resume position tracking
 /// - State change reporting (playing, paused, stopped)
+/// - Offline progress queuing for later sync
 class PlaybackProgressTracker {
-  final PlexClient client;
+  /// Plex client for online progress updates (null when offline)
+  final PlexClient? client;
+
+  /// Metadata of the media being played
   final PlexMetadata metadata;
+
+  /// Video player instance
   final Player player;
+
+  /// Whether playback is in offline mode
+  final bool isOffline;
+
+  /// Service for queuing offline progress updates
+  final OfflineWatchSyncService? offlineWatchService;
 
   /// Timer for periodic progress updates
   Timer? _progressTimer;
@@ -27,12 +40,22 @@ class PlaybackProgressTracker {
     required this.client,
     required this.metadata,
     required this.player,
+    this.isOffline = false,
+    this.offlineWatchService,
     this.updateInterval = const Duration(seconds: 10),
-  });
+  }) : assert(
+         !isOffline || offlineWatchService != null,
+         'offlineWatchService is required when isOffline is true',
+       ),
+       assert(
+         isOffline || client != null,
+         'client is required when isOffline is false',
+       );
 
   /// Start tracking playback progress
   ///
-  /// Begins periodic timeline updates to the Plex server.
+  /// Begins periodic timeline updates to the Plex server (online)
+  /// or queuing progress updates locally (offline).
   void startTracking() {
     if (_progressTimer != null) {
       appLogger.w('Progress tracking already started');
@@ -46,7 +69,7 @@ class PlaybackProgressTracker {
     });
 
     appLogger.d(
-      'Started progress tracking (interval: ${updateInterval.inSeconds}s)',
+      'Started progress tracking (interval: ${updateInterval.inSeconds}s, offline: $isOffline)',
     );
   }
 
@@ -59,7 +82,7 @@ class PlaybackProgressTracker {
     appLogger.d('Stopped progress tracking');
   }
 
-  /// Send progress update to Plex server
+  /// Send progress update to Plex server or queue locally
   ///
   /// [state] can be 'playing', 'paused', or 'stopped'
   Future<void> sendProgress(String state) async {
@@ -76,42 +99,58 @@ class PlaybackProgressTracker {
         return;
       }
 
-      // Build timeline query parameters
-      final queryParams = {
-        'ratingKey': metadata.ratingKey,
-        'key': '/library/metadata/${metadata.ratingKey}',
-        'state': state,
-        'time': position.inMilliseconds.toString(),
-        'duration': duration.inMilliseconds.toString(),
-      };
-
-      // Add playQueueItemID if available (for playlist/shuffle playback)
-      if (metadata.playQueueItemID != null) {
-        queryParams['playQueueItemID'] = metadata.playQueueItemID.toString();
+      if (isOffline) {
+        // Queue progress update for later sync
+        await _sendOfflineProgress(position, duration);
+      } else {
+        // Send progress to server immediately
+        await _sendOnlineProgress(state, position, duration);
       }
-
-      // Send timeline update
-      await client
-          .updateProgress(
-            metadata.ratingKey,
-            time: position.inMilliseconds,
-            state: state,
-            duration: duration.inMilliseconds,
-          )
-          .catchError((error) {
-            // Silent handling - don't interrupt playback for progress errors
-            appLogger.d(
-              'Failed to update progress (non-critical)',
-              error: error,
-            );
-          });
-
-      appLogger.d(
-        'Progress update sent: $state at ${position.inSeconds}s / ${duration.inSeconds}s',
-      );
     } catch (e) {
       appLogger.d('Failed to send progress update (non-critical)', error: e);
     }
+  }
+
+  /// Send progress update to Plex server (online mode)
+  Future<void> _sendOnlineProgress(
+    String state,
+    Duration position,
+    Duration duration,
+  ) async {
+    await client!.updateProgress(
+      metadata.ratingKey,
+      time: position.inMilliseconds,
+      state: state,
+      duration: duration.inMilliseconds,
+    );
+
+    appLogger.d(
+      'Progress update sent: $state at ${position.inSeconds}s / ${duration.inSeconds}s',
+    );
+  }
+
+  /// Queue progress update locally (offline mode)
+  Future<void> _sendOfflineProgress(
+    Duration position,
+    Duration duration,
+  ) async {
+    final serverId = metadata.serverId;
+    if (serverId == null) {
+      appLogger.w('Cannot queue offline progress: serverId is null');
+      return;
+    }
+
+    await offlineWatchService!.queueProgressUpdate(
+      serverId: serverId,
+      ratingKey: metadata.ratingKey,
+      viewOffset: position.inMilliseconds,
+      duration: duration.inMilliseconds,
+    );
+
+    final percent = (position.inMilliseconds / duration.inMilliseconds * 100);
+    appLogger.d(
+      'Offline progress queued: ${position.inSeconds}s / ${duration.inSeconds}s (${percent.toStringAsFixed(1)}%)',
+    );
   }
 
   /// Dispose resources
