@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:flutter/services.dart';
 
-import '../focus/dpad_navigator.dart';
 import '../focus/focusable_chip_mixin.dart';
 import '../focus/input_mode_tracker.dart';
 import 'focus_builders.dart';
@@ -70,36 +69,16 @@ class _FocusableFilterChipState extends State<FocusableFilterChip>
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
-      return KeyEventResult.ignored;
-    }
-
-    // SELECT key activates the chip
-    if (event.logicalKey.isSelectKey) {
-      widget.onPressed();
-      return KeyEventResult.handled;
-    }
-
-    // DOWN arrow navigates to the grid
-    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-      widget.onNavigateDown?.call();
-      return KeyEventResult.handled;
-    }
-
-    // UP arrow navigates to tab bar
-    if (event.logicalKey == LogicalKeyboardKey.arrowUp &&
-        widget.onNavigateUp != null) {
-      widget.onNavigateUp!();
-      return KeyEventResult.handled;
-    }
-
-    // BACK key navigates to tab bar
-    if (event.logicalKey.isBackKey && widget.onBack != null) {
-      widget.onBack!();
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
+    return handleChipKeyEvent(
+      node,
+      event,
+      ChipKeyCallbacks(
+        onSelect: widget.onPressed,
+        onNavigateDown: widget.onNavigateDown,
+        onNavigateUp: widget.onNavigateUp,
+        onBack: widget.onBack,
+      ),
+    );
   }
 
   @override

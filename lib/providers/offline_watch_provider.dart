@@ -92,6 +92,22 @@ class OfflineWatchProvider extends ChangeNotifier {
     return metadata?.viewOffset;
   }
 
+  /// Get sorted episodes for a show (by season, then episode number).
+  List<PlexMetadata> _getSortedEpisodes(String showRatingKey) {
+    final episodes = _downloadProvider.getDownloadedEpisodesForShow(
+      showRatingKey,
+    );
+    if (episodes.isEmpty) return episodes;
+
+    episodes.sort((a, b) {
+      final seasonCompare = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
+      if (seasonCompare != 0) return seasonCompare;
+      return (a.index ?? 0).compareTo(b.index ?? 0);
+    });
+
+    return episodes;
+  }
+
   /// Find the next unwatched downloaded episode for a show.
   ///
   /// This is the "offline OnDeck" calculation - finds the first
@@ -101,18 +117,8 @@ class OfflineWatchProvider extends ChangeNotifier {
   ///
   /// Returns the next unwatched episode, or the first episode if all watched.
   Future<PlexMetadata?> getNextUnwatchedEpisode(String showRatingKey) async {
-    final episodes = _downloadProvider.getDownloadedEpisodesForShow(
-      showRatingKey,
-    );
-
+    final episodes = _getSortedEpisodes(showRatingKey);
     if (episodes.isEmpty) return null;
-
-    // Sort by season, then episode number
-    episodes.sort((a, b) {
-      final seasonCompare = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-      if (seasonCompare != 0) return seasonCompare;
-      return (a.index ?? 0).compareTo(b.index ?? 0);
-    });
 
     // Find first unwatched episode
     for (final episode in episodes) {
@@ -131,18 +137,8 @@ class OfflineWatchProvider extends ChangeNotifier {
   /// This uses cached metadata without checking local offline actions.
   /// For real-time accuracy, use getNextUnwatchedEpisode() instead.
   PlexMetadata? getNextUnwatchedEpisodeSync(String showRatingKey) {
-    final episodes = _downloadProvider.getDownloadedEpisodesForShow(
-      showRatingKey,
-    );
-
+    final episodes = _getSortedEpisodes(showRatingKey);
     if (episodes.isEmpty) return null;
-
-    // Sort by season, then episode number
-    episodes.sort((a, b) {
-      final seasonCompare = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-      if (seasonCompare != 0) return seasonCompare;
-      return (a.index ?? 0).compareTo(b.index ?? 0);
-    });
 
     // Find first unwatched episode (using metadata's isWatched)
     for (final episode in episodes) {

@@ -154,16 +154,11 @@ class OfflineWatchSyncService extends ChangeNotifier {
   Future<void> queueMarkWatched({
     required String serverId,
     required String ratingKey,
-  }) async {
-    await _database.insertWatchAction(
-      serverId: serverId,
-      ratingKey: ratingKey,
-      actionType: 'watched',
-    );
-
-    appLogger.d('Queued offline mark watched: $serverId:$ratingKey');
-    notifyListeners();
-  }
+  }) => _queueWatchStatusAction(
+    serverId: serverId,
+    ratingKey: ratingKey,
+    actionType: 'watched',
+  );
 
   /// Queue a manual "mark as unwatched" action.
   ///
@@ -171,14 +166,25 @@ class OfflineWatchSyncService extends ChangeNotifier {
   Future<void> queueMarkUnwatched({
     required String serverId,
     required String ratingKey,
+  }) => _queueWatchStatusAction(
+    serverId: serverId,
+    ratingKey: ratingKey,
+    actionType: 'unwatched',
+  );
+
+  /// Internal helper to queue watch/unwatch actions.
+  Future<void> _queueWatchStatusAction({
+    required String serverId,
+    required String ratingKey,
+    required String actionType,
   }) async {
     await _database.insertWatchAction(
       serverId: serverId,
       ratingKey: ratingKey,
-      actionType: 'unwatched',
+      actionType: actionType,
     );
 
-    appLogger.d('Queued offline mark unwatched: $serverId:$ratingKey');
+    appLogger.d('Queued offline mark $actionType: $serverId:$ratingKey');
     notifyListeners();
   }
 
@@ -309,6 +315,28 @@ class OfflineWatchSyncService extends ChangeNotifier {
     }
   }
 
+  /// Execute a callback with an online client for the given server.
+  ///
+  /// Returns null if no client available or server is offline.
+  /// The callback receives the PlexClient and should return the result.
+  Future<T?> _withOnlineClient<T>(
+    String serverId,
+    Future<T> Function(PlexClient client) callback,
+  ) async {
+    final client = _serverManager.getClient(serverId);
+    if (client == null) {
+      appLogger.d('No client for server $serverId, skipping');
+      return null;
+    }
+
+    if (!_serverManager.isServerOnline(serverId)) {
+      appLogger.d('Server $serverId is offline, skipping');
+      return null;
+    }
+
+    return callback(client);
+  }
+
   /// Sync a single action to the server.
   Future<void> _syncAction(
     PlexClient client,
@@ -392,85 +420,67 @@ class OfflineWatchSyncService extends ChangeNotifier {
       for (final serverEntry in episodesByServerAndSeason.entries) {
         final serverId = serverEntry.key;
         final seasonMap = serverEntry.value;
-        final client = _serverManager.getClient(serverId);
 
-        if (client == null) {
-          appLogger.d('No client for server $serverId, skipping');
-          continue;
-        }
+        await _withOnlineClient(serverId, (client) async {
+          for (final seasonEntry in seasonMap.entries) {
+            final seasonRatingKey = seasonEntry.key;
+            final downloadedEpisodeKeys = seasonEntry.value;
 
-        if (!_serverManager.isServerOnline(serverId)) {
-          appLogger.d('Server $serverId is offline, skipping');
-          continue;
-        }
+            try {
+              // Fetch all episodes in this season with one API call
+              final seasonEpisodes = await client.getChildren(seasonRatingKey);
+              seasonCount++;
 
-        for (final seasonEntry in seasonMap.entries) {
-          final seasonRatingKey = seasonEntry.key;
-          final downloadedEpisodeKeys = seasonEntry.value;
-
-          try {
-            // Fetch all episodes in this season with one API call
-            final seasonEpisodes = await client.getChildren(seasonRatingKey);
-            seasonCount++;
-
-            // Cache only the episodes we have downloaded
-            for (final episode in seasonEpisodes) {
-              if (downloadedEpisodeKeys.contains(episode.ratingKey)) {
-                await PlexApiCache.instance.put(
-                  serverId,
-                  '/library/metadata/${episode.ratingKey}',
-                  {
-                    'MediaContainer': {
-                      'Metadata': [episode.toJson()],
+              // Cache only the episodes we have downloaded
+              for (final episode in seasonEpisodes) {
+                if (downloadedEpisodeKeys.contains(episode.ratingKey)) {
+                  await PlexApiCache.instance.put(
+                    serverId,
+                    '/library/metadata/${episode.ratingKey}',
+                    {
+                      'MediaContainer': {
+                        'Metadata': [episode.toJson()],
+                      },
                     },
-                  },
-                );
-                syncedCount++;
+                  );
+                  syncedCount++;
+                }
               }
+            } catch (e) {
+              appLogger.d(
+                'Failed to sync watch states for season $seasonRatingKey: $e',
+              );
             }
-          } catch (e) {
-            appLogger.d(
-              'Failed to sync watch states for season $seasonRatingKey: $e',
-            );
           }
-        }
+        });
       }
 
       // Fetch non-episode items individually (movies, etc.)
       for (final entry in nonEpisodeItems.entries) {
         final serverId = entry.key;
         final ratingKeys = entry.value;
-        final client = _serverManager.getClient(serverId);
 
-        if (client == null) {
-          appLogger.d('No client for server $serverId, skipping');
-          continue;
-        }
-
-        if (!_serverManager.isServerOnline(serverId)) {
-          appLogger.d('Server $serverId is offline, skipping');
-          continue;
-        }
-
-        for (final ratingKey in ratingKeys) {
-          try {
-            final metadata = await client.getMetadataWithImages(ratingKey);
-            if (metadata != null) {
-              await PlexApiCache.instance.put(
-                serverId,
-                '/library/metadata/$ratingKey',
-                {
-                  'MediaContainer': {
-                    'Metadata': [metadata.toJson()],
+        await _withOnlineClient(serverId, (client) async {
+          for (final ratingKey in ratingKeys) {
+            try {
+              final metadata = await client.getMetadataWithImages(ratingKey);
+              if (metadata != null) {
+                await PlexApiCache.instance.put(
+                  serverId,
+                  '/library/metadata/$ratingKey',
+                  {
+                    'MediaContainer': {
+                      'Metadata': [metadata.toJson()],
+                    },
                   },
-                },
-              );
-              syncedCount++;
+                );
+                syncedCount++;
+              }
+            } catch (e) {
+              appLogger.d('Failed to sync watch state for $ratingKey: $e');
             }
-          } catch (e) {
-            appLogger.d('Failed to sync watch state for $ratingKey: $e');
           }
-        }
+        });
       }
 
       final movieCount = nonEpisodeItems.values.fold(0, (a, b) => a + b.length);

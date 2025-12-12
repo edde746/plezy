@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../focus/dpad_navigator.dart';
 import '../focus/focusable_chip_mixin.dart';
 import '../focus/input_mode_tracker.dart';
 import 'focus_builders.dart';
@@ -78,43 +77,17 @@ class _FocusableTabChipState extends State<FocusableTabChip>
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
-      return KeyEventResult.ignored;
-    }
-
-    final key = event.logicalKey;
-
-    // SELECT key activates the tab
-    if (key.isSelectKey) {
-      widget.onSelect();
-      return KeyEventResult.handled;
-    }
-
-    // LEFT arrow switches to previous tab
-    if (key.isLeftKey && widget.onNavigateLeft != null) {
-      widget.onNavigateLeft!();
-      return KeyEventResult.handled;
-    }
-
-    // RIGHT arrow switches to next tab
-    if (key.isRightKey && widget.onNavigateRight != null) {
-      widget.onNavigateRight!();
-      return KeyEventResult.handled;
-    }
-
-    // DOWN arrow navigates to tab content
-    if (key == LogicalKeyboardKey.arrowDown) {
-      widget.onNavigateDown?.call();
-      return KeyEventResult.handled;
-    }
-
-    // BACK key navigates to sidenav
-    if (key.isBackKey && widget.onBack != null) {
-      widget.onBack!();
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
+    return handleChipKeyEvent(
+      node,
+      event,
+      ChipKeyCallbacks(
+        onSelect: widget.onSelect,
+        onNavigateLeft: widget.onNavigateLeft,
+        onNavigateRight: widget.onNavigateRight,
+        onNavigateDown: widget.onNavigateDown,
+        onBack: widget.onBack,
+      ),
+    );
   }
 
   @override

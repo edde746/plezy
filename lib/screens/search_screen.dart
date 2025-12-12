@@ -212,60 +212,16 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
                 child: Center(child: CircularProgressIndicator()),
               )
             else if (!_hasSearched)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AppIcon(
-                        Symbols.search_rounded,
-                        fill: 1,
-                        size: 80,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        t.search.searchYourMedia,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        t.search.enterTitleActorOrKeyword,
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
+              _SearchEmptyState(
+                icon: Symbols.search_rounded,
+                title: t.search.searchYourMedia,
+                subtitle: t.search.enterTitleActorOrKeyword,
               )
             else if (_searchResults.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AppIcon(
-                        Symbols.search_off_rounded,
-                        fill: 1,
-                        size: 80,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        t.messages.noResultsFound,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        t.search.tryDifferentTerm,
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
+              _SearchEmptyState(
+                icon: Symbols.search_off_rounded,
+                title: t.messages.noResultsFound,
+                subtitle: t.search.tryDifferentTerm,
               )
             else
               Consumer<SettingsProvider>(
@@ -289,6 +245,42 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
                   );
                 },
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Empty state widget for search screen with icon, title, and subtitle.
+class _SearchEmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _SearchEmptyState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverFillRemaining(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppIcon(icon, fill: 1, size: 80, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 8),
+            Text(subtitle, style: TextStyle(color: Colors.grey.shade600)),
           ],
         ),
       ),

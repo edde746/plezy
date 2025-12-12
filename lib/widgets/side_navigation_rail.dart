@@ -319,21 +319,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     }
   }
 
-  IconData _getLibraryIconFilled(String type) {
-    switch (type.toLowerCase()) {
-      case 'movie':
-        return Symbols.movie_rounded;
-      case 'show':
-        return Symbols.tv_rounded;
-      case 'artist':
-        return Symbols.music_note_rounded;
-      case 'photo':
-        return Symbols.photo_rounded;
-      default:
-        return Symbols.folder_rounded;
-    }
-  }
-
   /// Calculate top padding for macOS traffic lights
   double _getTopPadding(BuildContext context) {
     double basePadding = MediaQuery.of(context).padding.top + 16;
@@ -635,7 +620,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
     return NavigationRailItem(
       icon: _getLibraryIcon(library.type),
-      selectedIcon: _getLibraryIconFilled(library.type),
+      selectedIcon: _getLibraryIcon(library.type),
       label: SizedBox(
         height: 32, // Fixed height for consistent item sizing
         child: Column(

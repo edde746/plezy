@@ -335,6 +335,10 @@ class DownloadTreeItem extends StatelessWidget {
           tooltip: 'Delete',
           iconSize: 20,
         );
+
+      case DownloadStatus.partial:
+        // Partial status is for shows/seasons, not leaf nodes
+        return const SizedBox.shrink();
     }
   }
 
@@ -363,6 +367,8 @@ class DownloadTreeItem extends StatelessWidget {
         return Colors.amber;
       case DownloadStatus.cancelled:
         return Colors.grey;
+      case DownloadStatus.partial:
+        return Colors.teal;
     }
   }
 }

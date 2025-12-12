@@ -482,104 +482,126 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
   /// Build action buttons for nodes
   Widget _buildActions(DownloadTreeNode node) {
-    final globalKey = node.key;
     final isContainer =
         node.type == DownloadNodeType.show ||
         node.type == DownloadNodeType.season;
 
+    final actions = isContainer
+        ? _getContainerActions(node)
+        : _getItemActions(node);
+
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        // For individual items (episodes/movies)
-        if (!isContainer) ...[
-          // Pause button for downloading items
-          if (node.status == DownloadStatus.downloading &&
-              widget.onPause != null)
-            IconButton(
-              icon: const AppIcon(Symbols.pause_rounded, fill: 1, size: 20),
-              onPressed: () => widget.onPause!(globalKey),
-              tooltip: 'Pause',
-            ),
+      children: actions,
+    );
+  }
 
-          // Resume button for paused items
-          if (node.status == DownloadStatus.paused && widget.onResume != null)
-            IconButton(
-              icon: const AppIcon(
-                Symbols.play_arrow_rounded,
-                fill: 1,
-                size: 20,
-              ),
-              onPressed: () => widget.onResume!(globalKey),
-              tooltip: 'Resume',
-            ),
+  /// Get action buttons for individual items (episodes/movies)
+  List<Widget> _getItemActions(DownloadTreeNode node) {
+    final globalKey = node.key;
+    final status = node.status;
+    final actions = <Widget>[];
 
-          // Cancel button for downloading/queued items
-          if ((node.status == DownloadStatus.downloading ||
-                  node.status == DownloadStatus.queued) &&
-              widget.onCancel != null)
-            IconButton(
-              icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
-              onPressed: () => widget.onCancel!(globalKey),
-              tooltip: 'Cancel',
-            ),
+    // Pause button for downloading items
+    if (status == DownloadStatus.downloading && widget.onPause != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.pause_rounded,
+        tooltip: 'Pause',
+        onPressed: () => widget.onPause!(globalKey),
+      ));
+    }
 
-          // Retry button for failed items
-          if (node.status == DownloadStatus.failed && widget.onRetry != null)
-            IconButton(
-              icon: const AppIcon(Symbols.refresh_rounded, fill: 1, size: 20),
-              onPressed: () => widget.onRetry!(globalKey),
-              tooltip: t.downloads.retryDownload,
-            ),
+    // Resume button for paused items
+    if (status == DownloadStatus.paused && widget.onResume != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.play_arrow_rounded,
+        tooltip: 'Resume',
+        onPressed: () => widget.onResume!(globalKey),
+      ));
+    }
 
-          // Delete button for completed/failed/cancelled items
-          if ((node.status == DownloadStatus.completed ||
-                  node.status == DownloadStatus.failed ||
-                  node.status == DownloadStatus.cancelled) &&
-              widget.onDelete != null)
-            IconButton(
-              icon: const AppIcon(Symbols.delete_rounded, fill: 1, size: 20),
-              onPressed: () => widget.onDelete!(globalKey),
-              tooltip: 'Delete',
-            ),
-        ],
+    // Cancel button for downloading/queued items
+    if ((status == DownloadStatus.downloading ||
+            status == DownloadStatus.queued) &&
+        widget.onCancel != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.close_rounded,
+        tooltip: 'Cancel',
+        onPressed: () => widget.onCancel!(globalKey),
+      ));
+    }
 
-        // For container nodes (shows/seasons)
-        if (isContainer) ...[
-          // Pause all button - show if any children are downloading or queued
-          if ((node.status == DownloadStatus.downloading ||
-                  node.status == DownloadStatus.queued) &&
-              widget.onPause != null)
-            IconButton(
-              icon: const AppIcon(Symbols.pause_rounded, fill: 1, size: 20),
-              onPressed: () => _pauseAllChildren(node),
-              tooltip: 'Pause all',
-            ),
+    // Retry button for failed items
+    if (status == DownloadStatus.failed && widget.onRetry != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.refresh_rounded,
+        tooltip: t.downloads.retryDownload,
+        onPressed: () => widget.onRetry!(globalKey),
+      ));
+    }
 
-          // Resume all button - show if container is paused
-          if (node.status == DownloadStatus.paused && widget.onResume != null)
-            IconButton(
-              icon: const AppIcon(
-                Symbols.play_arrow_rounded,
-                fill: 1,
-                size: 20,
-              ),
-              onPressed: () => _resumeAllChildren(node),
-              tooltip: 'Resume all',
-            ),
+    // Delete button for completed/failed/cancelled items
+    if ((status == DownloadStatus.completed ||
+            status == DownloadStatus.failed ||
+            status == DownloadStatus.cancelled) &&
+        widget.onDelete != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.delete_rounded,
+        tooltip: 'Delete',
+        onPressed: () => widget.onDelete!(globalKey),
+      ));
+    }
 
-          // Delete all button
-          if (widget.onDelete != null)
-            IconButton(
-              icon: const AppIcon(
-                Symbols.delete_sweep_rounded,
-                fill: 1,
-                size: 20,
-              ),
-              onPressed: () => _deleteAllChildren(node),
-              tooltip: 'Delete all',
-            ),
-        ],
-      ],
+    return actions;
+  }
+
+  /// Get action buttons for container nodes (shows/seasons)
+  List<Widget> _getContainerActions(DownloadTreeNode node) {
+    final status = node.status;
+    final actions = <Widget>[];
+
+    // Pause all button - show if any children are downloading or queued
+    if ((status == DownloadStatus.downloading ||
+            status == DownloadStatus.queued) &&
+        widget.onPause != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.pause_rounded,
+        tooltip: 'Pause all',
+        onPressed: () => _pauseAllChildren(node),
+      ));
+    }
+
+    // Resume all button - show if container is paused
+    if (status == DownloadStatus.paused && widget.onResume != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.play_arrow_rounded,
+        tooltip: 'Resume all',
+        onPressed: () => _resumeAllChildren(node),
+      ));
+    }
+
+    // Delete all button
+    if (widget.onDelete != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.delete_sweep_rounded,
+        tooltip: 'Delete all',
+        onPressed: () => _deleteAllChildren(node),
+      ));
+    }
+
+    return actions;
+  }
+
+  /// Build a single action button
+  Widget _buildActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      icon: AppIcon(icon, fill: 1, size: 20),
+      onPressed: onPressed,
+      tooltip: tooltip,
     );
   }
 

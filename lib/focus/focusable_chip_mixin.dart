@@ -1,4 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'dpad_navigator.dart';
+
+/// Callbacks for chip key event handling.
+class ChipKeyCallbacks {
+  /// Called when SELECT key is pressed.
+  final VoidCallback? onSelect;
+
+  /// Called when DOWN arrow is pressed.
+  final VoidCallback? onNavigateDown;
+
+  /// Called when UP arrow is pressed.
+  final VoidCallback? onNavigateUp;
+
+  /// Called when LEFT arrow is pressed.
+  final VoidCallback? onNavigateLeft;
+
+  /// Called when RIGHT arrow is pressed.
+  final VoidCallback? onNavigateRight;
+
+  /// Called when BACK key is pressed.
+  final VoidCallback? onBack;
+
+  const ChipKeyCallbacks({
+    this.onSelect,
+    this.onNavigateDown,
+    this.onNavigateUp,
+    this.onNavigateLeft,
+    this.onNavigateRight,
+    this.onBack,
+  });
+}
 
 /// A mixin that provides common FocusNode lifecycle management for chip widgets.
 ///
@@ -59,5 +92,64 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
     if (mounted) {
       setState(() => _isFocused = focusNode.hasFocus);
     }
+  }
+
+  /// Shared key event handler for chip widgets.
+  ///
+  /// Handles common key patterns:
+  /// - SELECT key -> onSelect
+  /// - Arrow keys -> navigation callbacks
+  /// - BACK key -> onBack
+  ///
+  /// Returns [KeyEventResult.handled] if the event was consumed,
+  /// [KeyEventResult.ignored] otherwise.
+  KeyEventResult handleChipKeyEvent(
+    FocusNode node,
+    KeyEvent event,
+    ChipKeyCallbacks callbacks,
+  ) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // SELECT key activates the chip
+    if (key.isSelectKey && callbacks.onSelect != null) {
+      callbacks.onSelect!();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT arrow
+    if (key.isLeftKey && callbacks.onNavigateLeft != null) {
+      callbacks.onNavigateLeft!();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT arrow
+    if (key.isRightKey && callbacks.onNavigateRight != null) {
+      callbacks.onNavigateRight!();
+      return KeyEventResult.handled;
+    }
+
+    // DOWN arrow
+    if (key.isDownKey) {
+      callbacks.onNavigateDown?.call();
+      return KeyEventResult.handled;
+    }
+
+    // UP arrow
+    if (key.isUpKey && callbacks.onNavigateUp != null) {
+      callbacks.onNavigateUp!();
+      return KeyEventResult.handled;
+    }
+
+    // BACK key
+    if (key.isBackKey && callbacks.onBack != null) {
+      callbacks.onBack!();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 }

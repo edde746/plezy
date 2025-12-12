@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
+import '../../../focus/dpad_navigator.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../i18n/strings.g.dart';
@@ -91,7 +92,7 @@ class _VolumeControlState extends State<VolumeControl> {
         _adjustVolume(_volumeStep);
         return KeyEventResult.handled;
       }
-      if (_isBackKey(key) || _isSelectKey(key)) {
+      if (key.isBackKey || key.isSelectKey) {
         _exitAdjustMode();
         return KeyEventResult.handled;
       }
@@ -108,20 +109,6 @@ class _VolumeControlState extends State<VolumeControl> {
 
     // Not in adjust mode: use the provided key event handler for navigation
     return widget.onKeyEvent?.call(node, event) ?? KeyEventResult.ignored;
-  }
-
-  bool _isBackKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.escape ||
-        key == LogicalKeyboardKey.goBack ||
-        key == LogicalKeyboardKey.browserBack ||
-        key == LogicalKeyboardKey.gameButtonB;
-  }
-
-  bool _isSelectKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.select ||
-        key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.numpadEnter ||
-        key == LogicalKeyboardKey.gameButtonA;
   }
 
   void _handleFocusChange(bool hasFocus) {

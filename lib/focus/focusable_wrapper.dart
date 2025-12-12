@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dpad_navigator.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
 
@@ -265,7 +266,7 @@ class _FocusableWrapperState extends State<FocusableWrapper>
     }
 
     // Handle SELECT key with optional long-press detection
-    if (_isSelectKey(key)) {
+    if (key.isSelectKey) {
       if (widget.enableLongPress) {
         if (event is KeyDownEvent) {
           // Only start timer on initial press, not repeats
@@ -309,7 +310,7 @@ class _FocusableWrapperState extends State<FocusableWrapper>
     }
 
     // Context menu key
-    if (_isContextMenuKey(key)) {
+    if (key.isContextMenuKey) {
       widget.onLongPress?.call();
       return KeyEventResult.handled;
     }
@@ -321,31 +322,12 @@ class _FocusableWrapperState extends State<FocusableWrapper>
     }
 
     // BACK key
-    if (_isBackKey(key) && widget.onBack != null) {
+    if (key.isBackKey && widget.onBack != null) {
       widget.onBack!();
       return KeyEventResult.handled;
     }
 
     return KeyEventResult.ignored;
-  }
-
-  bool _isSelectKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.select ||
-        key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.numpadEnter ||
-        key == LogicalKeyboardKey.gameButtonA;
-  }
-
-  bool _isContextMenuKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.contextMenu ||
-        key == LogicalKeyboardKey.gameButtonX;
-  }
-
-  bool _isBackKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.escape ||
-        key == LogicalKeyboardKey.goBack ||
-        key == LogicalKeyboardKey.browserBack ||
-        key == LogicalKeyboardKey.gameButtonB;
   }
 
   @override

@@ -384,6 +384,52 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     }
   }
 
+  /// Build navigation destinations for bottom navigation bar.
+  List<NavigationDestination> _buildNavDestinations(bool isOffline) {
+    if (isOffline) {
+      return [
+        NavigationDestination(
+          icon: const AppIcon(Symbols.download_rounded, fill: 1),
+          selectedIcon: const AppIcon(Symbols.download_rounded, fill: 1),
+          label: t.navigation.downloads,
+        ),
+        NavigationDestination(
+          icon: const AppIcon(Symbols.settings_rounded, fill: 1),
+          selectedIcon: const AppIcon(Symbols.settings_rounded, fill: 1),
+          label: t.navigation.settings,
+        ),
+      ];
+    }
+
+    return [
+      NavigationDestination(
+        icon: const AppIcon(Symbols.home_rounded, fill: 1),
+        selectedIcon: const AppIcon(Symbols.home_rounded, fill: 1),
+        label: t.navigation.home,
+      ),
+      NavigationDestination(
+        icon: const AppIcon(Symbols.video_library_rounded, fill: 1),
+        selectedIcon: const AppIcon(Symbols.video_library_rounded, fill: 1),
+        label: t.navigation.libraries,
+      ),
+      NavigationDestination(
+        icon: const AppIcon(Symbols.search_rounded, fill: 1),
+        selectedIcon: const AppIcon(Symbols.search_rounded, fill: 1),
+        label: t.navigation.search,
+      ),
+      NavigationDestination(
+        icon: const AppIcon(Symbols.download_rounded, fill: 1),
+        selectedIcon: const AppIcon(Symbols.download_rounded, fill: 1),
+        label: t.navigation.downloads,
+      ),
+      NavigationDestination(
+        icon: const AppIcon(Symbols.settings_rounded, fill: 1),
+        selectedIcon: const AppIcon(Symbols.settings_rounded, fill: 1),
+        label: t.navigation.settings,
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
@@ -441,57 +487,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       );
     }
 
-    // In offline mode, only show Downloads and Settings
-    final destinations = _isOffline
-        ? [
-            NavigationDestination(
-              icon: const AppIcon(Symbols.download_rounded, fill: 1),
-              selectedIcon: const AppIcon(Symbols.download_rounded, fill: 1),
-              label: t.navigation.downloads,
-            ),
-            NavigationDestination(
-              icon: const AppIcon(Symbols.settings_rounded, fill: 1),
-              selectedIcon: const AppIcon(Symbols.settings_rounded, fill: 1),
-              label: t.navigation.settings,
-            ),
-          ]
-        : [
-            NavigationDestination(
-              icon: const AppIcon(Symbols.home_rounded, fill: 1),
-              selectedIcon: const AppIcon(Symbols.home_rounded, fill: 1),
-              label: t.navigation.home,
-            ),
-            NavigationDestination(
-              icon: const AppIcon(Symbols.video_library_rounded, fill: 1),
-              selectedIcon: const AppIcon(
-                Symbols.video_library_rounded,
-                fill: 1,
-              ),
-              label: t.navigation.libraries,
-            ),
-            NavigationDestination(
-              icon: const AppIcon(Symbols.search_rounded, fill: 1),
-              selectedIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-              label: t.navigation.search,
-            ),
-            NavigationDestination(
-              icon: const AppIcon(Symbols.download_rounded, fill: 1),
-              selectedIcon: const AppIcon(Symbols.download_rounded, fill: 1),
-              label: t.navigation.downloads,
-            ),
-            NavigationDestination(
-              icon: const AppIcon(Symbols.settings_rounded, fill: 1),
-              selectedIcon: const AppIcon(Symbols.settings_rounded, fill: 1),
-              label: t.navigation.settings,
-            ),
-          ];
-
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _selectTab,
-        destinations: destinations,
+        destinations: _buildNavDestinations(_isOffline),
       ),
     );
   }

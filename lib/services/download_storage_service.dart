@@ -54,6 +54,23 @@ class DownloadStorageService {
     }
   }
 
+  /// Get the base app directory for storing data.
+  /// Uses ApplicationDocumentsDirectory on mobile, ApplicationSupportDirectory on desktop.
+  Future<Directory> _getBaseAppDir() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      return getApplicationDocumentsDirectory();
+    }
+    return getApplicationSupportDirectory();
+  }
+
+  /// Format episode filename base: S{XX}E{XX} - {Title}
+  String _formatEpisodeFileName(PlexMetadata episode) {
+    final seasonNum = (episode.parentIndex ?? 0).toString().padLeft(2, '0');
+    final episodeNum = (episode.index ?? 0).toString().padLeft(2, '0');
+    final episodeName = _sanitizeFileName(episode.title);
+    return 'S${seasonNum}E$episodeNum - $episodeName';
+  }
+
   /// Check if using custom download path
   bool isUsingCustomPath() => _customDownloadPath != null;
 
@@ -68,12 +85,7 @@ class DownloadStorageService {
 
   /// Get default download path (for "Reset to Default" functionality)
   Future<String> getDefaultDownloadPath() async {
-    final Directory baseDir;
-    if (Platform.isAndroid || Platform.isIOS) {
-      baseDir = await getApplicationDocumentsDirectory();
-    } else {
-      baseDir = await getApplicationSupportDirectory();
-    }
+    final baseDir = await _getBaseAppDir();
     return path.join(baseDir.path, 'downloads');
   }
 
@@ -113,14 +125,7 @@ class DownloadStorageService {
     }
 
     // Default path logic
-    final Directory baseDir;
-    if (Platform.isAndroid || Platform.isIOS) {
-      baseDir = await getApplicationDocumentsDirectory();
-    } else {
-      // Desktop: macOS, Windows, Linux
-      baseDir = await getApplicationSupportDirectory();
-    }
-
+    final baseDir = await _getBaseAppDir();
     _baseDownloadsDir = Directory(path.join(baseDir.path, 'downloads'));
     if (!await _baseDownloadsDir!.exists()) {
       await _baseDownloadsDir!.create(recursive: true);
@@ -148,14 +153,7 @@ class DownloadStorageService {
     }
 
     // Default: Get the app base directory directly (not downloads directory)
-    final Directory baseDir;
-    if (Platform.isAndroid || Platform.isIOS) {
-      baseDir = await getApplicationDocumentsDirectory();
-    } else {
-      // Desktop: macOS, Windows, Linux
-      baseDir = await getApplicationSupportDirectory();
-    }
-
+    final baseDir = await _getBaseAppDir();
     final artworkDir = Directory(path.join(baseDir.path, 'artwork'));
     if (!await artworkDir.exists()) {
       await artworkDir.create(recursive: true);
@@ -357,6 +355,17 @@ class DownloadStorageService {
     return path.join(seasonDir.path, '$artworkType.jpg');
   }
 
+  /// Get base path info for episode files (season directory path and formatted filename).
+  /// [showYear]: Pass the show's premiere year (not episode year)
+  Future<({String seasonDirPath, String fileName})> _getEpisodeBasePath(
+    PlexMetadata episode, {
+    int? showYear,
+  }) async {
+    final seasonDir = await getSeasonDirectory(episode, showYear: showYear);
+    final fileName = _formatEpisodeFileName(episode);
+    return (seasonDirPath: seasonDir.path, fileName: fileName);
+  }
+
   /// Get episode video file path: .../Season XX/S{XX}E{XX} - {Title}.{ext}
   /// [showYear]: Pass the show's premiere year (not episode year)
   Future<String> getEpisodeVideoPath(
@@ -364,14 +373,8 @@ class DownloadStorageService {
     String extension, {
     int? showYear,
   }) async {
-    final seasonDir = await getSeasonDirectory(episode, showYear: showYear);
-    final seasonNum = (episode.parentIndex ?? 0).toString().padLeft(2, '0');
-    final episodeNum = (episode.index ?? 0).toString().padLeft(2, '0');
-    final episodeName = _sanitizeFileName(episode.title);
-    return path.join(
-      seasonDir.path,
-      'S${seasonNum}E$episodeNum - $episodeName.$extension',
-    );
+    final base = await _getEpisodeBasePath(episode, showYear: showYear);
+    return path.join(base.seasonDirPath, '${base.fileName}.$extension');
   }
 
   /// Get episode thumbnail path: .../Season XX/S{XX}E{XX} - {Title}.jpg
@@ -380,14 +383,8 @@ class DownloadStorageService {
     PlexMetadata episode, {
     int? showYear,
   }) async {
-    final seasonDir = await getSeasonDirectory(episode, showYear: showYear);
-    final seasonNum = (episode.parentIndex ?? 0).toString().padLeft(2, '0');
-    final episodeNum = (episode.index ?? 0).toString().padLeft(2, '0');
-    final episodeName = _sanitizeFileName(episode.title);
-    return path.join(
-      seasonDir.path,
-      'S${seasonNum}E$episodeNum - $episodeName.jpg',
-    );
+    final base = await _getEpisodeBasePath(episode, showYear: showYear);
+    return path.join(base.seasonDirPath, '${base.fileName}.jpg');
   }
 
   /// Get subtitles directory for episode: .../Season XX/S{XX}E{XX} - {Title}_subs/
@@ -396,15 +393,9 @@ class DownloadStorageService {
     PlexMetadata episode, {
     int? showYear,
   }) async {
-    final seasonDir = await getSeasonDirectory(episode, showYear: showYear);
-    final seasonNum = (episode.parentIndex ?? 0).toString().padLeft(2, '0');
-    final episodeNum = (episode.index ?? 0).toString().padLeft(2, '0');
-    final episodeName = _sanitizeFileName(episode.title);
+    final base = await _getEpisodeBasePath(episode, showYear: showYear);
     final subsDir = Directory(
-      path.join(
-        seasonDir.path,
-        'S${seasonNum}E$episodeNum - ${episodeName}_subs',
-      ),
+      path.join(base.seasonDirPath, '${base.fileName}_subs'),
     );
     if (!await subsDir.exists()) {
       await subsDir.create(recursive: true);
@@ -463,12 +454,7 @@ class DownloadStorageService {
   /// the container UUID can change.
   /// Returns a path relative to the app's documents directory.
   Future<String> toRelativePath(String absolutePath) async {
-    final Directory baseDir;
-    if (Platform.isAndroid || Platform.isIOS) {
-      baseDir = await getApplicationDocumentsDirectory();
-    } else {
-      baseDir = await getApplicationSupportDirectory();
-    }
+    final baseDir = await _getBaseAppDir();
 
     // If the path starts with the base directory, strip it
     if (absolutePath.startsWith(baseDir.path)) {
@@ -492,13 +478,7 @@ class DownloadStorageService {
       return relativePath;
     }
 
-    final Directory baseDir;
-    if (Platform.isAndroid || Platform.isIOS) {
-      baseDir = await getApplicationDocumentsDirectory();
-    } else {
-      baseDir = await getApplicationSupportDirectory();
-    }
-
+    final baseDir = await _getBaseAppDir();
     return path.join(baseDir.path, relativePath);
   }
 
@@ -686,10 +666,8 @@ class DownloadStorageService {
 
   /// Get SAF file name for an episode
   String getEpisodeSafFileName(PlexMetadata episode, String extension) {
-    final seasonNum = (episode.parentIndex ?? 0).toString().padLeft(2, '0');
-    final episodeNum = (episode.index ?? 0).toString().padLeft(2, '0');
-    final episodeName = _sanitizeFileName(episode.title);
-    return 'S${seasonNum}E$episodeNum - $episodeName.$extension';
+    final fileName = _formatEpisodeFileName(episode);
+    return '$fileName.$extension';
   }
 
   /// Check if a path is a SAF content URI

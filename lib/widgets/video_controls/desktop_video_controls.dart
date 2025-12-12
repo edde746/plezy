@@ -181,42 +181,34 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     }
   }
 
-  /// Handle key events for horizontal button navigation
-  KeyEventResult _handleButtonKeyEvent(
-    FocusNode node,
-    KeyEvent event,
-    int index,
-  ) {
+  /// Handle directional navigation for bottom control row.
+  ///
+  /// Returns [KeyEventResult.handled] if the key was processed,
+  /// [KeyEventResult.ignored] otherwise.
+  /// UP always navigates to timeline.
+  KeyEventResult _handleDirectionalNavigation(
+    KeyEvent event, {
+    FocusNode? leftTarget,
+    FocusNode? rightTarget,
+  }) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
 
     final key = event.logicalKey;
 
-    // LEFT arrow - move to previous button
     if (key == LogicalKeyboardKey.arrowLeft) {
-      if (index > 0) {
-        _buttonFocusNodes[index - 1].requestFocus();
-        widget.onFocusActivity?.call();
-        return KeyEventResult.handled;
-      }
-      return KeyEventResult.handled; // At start, consume to prevent bubbling
-    }
-
-    // RIGHT arrow - move to next button or to volume
-    if (key == LogicalKeyboardKey.arrowRight) {
-      if (index < _buttonFocusNodes.length - 1) {
-        _buttonFocusNodes[index + 1].requestFocus();
-        widget.onFocusActivity?.call();
-        return KeyEventResult.handled;
-      }
-      // At end of playback buttons - move to volume
-      _volumeFocusNode.requestFocus();
+      leftTarget?.requestFocus();
       widget.onFocusActivity?.call();
       return KeyEventResult.handled;
     }
 
-    // UP arrow - move focus to timeline
+    if (key == LogicalKeyboardKey.arrowRight) {
+      rightTarget?.requestFocus();
+      widget.onFocusActivity?.call();
+      return KeyEventResult.handled;
+    }
+
     if (key == LogicalKeyboardKey.arrowUp) {
       _timelineFocusNode.requestFocus();
       widget.onFocusActivity?.call();
@@ -226,38 +218,33 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     return KeyEventResult.ignored;
   }
 
+  /// Handle key events for horizontal button navigation
+  KeyEventResult _handleButtonKeyEvent(
+    FocusNode node,
+    KeyEvent event,
+    int index,
+  ) {
+    final leftTarget = index > 0 ? _buttonFocusNodes[index - 1] : null;
+    final rightTarget = index < _buttonFocusNodes.length - 1
+        ? _buttonFocusNodes[index + 1]
+        : _volumeFocusNode;
+
+    return _handleDirectionalNavigation(
+      event,
+      leftTarget: leftTarget,
+      rightTarget: rightTarget,
+    );
+  }
+
   /// Handle key events for volume control navigation
   KeyEventResult _handleVolumeKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
-      return KeyEventResult.ignored;
-    }
-
-    final key = event.logicalKey;
-
-    // LEFT arrow - move back to last playback button
-    if (key == LogicalKeyboardKey.arrowLeft) {
-      _nextItemFocusNode.requestFocus();
-      widget.onFocusActivity?.call();
-      return KeyEventResult.handled;
-    }
-
-    // RIGHT arrow - move to first track control button
-    if (key == LogicalKeyboardKey.arrowRight) {
-      if (_trackControlFocusNodes.isNotEmpty) {
-        _trackControlFocusNodes[0].requestFocus();
-        widget.onFocusActivity?.call();
-      }
-      return KeyEventResult.handled;
-    }
-
-    // UP arrow - move focus to timeline
-    if (key == LogicalKeyboardKey.arrowUp) {
-      _timelineFocusNode.requestFocus();
-      widget.onFocusActivity?.call();
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
+    return _handleDirectionalNavigation(
+      event,
+      leftTarget: _nextItemFocusNode,
+      rightTarget: _trackControlFocusNodes.isNotEmpty
+          ? _trackControlFocusNodes[0]
+          : null,
+    );
   }
 
   /// Handle key events for timeline navigation
