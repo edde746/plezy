@@ -153,11 +153,14 @@ extension DownloadDatabaseOperations on AppDatabase {
 
   /// Clear download error and reset retry count (for retry)
   Future<void> clearDownloadError(String globalKey) async {
-    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey)))
-        .write(const DownloadedMediaCompanion(
-      errorMessage: Value(null),
-      retryCount: Value(0),
-    ));
+    await (update(
+      downloadedMedia,
+    )..where((t) => t.globalKey.equals(globalKey))).write(
+      const DownloadedMediaCompanion(
+        errorMessage: Value(null),
+        retryCount: Value(0),
+      ),
+    );
   }
 
   /// Remove item from queue

@@ -73,7 +73,11 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
                     ),
                     if (_recordedHotKey != null)
                       IconButton(
-                        icon: const AppIcon(Symbols.backspace_rounded, fill: 1, size: 18),
+                        icon: const AppIcon(
+                          Symbols.backspace_rounded,
+                          fill: 1,
+                          size: 18,
+                        ),
                         onPressed: () {
                           setState(() {
                             _recordedHotKey = null;

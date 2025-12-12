@@ -81,7 +81,13 @@ class FolderTreeItem extends StatelessWidget {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : AppIcon(isExpanded ? Symbols.keyboard_arrow_down_rounded : Symbols.keyboard_arrow_right_rounded, fill: 1, size: 20),
+                    : AppIcon(
+                        isExpanded
+                            ? Symbols.keyboard_arrow_down_rounded
+                            : Symbols.keyboard_arrow_right_rounded,
+                        fill: 1,
+                        size: 20,
+                      ),
               )
             else
               const SizedBox(width: 24),
@@ -89,7 +95,16 @@ class FolderTreeItem extends StatelessWidget {
             const SizedBox(width: 8),
 
             // File/folder icon
-            AppIcon(_getIcon(), fill: 1, size: 20, color: isFolder ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+            AppIcon(
+              _getIcon(),
+              fill: 1,
+              size: 20,
+              color: isFolder
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
 
             const SizedBox(width: 12),
 

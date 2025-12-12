@@ -422,7 +422,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   return _buildFocusableButton(
                     focusNode: _playPauseFocusNode,
                     index: 2,
-                    icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
+                    icon: isPlaying
+                        ? Symbols.pause_rounded
+                        : Symbols.play_arrow_rounded,
                     iconSize: 32,
                     onPressed: () {
                       if (isPlaying) {

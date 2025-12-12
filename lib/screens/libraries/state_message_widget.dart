@@ -46,11 +46,16 @@ class StateMessageWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (icon != null) ...[
-              AppIcon(icon, fill: 1, size: 64, color:
+              AppIcon(
+                icon,
+                fill: 1,
+                size: 64,
+                color:
                     iconColor ??
                     Theme.of(
                       context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.4)),
+                    ).colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
               const SizedBox(height: 16),
             ],
             Text(

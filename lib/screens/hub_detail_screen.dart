@@ -245,7 +245,11 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       title: Text(widget.hub.title),
       actions: [
         IconButton(
-          icon: AppIcon(Symbols.swap_vert_rounded, fill: 1, semanticLabel: t.libraries.sort),
+          icon: AppIcon(
+            Symbols.swap_vert_rounded,
+            fill: 1,
+            semanticLabel: t.libraries.sort,
+          ),
           onPressed: _showSortBottomSheet,
         ),
       ],
@@ -256,7 +260,12 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 48, color: Colors.red),
+                  const AppIcon(
+                    Symbols.error_outline_rounded,
+                    fill: 1,
+                    size: 48,
+                    color: Colors.red,
+                  ),
                   const SizedBox(height: 16),
                   Text(_errorMessage!),
                   const SizedBox(height: 16),

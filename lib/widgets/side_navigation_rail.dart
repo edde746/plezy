@@ -80,7 +80,12 @@ class NavigationRailItem extends StatelessWidget {
             ),
             child: Row(
               children: [
-                AppIcon(isSelected && selectedIcon != null ? selectedIcon! : icon, fill: 1, size: iconSize, color: isSelected ? t.text : t.textMuted),
+                AppIcon(
+                  isSelected && selectedIcon != null ? selectedIcon! : icon,
+                  fill: 1,
+                  size: iconSize,
+                  color: isSelected ? t.text : t.textMuted,
+                ),
                 const SizedBox(width: 12),
                 Expanded(child: label),
               ],
@@ -523,7 +528,14 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                 ),
                 child: Row(
                   children: [
-                    AppIcon(widget.selectedIndex == 1 ? Symbols.video_library_rounded : Symbols.video_library_rounded, fill: 1, size: 22, color: widget.selectedIndex == 1 ? t.text : t.textMuted),
+                    AppIcon(
+                      widget.selectedIndex == 1
+                          ? Symbols.video_library_rounded
+                          : Symbols.video_library_rounded,
+                      fill: 1,
+                      size: 22,
+                      color: widget.selectedIndex == 1 ? t.text : t.textMuted,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -539,7 +551,14 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                         ),
                       ),
                     ),
-                    AppIcon(_librariesExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded, fill: 1, size: 20, color: t.textMuted),
+                    AppIcon(
+                      _librariesExpanded
+                          ? Symbols.expand_less_rounded
+                          : Symbols.expand_more_rounded,
+                      fill: 1,
+                      size: 20,
+                      color: t.textMuted,
+                    ),
                   ],
                 ),
               ),

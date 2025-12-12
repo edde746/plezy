@@ -39,7 +39,11 @@ class SleepTimerDurationList extends StatelessWidget {
         );
 
         return ListTile(
-          leading: const AppIcon(Symbols.timer_rounded, fill: 1, color: Colors.white70),
+          leading: const AppIcon(
+            Symbols.timer_rounded,
+            fill: 1,
+            color: Colors.white70,
+          ),
           title: Text(
             label,
             style: const TextStyle(

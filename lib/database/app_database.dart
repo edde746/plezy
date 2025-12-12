@@ -191,11 +191,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// Get all downloaded media items (for syncing watch states)
   Future<List<DownloadedMediaItem>> getAllDownloadedMetadata() {
-    return (select(downloadedMedia)
-          ..where(
-            (t) => t.status.equals(DownloadStatus.completed.index),
-          ))
-        .get();
+    return (select(
+      downloadedMedia,
+    )..where((t) => t.status.equals(DownloadStatus.completed.index))).get();
   }
 }
 

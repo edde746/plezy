@@ -233,7 +233,12 @@ class _PlaylistDetailScreenState
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Colors.blue[300]),
+                AppIcon(
+                  Symbols.auto_awesome_rounded,
+                  fill: 1,
+                  size: 12,
+                  color: Colors.blue[300],
+                ),
                 const SizedBox(width: 4),
                 Text(
                   t.playlists.smartPlaylist,

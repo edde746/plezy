@@ -149,7 +149,11 @@ class _VolumeControlState extends State<VolumeControl> {
           button: true,
           excludeSemantics: true,
           child: IconButton(
-            icon: AppIcon(isMuted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded, fill: 1, color: Colors.white),
+            icon: AppIcon(
+              isMuted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded,
+              fill: 1,
+              color: Colors.white,
+            ),
             onPressed: () async {
               final newVolume = isMuted ? 100.0 : 0.0;
               widget.player.setVolume(newVolume);

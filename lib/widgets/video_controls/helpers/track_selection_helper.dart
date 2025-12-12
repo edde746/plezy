@@ -87,7 +87,9 @@ class TrackSelectionHelper {
         label,
         style: TextStyle(color: isSelected ? Colors.blue : Colors.white),
       ),
-      trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
+      trailing: isSelected
+          ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue)
+          : null,
       onTap: onTap,
     );
   }

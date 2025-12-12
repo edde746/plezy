@@ -30,7 +30,11 @@ class VideoSheetHeader extends StatelessWidget {
           // Back button or icon
           if (onBack != null)
             IconButton(
-              icon: const AppIcon(Symbols.arrow_back_rounded, fill: 1, color: Colors.white),
+              icon: const AppIcon(
+                Symbols.arrow_back_rounded,
+                fill: 1,
+                color: Colors.white,
+              ),
               onPressed: onBack,
             )
           else if (icon != null)
@@ -46,7 +50,11 @@ class VideoSheetHeader extends StatelessWidget {
           ),
           const Spacer(),
           IconButton(
-            icon: const AppIcon(Symbols.close_rounded, fill: 1, color: Colors.white),
+            icon: const AppIcon(
+              Symbols.close_rounded,
+              fill: 1,
+              color: Colors.white,
+            ),
             onPressed: onClose ?? () => Navigator.pop(context),
           ),
         ],

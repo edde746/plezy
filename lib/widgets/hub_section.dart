@@ -287,7 +287,11 @@ class HubSectionState extends State<HubSection> {
                     ),
                     if (widget.hub.more) ...[
                       const SizedBox(width: 4),
-                      const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20),
+                      const AppIcon(
+                        Symbols.chevron_right_rounded,
+                        fill: 1,
+                        size: 20,
+                      ),
                     ],
                   ],
                 ),

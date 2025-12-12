@@ -110,11 +110,19 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                               segments: const [
                                 ButtonSegment(
                                   value: false,
-                                  icon: AppIcon(Symbols.arrow_upward_rounded, fill: 1, size: 16),
+                                  icon: AppIcon(
+                                    Symbols.arrow_upward_rounded,
+                                    fill: 1,
+                                    size: 16,
+                                  ),
                                 ),
                                 ButtonSegment(
                                   value: true,
-                                  icon: AppIcon(Symbols.arrow_downward_rounded, fill: 1, size: 16),
+                                  icon: AppIcon(
+                                    Symbols.arrow_downward_rounded,
+                                    fill: 1,
+                                    size: 16,
+                                  ),
                                 ),
                               ],
                               selected: {_currentDescending},

@@ -154,7 +154,12 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
                 color: currentColor,
                 shape: BoxShape.circle,
               ),
-              child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: effectiveColor, size: 20),
+              child: AppIcon(
+                Symbols.arrow_back_rounded,
+                fill: 1,
+                color: effectiveColor,
+                size: 20,
+              ),
             );
           },
         ),

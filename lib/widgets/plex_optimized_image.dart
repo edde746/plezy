@@ -336,7 +336,14 @@ class PlexOptimizedImage extends StatelessWidget {
   Widget _buildPlaceholder(BuildContext context) {
     return SkeletonLoader(
       child: fallbackIcon != null
-          ? Center(child: AppIcon(fallbackIcon!, fill: 1, size: 40, color: Colors.white54))
+          ? Center(
+              child: AppIcon(
+                fallbackIcon!,
+                fill: 1,
+                size: 40,
+                color: Colors.white54,
+              ),
+            )
           : null,
     );
   }
@@ -345,7 +352,12 @@ class PlexOptimizedImage extends StatelessWidget {
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Center(
-        child: AppIcon(fallbackIcon ?? Symbols.broken_image_rounded, fill: 1, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        child: AppIcon(
+          fallbackIcon ?? Symbols.broken_image_rounded,
+          fill: 1,
+          size: 40,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -356,7 +368,12 @@ class PlexOptimizedImage extends StatelessWidget {
       height: height,
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Center(
-        child: AppIcon(fallbackIcon ?? Symbols.image_not_supported_rounded, fill: 1, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        child: AppIcon(
+          fallbackIcon ?? Symbols.image_not_supported_rounded,
+          fill: 1,
+          size: 40,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }

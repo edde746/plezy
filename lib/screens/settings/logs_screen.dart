@@ -196,7 +196,12 @@ class _LogEntryCardState extends State<_LogEntryCard> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppIcon(widget.levelIcon, fill: 1, color: widget.levelColor, size: 20),
+                  AppIcon(
+                    widget.levelIcon,
+                    fill: 1,
+                    color: widget.levelColor,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -235,9 +240,15 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                     ),
                   ),
                   if (hasErrorOrStackTrace)
-                    AppIcon(_isExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded, fill: 1, color: Theme.of(
+                    AppIcon(
+                      _isExpanded
+                          ? Symbols.expand_less_rounded
+                          : Symbols.expand_more_rounded,
+                      fill: 1,
+                      color: Theme.of(
                         context,
-                      ).iconTheme.color?.withValues(alpha: 0.6)),
+                      ).iconTheme.color?.withValues(alpha: 0.6),
+                    ),
                 ],
               ),
               if (_isExpanded && hasErrorOrStackTrace) ...[

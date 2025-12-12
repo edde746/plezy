@@ -149,7 +149,12 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: tokens(context).textMuted),
+                      AppIcon(
+                        Symbols.movie_rounded,
+                        fill: 1,
+                        size: 64,
+                        color: tokens(context).textMuted,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         t.messages.noEpisodesFoundGeneral,
@@ -315,7 +320,11 @@ class _EpisodeCard extends StatelessWidget {
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.surfaceContainerHighest,
-                                      child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+                                      child: const AppIcon(
+                                        Symbols.movie_rounded,
+                                        fill: 1,
+                                        size: 32,
+                                      ),
                                     ),
                               )
                             : episode.thumb != null
@@ -333,14 +342,22 @@ class _EpisodeCard extends StatelessWidget {
                                   color: Theme.of(
                                     context,
                                   ).colorScheme.surfaceContainerHighest,
-                                  child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+                                  child: const AppIcon(
+                                    Symbols.movie_rounded,
+                                    fill: 1,
+                                    size: 32,
+                                  ),
                                 ),
                               )
                             : Container(
                                 color: Theme.of(
                                   context,
                                 ).colorScheme.surfaceContainerHighest,
-                                child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+                                child: const AppIcon(
+                                  Symbols.movie_rounded,
+                                  fill: 1,
+                                  size: 32,
+                                ),
                               ),
                       ),
                     ),
@@ -366,7 +383,12 @@ class _EpisodeCard extends StatelessWidget {
                               color: Colors.black.withValues(alpha: 0.6),
                               shape: BoxShape.circle,
                             ),
-                            child: const AppIcon(Symbols.play_arrow_rounded, fill: 1, color: Colors.white, size: 20),
+                            child: const AppIcon(
+                              Symbols.play_arrow_rounded,
+                              fill: 1,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -440,7 +462,12 @@ class _EpisodeCard extends StatelessWidget {
                           } else if (progress?.status ==
                               DownloadStatus.queued) {
                             // Queued state - waiting to download
-                            downloadStatusIcon = AppIcon(Symbols.schedule_rounded, fill: 1, size: 12, color: getMutedColor(Colors.orange));
+                            downloadStatusIcon = AppIcon(
+                              Symbols.schedule_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.orange),
+                            );
                           } else if (progress?.status ==
                               DownloadStatus.downloading) {
                             // Downloading state - active download with radial progress
@@ -474,19 +501,39 @@ class _EpisodeCard extends StatelessWidget {
                           } else if (progress?.status ==
                               DownloadStatus.paused) {
                             // Paused state - download paused
-                            downloadStatusIcon = AppIcon(Symbols.pause_circle_outline_rounded, fill: 1, size: 12, color: getMutedColor(Colors.amber));
+                            downloadStatusIcon = AppIcon(
+                              Symbols.pause_circle_outline_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.amber),
+                            );
                           } else if (progress?.status ==
                               DownloadStatus.failed) {
                             // Failed state - download failed
-                            downloadStatusIcon = AppIcon(Symbols.error_outline_rounded, fill: 1, size: 12, color: getMutedColor(Colors.red));
+                            downloadStatusIcon = AppIcon(
+                              Symbols.error_outline_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.red),
+                            );
                           } else if (progress?.status ==
                               DownloadStatus.cancelled) {
                             // Cancelled state - download cancelled
-                            downloadStatusIcon = AppIcon(Symbols.cancel_rounded, fill: 1, size: 12, color: getMutedColor(Colors.grey));
+                            downloadStatusIcon = AppIcon(
+                              Symbols.cancel_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.grey),
+                            );
                           } else if (progress?.status ==
                               DownloadStatus.completed) {
                             // Completed state - download complete
-                            downloadStatusIcon = AppIcon(Symbols.file_download_done_rounded, fill: 1, size: 12, color: getMutedColor(Colors.green));
+                            downloadStatusIcon = AppIcon(
+                              Symbols.file_download_done_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.green),
+                            );
                           }
                           // Note: No icon shown if not downloaded (null)
                         }

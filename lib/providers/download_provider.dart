@@ -905,7 +905,8 @@ class DownloadProvider extends ChangeNotifier {
 
         // Ensure show artwork is downloaded even if metadata already existed
         final thumbPath = showWithServer.thumb;
-        final hasPoster = thumbPath != null &&
+        final hasPoster =
+            thumbPath != null &&
             await storageService.artworkExists(serverId, thumbPath);
         if (!hasPoster) {
           await _downloadManager.downloadArtworkForMetadata(
@@ -916,9 +917,7 @@ class DownloadProvider extends ChangeNotifier {
         }
 
         // Store artwork reference in provider's map for offline display
-        _artworkPaths[showGlobalKey] = DownloadedArtwork(
-          thumbPath: thumbPath,
-        );
+        _artworkPaths[showGlobalKey] = DownloadedArtwork(thumbPath: thumbPath);
       }
     }
 
@@ -948,7 +947,8 @@ class DownloadProvider extends ChangeNotifier {
 
         // Ensure season artwork is downloaded even if metadata already existed
         final thumbPath = seasonWithServer.thumb;
-        final hasPoster = thumbPath != null &&
+        final hasPoster =
+            thumbPath != null &&
             await storageService.artworkExists(serverId, thumbPath);
         if (!hasPoster) {
           await _downloadManager.downloadArtworkForMetadata(

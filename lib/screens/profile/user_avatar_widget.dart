@@ -29,7 +29,12 @@ class UserAvatarWidget extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerHighest,
         shape: BoxShape.circle,
       ),
-      child: AppIcon(Symbols.person_rounded, fill: 1, size: size * 0.6, color: theme.colorScheme.onSurfaceVariant),
+      child: AppIcon(
+        Symbols.person_rounded,
+        fill: 1,
+        size: size * 0.6,
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
     );
   }
 

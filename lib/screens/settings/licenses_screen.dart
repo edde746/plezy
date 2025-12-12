@@ -106,7 +106,10 @@ class _LicensesScreenState extends State<LicensesScreen> {
                           ),
                         )
                       : null,
-                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  trailing: const AppIcon(
+                    Symbols.chevron_right_rounded,
+                    fill: 1,
+                  ),
                   onTap: () => _showLicenseDetail(mergedLicense),
                 ),
               );

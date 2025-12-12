@@ -183,16 +183,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   }
 
   void _handleOfflineStatusChanged() {
-    final newOffline =
-        _offlineModeProvider?.isOffline ?? widget.isOfflineMode;
+    final newOffline = _offlineModeProvider?.isOffline ?? widget.isOfflineMode;
 
     if (newOffline == _isOffline) return;
 
     setState(() {
       _isOffline = newOffline;
       _screens = _buildScreens(_isOffline);
-      _selectedLibraryGlobalKey =
-          _isOffline ? null : _selectedLibraryGlobalKey;
+      _selectedLibraryGlobalKey = _isOffline ? null : _selectedLibraryGlobalKey;
       _currentIndex = _normalizeIndexForMode(_currentIndex, _isOffline);
     });
 
@@ -205,9 +203,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     if (!_isOffline) {
       final userProfileProvider = context.userProfile;
       userProfileProvider.initialize().then((_) {
-        userProfileProvider.setDataInvalidationCallback(
-          _invalidateAllScreens,
-        );
+        userProfileProvider.setDataInvalidationCallback(_invalidateAllScreens);
       });
     }
   }
@@ -467,7 +463,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
             ),
             NavigationDestination(
               icon: const AppIcon(Symbols.video_library_rounded, fill: 1),
-              selectedIcon: const AppIcon(Symbols.video_library_rounded, fill: 1),
+              selectedIcon: const AppIcon(
+                Symbols.video_library_rounded,
+                fill: 1,
+              ),
               label: t.navigation.libraries,
             ),
             NavigationDestination(
@@ -510,7 +509,12 @@ class _OfflinePlaceholder extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppIcon(Symbols.cloud_off_rounded, fill: 1, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            AppIcon(
+              Symbols.cloud_off_rounded,
+              fill: 1,
+              size: 64,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(height: 16),
             Text(
               t.messages.youAreOffline,

@@ -58,7 +58,11 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                     index: widget.index,
                     child: const Padding(
                       padding: EdgeInsets.only(right: 12),
-                      child: AppIcon(Symbols.drag_indicator_rounded, fill: 1, color: Colors.grey),
+                      child: AppIcon(
+                        Symbols.drag_indicator_rounded,
+                        fill: 1,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
 
@@ -166,7 +170,12 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
         color: Colors.grey[850],
         borderRadius: BorderRadius.circular(6),
       ),
-      child: const AppIcon(Symbols.movie_rounded, fill: 1, color: Colors.grey, size: 24),
+      child: const AppIcon(
+        Symbols.movie_rounded,
+        fill: 1,
+        color: Colors.grey,
+        size: 24,
+      ),
     );
   }
 

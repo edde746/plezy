@@ -80,7 +80,10 @@ class _AboutScreenState extends State<AboutScreen> {
                   leading: const AppIcon(Symbols.description_rounded, fill: 1),
                   title: Text(t.about.openSourceLicenses),
                   subtitle: Text(t.about.viewLicensesDescription),
-                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  trailing: const AppIcon(
+                    Symbols.chevron_right_rounded,
+                    fill: 1,
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,

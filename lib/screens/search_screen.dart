@@ -217,7 +217,12 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      AppIcon(Symbols.search_rounded, fill: 1, size: 80, color: Colors.grey.shade400),
+                      AppIcon(
+                        Symbols.search_rounded,
+                        fill: 1,
+                        size: 80,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         t.search.searchYourMedia,
@@ -240,7 +245,12 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      AppIcon(Symbols.search_off_rounded, fill: 1, size: 80, color: Colors.grey.shade400),
+                      AppIcon(
+                        Symbols.search_off_rounded,
+                        fill: 1,
+                        size: 80,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         t.messages.noResultsFound,

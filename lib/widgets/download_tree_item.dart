@@ -121,7 +121,13 @@ class DownloadTreeItem extends StatelessWidget {
   Widget _buildExpandIcon() {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
-      child: AppIcon(isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded, fill: 1, size: 24),
+      child: AppIcon(
+        isExpanded
+            ? Symbols.expand_more_rounded
+            : Symbols.chevron_right_rounded,
+        fill: 1,
+        size: 24,
+      ),
     );
   }
 

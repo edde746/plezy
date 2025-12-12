@@ -240,7 +240,9 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           // Helper to get client from globalKey (serverId:ratingKey)
                           getClient(String globalKey) {
                             final serverId = globalKey.split(':').first;
-                            return serverProvider.serverManager.getClient(serverId);
+                            return serverProvider.serverManager.getClient(
+                              serverId,
+                            );
                           }
 
                           return DownloadTreeView(
@@ -250,13 +252,19 @@ class DownloadsScreenState extends State<DownloadsScreen>
                             onResume: (globalKey) {
                               final client = getClient(globalKey);
                               if (client != null) {
-                                downloadProvider.resumeDownload(globalKey, client);
+                                downloadProvider.resumeDownload(
+                                  globalKey,
+                                  client,
+                                );
                               }
                             },
                             onRetry: (globalKey) {
                               final client = getClient(globalKey);
                               if (client != null) {
-                                downloadProvider.retryDownload(globalKey, client);
+                                downloadProvider.retryDownload(
+                                  globalKey,
+                                  client,
+                                );
                               }
                             },
                             onCancel: downloadProvider.cancelDownload,
@@ -339,7 +347,12 @@ class _DownloadsGridContent extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AppIcon(Symbols.download_rounded, fill: 1, size: 80, color: Theme.of(context).colorScheme.outline),
+            AppIcon(
+              Symbols.download_rounded,
+              fill: 1,
+              size: 80,
+              color: Theme.of(context).colorScheme.outline,
+            ),
             const SizedBox(height: 24),
             Text(
               t.downloads.noDownloads,

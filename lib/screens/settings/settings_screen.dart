@@ -73,8 +73,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _autoSkipCredits = _settingsService.getAutoSkipCredits();
       _autoSkipDelay = _settingsService.getAutoSkipDelay();
       _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
-      _videoPlayerNavigationEnabled =
-          _settingsService.getVideoPlayerNavigationEnabled();
+      _videoPlayerNavigationEnabled = _settingsService
+          .getVideoPlayerNavigationEnabled();
       _isLoading = false;
     });
   }
@@ -386,7 +386,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  trailing: const AppIcon(
+                    Symbols.chevron_right_rounded,
+                    fill: 1,
+                  ),
                   onTap: () => _showDownloadLocationDialog(),
                 );
               },

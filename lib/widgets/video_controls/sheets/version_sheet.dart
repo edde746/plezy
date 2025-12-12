@@ -81,7 +81,11 @@ class _VersionSheetState extends State<VersionSheet> {
                 ),
               ),
               trailing: isSelected
-                  ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue)
+                  ? const AppIcon(
+                      Symbols.check_rounded,
+                      fill: 1,
+                      color: Colors.blue,
+                    )
                   : null,
               onTap: () {
                 Navigator.pop(context);

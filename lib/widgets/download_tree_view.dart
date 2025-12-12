@@ -364,7 +364,13 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
         children: [
           // Expand/collapse icon
           if (canExpand)
-            AppIcon(isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded, fill: 1, size: 20)
+            AppIcon(
+              isExpanded
+                  ? Symbols.expand_more_rounded
+                  : Symbols.chevron_right_rounded,
+              fill: 1,
+              size: 20,
+            )
           else
             const SizedBox(width: 20),
 
@@ -498,7 +504,11 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           // Resume button for paused items
           if (node.status == DownloadStatus.paused && widget.onResume != null)
             IconButton(
-              icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 20),
+              icon: const AppIcon(
+                Symbols.play_arrow_rounded,
+                fill: 1,
+                size: 20,
+              ),
               onPressed: () => widget.onResume!(globalKey),
               tooltip: 'Resume',
             ),
@@ -548,7 +558,11 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           // Resume all button - show if container is paused
           if (node.status == DownloadStatus.paused && widget.onResume != null)
             IconButton(
-              icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 20),
+              icon: const AppIcon(
+                Symbols.play_arrow_rounded,
+                fill: 1,
+                size: 20,
+              ),
               onPressed: () => _resumeAllChildren(node),
               tooltip: 'Resume all',
             ),
@@ -556,7 +570,11 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           // Delete all button
           if (widget.onDelete != null)
             IconButton(
-              icon: const AppIcon(Symbols.delete_sweep_rounded, fill: 1, size: 20),
+              icon: const AppIcon(
+                Symbols.delete_sweep_rounded,
+                fill: 1,
+                size: 20,
+              ),
               onPressed: () => _deleteAllChildren(node),
               tooltip: 'Delete all',
             ),

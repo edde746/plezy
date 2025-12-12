@@ -133,7 +133,12 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 48, color: Colors.red),
+                const AppIcon(
+                  Symbols.error_outline_rounded,
+                  fill: 1,
+                  size: 48,
+                  color: Colors.red,
+                ),
                 const SizedBox(height: 16),
                 Text(errorMessage!),
                 const SizedBox(height: 16),

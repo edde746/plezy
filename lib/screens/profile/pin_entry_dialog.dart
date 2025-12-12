@@ -88,7 +88,12 @@ class _PinEntryDialogState extends State<PinEntryDialog>
       child: AlertDialog(
         title: Row(
           children: [
-            AppIcon(Symbols.lock_outline_rounded, fill: 1, size: 24, color: theme.colorScheme.primary),
+            AppIcon(
+              Symbols.lock_outline_rounded,
+              fill: 1,
+              size: 24,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(widget.userName, overflow: TextOverflow.ellipsis),
@@ -114,7 +119,13 @@ class _PinEntryDialogState extends State<PinEntryDialog>
                 errorText: widget.errorMessage,
                 errorMaxLines: 2,
                 suffixIcon: IconButton(
-                  icon: AppIcon(_obscureText ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1, size: 20),
+                  icon: AppIcon(
+                    _obscureText
+                        ? Symbols.visibility_off_rounded
+                        : Symbols.visibility_rounded,
+                    fill: 1,
+                    size: 20,
+                  ),
                   onPressed: () {
                     setState(() {
                       _obscureText = !_obscureText;

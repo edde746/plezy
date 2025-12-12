@@ -845,7 +845,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   size: 32,
                                   showIndicators: false,
                                 )
-                              : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32),
+                              : const AppIcon(
+                                  Symbols.account_circle_rounded,
+                                  fill: 1,
+                                  size: 32,
+                                ),
                           onSelected: (value) {
                             if (value == 'switch_profile') {
                               _handleSwitchProfile(context);
@@ -894,7 +898,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 48, color: Colors.red),
+                      const AppIcon(
+                        Symbols.error_outline_rounded,
+                        fill: 1,
+                        size: 48,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 16),
                       Text(_errorMessage!),
                       const SizedBox(height: 16),
@@ -1008,7 +1017,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
+                        AppIcon(
+                          Symbols.movie_rounded,
+                          fill: 1,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
                         SizedBox(height: 16),
                         Text(t.discover.noContentAvailable),
                         SizedBox(height: 8),
@@ -1072,7 +1086,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           _pauseAutoScroll();
                         }
                       },
-                      child: AppIcon(_isAutoScrollPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded, fill: 1, color: Colors.white, size: 18, semanticLabel: '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll'),
+                      child: AppIcon(
+                        _isAutoScrollPaused
+                            ? Symbols.play_arrow_rounded
+                            : Symbols.pause_rounded,
+                        fill: 1,
+                        color: Colors.white,
+                        size: 18,
+                        semanticLabel:
+                            '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
+                      ),
                     ),
                     // Spacer to separate indicators from button
                     const SizedBox(width: 8),
@@ -1525,7 +1548,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 20, color: Colors.black),
+            const AppIcon(
+              Symbols.play_arrow_rounded,
+              fill: 1,
+              size: 20,
+              color: Colors.black,
+            ),
             const SizedBox(width: 8),
             if (hasProgress) ...[
               // Progress bar

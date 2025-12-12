@@ -309,7 +309,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           itemType == 'show' ||
           itemType == 'season') {
         menuActions.add(
-          _MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo),
+          _MenuAction(
+            value: 'add_to',
+            icon: Symbols.add_rounded,
+            label: t.common.addTo,
+          ),
         );
       }
     } // End of regular menu items else block

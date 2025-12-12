@@ -58,7 +58,12 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      const AppIcon(Symbols.info_rounded, fill: 1, color: Colors.white, size: 24),
+                      const AppIcon(
+                        Symbols.info_rounded,
+                        fill: 1,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -72,7 +77,11 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                       ),
                       IconButton(
                         focusNode: _initialFocusNode,
-                        icon: const AppIcon(Symbols.close_rounded, fill: 1, color: Colors.white),
+                        icon: const AppIcon(
+                          Symbols.close_rounded,
+                          fill: 1,
+                          color: Colors.white,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],

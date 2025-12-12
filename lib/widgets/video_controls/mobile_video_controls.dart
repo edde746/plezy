@@ -103,7 +103,9 @@ class MobileVideoControls extends StatelessWidget {
               semanticLabel: isPlaying
                   ? t.videoControls.pauseButton
                   : t.videoControls.playButton,
-              icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
+              icon: isPlaying
+                  ? Symbols.pause_rounded
+                  : Symbols.play_arrow_rounded,
               iconSize: 72,
               onPressed: () {
                 if (isPlaying) {

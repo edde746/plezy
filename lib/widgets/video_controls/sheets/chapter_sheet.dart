@@ -149,7 +149,12 @@ class _ChapterSheetState extends State<ChapterSheet> {
                                 height: 34,
                                 fit: BoxFit.cover,
                                 errorWidget: (context, url, error) =>
-                                    const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
+                                    const AppIcon(
+                                      Symbols.image_rounded,
+                                      fill: 1,
+                                      color: Colors.white54,
+                                      size: 34,
+                                    ),
                               ),
                             ),
                             if (isCurrentChapter)
@@ -186,7 +191,11 @@ class _ChapterSheetState extends State<ChapterSheet> {
                     ),
                   ),
                   trailing: isCurrentChapter
-                      ? const AppIcon(Symbols.play_circle_rounded, fill: 1, color: Colors.blue)
+                      ? const AppIcon(
+                          Symbols.play_circle_rounded,
+                          fill: 1,
+                          color: Colors.blue,
+                        )
                       : null,
                   onTap: () {
                     widget.player.seek(chapter.startTime);

@@ -1375,7 +1375,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const AppIcon(Symbols.play_circle_rounded, fill: 1, size: 64, color: Colors.white),
+                            const AppIcon(
+                              Symbols.play_circle_rounded,
+                              fill: 1,
+                              size: 64,
+                              color: Colors.white,
+                            ),
                             const SizedBox(height: 24),
                             Consumer<PlaybackStateProvider>(
                               builder: (context, playbackState, child) {
@@ -1394,7 +1399,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                                     ),
                                     if (isShuffleActive) ...[
                                       const SizedBox(width: 8),
-                                      const AppIcon(Symbols.shuffle_rounded, fill: 1, size: 20, color: Colors.white70),
+                                      const AppIcon(
+                                        Symbols.shuffle_rounded,
+                                        fill: 1,
+                                        size: 20,
+                                        color: Colors.white70,
+                                      ),
                                     ],
                                   ],
                                 );

@@ -963,7 +963,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         value: library.globalKey,
         child: Row(
           children: [
-            AppIcon(_getLibraryIcon(library.type), fill: 1, size: 20, color: isSelected ? Theme.of(context).colorScheme.primary : null),
+            AppIcon(
+              _getLibraryIcon(library.type),
+              fill: 1,
+              size: 20,
+              color: isSelected ? Theme.of(context).colorScheme.primary : null,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1170,7 +1175,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 48, color: Colors.red),
+                    const AppIcon(
+                      Symbols.error_outline_rounded,
+                      fill: 1,
+                      size: 48,
+                      color: Colors.red,
+                    ),
                     const SizedBox(height: 16),
                     Text(_errorMessage!),
                     const SizedBox(height: 16),
@@ -1188,7 +1198,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const AppIcon(Symbols.video_library_rounded, fill: 1, size: 64, color: Colors.grey),
+                    const AppIcon(
+                      Symbols.video_library_rounded,
+                      fill: 1,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(height: 16),
                     Text(t.libraries.noLibrariesFound),
                   ],
@@ -1684,7 +1699,15 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             children: [
               ReorderableDragStartListener(
                 index: index,
-                child: AppIcon(isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded, fill: 1, color: isMoving ? colorScheme.primary : IconTheme.of(context).color?.withValues(alpha: 0.5)),
+                child: AppIcon(
+                  isMoving
+                      ? Symbols.swap_vert_rounded
+                      : Symbols.drag_indicator_rounded,
+                  fill: 1,
+                  color: isMoving
+                      ? colorScheme.primary
+                      : IconTheme.of(context).color?.withValues(alpha: 0.5),
+                ),
               ),
               const SizedBox(width: 8),
               AppIcon(_getLibraryIcon(library.type), fill: 1),
@@ -1713,7 +1736,12 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                       )
                     : null,
                 child: IconButton(
-                  icon: AppIcon(isHidden ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1),
+                  icon: AppIcon(
+                    isHidden
+                        ? Symbols.visibility_off_rounded
+                        : Symbols.visibility_rounded,
+                    fill: 1,
+                  ),
                   tooltip: isHidden
                       ? t.libraries.showLibrary
                       : t.libraries.hideLibrary,

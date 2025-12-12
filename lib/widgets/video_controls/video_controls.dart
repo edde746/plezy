@@ -334,8 +334,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _autoSkipIntro = settingsService.getAutoSkipIntro();
         _autoSkipCredits = settingsService.getAutoSkipCredits();
         _autoSkipDelay = settingsService.getAutoSkipDelay();
-        _videoPlayerNavigationEnabled =
-            settingsService.getVideoPlayerNavigationEnabled();
+        _videoPlayerNavigationEnabled = settingsService
+            .getVideoPlayerNavigationEnabled();
       });
 
       // Apply rotation lock setting
@@ -801,9 +801,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           color: Colors.black.withValues(alpha: 0.6),
           shape: BoxShape.circle,
         ),
-        child: AppIcon(_lastDoubleTapWasForward
+        child: AppIcon(
+          _lastDoubleTapWasForward
               ? getForwardIcon(_seekTimeSmall)
-              : getReplayIcon(_seekTimeSmall), fill: 1, color: Colors.white, size: 48),
+              : getReplayIcon(_seekTimeSmall),
+          fill: 1,
+          color: Colors.white,
+          size: 48,
+        ),
       ),
     );
   }
@@ -947,7 +952,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
         // On desktop, show controls and focus play/pause on directional input
         // Only handle navigation if video player navigation is enabled
-        if (!isMobile && _isDirectionalKey(key) && _videoPlayerNavigationEnabled) {
+        if (!isMobile &&
+            _isDirectionalKey(key) &&
+            _videoPlayerNavigationEnabled) {
           // If controls are hidden, show them and focus play/pause
           if (!_showControls) {
             _showControlsWithFocus();

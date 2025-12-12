@@ -56,7 +56,12 @@ class ProfileSwitchScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        AppIcon(Symbols.person_off_rounded, fill: 1, size: 64, color: theme.colorScheme.onSurfaceVariant),
+                        AppIcon(
+                          Symbols.person_off_rounded,
+                          fill: 1,
+                          size: 64,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'No profiles available',

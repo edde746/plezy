@@ -717,7 +717,9 @@ Widget _buildPosterImage(
   }
 
   return SkeletonLoader(
-    child: Center(child: AppIcon(fallbackIcon, fill: 1, size: 40, color: Colors.white54)),
+    child: Center(
+      child: AppIcon(fallbackIcon, fill: 1, size: 40, color: Colors.white54),
+    ),
   );
 }
 
@@ -840,7 +842,12 @@ class _MediaCardHelpers {
                   ),
                 ],
               ),
-              child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 16),
+              child: AppIcon(
+                Symbols.check_rounded,
+                fill: 1,
+                color: tokens(context).bg,
+                size: 16,
+              ),
             ),
           ),
         // Progress bar for partially watched content

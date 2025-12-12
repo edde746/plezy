@@ -76,9 +76,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Push always happens immediately. Pull respects [minSyncInterval] unless [force] is true.
   Future<void> _performBidirectionalSync({bool force = false}) async {
     if (_serverManager.onlineClients.isEmpty) {
-      appLogger.d(
-        'Skipping watch sync - no connected servers available yet',
-      );
+      appLogger.d('Skipping watch sync - no connected servers available yet');
       return;
     }
 

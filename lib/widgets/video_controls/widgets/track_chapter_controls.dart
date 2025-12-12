@@ -364,7 +364,9 @@ class TrackChapterControls extends StatelessWidget {
           final currentIndex = buttonIndex;
           buttons.add(
             VideoControlButton(
-              icon: isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
+              icon: isFullscreen
+                  ? Symbols.fullscreen_exit_rounded
+                  : Symbols.fullscreen_rounded,
               semanticLabel: isFullscreen
                   ? t.videoControls.exitFullscreenButton
                   : t.videoControls.fullscreenButton,
