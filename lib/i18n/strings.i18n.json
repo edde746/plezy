@@ -113,6 +113,8 @@
     "videoPlayerControls": "Video Player Controls",
     "keyboardShortcuts": "Keyboard Shortcuts",
     "keyboardShortcutsDescription": "Customize keyboard shortcuts",
+    "videoPlayerNavigation": "Video Player Navigation",
+    "videoPlayerNavigationDescription": "Use arrow keys to navigate video player controls",
     "debugLogging": "Debug Logging",
     "debugLoggingDescription": "Enable detailed logging for troubleshooting",
     "viewLogs": "View Logs",

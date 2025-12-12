@@ -114,6 +114,8 @@
     "videoPlayerControls": "Controlli del lettore video",
     "keyboardShortcuts": "Scorciatoie da tastiera",
     "keyboardShortcutsDescription": "Personalizza le scorciatoie da tastiera",
+    "videoPlayerNavigation": "Navigazione del lettore video",
+    "videoPlayerNavigationDescription": "Usa i tasti freccia per navigare nei controlli del lettore video",
     "debugLogging": "Log di debug",
     "debugLoggingDescription": "Abilita il logging dettagliato per la risoluzione dei problemi",
     "viewLogs": "Visualizza log",

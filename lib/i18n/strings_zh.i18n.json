@@ -114,6 +114,8 @@
     "videoPlayerControls": "视频播放器控制",
     "keyboardShortcuts": "键盘快捷键",
     "keyboardShortcutsDescription": "自定义键盘快捷键",
+    "videoPlayerNavigation": "视频播放器导航",
+    "videoPlayerNavigationDescription": "使用方向键导航视频播放器控件",
     "debugLogging": "调试日志",
     "debugLoggingDescription": "启用详细日志记录以便故障排除",
     "viewLogs": "查看日志",

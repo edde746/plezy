@@ -114,6 +114,8 @@
     "videoPlayerControls": "Videospelar-kontroller",
     "keyboardShortcuts": "Tangentbordsgenvägar",
     "keyboardShortcutsDescription": "Anpassa tangentbordsgenvägar",
+    "videoPlayerNavigation": "Navigering i videospelaren",
+    "videoPlayerNavigationDescription": "Använd piltangenter för att navigera videospelarens kontroller",
     "debugLogging": "Felsökningsloggning",
     "debugLoggingDescription": "Aktivera detaljerad loggning för felsökning",
     "viewLogs": "Visa loggar",

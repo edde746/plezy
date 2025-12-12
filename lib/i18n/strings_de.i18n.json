@@ -114,6 +114,8 @@
     "videoPlayerControls": "Videoplayer-Steuerung",
     "keyboardShortcuts": "Tastenkürzel",
     "keyboardShortcutsDescription": "Tastenkürzel anpassen",
+    "videoPlayerNavigation": "Videoplayer-Navigation",
+    "videoPlayerNavigationDescription": "Pfeiltasten zur Navigation der Videoplayer-Steuerung verwenden",
     "debugLogging": "Debug-Protokollierung",
     "debugLoggingDescription": "Detaillierte Protokolle zur Fehleranalyse aktivieren",
     "viewLogs": "Protokolle anzeigen",

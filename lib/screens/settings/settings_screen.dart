@@ -45,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _autoSkipCredits = true;
   int _autoSkipDelay = 5;
   bool _downloadOnWifiOnly = false;
+  bool _videoPlayerNavigationEnabled = false;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -72,6 +73,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _autoSkipCredits = _settingsService.getAutoSkipCredits();
       _autoSkipDelay = _settingsService.getAutoSkipDelay();
       _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
+      _videoPlayerNavigationEnabled =
+          _settingsService.getVideoPlayerNavigationEnabled();
       _isLoading = false;
     });
   }
@@ -544,6 +547,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(t.settings.keyboardShortcutsDescription),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showKeyboardShortcutsDialog(),
+          ),
+          SwitchListTile(
+            secondary: const AppIcon(Symbols.gamepad_rounded, fill: 1),
+            title: Text(t.settings.videoPlayerNavigation),
+            subtitle: Text(t.settings.videoPlayerNavigationDescription),
+            value: _videoPlayerNavigationEnabled,
+            onChanged: (value) async {
+              setState(() {
+                _videoPlayerNavigationEnabled = value;
+              });
+              await _settingsService.setVideoPlayerNavigationEnabled(value);
+            },
           ),
         ],
       ),

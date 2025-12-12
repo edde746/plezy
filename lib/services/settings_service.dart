@@ -4,6 +4,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:plezy/utils/app_logger.dart';
 import '../i18n/strings.g.dart';
 import 'base_shared_preferences_service.dart';
+import 'tv_detection_service.dart';
 
 enum ThemeMode { system, light, dark }
 
@@ -48,6 +49,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyCustomDownloadPath = 'custom_download_path';
   static const String _keyCustomDownloadPathType = 'custom_download_path_type';
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
+  static const String _keyVideoPlayerNavigationEnabled =
+      'video_player_navigation_enabled';
 
   SettingsService._();
 
@@ -442,6 +445,17 @@ class SettingsService extends BaseSharedPreferencesService {
 
   Future<void> resetKeyboardHotkeys() async {
     await setKeyboardHotkeys(getDefaultKeyboardHotkeys());
+  }
+
+  // Video Player Navigation (use arrow keys to navigate video player controls)
+  Future<void> setVideoPlayerNavigationEnabled(bool enabled) async {
+    await prefs.setBool(_keyVideoPlayerNavigationEnabled, enabled);
+  }
+
+  bool getVideoPlayerNavigationEnabled() {
+    // Default: enabled on Android TV, disabled elsewhere
+    return prefs.getBool(_keyVideoPlayerNavigationEnabled) ??
+        TvDetectionService.isTVSync();
   }
 
   // Helper methods for HotKey serialization
@@ -915,6 +929,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyCustomDownloadPath),
       prefs.remove(_keyCustomDownloadPathType),
       prefs.remove(_keyDownloadOnWifiOnly),
+      prefs.remove(_keyVideoPlayerNavigationEnabled),
     ]);
   }
 

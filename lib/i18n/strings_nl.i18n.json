@@ -114,6 +114,8 @@
     "videoPlayerControls": "Videospeler bediening",
     "keyboardShortcuts": "Toetsenbord sneltoetsen",
     "keyboardShortcutsDescription": "Pas toetsenbord sneltoetsen aan",
+    "videoPlayerNavigation": "Videospeler navigatie",
+    "videoPlayerNavigationDescription": "Gebruik pijltjestoetsen om door de videospeler bediening te navigeren",
     "debugLogging": "Debug logging",
     "debugLoggingDescription": "Schakel gedetailleerde logging in voor probleemoplossing",
     "viewLogs": "Bekijk logs",

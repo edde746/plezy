@@ -141,6 +141,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   int _autoSkipDelay = 5;
   Timer? _autoSkipTimer;
   double _autoSkipProgress = 0.0;
+  // Video player navigation (use arrow keys to navigate controls)
+  bool _videoPlayerNavigationEnabled = false;
 
   @override
   void initState() {
@@ -332,6 +334,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _autoSkipIntro = settingsService.getAutoSkipIntro();
         _autoSkipCredits = settingsService.getAutoSkipCredits();
         _autoSkipDelay = settingsService.getAutoSkipDelay();
+        _videoPlayerNavigationEnabled =
+            settingsService.getVideoPlayerNavigationEnabled();
       });
 
       // Apply rotation lock setting
@@ -942,7 +946,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         }
 
         // On desktop, show controls and focus play/pause on directional input
-        if (!isMobile && _isDirectionalKey(key)) {
+        // Only handle navigation if video player navigation is enabled
+        if (!isMobile && _isDirectionalKey(key) && _videoPlayerNavigationEnabled) {
           // If controls are hidden, show them and focus play/pause
           if (!_showControls) {
             _showControlsWithFocus();
