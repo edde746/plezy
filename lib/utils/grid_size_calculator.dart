@@ -36,6 +36,57 @@ class GridSizeCalculator {
     }
   }
 
+  /// Calculates the max cross-axis extent accounting for outer padding.
+  ///
+  /// Uses responsive strategies:
+  /// - Wide screens (>=900px): Divisor-based calculation with max item width
+  /// - Medium screens (600-899px): Fixed item count (4-6 items based on density)
+  /// - Small screens (<600px): Fixed item count (2-4 items based on density)
+  static double getMaxCrossAxisExtentWithPadding(
+    BuildContext context,
+    LibraryDensity density,
+    double horizontalPadding,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final availableWidth = screenWidth - horizontalPadding;
+
+    if (ScreenBreakpoints.isWideTabletOrLarger(screenWidth)) {
+      // Wide screens (desktop/large tablet landscape): Responsive division
+      double divisor;
+      double maxItemWidth;
+
+      switch (density) {
+        case LibraryDensity.comfortable:
+          divisor = 6.5;
+          maxItemWidth = 280;
+        case LibraryDensity.normal:
+          divisor = 8.0;
+          maxItemWidth = 200;
+        case LibraryDensity.compact:
+          divisor = 10.0;
+          maxItemWidth = 160;
+      }
+
+      return (availableWidth / divisor).clamp(0, maxItemWidth);
+    } else if (ScreenBreakpoints.isTablet(screenWidth)) {
+      // Medium screens (tablets): Fixed 4-5-6 items
+      int targetItemCount = switch (density) {
+        LibraryDensity.comfortable => 4,
+        LibraryDensity.normal => 5,
+        LibraryDensity.compact => 6,
+      };
+      return availableWidth / targetItemCount;
+    } else {
+      // Small screens (phones): Fixed 2-3-4 items
+      int targetItemCount = switch (density) {
+        LibraryDensity.comfortable => 2,
+        LibraryDensity.normal => 3,
+        LibraryDensity.compact => 4,
+      };
+      return availableWidth / targetItemCount;
+    }
+  }
+
   /// Returns whether the current screen is a desktop-sized screen
   static bool isDesktop(BuildContext context) {
     return MediaQuery.of(context).size.width > desktopBreakpoint;

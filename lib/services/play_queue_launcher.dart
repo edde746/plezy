@@ -152,9 +152,9 @@ class PlayQueueLauncher {
     required PlexMetadata metadata,
     bool showLoadingIndicator = true,
   }) async {
-    final itemType = metadata.type.toLowerCase();
+    final mediaType = metadata.mediaType;
 
-    if (itemType != 'show' && itemType != 'season') {
+    if (mediaType != PlexMediaType.show && mediaType != PlexMediaType.season) {
       return PlayQueueError(
         Exception('Shuffle play only works for shows and seasons'),
       );
@@ -166,7 +166,7 @@ class PlayQueueLauncher {
       execute: () async {
         // Determine the rating key for the play queue
         String showRatingKey;
-        if (itemType == 'show') {
+        if (mediaType == PlexMediaType.show) {
           showRatingKey = metadata.ratingKey;
         } else {
           // For seasons, we need the show's rating key
@@ -244,23 +244,17 @@ class PlayQueueLauncher {
     required String action,
     required Future<PlayQueueResult> Function() execute,
   }) async {
+    // Show loading indicator
+    if (showLoading && context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     try {
-      // Show loading indicator
-      if (showLoading && context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) =>
-              const Center(child: CircularProgressIndicator()),
-        );
-      }
-
       final result = await execute();
-
-      // Close loading indicator
-      if (showLoading && context.mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
 
       // Handle empty queue result
       if (result is PlayQueueEmpty && context.mounted) {
@@ -273,11 +267,6 @@ class PlayQueueLauncher {
     } catch (e) {
       appLogger.e('Failed to $action', error: e);
 
-      // Close loading indicator if it's still open
-      if (showLoading && context.mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -289,6 +278,11 @@ class PlayQueueLauncher {
       }
 
       return PlayQueueError(e);
+    } finally {
+      // Close loading indicator (guaranteed cleanup)
+      if (showLoading && context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
     }
   }
 }

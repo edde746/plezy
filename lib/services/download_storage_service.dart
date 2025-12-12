@@ -126,10 +126,9 @@ class DownloadStorageService {
 
     // Default path logic
     final baseDir = await _getBaseAppDir();
-    _baseDownloadsDir = Directory(path.join(baseDir.path, 'downloads'));
-    if (!await _baseDownloadsDir!.exists()) {
-      await _baseDownloadsDir!.create(recursive: true);
-    }
+    _baseDownloadsDir = await _ensureDirectoryExists(
+      Directory(path.join(baseDir.path, 'downloads')),
+    );
     return _baseDownloadsDir!;
   }
 
@@ -142,11 +141,11 @@ class DownloadStorageService {
       final parent = customDir.parent;
       final artworkDir = Directory(path.join(parent.path, 'artwork'));
       try {
-        if (!await artworkDir.exists()) {
-          await artworkDir.create(recursive: true);
+        // Validate writeability for custom artwork path
+        if (await isDirectoryWritable(artworkDir)) {
+          _artworkDirectoryPath = artworkDir.path;
+          return artworkDir;
         }
-        _artworkDirectoryPath = artworkDir.path;
-        return artworkDir;
       } catch (e) {
         // Fall through to default if we can't create artwork dir
       }
@@ -154,10 +153,9 @@ class DownloadStorageService {
 
     // Default: Get the app base directory directly (not downloads directory)
     final baseDir = await _getBaseAppDir();
-    final artworkDir = Directory(path.join(baseDir.path, 'artwork'));
-    if (!await artworkDir.exists()) {
-      await artworkDir.create(recursive: true);
-    }
+    final artworkDir = await _ensureDirectoryExists(
+      Directory(path.join(baseDir.path, 'artwork')),
+    );
     // Cache the path for synchronous access
     _artworkDirectoryPath = artworkDir.path;
     return artworkDir;
@@ -202,11 +200,9 @@ class DownloadStorageService {
   /// Get directory for a specific media item
   Future<Directory> getMediaDirectory(String serverId, String ratingKey) async {
     final baseDir = await getDownloadsDirectory();
-    final mediaDir = Directory(path.join(baseDir.path, serverId, ratingKey));
-    if (!await mediaDir.exists()) {
-      await mediaDir.create(recursive: true);
-    }
-    return mediaDir;
+    return _ensureDirectoryExists(
+      Directory(path.join(baseDir.path, serverId, ratingKey)),
+    );
   }
 
   /// Get video file path
@@ -267,25 +263,46 @@ class DownloadStorageService {
         .trim();
   }
 
-  /// Get movie directory: downloads/Movies/{Movie Name} ({Year})/
-  Future<Directory> getMovieDirectory(PlexMetadata movie) async {
-    final baseDir = await getDownloadsDirectory();
-    final movieName = _sanitizeFileName(movie.title);
-    final year = movie.year;
-    final movieFolder = year != null ? '$movieName ($year)' : movieName;
-    final dir = Directory(path.join(baseDir.path, 'Movies', movieFolder));
+  /// Ensure a directory exists, creating it if necessary
+  Future<Directory> _ensureDirectoryExists(Directory dir) async {
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
     return dir;
   }
 
+  /// Format a media title with optional year: "Title (YYYY)" or "Title"
+  String _formatTitleWithYear(String title, int? year) {
+    final sanitized = _sanitizeFileName(title);
+    return year != null ? '$sanitized ($year)' : sanitized;
+  }
+
+  /// Get the folder name for a movie: "Movie Name (YYYY)"
+  String _getMovieFolderName(PlexMetadata movie) {
+    return _formatTitleWithYear(movie.title, movie.year);
+  }
+
+  /// Get the folder name for a TV show: "Show Name (YYYY)"
+  /// [showYear]: Pass explicitly for episodes (episode.year may differ from show's year)
+  String _getShowFolderName(PlexMetadata metadata, {int? showYear}) {
+    final title = metadata.grandparentTitle ?? metadata.title;
+    final year = showYear ?? metadata.year;
+    return _formatTitleWithYear(title, year);
+  }
+
+  /// Get movie directory: downloads/Movies/{Movie Name} ({Year})/
+  Future<Directory> getMovieDirectory(PlexMetadata movie) async {
+    final baseDir = await getDownloadsDirectory();
+    final movieFolder = _getMovieFolderName(movie);
+    return _ensureDirectoryExists(
+      Directory(path.join(baseDir.path, 'Movies', movieFolder)),
+    );
+  }
+
   /// Get movie video file path: .../Movie Name (YYYY)/Movie Name (YYYY).{ext}
   Future<String> getMovieVideoPath(PlexMetadata movie, String extension) async {
     final movieDir = await getMovieDirectory(movie);
-    final movieName = _sanitizeFileName(movie.title);
-    final year = movie.year;
-    final fileName = year != null ? '$movieName ($year)' : movieName;
+    final fileName = _getMovieFolderName(movie);
     return path.join(movieDir.path, '$fileName.$extension');
   }
 
@@ -306,18 +323,10 @@ class DownloadStorageService {
     int? showYear,
   }) async {
     final baseDir = await getDownloadsDirectory();
-    // For episodes, use grandparentTitle; for shows, use title
-    final showName = _sanitizeFileName(
-      metadata.grandparentTitle ?? metadata.title,
+    final showFolder = _getShowFolderName(metadata, showYear: showYear);
+    return _ensureDirectoryExists(
+      Directory(path.join(baseDir.path, 'TV Shows', showFolder)),
     );
-    // Use explicit showYear if provided, otherwise fall back to metadata.year
-    final year = showYear ?? metadata.year;
-    final showFolder = year != null ? '$showName ($year)' : showName;
-    final dir = Directory(path.join(baseDir.path, 'TV Shows', showFolder));
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-    return dir;
   }
 
   /// Get show artwork path: downloads/TV Shows/{Show}/poster.jpg
@@ -338,11 +347,9 @@ class DownloadStorageService {
   }) async {
     final showDir = await getShowDirectory(metadata, showYear: showYear);
     final seasonNum = (metadata.parentIndex ?? 0).toString().padLeft(2, '0');
-    final dir = Directory(path.join(showDir.path, 'Season $seasonNum'));
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-    return dir;
+    return _ensureDirectoryExists(
+      Directory(path.join(showDir.path, 'Season $seasonNum')),
+    );
   }
 
   /// Get season artwork path: .../Season XX/poster.jpg
@@ -394,13 +401,9 @@ class DownloadStorageService {
     int? showYear,
   }) async {
     final base = await _getEpisodeBasePath(episode, showYear: showYear);
-    final subsDir = Directory(
-      path.join(base.seasonDirPath, '${base.fileName}_subs'),
+    return _ensureDirectoryExists(
+      Directory(path.join(base.seasonDirPath, '${base.fileName}_subs')),
     );
-    if (!await subsDir.exists()) {
-      await subsDir.create(recursive: true);
-    }
-    return subsDir;
   }
 
   /// Get episode subtitle path
@@ -421,14 +424,10 @@ class DownloadStorageService {
   /// Get subtitles directory for movie
   Future<Directory> getMovieSubtitlesDirectory(PlexMetadata movie) async {
     final movieDir = await getMovieDirectory(movie);
-    final movieName = _sanitizeFileName(movie.title);
-    final year = movie.year;
-    final baseName = year != null ? '$movieName ($year)' : movieName;
-    final subsDir = Directory(path.join(movieDir.path, '${baseName}_subs'));
-    if (!await subsDir.exists()) {
-      await subsDir.create(recursive: true);
-    }
-    return subsDir;
+    final baseName = _getMovieFolderName(movie);
+    return _ensureDirectoryExists(
+      Directory(path.join(movieDir.path, '${baseName}_subs')),
+    );
   }
 
   /// Get movie subtitle path
@@ -544,13 +543,9 @@ class DownloadStorageService {
   /// Files are downloaded here first, then copied to SAF if using SAF mode
   Future<Directory> getCacheDownloadDirectory() async {
     final cacheDir = await getApplicationDocumentsDirectory();
-    final downloadCache = Directory(
-      path.join(cacheDir.path, '.download_cache'),
+    return _ensureDirectoryExists(
+      Directory(path.join(cacheDir.path, '.download_cache')),
     );
-    if (!await downloadCache.exists()) {
-      await downloadCache.create(recursive: true);
-    }
-    return downloadCache;
   }
 
   /// Get temporary file path for downloading (before copying to SAF)
@@ -636,10 +631,7 @@ class DownloadStorageService {
   /// Get path components for SAF based on media type
   /// Returns list of directory names to create under the SAF base
   List<String> getMovieSafPathComponents(PlexMetadata movie) {
-    final movieName = _sanitizeFileName(movie.title);
-    final year = movie.year;
-    final movieFolder = year != null ? '$movieName ($year)' : movieName;
-    return ['Movies', movieFolder];
+    return ['Movies', _getMovieFolderName(movie)];
   }
 
   /// Get path components for episode SAF storage
@@ -647,21 +639,14 @@ class DownloadStorageService {
     PlexMetadata episode, {
     int? showYear,
   }) {
-    final showName = _sanitizeFileName(
-      episode.grandparentTitle ?? episode.title,
-    );
-    final year = showYear ?? episode.year;
-    final showFolder = year != null ? '$showName ($year)' : showName;
+    final showFolder = _getShowFolderName(episode, showYear: showYear);
     final seasonNum = (episode.parentIndex ?? 0).toString().padLeft(2, '0');
     return ['TV Shows', showFolder, 'Season $seasonNum'];
   }
 
   /// Get SAF file name for a movie
   String getMovieSafFileName(PlexMetadata movie, String extension) {
-    final movieName = _sanitizeFileName(movie.title);
-    final year = movie.year;
-    final fileName = year != null ? '$movieName ($year)' : movieName;
-    return '$fileName.$extension';
+    return '${_getMovieFolderName(movie)}.$extension';
   }
 
   /// Get SAF file name for an episode

@@ -11,13 +11,9 @@ import '../services/download_storage_service.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
-import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/duration_formatter.dart';
-import '../screens/media_detail_screen.dart';
-import '../screens/season_detail_screen.dart';
-import '../screens/playlist/playlist_detail_screen.dart';
-import '../screens/collection_detail_screen.dart';
+import '../utils/media_navigation_helper.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
 import 'media_context_menu.dart';
@@ -74,30 +70,29 @@ class MediaCardState extends State<MediaCard> {
 
   String _buildSemanticLabel() {
     final item = widget.item;
-    final itemType = item.type.toLowerCase();
 
     // Build base label based on type
     String baseLabel;
-    if (itemType == 'episode') {
-      final episodeInfo = item.parentIndex != null && item.index != null
-          ? 'S${item.parentIndex} E${item.index}'
-          : '';
-      baseLabel = t.accessibility.mediaCardEpisode(
-        title: item.displayTitle,
-        episodeInfo: episodeInfo,
-      );
-    } else if (itemType == 'season') {
-      final seasonInfo = item.parentIndex != null
-          ? 'Season ${item.parentIndex}'
-          : '';
-      baseLabel = t.accessibility.mediaCardSeason(
-        title: item.displayTitle,
-        seasonInfo: seasonInfo,
-      );
-    } else if (itemType == 'movie') {
-      baseLabel = t.accessibility.mediaCardMovie(title: item.displayTitle);
-    } else {
-      baseLabel = t.accessibility.mediaCardShow(title: item.displayTitle);
+    switch (item.mediaType) {
+      case PlexMediaType.episode:
+        final episodeInfo = item.parentIndex != null && item.index != null
+            ? 'S${item.parentIndex} E${item.index}'
+            : '';
+        baseLabel = t.accessibility.mediaCardEpisode(
+          title: item.displayTitle,
+          episodeInfo: episodeInfo,
+        );
+      case PlexMediaType.season:
+        final seasonInfo =
+            item.parentIndex != null ? 'Season ${item.parentIndex}' : '';
+        baseLabel = t.accessibility.mediaCardSeason(
+          title: item.displayTitle,
+          seasonInfo: seasonInfo,
+        );
+      case PlexMediaType.movie:
+        baseLabel = t.accessibility.mediaCardMovie(title: item.displayTitle);
+      default:
+        baseLabel = t.accessibility.mediaCardShow(title: item.displayTitle);
     }
 
     // Add watched status
@@ -122,85 +117,28 @@ class MediaCardState extends State<MediaCard> {
       return;
     }
 
-    // Handle playlists
-    if (widget.item is PlexPlaylist) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              PlaylistDetailScreen(playlist: widget.item as PlexPlaylist),
-        ),
-      );
-      return;
-    }
+    final result = await navigateToMediaItem(
+      context,
+      widget.item,
+      onRefresh: widget.onRefresh,
+      isOffline: widget.isOffline,
+    );
 
-    final itemType = widget.item.type.toLowerCase();
+    if (!mounted) return;
 
-    // Handle collections
-    if (itemType == 'collection') {
-      final result = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CollectionDetailScreen(collection: widget.item),
-        ),
-      );
-
-      // If collection was deleted, refresh the parent list
-      if (result == true && mounted) {
-        widget.onListRefresh?.call();
-      }
-      return;
-    }
-
-    // Music content is not yet supported
-    if (itemType == 'artist' || itemType == 'album' || itemType == 'track') {
-      if (context.mounted) {
+    switch (result) {
+      case MediaNavigationResult.unsupported:
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(t.messages.musicNotSupported),
             duration: const Duration(seconds: 2),
           ),
         );
-      }
-      return;
-    }
-
-    // For episodes, start playback directly
-    if (itemType == 'episode') {
-      final result = await navigateToVideoPlayer(
-        context,
-        metadata: widget.item,
-        isOffline: widget.isOffline,
-      );
-      // Refresh parent screen if result indicates it's needed
-      if (result == true) {
-        widget.onRefresh?.call(widget.item.ratingKey);
-      }
-    } else if (itemType == 'season') {
-      // For seasons, show season detail screen
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SeasonDetailScreen(season: widget.item),
-        ),
-      );
-      // Season screen doesn't return a refresh flag, but we can refresh anyway
-      widget.onRefresh?.call(widget.item.ratingKey);
-    } else {
-      // For all other types (shows, movies), show detail screen
-      final result = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MediaDetailScreen(
-            metadata: widget.item,
-            isOffline: widget.isOffline,
-          ),
-        ),
-      );
-      // Refresh parent screen if result indicates it's needed
-      if (result == true) {
-        widget.onRefresh?.call(widget.item.ratingKey);
-      }
+      case MediaNavigationResult.listRefreshNeeded:
+        widget.onListRefresh?.call();
+      case MediaNavigationResult.navigated:
+        // Item refresh already handled by onRefresh callback in helper
+        break;
     }
   }
 
@@ -479,7 +417,7 @@ class _MediaCardList extends StatelessWidget {
       final metadata = item as PlexMetadata;
 
       // For collections, show item count
-      if (metadata.type.toLowerCase() == 'collection') {
+      if (metadata.mediaType == PlexMediaType.collection) {
         final count = metadata.childCount ?? metadata.leafCount;
         if (count != null && count > 0) {
           parts.add(t.playlists.itemCount(count: count));
@@ -765,7 +703,7 @@ class _MediaCardHelpers {
     PlexMetadata metadata,
   ) {
     // For collections, show item count
-    if (metadata.type.toLowerCase() == 'collection') {
+    if (metadata.mediaType == PlexMediaType.collection) {
       final count = metadata.childCount ?? metadata.leafCount;
       if (count != null && count > 0) {
         return Text(

@@ -39,7 +39,7 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen>
-    with Refreshable, ItemUpdatable, SingleTickerProviderStateMixin {
+    with Refreshable, FullRefreshable, ItemUpdatable, SingleTickerProviderStateMixin {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
 
   @override
@@ -1184,7 +1184,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final isEpisode = heroItem.type.toLowerCase() == 'episode';
     final showName = heroItem.grandparentTitle ?? heroItem.title;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isLargeScreen = screenWidth > 800;
+    final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.type.toLowerCase() == 'movie'

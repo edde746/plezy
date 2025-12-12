@@ -10,6 +10,7 @@ import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
+import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/server_state_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
@@ -166,20 +167,22 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     ];
   }
 
-  int _normalizeIndexForMode(int current, bool offline) {
-    if (offline) {
-      // Only two tabs exist offline: 0 = Downloads, 1 = Settings
-      if (current <= 0) return 0;
-      if (current == 1) return 1;
-      return 0;
-    }
+  /// Normalize tab index when switching between offline/online modes.
+  /// Preserves the current tab if it exists in the new mode, otherwise defaults to first tab.
+  int _normalizeIndexForMode(int currentIndex, bool wasOffline, bool isOffline) {
+    if (wasOffline == isOffline) return currentIndex;
 
-    // Map offline indices back to online equivalents when reconnecting
-    if (current == 0) return 3; // Downloads tab
-    if (current == 1) return 4; // Settings tab
-    if (current < 0) return 0;
-    if (current > 4) return 0;
-    return current;
+    final oldTabs = _getVisibleTabs(wasOffline);
+    final newTabs = _getVisibleTabs(isOffline);
+
+    // Get the tab ID at the current index (or first tab if out of bounds)
+    final currentTabId = currentIndex >= 0 && currentIndex < oldTabs.length
+        ? oldTabs[currentIndex].id
+        : oldTabs.first.id;
+
+    // Find the same tab in the new mode's tab list
+    final newIndex = newTabs.indexWhere((tab) => tab.id == currentTabId);
+    return newIndex >= 0 ? newIndex : 0;
   }
 
   void _handleOfflineStatusChanged() {
@@ -187,11 +190,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
     if (newOffline == _isOffline) return;
 
+    final wasOffline = _isOffline;
     setState(() {
       _isOffline = newOffline;
       _screens = _buildScreens(_isOffline);
       _selectedLibraryGlobalKey = _isOffline ? null : _selectedLibraryGlobalKey;
-      _currentIndex = _normalizeIndexForMode(_currentIndex, _isOffline);
+      _currentIndex = _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
     });
 
     // Refresh sidebar focus after rebuilding navigation
@@ -223,9 +227,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     // When content regains focus while on Libraries, retry focusing the active tab
     if (_currentIndex == 1) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final librariesState = _librariesKey.currentState;
-        if (librariesState != null) {
-          (librariesState as dynamic).focusActiveTabIfReady();
+        if (_librariesKey.currentState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
         }
       });
     }
@@ -323,21 +326,18 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     appLogger.d('Cleared all provider states for profile switch');
 
     // Full refresh discover screen (reload all content for new profile)
-    final discoverState = _discoverKey.currentState;
-    if (discoverState != null) {
-      (discoverState as dynamic).fullRefresh();
+    if (_discoverKey.currentState case final FullRefreshable refreshable) {
+      refreshable.fullRefresh();
     }
 
     // Full refresh libraries screen (clear filters and reload for new profile)
-    final librariesState = _librariesKey.currentState;
-    if (librariesState != null) {
-      (librariesState as dynamic).fullRefresh();
+    if (_librariesKey.currentState case final FullRefreshable refreshable) {
+      refreshable.fullRefresh();
     }
 
     // Full refresh search screen (clear search for new profile)
-    final searchState = _searchKey.currentState;
-    if (searchState != null) {
-      (searchState as dynamic).fullRefresh();
+    if (_searchKey.currentState case final FullRefreshable refreshable) {
+      refreshable.fullRefresh();
     }
   }
 
@@ -356,16 +356,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     }
     // Ensure the libraries screen applies focus when brought into view
     if (index == 1 && previousIndex != 1) {
-      final librariesState = _librariesKey.currentState;
-      if (librariesState != null) {
-        (librariesState as dynamic).focusActiveTabIfReady();
+      if (_librariesKey.currentState case final FocusableTab focusable) {
+        focusable.focusActiveTabIfReady();
       }
     }
     // Focus search input when selecting Search tab
     if (index == 2) {
-      final searchState = _searchKey.currentState;
-      if (searchState != null) {
-        (searchState as dynamic).focusSearchInput();
+      if (_searchKey.currentState case final SearchInputFocusable searchable) {
+        searchable.focusSearchInput();
       }
     }
   }
@@ -377,57 +375,22 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       _currentIndex = 1; // Switch to Libraries tab
     });
     // Tell LibrariesScreen to load this library
-    final librariesState = _librariesKey.currentState;
-    if (librariesState != null) {
-      (librariesState as dynamic).loadLibraryByKey(libraryGlobalKey);
-      (librariesState as dynamic).focusActiveTabIfReady();
+    if (_librariesKey.currentState case final LibraryLoadable loadable) {
+      loadable.loadLibraryByKey(libraryGlobalKey);
     }
+    if (_librariesKey.currentState case final FocusableTab focusable) {
+      focusable.focusActiveTabIfReady();
+    }
+  }
+
+  /// Get navigation tabs filtered by offline mode
+  List<NavigationTab> _getVisibleTabs(bool isOffline) {
+    return NavigationTab.getVisibleTabs(isOffline: isOffline);
   }
 
   /// Build navigation destinations for bottom navigation bar.
   List<NavigationDestination> _buildNavDestinations(bool isOffline) {
-    if (isOffline) {
-      return [
-        NavigationDestination(
-          icon: const AppIcon(Symbols.download_rounded, fill: 1),
-          selectedIcon: const AppIcon(Symbols.download_rounded, fill: 1),
-          label: t.navigation.downloads,
-        ),
-        NavigationDestination(
-          icon: const AppIcon(Symbols.settings_rounded, fill: 1),
-          selectedIcon: const AppIcon(Symbols.settings_rounded, fill: 1),
-          label: t.navigation.settings,
-        ),
-      ];
-    }
-
-    return [
-      NavigationDestination(
-        icon: const AppIcon(Symbols.home_rounded, fill: 1),
-        selectedIcon: const AppIcon(Symbols.home_rounded, fill: 1),
-        label: t.navigation.home,
-      ),
-      NavigationDestination(
-        icon: const AppIcon(Symbols.video_library_rounded, fill: 1),
-        selectedIcon: const AppIcon(Symbols.video_library_rounded, fill: 1),
-        label: t.navigation.libraries,
-      ),
-      NavigationDestination(
-        icon: const AppIcon(Symbols.search_rounded, fill: 1),
-        selectedIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-        label: t.navigation.search,
-      ),
-      NavigationDestination(
-        icon: const AppIcon(Symbols.download_rounded, fill: 1),
-        selectedIcon: const AppIcon(Symbols.download_rounded, fill: 1),
-        label: t.navigation.downloads,
-      ),
-      NavigationDestination(
-        icon: const AppIcon(Symbols.settings_rounded, fill: 1),
-        selectedIcon: const AppIcon(Symbols.settings_rounded, fill: 1),
-        label: t.navigation.settings,
-      ),
-    ];
+    return _getVisibleTabs(isOffline).map((tab) => tab.toDestination()).toList();
   }
 
   @override

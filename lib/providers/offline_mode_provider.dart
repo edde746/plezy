@@ -26,16 +26,22 @@ class OfflineModeProvider extends ChangeNotifier {
   /// Whether at least one Plex server is reachable
   bool get hasServerConnection => _hasServerConnection;
 
+  /// Updates network and server connection flags
+  Future<void> _updateConnectionFlags() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    _hasNetworkConnection = !connectivityResult.contains(
+      ConnectivityResult.none,
+    );
+    _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
+  }
+
   /// Initialize the provider and start monitoring
   Future<void> initialize() async {
     if (_isInitialized) return;
     _isInitialized = true;
 
     // Check initial connectivity
-    final connectivityResult = await Connectivity().checkConnectivity();
-    _hasNetworkConnection = !connectivityResult.contains(
-      ConnectivityResult.none,
-    );
+    await _updateConnectionFlags();
 
     // Monitor connectivity changes
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
@@ -59,18 +65,12 @@ class OfflineModeProvider extends ChangeNotifier {
       }
     });
 
-    // Check initial server status
-    _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
     notifyListeners();
   }
 
   /// Force a refresh of connectivity status
   Future<void> refresh() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    _hasNetworkConnection = !connectivityResult.contains(
-      ConnectivityResult.none,
-    );
-    _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
+    await _updateConnectionFlags();
     notifyListeners();
   }
 

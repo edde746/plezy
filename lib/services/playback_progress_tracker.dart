@@ -62,6 +62,11 @@ class PlaybackProgressTracker {
       return;
     }
 
+    // Send initial progress immediately (don't wait for first timer tick)
+    if (player.state.playing) {
+      _sendProgress('playing');
+    }
+
     _progressTimer = Timer.periodic(updateInterval, (timer) {
       if (player.state.playing) {
         _sendProgress('playing');

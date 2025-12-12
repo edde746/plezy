@@ -85,48 +85,25 @@ class DataAggregationService {
       return _cachedLibrariesByServer!;
     }
 
-    final clients = _serverManager.onlineClients;
-
-    if (clients.isEmpty) {
-      appLogger.w('No online servers available for fetching libraries');
-      return {};
-    }
-
-    appLogger.d('Fetching libraries from ${clients.length} servers');
-
-    final libraryFutures = clients.entries.map((entry) async {
-      final serverId = entry.key;
-      final client = entry.value;
-      try {
-        final libraries = await client.getLibraries();
-        appLogger.d(
-          'Fetched ${libraries.length} libraries for server $serverId',
-        );
-        return MapEntry(serverId, libraries);
-      } catch (e) {
-        appLogger.e(
-          'Failed to fetch libraries from server $serverId',
-          error: e,
-        );
-        return MapEntry(serverId, <PlexLibrary>[]);
-      }
-    });
-
-    final libraryResults = await Future.wait(libraryFutures);
-
-    final librariesByServer = Map.fromEntries(libraryResults);
-    final totalLibraries = libraryResults.fold<int>(
-      0,
-      (sum, entry) => sum + entry.value.length,
+    final librariesByServer = await _perServerGrouped<PlexLibrary>(
+      operationName: 'fetching libraries',
+      operation: (serverId, client, server) async {
+        return await client.getLibraries();
+      },
     );
 
     // Cache the results
     _cachedLibrariesByServer = librariesByServer;
     _librariesCacheTime = DateTime.now();
 
-    appLogger.d(
-      'Fetched $totalLibraries libraries from ${clients.length} servers',
+    final totalLibraries = librariesByServer.values.fold<int>(
+      0,
+      (sum, libs) => sum + libs.length,
     );
+    appLogger.d(
+      'Fetched $totalLibraries libraries from ${librariesByServer.length} servers',
+    );
+
     return librariesByServer;
   }
 
@@ -367,5 +344,63 @@ class DataAggregationService {
     }
 
     return allResults;
+  }
+
+  /// Higher-order helper for per-server fan-out operations that groups results by server
+  ///
+  /// Similar to [_perServer] but returns a Map with results grouped by serverId
+  /// instead of flattening into a single list.
+  ///
+  /// Type parameter `T` is the item type returned by the operation
+  /// [operationName] is used for logging (e.g., "fetching libraries")
+  /// [operation] is the async function to run per server, returning `List<T>`
+  Future<Map<String, List<T>>> _perServerGrouped<T>({
+    required String operationName,
+    required Future<List<T>> Function(
+      String serverId,
+      PlexClient client,
+      PlexServer? server,
+    )
+    operation,
+  }) async {
+    final clients = _serverManager.onlineClients;
+
+    if (clients.isEmpty) {
+      appLogger.w('No online servers available for $operationName');
+      return {};
+    }
+
+    appLogger.d('$operationName from ${clients.length} servers');
+
+    // Execute operation on all servers in parallel
+    final futures = clients.entries.map((entry) async {
+      final serverId = entry.key;
+      final client = entry.value;
+      final server = _serverManager.getServer(serverId);
+      final sw = Stopwatch()..start();
+
+      try {
+        final result = await operation(serverId, client, server);
+        appLogger.d(
+          '$operationName for server $serverId completed in ${sw.elapsedMilliseconds}ms with ${result.length} items',
+        );
+        return MapEntry(serverId, result);
+      } catch (e, stackTrace) {
+        appLogger.e(
+          'Failed $operationName from server $serverId',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        _serverManager.updateServerStatus(serverId, false);
+        appLogger.d(
+          '$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms',
+        );
+        return MapEntry(serverId, <T>[]);
+      }
+    });
+
+    final results = await Future.wait(futures);
+
+    return Map.fromEntries(results);
   }
 }

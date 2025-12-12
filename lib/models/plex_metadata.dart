@@ -5,6 +5,34 @@ import 'plex_role.dart';
 
 part 'plex_metadata.g.dart';
 
+/// Media type enum for type-safe media type handling
+enum PlexMediaType {
+  movie,
+  show,
+  season,
+  episode,
+  artist,
+  album,
+  track,
+  collection,
+  playlist,
+  clip,
+  photo,
+  unknown;
+
+  /// Whether this type represents video content
+  bool get isVideo => this == movie || this == episode || this == clip;
+
+  /// Whether this type is part of a show hierarchy
+  bool get isShowRelated => this == show || this == season || this == episode;
+
+  /// Whether this type represents music content
+  bool get isMusic => this == artist || this == album || this == track;
+
+  /// Whether this type can be played directly
+  bool get isPlayable => isVideo || this == track;
+}
+
 @JsonSerializable()
 class PlexMetadata with MultiServerFields {
   final String ratingKey;
@@ -60,6 +88,24 @@ class PlexMetadata with MultiServerFields {
 
   /// Global unique identifier across all servers (serverId:ratingKey)
   String get globalKey => serverId != null ? '$serverId:$ratingKey' : ratingKey;
+
+  /// Parsed media type enum for type-safe comparisons
+  PlexMediaType get mediaType {
+    return switch (type.toLowerCase()) {
+      'movie' => PlexMediaType.movie,
+      'show' => PlexMediaType.show,
+      'season' => PlexMediaType.season,
+      'episode' => PlexMediaType.episode,
+      'artist' => PlexMediaType.artist,
+      'album' => PlexMediaType.album,
+      'track' => PlexMediaType.track,
+      'collection' => PlexMediaType.collection,
+      'playlist' => PlexMediaType.playlist,
+      'clip' => PlexMediaType.clip,
+      'photo' => PlexMediaType.photo,
+      _ => PlexMediaType.unknown,
+    };
+  }
 
   PlexMetadata({
     required this.ratingKey,

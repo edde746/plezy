@@ -21,6 +21,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   OfflineModeProvider? _offlineModeProvider;
   VoidCallback? _offlineModeListener;
   bool _isSyncing = false;
+  bool _isBidirectionalSyncing = false;
   DateTime? _lastSyncTime;
   bool _hasPerformedStartupSync = false;
 
@@ -75,28 +76,39 @@ class OfflineWatchSyncService extends ChangeNotifier {
   ///
   /// Push always happens immediately. Pull respects [minSyncInterval] unless [force] is true.
   Future<void> _performBidirectionalSync({bool force = false}) async {
+    // Prevent overlapping bidirectional syncs
+    if (_isBidirectionalSyncing) {
+      appLogger.d('Bidirectional sync already in progress, skipping');
+      return;
+    }
+
     if (_serverManager.onlineClients.isEmpty) {
       appLogger.d('Skipping watch sync - no connected servers available yet');
       return;
     }
 
-    // Always push local changes to server (never throttle outbound sync)
-    await syncPendingItems();
+    _isBidirectionalSyncing = true;
+    try {
+      // Always push local changes to server (never throttle outbound sync)
+      await syncPendingItems();
 
-    // Only throttle the pull from server
-    if (!force && _lastSyncTime != null) {
-      final elapsed = DateTime.now().difference(_lastSyncTime!);
-      if (elapsed < minSyncInterval) {
-        appLogger.d(
-          'Skipping server pull - last sync was ${elapsed.inMinutes}m ago (min: ${minSyncInterval.inMinutes}m)',
-        );
-        return;
+      // Only throttle the pull from server
+      if (!force && _lastSyncTime != null) {
+        final elapsed = DateTime.now().difference(_lastSyncTime!);
+        if (elapsed < minSyncInterval) {
+          appLogger.d(
+            'Skipping server pull - last sync was ${elapsed.inMinutes}m ago (min: ${minSyncInterval.inMinutes}m)',
+          );
+          return;
+        }
       }
-    }
 
-    // Pull latest states from server
-    await syncWatchStatesFromServer();
-    _lastSyncTime = DateTime.now();
+      // Pull latest states from server
+      await syncWatchStatesFromServer();
+      _lastSyncTime = DateTime.now();
+    } finally {
+      _isBidirectionalSyncing = false;
+    }
   }
 
   /// Called when app becomes active - syncs if interval has passed.
@@ -217,6 +229,40 @@ class OfflineWatchSyncService extends ChangeNotifier {
     }
   }
 
+  /// Get local watch statuses for multiple items in a single database query.
+  ///
+  /// Returns a map of globalKey -> watch status (true/false/null).
+  /// More efficient than calling getLocalWatchStatus multiple times.
+  Future<Map<String, bool?>> getLocalWatchStatusesBatched(
+    Set<String> globalKeys,
+  ) async {
+    if (globalKeys.isEmpty) return {};
+
+    final actions = await _database.getLatestWatchActionsForKeys(globalKeys);
+    final result = <String, bool?>{};
+
+    for (final key in globalKeys) {
+      final action = actions[key];
+      if (action == null) {
+        result[key] = null;
+        continue;
+      }
+
+      switch (action.actionType) {
+        case 'watched':
+          result[key] = true;
+        case 'unwatched':
+          result[key] = false;
+        case 'progress':
+          result[key] = action.shouldMarkWatched;
+        default:
+          result[key] = null;
+      }
+    }
+
+    return result;
+  }
+
   /// Get the local view offset (resume position) for a media item.
   ///
   /// Returns the locally tracked position, or null if none exists.
@@ -240,6 +286,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Sync all pending items to their respective servers.
   ///
   /// Called automatically when connectivity is restored, or manually.
+  /// Actions are batched by server to reduce connectivity lookups.
   Future<void> syncPendingItems() async {
     if (_isSyncing) {
       appLogger.d('Sync already in progress, skipping');
@@ -259,6 +306,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
       appLogger.i('Syncing ${pendingActions.length} pending watch actions');
 
+      // First pass: handle retry limit exceeded and group by server
+      final actionsByServer = <String, List<OfflineWatchProgressItem>>{};
+
       for (final action in pendingActions) {
         // Delete items that have exceeded retry limit
         if (action.syncAttempts >= maxSyncAttempts) {
@@ -270,43 +320,54 @@ class OfflineWatchSyncService extends ChangeNotifier {
           continue;
         }
 
-        // Get the client for this server
-        final client = _serverManager.getClient(action.serverId);
-        if (client == null) {
-          // Check if this server still exists in the app
-          if (_serverManager.getServer(action.serverId) == null) {
-            appLogger.w(
-              'Deleting action ${action.id} - server ${action.serverId} no longer exists',
-            );
-            await _database.deleteWatchAction(action.id);
-          } else {
-            appLogger.w(
-              'No client available for server ${action.serverId}, will retry',
-            );
-            await _database.updateSyncAttempt(
-              action.id,
-              'Server not available',
-            );
-          }
-          continue;
-        }
-
-        // Check if server is online
-        if (!_serverManager.isServerOnline(action.serverId)) {
-          appLogger.d('Server ${action.serverId} is offline, skipping');
-          continue;
-        }
-
-        try {
-          await _syncAction(client, action);
-          // Success - delete the action from queue
-          await _database.deleteWatchAction(action.id);
-          appLogger.d(
-            'Successfully synced action ${action.id}: ${action.actionType} for ${action.ratingKey}',
+        // Check if server still exists
+        if (_serverManager.getServer(action.serverId) == null) {
+          appLogger.w(
+            'Deleting action ${action.id} - server ${action.serverId} no longer exists',
           );
-        } catch (e) {
-          appLogger.w('Failed to sync action ${action.id}: $e');
-          await _database.updateSyncAttempt(action.id, e.toString());
+          await _database.deleteWatchAction(action.id);
+          continue;
+        }
+
+        actionsByServer.putIfAbsent(action.serverId, () => []).add(action);
+      }
+
+      // Second pass: process each server's actions with single connectivity check
+      for (final entry in actionsByServer.entries) {
+        final serverId = entry.key;
+        final actions = entry.value;
+
+        await _withOnlineClient(serverId, (client) async {
+          for (final action in actions) {
+            try {
+              await _syncAction(client, action);
+              // Success - delete the action from queue
+              await _database.deleteWatchAction(action.id);
+              appLogger.d(
+                'Successfully synced action ${action.id}: ${action.actionType} for ${action.ratingKey}',
+              );
+            } catch (e) {
+              appLogger.w('Failed to sync action ${action.id}: $e');
+              await _database.updateSyncAttempt(action.id, e.toString());
+            }
+          }
+        });
+
+        // If _withOnlineClient returned null (server offline), mark actions for retry
+        if (_serverManager.getClient(serverId) == null ||
+            !_serverManager.isServerOnline(serverId)) {
+          for (final action in actions) {
+            // Only update if we haven't already processed it
+            final stillPending = await _database.getLatestWatchAction(
+              '${action.serverId}:${action.ratingKey}',
+            );
+            if (stillPending != null && stillPending.id == action.id) {
+              await _database.updateSyncAttempt(
+                action.id,
+                'Server not available',
+              );
+            }
+          }
         }
       }
     } finally {

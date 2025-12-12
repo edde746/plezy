@@ -36,7 +36,6 @@ class FocusedScrollScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Focus(
-      autofocus: true,
       onKeyEvent: (_, event) => handleBackKeyNavigation(context, event),
       child: Scaffold(
         body: CustomScrollView(

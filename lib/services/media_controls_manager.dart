@@ -16,15 +16,19 @@ class MediaControlsManager {
   /// Stream of control events from OS media controls
   Stream<dynamic> get controlEvents => OsMediaControls.controlEvents;
 
-  /// Throttled playback state update (1 second interval, leading edge only)
+  /// Throttled playback state update (1 second interval, leading + trailing)
   late final Throttle _throttledUpdate;
+
+  /// Cached control enabled state to avoid redundant platform calls
+  bool? _lastCanGoNext;
+  bool? _lastCanGoPrevious;
 
   MediaControlsManager() {
     _throttledUpdate = throttle(
       _doUpdatePlaybackState,
       const Duration(seconds: 1),
       leading: true,
-      trailing: false,
+      trailing: true, // Send final position at end of throttle window
     );
   }
 
@@ -117,6 +121,14 @@ class MediaControlsManager {
     bool canGoNext = false,
     bool canGoPrevious = false,
   }) async {
+    // Skip if unchanged (avoid redundant platform calls)
+    if (canGoNext == _lastCanGoNext && canGoPrevious == _lastCanGoPrevious) {
+      return;
+    }
+
+    _lastCanGoNext = canGoNext;
+    _lastCanGoPrevious = canGoPrevious;
+
     try {
       final controls = <MediaControl>[];
       if (canGoPrevious) controls.add(MediaControl.previous);

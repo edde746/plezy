@@ -24,23 +24,13 @@ class SmartDeletionHandler {
     });
 
     try {
-      // Start deletion
       await provider.deleteDownload(globalKey);
+    } finally {
       deletionComplete = true;
-
-      // Close dialog if shown
-      if (dialogShown && context.mounted) {
+      // Close dialog if shown (with canPop guard to prevent double-pop)
+      if (dialogShown && context.mounted && Navigator.canPop(context)) {
         Navigator.of(context).pop();
       }
-    } catch (e) {
-      deletionComplete = true;
-
-      // Close dialog if shown
-      if (dialogShown && context.mounted) {
-        Navigator.of(context).pop();
-      }
-
-      rethrow; // Let caller handle error
     }
   }
 

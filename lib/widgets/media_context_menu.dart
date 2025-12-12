@@ -13,7 +13,6 @@ import '../providers/offline_mode_provider.dart';
 import '../providers/offline_watch_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
-import '../utils/collection_playlist_play_helper.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
@@ -132,8 +131,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     final isPlaylist = widget.item is PlexPlaylist;
     final metadata = isPlaylist ? null : widget.item as PlexMetadata;
-    final itemType = isPlaylist ? 'playlist' : (metadata!.type.toLowerCase());
-    final isCollection = itemType == 'collection';
+    final mediaType = isPlaylist ? null : metadata!.mediaType;
+    final isCollection = mediaType == PlexMediaType.collection;
 
     final isPartiallyWatched =
         !isPlaylist &&
@@ -226,7 +225,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Go to Series (for episodes and seasons)
-      if ((itemType == 'episode' || itemType == 'season') &&
+      if ((mediaType == PlexMediaType.episode ||
+              mediaType == PlexMediaType.season) &&
           metadata.grandparentTitle != null) {
         menuActions.add(
           _MenuAction(
@@ -238,7 +238,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Go to Season (for episodes)
-      if (itemType == 'episode' && metadata.parentTitle != null) {
+      if (mediaType == PlexMediaType.episode && metadata.parentTitle != null) {
         menuActions.add(
           _MenuAction(
             value: 'season',
@@ -249,7 +249,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Shuffle Play (for shows and seasons)
-      if (itemType == 'show' || itemType == 'season') {
+      if (mediaType == PlexMediaType.show ||
+          mediaType == PlexMediaType.season) {
         menuActions.add(
           _MenuAction(
             value: 'shuffle_play',
@@ -260,7 +261,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // File Info (for episodes and movies)
-      if (itemType == 'episode' || itemType == 'movie') {
+      if (mediaType == PlexMediaType.episode ||
+          mediaType == PlexMediaType.movie) {
         menuActions.add(
           _MenuAction(
             value: 'fileinfo',
@@ -271,10 +273,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Download options (for episodes, movies, shows, and seasons)
-      if (itemType == 'episode' ||
-          itemType == 'movie' ||
-          itemType == 'show' ||
-          itemType == 'season') {
+      if (mediaType == PlexMediaType.episode ||
+          mediaType == PlexMediaType.movie ||
+          mediaType == PlexMediaType.show ||
+          mediaType == PlexMediaType.season) {
         final downloadProvider = Provider.of<DownloadProvider>(
           context,
           listen: false,
@@ -304,10 +306,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Add to... (for episodes, movies, shows, and seasons)
-      if (itemType == 'episode' ||
-          itemType == 'movie' ||
-          itemType == 'show' ||
-          itemType == 'season') {
+      if (mediaType == PlexMediaType.episode ||
+          mediaType == PlexMediaType.movie ||
+          mediaType == PlexMediaType.show ||
+          mediaType == PlexMediaType.season) {
         menuActions.add(
           _MenuAction(
             value: 'add_to',
@@ -1118,14 +1120,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     bool isCollection,
     bool isPlaylist,
   ) async {
-    final client = _getClientForItem();
-
-    await playCollectionOrPlaylist(
-      context: context,
-      client: client,
-      item: widget.item,
-      shuffle: false,
-    );
+    await _launchCollectionOrPlaylist(context, shuffle: false);
   }
 
   /// Handle shuffle action for collections and playlists
@@ -1134,13 +1129,32 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     bool isCollection,
     bool isPlaylist,
   ) async {
-    final client = _getClientForItem();
+    await _launchCollectionOrPlaylist(context, shuffle: true);
+  }
 
-    await playCollectionOrPlaylist(
+  /// Launch playback for collection or playlist
+  Future<void> _launchCollectionOrPlaylist(
+    BuildContext context, {
+    required bool shuffle,
+  }) async {
+    final client = _getClientForItem();
+    final item = widget.item;
+
+    final launcher = PlayQueueLauncher(
       context: context,
       client: client,
-      item: widget.item,
-      shuffle: true,
+      serverId: item is PlexMetadata
+          ? item.serverId
+          : (item as PlexPlaylist).serverId,
+      serverName: item is PlexMetadata
+          ? item.serverName
+          : (item as PlexPlaylist).serverName,
+    );
+
+    await launcher.launchFromCollectionOrPlaylist(
+      item: item,
+      shuffle: shuffle,
+      showLoadingIndicator: false,
     );
   }
 

@@ -535,6 +535,121 @@ class PlexClient {
     return null;
   }
 
+  /// Fetch metadata with cache support for offline mode and network fallback.
+  ///
+  /// Returns the raw response data (Map) or null if not available.
+  /// Used by playback methods to share caching logic.
+  Future<Map<String, dynamic>?> _fetchMetadataWithCache(
+    String ratingKey, {
+    Map<String, dynamic>? queryParams,
+  }) async {
+    final cacheKey = '/library/metadata/$ratingKey';
+
+    // Offline mode: cache only
+    if (_offlineMode) {
+      return await _cache.get(serverId, cacheKey);
+    }
+
+    // Online: try network first
+    try {
+      final response = await _dio.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: queryParams,
+      );
+
+      // Cache at base endpoint
+      if (response.data != null) {
+        await _cache.put(serverId, cacheKey, response.data);
+      }
+
+      return response.data;
+    } catch (e) {
+      // Network failed - try cache as fallback
+      appLogger.w('Network request failed for metadata, trying cache', error: e);
+      return await _cache.get(serverId, cacheKey);
+    }
+  }
+
+  /// Get first metadata JSON from response data
+  Map<String, dynamic>? _getFirstMetadataJsonFromData(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    final container = data['MediaContainer'];
+    if (container != null &&
+        container['Metadata'] != null &&
+        (container['Metadata'] as List).isNotEmpty) {
+      return container['Metadata'][0];
+    }
+    return null;
+  }
+
+  /// Parse audio and subtitle tracks from a stream list
+  ({List<PlexAudioTrack> audio, List<PlexSubtitleTrack> subtitles}) _parseStreams(
+    List<dynamic>? streams,
+  ) {
+    final audioTracks = <PlexAudioTrack>[];
+    final subtitleTracks = <PlexSubtitleTrack>[];
+
+    if (streams == null) return (audio: audioTracks, subtitles: subtitleTracks);
+
+    for (var stream in streams) {
+      final streamType = stream['streamType'] as int?;
+
+      if (streamType == 2) {
+        // Audio track
+        audioTracks.add(
+          PlexAudioTrack(
+            id: stream['id'] as int,
+            index: stream['index'] as int?,
+            codec: stream['codec'] as String?,
+            language: stream['language'] as String?,
+            languageCode: stream['languageCode'] as String?,
+            title: stream['title'] as String?,
+            displayTitle: stream['displayTitle'] as String?,
+            channels: stream['channels'] as int?,
+            selected: stream['selected'] == 1,
+          ),
+        );
+      } else if (streamType == 3) {
+        // Subtitle track
+        subtitleTracks.add(
+          PlexSubtitleTrack(
+            id: stream['id'] as int,
+            index: stream['index'] as int?,
+            codec: stream['codec'] as String?,
+            language: stream['language'] as String?,
+            languageCode: stream['languageCode'] as String?,
+            title: stream['title'] as String?,
+            displayTitle: stream['displayTitle'] as String?,
+            selected: stream['selected'] == 1,
+            forced: stream['forced'] == 1,
+            key: stream['key'] as String?,
+          ),
+        );
+      }
+    }
+
+    return (audio: audioTracks, subtitles: subtitleTracks);
+  }
+
+  /// Parse chapters from metadata JSON
+  List<PlexChapter> _parseChapters(Map<String, dynamic>? metadataJson) {
+    if (metadataJson == null || metadataJson['Chapter'] == null) {
+      return [];
+    }
+
+    final chapterList = metadataJson['Chapter'] as List<dynamic>;
+    return chapterList.map((chapter) {
+      return PlexChapter(
+        id: chapter['id'] as int,
+        index: chapter['index'] as int?,
+        startTimeOffset: chapter['startTimeOffset'] as int?,
+        endTimeOffset: chapter['endTimeOffset'] as int?,
+        title: chapter['tag'] as String? ?? chapter['title'] as String?,
+        thumb: chapter['thumb'] as String?,
+      );
+    }).toList();
+  }
+
   /// Set per-media language preferences (audio and subtitle)
   /// For TV shows, use grandparentRatingKey to set preference for the entire series
   /// For movies, use the movie's ratingKey
@@ -811,9 +926,10 @@ class PlexClient {
 
   /// Get video URL for direct playback
   /// [mediaIndex] specifies which Media item to use (defaults to 0 - first version)
+  /// Uses cache for offline mode support and network fallback.
   Future<String?> getVideoUrl(String ratingKey, {int mediaIndex = 0}) async {
-    final response = await _dio.get('/library/metadata/$ratingKey');
-    final metadataJson = _getFirstMetadataJson(response);
+    final data = await _fetchMetadataWithCache(ratingKey);
+    final metadataJson = _getFirstMetadataJsonFromData(data);
 
     if (metadataJson != null &&
         metadataJson['Media'] != null &&
@@ -1002,12 +1118,13 @@ class PlexClient {
 
   /// Get detailed media info including chapters and tracks
   /// [mediaIndex] specifies which Media item to use (defaults to 0 - first version)
+  /// Uses cache for offline mode support and network fallback.
   Future<PlexMediaInfo?> getMediaInfo(
     String ratingKey, {
     int mediaIndex = 0,
   }) async {
-    final response = await _dio.get('/library/metadata/$ratingKey');
-    final metadataJson = _getFirstMetadataJson(response);
+    final data = await _fetchMetadataWithCache(ratingKey);
+    final metadataJson = _getFirstMetadataJsonFromData(data);
 
     if (metadataJson != null &&
         metadataJson['Media'] != null &&
@@ -1025,70 +1142,15 @@ class PlexClient {
         final partKey = part['key'] as String?;
 
         if (partKey != null) {
-          // Parse streams (audio and subtitle tracks)
-          final streams = part['Stream'] as List<dynamic>? ?? [];
-          final audioTracks = <PlexAudioTrack>[];
-          final subtitleTracks = <PlexSubtitleTrack>[];
-
-          for (var stream in streams) {
-            final streamType = stream['streamType'] as int?;
-
-            if (streamType == 2) {
-              // Audio track
-              audioTracks.add(
-                PlexAudioTrack(
-                  id: stream['id'] as int,
-                  index: stream['index'] as int?,
-                  codec: stream['codec'] as String?,
-                  language: stream['language'] as String?,
-                  languageCode: stream['languageCode'] as String?,
-                  title: stream['title'] as String?,
-                  displayTitle: stream['displayTitle'] as String?,
-                  channels: stream['channels'] as int?,
-                  selected: stream['selected'] == 1,
-                ),
-              );
-            } else if (streamType == 3) {
-              // Subtitle track
-              subtitleTracks.add(
-                PlexSubtitleTrack(
-                  id: stream['id'] as int,
-                  index: stream['index'] as int?,
-                  codec: stream['codec'] as String?,
-                  language: stream['language'] as String?,
-                  languageCode: stream['languageCode'] as String?,
-                  title: stream['title'] as String?,
-                  displayTitle: stream['displayTitle'] as String?,
-                  selected: stream['selected'] == 1,
-                  forced: stream['forced'] == 1,
-                  key: stream['key'] as String?,
-                ),
-              );
-            }
-          }
-
-          // Parse chapters
-          final chapters = <PlexChapter>[];
-          if (metadataJson['Chapter'] != null) {
-            final chapterList = metadataJson['Chapter'] as List<dynamic>;
-            for (var chapter in chapterList) {
-              chapters.add(
-                PlexChapter(
-                  id: chapter['id'] as int,
-                  index: chapter['index'] as int?,
-                  startTimeOffset: chapter['startTimeOffset'] as int?,
-                  endTimeOffset: chapter['endTimeOffset'] as int?,
-                  title: chapter['title'] as String?,
-                  thumb: chapter['thumb'] as String?,
-                ),
-              );
-            }
-          }
+          // Parse streams using helper
+          final streams = _parseStreams(part['Stream'] as List<dynamic>?);
+          // Parse chapters using helper
+          final chapters = _parseChapters(metadataJson);
 
           return PlexMediaInfo(
             videoUrl: '${config.baseUrl}$partKey?X-Plex-Token=${config.token}',
-            audioTracks: audioTracks,
-            subtitleTracks: subtitleTracks,
+            audioTracks: streams.audio,
+            subtitleTracks: streams.subtitles,
             chapters: chapters,
           );
         }
@@ -1100,9 +1162,10 @@ class PlexClient {
 
   /// Get all available media versions for a media item
   /// Returns a list of PlexMediaVersion objects representing different quality/format options
+  /// Uses cache for offline mode support and network fallback.
   Future<List<PlexMediaVersion>> getMediaVersions(String ratingKey) async {
-    final response = await _dio.get('/library/metadata/$ratingKey');
-    final metadataJson = _getFirstMetadataJson(response);
+    final data = await _fetchMetadataWithCache(ratingKey);
+    final metadataJson = _getFirstMetadataJsonFromData(data);
 
     if (metadataJson != null &&
         metadataJson['Media'] != null &&
@@ -1121,12 +1184,13 @@ class PlexClient {
   /// Get consolidated video playback data (URL, media info, and versions) in a single API call
   /// This method combines the functionality of getVideoUrl(), getMediaInfo(), and getMediaVersions()
   /// to reduce redundant API calls during video playback initialization.
+  /// Uses cache for offline mode support and network fallback.
   Future<PlexVideoPlaybackData> getVideoPlaybackData(
     String ratingKey, {
     int mediaIndex = 0,
   }) async {
-    final response = await _dio.get('/library/metadata/$ratingKey');
-    final metadataJson = _getFirstMetadataJson(response);
+    final data = await _fetchMetadataWithCache(ratingKey);
+    final metadataJson = _getFirstMetadataJsonFromData(data);
 
     String? videoUrl;
     PlexMediaInfo? mediaInfo;
@@ -1158,71 +1222,16 @@ class PlexClient {
           // Get video URL
           videoUrl = '${config.baseUrl}$partKey?X-Plex-Token=${config.token}';
 
-          // Parse streams (audio and subtitle tracks) for media info
-          final streams = part['Stream'] as List<dynamic>? ?? [];
-          final audioTracks = <PlexAudioTrack>[];
-          final subtitleTracks = <PlexSubtitleTrack>[];
-
-          for (var stream in streams) {
-            final streamType = stream['streamType'] as int?;
-
-            if (streamType == 2) {
-              // Audio track
-              audioTracks.add(
-                PlexAudioTrack(
-                  id: stream['id'] as int,
-                  index: stream['index'] as int?,
-                  codec: stream['codec'] as String?,
-                  language: stream['language'] as String?,
-                  languageCode: stream['languageCode'] as String?,
-                  title: stream['title'] as String?,
-                  displayTitle: stream['displayTitle'] as String?,
-                  channels: stream['channels'] as int?,
-                  selected: stream['selected'] == 1,
-                ),
-              );
-            } else if (streamType == 3) {
-              // Subtitle track
-              subtitleTracks.add(
-                PlexSubtitleTrack(
-                  id: stream['id'] as int,
-                  index: stream['index'] as int?,
-                  codec: stream['codec'] as String?,
-                  language: stream['language'] as String?,
-                  languageCode: stream['languageCode'] as String?,
-                  title: stream['title'] as String?,
-                  displayTitle: stream['displayTitle'] as String?,
-                  selected: stream['selected'] == 1,
-                  forced: stream['forced'] == 1,
-                  key: stream['key'] as String?,
-                ),
-              );
-            }
-          }
-
-          // Parse chapters
-          final chapters = <PlexChapter>[];
-          if (metadataJson['Chapter'] != null) {
-            final chapterList = metadataJson['Chapter'] as List<dynamic>;
-            for (var chapter in chapterList) {
-              chapters.add(
-                PlexChapter(
-                  id: chapter['id'] as int,
-                  index: chapter['index'] as int?,
-                  startTimeOffset: chapter['startTimeOffset'] as int?,
-                  endTimeOffset: chapter['endTimeOffset'] as int?,
-                  title: chapter['title'] as String?,
-                  thumb: chapter['thumb'] as String?,
-                ),
-              );
-            }
-          }
+          // Parse streams using helper
+          final streams = _parseStreams(part['Stream'] as List<dynamic>?);
+          // Parse chapters using helper
+          final chapters = _parseChapters(metadataJson);
 
           // Create media info
           mediaInfo = PlexMediaInfo(
             videoUrl: videoUrl,
-            audioTracks: audioTracks,
-            subtitleTracks: subtitleTracks,
+            audioTracks: streams.audio,
+            subtitleTracks: streams.subtitles,
             chapters: chapters,
             partId: part['id'] as int?,
           );
@@ -1238,10 +1247,11 @@ class PlexClient {
   }
 
   /// Get file information for a media item
+  /// Uses cache for offline mode support and network fallback.
   Future<PlexFileInfo?> getFileInfo(String ratingKey) async {
     try {
-      final response = await _dio.get('/library/metadata/$ratingKey');
-      final metadataJson = _getFirstMetadataJson(response);
+      final data = await _fetchMetadataWithCache(ratingKey);
+      final metadataJson = _getFirstMetadataJsonFromData(data);
 
       if (metadataJson != null &&
           metadataJson['Media'] != null &&
@@ -1384,7 +1394,13 @@ class PlexClient {
   }
 
   /// Get available sort options for a library section
-  Future<List<PlexSort>> getLibrarySorts(String sectionId) async {
+  ///
+  /// If [libraryType] is provided (e.g., 'movie', 'show'), it's used for fallback
+  /// sorts without needing to re-fetch the library sections list.
+  Future<List<PlexSort>> getLibrarySorts(
+    String sectionId, {
+    String? libraryType,
+  }) async {
     try {
       // Use the dedicated sorts endpoint
       final response = await _dio.get('/library/sections/$sectionId/sorts');
@@ -1397,78 +1413,56 @@ class PlexClient {
       }
 
       // Fallback: return common sort options if API doesn't provide them
-      return _getFallbackSorts(sectionId);
+      return _getFallbackSorts(libraryType);
     } catch (e) {
       appLogger.e('Failed to get library sorts: $e');
       // Return fallback sort options on error
-      return _getFallbackSorts(sectionId);
+      return _getFallbackSorts(libraryType);
     }
   }
 
-  Future<List<PlexSort>> _getFallbackSorts(String sectionId) async {
-    try {
-      // Get library type to determine which sorts to include
-      final librariesResponse = await _dio.get('/library/sections');
-      final libraries = _extractDirectoryList(
-        librariesResponse,
-        PlexLibrary.fromJson,
+  /// Build fallback sort options based on library type.
+  ///
+  /// If [libraryType] is null, returns generic sorts without the show-specific options.
+  List<PlexSort> _getFallbackSorts(String? libraryType) {
+    final fallbackSorts = <PlexSort>[
+      PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
+      PlexSort(
+        key: 'addedAt',
+        descKey: 'addedAt:desc',
+        title: 'Date Added',
+        defaultDirection: 'desc',
+      ),
+    ];
+
+    // Add "Latest Episode Air Date" only for TV show libraries
+    if (libraryType?.toLowerCase() == 'show') {
+      fallbackSorts.add(
+        PlexSort(
+          key: 'episode.originallyAvailableAt',
+          descKey: 'episode.originallyAvailableAt:desc',
+          title: 'Latest Episode Air Date',
+          defaultDirection: 'desc',
+        ),
       );
-      final library = libraries.firstWhere(
-        (lib) => lib.key == sectionId,
-        orElse: () => libraries.first,
-      );
-
-      final fallbackSorts = <PlexSort>[
-        PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
-        PlexSort(
-          key: 'addedAt',
-          descKey: 'addedAt:desc',
-          title: 'Date Added',
-          defaultDirection: 'desc',
-        ),
-      ];
-
-      // Add "Latest Episode Air Date" only for TV show libraries
-      if (library.type.toLowerCase() == 'show') {
-        fallbackSorts.add(
-          PlexSort(
-            key: 'episode.originallyAvailableAt',
-            descKey: 'episode.originallyAvailableAt:desc',
-            title: 'Latest Episode Air Date',
-            defaultDirection: 'desc',
-          ),
-        );
-      }
-
-      fallbackSorts.addAll([
-        PlexSort(
-          key: 'originallyAvailableAt',
-          descKey: 'originallyAvailableAt:desc',
-          title: 'Release Date',
-          defaultDirection: 'desc',
-        ),
-        PlexSort(
-          key: 'rating',
-          descKey: 'rating:desc',
-          title: 'Rating',
-          defaultDirection: 'desc',
-        ),
-      ]);
-
-      return fallbackSorts;
-    } catch (e) {
-      appLogger.e('Failed to get fallback sorts: $e');
-      // Return minimal fallback options
-      return [
-        PlexSort(key: 'titleSort', title: 'Title', defaultDirection: 'asc'),
-        PlexSort(
-          key: 'addedAt',
-          descKey: 'addedAt:desc',
-          title: 'Date Added',
-          defaultDirection: 'desc',
-        ),
-      ];
     }
+
+    fallbackSorts.addAll([
+      PlexSort(
+        key: 'originallyAvailableAt',
+        descKey: 'originallyAvailableAt:desc',
+        title: 'Release Date',
+        defaultDirection: 'desc',
+      ),
+      PlexSort(
+        key: 'rating',
+        descKey: 'rating:desc',
+        title: 'Rating',
+        defaultDirection: 'desc',
+      ),
+    ]);
+
+    return fallbackSorts;
   }
 
   /// Get library hubs (recommendations for a specific library section)
@@ -2206,6 +2200,80 @@ class PlexClient {
   /// Analyze library section
   Future<void> analyzeLibrary(String sectionId) async {
     await _dio.get('/library/sections/$sectionId/analyze');
+  }
+
+  // ============================================================================
+  // Library Statistics Methods
+  // ============================================================================
+
+  /// Get total item count for a library section efficiently.
+  /// Uses X-Plex-Container-Size: 1 to get totalSize with minimal data transfer.
+  Future<int> getLibraryTotalCount(String sectionId) async {
+    try {
+      final response = await _dio.get(
+        '/library/sections/$sectionId/all',
+        queryParameters: {
+          'X-Plex-Container-Start': 0,
+          'X-Plex-Container-Size': 1,
+        },
+      );
+      final container = _getMediaContainer(response);
+      // Try totalSize first, fall back to size if not available
+      return container?['totalSize'] as int? ??
+          container?['size'] as int? ??
+          0;
+    } catch (e) {
+      appLogger.e('Failed to get library total count: $e');
+      return 0;
+    }
+  }
+
+  /// Get total episode count for a TV show library.
+  /// Uses the allLeaves endpoint to count all episodes.
+  Future<int> getLibraryEpisodeCount(String sectionId) async {
+    try {
+      final response = await _dio.get(
+        '/library/sections/$sectionId/allLeaves',
+        queryParameters: {
+          'X-Plex-Container-Start': 0,
+          'X-Plex-Container-Size': 1,
+        },
+      );
+      final container = _getMediaContainer(response);
+      return container?['totalSize'] as int? ??
+          container?['size'] as int? ??
+          0;
+    } catch (e) {
+      appLogger.e('Failed to get library episode count: $e');
+      return 0;
+    }
+  }
+
+  /// Get watch history count for a time period.
+  /// [since] - Optional DateTime to filter history from this date onwards.
+  /// Returns the total count of items watched.
+  Future<int> getWatchHistoryCount({DateTime? since}) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'X-Plex-Container-Start': 0,
+        'X-Plex-Container-Size': 1,
+      };
+      if (since != null) {
+        final epochSeconds = since.millisecondsSinceEpoch ~/ 1000;
+        queryParams['viewedAt>'] = epochSeconds;
+      }
+      final response = await _dio.get(
+        '/status/sessions/history/all',
+        queryParameters: queryParams,
+      );
+      final container = _getMediaContainer(response);
+      return container?['totalSize'] as int? ??
+          container?['size'] as int? ??
+          0;
+    } catch (e) {
+      appLogger.e('Failed to get watch history count: $e');
+      return 0;
+    }
   }
 
   Future<void> _handleEndpointSwitch(String newBaseUrl) async {

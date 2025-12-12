@@ -21,7 +21,6 @@ import '../error_state_widget.dart';
 import '../../../services/storage_service.dart';
 import '../../../services/settings_service.dart' show ViewMode;
 import '../../../mixins/item_updatable.dart';
-import '../../../mixins/library_tab_state.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_library_tab.dart';
 
@@ -45,7 +44,7 @@ class LibraryBrowseTab extends BaseLibraryTab<PlexMetadata> {
 
 class _LibraryBrowseTabState
     extends BaseLibraryTabState<PlexMetadata, LibraryBrowseTab>
-    with ItemUpdatable, LibraryTabStateMixin, LibraryTabFocusMixin {
+    with ItemUpdatable, LibraryTabFocusMixin {
   @override
   PlexClient get client => getClientForLibrary();
 

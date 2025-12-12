@@ -18,6 +18,62 @@ class TrackSelectionService {
     required this.metadata,
   });
 
+  /// Build list of preferred languages from a user profile
+  List<String> _buildPreferredLanguages(PlexUserProfile profile, {required bool isAudio}) {
+    final primary = isAudio
+        ? profile.defaultAudioLanguage
+        : profile.defaultSubtitleLanguage;
+    final list = isAudio
+        ? profile.defaultAudioLanguages
+        : profile.defaultSubtitleLanguages;
+
+    final result = <String>[];
+    if (primary != null && primary.isNotEmpty) {
+      result.add(primary);
+    }
+    if (list != null) {
+      result.addAll(list);
+    }
+    return result;
+  }
+
+  /// Find a track by preferred language with variation lookup and logging
+  T? _findTrackByPreferredLanguage<T>(
+    List<T> tracks,
+    String preferredLanguage,
+    String? Function(T) getLanguage,
+    String Function(T) getDescription,
+    String trackType,
+  ) {
+    final languageVariations = LanguageCodes.getVariations(preferredLanguage);
+    appLogger.d(
+      'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
+    );
+
+    return _findTrackByLanguageVariations<T>(
+      tracks,
+      preferredLanguage,
+      languageVariations,
+      getLanguage,
+      getDescription,
+      trackType,
+    );
+  }
+
+  /// Apply a filter to tracks, falling back to original if filter produces empty result
+  List<T> _applyFilterWithFallback<T>(
+    List<T> tracks,
+    List<T> Function(List<T>) filter,
+    String filterDescription,
+  ) {
+    final filtered = filter(tracks);
+    if (filtered.isNotEmpty) {
+      return filtered;
+    }
+    appLogger.d('No tracks match $filterDescription, using all tracks');
+    return tracks;
+  }
+
   /// Generic track matching for audio and subtitle tracks
   /// Returns the best matching track based on hierarchical criteria:
   /// 1. Exact match (id + title + language)
@@ -98,15 +154,7 @@ class TrackSelectionService {
       return null;
     }
 
-    // Build list of preferred languages
-    final preferredLanguages = <String>[];
-    if (profile.defaultAudioLanguage != null &&
-        profile.defaultAudioLanguage!.isNotEmpty) {
-      preferredLanguages.add(profile.defaultAudioLanguage!);
-    }
-    if (profile.defaultAudioLanguages != null) {
-      preferredLanguages.addAll(profile.defaultAudioLanguages!);
-    }
+    final preferredLanguages = _buildPreferredLanguages(profile, isAudio: true);
 
     if (preferredLanguages.isEmpty) {
       appLogger.d('Cannot use profile: No defaultAudioLanguage(s) specified');
@@ -117,16 +165,9 @@ class TrackSelectionService {
 
     // Try to find track matching any preferred language
     for (final preferredLanguage in preferredLanguages) {
-      // Get all possible language code variations (e.g., "en" → ["en", "eng"])
-      final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-      appLogger.d(
-        'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
-      );
-
-      final match = _findTrackByLanguageVariations<AudioTrack>(
+      final match = _findTrackByPreferredLanguage<AudioTrack>(
         availableTracks,
         preferredLanguage,
-        languageVariations,
         (t) => t.language,
         (t) => t.title ?? 'Track ${t.id}',
         'audio track',
@@ -211,15 +252,7 @@ class TrackSelectionService {
     // Mode 2: Always enabled (or continuing from mode 1 with foreign audio)
     appLogger.d('Selecting subtitle track based on preferences');
 
-    // Build list of preferred languages
-    final preferredLanguages = <String>[];
-    if (profile.defaultSubtitleLanguage != null &&
-        profile.defaultSubtitleLanguage!.isNotEmpty) {
-      preferredLanguages.add(profile.defaultSubtitleLanguage!);
-    }
-    if (profile.defaultSubtitleLanguages != null) {
-      preferredLanguages.addAll(profile.defaultSubtitleLanguages!);
-    }
+    final preferredLanguages = _buildPreferredLanguages(profile, isAudio: false);
 
     if (preferredLanguages.isEmpty) {
       appLogger.d(
@@ -230,7 +263,7 @@ class TrackSelectionService {
 
     appLogger.d('Preferred languages: ${preferredLanguages.join(", ")}');
 
-    // Apply filtering based on preferences
+    // Apply filtering with fallback to original tracks if filter produces empty result
     var candidateTracks = availableTracks;
 
     // Filter by SDH (defaultSubtitleAccessibility: 0-3)
@@ -246,22 +279,17 @@ class TrackSelectionService {
     );
 
     // If no candidates after filtering, relax filters
-    if (candidateTracks.isEmpty) {
-      appLogger.d('No tracks match strict filters, relaxing filters');
-      candidateTracks = availableTracks;
-    }
+    candidateTracks = _applyFilterWithFallback(
+      availableTracks,
+      (_) => candidateTracks,
+      'strict filters',
+    );
 
     // Try to find track matching any preferred language
     for (final preferredLanguage in preferredLanguages) {
-      final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-      appLogger.d(
-        'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
-      );
-
-      final match = _findTrackByLanguageVariations<SubtitleTrack>(
+      final match = _findTrackByPreferredLanguage<SubtitleTrack>(
         candidateTracks,
         preferredLanguage,
-        languageVariations,
         (t) => t.language,
         (t) => t.title ?? 'Track ${t.id}',
         'subtitle',

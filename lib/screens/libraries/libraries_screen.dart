@@ -40,7 +40,7 @@ class LibrariesScreen extends StatefulWidget {
 }
 
 class _LibrariesScreenState extends State<LibrariesScreen>
-    with Refreshable, ItemUpdatable, SingleTickerProviderStateMixin {
+    with Refreshable, FullRefreshable, FocusableTab, LibraryLoadable, ItemUpdatable, SingleTickerProviderStateMixin {
   @override
   PlexClient get client {
     final multiServerProvider = Provider.of<MultiServerProvider>(

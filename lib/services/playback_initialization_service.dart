@@ -17,6 +17,11 @@ class PlaybackInitializationService {
 
   PlaybackInitializationService({required this.client, this.database});
 
+  /// Format a video path as a URL (adds file:// prefix for file paths)
+  String _formatVideoUrl(String path) {
+    return path.contains('://') ? path : 'file://$path';
+  }
+
   /// Check if content is available offline and return local path
   ///
   /// Returns the local file path if the video is downloaded and completed.
@@ -50,27 +55,22 @@ class PlaybackInitializationService {
       final storageService = DownloadStorageService.instance;
       final storedPath = downloadedItem.videoFilePath!;
 
-      // Check if this is a SAF URI (content://)
-      if (storageService.isSafUri(storedPath)) {
-        // SAF URIs are already valid for media players
-        appLogger.d('Found offline video (SAF): $storedPath');
-        return storedPath;
+      // Get readable path (handles both SAF URIs and file paths)
+      final readablePath = await storageService.getReadablePath(storedPath);
+
+      // For file paths (not SAF), verify the file exists
+      if (!storageService.isSafUri(storedPath)) {
+        final file = File(readablePath);
+        if (!await file.exists()) {
+          appLogger.w(
+            'Offline video file not found: $readablePath (stored as: $storedPath)',
+          );
+          return null;
+        }
       }
 
-      // Convert relative path to absolute path (handles both old absolute and new relative paths)
-      final absolutePath = await storageService.ensureAbsolutePath(storedPath);
-
-      // Verify file exists
-      final file = File(absolutePath);
-      if (!await file.exists()) {
-        appLogger.w(
-          'Offline video file not found: $absolutePath (stored as: $storedPath)',
-        );
-        return null;
-      }
-
-      appLogger.d('Found offline video: $absolutePath');
-      return absolutePath;
+      appLogger.d('Found offline video: $readablePath');
+      return readablePath;
     } catch (e) {
       appLogger.w('Error checking offline video path', error: e);
       return null;
@@ -113,12 +113,10 @@ class PlaybackInitializationService {
             playbackData.mediaInfo,
           );
 
-          // Return result with local file path (file:// prefix for file paths, keep SAF URIs as-is)
+          // Return result with local file path
           return PlaybackInitializationResult(
             availableVersions: playbackData.availableVersions,
-            videoUrl: offlineVideoPath.contains('://')
-                ? offlineVideoPath
-                : 'file://$offlineVideoPath',
+            videoUrl: _formatVideoUrl(offlineVideoPath),
             mediaInfo: playbackData.mediaInfo,
             externalSubtitles: externalSubtitles,
             isOffline: true,
@@ -131,9 +129,7 @@ class PlaybackInitializationService {
           );
           return PlaybackInitializationResult(
             availableVersions: [],
-            videoUrl: offlineVideoPath.contains('://')
-                ? offlineVideoPath
-                : 'file://$offlineVideoPath',
+            videoUrl: _formatVideoUrl(offlineVideoPath),
             mediaInfo: null,
             externalSubtitles: const [],
             isOffline: true,

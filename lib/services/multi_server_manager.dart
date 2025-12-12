@@ -66,6 +66,62 @@ class MultiServerManager {
   /// Check if a server is online
   bool isServerOnline(String serverId) => _serverStatus[serverId] ?? false;
 
+  /// Creates and initializes a PlexClient for a given server
+  ///
+  /// Handles finding working connection, loading cached endpoint,
+  /// creating config, and building client with failover support.
+  Future<PlexClient> _createClientForServer({
+    required PlexServer server,
+    required String clientIdentifier,
+  }) async {
+    final serverId = server.clientIdentifier;
+
+    // Find best working connection
+    PlexConnection? workingConnection;
+    await for (final connection in server.findBestWorkingConnection()) {
+      workingConnection = connection;
+      break;
+    }
+
+    if (workingConnection == null) {
+      throw Exception('No working connection found');
+    }
+
+    final baseUrl = workingConnection.uri;
+
+    // Get storage and load cached endpoint for this server
+    final storage = await StorageService.getInstance();
+    final cachedEndpoint = storage.getServerEndpoint(serverId);
+
+    // Create PlexClient with failover support
+    final prioritizedEndpoints = server.prioritizedEndpointUrls(
+      preferredFirst: cachedEndpoint ?? baseUrl,
+    );
+    final config = await PlexConfig.create(
+      baseUrl: baseUrl,
+      token: server.accessToken,
+      clientIdentifier: clientIdentifier,
+    );
+
+    final client = PlexClient(
+      config,
+      serverId: serverId,
+      serverName: server.name,
+      prioritizedEndpoints: prioritizedEndpoints,
+      onEndpointChanged: (newUrl) async {
+        await storage.saveServerEndpoint(serverId, newUrl);
+        appLogger.i(
+          'Updated endpoint for ${server.name} after failover: $newUrl',
+        );
+      },
+    );
+
+    // Save the initial endpoint
+    await storage.saveServerEndpoint(serverId, baseUrl);
+
+    return client;
+  }
+
   /// Connect to all available servers in parallel
   /// Returns the number of successfully connected servers
   Future<int> connectToAllServers(
@@ -93,51 +149,10 @@ class MultiServerManager {
       try {
         appLogger.d('Attempting connection to server: ${server.name}');
 
-        // Find best working connection for this server
-        PlexConnection? workingConnection;
-
-        await for (final connection in server.findBestWorkingConnection()) {
-          workingConnection = connection;
-          // Use first working connection (could wait for optimal, but that's slower)
-          break;
-        }
-
-        if (workingConnection == null) {
-          throw Exception('No working connection found');
-        }
-
-        final baseUrl = workingConnection.uri;
-        appLogger.d('Connected to ${server.name} at $baseUrl');
-
-        // Get storage and load cached endpoint for this server
-        final storage = await StorageService.getInstance();
-        final cachedEndpoint = storage.getServerEndpoint(serverId);
-
-        // Create PlexClient with the working connection and failover support
-        final prioritizedEndpoints = server.prioritizedEndpointUrls(
-          preferredFirst: cachedEndpoint ?? baseUrl,
-        );
-        final config = await PlexConfig.create(
-          baseUrl: baseUrl,
-          token: server.accessToken,
+        final client = await _createClientForServer(
+          server: server,
           clientIdentifier: effectiveClientId,
         );
-
-        final client = PlexClient(
-          config,
-          serverId: serverId,
-          serverName: server.name,
-          prioritizedEndpoints: prioritizedEndpoints,
-          onEndpointChanged: (newUrl) async {
-            await storage.saveServerEndpoint(serverId, newUrl);
-            appLogger.i(
-              'Updated endpoint for ${server.name} after failover: $newUrl',
-            );
-          },
-        );
-
-        // Save the initial endpoint
-        await storage.saveServerEndpoint(serverId, baseUrl);
 
         // Store the client and server info
         _clients[serverId] = client;
@@ -204,49 +219,10 @@ class MultiServerManager {
     try {
       appLogger.d('Adding server: ${server.name}');
 
-      // Find best working connection
-      PlexConnection? workingConnection;
-
-      await for (final connection in server.findBestWorkingConnection()) {
-        workingConnection = connection;
-        break;
-      }
-
-      if (workingConnection == null) {
-        throw Exception('No working connection found');
-      }
-
-      final baseUrl = workingConnection.uri;
-
-      // Get storage and load cached endpoint for this server
-      final storage = await StorageService.getInstance();
-      final cachedEndpoint = storage.getServerEndpoint(serverId);
-
-      // Create PlexClient with failover support
-      final prioritizedEndpoints = server.prioritizedEndpointUrls(
-        preferredFirst: cachedEndpoint ?? baseUrl,
-      );
-      final config = await PlexConfig.create(
-        baseUrl: baseUrl,
-        token: server.accessToken,
+      final client = await _createClientForServer(
+        server: server,
         clientIdentifier: effectiveClientId,
       );
-
-      final client = PlexClient(
-        config,
-        serverId: serverId,
-        serverName: server.name,
-        prioritizedEndpoints: prioritizedEndpoints,
-        onEndpointChanged: (newUrl) async {
-          await storage.saveServerEndpoint(serverId, newUrl);
-          appLogger.i(
-            'Updated endpoint for ${server.name} after failover: $newUrl',
-          );
-        },
-      );
-
-      // Save the initial endpoint
-      await storage.saveServerEndpoint(serverId, baseUrl);
 
       // Store
       _clients[serverId] = client;

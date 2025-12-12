@@ -120,9 +120,16 @@ class OfflineWatchProvider extends ChangeNotifier {
     final episodes = _getSortedEpisodes(showRatingKey);
     if (episodes.isEmpty) return null;
 
+    // Batch fetch all watch statuses in a single query
+    final globalKeys = episodes.map((e) => e.globalKey).toSet();
+    final localStatuses =
+        await _syncService.getLocalWatchStatusesBatched(globalKeys);
+
     // Find first unwatched episode
     for (final episode in episodes) {
-      final watched = await isWatched(episode.globalKey);
+      final localStatus = localStatuses[episode.globalKey];
+      final watched =
+          localStatus ?? _downloadProvider.getMetadata(episode.globalKey)?.isWatched ?? false;
       if (!watched) {
         return episode;
       }
@@ -182,15 +189,25 @@ class OfflineWatchProvider extends ChangeNotifier {
   /// Get downloaded episodes for a show with their watch status.
   ///
   /// Returns a list of (episode, isWatched) pairs.
+  /// Uses batched database query for efficiency.
   Future<List<(PlexMetadata episode, bool isWatched)>>
   getEpisodesWithWatchStatus(String showRatingKey) async {
     final episodes = _downloadProvider.getDownloadedEpisodesForShow(
       showRatingKey,
     );
 
+    if (episodes.isEmpty) return [];
+
+    // Batch fetch all watch statuses in a single query
+    final globalKeys = episodes.map((e) => e.globalKey).toSet();
+    final localStatuses =
+        await _syncService.getLocalWatchStatusesBatched(globalKeys);
+
     final results = <(PlexMetadata, bool)>[];
     for (final episode in episodes) {
-      final watched = await isWatched(episode.globalKey);
+      final localStatus = localStatuses[episode.globalKey];
+      final watched =
+          localStatus ?? _downloadProvider.getMetadata(episode.globalKey)?.isWatched ?? false;
       results.add((episode, watched));
     }
 

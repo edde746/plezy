@@ -6,7 +6,8 @@ import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
-import '../utils/collection_playlist_play_helper.dart';
+import '../services/play_queue_launcher.dart';
+import '../models/plex_playlist.dart';
 import '../utils/app_logger.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
@@ -97,12 +98,23 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
     }
 
     final client = _getClientForMediaItem();
+    final item = mediaItem;
 
-    await playCollectionOrPlaylist(
+    final launcher = PlayQueueLauncher(
       context: context,
       client: client,
-      item: mediaItem,
+      serverId: item is PlexMetadata
+          ? item.serverId
+          : (item as PlexPlaylist).serverId,
+      serverName: item is PlexMetadata
+          ? item.serverName
+          : (item as PlexPlaylist).serverName,
+    );
+
+    await launcher.launchFromCollectionOrPlaylist(
+      item: item,
       shuffle: shuffle,
+      showLoadingIndicator: false,
     );
   }
 

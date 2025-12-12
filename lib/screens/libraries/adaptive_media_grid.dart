@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/settings_service.dart' show ViewMode, LibraryDensity;
 import '../../utils/grid_size_calculator.dart';
+import '../../utils/layout_constants.dart';
 
 /// A widget that automatically switches between grid and list view
 /// based on user settings, providing a consistent layout pattern
@@ -20,10 +21,10 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
   final VoidCallback? onRefresh;
 
   /// Optional padding around the grid/list
-  final EdgeInsets padding;
+  final EdgeInsets? padding;
 
   /// Child aspect ratio for grid items (width / height)
-  final double childAspectRatio;
+  final double? childAspectRatio;
 
   /// Optional focus node for the first item (for programmatic focus)
   final FocusNode? firstItemFocusNode;
@@ -36,8 +37,8 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
     required this.items,
     required this.itemBuilder,
     this.onRefresh,
-    this.padding = const EdgeInsets.fromLTRB(8, 8, 8, 8),
-    this.childAspectRatio = 2 / 3.3,
+    this.padding,
+    this.childAspectRatio,
     this.firstItemFocusNode,
     this.onBack,
   });
@@ -61,24 +62,28 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
     ViewMode viewMode,
     LibraryDensity density,
   ) {
+    final effectivePadding = padding ?? GridLayoutConstants.gridPadding;
+    final effectiveAspectRatio =
+        childAspectRatio ?? GridLayoutConstants.posterAspectRatio;
+
     if (viewMode == ViewMode.list) {
       return ListView.builder(
-        padding: padding,
+        padding: effectivePadding,
         itemCount: items.length,
         itemBuilder: (context, index) =>
             itemBuilder(context, items[index], index),
       );
     } else {
       return GridView.builder(
-        padding: padding,
+        padding: effectivePadding,
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
             context,
             density,
           ),
-          childAspectRatio: childAspectRatio,
-          crossAxisSpacing: 0,
-          mainAxisSpacing: 0,
+          childAspectRatio: effectiveAspectRatio,
+          crossAxisSpacing: GridLayoutConstants.crossAxisSpacing,
+          mainAxisSpacing: GridLayoutConstants.mainAxisSpacing,
         ),
         itemCount: items.length,
         itemBuilder: (context, index) =>

@@ -69,6 +69,32 @@ class AppDatabase extends _$AppDatabase {
         .getSingleOrNull();
   }
 
+  /// Get the latest actions for multiple items in a single query
+  ///
+  /// Returns a map of globalKey -> latest action for each key.
+  /// Keys with no actions will not be present in the returned map.
+  Future<Map<String, OfflineWatchProgressItem>> getLatestWatchActionsForKeys(
+    Set<String> globalKeys,
+  ) async {
+    if (globalKeys.isEmpty) return {};
+
+    // Query all actions for the given keys
+    final allActions =
+        await (select(offlineWatchProgress)
+              ..where((t) => t.globalKey.isIn(globalKeys))
+              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+            .get();
+
+    // Group by globalKey and take the latest (first due to ordering)
+    final result = <String, OfflineWatchProgressItem>{};
+    for (final action in allActions) {
+      // Only keep the first (latest) action for each key
+      result.putIfAbsent(action.globalKey, () => action);
+    }
+
+    return result;
+  }
+
   /// Insert or update a progress action (merges with existing)
   Future<void> upsertProgressAction({
     required String serverId,

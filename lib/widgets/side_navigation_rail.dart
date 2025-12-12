@@ -8,12 +8,65 @@ import 'package:provider/provider.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../models/plex_library.dart';
+import '../navigation/navigation_tabs.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/storage_service.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
+
+/// Tracks focus state for a set of named items, avoiding repeated boilerplate
+class _FocusStateTracker {
+  final Map<String, FocusNode> _nodes = {};
+  final Set<String> _focused = {};
+  final VoidCallback _onChanged;
+
+  _FocusStateTracker(this._onChanged);
+
+  /// Get or create a focus node for the given key
+  FocusNode get(String key, {String? debugLabel}) {
+    return _nodes.putIfAbsent(key, () {
+      final node = FocusNode(debugLabel: debugLabel ?? 'nav_$key');
+      node.addListener(() {
+        final wasFocused = _focused.contains(key);
+        if (node.hasFocus && !wasFocused) {
+          _focused.add(key);
+          _onChanged();
+        } else if (!node.hasFocus && wasFocused) {
+          _focused.remove(key);
+          _onChanged();
+        }
+      });
+      return node;
+    });
+  }
+
+  /// Check if a key is currently focused
+  bool isFocused(String key) => _focused.contains(key);
+
+  /// Check if a node exists for the given key
+  FocusNode? nodeFor(String key) => _nodes[key];
+
+  /// Dispose all nodes
+  void dispose() {
+    for (final node in _nodes.values) {
+      node.dispose();
+    }
+    _nodes.clear();
+    _focused.clear();
+  }
+
+  /// Remove nodes not in the given set of valid keys (prunes stale nodes)
+  void pruneExcept(Set<String> validKeys) {
+    final toRemove = _nodes.keys.where((k) => !validKeys.contains(k)).toList();
+    for (final key in toRemove) {
+      _nodes[key]?.dispose();
+      _nodes.remove(key);
+      _focused.remove(key);
+    }
+  }
+}
 
 /// Reusable navigation rail item widget that handles focus, selection, and interaction
 class NavigationRailItem extends StatelessWidget {
@@ -123,169 +176,103 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   List<PlexLibrary> _libraries = [];
   bool _isLoadingLibraries = true;
 
-  // Focus nodes for main nav items
-  late FocusNode _homeFocusNode;
-  late FocusNode _librariesFocusNode;
-  late FocusNode _searchFocusNode;
-  late FocusNode _downloadsFocusNode;
-  late FocusNode _settingsFocusNode;
+  // Focus keys for main nav items
+  static const _kHome = 'home';
+  static const _kLibraries = 'libraries';
+  static const _kSearch = 'search';
+  static const _kDownloads = 'downloads';
+  static const _kSettings = 'settings';
 
-  // Focus state tracking
-  bool _isHomeFocused = false;
-  bool _isLibrariesFocused = false;
-  bool _isSearchFocused = false;
-  bool _isDownloadsFocused = false;
-  bool _isSettingsFocused = false;
-
-  // Map to store library item focus nodes and states
-  final Map<String, FocusNode> _libraryFocusNodes = {};
-  final Set<String> _focusedLibraryKeys = {};
+  // Unified focus state tracker for all nav items (main + libraries)
+  late final _FocusStateTracker _focusTracker;
 
   @override
   void initState() {
     super.initState();
-    _homeFocusNode = FocusNode(debugLabel: 'nav_home');
-    _librariesFocusNode = FocusNode(debugLabel: 'nav_libraries');
-    _searchFocusNode = FocusNode(debugLabel: 'nav_search');
-    _downloadsFocusNode = FocusNode(debugLabel: 'nav_downloads');
-    _settingsFocusNode = FocusNode(debugLabel: 'nav_settings');
-
-    _homeFocusNode.addListener(
-      () => _onFocusChange(_homeFocusNode, () {
-        setState(() => _isHomeFocused = _homeFocusNode.hasFocus);
-      }),
-    );
-    _librariesFocusNode.addListener(
-      () => _onFocusChange(_librariesFocusNode, () {
-        setState(() => _isLibrariesFocused = _librariesFocusNode.hasFocus);
-      }),
-    );
-    _searchFocusNode.addListener(
-      () => _onFocusChange(_searchFocusNode, () {
-        setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
-      }),
-    );
-    _downloadsFocusNode.addListener(
-      () => _onFocusChange(_downloadsFocusNode, () {
-        setState(() => _isDownloadsFocused = _downloadsFocusNode.hasFocus);
-      }),
-    );
-    _settingsFocusNode.addListener(
-      () => _onFocusChange(_settingsFocusNode, () {
-        setState(() => _isSettingsFocused = _settingsFocusNode.hasFocus);
-      }),
-    );
-
+    _focusTracker = _FocusStateTracker(() {
+      if (mounted) setState(() {});
+    });
     _loadLibraries();
-  }
-
-  void _onFocusChange(FocusNode node, VoidCallback updateState) {
-    if (mounted) updateState();
   }
 
   @override
   void dispose() {
-    _homeFocusNode.dispose();
-    _librariesFocusNode.dispose();
-    _searchFocusNode.dispose();
-    _downloadsFocusNode.dispose();
-    _settingsFocusNode.dispose();
-    for (final node in _libraryFocusNodes.values) {
-      node.dispose();
-    }
+    _focusTracker.dispose();
     super.dispose();
-  }
-
-  /// Get or create a focus node for a library item
-  FocusNode _getLibraryFocusNode(String globalKey) {
-    return _libraryFocusNodes.putIfAbsent(globalKey, () {
-      final node = FocusNode(debugLabel: 'nav_library_$globalKey');
-      node.addListener(() {
-        if (mounted) {
-          setState(() {
-            if (node.hasFocus) {
-              _focusedLibraryKeys.add(globalKey);
-            } else {
-              _focusedLibraryKeys.remove(globalKey);
-            }
-          });
-        }
-      });
-      return node;
-    });
   }
 
   /// Focus the currently selected nav item
   void focusActiveItem() {
     if (widget.selectedLibraryKey != null) {
       // A library is selected - focus that library item
-      final node = _libraryFocusNodes[widget.selectedLibraryKey];
-      node?.requestFocus();
+      _focusTracker.nodeFor(widget.selectedLibraryKey!)?.requestFocus();
     } else {
       // Focus main nav item based on selectedIndex
-      switch (widget.selectedIndex) {
-        case 0:
-          _homeFocusNode.requestFocus();
-          break;
-        case 1:
-          _librariesFocusNode.requestFocus();
-          break;
-        case 2:
-          _searchFocusNode.requestFocus();
-          break;
-        case 3:
-          _downloadsFocusNode.requestFocus();
-          break;
-        case 4:
-          _settingsFocusNode.requestFocus();
-          break;
-      }
+      final key = switch (widget.selectedIndex) {
+        0 => _kHome,
+        1 => _kLibraries,
+        2 => _kSearch,
+        3 => _kDownloads,
+        4 => _kSettings,
+        _ => null,
+      };
+      if (key != null) _focusTracker.nodeFor(key)?.requestFocus();
     }
   }
 
-  Future<void> _loadLibraries() async {
-    final multiServerProvider = context.read<MultiServerProvider>();
+  /// Fetch, filter, and order libraries (pure logic, no state changes)
+  Future<List<PlexLibrary>> _resolveLibraries(
+    MultiServerProvider provider,
+    StorageService storage,
+  ) async {
+    if (!provider.hasConnectedServers) return [];
 
-    if (!multiServerProvider.hasConnectedServers) {
-      setState(() {
-        _isLoadingLibraries = false;
-      });
-      return;
+    final libraries =
+        await provider.aggregationService.getLibrariesFromAllServers();
+
+    // Filter out unsupported library types (music)
+    var filtered = libraries.where((lib) => lib.type != 'artist').toList();
+
+    // Apply saved order
+    final savedOrder = storage.getLibraryOrder();
+    if (savedOrder == null || savedOrder.isEmpty) return filtered;
+
+    final libraryMap = {for (var lib in filtered) lib.globalKey: lib};
+    final ordered = <PlexLibrary>[];
+    for (final key in savedOrder) {
+      final lib = libraryMap.remove(key);
+      if (lib != null) ordered.add(lib);
     }
+    ordered.addAll(libraryMap.values); // New libraries not in saved order
+    return ordered;
+  }
+
+  /// Build the set of valid focus keys (main nav + current libraries)
+  Set<String> _buildValidFocusKeys(List<PlexLibrary> libraries) {
+    return {
+      _kHome,
+      _kLibraries,
+      _kSearch,
+      _kDownloads,
+      _kSettings,
+      ...libraries.map((lib) => lib.globalKey),
+    };
+  }
+
+  Future<void> _loadLibraries() async {
+    final provider = context.read<MultiServerProvider>();
+    final storage = await StorageService.getInstance();
 
     try {
-      final libraries = await multiServerProvider.aggregationService
-          .getLibrariesFromAllServers();
-
-      // Filter out music libraries (not supported)
-      var filteredLibraries = libraries
-          .where((lib) => lib.type != 'artist')
-          .toList();
-
-      // Apply saved library order
-      final storage = await StorageService.getInstance();
-      final savedOrder = storage.getLibraryOrder();
-      if (savedOrder != null && savedOrder.isNotEmpty) {
-        final libraryMap = {
-          for (var lib in filteredLibraries) lib.globalKey: lib,
-        };
-        final orderedLibraries = <PlexLibrary>[];
-        for (final key in savedOrder) {
-          if (libraryMap.containsKey(key)) {
-            orderedLibraries.add(libraryMap[key]!);
-            libraryMap.remove(key);
-          }
-        }
-        // Add any new libraries not in saved order
-        orderedLibraries.addAll(libraryMap.values);
-        filteredLibraries = orderedLibraries;
-      }
+      final libraries = await _resolveLibraries(provider, storage);
 
       if (mounted) {
         setState(() {
-          _libraries = filteredLibraries;
+          _libraries = libraries;
           _isLoadingLibraries = false;
         });
+        // Prune stale library focus nodes
+        _focusTracker.pruneExcept(_buildValidFocusKeys(libraries));
       }
     } catch (e) {
       if (mounted) {
@@ -371,9 +358,9 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                         selectedIcon: Symbols.home_rounded,
                         label: Translations.of(context).navigation.home,
                         isSelected: widget.selectedIndex == 0,
-                        isFocused: _isHomeFocused,
+                        isFocused: _focusTracker.isFocused(_kHome),
                         onTap: () => widget.onDestinationSelected(0),
-                        focusNode: _homeFocusNode,
+                        focusNode: _focusTracker.get(_kHome),
                       ),
 
                       const SizedBox(height: 8),
@@ -389,44 +376,54 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                         selectedIcon: Symbols.search_rounded,
                         label: Translations.of(context).navigation.search,
                         isSelected: widget.selectedIndex == 2,
-                        isFocused: _isSearchFocused,
+                        isFocused: _focusTracker.isFocused(_kSearch),
                         onTap: () => widget.onDestinationSelected(2),
-                        focusNode: _searchFocusNode,
+                        focusNode: _focusTracker.get(_kSearch),
                       ),
 
                       const SizedBox(height: 8),
                     ],
 
-                    // Downloads (index 0 in offline mode, 3 in online mode)
+                    // Downloads
                     _buildNavItem(
                       icon: Symbols.download_rounded,
                       selectedIcon: Symbols.download_rounded,
                       label: Translations.of(context).navigation.downloads,
-                      isSelected: widget.isOfflineMode
-                          ? widget.selectedIndex == 0
-                          : widget.selectedIndex == 3,
-                      isFocused: _isDownloadsFocused,
-                      onTap: () => widget.onDestinationSelected(
-                        widget.isOfflineMode ? 0 : 3,
+                      isSelected: NavigationTab.isTabAtIndex(
+                        NavigationTabId.downloads,
+                        widget.selectedIndex,
+                        isOffline: widget.isOfflineMode,
                       ),
-                      focusNode: _downloadsFocusNode,
+                      isFocused: _focusTracker.isFocused(_kDownloads),
+                      onTap: () => widget.onDestinationSelected(
+                        NavigationTab.indexFor(
+                          NavigationTabId.downloads,
+                          isOffline: widget.isOfflineMode,
+                        ),
+                      ),
+                      focusNode: _focusTracker.get(_kDownloads),
                     ),
 
                     const SizedBox(height: 8),
 
-                    // Settings (index 1 in offline mode, 4 in online mode)
+                    // Settings
                     _buildNavItem(
                       icon: Symbols.settings_rounded,
                       selectedIcon: Symbols.settings_rounded,
                       label: Translations.of(context).navigation.settings,
-                      isSelected: widget.isOfflineMode
-                          ? widget.selectedIndex == 1
-                          : widget.selectedIndex == 4,
-                      isFocused: _isSettingsFocused,
-                      onTap: () => widget.onDestinationSelected(
-                        widget.isOfflineMode ? 1 : 4,
+                      isSelected: NavigationTab.isTabAtIndex(
+                        NavigationTabId.settings,
+                        widget.selectedIndex,
+                        isOffline: widget.isOfflineMode,
                       ),
-                      focusNode: _settingsFocusNode,
+                      isFocused: _focusTracker.isFocused(_kSettings),
+                      onTap: () => widget.onDestinationSelected(
+                        NavigationTab.indexFor(
+                          NavigationTabId.settings,
+                          isOffline: widget.isOfflineMode,
+                        ),
+                      ),
+                      focusNode: _focusTracker.get(_kSettings),
                     ),
                   ],
                 ),
@@ -472,13 +469,14 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   Widget _buildLibrariesSection(List<PlexLibrary> visibleLibraries, dynamic t) {
     final isLibrariesSelected =
         widget.selectedIndex == 1 && widget.selectedLibraryKey == null;
+    final isLibrariesFocused = _focusTracker.isFocused(_kLibraries);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Libraries header with expand/collapse
         Focus(
-          focusNode: _librariesFocusNode,
+          focusNode: _focusTracker.get(_kLibraries),
           onKeyEvent: (node, event) {
             if (event is! KeyDownEvent) return KeyEventResult.ignored;
             if (event.logicalKey.isSelectKey) {
@@ -506,7 +504,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                 decoration: BoxDecoration(
                   color: isLibrariesSelected
                       ? t.text.withValues(alpha: 0.1)
-                      : _isLibrariesFocused
+                      : isLibrariesFocused
                       ? t.text.withValues(alpha: 0.08)
                       : null,
                   borderRadius: BorderRadius.circular(12),
@@ -615,8 +613,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     final isSelected =
         widget.selectedIndex == 1 &&
         widget.selectedLibraryKey == library.globalKey;
-    final isFocused = _focusedLibraryKeys.contains(library.globalKey);
-    final focusNode = _getLibraryFocusNode(library.globalKey);
+    final isFocused = _focusTracker.isFocused(library.globalKey);
+    final focusNode = _focusTracker.get(library.globalKey);
 
     return NavigationRailItem(
       icon: _getLibraryIcon(library.type),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/settings_service.dart';
 import 'grid_size_calculator.dart';
+import 'layout_constants.dart';
 
 /// Builds an adaptive Sliver widget that switches between grid and list
 /// based on the current view mode setting.
@@ -13,14 +14,22 @@ Widget buildAdaptiveMediaSliverBuilder<T>({
   required Widget Function(BuildContext context, T item, int index) itemBuilder,
   required ViewMode viewMode,
   required LibraryDensity density,
-  EdgeInsets padding = const EdgeInsets.all(16),
-  double childAspectRatio = 2 / 3.3,
-  double crossAxisSpacing = 8,
-  double mainAxisSpacing = 8,
+  EdgeInsets? padding,
+  double? childAspectRatio,
+  double? crossAxisSpacing,
+  double? mainAxisSpacing,
 }) {
+  final effectivePadding = padding ?? GridLayoutConstants.gridPadding;
+  final effectiveAspectRatio =
+      childAspectRatio ?? GridLayoutConstants.posterAspectRatio;
+  final effectiveCrossAxisSpacing =
+      crossAxisSpacing ?? GridLayoutConstants.crossAxisSpacing;
+  final effectiveMainAxisSpacing =
+      mainAxisSpacing ?? GridLayoutConstants.mainAxisSpacing;
+
   if (viewMode == ViewMode.list) {
     return SliverPadding(
-      padding: padding,
+      padding: effectivePadding,
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {
           final item = items[index];
@@ -30,16 +39,16 @@ Widget buildAdaptiveMediaSliverBuilder<T>({
     );
   } else {
     return SliverPadding(
-      padding: padding,
+      padding: effectivePadding,
       sliver: SliverGrid(
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
             context,
             density,
           ),
-          childAspectRatio: childAspectRatio,
-          crossAxisSpacing: crossAxisSpacing,
-          mainAxisSpacing: mainAxisSpacing,
+          childAspectRatio: effectiveAspectRatio,
+          crossAxisSpacing: effectiveCrossAxisSpacing,
+          mainAxisSpacing: effectiveMainAxisSpacing,
         ),
         delegate: SliverChildBuilderDelegate((context, index) {
           final item = items[index];

@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
+import '../utils/layout_constants.dart';
 import '../focus/locked_hub_controller.dart';
 import '../models/plex_hub.dart';
 import '../screens/hub_detail_screen.dart';
@@ -309,11 +310,11 @@ class HubSectionState extends State<HubSection> {
               builder: (context, constraints) {
                 // Responsive card width based on screen size
                 final screenWidth = constraints.maxWidth;
-                final cardWidth = screenWidth > 1600
+                final cardWidth = ScreenBreakpoints.isLargeDesktop(screenWidth)
                     ? 220.0
-                    : screenWidth > 1200
+                    : ScreenBreakpoints.isDesktop(screenWidth)
                     ? 200.0
-                    : screenWidth > 800
+                    : ScreenBreakpoints.isWideTablet(screenWidth)
                     ? 190.0
                     : 160.0;
 

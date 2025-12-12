@@ -21,7 +21,8 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with Refreshable {
+class _SearchScreenState extends State<SearchScreen>
+    with Refreshable, FullRefreshable, SearchInputFocusable {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
   List<PlexMetadata> _searchResults = [];
