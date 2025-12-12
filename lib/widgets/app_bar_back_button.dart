@@ -144,9 +144,8 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
               _backgroundAnimation.value,
             );
 
-            final isPlain = widget.style == BackButtonStyle.plain;
             return Container(
-              margin: isPlain ? EdgeInsets.zero : const EdgeInsets.all(8),
+              margin: const EdgeInsets.all(8),
               width: 40,
               height: 40,
               decoration: BoxDecoration(
@@ -156,7 +155,7 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
               child: Icon(
                 Icons.arrow_back,
                 color: effectiveColor,
-                size: isPlain ? 24 : 20,
+                size: 20,
               ),
             );
           },
