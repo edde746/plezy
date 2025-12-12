@@ -165,7 +165,7 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
             DesktopSliverAppBar(title: Text(t.screens.search), floating: true),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: TextField(
                   controller: _searchController,
                   focusNode: _searchFocusNode,
@@ -186,7 +186,15 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable {
                       context,
                     ).colorScheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(100),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(100),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(100),
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
