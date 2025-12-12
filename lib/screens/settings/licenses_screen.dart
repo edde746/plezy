@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../i18n/strings.g.dart';
 
@@ -104,7 +106,7 @@ class _LicensesScreenState extends State<LicensesScreen> {
                           ),
                         )
                       : null,
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () => _showLicenseDetail(mergedLicense),
                 ),
               );

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
@@ -131,7 +133,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 48, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(errorMessage!),
                 const SizedBox(height: 16),
@@ -163,7 +165,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(icon, size: 64, color: Colors.grey),
+                      AppIcon(icon, fill: 1, size: 64, color: Colors.grey),
                       const SizedBox(height: 16),
                       Text(
                         emptyMessage,
@@ -195,21 +197,21 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
       // Play button
       if (items.isNotEmpty)
         IconButton(
-          icon: const Icon(Icons.play_arrow),
+          icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1),
           tooltip: t.discover.play,
           onPressed: playItems,
         ),
       // Shuffle button
       if (items.isNotEmpty)
         IconButton(
-          icon: const Icon(Icons.shuffle),
+          icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
           tooltip: t.common.shuffle,
           onPressed: shufflePlayItems,
         ),
       // Delete button
       if (showDelete && onDelete != null)
         IconButton(
-          icon: const Icon(Icons.delete),
+          icon: const AppIcon(Symbols.delete_rounded, fill: 1),
           tooltip: deleteTooltip ?? t.common.delete,
           onPressed: onDelete,
           color: deleteColor ?? Colors.red,

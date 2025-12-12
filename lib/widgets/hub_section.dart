@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/locked_hub_controller.dart';
@@ -273,7 +275,7 @@ class HubSectionState extends State<HubSection> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(widget.icon),
+                    AppIcon(widget.icon, fill: 1),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -285,7 +287,7 @@ class HubSectionState extends State<HubSection> {
                     ),
                     if (widget.hub.more) ...[
                       const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right, size: 20),
+                      const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20),
                     ],
                   ],
                 ),

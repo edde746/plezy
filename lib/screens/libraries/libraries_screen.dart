@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
@@ -763,7 +765,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     return [
       ContextMenuItem(
         value: 'scan',
-        icon: Icons.refresh,
+        icon: Symbols.refresh_rounded,
         label: t.libraries.scanLibraryFiles,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.scanLibrary,
@@ -773,7 +775,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       ),
       ContextMenuItem(
         value: 'analyze',
-        icon: Icons.analytics_outlined,
+        icon: Symbols.analytics_rounded,
         label: t.libraries.analyze,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.analyzeLibrary,
@@ -783,7 +785,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       ),
       ContextMenuItem(
         value: 'refresh',
-        icon: Icons.sync,
+        icon: Symbols.sync_rounded,
         label: t.libraries.refreshMetadata,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.refreshMetadata,
@@ -794,7 +796,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       ),
       ContextMenuItem(
         value: 'empty_trash',
-        icon: Icons.delete_outline,
+        icon: Symbols.delete_outline_rounded,
         label: t.libraries.emptyTrash,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.emptyTrash,
@@ -961,11 +963,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         value: library.globalKey,
         child: Row(
           children: [
-            Icon(
-              _getLibraryIcon(library.type),
-              size: 20,
-              color: isSelected ? Theme.of(context).colorScheme.primary : null,
-            ),
+            AppIcon(_getLibraryIcon(library.type), fill: 1, size: 20, color: isSelected ? Theme.of(context).colorScheme.primary : null),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1092,7 +1090,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(_getLibraryIcon(selectedLibrary.type), size: 20),
+            AppIcon(_getLibraryIcon(selectedLibrary.type), fill: 1, size: 20),
             const SizedBox(width: 8),
             if (_hasMultipleServers && selectedLibrary.serverName != null)
               Column(
@@ -1119,7 +1117,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             const SizedBox(width: 4),
-            const Icon(Icons.arrow_drop_down, size: 24),
+            const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1, size: 24),
           ],
         ),
       ),
@@ -1151,12 +1149,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             actions: [
               if (_allLibraries.isNotEmpty)
                 IconButton(
-                  icon: const Icon(Icons.edit),
+                  icon: const AppIcon(Symbols.edit_rounded, fill: 1),
                   tooltip: t.libraries.manageLibraries,
                   onPressed: _showLibraryManagementSheet,
                 ),
               IconButton(
-                icon: const Icon(Icons.refresh),
+                icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
                 tooltip: t.common.refresh,
                 onPressed: _refreshCurrentTab,
               ),
@@ -1172,11 +1170,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.red,
-                    ),
+                    const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 48, color: Colors.red),
                     const SizedBox(height: 16),
                     Text(_errorMessage!),
                     const SizedBox(height: 16),
@@ -1194,11 +1188,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.video_library_outlined,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
+                    const AppIcon(Symbols.video_library_rounded, fill: 1, size: 64, color: Colors.grey),
                     const SizedBox(height: 16),
                     Text(t.libraries.noLibrariesFound),
                   ],
@@ -1291,15 +1281,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   IconData _getLibraryIcon(String type) {
     switch (type.toLowerCase()) {
       case 'movie':
-        return Icons.movie;
+        return Symbols.movie_rounded;
       case 'show':
-        return Icons.tv;
+        return Symbols.tv_rounded;
       case 'artist':
-        return Icons.music_note;
+        return Symbols.music_note_rounded;
       case 'photo':
-        return Icons.photo;
+        return Symbols.photo_rounded;
       default:
-        return Icons.folder;
+        return Symbols.folder_rounded;
     }
   }
 }
@@ -1484,7 +1474,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             ),
             ...menuItems.indexed.map(
               (entry) => ListTile(
-                leading: Icon(entry.$2.icon),
+                leading: AppIcon(entry.$2.icon, fill: 1),
                 title: Text(entry.$2.label),
                 onTap: () => Navigator.pop(context, entry.$2.value),
               ),
@@ -1538,15 +1528,15 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   IconData _getLibraryIcon(String type) {
     switch (type.toLowerCase()) {
       case 'movie':
-        return Icons.movie;
+        return Symbols.movie_rounded;
       case 'show':
-        return Icons.tv;
+        return Symbols.tv_rounded;
       case 'artist':
-        return Icons.music_note;
+        return Symbols.music_note_rounded;
       case 'photo':
-        return Icons.photo;
+        return Symbols.photo_rounded;
       default:
-        return Icons.folder;
+        return Symbols.folder_rounded;
     }
   }
 
@@ -1586,7 +1576,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.edit),
+                  const AppIcon(Symbols.edit_rounded, fill: 1),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -1598,7 +1588,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const AppIcon(Symbols.close_rounded, fill: 1),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -1694,15 +1684,10 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             children: [
               ReorderableDragStartListener(
                 index: index,
-                child: Icon(
-                  isMoving ? Icons.swap_vert : Icons.drag_indicator,
-                  color: isMoving
-                      ? colorScheme.primary
-                      : IconTheme.of(context).color?.withValues(alpha: 0.5),
-                ),
+                child: AppIcon(isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded, fill: 1, color: isMoving ? colorScheme.primary : IconTheme.of(context).color?.withValues(alpha: 0.5)),
               ),
               const SizedBox(width: 8),
-              Icon(_getLibraryIcon(library.type)),
+              AppIcon(_getLibraryIcon(library.type), fill: 1),
             ],
           ),
           title: Text(library.title),
@@ -1728,9 +1713,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                       )
                     : null,
                 child: IconButton(
-                  icon: Icon(
-                    isHidden ? Icons.visibility_off : Icons.visibility,
-                  ),
+                  icon: AppIcon(isHidden ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1),
                   tooltip: isHidden
                       ? t.libraries.showLibrary
                       : t.libraries.hideLibrary,
@@ -1745,7 +1728,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                       )
                     : null,
                 child: IconButton(
-                  icon: const Icon(Icons.more_vert),
+                  icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
                   tooltip: t.libraries.libraryOptions,
                   onPressed: () =>
                       _showLibraryMenuBottomSheet(context, library),

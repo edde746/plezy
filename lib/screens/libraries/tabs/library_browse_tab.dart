@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../../../../services/plex_client.dart';
@@ -111,7 +112,7 @@ class _LibraryBrowseTabState
 
   // Required abstract implementations from base class
   @override
-  IconData get emptyIcon => Icons.folder_open;
+  IconData get emptyIcon => Symbols.folder_open_rounded;
 
   @override
   String get emptyMessage => t.libraries.thisLibraryIsEmpty;
@@ -503,7 +504,7 @@ class _LibraryBrowseTabState
                 // Grouping chip
                 FocusableFilterChip(
                   focusNode: _groupingChipFocusNode,
-                  icon: Icons.category,
+                  icon: Symbols.category_rounded,
                   label: _getGroupingLabel(_selectedGrouping),
                   onPressed: _showGroupingBottomSheet,
                   onNavigateDown: _navigateToGrid,
@@ -515,7 +516,7 @@ class _LibraryBrowseTabState
                 if (_filters.isNotEmpty && _selectedGrouping != 'folders')
                   FocusableFilterChip(
                     focusNode: _filtersChipFocusNode,
-                    icon: Icons.filter_alt,
+                    icon: Symbols.filter_alt_rounded,
                     label: _selectedFilters.isEmpty
                         ? t.libraries.filters
                         : t.libraries.filtersWithCount(
@@ -532,7 +533,7 @@ class _LibraryBrowseTabState
                 if (_sortOptions.isNotEmpty && _selectedGrouping != 'folders')
                   FocusableFilterChip(
                     focusNode: _sortChipFocusNode,
-                    icon: Icons.sort,
+                    icon: Symbols.sort_rounded,
                     label: _selectedSort?.title ?? t.libraries.sort,
                     onPressed: _showSortBottomSheet,
                     onNavigateDown: _navigateToGrid,
@@ -567,7 +568,7 @@ class _LibraryBrowseTabState
     if (errorMessage != null && items.isEmpty) {
       return ErrorStateWidget(
         message: errorMessage!,
-        icon: Icons.error_outline,
+        icon: Symbols.error_outline_rounded,
         onRetry: _loadContent,
         retryLabel: t.common.retry,
       );
@@ -576,7 +577,7 @@ class _LibraryBrowseTabState
     if (items.isEmpty) {
       return EmptyStateWidget(
         message: t.libraries.thisLibraryIsEmpty,
-        icon: Icons.folder_open,
+        icon: Symbols.folder_open_rounded,
       );
     }
 

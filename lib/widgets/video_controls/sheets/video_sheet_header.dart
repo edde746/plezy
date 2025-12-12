@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 /// Shared header widget for video control sheets
 ///
@@ -28,11 +30,11 @@ class VideoSheetHeader extends StatelessWidget {
           // Back button or icon
           if (onBack != null)
             IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const AppIcon(Symbols.arrow_back_rounded, fill: 1, color: Colors.white),
               onPressed: onBack,
             )
           else if (icon != null)
-            Icon(icon, color: iconColor ?? Colors.white),
+            AppIcon(icon, fill: 1, color: iconColor ?? Colors.white),
           const SizedBox(width: 12),
           Text(
             title,
@@ -44,7 +46,7 @@ class VideoSheetHeader extends StatelessWidget {
           ),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: const AppIcon(Symbols.close_rounded, fill: 1, color: Colors.white),
             onPressed: onClose ?? () => Navigator.pop(context),
           ),
         ],

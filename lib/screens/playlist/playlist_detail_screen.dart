@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../services/plex_client.dart';
 import '../../services/play_queue_launcher.dart';
 import '../../models/plex_playlist.dart';
@@ -35,7 +37,7 @@ class _PlaylistDetailScreenState
   String get emptyMessage => t.playlists.emptyPlaylist;
 
   @override
-  IconData get emptyIcon => Icons.playlist_play;
+  IconData get emptyIcon => Symbols.playlist_play_rounded;
 
   @override
   Future<List<PlexMetadata>> fetchItems() async {
@@ -231,7 +233,7 @@ class _PlaylistDetailScreenState
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.auto_awesome, size: 12, color: Colors.blue[300]),
+                AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Colors.blue[300]),
                 const SizedBox(width: 4),
                 Text(
                   t.playlists.smartPlaylist,

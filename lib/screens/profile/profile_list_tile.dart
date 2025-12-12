@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/plex_home_user.dart';
 import 'user_avatar_widget.dart';
@@ -46,7 +48,7 @@ class ProfileListTile extends StatelessWidget {
                 ),
               ),
             )
-          : (showTrailingIcon ? const Icon(Icons.chevron_right) : null),
+          : (showTrailingIcon ? const AppIcon(Symbols.chevron_right_rounded, fill: 1) : null),
       onTap: isCurrentUser ? null : onTap,
       enabled: !isCurrentUser,
     );

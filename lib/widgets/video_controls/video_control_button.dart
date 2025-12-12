@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
 import 'package:flutter/services.dart';
 
 import '../../focus/focusable_wrapper.dart';
@@ -62,7 +63,7 @@ class VideoControlButton extends StatelessWidget {
     final effectiveColor = color ?? (isActive ? Colors.amber : Colors.white);
 
     final button = IconButton(
-      icon: Icon(icon, color: effectiveColor),
+      icon: AppIcon(icon, fill: 1, color: effectiveColor),
       onPressed: onPressed,
       tooltip: tooltip,
       constraints: const BoxConstraints(minWidth: 40, minHeight: 40),

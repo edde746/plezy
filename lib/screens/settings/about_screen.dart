@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../i18n/strings.g.dart';
@@ -75,10 +77,10 @@ class _AboutScreenState extends State<AboutScreen> {
               // Open Source Licenses
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.description),
+                  leading: const AppIcon(Symbols.description_rounded, fill: 1),
                   title: Text(t.about.openSourceLicenses),
                   subtitle: Text(t.about.viewLicensesDescription),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () {
                     Navigator.push(
                       context,

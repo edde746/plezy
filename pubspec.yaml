@@ -44,6 +44,7 @@ dependencies:
   file_picker: ^8.0.0
   saf_util: ^0.11.0
   saf_stream: ^0.12.2
+  material_symbols_icons: ^4.2892.0
 
 dev_dependencies:
   flutter_test:

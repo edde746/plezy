@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../models/download_progress.dart';
 import '../models/download_status.dart';
 
@@ -119,10 +121,7 @@ class DownloadTreeItem extends StatelessWidget {
   Widget _buildExpandIcon() {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
-      child: Icon(
-        isExpanded ? Icons.expand_more : Icons.chevron_right,
-        size: 24,
-      ),
+      child: AppIcon(isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded, fill: 1, size: 24),
     );
   }
 
@@ -263,7 +262,7 @@ class DownloadTreeItem extends StatelessWidget {
     switch (status) {
       case DownloadStatus.downloading:
         return IconButton(
-          icon: const Icon(Icons.pause),
+          icon: const AppIcon(Symbols.pause_rounded, fill: 1),
           onPressed: onPause,
           tooltip: 'Pause',
           iconSize: 20,
@@ -271,7 +270,7 @@ class DownloadTreeItem extends StatelessWidget {
 
       case DownloadStatus.queued:
         return IconButton(
-          icon: const Icon(Icons.close),
+          icon: const AppIcon(Symbols.close_rounded, fill: 1),
           onPressed: onCancel,
           tooltip: 'Cancel',
           iconSize: 20,
@@ -282,13 +281,13 @@ class DownloadTreeItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.play_arrow),
+              icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1),
               onPressed: onResume,
               tooltip: 'Resume',
               iconSize: 20,
             ),
             IconButton(
-              icon: const Icon(Icons.close),
+              icon: const AppIcon(Symbols.close_rounded, fill: 1),
               onPressed: onCancel,
               tooltip: 'Cancel',
               iconSize: 20,
@@ -298,7 +297,7 @@ class DownloadTreeItem extends StatelessWidget {
 
       case DownloadStatus.completed:
         return IconButton(
-          icon: const Icon(Icons.delete_outline),
+          icon: const AppIcon(Symbols.delete_outline_rounded, fill: 1),
           onPressed: onDelete,
           tooltip: 'Delete',
           iconSize: 20,
@@ -309,13 +308,13 @@ class DownloadTreeItem extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.refresh),
+              icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
               onPressed: onRetry,
               tooltip: 'Retry',
               iconSize: 20,
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline),
+              icon: const AppIcon(Symbols.delete_outline_rounded, fill: 1),
               onPressed: onDelete,
               tooltip: 'Delete',
               iconSize: 20,
@@ -325,7 +324,7 @@ class DownloadTreeItem extends StatelessWidget {
 
       case DownloadStatus.cancelled:
         return IconButton(
-          icon: const Icon(Icons.delete_outline),
+          icon: const AppIcon(Symbols.delete_outline_rounded, fill: 1),
           onPressed: onDelete,
           tooltip: 'Delete',
           iconSize: 20,

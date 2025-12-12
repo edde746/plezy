@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../models/plex_file_info.dart';
 import '../i18n/strings.g.dart';
 import 'focusable_bottom_sheet.dart';
@@ -56,11 +58,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+                      const AppIcon(Symbols.info_rounded, fill: 1, color: Colors.white, size: 24),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -74,7 +72,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                       ),
                       IconButton(
                         focusNode: _initialFocusNode,
-                        icon: const Icon(Icons.close, color: Colors.white),
+                        icon: const AppIcon(Symbols.close_rounded, fill: 1, color: Colors.white),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],

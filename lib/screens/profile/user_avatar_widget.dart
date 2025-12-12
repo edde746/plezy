@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/plex_home_user.dart';
 import '../../i18n/strings.g.dart';
@@ -27,11 +29,7 @@ class UserAvatarWidget extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerHighest,
         shape: BoxShape.circle,
       ),
-      child: Icon(
-        Icons.person,
-        size: size * 0.6,
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
+      child: AppIcon(Symbols.person_rounded, fill: 1, size: size * 0.6, color: theme.colorScheme.onSurfaceVariant),
     );
   }
 
@@ -69,7 +67,7 @@ class UserAvatarWidget extends StatelessWidget {
             width: 1,
           ),
         ),
-        child: Icon(icon, size: iconSize, color: iconColor),
+        child: AppIcon(icon, fill: 1, size: iconSize, color: iconColor),
       ),
     );
   }
@@ -176,7 +174,7 @@ class UserAvatarWidget extends StatelessWidget {
             if (user.isAdminUser)
               _buildBadge(
                 context: context,
-                icon: Icons.admin_panel_settings,
+                icon: Symbols.admin_panel_settings_rounded,
                 color: theme.colorScheme.primary,
                 iconColor: theme.colorScheme.onPrimary,
                 position: 'topRight',
@@ -186,7 +184,7 @@ class UserAvatarWidget extends StatelessWidget {
             if (user.isRestrictedUser && !user.isAdminUser)
               _buildBadge(
                 context: context,
-                icon: Icons.security,
+                icon: Symbols.security_rounded,
                 color: theme.colorScheme.warning ?? Colors.orange,
                 iconColor: theme.colorScheme.onPrimary,
                 position: 'topRight',
@@ -196,7 +194,7 @@ class UserAvatarWidget extends StatelessWidget {
             if (user.requiresPassword)
               _buildBadge(
                 context: context,
-                icon: Icons.lock,
+                icon: Symbols.lock_rounded,
                 color: theme.colorScheme.secondary,
                 iconColor: theme.colorScheme.onSecondary,
                 position: 'bottomRight',

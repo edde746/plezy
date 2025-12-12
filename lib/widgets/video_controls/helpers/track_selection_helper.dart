@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../mpv/mpv.dart';
 import '../../../widgets/focusable_list_tile.dart';
 
@@ -85,7 +87,7 @@ class TrackSelectionHelper {
         label,
         style: TextStyle(color: isSelected ? Colors.blue : Colors.white),
       ),
-      trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
+      trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
       onTap: onTap,
     );
   }

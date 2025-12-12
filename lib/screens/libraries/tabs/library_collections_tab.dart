@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../widgets/focusable_media_card.dart';
@@ -30,7 +31,7 @@ class _LibraryCollectionsTabState
   String get focusNodeDebugLabel => 'collections_first_item';
 
   @override
-  IconData get emptyIcon => Icons.collections;
+  IconData get emptyIcon => Symbols.collections_rounded;
 
   @override
   String get emptyMessage => t.libraries.noCollections;

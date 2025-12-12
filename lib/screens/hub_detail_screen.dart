@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_metadata.dart';
@@ -243,7 +245,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       title: Text(widget.hub.title),
       actions: [
         IconButton(
-          icon: Icon(Icons.swap_vert, semanticLabel: t.libraries.sort),
+          icon: AppIcon(Symbols.swap_vert_rounded, fill: 1, semanticLabel: t.libraries.sort),
           onPressed: _showSortBottomSheet,
         ),
       ],
@@ -254,7 +256,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(_errorMessage!),
                   const SizedBox(height: 16),

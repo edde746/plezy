@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -78,11 +80,7 @@ class NavigationRailItem extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  isSelected && selectedIcon != null ? selectedIcon! : icon,
-                  size: iconSize,
-                  color: isSelected ? t.text : t.textMuted,
-                ),
+                AppIcon(isSelected && selectedIcon != null ? selectedIcon! : icon, fill: 1, size: iconSize, color: isSelected ? t.text : t.textMuted),
                 const SizedBox(width: 12),
                 Expanded(child: label),
               ],
@@ -304,30 +302,30 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   IconData _getLibraryIcon(String type) {
     switch (type.toLowerCase()) {
       case 'movie':
-        return Icons.movie_outlined;
+        return Symbols.movie_rounded;
       case 'show':
-        return Icons.tv_outlined;
+        return Symbols.tv_rounded;
       case 'artist':
-        return Icons.music_note_outlined;
+        return Symbols.music_note_rounded;
       case 'photo':
-        return Icons.photo_outlined;
+        return Symbols.photo_rounded;
       default:
-        return Icons.folder_outlined;
+        return Symbols.folder_rounded;
     }
   }
 
   IconData _getLibraryIconFilled(String type) {
     switch (type.toLowerCase()) {
       case 'movie':
-        return Icons.movie;
+        return Symbols.movie_rounded;
       case 'show':
-        return Icons.tv;
+        return Symbols.tv_rounded;
       case 'artist':
-        return Icons.music_note;
+        return Symbols.music_note_rounded;
       case 'photo':
-        return Icons.photo;
+        return Symbols.photo_rounded;
       default:
-        return Icons.folder;
+        return Symbols.folder_rounded;
     }
   }
 
@@ -379,8 +377,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                     if (!widget.isOfflineMode) ...[
                       // Home
                       _buildNavItem(
-                        icon: Icons.home_outlined,
-                        selectedIcon: Icons.home,
+                        icon: Symbols.home_rounded,
+                        selectedIcon: Symbols.home_rounded,
                         label: Translations.of(context).navigation.home,
                         isSelected: widget.selectedIndex == 0,
                         isFocused: _isHomeFocused,
@@ -397,8 +395,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
                       // Search
                       _buildNavItem(
-                        icon: Icons.search,
-                        selectedIcon: Icons.search,
+                        icon: Symbols.search_rounded,
+                        selectedIcon: Symbols.search_rounded,
                         label: Translations.of(context).navigation.search,
                         isSelected: widget.selectedIndex == 2,
                         isFocused: _isSearchFocused,
@@ -411,8 +409,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
                     // Downloads (index 0 in offline mode, 3 in online mode)
                     _buildNavItem(
-                      icon: Icons.download_outlined,
-                      selectedIcon: Icons.download,
+                      icon: Symbols.download_rounded,
+                      selectedIcon: Symbols.download_rounded,
                       label: Translations.of(context).navigation.downloads,
                       isSelected: widget.isOfflineMode
                           ? widget.selectedIndex == 0
@@ -428,8 +426,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
                     // Settings (index 1 in offline mode, 4 in online mode)
                     _buildNavItem(
-                      icon: Icons.settings_outlined,
-                      selectedIcon: Icons.settings,
+                      icon: Symbols.settings_rounded,
+                      selectedIcon: Symbols.settings_rounded,
                       label: Translations.of(context).navigation.settings,
                       isSelected: widget.isOfflineMode
                           ? widget.selectedIndex == 1
@@ -525,13 +523,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      widget.selectedIndex == 1
-                          ? Icons.video_library
-                          : Icons.video_library_outlined,
-                      size: 22,
-                      color: widget.selectedIndex == 1 ? t.text : t.textMuted,
-                    ),
+                    AppIcon(widget.selectedIndex == 1 ? Symbols.video_library_rounded : Symbols.video_library_rounded, fill: 1, size: 22, color: widget.selectedIndex == 1 ? t.text : t.textMuted),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -547,13 +539,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                         ),
                       ),
                     ),
-                    Icon(
-                      _librariesExpanded
-                          ? Icons.expand_less
-                          : Icons.expand_more,
-                      size: 20,
-                      color: t.textMuted,
-                    ),
+                    AppIcon(_librariesExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded, fill: 1, size: 20, color: t.textMuted),
                   ],
                 ),
               ),

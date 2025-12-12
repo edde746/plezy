@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../mpv/mpv.dart';
@@ -390,7 +392,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               _buildFocusableButton(
                 focusNode: _prevItemFocusNode,
                 index: 0,
-                icon: Icons.skip_previous,
+                icon: Symbols.skip_previous_rounded,
                 color: widget.onPrevious != null
                     ? Colors.white
                     : Colors.white54,
@@ -403,7 +405,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 index: 1,
                 icon: widget.chapters.isEmpty
                     ? widget.getReplayIcon(widget.seekTimeSmall)
-                    : Icons.fast_rewind,
+                    : Symbols.fast_rewind_rounded,
                 onPressed: widget.onSeekToPreviousChapter,
                 semanticLabel: widget.chapters.isEmpty
                     ? t.videoControls.seekBackwardButton(
@@ -420,7 +422,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   return _buildFocusableButton(
                     focusNode: _playPauseFocusNode,
                     index: 2,
-                    icon: isPlaying ? Icons.pause : Icons.play_arrow,
+                    icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
                     iconSize: 32,
                     onPressed: () {
                       if (isPlaying) {
@@ -441,7 +443,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 index: 3,
                 icon: widget.chapters.isEmpty
                     ? widget.getForwardIcon(widget.seekTimeSmall)
-                    : Icons.fast_forward,
+                    : Symbols.fast_forward_rounded,
                 onPressed: widget.onSeekToNextChapter,
                 semanticLabel: widget.chapters.isEmpty
                     ? t.videoControls.seekForwardButton(
@@ -453,7 +455,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               _buildFocusableButton(
                 focusNode: _nextItemFocusNode,
                 index: 4,
-                icon: Icons.skip_next,
+                icon: Symbols.skip_next_rounded,
                 color: widget.onNext != null ? Colors.white : Colors.white54,
                 onPressed: widget.onNext,
                 semanticLabel: t.videoControls.nextButton,
@@ -523,7 +525,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
         button: true,
         excludeSemantics: true,
         child: IconButton(
-          icon: Icon(icon, color: color, size: iconSize),
+          icon: AppIcon(icon, fill: 1, color: color, size: iconSize),
           iconSize: iconSize,
           onPressed: onPressed,
         ),

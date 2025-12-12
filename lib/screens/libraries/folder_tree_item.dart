@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../models/plex_metadata.dart';
 
 /// Individual item in the folder tree
@@ -25,24 +27,24 @@ class FolderTreeItem extends StatelessWidget {
 
   IconData _getIcon() {
     if (isFolder) {
-      return Icons.folder;
+      return Symbols.folder_rounded;
     }
 
     // File icons based on type
     final type = item.type.toLowerCase();
     switch (type) {
       case 'movie':
-        return Icons.movie;
+        return Symbols.movie_rounded;
       case 'show':
-        return Icons.tv;
+        return Symbols.tv_rounded;
       case 'season':
-        return Icons.video_library;
+        return Symbols.video_library_rounded;
       case 'episode':
-        return Icons.play_circle_outline;
+        return Symbols.play_circle_rounded;
       case 'collection':
-        return Icons.collections;
+        return Symbols.collections_rounded;
       default:
-        return Icons.insert_drive_file;
+        return Symbols.insert_drive_file_rounded;
     }
   }
 
@@ -79,12 +81,7 @@ class FolderTreeItem extends StatelessWidget {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Icon(
-                        isExpanded
-                            ? Icons.keyboard_arrow_down
-                            : Icons.keyboard_arrow_right,
-                        size: 20,
-                      ),
+                    : AppIcon(isExpanded ? Symbols.keyboard_arrow_down_rounded : Symbols.keyboard_arrow_right_rounded, fill: 1, size: 20),
               )
             else
               const SizedBox(width: 24),
@@ -92,15 +89,7 @@ class FolderTreeItem extends StatelessWidget {
             const SizedBox(width: 8),
 
             // File/folder icon
-            Icon(
-              _getIcon(),
-              size: 20,
-              color: isFolder
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
+            AppIcon(_getIcon(), fill: 1, size: 20, color: isFolder ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
 
             const SizedBox(width: 12),
 

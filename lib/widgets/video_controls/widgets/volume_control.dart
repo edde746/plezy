@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../../mpv/mpv.dart';
@@ -147,10 +149,7 @@ class _VolumeControlState extends State<VolumeControl> {
           button: true,
           excludeSemantics: true,
           child: IconButton(
-            icon: Icon(
-              isMuted ? Icons.volume_off : Icons.volume_up,
-              color: Colors.white,
-            ),
+            icon: AppIcon(isMuted ? Symbols.volume_off_rounded : Symbols.volume_up_rounded, fill: 1, color: Colors.white),
             onPressed: () async {
               final newVolume = isMuted ? 100.0 : 0.0;
               widget.player.setVolume(newVolume);

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
@@ -686,11 +688,11 @@ Widget _buildPosterImage(
   String? localPosterPath,
 }) {
   String? posterUrl;
-  IconData fallbackIcon = Icons.movie;
+  IconData fallbackIcon = Symbols.movie_rounded;
 
   if (item is PlexPlaylist) {
     posterUrl = item.displayImage;
-    fallbackIcon = Icons.playlist_play;
+    fallbackIcon = Symbols.playlist_play_rounded;
 
     return PlexOptimizedImage.playlist(
       client: isOffline ? null : _getClientForItem(context, item),
@@ -715,7 +717,7 @@ Widget _buildPosterImage(
   }
 
   return SkeletonLoader(
-    child: Center(child: Icon(fallbackIcon, size: 40, color: Colors.white54)),
+    child: Center(child: AppIcon(fallbackIcon, fill: 1, size: 40, color: Colors.white54)),
   );
 }
 
@@ -838,7 +840,7 @@ class _MediaCardHelpers {
                   ),
                 ],
               ),
-              child: Icon(Icons.check, color: tokens(context).bg, size: 16),
+              child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 16),
             ),
           ),
         // Progress bar for partially watched content

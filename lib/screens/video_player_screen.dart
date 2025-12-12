@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
@@ -1373,11 +1375,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.play_circle_outline,
-                              size: 64,
-                              color: Colors.white,
-                            ),
+                            const AppIcon(Symbols.play_circle_rounded, fill: 1, size: 64, color: Colors.white),
                             const SizedBox(height: 24),
                             Consumer<PlaybackStateProvider>(
                               builder: (context, playbackState, child) {
@@ -1396,11 +1394,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                                     ),
                                     if (isShuffleActive) ...[
                                       const SizedBox(width: 8),
-                                      const Icon(
-                                        Icons.shuffle,
-                                        size: 20,
-                                        color: Colors.white70,
-                                      ),
+                                      const AppIcon(Symbols.shuffle_rounded, fill: 1, size: 20, color: Colors.white70),
                                     ],
                                   ],
                                 );

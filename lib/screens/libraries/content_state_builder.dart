@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
 import 'empty_state_widget.dart';
 import 'error_state_widget.dart';
@@ -49,7 +50,7 @@ class ContentStateBuilder<T> extends StatelessWidget {
     if (errorMessage != null && items.isEmpty) {
       return ErrorStateWidget(
         message: errorMessage!,
-        icon: Icons.error_outline,
+        icon: Symbols.error_outline_rounded,
         onRetry: onRetry,
         retryLabel: t.common.retry,
       );

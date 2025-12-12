@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../models/plex_media_version.dart';
 import '../../../widgets/focusable_bottom_sheet.dart';
 import '../../../widgets/focusable_list_tile.dart';
@@ -63,7 +65,7 @@ class _VersionSheetState extends State<VersionSheet> {
       initialFocusNode: _initialFocusNode,
       child: BaseVideoControlSheet(
         title: 'Video Version',
-        icon: Icons.video_file,
+        icon: Symbols.video_file_rounded,
         child: ListView.builder(
           itemCount: widget.availableVersions.length,
           itemBuilder: (context, index) {
@@ -79,7 +81,7 @@ class _VersionSheetState extends State<VersionSheet> {
                 ),
               ),
               trailing: isSelected
-                  ? const Icon(Icons.check, color: Colors.blue)
+                  ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue)
                   : null,
               onTap: () {
                 Navigator.pop(context);

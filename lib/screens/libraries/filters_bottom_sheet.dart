@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../models/plex_filter.dart';
 import '../../widgets/app_bar_back_button.dart';
 import '../../widgets/bottom_sheet_header.dart';
@@ -201,7 +203,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
               // Header
               BottomSheetHeader(
                 title: t.libraries.filters,
-                leading: const Icon(Icons.filter_alt),
+                leading: const AppIcon(Symbols.filter_alt_rounded, fill: 1),
                 action: _tempSelectedFilters.isNotEmpty
                     ? TextButton.icon(
                         onPressed: () {
@@ -210,7 +212,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                           });
                           _applyFilters();
                         },
-                        icon: const Icon(Icons.clear_all),
+                        icon: const AppIcon(Symbols.clear_all_rounded, fill: 1),
                         label: Text(t.libraries.clearAll),
                       )
                     : null,
@@ -275,7 +277,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                               ),
                             ),
                           if (displayValue != null) const SizedBox(width: 8),
-                          const Icon(Icons.chevron_right),
+                          const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                         ],
                       ),
                       onTap: () => _loadFilterValues(filter),

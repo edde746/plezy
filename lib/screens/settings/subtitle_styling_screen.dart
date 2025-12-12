@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
@@ -103,7 +105,7 @@ class _ColorSettingTile extends StatelessWidget {
       ),
       title: Text(label),
       subtitle: Text(currentColor),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
     );
   }

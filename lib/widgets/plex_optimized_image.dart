@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
@@ -144,7 +146,7 @@ class PlexOptimizedImage extends StatelessWidget {
          enableTranscoding: enableTranscoding,
          cacheKey: cacheKey,
          alignment: alignment,
-         fallbackIcon: Icons.movie,
+         fallbackIcon: Symbols.movie_rounded,
          imageType: ImageType.poster,
          localFilePath: localFilePath,
        );
@@ -178,7 +180,7 @@ class PlexOptimizedImage extends StatelessWidget {
          enableTranscoding: enableTranscoding,
          cacheKey: cacheKey,
          alignment: alignment,
-         fallbackIcon: Icons.video_library,
+         fallbackIcon: Symbols.video_library_rounded,
          imageType: ImageType.thumb,
          localFilePath: localFilePath,
        );
@@ -212,7 +214,7 @@ class PlexOptimizedImage extends StatelessWidget {
          enableTranscoding: enableTranscoding,
          cacheKey: cacheKey,
          alignment: alignment,
-         fallbackIcon: Icons.playlist_play,
+         fallbackIcon: Symbols.playlist_play_rounded,
          imageType: ImageType.poster,
          localFilePath: localFilePath,
        );
@@ -334,7 +336,7 @@ class PlexOptimizedImage extends StatelessWidget {
   Widget _buildPlaceholder(BuildContext context) {
     return SkeletonLoader(
       child: fallbackIcon != null
-          ? Center(child: Icon(fallbackIcon!, size: 40, color: Colors.white54))
+          ? Center(child: AppIcon(fallbackIcon!, fill: 1, size: 40, color: Colors.white54))
           : null,
     );
   }
@@ -343,11 +345,7 @@ class PlexOptimizedImage extends StatelessWidget {
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Center(
-        child: Icon(
-          fallbackIcon ?? Icons.broken_image,
-          size: 40,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        child: AppIcon(fallbackIcon ?? Symbols.broken_image_rounded, fill: 1, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -358,11 +356,7 @@ class PlexOptimizedImage extends StatelessWidget {
       height: height,
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Center(
-        child: Icon(
-          fallbackIcon ?? Icons.image_not_supported,
-          size: 40,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        child: AppIcon(fallbackIcon ?? Symbols.image_not_supported_rounded, fill: 1, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../services/plex_client.dart';
 import '../services/play_queue_launcher.dart';
@@ -152,7 +154,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       menuActions.add(
         _MenuAction(
           value: 'play',
-          icon: Icons.play_arrow,
+          icon: Symbols.play_arrow_rounded,
           label: t.discover.play,
         ),
       );
@@ -161,7 +163,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       menuActions.add(
         _MenuAction(
           value: 'shuffle',
-          icon: Icons.shuffle,
+          icon: Symbols.shuffle_rounded,
           label: t.mediaMenu.shufflePlay,
         ),
       );
@@ -170,7 +172,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       menuActions.add(
         _MenuAction(
           value: 'delete',
-          icon: Icons.delete,
+          icon: Symbols.delete_rounded,
           label: t.common.delete,
         ),
       );
@@ -184,7 +186,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'watch',
-            icon: Icons.check_circle_outline,
+            icon: Symbols.check_circle_outline_rounded,
             label: t.mediaMenu.markAsWatched,
           ),
         );
@@ -195,7 +197,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'unwatch',
-            icon: Icons.remove_circle_outline,
+            icon: Symbols.remove_circle_outline_rounded,
             label: t.mediaMenu.markAsUnwatched,
           ),
         );
@@ -206,7 +208,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'remove_from_continue_watching',
-            icon: Icons.close,
+            icon: Symbols.close_rounded,
             label: t.mediaMenu.removeFromContinueWatching,
           ),
         );
@@ -217,7 +219,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'remove_from_collection',
-            icon: Icons.delete_outline,
+            icon: Symbols.delete_outline_rounded,
             label: t.collections.removeFromCollection,
           ),
         );
@@ -229,7 +231,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'series',
-            icon: Icons.tv,
+            icon: Symbols.tv_rounded,
             label: t.mediaMenu.goToSeries,
           ),
         );
@@ -240,7 +242,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'season',
-            icon: Icons.playlist_play,
+            icon: Symbols.playlist_play_rounded,
             label: t.mediaMenu.goToSeason,
           ),
         );
@@ -251,7 +253,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'shuffle_play',
-            icon: Icons.shuffle,
+            icon: Symbols.shuffle_rounded,
             label: t.mediaMenu.shufflePlay,
           ),
         );
@@ -262,7 +264,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'fileinfo',
-            icon: Icons.info_outline,
+            icon: Symbols.info_rounded,
             label: t.mediaMenu.fileInfo,
           ),
         );
@@ -285,7 +287,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           menuActions.add(
             _MenuAction(
               value: 'delete_download',
-              icon: Icons.delete,
+              icon: Symbols.delete_rounded,
               label: t.downloads.deleteDownload,
             ),
           );
@@ -294,7 +296,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           menuActions.add(
             _MenuAction(
               value: 'download',
-              icon: Icons.download,
+              icon: Symbols.download_rounded,
               label: t.downloads.downloadNow,
             ),
           );
@@ -307,7 +309,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           itemType == 'show' ||
           itemType == 'season') {
         menuActions.add(
-          _MenuAction(value: 'add_to', icon: Icons.add, label: t.common.addTo),
+          _MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo),
         );
       }
     } // End of regular menu items else block
@@ -626,12 +628,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final submenuActions = [
       _MenuAction(
         value: 'playlist',
-        icon: Icons.playlist_play,
+        icon: Symbols.playlist_play_rounded,
         label: t.playlists.playlist,
       ),
       _MenuAction(
         value: 'collection',
-        icon: Icons.collections,
+        icon: Symbols.collections_rounded,
         label: t.collections.collection,
       ),
     ];
@@ -656,7 +658,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               ),
               ...submenuActions.map((action) {
                 return ListTile(
-                  leading: Icon(action.icon),
+                  leading: AppIcon(action.icon, fill: 1),
                   title: Text(action.label),
                   onTap: () => Navigator.pop(context, action.value),
                 );
@@ -682,7 +684,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(action.icon, size: 20),
+                AppIcon(action.icon, fill: 1, size: 20),
                 const SizedBox(width: 12),
                 Text(action.label),
               ],
@@ -1354,7 +1356,7 @@ class _PlaylistSelectionDialog extends StatelessWidget {
             if (index == 0) {
               // Create new playlist option (always shown first)
               return ListTile(
-                leading: const Icon(Icons.add),
+                leading: const AppIcon(Symbols.add_rounded, fill: 1),
                 title: Text(t.playlists.createNewPlaylist),
                 onTap: () => Navigator.pop(context, '_create_new'),
               );
@@ -1363,8 +1365,8 @@ class _PlaylistSelectionDialog extends StatelessWidget {
             final playlist = playlists[index - 1];
             return ListTile(
               leading: playlist.smart
-                  ? const Icon(Icons.auto_awesome)
-                  : const Icon(Icons.playlist_play),
+                  ? const AppIcon(Symbols.auto_awesome_rounded, fill: 1)
+                  : const AppIcon(Symbols.playlist_play_rounded, fill: 1),
               title: Text(playlist.title),
               subtitle: playlist.leafCount != null
                   ? Text(
@@ -1460,7 +1462,7 @@ class _CollectionSelectionDialog extends StatelessWidget {
             if (index == 0) {
               // Create new collection option (always shown first)
               return ListTile(
-                leading: const Icon(Icons.add),
+                leading: const AppIcon(Symbols.add_rounded, fill: 1),
                 title: Text(t.collections.createNewCollection),
                 onTap: () => Navigator.pop(context, '_create_new'),
               );
@@ -1468,7 +1470,7 @@ class _CollectionSelectionDialog extends StatelessWidget {
 
             final collection = collections[index - 1];
             return ListTile(
-              leading: const Icon(Icons.collections),
+              leading: const AppIcon(Symbols.collections_rounded, fill: 1),
               title: Text(collection.title),
               subtitle: collection.childCount != null
                   ? Text('${collection.childCount} items')
@@ -1594,7 +1596,7 @@ class _FocusableContextMenuSheetState
               final action = entry.value;
               return FocusableListTile(
                 focusNode: index == 0 ? _initialFocusNode : null,
-                leading: Icon(action.icon),
+                leading: AppIcon(action.icon, fill: 1),
                 title: Text(action.label),
                 onTap: () => Navigator.pop(context, action.value),
               );
@@ -1695,7 +1697,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
                   final action = entry.value;
                   return FocusableListTile(
                     focusNode: index == 0 ? _initialFocusNode : null,
-                    leading: Icon(action.icon, size: 20),
+                    leading: AppIcon(action.icon, fill: 1, size: 20),
                     title: Text(action.label),
                     onTap: () => Navigator.pop(context, action.value),
                   );

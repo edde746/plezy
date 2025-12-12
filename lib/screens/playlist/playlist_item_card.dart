@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../services/plex_client.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/duration_formatter.dart';
@@ -56,7 +58,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                     index: widget.index,
                     child: const Padding(
                       padding: EdgeInsets.only(right: 12),
-                      child: Icon(Icons.drag_indicator, color: Colors.grey),
+                      child: AppIcon(Symbols.drag_indicator_rounded, fill: 1, color: Colors.grey),
                     ),
                   ),
 
@@ -122,7 +124,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
 
                 // Remove button
                 IconButton(
-                  icon: const Icon(Icons.close, size: 20),
+                  icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
                   onPressed: widget.onRemove,
                   tooltip: t.playlists.removeItem,
                   color: Colors.grey[400],
@@ -164,7 +166,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
         color: Colors.grey[850],
         borderRadius: BorderRadius.circular(6),
       ),
-      child: const Icon(Icons.movie, color: Colors.grey, size: 24),
+      child: const AppIcon(Symbols.movie_rounded, fill: 1, color: Colors.grey, size: 24),
     );
   }
 

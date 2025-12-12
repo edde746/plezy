@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../i18n/strings.g.dart';
 import '../models/download_progress.dart';
 import '../models/download_status.dart';
@@ -362,7 +364,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
         children: [
           // Expand/collapse icon
           if (canExpand)
-            Icon(isExpanded ? Icons.expand_more : Icons.chevron_right, size: 20)
+            AppIcon(isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded, fill: 1, size: 20)
           else
             const SizedBox(width: 20),
 
@@ -433,36 +435,36 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
     switch (status) {
       case DownloadStatus.downloading:
-        iconData = Icons.downloading;
+        iconData = Symbols.downloading_rounded;
         color = Colors.blue;
         break;
       case DownloadStatus.queued:
-        iconData = Icons.schedule;
+        iconData = Symbols.schedule_rounded;
         color = Colors.orange;
         break;
       case DownloadStatus.paused:
-        iconData = Icons.pause_circle_outline;
+        iconData = Symbols.pause_circle_outline_rounded;
         color = Colors.grey;
         break;
       case DownloadStatus.completed:
-        iconData = Icons.check_circle;
+        iconData = Symbols.check_circle_rounded;
         color = Colors.green;
         break;
       case DownloadStatus.failed:
-        iconData = Icons.error;
+        iconData = Symbols.error_rounded;
         color = Colors.red;
         break;
       case DownloadStatus.cancelled:
-        iconData = Icons.cancel;
+        iconData = Symbols.cancel_rounded;
         color = Colors.grey;
         break;
       case DownloadStatus.partial:
-        iconData = Icons.downloading;
+        iconData = Symbols.downloading_rounded;
         color = Colors.orange;
         break;
     }
 
-    return Icon(iconData, size: 20, color: color);
+    return AppIcon(iconData, fill: 1, size: 20, color: color);
   }
 
   /// Get summary text for container nodes (shows/seasons)
@@ -488,7 +490,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           if (node.status == DownloadStatus.downloading &&
               widget.onPause != null)
             IconButton(
-              icon: const Icon(Icons.pause, size: 20),
+              icon: const AppIcon(Symbols.pause_rounded, fill: 1, size: 20),
               onPressed: () => widget.onPause!(globalKey),
               tooltip: 'Pause',
             ),
@@ -496,7 +498,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           // Resume button for paused items
           if (node.status == DownloadStatus.paused && widget.onResume != null)
             IconButton(
-              icon: const Icon(Icons.play_arrow, size: 20),
+              icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 20),
               onPressed: () => widget.onResume!(globalKey),
               tooltip: 'Resume',
             ),
@@ -506,7 +508,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
                   node.status == DownloadStatus.queued) &&
               widget.onCancel != null)
             IconButton(
-              icon: const Icon(Icons.close, size: 20),
+              icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
               onPressed: () => widget.onCancel!(globalKey),
               tooltip: 'Cancel',
             ),
@@ -514,7 +516,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           // Retry button for failed items
           if (node.status == DownloadStatus.failed && widget.onRetry != null)
             IconButton(
-              icon: const Icon(Icons.refresh, size: 20),
+              icon: const AppIcon(Symbols.refresh_rounded, fill: 1, size: 20),
               onPressed: () => widget.onRetry!(globalKey),
               tooltip: t.downloads.retryDownload,
             ),
@@ -525,7 +527,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
                   node.status == DownloadStatus.cancelled) &&
               widget.onDelete != null)
             IconButton(
-              icon: const Icon(Icons.delete, size: 20),
+              icon: const AppIcon(Symbols.delete_rounded, fill: 1, size: 20),
               onPressed: () => widget.onDelete!(globalKey),
               tooltip: 'Delete',
             ),
@@ -538,7 +540,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
                   node.status == DownloadStatus.queued) &&
               widget.onPause != null)
             IconButton(
-              icon: const Icon(Icons.pause, size: 20),
+              icon: const AppIcon(Symbols.pause_rounded, fill: 1, size: 20),
               onPressed: () => _pauseAllChildren(node),
               tooltip: 'Pause all',
             ),
@@ -546,7 +548,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           // Resume all button - show if container is paused
           if (node.status == DownloadStatus.paused && widget.onResume != null)
             IconButton(
-              icon: const Icon(Icons.play_arrow, size: 20),
+              icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 20),
               onPressed: () => _resumeAllChildren(node),
               tooltip: 'Resume all',
             ),
@@ -554,7 +556,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           // Delete all button
           if (widget.onDelete != null)
             IconButton(
-              icon: const Icon(Icons.delete_sweep, size: 20),
+              icon: const AppIcon(Symbols.delete_sweep_rounded, fill: 1, size: 20),
               onPressed: () => _deleteAllChildren(node),
               tooltip: 'Delete all',
             ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../models/plex_home_user.dart';
 import '../../providers/user_profile_provider.dart';
@@ -54,11 +56,7 @@ class ProfileSwitchScreen extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.person_off,
-                          size: 64,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                        AppIcon(Symbols.person_off_rounded, fill: 1, size: 64, color: theme.colorScheme.onSurfaceVariant),
                         const SizedBox(height: 16),
                         Text(
                           'No profiles available',

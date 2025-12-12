@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -564,98 +566,98 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     // Trending/Popular content
     if (lowerTitle.contains('trending')) {
-      return Icons.trending_up;
+      return Symbols.trending_up_rounded;
     }
     if (lowerTitle.contains('popular') || lowerTitle.contains('imdb')) {
-      return Icons.whatshot;
+      return Symbols.whatshot_rounded;
     }
 
     // Seasonal/Time-based
     if (lowerTitle.contains('seasonal')) {
-      return Icons.calendar_month;
+      return Symbols.calendar_month_rounded;
     }
     if (lowerTitle.contains('newly') || lowerTitle.contains('new release')) {
-      return Icons.new_releases;
+      return Symbols.new_releases_rounded;
     }
     if (lowerTitle.contains('recently released') ||
         lowerTitle.contains('recent')) {
-      return Icons.schedule;
+      return Symbols.schedule_rounded;
     }
 
     // Top/Rated content
     if (lowerTitle.contains('top rated') ||
         lowerTitle.contains('highest rated')) {
-      return Icons.star;
+      return Symbols.star_rounded;
     }
     if (lowerTitle.contains('top ')) {
-      return Icons.military_tech;
+      return Symbols.military_tech_rounded;
     }
 
     // Genre-specific
     if (lowerTitle.contains('thriller')) {
-      return Icons.warning_amber_rounded;
+      return Symbols.warning_amber_rounded;
     }
     if (lowerTitle.contains('comedy') || lowerTitle.contains('comedier')) {
-      return Icons.mood;
+      return Symbols.mood_rounded;
     }
     if (lowerTitle.contains('action')) {
-      return Icons.flash_on;
+      return Symbols.flash_on_rounded;
     }
     if (lowerTitle.contains('drama')) {
-      return Icons.theater_comedy;
+      return Symbols.theater_comedy_rounded;
     }
     if (lowerTitle.contains('fantasy')) {
-      return Icons.auto_fix_high;
+      return Symbols.auto_fix_high_rounded;
     }
     if (lowerTitle.contains('science') || lowerTitle.contains('sci-fi')) {
-      return Icons.rocket_launch;
+      return Symbols.rocket_launch_rounded;
     }
     if (lowerTitle.contains('horror') || lowerTitle.contains('skräck')) {
-      return Icons.nights_stay;
+      return Symbols.nights_stay_rounded;
     }
     if (lowerTitle.contains('romance') || lowerTitle.contains('romantic')) {
-      return Icons.favorite_border;
+      return Symbols.favorite_border_rounded;
     }
     if (lowerTitle.contains('adventure') || lowerTitle.contains('äventyr')) {
-      return Icons.explore;
+      return Symbols.explore_rounded;
     }
 
     // Watchlist/Playlists
     if (lowerTitle.contains('playlist') || lowerTitle.contains('watchlist')) {
-      return Icons.playlist_play;
+      return Symbols.playlist_play_rounded;
     }
     if (lowerTitle.contains('unwatched') || lowerTitle.contains('unplayed')) {
-      return Icons.visibility_off;
+      return Symbols.visibility_off_rounded;
     }
     if (lowerTitle.contains('watched') || lowerTitle.contains('played')) {
-      return Icons.visibility;
+      return Symbols.visibility_rounded;
     }
 
     // Network/Studio
     if (lowerTitle.contains('network') || lowerTitle.contains('more from')) {
-      return Icons.tv;
+      return Symbols.tv_rounded;
     }
 
     // Actor/Director
     if (lowerTitle.contains('actor') || lowerTitle.contains('director')) {
-      return Icons.person;
+      return Symbols.person_rounded;
     }
 
     // Year-based (80s, 90s, etc.)
     if (lowerTitle.contains('80') ||
         lowerTitle.contains('90') ||
         lowerTitle.contains('00')) {
-      return Icons.history;
+      return Symbols.history_rounded;
     }
 
     // Rediscover/Start Watching
     if (lowerTitle.contains('rediscover') ||
         lowerTitle.contains('start watching')) {
-      return Icons.play_arrow;
+      return Symbols.play_arrow_rounded;
     }
 
     // Default icon for other hubs
-    return Icons.auto_awesome;
+    return Symbols.auto_awesome_rounded;
   }
 
   @override
@@ -762,7 +764,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             value: 'switch_profile',
             child: Row(
               children: [
-                Icon(Icons.people),
+                AppIcon(Symbols.people_rounded, fill: 1),
                 SizedBox(width: 8),
                 Text(t.discover.switchProfile),
               ],
@@ -772,7 +774,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           value: 'logout',
           child: Row(
             children: [
-              Icon(Icons.logout),
+              AppIcon(Symbols.logout_rounded, fill: 1),
               SizedBox(width: 8),
               Text(t.discover.logout),
             ],
@@ -817,7 +819,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.refresh),
+                      icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
                       onPressed: _loadContent,
                     ),
                   ),
@@ -843,7 +845,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   size: 32,
                                   showIndicators: false,
                                 )
-                              : const Icon(Icons.account_circle, size: 32),
+                              : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32),
                           onSelected: (value) {
                             if (value == 'switch_profile') {
                               _handleSwitchProfile(context);
@@ -858,7 +860,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 value: 'switch_profile',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.people),
+                                    AppIcon(Symbols.people_rounded, fill: 1),
                                     SizedBox(width: 8),
                                     Text(t.discover.switchProfile),
                                   ],
@@ -868,7 +870,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               value: 'logout',
                               child: Row(
                                 children: [
-                                  Icon(Icons.logout),
+                                  AppIcon(Symbols.logout_rounded, fill: 1),
                                   SizedBox(width: 8),
                                   Text(t.discover.logout),
                                 ],
@@ -892,11 +894,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: Colors.red,
-                      ),
+                      const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 48, color: Colors.red),
                       const SizedBox(height: 16),
                       Text(_errorMessage!),
                       const SizedBox(height: 16),
@@ -933,7 +931,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       more: false,
                       items: _onDeck,
                     ),
-                    icon: Icons.play_circle_outline,
+                    icon: Symbols.play_circle_rounded,
                     onRefresh: updateItem,
                     onRemoveFromContinueWatching: _refreshContinueWatching,
                     isInContinueWatching: true,
@@ -1010,11 +1008,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.movie_outlined,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
+                        AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
                         SizedBox(height: 16),
                         Text(t.discover.noContentAvailable),
                         SizedBox(height: 8),
@@ -1078,13 +1072,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           _pauseAutoScroll();
                         }
                       },
-                      child: Icon(
-                        _isAutoScrollPaused ? Icons.play_arrow : Icons.pause,
-                        color: Colors.white,
-                        size: 18,
-                        semanticLabel:
-                            '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
-                      ),
+                      child: AppIcon(_isAutoScrollPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded, fill: 1, color: Colors.white, size: 18, semanticLabel: '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll'),
                     ),
                     // Spacer to separate indicators from button
                     const SizedBox(width: 8),
@@ -1537,7 +1525,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.play_arrow, size: 20, color: Colors.black),
+            const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 20, color: Colors.black),
             const SizedBox(width: 8),
             if (hasProgress) ...[
               // Progress bar

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../models/plex_metadata.dart';
 import '../../providers/download_provider.dart';
@@ -337,11 +339,7 @@ class _DownloadsGridContent extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.download_outlined,
-              size: 80,
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            AppIcon(Symbols.download_rounded, fill: 1, size: 80, color: Theme.of(context).colorScheme.outline),
             const SizedBox(height: 24),
             Text(
               t.downloads.noDownloads,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 /// A reusable header widget for bottom sheets
 /// Provides consistent styling with title, optional leading widget, optional action, and close button
@@ -44,7 +46,7 @@ class BottomSheetHeader extends StatelessWidget {
           ),
           if (action != null) action!,
           IconButton(
-            icon: const Icon(Icons.close),
+            icon: const AppIcon(Symbols.close_rounded, fill: 1),
             onPressed: onClose ?? () => Navigator.pop(context),
           ),
         ],

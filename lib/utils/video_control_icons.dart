@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 /// Get the replay icon based on the duration
 /// Returns numbered icons (replay_5, replay_10, replay_30) when available,
@@ -6,13 +7,13 @@ import 'package:flutter/material.dart';
 IconData getReplayIcon(int seconds) {
   switch (seconds) {
     case 5:
-      return Icons.replay_5;
+      return Symbols.replay_5_rounded;
     case 10:
-      return Icons.replay_10;
+      return Symbols.replay_10_rounded;
     case 30:
-      return Icons.replay_30;
+      return Symbols.replay_30_rounded;
     default:
-      return Icons.replay; // Generic icon for custom durations
+      return Symbols.replay_rounded; // Generic icon for custom durations
   }
 }
 
@@ -22,12 +23,12 @@ IconData getReplayIcon(int seconds) {
 IconData getForwardIcon(int seconds) {
   switch (seconds) {
     case 5:
-      return Icons.forward_5;
+      return Symbols.forward_5_rounded;
     case 10:
-      return Icons.forward_10;
+      return Symbols.forward_10_rounded;
     case 30:
-      return Icons.forward_30;
+      return Symbols.forward_30_rounded;
     default:
-      return Icons.forward; // Generic icon for custom durations
+      return Symbols.forward_rounded; // Generic icon for custom durations
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'state_message_widget.dart';
 
 /// A reusable widget for displaying error states throughout the app
@@ -32,7 +33,7 @@ class ErrorStateWidget extends StatelessWidget {
       textColor: Theme.of(context).colorScheme.error,
       onAction: onRetry,
       actionLabel: retryLabel ?? 'Retry',
-      actionIcon: Icons.refresh,
+      actionIcon: Symbols.refresh_rounded,
     );
   }
 }

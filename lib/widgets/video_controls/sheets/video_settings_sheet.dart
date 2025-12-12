@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
@@ -49,14 +51,14 @@ class _SettingsMenuItem extends StatelessWidget {
 
     return FocusableListTile(
       focusNode: focusNode,
-      leading: Icon(icon, color: isHighlighted ? Colors.amber : Colors.white70),
+      leading: AppIcon(icon, fill: 1, color: isHighlighted ? Colors.amber : Colors.white70),
       title: Text(title, style: const TextStyle(color: Colors.white)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (allowValueOverflow) Flexible(child: valueWidget) else valueWidget,
           const SizedBox(width: 8),
-          const Icon(Icons.chevron_right, color: Colors.white70),
+          const AppIcon(Symbols.chevron_right_rounded, fill: 1, color: Colors.white70),
         ],
       ),
       onTap: onTap,
@@ -173,17 +175,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   IconData _getIcon() {
     switch (_currentView) {
       case _SettingsView.menu:
-        return Icons.tune;
+        return Symbols.tune_rounded;
       case _SettingsView.speed:
-        return Icons.speed;
+        return Symbols.speed_rounded;
       case _SettingsView.sleep:
-        return Icons.bedtime;
+        return Symbols.bedtime_rounded;
       case _SettingsView.audioSync:
-        return Icons.sync;
+        return Symbols.sync_rounded;
       case _SettingsView.subtitleSync:
-        return Icons.subtitles;
+        return Symbols.subtitles_rounded;
       case _SettingsView.audioDevice:
-        return Icons.speaker;
+        return Symbols.speaker_rounded;
     }
   }
 
@@ -213,7 +215,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final currentRate = snapshot.data ?? 1.0;
             return _SettingsMenuItem(
               focusNode: _initialFocusNode,
-              icon: Icons.speed,
+              icon: Symbols.speed_rounded,
               title: 'Playback Speed',
               valueText: _formatSpeed(currentRate),
               onTap: () => _navigateTo(_SettingsView.speed),
@@ -227,7 +229,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           builder: (context, _) {
             final isActive = sleepTimer.isActive;
             return _SettingsMenuItem(
-              icon: isActive ? Icons.bedtime : Icons.bedtime_outlined,
+              icon: isActive ? Symbols.bedtime_rounded : Symbols.bedtime_rounded,
               title: 'Sleep Timer',
               valueText: _formatSleepTimer(sleepTimer),
               isHighlighted: isActive,
@@ -238,7 +240,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // Audio Sync
         _SettingsMenuItem(
-          icon: Icons.sync,
+          icon: Symbols.sync_rounded,
           title: 'Audio Sync',
           valueText: formatSyncOffset(_audioSyncOffset.toDouble()),
           isHighlighted: _audioSyncOffset != 0,
@@ -247,7 +249,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // Subtitle Sync
         _SettingsMenuItem(
-          icon: Icons.subtitles,
+          icon: Symbols.subtitles_rounded,
           title: 'Subtitle Sync',
           valueText: formatSyncOffset(_subtitleSyncOffset.toDouble()),
           isHighlighted: _subtitleSyncOffset != 0,
@@ -257,10 +259,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         // HDR Toggle (iOS, macOS, and Windows)
         if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
           ListTile(
-            leading: Icon(
-              Icons.hdr_strong,
-              color: _enableHDR ? Colors.amber : Colors.white70,
-            ),
+            leading: AppIcon(Symbols.hdr_strong_rounded, fill: 1, color: _enableHDR ? Colors.amber : Colors.white70),
             title: const Text('HDR', style: TextStyle(color: Colors.white)),
             trailing: Switch(
               value: _enableHDR,
@@ -283,7 +282,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                   : '${currentDevice.name} · ${currentDevice.description}';
 
               return _SettingsMenuItem(
-                icon: Icons.speaker,
+                icon: Symbols.speaker_rounded,
                 title: 'Audio Output',
                 valueText: deviceLabel,
                 allowValueOverflow: true,
@@ -320,7 +319,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 ),
               ),
               trailing: isSelected
-                  ? const Icon(Icons.check, color: Colors.blue)
+                  ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue)
                   : null,
               onTap: () {
                 widget.player.setRate(speed);
@@ -406,7 +405,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                     ),
                   ),
                   trailing: isSelected
-                      ? const Icon(Icons.check, color: Colors.blue)
+                      ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue)
                       : null,
                   onTap: () {
                     widget.player.setAudioDevice(device);

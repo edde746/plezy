@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -129,30 +131,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return ListTile(
-                leading: Icon(themeProvider.themeModeIcon),
+                leading: AppIcon(themeProvider.themeModeIcon, fill: 1),
                 title: Text(t.settings.theme),
                 subtitle: Text(themeProvider.themeModeDisplayName),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showThemeDialog(themeProvider),
               );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.language),
+            leading: const AppIcon(Symbols.language_rounded, fill: 1),
             title: Text(t.settings.language),
             subtitle: Text(
               _getLanguageDisplayName(LocaleSettings.currentLocale),
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showLanguageDialog(),
           ),
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return ListTile(
-                leading: const Icon(Icons.grid_view),
+                leading: const AppIcon(Symbols.grid_view_rounded, fill: 1),
                 title: Text(t.settings.libraryDensity),
                 subtitle: Text(settingsProvider.libraryDensityDisplayName),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showLibraryDensityDialog(),
               );
             },
@@ -160,14 +162,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return ListTile(
-                leading: const Icon(Icons.view_list),
+                leading: const AppIcon(Symbols.view_list_rounded, fill: 1),
                 title: Text(t.settings.viewMode),
                 subtitle: Text(
                   settingsProvider.viewMode == settings.ViewMode.grid
                       ? t.settings.gridView
                       : t.settings.listView,
                 ),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showViewModeDialog(),
               );
             },
@@ -175,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
-                secondary: const Icon(Icons.image),
+                secondary: const AppIcon(Symbols.image_rounded, fill: 1),
                 title: Text(t.settings.useSeasonPosters),
                 subtitle: Text(t.settings.useSeasonPostersDescription),
                 value: settingsProvider.useSeasonPoster,
@@ -188,7 +190,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
-                secondary: const Icon(Icons.featured_play_list),
+                secondary: const AppIcon(
+                  Symbols.featured_play_list_rounded,
+                  fill: 1,
+                ),
                 title: Text(t.settings.showHeroSection),
                 subtitle: Text(t.settings.showHeroSectionDescription),
                 value: settingsProvider.showHeroSection,
@@ -218,7 +223,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           SwitchListTile(
-            secondary: const Icon(Icons.hardware),
+            secondary: const AppIcon(Symbols.hardware_rounded, fill: 1),
             title: Text(t.settings.hardwareDecoding),
             subtitle: Text(t.settings.hardwareDecodingDescription),
             value: _enableHardwareDecoding,
@@ -230,19 +235,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.memory),
+            leading: const AppIcon(Symbols.memory_rounded, fill: 1),
             title: Text(t.settings.bufferSize),
             subtitle: Text(
               t.settings.bufferSizeMB(size: _bufferSize.toString()),
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showBufferSizeDialog(),
           ),
           ListTile(
-            leading: const Icon(Icons.subtitles),
+            leading: const AppIcon(Symbols.subtitles_rounded, fill: 1),
             title: Text(t.settings.subtitleStyling),
             subtitle: Text(t.settings.subtitleStylingDescription),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () {
               Navigator.push(
                 context,
@@ -253,34 +258,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.replay_10),
+            leading: const AppIcon(Symbols.replay_10_rounded, fill: 1),
             title: Text(t.settings.smallSkipDuration),
             subtitle: Text(
               t.settings.secondsUnit(seconds: _seekTimeSmall.toString()),
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showSeekTimeSmallDialog(),
           ),
           ListTile(
-            leading: const Icon(Icons.replay_30),
+            leading: const AppIcon(Symbols.replay_30_rounded, fill: 1),
             title: Text(t.settings.largeSkipDuration),
             subtitle: Text(
               t.settings.secondsUnit(seconds: _seekTimeLarge.toString()),
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showSeekTimeLargeDialog(),
           ),
           ListTile(
-            leading: const Icon(Icons.bedtime),
+            leading: const AppIcon(Symbols.bedtime_rounded, fill: 1),
             title: Text(t.settings.defaultSleepTimer),
             subtitle: Text(
               t.settings.minutesUnit(minutes: _sleepTimerDuration.toString()),
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showSleepTimerDurationDialog(),
           ),
           SwitchListTile(
-            secondary: const Icon(Icons.bookmark),
+            secondary: const AppIcon(Symbols.bookmark_rounded, fill: 1),
             title: Text(t.settings.rememberTrackSelections),
             subtitle: Text(t.settings.rememberTrackSelectionsDescription),
             value: _rememberTrackSelections,
@@ -303,7 +308,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           SwitchListTile(
-            secondary: const Icon(Icons.fast_forward),
+            secondary: const AppIcon(Symbols.fast_forward_rounded, fill: 1),
             title: Text(t.settings.autoSkipIntro),
             subtitle: Text(t.settings.autoSkipIntroDescription),
             value: _autoSkipIntro,
@@ -315,7 +320,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           SwitchListTile(
-            secondary: const Icon(Icons.skip_next),
+            secondary: const AppIcon(Symbols.skip_next_rounded, fill: 1),
             title: Text(t.settings.autoSkipCredits),
             subtitle: Text(t.settings.autoSkipCreditsDescription),
             value: _autoSkipCredits,
@@ -327,14 +332,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.timer),
+            leading: const AppIcon(Symbols.timer_rounded, fill: 1),
             title: Text(t.settings.autoSkipDelay),
             subtitle: Text(
               t.settings.autoSkipDelayDescription(
                 seconds: _autoSkipDelay.toString(),
               ),
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showAutoSkipDelayDialog(),
           ),
         ],
@@ -367,7 +372,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final currentPath = snapshot.data ?? '...';
 
                 return ListTile(
-                  leading: const Icon(Icons.folder),
+                  leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                   title: Text(
                     isCustom
                         ? t.settings.downloadLocationCustom
@@ -378,13 +383,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () => _showDownloadLocationDialog(),
                 );
               },
             ),
           SwitchListTile(
-            secondary: const Icon(Icons.wifi),
+            secondary: const AppIcon(Symbols.wifi_rounded, fill: 1),
             title: Text(t.settings.downloadOnWifiOnly),
             subtitle: Text(t.settings.downloadOnWifiOnlyDescription),
             value: _downloadOnWifiOnly,
@@ -534,10 +539,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.keyboard),
+            leading: const AppIcon(Symbols.keyboard_rounded, fill: 1),
             title: Text(t.settings.videoPlayerControls),
             subtitle: Text(t.settings.keyboardShortcutsDescription),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showKeyboardShortcutsDialog(),
           ),
         ],
@@ -560,7 +565,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           SwitchListTile(
-            secondary: const Icon(Icons.bug_report),
+            secondary: const AppIcon(Symbols.bug_report_rounded, fill: 1),
             title: Text(t.settings.debugLogging),
             subtitle: Text(t.settings.debugLoggingDescription),
             value: _enableDebugLogging,
@@ -572,10 +577,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.article),
+            leading: const AppIcon(Symbols.article_rounded, fill: 1),
             title: Text(t.settings.viewLogs),
             subtitle: Text(t.settings.viewLogsDescription),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () {
               Navigator.push(
                 context,
@@ -584,17 +589,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.cleaning_services),
+            leading: const AppIcon(Symbols.cleaning_services_rounded, fill: 1),
             title: Text(t.settings.clearCache),
             subtitle: Text(t.settings.clearCacheDescription),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showClearCacheDialog(),
           ),
           ListTile(
-            leading: const Icon(Icons.restore),
+            leading: const AppIcon(Symbols.restore_rounded, fill: 1),
             title: Text(t.settings.resetSettings),
             subtitle: Text(t.settings.resetSettingsDescription),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showResetSettingsDialog(),
           ),
         ],
@@ -619,8 +624,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ListTile(
-            leading: Icon(
-              hasUpdate ? Icons.system_update : Icons.check_circle,
+            leading: AppIcon(
+              hasUpdate
+                  ? Symbols.system_update_rounded
+                  : Symbols.check_circle_rounded,
+              fill: 1,
               color: hasUpdate ? Colors.orange : null,
             ),
             title: Text(
@@ -641,7 +649,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     height: 24,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.chevron_right),
+                : const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: _isCheckingForUpdate
                 ? null
                 : () {
@@ -660,10 +668,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAboutSection() {
     return Card(
       child: ListTile(
-        leading: const Icon(Icons.info),
+        leading: const AppIcon(Symbols.info_rounded, fill: 1),
         title: Text(t.settings.about),
         subtitle: Text(t.settings.aboutDescription),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
         onTap: () {
           Navigator.push(
             context,
@@ -684,10 +692,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(
+                leading: AppIcon(
                   themeProvider.themeMode == settings.ThemeMode.system
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
+                      ? Symbols.radio_button_checked_rounded
+                      : Symbols.radio_button_unchecked_rounded,
+                  fill: 1,
                 ),
                 title: Text(t.settings.systemTheme),
                 subtitle: Text(t.settings.systemThemeDescription),
@@ -697,10 +706,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               ListTile(
-                leading: Icon(
+                leading: AppIcon(
                   themeProvider.themeMode == settings.ThemeMode.light
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
+                      ? Symbols.radio_button_checked_rounded
+                      : Symbols.radio_button_unchecked_rounded,
+                  fill: 1,
                 ),
                 title: Text(t.settings.lightTheme),
                 onTap: () {
@@ -709,10 +719,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               ListTile(
-                leading: Icon(
+                leading: AppIcon(
                   themeProvider.themeMode == settings.ThemeMode.dark
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
+                      ? Symbols.radio_button_checked_rounded
+                      : Symbols.radio_button_unchecked_rounded,
+                  fill: 1,
                 ),
                 title: Text(t.settings.darkTheme),
                 onTap: () {
@@ -745,10 +756,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: options.map((size) {
               return ListTile(
-                leading: Icon(
+                leading: AppIcon(
                   _bufferSize == size
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
+                      ? Symbols.radio_button_checked_rounded
+                      : Symbols.radio_button_unchecked_rounded,
+                  fill: 1,
                 ),
                 title: Text('${size}MB'),
                 onTap: () {
@@ -1148,10 +1160,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final isSelected = LocaleSettings.currentLocale == locale;
               return ListTile(
                 title: Text(_getLanguageDisplayName(locale)),
-                leading: Icon(
+                leading: AppIcon(
                   isSelected
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
+                      ? Symbols.radio_button_checked_rounded
+                      : Symbols.radio_button_unchecked_rounded,
+                  fill: 1,
                   color: isSelected
                       ? Theme.of(context).colorScheme.primary
                       : null,
@@ -1298,10 +1311,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    leading: Icon(
+                    leading: AppIcon(
                       provider.libraryDensity == settings.LibraryDensity.compact
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                          ? Symbols.radio_button_checked_rounded
+                          : Symbols.radio_button_unchecked_rounded,
+                      fill: 1,
                     ),
                     title: Text(t.settings.compact),
                     subtitle: Text(t.settings.compactDescription),
@@ -1313,10 +1327,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   ListTile(
-                    leading: Icon(
+                    leading: AppIcon(
                       provider.libraryDensity == settings.LibraryDensity.normal
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                          ? Symbols.radio_button_checked_rounded
+                          : Symbols.radio_button_unchecked_rounded,
+                      fill: 1,
                     ),
                     title: Text(t.settings.normal),
                     subtitle: Text(t.settings.normalDescription),
@@ -1328,11 +1343,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   ListTile(
-                    leading: Icon(
+                    leading: AppIcon(
                       provider.libraryDensity ==
                               settings.LibraryDensity.comfortable
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                          ? Symbols.radio_button_checked_rounded
+                          : Symbols.radio_button_unchecked_rounded,
+                      fill: 1,
                     ),
                     title: Text(t.settings.comfortable),
                     subtitle: Text(t.settings.comfortableDescription),
@@ -1371,10 +1387,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    leading: Icon(
+                    leading: AppIcon(
                       provider.viewMode == settings.ViewMode.grid
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                          ? Symbols.radio_button_checked_rounded
+                          : Symbols.radio_button_unchecked_rounded,
+                      fill: 1,
                     ),
                     title: Text(t.settings.gridView),
                     subtitle: Text(t.settings.gridViewDescription),
@@ -1386,10 +1403,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   ListTile(
-                    leading: Icon(
+                    leading: AppIcon(
                       provider.viewMode == settings.ViewMode.list
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
+                          ? Symbols.radio_button_checked_rounded
+                          : Symbols.radio_button_unchecked_rounded,
+                      fill: 1,
                     ),
                     title: Text(t.settings.listView),
                     subtitle: Text(t.settings.listViewDescription),

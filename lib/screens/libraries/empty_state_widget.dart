@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'state_message_widget.dart';
 
 /// A reusable widget for displaying empty states throughout the app
@@ -30,7 +31,7 @@ class EmptyStateWidget extends StatelessWidget {
       icon: icon,
       onAction: onAction,
       actionLabel: actionLabel,
-      actionIcon: Icons.add,
+      actionIcon: Symbols.add_rounded,
     );
   }
 }

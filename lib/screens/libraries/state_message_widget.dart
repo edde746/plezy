@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 /// Base widget for displaying state messages (empty, error, etc.)
 /// Provides a consistent UI pattern for showing icons, messages, and actions
@@ -44,15 +46,11 @@ class StateMessageWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (icon != null) ...[
-              Icon(
-                icon,
-                size: 64,
-                color:
+              AppIcon(icon, fill: 1, size: 64, color:
                     iconColor ??
                     Theme.of(
                       context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.4),
-              ),
+                    ).colorScheme.onSurface.withValues(alpha: 0.4)),
               const SizedBox(height: 16),
             ],
             Text(
@@ -70,7 +68,7 @@ class StateMessageWidget extends StatelessWidget {
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: onAction,
-                icon: Icon(actionIcon ?? Icons.refresh),
+                icon: AppIcon(actionIcon ?? Symbols.refresh_rounded, fill: 1),
                 label: Text(actionLabel!),
               ),
             ],

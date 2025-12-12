@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../utils/platform_detector.dart';
 
 /// A wrapper widget that adds hover-activated navigation arrows to horizontal scrolling content.
@@ -128,13 +130,13 @@ class _HorizontalScrollWithArrowsState
           child,
           _buildArrowButton(
             position: 8,
-            icon: Icons.chevron_left,
+            icon: Symbols.chevron_left_rounded,
             onPressed: _scrollLeft,
             canScroll: _canScrollLeft,
           ),
           _buildArrowButton(
             position: -8,
-            icon: Icons.chevron_right,
+            icon: Symbols.chevron_right_rounded,
             onPressed: _scrollRight,
             canScroll: _canScrollRight,
           ),
@@ -182,7 +184,7 @@ class _NavigationArrowState extends State<_NavigationArrow> {
               ),
             ],
           ),
-          child: Icon(widget.icon, color: Colors.white, size: 32),
+          child: AppIcon(widget.icon, fill: 1, color: Colors.white, size: 32),
         ),
       ),
     );

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../mpv/mpv.dart';
 import '../../models/plex_media_info.dart';
@@ -101,7 +103,7 @@ class MobileVideoControls extends StatelessWidget {
               semanticLabel: isPlaying
                   ? t.videoControls.pauseButton
                   : t.videoControls.playButton,
-              icon: isPlaying ? Icons.pause : Icons.play_arrow,
+              icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
               iconSize: 72,
               onPressed: () {
                 if (isPlaying) {
@@ -164,7 +166,7 @@ class MobileVideoControls extends StatelessWidget {
         button: true,
         excludeSemantics: true,
         child: IconButton(
-          icon: Icon(icon, color: Colors.white, size: iconSize),
+          icon: AppIcon(icon, fill: 1, color: Colors.white, size: iconSize),
           iconSize: iconSize,
           onPressed: onPressed,
         ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../utils/desktop_window_padding.dart';
 import '../services/fullscreen_state_manager.dart';
 import 'app_bar_back_button.dart';
@@ -53,7 +55,7 @@ class DesktopAppBarSections {
 
       if (canPop) {
         effectiveLeading = IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const AppIcon(Symbols.arrow_back_rounded, fill: 1),
           onPressed: () => Navigator.of(context).pop(),
           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         );

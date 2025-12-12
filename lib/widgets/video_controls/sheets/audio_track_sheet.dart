@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
@@ -17,7 +18,7 @@ class AudioTrackSheet {
       context: context,
       player: player,
       title: t.videoControls.audioLabel,
-      icon: Icons.audiotrack,
+      icon: Symbols.audiotrack_rounded,
       extractTracks: (tracks) => tracks?.audio ?? [],
       getCurrentTrack: (track) => track.audio,
       buildLabel: (audioTrack, index) {

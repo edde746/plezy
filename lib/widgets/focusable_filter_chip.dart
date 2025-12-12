@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
 import 'package:flutter/services.dart';
 
 import '../focus/dpad_navigator.dart';
@@ -126,7 +127,7 @@ class _FocusableFilterChipState extends State<FocusableFilterChip>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: foregroundColor),
+          AppIcon(icon, fill: 1, size: 16, color: foregroundColor),
           const SizedBox(width: 6),
           Text(
             widget.label,

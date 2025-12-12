@@ -2,6 +2,8 @@ import 'dart:async' show StreamSubscription, Timer;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 import 'package:flutter/services.dart'
     show
@@ -795,13 +797,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           color: Colors.black.withValues(alpha: 0.6),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          _lastDoubleTapWasForward
+        child: AppIcon(_lastDoubleTapWasForward
               ? getForwardIcon(_seekTimeSmall)
-              : getReplayIcon(_seekTimeSmall),
-          color: Colors.white,
-          size: 48,
-        ),
+              : getReplayIcon(_seekTimeSmall), fill: 1, color: Colors.white, size: 48),
       ),
     );
   }
@@ -1243,8 +1241,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         ? '$baseButtonText ($remainingSeconds)'
         : baseButtonText;
     final IconData buttonIcon = showNextEpisode
-        ? Icons.skip_next
-        : Icons.fast_forward;
+        ? Symbols.skip_next_rounded
+        : Symbols.fast_forward_rounded;
 
     return Material(
       color: Colors.transparent,
@@ -1284,7 +1282,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(buttonIcon, color: Colors.black, size: 20),
+                  AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
                 ],
               ),
             ),

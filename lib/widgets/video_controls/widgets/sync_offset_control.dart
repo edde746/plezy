@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
@@ -132,7 +134,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // Reset button
           ElevatedButton.icon(
             onPressed: _currentOffset != 0 ? _resetOffset : null,
-            icon: const Icon(Icons.restart_alt),
+            icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),
             label: Text(t.videoControls.resetToZero),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey[800],

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../models/plex_sort.dart';
 import '../../widgets/bottom_sheet_header.dart';
 import '../../widgets/focusable_bottom_sheet.dart';
@@ -108,11 +110,11 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                               segments: const [
                                 ButtonSegment(
                                   value: false,
-                                  icon: Icon(Icons.arrow_upward, size: 16),
+                                  icon: AppIcon(Symbols.arrow_upward_rounded, fill: 1, size: 16),
                                 ),
                                 ButtonSegment(
                                   value: true,
-                                  icon: Icon(Icons.arrow_downward, size: 16),
+                                  icon: AppIcon(Symbols.arrow_downward_rounded, fill: 1, size: 16),
                                 ),
                               ],
                               selected: {_currentDescending},

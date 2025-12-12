@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/duration_formatter.dart';
@@ -43,7 +45,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               OutlinedButton.icon(
-                icon: const Icon(Icons.add),
+                icon: const AppIcon(Symbols.add_rounded, fill: 1),
                 label: Text(
                   t.videoControls.addTime(amount: "15", unit: " min"),
                 ),
@@ -57,7 +59,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               FilledButton.icon(
-                icon: const Icon(Icons.cancel),
+                icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
                 label: Text(t.common.cancel),
                 style: FilledButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () {

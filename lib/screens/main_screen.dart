@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
@@ -447,40 +449,40 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     final destinations = _isOffline
         ? [
             NavigationDestination(
-              icon: const Icon(Icons.download_outlined),
-              selectedIcon: const Icon(Icons.download),
+              icon: const AppIcon(Symbols.download_rounded, fill: 1),
+              selectedIcon: const AppIcon(Symbols.download_rounded, fill: 1),
               label: t.navigation.downloads,
             ),
             NavigationDestination(
-              icon: const Icon(Icons.settings_outlined),
-              selectedIcon: const Icon(Icons.settings),
+              icon: const AppIcon(Symbols.settings_rounded, fill: 1),
+              selectedIcon: const AppIcon(Symbols.settings_rounded, fill: 1),
               label: t.navigation.settings,
             ),
           ]
         : [
             NavigationDestination(
-              icon: const Icon(Icons.home_outlined),
-              selectedIcon: const Icon(Icons.home),
+              icon: const AppIcon(Symbols.home_rounded, fill: 1),
+              selectedIcon: const AppIcon(Symbols.home_rounded, fill: 1),
               label: t.navigation.home,
             ),
             NavigationDestination(
-              icon: const Icon(Icons.video_library_outlined),
-              selectedIcon: const Icon(Icons.video_library),
+              icon: const AppIcon(Symbols.video_library_rounded, fill: 1),
+              selectedIcon: const AppIcon(Symbols.video_library_rounded, fill: 1),
               label: t.navigation.libraries,
             ),
             NavigationDestination(
-              icon: const Icon(Icons.search),
-              selectedIcon: const Icon(Icons.search),
+              icon: const AppIcon(Symbols.search_rounded, fill: 1),
+              selectedIcon: const AppIcon(Symbols.search_rounded, fill: 1),
               label: t.navigation.search,
             ),
             NavigationDestination(
-              icon: const Icon(Icons.download_outlined),
-              selectedIcon: const Icon(Icons.download),
+              icon: const AppIcon(Symbols.download_rounded, fill: 1),
+              selectedIcon: const AppIcon(Symbols.download_rounded, fill: 1),
               label: t.navigation.downloads,
             ),
             NavigationDestination(
-              icon: const Icon(Icons.settings_outlined),
-              selectedIcon: const Icon(Icons.settings),
+              icon: const AppIcon(Symbols.settings_rounded, fill: 1),
+              selectedIcon: const AppIcon(Symbols.settings_rounded, fill: 1),
               label: t.navigation.settings,
             ),
           ];
@@ -508,11 +510,7 @@ class _OfflinePlaceholder extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.cloud_off,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            AppIcon(Symbols.cloud_off_rounded, fill: 1, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: 16),
             Text(
               t.messages.youAreOffline,

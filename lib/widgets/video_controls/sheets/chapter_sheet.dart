@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../services/plex_client.dart';
@@ -147,11 +149,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                                 height: 34,
                                 fit: BoxFit.cover,
                                 errorWidget: (context, url, error) =>
-                                    const Icon(
-                                      Icons.image,
-                                      color: Colors.white54,
-                                      size: 34,
-                                    ),
+                                    const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
                               ),
                             ),
                             if (isCurrentChapter)
@@ -188,7 +186,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                     ),
                   ),
                   trailing: isCurrentChapter
-                      ? const Icon(Icons.play_circle_filled, color: Colors.blue)
+                      ? const AppIcon(Symbols.play_circle_rounded, fill: 1, color: Colors.blue)
                       : null,
                   onTap: () {
                     widget.player.seek(chapter.startTime);
@@ -201,7 +199,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
 
           return BaseVideoControlSheet(
             title: 'Chapters',
-            icon: Icons.video_library,
+            icon: Symbols.video_library_rounded,
             child: content,
           );
         },

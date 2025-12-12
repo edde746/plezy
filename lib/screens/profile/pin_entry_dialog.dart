@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import '../../i18n/strings.g.dart';
 
@@ -86,11 +88,7 @@ class _PinEntryDialogState extends State<PinEntryDialog>
       child: AlertDialog(
         title: Row(
           children: [
-            Icon(
-              Icons.lock_outline,
-              size: 24,
-              color: theme.colorScheme.primary,
-            ),
+            AppIcon(Symbols.lock_outline_rounded, fill: 1, size: 24, color: theme.colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Text(widget.userName, overflow: TextOverflow.ellipsis),
@@ -116,10 +114,7 @@ class _PinEntryDialogState extends State<PinEntryDialog>
                 errorText: widget.errorMessage,
                 errorMaxLines: 2,
                 suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureText ? Icons.visibility_off : Icons.visibility,
-                    size: 20,
-                  ),
+                  icon: AppIcon(_obscureText ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1, size: 20),
                   onPressed: () {
                     setState(() {
                       _obscureText = !_obscureText;

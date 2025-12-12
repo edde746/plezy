@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/media_navigation_helper.dart';
@@ -209,7 +210,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     if (_errorMessage != null) {
       return ErrorStateWidget(
         message: _errorMessage!,
-        icon: Icons.error_outline,
+        icon: Symbols.error_outline_rounded,
         onRetry: _loadRootFolders,
         retryLabel: t.common.retry,
       );
@@ -218,7 +219,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     if (_rootFolders.isEmpty) {
       return EmptyStateWidget(
         message: t.libraries.noFoldersFound,
-        icon: Icons.folder_open,
+        icon: Symbols.folder_open_rounded,
       );
     }
 

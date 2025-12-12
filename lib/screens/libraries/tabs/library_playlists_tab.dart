@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../models/plex_playlist.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../widgets/focusable_media_card.dart';
@@ -30,7 +31,7 @@ class _LibraryPlaylistsTabState
   String get focusNodeDebugLabel => 'playlists_first_item';
 
   @override
-  IconData get emptyIcon => Icons.playlist_play;
+  IconData get emptyIcon => Symbols.playlist_play_rounded;
 
   @override
   String get emptyMessage => t.playlists.noPlaylists;

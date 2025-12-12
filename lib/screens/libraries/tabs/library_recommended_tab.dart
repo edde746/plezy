@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../services/plex_client.dart';
 import '../../../i18n/strings.g.dart';
@@ -47,7 +48,7 @@ class _LibraryRecommendedTabState
   }
 
   @override
-  IconData get emptyIcon => Icons.recommend;
+  IconData get emptyIcon => Symbols.recommend_rounded;
 
   @override
   String get emptyMessage => t.libraries.noRecommendations;
@@ -179,20 +180,20 @@ class _LibraryRecommendedTabState
   IconData _getHubIcon(PlexHub hub) {
     final title = hub.title.toLowerCase();
     if (title.contains('continue watching') || title.contains('on deck')) {
-      return Icons.play_circle;
+      return Symbols.play_circle_rounded;
     } else if (title.contains('recently') || title.contains('new')) {
-      return Icons.fiber_new;
+      return Symbols.fiber_new_rounded;
     } else if (title.contains('popular') || title.contains('trending')) {
-      return Icons.trending_up;
+      return Symbols.trending_up_rounded;
     } else if (title.contains('top') || title.contains('rated')) {
-      return Icons.star;
+      return Symbols.star_rounded;
     } else if (title.contains('recommended')) {
-      return Icons.thumb_up;
+      return Symbols.thumb_up_rounded;
     } else if (title.contains('unwatched')) {
-      return Icons.visibility_off;
+      return Symbols.visibility_off_rounded;
     } else if (title.contains('genre')) {
-      return Icons.category;
+      return Symbols.category_rounded;
     }
-    return Icons.movie;
+    return Symbols.movie_rounded;
   }
 }

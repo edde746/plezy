@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../focus/key_event_utils.dart';
@@ -889,8 +891,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(
-                                            Icons.star,
+                                          const AppIcon(
+                                            Symbols.star_rounded,
+                                            fill: 1,
                                             color: Colors.white,
                                             size: 16,
                                           ),
@@ -921,8 +924,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(
-                                            Icons.people,
+                                          const AppIcon(
+                                            Symbols.people_rounded,
+                                            fill: 1,
                                             color: Colors.white,
                                             size: 16,
                                           ),
@@ -1008,8 +1012,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   }
                                 }
                               },
-                              icon: Icon(
+                              icon: AppIcon(
                                 _getPlayButtonIcon(metadata),
+                                fill: 1,
                                 size: 20,
                               ),
                               label: Text(
@@ -1035,7 +1040,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                 metadata,
                               );
                             },
-                            icon: const Icon(Icons.shuffle),
+                            icon: const AppIcon(
+                              Symbols.shuffle_rounded,
+                              fill: 1,
+                            ),
                             tooltip: t.tooltips.shufflePlay,
                             iconSize: 20,
                             style: IconButton.styleFrom(
@@ -1096,7 +1104,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                 return IconButton.filledTonal(
                                   onPressed: null,
                                   tooltip: tooltip,
-                                  icon: const Icon(Icons.schedule),
+                                  icon: const AppIcon(
+                                    Symbols.schedule_rounded,
+                                    fill: 1,
+                                  ),
                                   iconSize: 20,
                                   style: IconButton.styleFrom(
                                     minimumSize: const Size(48, 48),
@@ -1152,7 +1163,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       );
                                     }
                                   },
-                                  icon: const Icon(Icons.pause_circle_outline),
+                                  icon: const AppIcon(
+                                    Symbols.pause_circle_outline_rounded,
+                                    fill: 1,
+                                  ),
                                   tooltip: 'Resume download',
                                   iconSize: 20,
                                   style: IconButton.styleFrom(
@@ -1209,7 +1223,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       }
                                     }
                                   },
-                                  icon: const Icon(Icons.error_outline),
+                                  icon: const AppIcon(
+                                    Symbols.error_outline_rounded,
+                                    fill: 1,
+                                  ),
                                   tooltip: 'Retry download',
                                   iconSize: 20,
                                   style: IconButton.styleFrom(
@@ -1307,7 +1324,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       }
                                     }
                                   },
-                                  icon: const Icon(Icons.cancel_outlined),
+                                  icon: const AppIcon(
+                                    Symbols.cancel_rounded,
+                                    fill: 1,
+                                  ),
                                   tooltip: 'Cancelled download',
                                   iconSize: 20,
                                   style: IconButton.styleFrom(
@@ -1350,7 +1370,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                     }
                                   },
                                   tooltip: tooltip,
-                                  icon: const Icon(Icons.downloading),
+                                  icon: const AppIcon(
+                                    Symbols.downloading_rounded,
+                                    fill: 1,
+                                  ),
                                   iconSize: 20,
                                   style: IconButton.styleFrom(
                                     minimumSize: const Size(48, 48),
@@ -1409,7 +1432,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                       }
                                     }
                                   },
-                                  icon: const Icon(Icons.file_download_done),
+                                  icon: const AppIcon(
+                                    Symbols.file_download_done_rounded,
+                                    fill: 1,
+                                  ),
                                   tooltip: t.downloads.deleteDownload,
                                   iconSize: 20,
                                   style: IconButton.styleFrom(
@@ -1438,7 +1464,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                     );
                                   }
                                 },
-                                icon: const Icon(Icons.download),
+                                icon: const AppIcon(
+                                  Symbols.download_rounded,
+                                  fill: 1,
+                                ),
                                 tooltip: t.downloads.downloadNow,
                                 iconSize: 20,
                                 style: IconButton.styleFrom(
@@ -1449,23 +1478,35 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                             },
                           ),
                         const SizedBox(width: 12),
-                        // Mark as watched/unwatched (works offline too)
+                        // Mark as watched/unwatched toggle (works offline too)
                         IconButton.filledTonal(
                           onPressed: () async {
                             try {
+                              final isWatched = metadata.isWatched;
                               if (widget.isOffline) {
                                 // Offline mode: queue action for later sync
                                 final offlineWatch = context
                                     .read<OfflineWatchProvider>();
-                                await offlineWatch.markAsWatched(
-                                  serverId: metadata.serverId!,
-                                  ratingKey: metadata.ratingKey,
-                                );
+                                if (isWatched) {
+                                  await offlineWatch.markAsUnwatched(
+                                    serverId: metadata.serverId!,
+                                    ratingKey: metadata.ratingKey,
+                                  );
+                                } else {
+                                  await offlineWatch.markAsWatched(
+                                    serverId: metadata.serverId!,
+                                    ratingKey: metadata.ratingKey,
+                                  );
+                                }
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        t.messages.markedAsWatchedOffline,
+                                        isWatched
+                                            ? t
+                                                  .messages
+                                                  .markedAsUnwatchedOffline
+                                            : t.messages.markedAsWatchedOffline,
                                       ),
                                     ),
                                   );
@@ -1477,12 +1518,24 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                 final client = _getClientForMetadata(context);
                                 if (client == null) return;
 
-                                await client.markAsWatched(metadata.ratingKey);
+                                if (isWatched) {
+                                  await client.markAsUnwatched(
+                                    metadata.ratingKey,
+                                  );
+                                } else {
+                                  await client.markAsWatched(
+                                    metadata.ratingKey,
+                                  );
+                                }
                                 if (context.mounted) {
                                   _watchStateChanged = true;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(t.messages.markedAsWatched),
+                                      content: Text(
+                                        isWatched
+                                            ? t.messages.markedAsUnwatched
+                                            : t.messages.markedAsWatched,
+                                      ),
                                     ),
                                   );
                                   // Update watch state without full rebuild
@@ -1503,74 +1556,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               }
                             }
                           },
-                          icon: const Icon(Icons.check),
-                          tooltip: t.tooltips.markAsWatched,
-                          iconSize: 20,
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(48, 48),
-                            maximumSize: const Size(48, 48),
+                          icon: AppIcon(
+                            metadata.isWatched
+                                ? Symbols.remove_done_rounded
+                                : Symbols.check_rounded,
+                            fill: 1,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton.filledTonal(
-                          onPressed: () async {
-                            try {
-                              if (widget.isOffline) {
-                                // Offline mode: queue action for later sync
-                                final offlineWatch = context
-                                    .read<OfflineWatchProvider>();
-                                await offlineWatch.markAsUnwatched(
-                                  serverId: metadata.serverId!,
-                                  ratingKey: metadata.ratingKey,
-                                );
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        t.messages.markedAsUnwatchedOffline,
-                                      ),
-                                    ),
-                                  );
-                                  // Refresh offline OnDeck
-                                  _loadOfflineOnDeckEpisode();
-                                }
-                              } else {
-                                // Online mode: send to server
-                                final client = _getClientForMetadata(context);
-                                if (client == null) return;
-
-                                await client.markAsUnwatched(
-                                  metadata.ratingKey,
-                                );
-                                if (context.mounted) {
-                                  _watchStateChanged = true;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        t.messages.markedAsUnwatched,
-                                      ),
-                                    ),
-                                  );
-                                  // Update watch state without full rebuild
-                                  _updateWatchState();
-                                }
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      t.messages.errorLoading(
-                                        error: e.toString(),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          },
-                          icon: const Icon(Icons.remove_done),
-                          tooltip: t.tooltips.markAsUnwatched,
+                          tooltip: metadata.isWatched
+                              ? t.tooltips.markAsUnwatched
+                              : t.tooltips.markAsWatched,
                           iconSize: 20,
                           style: IconButton.styleFrom(
                             minimumSize: const Size(48, 48),
@@ -1721,7 +1715,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                                         .colorScheme
                                                         .surfaceContainerHighest,
                                                     child: const Center(
-                                                      child: Icon(Icons.person),
+                                                      child: AppIcon(
+                                                        Symbols.person_rounded,
+                                                        fill: 1,
+                                                      ),
                                                     ),
                                                   ),
                                               errorWidget:
@@ -1736,7 +1733,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                                         .colorScheme
                                                         .surfaceContainerHighest,
                                                     child: const Center(
-                                                      child: Icon(Icons.person),
+                                                      child: AppIcon(
+                                                        Symbols.person_rounded,
+                                                        fill: 1,
+                                                      ),
                                                     ),
                                                   ),
                                             )
@@ -1747,7 +1747,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                                   .colorScheme
                                                   .surfaceContainerHighest,
                                               child: const Center(
-                                                child: Icon(Icons.person),
+                                                child: AppIcon(
+                                                  Symbols.person_rounded,
+                                                  fill: 1,
+                                                ),
                                               ),
                                             ),
                                     ),
@@ -1872,17 +1875,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         final episode = _onDeckEpisode!;
         // Check if episode has been partially watched
         if (episode.viewOffset != null && episode.viewOffset! > 0) {
-          return Icons.restore; // Resume icon
+          return Symbols.resume_rounded; // Resume icon
         }
       }
     } else {
       // For movies or episodes
       if (metadata.viewOffset != null && metadata.viewOffset! > 0) {
-        return Icons.restore; // Resume icon
+        return Symbols.resume_rounded; // Resume icon
       }
     }
 
-    return Icons.play_arrow; // Default play icon
+    return Symbols.play_arrow_rounded; // Default play icon
   }
 }
 
@@ -1939,7 +1942,11 @@ class _SeasonCard extends StatelessWidget {
                                   color: Theme.of(
                                     context,
                                   ).colorScheme.surfaceContainerHighest,
-                                  child: const Icon(Icons.movie, size: 32),
+                                  child: const AppIcon(
+                                    Symbols.movie_rounded,
+                                    fill: 1,
+                                    size: 32,
+                                  ),
                                 ),
                           )
                         : season.thumb != null
@@ -1962,7 +1969,11 @@ class _SeasonCard extends StatelessWidget {
                               color: Theme.of(
                                 context,
                               ).colorScheme.surfaceContainerHighest,
-                              child: const Icon(Icons.movie, size: 32),
+                              child: const AppIcon(
+                                Symbols.movie_rounded,
+                                fill: 1,
+                                size: 32,
+                              ),
                             ),
                           )
                         : Container(
@@ -1971,7 +1982,11 @@ class _SeasonCard extends StatelessWidget {
                             color: Theme.of(
                               context,
                             ).colorScheme.surfaceContainerHighest,
-                            child: const Icon(Icons.movie, size: 32),
+                            child: const AppIcon(
+                              Symbols.movie_rounded,
+                              fill: 1,
+                              size: 32,
+                            ),
                           ),
                   ),
                   const SizedBox(width: 16),
@@ -2035,7 +2050,7 @@ class _SeasonCard extends StatelessWidget {
                     ),
                   ),
 
-                  const Icon(Icons.chevron_right),
+                  const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 ],
               ),
             ),

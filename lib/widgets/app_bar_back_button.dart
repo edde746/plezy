@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 /// Defines the visual style of the back button
 enum BackButtonStyle {
@@ -152,11 +154,7 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
                 color: currentColor,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.arrow_back,
-                color: effectiveColor,
-                size: 20,
-              ),
+              child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: effectiveColor, size: 20),
             );
           },
         ),

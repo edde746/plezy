@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import '../../i18n/strings.g.dart';
@@ -91,16 +93,16 @@ class _LogsScreenState extends State<LogsScreen> {
     switch (level) {
       case Level.error:
       case Level.fatal:
-        return Icons.error;
+        return Symbols.error_rounded;
       case Level.warning:
-        return Icons.warning;
+        return Symbols.warning_rounded;
       case Level.info:
-        return Icons.info;
+        return Symbols.info_rounded;
       case Level.debug:
       case Level.trace:
-        return Icons.bug_report;
+        return Symbols.bug_report_rounded;
       default:
-        return Icons.circle;
+        return Symbols.circle_rounded;
     }
   }
 
@@ -114,17 +116,17 @@ class _LogsScreenState extends State<LogsScreen> {
             pinned: true,
             actions: [
               IconButton(
-                icon: const Icon(Icons.refresh),
+                icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
                 onPressed: _loadLogs,
                 tooltip: t.common.refresh,
               ),
               IconButton(
-                icon: const Icon(Icons.copy),
+                icon: const AppIcon(Symbols.content_copy_rounded, fill: 1),
                 onPressed: _logs.isNotEmpty ? _copyAllLogs : null,
                 tooltip: t.logs.copyLogs,
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: const AppIcon(Symbols.delete_outline_rounded, fill: 1),
                 onPressed: _logs.isNotEmpty ? _clearLogs : null,
                 tooltip: t.logs.clearLogs,
               ),
@@ -194,7 +196,7 @@ class _LogEntryCardState extends State<_LogEntryCard> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(widget.levelIcon, color: widget.levelColor, size: 20),
+                  AppIcon(widget.levelIcon, fill: 1, color: widget.levelColor, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -233,12 +235,9 @@ class _LogEntryCardState extends State<_LogEntryCard> {
                     ),
                   ),
                   if (hasErrorOrStackTrace)
-                    Icon(
-                      _isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: Theme.of(
+                    AppIcon(_isExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded, fill: 1, color: Theme.of(
                         context,
-                      ).iconTheme.color?.withValues(alpha: 0.6),
-                    ),
+                      ).iconTheme.color?.withValues(alpha: 0.6)),
                 ],
               ),
               if (_isExpanded && hasErrorOrStackTrace) ...[

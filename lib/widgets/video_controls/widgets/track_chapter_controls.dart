@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../../mpv/mpv.dart';
@@ -143,7 +144,7 @@ class TrackChapterControls extends StatelessWidget {
                   subtitleSyncOffset != 0;
               final currentIndex = 0;
               return VideoControlButton(
-                icon: Icons.tune,
+                icon: Symbols.tune_rounded,
                 isActive: isActive,
                 semanticLabel: t.videoControls.settingsButton,
                 focusNode: focusNodes != null && focusNodes!.isNotEmpty
@@ -180,7 +181,7 @@ class TrackChapterControls extends StatelessWidget {
           final currentIndex = buttonIndex;
           buttons.add(
             VideoControlButton(
-              icon: Icons.audiotrack,
+              icon: Symbols.audiotrack_rounded,
               semanticLabel: t.videoControls.audioTrackButton,
               focusNode: focusNodes != null && focusNodes!.length > currentIndex
                   ? focusNodes![currentIndex]
@@ -211,7 +212,7 @@ class TrackChapterControls extends StatelessWidget {
           final currentIndex = buttonIndex;
           buttons.add(
             VideoControlButton(
-              icon: Icons.subtitles,
+              icon: Symbols.subtitles_rounded,
               semanticLabel: t.videoControls.subtitlesButton,
               focusNode: focusNodes != null && focusNodes!.length > currentIndex
                   ? focusNodes![currentIndex]
@@ -242,7 +243,7 @@ class TrackChapterControls extends StatelessWidget {
           final currentIndex = buttonIndex;
           buttons.add(
             VideoControlButton(
-              icon: Icons.video_library,
+              icon: Symbols.video_library_rounded,
               semanticLabel: t.videoControls.chaptersButton,
               focusNode: focusNodes != null && focusNodes!.length > currentIndex
                   ? focusNodes![currentIndex]
@@ -275,7 +276,7 @@ class TrackChapterControls extends StatelessWidget {
           final currentIndex = buttonIndex;
           buttons.add(
             VideoControlButton(
-              icon: Icons.video_file,
+              icon: Symbols.video_file_rounded,
               semanticLabel: t.videoControls.versionsButton,
               focusNode: focusNodes != null && focusNodes!.length > currentIndex
                   ? focusNodes![currentIndex]
@@ -334,8 +335,8 @@ class TrackChapterControls extends StatelessWidget {
           buttons.add(
             VideoControlButton(
               icon: isRotationLocked
-                  ? Icons.screen_lock_rotation
-                  : Icons.screen_rotation,
+                  ? Symbols.screen_lock_rotation_rounded
+                  : Symbols.screen_rotation_rounded,
               tooltip: isRotationLocked
                   ? t.videoControls.unlockRotation
                   : t.videoControls.lockRotation,
@@ -363,7 +364,7 @@ class TrackChapterControls extends StatelessWidget {
           final currentIndex = buttonIndex;
           buttons.add(
             VideoControlButton(
-              icon: isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+              icon: isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
               semanticLabel: isFullscreen
                   ? t.videoControls.exitFullscreenButton
                   : t.videoControls.fullscreenButton,
@@ -421,13 +422,13 @@ class TrackChapterControls extends StatelessWidget {
   IconData _getBoxFitIcon(int mode) {
     switch (mode) {
       case 0:
-        return Icons.fit_screen; // contain (letterbox)
+        return Symbols.fit_screen_rounded; // contain (letterbox)
       case 1:
-        return Icons.aspect_ratio; // cover (fill screen)
+        return Symbols.aspect_ratio_rounded; // cover (fill screen)
       case 2:
-        return Icons.settings_overscan; // fill (stretch)
+        return Symbols.settings_overscan_rounded; // fill (stretch)
       default:
-        return Icons.fit_screen;
+        return Symbols.fit_screen_rounded;
     }
   }
 

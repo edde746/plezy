@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../services/sleep_timer_service.dart';
@@ -37,7 +39,7 @@ class SleepTimerDurationList extends StatelessWidget {
         );
 
         return ListTile(
-          leading: const Icon(Icons.timer, color: Colors.white70),
+          leading: const AppIcon(Symbols.timer_rounded, fill: 1, color: Colors.white70),
           title: Text(
             label,
             style: const TextStyle(

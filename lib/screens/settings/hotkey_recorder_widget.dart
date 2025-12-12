@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import '../../i18n/strings.g.dart';
 
@@ -71,7 +73,7 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
                     ),
                     if (_recordedHotKey != null)
                       IconButton(
-                        icon: const Icon(Icons.backspace, size: 18),
+                        icon: const AppIcon(Symbols.backspace_rounded, fill: 1, size: 18),
                         onPressed: () {
                           setState(() {
                             _recordedHotKey = null;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
@@ -17,7 +18,7 @@ class SubtitleTrackSheet {
       context: context,
       player: player,
       title: t.videoControls.subtitlesLabel,
-      icon: Icons.subtitles,
+      icon: Symbols.subtitles_rounded,
       extractTracks: (tracks) => tracks?.subtitle ?? [],
       getCurrentTrack: (track) => track.subtitle,
       buildLabel: (subtitle, index) {
