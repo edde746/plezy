@@ -788,7 +788,7 @@ class _MediaCardHelpers {
               ),
             ),
           ),
-        // Progress bar for partially watched content
+        // Progress bar for partially watched content (episodes/movies)
         if (metadata.viewOffset != null &&
             metadata.duration != null &&
             metadata.viewOffset! > 0 &&
@@ -804,6 +804,32 @@ class _MediaCardHelpers {
               ),
               child: LinearProgressIndicator(
                 value: metadata.viewOffset! / metadata.duration!,
+                backgroundColor: tokens(context).outline,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
+                minHeight: 4,
+              ),
+            ),
+          ),
+        // Progress bar for seasons (viewedLeafCount / leafCount)
+        if (metadata.type == 'season' &&
+            metadata.viewedLeafCount != null &&
+            metadata.leafCount != null &&
+            metadata.leafCount! > 0 &&
+            metadata.viewedLeafCount! > 0 &&
+            metadata.viewedLeafCount! < metadata.leafCount!)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              child: LinearProgressIndicator(
+                value: metadata.viewedLeafCount! / metadata.leafCount!,
                 backgroundColor: tokens(context).outline,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   Theme.of(context).colorScheme.primary,

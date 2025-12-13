@@ -24,9 +24,9 @@ import '../utils/duration_formatter.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
-import '../widgets/desktop_app_bar.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
+import '../widgets/media_card.dart';
 import '../widgets/media_context_menu.dart';
 import 'season_detail_screen.dart';
 
@@ -51,6 +51,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   PlexMetadata? _onDeckEpisode;
   bool _isLoadingMetadata = true;
   late final ScrollController _scrollController;
+  final ScrollController _seasonsScrollController = ScrollController();
   bool _watchStateChanged = false;
   double _scrollOffset = 0;
 
@@ -71,6 +72,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _seasonsScrollController.dispose();
     super.dispose();
   }
 
@@ -742,7 +744,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer,
+        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(100),
       ),
       child: icon != null
@@ -942,6 +944,102 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       _seasons = seasons;
       _isLoadingSeasons = false;
     });
+  }
+
+  /// Navigate to a season detail screen
+  Future<void> _navigateToSeason(PlexMetadata season) async {
+    final watchStateChanged = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SeasonDetailScreen(
+          season: season,
+          isOffline: widget.isOffline,
+        ),
+      ),
+    );
+    if (watchStateChanged == true) {
+      _watchStateChanged = true;
+      _updateWatchState();
+    }
+  }
+
+  /// Build horizontal seasons list for larger screens (>=600px)
+  Widget _buildHorizontalSeasons() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth >= 1400
+        ? 220.0
+        : screenWidth >= 900
+            ? 200.0
+            : screenWidth >= 700
+                ? 190.0
+                : 160.0;
+    final posterHeight = (cardWidth - 16) * 1.5;
+    final containerHeight = posterHeight + 66;
+
+    return SizedBox(
+      height: containerHeight,
+      child: HorizontalScrollWithArrows(
+        controller: _seasonsScrollController,
+        builder: (scrollController) => ListView.builder(
+          controller: scrollController,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          itemCount: _seasons.length,
+          itemBuilder: (context, index) {
+            final season = _seasons[index];
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: MediaCard(
+                item: season,
+                width: cardWidth,
+                height: posterHeight,
+                forceGridMode: true,
+                isOffline: widget.isOffline,
+                onRefresh: (_) {
+                  _watchStateChanged = true;
+                  _updateWatchState();
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Build vertical seasons list for smaller screens (<600px)
+  Widget _buildVerticalSeasons() {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      itemCount: _seasons.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final season = _seasons[index];
+        // Look up each season's artwork, not the show's
+        String? seasonPosterPath;
+        if (widget.isOffline && season.serverId != null) {
+          seasonPosterPath = context
+              .read<DownloadProvider>()
+              .getArtworkLocalPath(
+                season.serverId!,
+                season.thumb,
+              );
+        }
+        return _SeasonCard(
+          season: season,
+          client: _getClientForMetadata(context),
+          isOffline: widget.isOffline,
+          localPosterPath: seasonPosterPath,
+          onTap: () => _navigateToSeason(season),
+          onRefresh: () {
+            _watchStateChanged = true;
+            _updateWatchState();
+          },
+        );
+      },
+    );
   }
 
   /// Load the next unwatched episode for offline mode (offline OnDeck)
@@ -1335,10 +1433,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               end: Alignment.bottomCenter,
                               colors: [
                                 Colors.transparent,
-                                bgColor.withValues(alpha: 0.7),
+                                bgColor.withValues(alpha: 0.9),
                                 bgColor,
                               ],
-                              stops: const [0.3, 0.7, 1.0],
+                              stops: const [0.3, 0.8, 1.0],
                             ),
                           ),
                         );
@@ -1566,55 +1664,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                             ),
                           ),
                         )
+                      else if (size.width >= 600)
+                        _buildHorizontalSeasons()
                       else
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: EdgeInsets.zero,
-                          itemCount: _seasons.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final season = _seasons[index];
-                            // Look up each season's artwork, not the show's
-                            String? seasonPosterPath;
-                            if (widget.isOffline && season.serverId != null) {
-                              seasonPosterPath = context
-                                  .read<DownloadProvider>()
-                                  .getArtworkLocalPath(
-                                    season.serverId!,
-                                    season.thumb,
-                                  );
-                            }
-                            return _SeasonCard(
-                              season: season,
-                              client: _getClientForMetadata(context),
-                              isOffline: widget.isOffline,
-                              localPosterPath: seasonPosterPath,
-                              onTap: () async {
-                                final watchStateChanged =
-                                    await Navigator.push<bool>(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            SeasonDetailScreen(
-                                              season: season,
-                                              isOffline: widget.isOffline,
-                                            ),
-                                      ),
-                                    );
-                                if (watchStateChanged == true) {
-                                  _watchStateChanged = true;
-                                  _updateWatchState();
-                                }
-                              },
-                              onRefresh: () {
-                                _watchStateChanged = true;
-                                _updateWatchState();
-                              },
-                            );
-                          },
-                        ),
+                        _buildVerticalSeasons(),
                       const SizedBox(height: 24),
                     ],
 
