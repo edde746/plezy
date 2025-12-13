@@ -124,7 +124,7 @@ class MediaCardState extends State<MediaCard> {
       isOffline: widget.isOffline,
     );
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     switch (result) {
       case MediaNavigationResult.unsupported:

@@ -99,7 +99,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
               value: 1.0,
               strokeWidth: 2.0,
               valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.2),
               ),
             ),
           // Progress circle (indeterminate if no progress, determinate otherwise)
@@ -368,6 +371,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         await Future.delayed(const Duration(milliseconds: 100));
       }
 
+      if (!mounted) return;
+
       if (_seasons.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(
@@ -382,6 +387,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
       // Get episodes of the first season
       List<PlexMetadata> episodes;
+      if (!mounted) return;
       if (widget.isOffline) {
         // In offline mode, get episodes from downloads
         final downloadProvider = context.read<DownloadProvider>();

@@ -11,10 +11,11 @@ class OfflineModeProvider extends ChangeNotifier {
   StreamSubscription<Map<String, bool>>? _serverStatusSubscription;
 
   bool _hasNetworkConnection = true;
-  bool _hasServerConnection = false;
+  late bool _hasServerConnection;
   bool _isInitialized = false;
 
-  OfflineModeProvider(this._serverManager);
+  OfflineModeProvider(this._serverManager)
+      : _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
 
   /// Whether the app is currently in offline mode
   /// Offline = no network OR no servers reachable

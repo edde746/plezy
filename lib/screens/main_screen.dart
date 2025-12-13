@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
-import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
@@ -313,7 +310,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       );
 
       // Trigger watch state sync now that servers are connected
-      if (connectedCount > 0 && context.mounted) {
+      if (connectedCount > 0) {
+        if (!mounted) return;
         context.read<OfflineWatchSyncService>().onServersConnected();
       }
     }
@@ -456,45 +454,6 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
         selectedIndex: _currentIndex,
         onDestinationSelected: _selectTab,
         destinations: _buildNavDestinations(_isOffline),
-      ),
-    );
-  }
-}
-
-/// Placeholder widget shown for network-dependent screens when offline
-class _OfflinePlaceholder extends StatelessWidget {
-  const _OfflinePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppIcon(
-              Symbols.cloud_off_rounded,
-              fill: 1,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              t.messages.youAreOffline,
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              t.messages.offlineFeatureUnavailable,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }

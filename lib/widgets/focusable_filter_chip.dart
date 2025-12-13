@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
-import 'package:flutter/services.dart';
 
 import '../focus/focusable_chip_mixin.dart';
 import '../focus/input_mode_tracker.dart';

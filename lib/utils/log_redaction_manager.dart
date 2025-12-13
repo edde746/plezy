@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 class LogRedactionManager {
   // Size limits for bounded sets (FIFO eviction when exceeded)
   static const int _maxTokens = 50;
@@ -7,9 +5,9 @@ class LogRedactionManager {
   static const int _maxCustomValues = 50;
 
   // Use LinkedHashSet for FIFO ordering
-  static final Set<String> _tokens = LinkedHashSet<String>();
-  static final Set<String> _urls = LinkedHashSet<String>();
-  static final Set<String> _customValues = LinkedHashSet<String>();
+  static final Set<String> _tokens = <String>{};
+  static final Set<String> _urls = <String>{};
+  static final Set<String> _customValues = <String>{};
 
   static final RegExp _ipv4Pattern = RegExp(
     r'\b(\d{1,3})([.-])(\d{1,3})\2(\d{1,3})\2(\d{1,3})\b',

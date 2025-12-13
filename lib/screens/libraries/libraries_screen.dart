@@ -244,6 +244,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// If the active tab has already loaded data (often the case after preloading
   /// while on another main tab), re-request focus so the first item is focused
   /// once the screen is actually shown.
+  @override
   void focusActiveTabIfReady() {
     if (_selectedLibraryGlobalKey == null) return;
     _focusCurrentTab();
@@ -452,6 +453,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Public method to load a library by key (called from MainScreen side nav)
+  @override
   void loadLibraryByKey(String libraryGlobalKey) {
     _loadLibraryContent(libraryGlobalKey);
   }
@@ -716,6 +718,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   // Public method to fully reload all content (for profile switches)
+  @override
   void fullRefresh() {
     appLogger.d('LibrariesScreen.fullRefresh() called - reloading all content');
     // Reload libraries and clear any selected library/filters

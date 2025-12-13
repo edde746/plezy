@@ -48,13 +48,17 @@ class DownloadTreeNode {
 
     // Aggregate status from children
     final statuses = children.map((c) => c.status).toSet();
-    if (statuses.contains(DownloadStatus.downloading))
+    if (statuses.contains(DownloadStatus.downloading)) {
       return DownloadStatus.downloading;
+    }
     if (statuses.contains(DownloadStatus.queued)) return DownloadStatus.queued;
     if (statuses.contains(DownloadStatus.paused)) return DownloadStatus.paused;
-    if (statuses.contains(DownloadStatus.failed)) return DownloadStatus.failed;
-    if (statuses.every((s) => s == DownloadStatus.completed))
+    if (statuses.contains(DownloadStatus.failed)) {
+      return DownloadStatus.failed;
+    }
+    if (statuses.every((s) => s == DownloadStatus.completed)) {
       return DownloadStatus.completed;
+    }
     return DownloadStatus.queued;
   }
 }
@@ -146,7 +150,8 @@ class DownloadTreeItem extends StatelessWidget {
           CircularProgressIndicator(
             value: 1.0,
             strokeWidth: 3.0,
-            valueColor: AlwaysStoppedAnimation<Color>(color.withOpacity(0.2)),
+            valueColor:
+                AlwaysStoppedAnimation<Color>(color.withValues(alpha: 0.2)),
           ),
           // Progress circle
           CircularProgressIndicator(

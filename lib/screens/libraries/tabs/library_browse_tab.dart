@@ -365,35 +365,36 @@ class _LibraryBrowseTabState
       context: context,
       builder: (sheetContext) {
         final options = _getGroupingOptions();
-        return ListView.builder(
-          shrinkWrap: true,
-          itemCount: options.length,
-          itemBuilder: (context, index) {
-            final grouping = options[index];
-            return RadioListTile<String>(
-              title: Text(_getGroupingLabel(grouping)),
-              value: grouping,
-              groupValue: _selectedGrouping,
-              onChanged: (value) async {
-                if (value != null) {
-                  setState(() {
-                    _selectedGrouping = value;
-                  });
+        return RadioGroup<String>(
+          groupValue: _selectedGrouping,
+          onChanged: (value) async {
+            if (value == null) return;
+            setState(() {
+              _selectedGrouping = value;
+            });
 
-                  final storage = await StorageService.getInstance();
-                  await storage.saveLibraryGrouping(
-                    widget.library.globalKey,
-                    value,
-                  );
-
-                  if (!sheetContext.mounted) return;
-
-                  Navigator.pop(sheetContext);
-                  _loadItems();
-                }
-              },
+            final storage = await StorageService.getInstance();
+            await storage.saveLibraryGrouping(
+              widget.library.globalKey,
+              value,
             );
+
+            if (!sheetContext.mounted || !mounted) return;
+
+            Navigator.pop(sheetContext);
+            _loadItems();
           },
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: options.length,
+            itemBuilder: (context, index) {
+              final grouping = options[index];
+              return RadioListTile<String>(
+                title: Text(_getGroupingLabel(grouping)),
+                value: grouping,
+              );
+            },
+          ),
         );
       },
     );

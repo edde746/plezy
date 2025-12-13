@@ -131,6 +131,7 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   /// Focus the search input field
+  @override
   void focusSearchInput() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.requestFocus();
@@ -138,6 +139,7 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   // Public method to fully reload all content (for profile switches)
+  @override
   void fullRefresh() {
     appLogger.d(
       'SearchScreen.fullRefresh() called - clearing search and reloading',

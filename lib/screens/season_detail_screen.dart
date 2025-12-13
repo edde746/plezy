@@ -479,14 +479,14 @@ class _EpisodeCard extends StatelessWidget {
                                 children: [
                                   // Background circle
                                   CircularProgressIndicator(
-                                    value: 1.0,
-                                    strokeWidth: 1.5,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      getMutedColor(
-                                        Colors.blue,
-                                      ).withOpacity(0.3),
-                                    ),
+                                  value: 1.0,
+                                  strokeWidth: 1.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    getMutedColor(
+                                      Colors.blue,
+                                    ).withValues(alpha: 0.3),
                                   ),
+                                ),
                                   // Progress circle
                                   CircularProgressIndicator(
                                     value: progress?.progressPercent,

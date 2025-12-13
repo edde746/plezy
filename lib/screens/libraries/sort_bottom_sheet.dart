@@ -86,53 +86,55 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                     : null,
               ),
               Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: widget.sortOptions.length,
-                  itemBuilder: (context, index) {
-                    final sort = widget.sortOptions[index];
-                    final isSelected = _currentSort?.key == sort.key;
-
-                    return FocusableRadioListTile<PlexSort>(
-                      focusNode: index == 0 ? _initialFocusNode : null,
-                      title: Text(sort.title),
-                      value: sort,
-                      groupValue: _currentSort,
-                      onChanged: (value) {
-                        if (value != null) {
-                          _handleSortChange(value, value.isDefaultDescending);
-                        }
-                      },
-                      secondary: isSelected
-                          ? SegmentedButton<bool>(
-                              showSelectedIcon: false,
-                              segments: const [
-                                ButtonSegment(
-                                  value: false,
-                                  icon: AppIcon(
-                                    Symbols.arrow_upward_rounded,
-                                    fill: 1,
-                                    size: 16,
-                                  ),
-                                ),
-                                ButtonSegment(
-                                  value: true,
-                                  icon: AppIcon(
-                                    Symbols.arrow_downward_rounded,
-                                    fill: 1,
-                                    size: 16,
-                                  ),
-                                ),
-                              ],
-                              selected: {_currentDescending},
-                              onSelectionChanged: (Set<bool> newSelection) {
-                                _handleSortChange(sort, newSelection.first);
-                              },
-                            )
-                          : null,
-                    );
+                child: RadioGroup<PlexSort>(
+                  groupValue: _currentSort,
+                  onChanged: (value) {
+                    if (value != null) {
+                      _handleSortChange(value, value.isDefaultDescending);
+                    }
                   },
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: widget.sortOptions.length,
+                    itemBuilder: (context, index) {
+                      final sort = widget.sortOptions[index];
+                      final isSelected = _currentSort?.key == sort.key;
+
+                      return FocusableRadioListTile<PlexSort>(
+                        focusNode: index == 0 ? _initialFocusNode : null,
+                        title: Text(sort.title),
+                        value: sort,
+                        secondary: isSelected
+                            ? SegmentedButton<bool>(
+                                showSelectedIcon: false,
+                                segments: const [
+                                  ButtonSegment(
+                                    value: false,
+                                    icon: AppIcon(
+                                      Symbols.arrow_upward_rounded,
+                                      fill: 1,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  ButtonSegment(
+                                    value: true,
+                                    icon: AppIcon(
+                                      Symbols.arrow_downward_rounded,
+                                      fill: 1,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ],
+                                selected: {_currentDescending},
+                                onSelectionChanged: (Set<bool> newSelection) {
+                                  _handleSortChange(sort, newSelection.first);
+                                },
+                              )
+                            : null,
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
