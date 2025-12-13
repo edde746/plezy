@@ -164,10 +164,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (context) => ServerStateProvider()),
         // Offline mode provider - depends on MultiServerProvider
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
-          create: (_) => OfflineModeProvider(_serverManager),
+          create: (_) {
+            final provider = OfflineModeProvider(_serverManager);
+            provider.initialize(); // Initialize immediately so statusStream listener is ready
+            return provider;
+          },
           update: (_, multiServerProvider, previous) {
             final provider = previous ?? OfflineModeProvider(_serverManager);
-            provider.initialize();
+            provider.initialize(); // Idempotent - safe to call again
             return provider;
           },
         ),

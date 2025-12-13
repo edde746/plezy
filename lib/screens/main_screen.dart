@@ -65,6 +65,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   /// Whether the app is in offline mode (no server connection)
   bool _isOffline = false;
 
+  /// Last selected online tab (restored when coming back online after an offline fallback)
+  NavigationTabId? _lastOnlineTabId;
+
+  /// Whether we auto-switched to Downloads because the previous tab was unavailable offline
+  bool _autoSwitchedToDownloads = false;
+
   OfflineModeProvider? _offlineModeProvider;
 
   late List<Widget> _screens;
@@ -93,6 +99,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     // In offline mode: visual index 0 = Downloads (screen 3), 1 = Settings (screen 4)
     // In online mode: indices match directly
     _currentIndex = _isOffline ? 0 : 0;
+    _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
+    _autoSwitchedToDownloads = _isOffline;
 
     _screens = _buildScreens(_isOffline);
 
@@ -119,12 +127,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     super.didChangeDependencies();
 
     // Listen for offline/online transitions to refresh navigation & screens
+    // Note: We don't call _handleOfflineStatusChanged() immediately because
+    // widget.isOfflineMode (from SetupScreen navigation) is authoritative for
+    // initial state. The provider may not yet have received the server status
+    // update due to initialization timing. The listener handles runtime changes.
     final provider = context.read<OfflineModeProvider?>();
     if (provider != null && provider != _offlineModeProvider) {
       _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
       _offlineModeProvider = provider;
       _offlineModeProvider!.addListener(_handleOfflineStatusChanged);
-      _handleOfflineStatusChanged();
     }
 
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
@@ -187,12 +198,41 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
     if (newOffline == _isOffline) return;
 
+    final previousTabId = _tabIdForIndex(_isOffline, _currentIndex);
     final wasOffline = _isOffline;
     setState(() {
       _isOffline = newOffline;
       _screens = _buildScreens(_isOffline);
       _selectedLibraryGlobalKey = _isOffline ? null : _selectedLibraryGlobalKey;
-      _currentIndex = _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
+
+      if (_isOffline) {
+        // Remember the online tab so we can restore it when reconnecting.
+        if (!wasOffline) {
+          _lastOnlineTabId = previousTabId;
+        }
+
+        _currentIndex =
+            _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
+
+        // Track if we auto-switched to Downloads because the previous tab was unavailable.
+        _autoSwitchedToDownloads =
+            previousTabId != NavigationTabId.downloads &&
+            _tabIdForIndex(true, _currentIndex) == NavigationTabId.downloads;
+      } else {
+        // Coming back online: restore the last online tab if we forced a switch to Downloads.
+        if (_autoSwitchedToDownloads) {
+          final restoredTab = _lastOnlineTabId ?? NavigationTabId.discover;
+          final restoredIndex = NavigationTab.indexFor(
+            restoredTab,
+            isOffline: _isOffline,
+          );
+          _currentIndex = restoredIndex >= 0 ? restoredIndex : 0;
+        } else {
+          _currentIndex =
+              _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
+        }
+        _autoSwitchedToDownloads = false;
+      }
     });
 
     // Refresh sidebar focus after rebuilding navigation
@@ -343,6 +383,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     final previousIndex = _currentIndex;
     setState(() {
       _currentIndex = index;
+      if (!_isOffline) {
+        _lastOnlineTabId = _tabIdForIndex(false, index);
+      } else if (previousIndex != index) {
+        // User made an explicit offline selection, so don't auto-restore later.
+        _autoSwitchedToDownloads = false;
+      }
     });
 
     // Skip screen-specific logic in offline mode (only Downloads and Settings available)
@@ -371,6 +417,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     setState(() {
       _selectedLibraryGlobalKey = libraryGlobalKey;
       _currentIndex = 1; // Switch to Libraries tab
+      if (!_isOffline) {
+        _lastOnlineTabId = NavigationTabId.libraries;
+      }
     });
     // Tell LibrariesScreen to load this library
     if (_librariesKey.currentState case final LibraryLoadable loadable) {
@@ -384,6 +433,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   /// Get navigation tabs filtered by offline mode
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
     return NavigationTab.getVisibleTabs(isOffline: isOffline);
+  }
+
+  /// Get the tab ID for a given index, clamping to the available range.
+  NavigationTabId _tabIdForIndex(bool isOffline, int index) {
+    final tabs = _getVisibleTabs(isOffline);
+    if (tabs.isEmpty) return NavigationTabId.discover;
+    final safeIndex = index.clamp(0, tabs.length - 1).toInt();
+    return tabs[safeIndex].id;
   }
 
   /// Build navigation destinations for bottom navigation bar.
