@@ -278,7 +278,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             trailing: Switch(
               value: _enableHDR,
               onChanged: (_) => _toggleHDR(),
-              activeColor: Colors.amber,
+              activeThumbColor: Colors.amber,
             ),
             onTap: _toggleHDR,
           ),

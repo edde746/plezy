@@ -56,7 +56,6 @@ class _InputModeTrackerState extends State<InputModeTracker> {
     _updateFocusHighlightStrategy(_mode);
     // Listen to hardware keyboard events globally
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
-    RawKeyboard.instance.addListener(_handleRawKeyEvent);
 
     // Register callback for gamepad input to switch to keyboard mode
     GamepadService.onGamepadInput = () => _setMode(InputMode.keyboard);
@@ -65,7 +64,6 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
-    RawKeyboard.instance.removeListener(_handleRawKeyEvent);
     GamepadService.onGamepadInput = null;
     super.dispose();
   }
@@ -77,12 +75,6 @@ class _InputModeTrackerState extends State<InputModeTracker> {
     }
     // Return false to let the event continue propagating
     return false;
-  }
-
-  void _handleRawKeyEvent(RawKeyEvent event) {
-    if (event is RawKeyDownEvent) {
-      _setMode(InputMode.keyboard);
-    }
   }
 
   void _setMode(InputMode mode) {

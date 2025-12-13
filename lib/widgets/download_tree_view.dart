@@ -397,13 +397,14 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
                 if (canExpand) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    _getNodeSummary(node),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    ),
+                Text(
+                  _getNodeSummary(node),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color:
+                        theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
-                ],
+                ),
+              ],
 
                 // Progress bar
                 if (node.status == DownloadStatus.downloading ||
@@ -418,7 +419,8 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
                     Text(
                       '${(node.progress * 100).toStringAsFixed(1)}% - ${node.downloadProgress!.speedFormatted}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],

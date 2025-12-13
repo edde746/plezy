@@ -26,6 +26,7 @@ import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
+import '../utils/layout_constants.dart';
 import '../focus/dpad_navigator.dart';
 import 'auth_screen.dart';
 
@@ -467,6 +468,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Wait for libraries and then fetch hubs
       final librariesByServer = await librariesFuture;
 
+      if (!mounted) return;
+
       // Get hidden libraries to filter from hubs
       final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
         context,
@@ -494,6 +497,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       appLogger.d(
         'Received ${onDeck.length} on deck items and ${filteredHubs.length} hubs from all servers',
       );
+      if (!mounted) return;
       setState(() {
         _hubs = filteredHubs;
         _areHubsLoading = false;
@@ -554,6 +558,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   // Public method to fully reload all content (for profile switches)
+  @override
   void fullRefresh() {
     appLogger.d('DiscoverScreen.fullRefresh() called - reloading all content');
     // Reload all content including On Deck and content hubs
@@ -782,6 +787,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ),
       ],
     ).then((value) {
+      if (!context.mounted) return;
       if (value == 'switch_profile') {
         _handleSwitchProfile(context);
       } else if (value == 'logout') {

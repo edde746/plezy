@@ -92,12 +92,6 @@ class FocusableRadioListTile<T> extends StatelessWidget {
   /// The value represented by this radio button.
   final T value;
 
-  /// The currently selected value for this group of radio buttons.
-  final T? groupValue;
-
-  /// Called when the user selects this radio button.
-  final ValueChanged<T?>? onChanged;
-
   /// Whether this radio button is part of a vertically dense list.
   final bool dense;
 
@@ -107,17 +101,19 @@ class FocusableRadioListTile<T> extends StatelessWidget {
   /// Whether this tile should autofocus when first built.
   final bool autofocus;
 
+  /// Whether the radio tile is interactive.
+  final bool? enabled;
+
   const FocusableRadioListTile({
     super.key,
     this.title,
     this.subtitle,
     this.secondary,
     required this.value,
-    required this.groupValue,
-    required this.onChanged,
     this.dense = false,
     this.focusNode,
     this.autofocus = false,
+    this.enabled,
   });
 
   @override
@@ -127,11 +123,10 @@ class FocusableRadioListTile<T> extends StatelessWidget {
       subtitle: subtitle,
       secondary: secondary,
       value: value,
-      groupValue: groupValue,
-      onChanged: onChanged,
       dense: dense,
       focusNode: focusNode,
       autofocus: autofocus,
+      enabled: enabled,
     );
   }
 }

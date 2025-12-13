@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../models/plex_media_info.dart';
