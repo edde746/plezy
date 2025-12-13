@@ -63,11 +63,11 @@ body:
       description: Which platform(s) are affected?
       multiple: true
       options:
-        - Android
         - iOS
-        - Web
-        - macOS
+        - Android
         - Windows
+        - macOS
+        - Android TV
         - Linux
     validations:
       required: true
