@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
@@ -22,6 +24,11 @@ class KeyboardShortcutsService {
       await _instance!._init();
     }
     return _instance!;
+  }
+
+  /// Keyboard shortcut customization is only supported on desktop platforms.
+  static bool isPlatformSupported() {
+    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
   }
 
   Future<void> _init() async {

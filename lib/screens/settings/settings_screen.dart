@@ -31,7 +31,9 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late settings.SettingsService _settingsService;
-  late KeyboardShortcutsService _keyboardService;
+  KeyboardShortcutsService? _keyboardService;
+  late final bool _keyboardShortcutsSupported =
+      KeyboardShortcutsService.isPlatformSupported();
   bool _isLoading = true;
 
   bool _enableDebugLogging = false;
@@ -59,7 +61,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     _settingsService = await settings.SettingsService.getInstance();
-    _keyboardService = await KeyboardShortcutsService.getInstance();
+    if (_keyboardShortcutsSupported) {
+      _keyboardService = await KeyboardShortcutsService.getInstance();
+    }
 
     setState(() {
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
@@ -99,8 +103,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
                 _buildDownloadsSection(),
                 const SizedBox(height: 24),
-                _buildKeyboardShortcutsSection(),
-                const SizedBox(height: 24),
+                if (_keyboardShortcutsSupported) ...[
+                  _buildKeyboardShortcutsSection(),
+                  const SizedBox(height: 24),
+                ],
                 _buildAdvancedSection(),
                 const SizedBox(height: 24),
                 if (UpdateService.isUpdateCheckEnabled) ...[
@@ -531,6 +537,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildKeyboardShortcutsSection() {
+    if (_keyboardService == null) return const SizedBox.shrink();
+
     return Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -854,7 +862,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _settingsService.setSeekTimeSmall(parsed);
                       });
                       // Reload keyboard shortcuts service to use new settings
-                      await _keyboardService.refreshFromStorage();
+                      await _keyboardService?.refreshFromStorage();
                       if (dialogContext.mounted) {
                         Navigator.pop(dialogContext);
                       }
@@ -922,7 +930,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _settingsService.setSeekTimeLarge(parsed);
                       });
                       // Reload keyboard shortcuts service to use new settings
-                      await _keyboardService.refreshFromStorage();
+                      await _keyboardService?.refreshFromStorage();
                       if (dialogContext.mounted) {
                         Navigator.pop(dialogContext);
                       }
@@ -1073,11 +1081,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showKeyboardShortcutsDialog() {
+    if (_keyboardService == null) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) =>
-            _KeyboardShortcutsScreen(keyboardService: _keyboardService),
+            _KeyboardShortcutsScreen(keyboardService: _keyboardService!),
       ),
     );
   }
@@ -1131,7 +1141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final navigator = Navigator.of(context);
                 final messenger = ScaffoldMessenger.of(context);
                 await _settingsService.resetAllSettings();
-                await _keyboardService.resetToDefaults();
+                await _keyboardService?.resetToDefaults();
                 if (mounted) {
                   navigator.pop();
                   messenger.showSnackBar(
