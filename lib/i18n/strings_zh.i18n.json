@@ -42,7 +42,7 @@
   "screens": {
     "licenses": "许可证",
     "selectServer": "选择服务器",
-    "switchProfile": "切换配置文件",
+    "switchProfile": "切换用户",
     "subtitleStyling": "字幕样式",
     "search": "搜索",
     "logs": "日志"
@@ -252,7 +252,7 @@
   },
   "discover": {
     "title": "发现",
-    "switchProfile": "切换配置文件",
+    "switchProfile": "切换用户",
     "switchServer": "切换服务器",
     "logout": "登出",
     "noContentAvailable": "没有可用内容",
