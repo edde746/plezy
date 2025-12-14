@@ -1328,7 +1328,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     // Determine header height based on screen size
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width > 600;
-    final headerHeight = isDesktop ? size.height * 0.6 : size.height * 0.4;
+    final headerHeight = size.height * 0.6;
 
     return Focus(
       onKeyEvent: handleBack,
@@ -1847,7 +1847,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
             ),
             // Back button (always visible)
             Positioned(
-              top: MediaQuery.of(context).padding.top,
+              top: 0,
               left: 0,
               child: DesktopAppBarHelper.buildAdjustedLeading(
                 AppBarBackButton(
