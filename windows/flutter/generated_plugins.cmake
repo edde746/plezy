@@ -3,13 +3,13 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  connectivity_plus
+  gamepads_windows
   hotkey_manager_windows
-  media_kit_libs_windows_video
-  media_kit_video
   os_media_controls
   screen_retriever_windows
+  sqlite3_flutter_libs
   url_launcher_windows
-  volume_controller
   window_manager
 )
 

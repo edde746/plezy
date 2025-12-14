@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../utils/platform_detector.dart';
 
 /// A wrapper widget that adds hover-activated navigation arrows to horizontal scrolling content.
@@ -9,11 +11,13 @@ import '../utils/platform_detector.dart';
 class HorizontalScrollWithArrows extends StatefulWidget {
   final Widget Function(ScrollController) builder;
   final double scrollAmount;
+  final ScrollController? controller;
 
   const HorizontalScrollWithArrows({
     super.key,
     required this.builder,
     this.scrollAmount = 0.8, // Scroll by 80% of viewport width by default
+    this.controller,
   });
 
   @override
@@ -24,6 +28,7 @@ class HorizontalScrollWithArrows extends StatefulWidget {
 class _HorizontalScrollWithArrowsState
     extends State<HorizontalScrollWithArrows> {
   late final ScrollController _scrollController;
+  late final bool _ownsController;
   bool _isHovering = false;
   bool _canScrollLeft = false;
   bool _canScrollRight = false;
@@ -31,7 +36,8 @@ class _HorizontalScrollWithArrowsState
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
+    _ownsController = widget.controller == null;
+    _scrollController = widget.controller ?? ScrollController();
     _scrollController.addListener(_updateScrollState);
     // Initial state update after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
@@ -40,7 +46,9 @@ class _HorizontalScrollWithArrowsState
   @override
   void dispose() {
     _scrollController.removeListener(_updateScrollState);
-    _scrollController.dispose();
+    if (_ownsController) {
+      _scrollController.dispose();
+    }
     super.dispose();
   }
 
@@ -80,6 +88,31 @@ class _HorizontalScrollWithArrowsState
     );
   }
 
+  Widget _buildArrowButton({
+    required double position,
+    required IconData icon,
+    required VoidCallback onPressed,
+    required bool canScroll,
+  }) {
+    return Positioned(
+      left: position < 0 ? null : position,
+      right: position < 0 ? -position : null,
+      top: 0,
+      bottom: 0,
+      child: Center(
+        child: AnimatedOpacity(
+          opacity: (_isHovering && canScroll) ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: IgnorePointer(
+            ignoring: !(_isHovering && canScroll),
+            child: _NavigationArrow(icon: icon, onPressed: onPressed),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final child = widget.builder(_scrollController);
@@ -95,45 +128,17 @@ class _HorizontalScrollWithArrowsState
       child: Stack(
         children: [
           child,
-          // Left arrow
-          Positioned(
-            left: 8,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: AnimatedOpacity(
-                opacity: (_isHovering && _canScrollLeft) ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                child: IgnorePointer(
-                  ignoring: !(_isHovering && _canScrollLeft),
-                  child: _NavigationArrow(
-                    icon: Icons.chevron_left,
-                    onPressed: _scrollLeft,
-                  ),
-                ),
-              ),
-            ),
+          _buildArrowButton(
+            position: 8,
+            icon: Symbols.chevron_left_rounded,
+            onPressed: _scrollLeft,
+            canScroll: _canScrollLeft,
           ),
-          // Right arrow
-          Positioned(
-            right: 8,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: AnimatedOpacity(
-                opacity: (_isHovering && _canScrollRight) ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                child: IgnorePointer(
-                  ignoring: !(_isHovering && _canScrollRight),
-                  child: _NavigationArrow(
-                    icon: Icons.chevron_right,
-                    onPressed: _scrollRight,
-                  ),
-                ),
-              ),
-            ),
+          _buildArrowButton(
+            position: -8,
+            icon: Symbols.chevron_right_rounded,
+            onPressed: _scrollRight,
+            canScroll: _canScrollRight,
           ),
         ],
       ),
@@ -179,7 +184,7 @@ class _NavigationArrowState extends State<_NavigationArrow> {
               ),
             ],
           ),
-          child: Icon(widget.icon, color: Colors.white, size: 32),
+          child: AppIcon(widget.icon, fill: 1, color: Colors.white, size: 32),
         ),
       ),
     );

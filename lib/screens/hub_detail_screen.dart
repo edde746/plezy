@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../client/plex_client.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import '../../services/plex_client.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';
-import '../providers/settings_provider.dart';
-import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
-import '../widgets/media_card.dart';
-import '../widgets/desktop_app_bar.dart';
-import '../widgets/sort_bottom_sheet.dart';
+import '../widgets/media_grid_sliver.dart';
+import '../widgets/focused_scroll_scaffold.dart';
+import 'libraries/sort_bottom_sheet.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
 
@@ -25,7 +24,7 @@ class HubDetailScreen extends StatefulWidget {
 }
 
 class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
-  PlexClient get client => context.clientSafe;
+  PlexClient get client => _getClientForHub();
 
   List<PlexMetadata> _items = [];
   List<PlexMetadata> _filteredItems = [];
@@ -34,6 +33,11 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
   bool _isSortDescending = false;
   bool _isLoading = false;
   String? _errorMessage;
+
+  /// Get the correct PlexClient for this hub's server
+  PlexClient _getClientForHub() {
+    return context.getClientForServer(widget.hub.serverId!);
+  }
 
   @override
   void initState() {
@@ -51,9 +55,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   Future<void> _loadSorts() async {
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) return;
+      final client = _getClientForHub();
 
       // Get the library key from the hub key
       // Hub keys can have various formats:
@@ -197,27 +199,21 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
     });
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception('No client available');
-      }
+      final client = _getClientForHub();
 
-      // Fetch more items from the hub using the hubKey
-      final response = await client.getHubContent(widget.hub.hubKey);
+      // Fetch items from the hub, tagged with server info at the source
+      final items = await client.getHubContent(widget.hub.hubKey);
 
       setState(() {
-        _items = response;
-        _filteredItems = response;
+        _items = items;
+        _filteredItems = items;
         _isLoading = false;
       });
 
       // Apply any existing sort
       _applySort();
 
-      appLogger.d(
-        'Loaded ${response.length} items for hub: ${widget.hub.title}',
-      );
+      appLogger.d('Loaded ${items.length} items for hub: ${widget.hub.title}');
     } catch (e) {
       appLogger.e('Failed to load hub content', error: e);
       setState(() {
@@ -245,117 +241,58 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(
-            title: Text(widget.hub.title),
-            pinned: true,
-            actions: [
-              IconButton(
-                icon: Icon(Icons.swap_vert, semanticLabel: t.libraries.sort),
-                onPressed: _showSortBottomSheet,
-              ),
-            ],
+    return FocusedScrollScaffold(
+      title: Text(widget.hub.title),
+      actions: [
+        IconButton(
+          icon: AppIcon(
+            Symbols.swap_vert_rounded,
+            fill: 1,
+            semanticLabel: t.libraries.sort,
           ),
-          if (_errorMessage != null)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(_errorMessage!),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadMoreItems,
-                      child: Text(t.common.retry),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (_filteredItems.isEmpty && _isLoading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_filteredItems.isEmpty)
-            SliverFillRemaining(
-              child: Center(child: Text(t.hubDetail.noItemsFound)),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: _getMaxCrossAxisExtent(
-                    context,
-                    context.watch<SettingsProvider>().libraryDensity,
+          onPressed: _showSortBottomSheet,
+        ),
+      ],
+      slivers: [
+        if (_errorMessage != null)
+          SliverFillRemaining(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const AppIcon(
+                    Symbols.error_outline_rounded,
+                    fill: 1,
+                    size: 48,
+                    color: Colors.red,
                   ),
-                  childAspectRatio: 2 / 3.3,
-                  crossAxisSpacing: 0,
-                  mainAxisSpacing: 0,
-                ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return MediaCard(
-                    item: _filteredItems[index],
-                    onRefresh: _handleItemRefresh,
-                  );
-                }, childCount: _filteredItems.length),
+                  const SizedBox(height: 16),
+                  Text(_errorMessage!),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadMoreItems,
+                    child: Text(t.common.retry),
+                  ),
+                ],
               ),
             ),
-        ],
-      ),
+          )
+        else if (_filteredItems.isEmpty && _isLoading)
+          const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_filteredItems.isEmpty)
+          SliverFillRemaining(
+            child: Center(child: Text(t.hubDetail.noItemsFound)),
+          )
+        else
+          MediaGridSliver(
+            items: _filteredItems,
+            onRefresh: _handleItemRefresh,
+            usePaddingAwareExtent: true,
+            horizontalPadding: 16,
+          ),
+      ],
     );
-  }
-
-  double _getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final padding = 16.0; // 8px left + 8px right
-    final availableWidth = screenWidth - padding;
-
-    if (screenWidth >= 900) {
-      // Wide screens (desktop/large tablet landscape): Responsive division
-      double divisor;
-      double maxItemWidth;
-
-      switch (density) {
-        case LibraryDensity.comfortable:
-          divisor = 6.5;
-          maxItemWidth = 280;
-          break;
-        case LibraryDensity.normal:
-          divisor = 8.0;
-          maxItemWidth = 200;
-          break;
-        case LibraryDensity.compact:
-          divisor = 10.0;
-          maxItemWidth = 160;
-          break;
-      }
-
-      return (availableWidth / divisor).clamp(0, maxItemWidth);
-    } else if (screenWidth >= 600) {
-      // Medium screens (tablets): Fixed 4-5-6 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 4,
-        LibraryDensity.normal => 5,
-        LibraryDensity.compact => 6,
-      };
-      return availableWidth / targetItemCount;
-    } else {
-      // Small screens (phones): Fixed 2-3-4 items
-      int targetItemCount = switch (density) {
-        LibraryDensity.comfortable => 2,
-        LibraryDensity.normal => 3,
-        LibraryDensity.compact => 4,
-      };
-      return availableWidth / targetItemCount;
-    }
   }
 }

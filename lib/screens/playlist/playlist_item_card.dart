@@ -1,0 +1,202 @@
+import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import '../../services/plex_client.dart';
+import '../../models/plex_metadata.dart';
+import '../../utils/duration_formatter.dart';
+import '../../utils/provider_extensions.dart';
+import '../../i18n/strings.g.dart';
+import '../../widgets/media_context_menu.dart';
+import '../../widgets/plex_optimized_image.dart';
+
+/// Custom list item widget for playlist items
+/// Shows drag handle, poster, title/metadata, duration, and remove button
+class PlaylistItemCard extends StatefulWidget {
+  final PlexMetadata item;
+  final int index;
+  final VoidCallback onRemove;
+  final VoidCallback? onTap;
+  final void Function(String ratingKey)? onRefresh;
+  final bool canReorder; // Whether drag handle should be shown
+
+  const PlaylistItemCard({
+    super.key,
+    required this.item,
+    required this.index,
+    required this.onRemove,
+    this.onTap,
+    this.onRefresh,
+    this.canReorder = true,
+  });
+
+  @override
+  State<PlaylistItemCard> createState() => _PlaylistItemCardState();
+}
+
+class _PlaylistItemCardState extends State<PlaylistItemCard> {
+  final _contextMenuKey = GlobalKey<MediaContextMenuState>();
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    return MediaContextMenu(
+      key: _contextMenuKey,
+      item: item,
+      onRefresh: widget.onRefresh,
+      onTap: widget.onTap,
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: InkWell(
+          onTap: widget.onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                // Drag handle (if reorderable)
+                if (widget.canReorder)
+                  ReorderableDragStartListener(
+                    index: widget.index,
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 12),
+                      child: AppIcon(
+                        Symbols.drag_indicator_rounded,
+                        fill: 1,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+
+                // Poster thumbnail
+                _buildPosterImage(context),
+
+                const SizedBox(width: 12),
+
+                // Title and metadata
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Title
+                      Text(
+                        item.displayTitle,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      // Subtitle (episode info or type)
+                      Text(
+                        _buildSubtitle(),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      // Progress indicator if partially watched
+                      if (item.viewOffset != null && item.duration != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: LinearProgressIndicator(
+                            value: item.viewOffset! / item.duration!,
+                            backgroundColor: Colors.grey[800],
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context).colorScheme.primary,
+                            ),
+                            minHeight: 3,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Duration
+                if (item.duration != null)
+                  Text(
+                    formatDurationTextual(item.duration!),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  ),
+
+                const SizedBox(width: 8),
+
+                // Remove button
+                IconButton(
+                  icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
+                  onPressed: widget.onRemove,
+                  tooltip: t.playlists.removeItem,
+                  color: Colors.grey[400],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Get the correct PlexClient for this item's server
+  PlexClient _getClientForItem(BuildContext context) {
+    return context.getClientForServer(widget.item.serverId!);
+  }
+
+  Widget _buildPosterImage(BuildContext context) {
+    final posterUrl = widget.item.posterThumb();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: PlexOptimizedImage.poster(
+        client: _getClientForItem(context),
+        imagePath: posterUrl,
+        width: 60,
+        height: 90,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => _buildPlaceholder(),
+        errorWidget: (context, url, error) => _buildPlaceholder(),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      width: 60,
+      height: 90,
+      decoration: BoxDecoration(
+        color: Colors.grey[850],
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const AppIcon(
+        Symbols.movie_rounded,
+        fill: 1,
+        color: Colors.grey,
+        size: 24,
+      ),
+    );
+  }
+
+  String _buildSubtitle() {
+    final item = widget.item;
+    final itemType = item.type.toLowerCase();
+
+    if (itemType == 'episode') {
+      // For episodes, show "S#E# - Episode Title"
+      final season = item.parentIndex;
+      final episode = item.index;
+      if (season != null && episode != null) {
+        return 'S${season}E$episode${item.displaySubtitle != null ? ' - ${item.displaySubtitle}' : ''}';
+      }
+      return item.displaySubtitle ?? t.discover.tvShow;
+    } else if (itemType == 'movie') {
+      // For movies, show year
+      return item.year?.toString() ?? t.discover.movie;
+    }
+
+    // Default to type
+    return item.type;
+  }
+}

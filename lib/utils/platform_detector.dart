@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+import '../services/tv_detection_service.dart';
+
 /// Utility class for platform detection
 class PlatformDetector {
+  /// Detects if running on Android TV (requires TvDetectionService to be initialized)
+  static bool isTV() {
+    return TvDetectionService.isTVSync();
+  }
+
+  /// Detects if the app should use side navigation (Desktop or TV)
+  static bool shouldUseSideNavigation(BuildContext context) {
+    return isDesktop(context) || isTV();
+  }
+
   /// Detects if running on a mobile platform (iOS or Android)
   /// Uses Theme for consistent platform detection across the app
   static bool isMobile(BuildContext context) {

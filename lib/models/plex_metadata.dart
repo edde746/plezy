@@ -1,11 +1,40 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'mixins/multi_server_fields.dart';
 import 'plex_role.dart';
 
 part 'plex_metadata.g.dart';
 
+/// Media type enum for type-safe media type handling
+enum PlexMediaType {
+  movie,
+  show,
+  season,
+  episode,
+  artist,
+  album,
+  track,
+  collection,
+  playlist,
+  clip,
+  photo,
+  unknown;
+
+  /// Whether this type represents video content
+  bool get isVideo => this == movie || this == episode || this == clip;
+
+  /// Whether this type is part of a show hierarchy
+  bool get isShowRelated => this == show || this == season || this == episode;
+
+  /// Whether this type represents music content
+  bool get isMusic => this == artist || this == album || this == track;
+
+  /// Whether this type can be played directly
+  bool get isPlayable => isVideo || this == track;
+}
+
 @JsonSerializable()
-class PlexMetadata {
+class PlexMetadata with MultiServerFields {
   final String ratingKey;
   final String key;
   final String? guid;
@@ -22,6 +51,7 @@ class PlexMetadata {
   final int? duration;
   final int? addedAt;
   final int? updatedAt;
+  final int? lastViewedAt; // Timestamp when item was last viewed
   final String? grandparentTitle; // Show title for episodes
   final String? grandparentThumb; // Show poster for episodes
   final String? grandparentArt; // Show art for episodes
@@ -36,12 +66,46 @@ class PlexMetadata {
   final int? viewCount;
   final int? leafCount; // Total number of episodes in a series/season
   final int? viewedLeafCount; // Number of watched episodes in a series/season
+  final int? childCount; // Number of items in a collection or playlist
   @JsonKey(name: 'Role')
   final List<PlexRole>? role; // Cast members
+  final String? audioLanguage; // Per-media preferred audio language
+  final String? subtitleLanguage; // Per-media preferred subtitle language
+  final int? playlistItemID; // Playlist item ID (for dumb playlists only)
+  final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
+  final int? librarySectionID; // Library section ID this item belongs to
 
-  // Transient field for clear logo (extracted from Image array)
-  String? _clearLogo;
-  String? get clearLogo => _clearLogo;
+  // Multi-server support fields (from MultiServerFields mixin)
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? serverId;
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? serverName;
+
+  // Clear logo URL (extracted from Image array, but serialized for offline storage)
+  final String? clearLogo;
+
+  /// Global unique identifier across all servers (serverId:ratingKey)
+  String get globalKey => serverId != null ? '$serverId:$ratingKey' : ratingKey;
+
+  /// Parsed media type enum for type-safe comparisons
+  PlexMediaType get mediaType {
+    return switch (type.toLowerCase()) {
+      'movie' => PlexMediaType.movie,
+      'show' => PlexMediaType.show,
+      'season' => PlexMediaType.season,
+      'episode' => PlexMediaType.episode,
+      'artist' => PlexMediaType.artist,
+      'album' => PlexMediaType.album,
+      'track' => PlexMediaType.track,
+      'collection' => PlexMediaType.collection,
+      'playlist' => PlexMediaType.playlist,
+      'clip' => PlexMediaType.clip,
+      'photo' => PlexMediaType.photo,
+      _ => PlexMediaType.unknown,
+    };
+  }
 
   PlexMetadata({
     required this.ratingKey,
@@ -60,6 +124,7 @@ class PlexMetadata {
     this.duration,
     this.addedAt,
     this.updatedAt,
+    this.lastViewedAt,
     this.grandparentTitle,
     this.grandparentThumb,
     this.grandparentArt,
@@ -74,7 +139,16 @@ class PlexMetadata {
     this.viewCount,
     this.leafCount,
     this.viewedLeafCount,
+    this.childCount,
     this.role,
+    this.audioLanguage,
+    this.subtitleLanguage,
+    this.playlistItemID,
+    this.playQueueItemID,
+    this.librarySectionID,
+    this.serverId,
+    this.serverName,
+    this.clearLogo,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -95,6 +169,7 @@ class PlexMetadata {
     int? duration,
     int? addedAt,
     int? updatedAt,
+    int? lastViewedAt,
     String? grandparentTitle,
     String? grandparentThumb,
     String? grandparentArt,
@@ -109,9 +184,18 @@ class PlexMetadata {
     int? viewCount,
     int? leafCount,
     int? viewedLeafCount,
+    int? childCount,
     List<PlexRole>? role,
+    String? audioLanguage,
+    String? subtitleLanguage,
+    int? playlistItemID,
+    int? playQueueItemID,
+    int? librarySectionID,
+    String? serverId,
+    String? serverName,
+    String? clearLogo,
   }) {
-    final copy = PlexMetadata(
+    return PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
       key: key ?? this.key,
       guid: guid ?? this.guid,
@@ -128,6 +212,7 @@ class PlexMetadata {
       duration: duration ?? this.duration,
       addedAt: addedAt ?? this.addedAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      lastViewedAt: lastViewedAt ?? this.lastViewedAt,
       grandparentTitle: grandparentTitle ?? this.grandparentTitle,
       grandparentThumb: grandparentThumb ?? this.grandparentThumb,
       grandparentArt: grandparentArt ?? this.grandparentArt,
@@ -142,33 +227,43 @@ class PlexMetadata {
       viewCount: viewCount ?? this.viewCount,
       leafCount: leafCount ?? this.leafCount,
       viewedLeafCount: viewedLeafCount ?? this.viewedLeafCount,
+      childCount: childCount ?? this.childCount,
       role: role ?? this.role,
+      audioLanguage: audioLanguage ?? this.audioLanguage,
+      subtitleLanguage: subtitleLanguage ?? this.subtitleLanguage,
+      playlistItemID: playlistItemID ?? this.playlistItemID,
+      playQueueItemID: playQueueItemID ?? this.playQueueItemID,
+      librarySectionID: librarySectionID ?? this.librarySectionID,
+      serverId: serverId ?? this.serverId,
+      serverName: serverName ?? this.serverName,
+      clearLogo: clearLogo ?? this.clearLogo,
     );
-    // Preserve clearLogo
-    copy._clearLogo = _clearLogo;
-    return copy;
   }
 
-  // Extract clearLogo from Image array in raw JSON
-  void _extractClearLogo(Map<String, dynamic> json) {
-    if (!json.containsKey('Image')) return;
+  /// Extract clearLogo from Image array in raw JSON
+  static String? _extractClearLogoFromJson(Map<String, dynamic> json) {
+    if (!json.containsKey('Image')) return null;
 
     final images = json['Image'] as List?;
-    if (images == null) return;
+    if (images == null) return null;
 
     for (var image in images) {
       if (image is Map && image['type'] == 'clearLogo') {
-        _clearLogo = image['url'] as String?;
-        return;
+        return image['url'] as String?;
       }
     }
+    return null;
   }
 
-  // Custom factory that extracts clearLogo
+  /// Create from JSON with clearLogo extracted from Image array
   factory PlexMetadata.fromJsonWithImages(Map<String, dynamic> json) {
-    final metadata = PlexMetadata.fromJson(json);
-    metadata._extractClearLogo(json);
-    return metadata;
+    // Extract clearLogo before parsing
+    final clearLogoUrl = _extractClearLogoFromJson(json);
+    // Add it to the json so it gets parsed
+    if (clearLogoUrl != null) {
+      json['clearLogo'] = clearLogoUrl;
+    }
+    return PlexMetadata.fromJson(json);
   }
 
   // Helper to get the display title (show name for episodes/seasons, title otherwise)

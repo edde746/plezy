@@ -1,234 +1,218 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:provider/provider.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
+import '../../../mpv/mpv.dart';
+import '../../../services/plex_client.dart';
+import '../../../services/download_storage_service.dart';
 import '../../../models/plex_media_info.dart';
-import '../../../providers/plex_client_provider.dart';
+import '../../../utils/duration_formatter.dart';
+import '../../../utils/provider_extensions.dart';
+import '../../../widgets/focusable_bottom_sheet.dart';
+import '../../../widgets/focusable_list_tile.dart';
+import 'base_video_control_sheet.dart';
+import 'video_control_sheet_launcher.dart';
+import '../../plex_optimized_image.dart';
 
 /// Bottom sheet for selecting chapters
-class ChapterSheet extends StatelessWidget {
+class ChapterSheet extends StatefulWidget {
   final Player player;
   final List<PlexChapter> chapters;
   final bool chaptersLoaded;
+  final String? serverId; // Server ID for the metadata these chapters belong to
 
   const ChapterSheet({
     super.key,
     required this.player,
     required this.chapters,
     required this.chaptersLoaded,
+    this.serverId,
   });
-
-  static BoxConstraints getBottomSheetConstraints(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 600;
-
-    return BoxConstraints(
-      maxWidth: isDesktop ? 700 : double.infinity,
-      maxHeight: isDesktop ? 400 : size.height * 0.75,
-      minHeight: isDesktop ? 300 : size.height * 0.5,
-    );
-  }
 
   static void show(
     BuildContext context,
     Player player,
     List<PlexChapter> chapters,
-    bool chaptersLoaded,
-  ) {
-    showModalBottomSheet(
+    bool chaptersLoaded, {
+    String? serverId,
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
+  }) {
+    VideoControlSheetLauncher.show(
       context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: getBottomSheetConstraints(context),
+      onOpen: onOpen,
+      onClose: onClose,
       builder: (context) => ChapterSheet(
         player: player,
         chapters: chapters,
         chaptersLoaded: chaptersLoaded,
+        serverId: serverId,
       ),
     );
   }
 
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
+  @override
+  State<ChapterSheet> createState() => _ChapterSheetState();
+}
 
-    if (hours > 0) {
-      return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    } else {
-      return '$minutes:${seconds.toString().padLeft(2, '0')}';
+class _ChapterSheetState extends State<ChapterSheet> {
+  late final FocusNode _initialFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialFocusNode = FocusNode(debugLabel: 'ChapterSheetInitialFocus');
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
+  /// Get the PlexClient for chapters, or null if unavailable (offline mode)
+  PlexClient? _tryGetClientForChapters(BuildContext context) {
+    if (widget.serverId == null) return null;
+    try {
+      return context.getClientForServer(widget.serverId!);
+    } catch (_) {
+      return null;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Duration>(
-      stream: player.stream.position,
-      initialData: player.state.position,
-      builder: (context, positionSnapshot) {
-        final currentPosition = positionSnapshot.data ?? Duration.zero;
-        final currentPositionMs = currentPosition.inMilliseconds;
+    return FocusableBottomSheet(
+      initialFocusNode: _initialFocusNode,
+      child: StreamBuilder<Duration>(
+        stream: widget.player.streams.position,
+        initialData: widget.player.state.position,
+        builder: (context, positionSnapshot) {
+          final currentPosition = positionSnapshot.data ?? Duration.zero;
+          final currentPositionMs = currentPosition.inMilliseconds;
 
-        // Find the current chapter based on position
-        int? currentChapterIndex;
-        for (int i = 0; i < chapters.length; i++) {
-          final chapter = chapters[i];
-          final startMs = chapter.startTimeOffset ?? 0;
-          final endMs =
-              chapter.endTimeOffset ??
-              (i < chapters.length - 1
-                  ? chapters[i + 1].startTimeOffset ?? 0
-                  : double.maxFinite.toInt());
+          // Find the current chapter based on position
+          int? currentChapterIndex;
+          for (int i = 0; i < widget.chapters.length; i++) {
+            final chapter = widget.chapters[i];
+            final startMs = chapter.startTimeOffset ?? 0;
+            final endMs =
+                chapter.endTimeOffset ??
+                (i < widget.chapters.length - 1
+                    ? widget.chapters[i + 1].startTimeOffset ?? 0
+                    : double.maxFinite.toInt());
 
-          if (currentPositionMs >= startMs && currentPositionMs < endMs) {
-            currentChapterIndex = i;
-            break;
+            if (currentPositionMs >= startMs && currentPositionMs < endMs) {
+              currentChapterIndex = i;
+              break;
+            }
           }
-        }
 
-        return SafeArea(
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.75,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.video_library, color: Colors.white),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Chapters',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(color: Colors.white24, height: 1),
-                if (!chaptersLoaded)
-                  const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (chapters.isEmpty)
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'No chapters available',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: chapters.length,
-                      itemBuilder: (context, index) {
-                        final chapter = chapters[index];
-                        final isCurrentChapter = currentChapterIndex == index;
+          Widget content;
+          if (!widget.chaptersLoaded) {
+            content = const Center(child: CircularProgressIndicator());
+          } else if (widget.chapters.isEmpty) {
+            content = const Center(
+              child: Text(
+                'No chapters available',
+                style: TextStyle(color: Colors.white70),
+              ),
+            );
+          } else {
+            content = ListView.builder(
+              itemCount: widget.chapters.length,
+              itemBuilder: (context, index) {
+                final chapter = widget.chapters[index];
+                final isCurrentChapter = currentChapterIndex == index;
 
-                        return ListTile(
-                          leading: chapter.thumb != null
-                              ? Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: Consumer<PlexClientProvider>(
-                                        builder:
-                                            (context, clientProvider, child) {
-                                              final client =
-                                                  clientProvider.client;
-                                              if (client == null) {
-                                                return const Icon(
-                                                  Icons.image,
-                                                  color: Colors.white54,
-                                                  size: 34,
-                                                );
-                                              }
-                                              return Image.network(
-                                                client.getThumbnailUrl(
-                                                  chapter.thumb,
-                                                ),
-                                                width: 60,
-                                                height: 34,
-                                                fit: BoxFit.cover,
-                                                errorBuilder:
-                                                    (
-                                                      context,
-                                                      error,
-                                                      stackTrace,
-                                                    ) => const Icon(
-                                                      Icons.image,
-                                                      color: Colors.white54,
-                                                      size: 34,
-                                                    ),
-                                              );
-                                            },
-                                      ),
+                // Get local file path for offline chapter thumbnails
+                final localThumbPath =
+                    widget.serverId != null && chapter.thumb != null
+                    ? DownloadStorageService.instance.getArtworkPathSync(
+                        widget.serverId!,
+                        chapter.thumb!,
+                      )
+                    : null;
+
+                return FocusableListTile(
+                  focusNode: index == 0 ? _initialFocusNode : null,
+                  leading: chapter.thumb != null
+                      ? Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: PlexOptimizedImage.thumb(
+                                client: _tryGetClientForChapters(context),
+                                imagePath: chapter.thumb,
+                                localFilePath: localThumbPath,
+                                width: 60,
+                                height: 34,
+                                fit: BoxFit.cover,
+                                errorWidget: (context, url, error) =>
+                                    const AppIcon(
+                                      Symbols.image_rounded,
+                                      fill: 1,
+                                      color: Colors.white54,
+                                      size: 34,
                                     ),
-                                    if (isCurrentChapter)
-                                      Positioned.fill(
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              4,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.blue,
-                                              width: 2,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                )
-                              : null,
-                          title: Text(
-                            chapter.label,
-                            style: TextStyle(
-                              color: isCurrentChapter
-                                  ? Colors.blue
-                                  : Colors.white,
-                              fontWeight: isCurrentChapter
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                              ),
                             ),
-                          ),
-                          subtitle: Text(
-                            _formatDuration(chapter.startTime),
-                            style: TextStyle(
-                              color: isCurrentChapter
-                                  ? Colors.blue.withValues(alpha: 0.7)
-                                  : Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                          trailing: isCurrentChapter
-                              ? const Icon(
-                                  Icons.play_circle_filled,
-                                  color: Colors.blue,
-                                )
-                              : null,
-                          onTap: () {
-                            player.seek(chapter.startTime);
-                            Navigator.pop(context);
-                          },
-                        );
-                      },
+                            if (isCurrentChapter)
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: Colors.blue,
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        )
+                      : null,
+                  title: Text(
+                    chapter.label,
+                    style: TextStyle(
+                      color: isCurrentChapter ? Colors.blue : Colors.white,
+                      fontWeight: isCurrentChapter
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                   ),
-              ],
-            ),
-          ),
-        );
-      },
+                  subtitle: Text(
+                    formatDurationTimestamp(chapter.startTime),
+                    style: TextStyle(
+                      color: isCurrentChapter
+                          ? Colors.blue.withValues(alpha: 0.7)
+                          : Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                  trailing: isCurrentChapter
+                      ? const AppIcon(
+                          Symbols.play_circle_rounded,
+                          fill: 1,
+                          color: Colors.blue,
+                        )
+                      : null,
+                  onTap: () {
+                    widget.player.seek(chapter.startTime);
+                    Navigator.pop(context);
+                  },
+                );
+              },
+            );
+          }
+
+          return BaseVideoControlSheet(
+            title: 'Chapters',
+            icon: Symbols.video_library_rounded,
+            child: content,
+          );
+        },
+      ),
     );
   }
 }

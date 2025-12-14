@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
+import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../utils/duration_formatter.dart';
 
 /// Reusable widget for adjusting sync offsets (audio or subtitle)
 class SyncOffsetControl extends StatefulWidget {
@@ -43,11 +47,11 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   }
 
   Future<void> _applyOffset(double offsetMs) async {
-    // Convert milliseconds to seconds for media_kit
+    // Convert milliseconds to seconds for mpv
     final offsetSeconds = offsetMs / 1000.0;
 
     // Apply to player using setProperty
-    await (widget.player.platform as dynamic).setProperty(
+    await widget.player.setProperty(
       widget.propertyName,
       offsetSeconds.toString(),
     );
@@ -61,11 +65,6 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
       _currentOffset = 0;
     });
     _applyOffset(0);
-  }
-
-  String _formatOffset(double offsetMs) {
-    final sign = offsetMs >= 0 ? '+' : '';
-    return '$sign${offsetMs.round()}ms';
   }
 
   String _getDescriptionText() {
@@ -87,7 +86,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
         children: [
           // Current offset display
           Text(
-            _formatOffset(_currentOffset),
+            formatSyncOffset(_currentOffset),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 48,
@@ -135,7 +134,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // Reset button
           ElevatedButton.icon(
             onPressed: _currentOffset != 0 ? _resetOffset : null,
-            icon: const Icon(Icons.restart_alt),
+            icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),
             label: Text(t.videoControls.resetToZero),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey[800],

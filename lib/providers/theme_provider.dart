@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../services/settings_service.dart' as settings;
 import '../theme/mono_theme.dart';
 
@@ -78,11 +79,11 @@ class ThemeProvider extends ChangeNotifier {
   IconData get themeModeIcon {
     switch (_themeMode) {
       case settings.ThemeMode.light:
-        return Icons.light_mode;
+        return Symbols.light_mode_rounded;
       case settings.ThemeMode.dark:
-        return Icons.dark_mode;
+        return Symbols.dark_mode_rounded;
       case settings.ThemeMode.system:
-        return Icons.brightness_auto;
+        return Symbols.brightness_auto_rounded;
     }
   }
 

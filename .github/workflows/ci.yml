@@ -1,0 +1,161 @@
+name: CI - Sanity Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Code Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-v2-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-v2-
+
+      - name: Install dependencies
+        run: |
+
+          flutter pub get
+
+      - name: Verify formatting
+        run: |
+          # Find all Dart files excluding generated files
+          find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null | while IFS= read -r file; do
+            files_found=true
+            break
+          done
+          if [ "$files_found" != "true" ]; then
+            echo "No Dart files found to format"
+            exit 0
+          fi
+          find lib $([ -d test ] && echo test) -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f 2>/dev/null -print0 | xargs -0 dart format --output=none --set-exit-if-changed
+      - name: Analyze code
+        run: |
+          # Run flutter analyze
+          # Fails on errors or warnings only (info messages are allowed)
+          flutter analyze 2>&1 | tee analyze_output.txt || true
+
+          # Check output for errors or warnings
+          if grep -q "error •" analyze_output.txt; then
+            echo "❌ Analysis failed with errors"
+            exit 1
+          elif grep -q "warning •" analyze_output.txt; then
+            echo "⚠️  Analysis completed with warnings"
+            exit 1
+          else
+            echo "✅ Analysis passed!"
+            exit 0
+          fi
+
+      - name: Check for unused code
+        run: |
+          echo "🔍 Checking for unused code..."
+          dart run dart_code_linter:metrics check-unused-code lib 2>&1 | tee unused_code.txt
+          if grep -qi "no unused code found" unused_code.txt; then
+            echo "✅ No unused code found"
+          else
+            echo "❌ Found unused code:"
+            cat unused_code.txt
+            exit 1
+          fi
+
+      - name: Check for unused files
+        run: |
+          echo "🔍 Checking for unused files..."
+          dart run dart_code_linter:metrics check-unused-files lib 2>&1 | tee unused_files.txt
+          if grep -qi "no unused files found" unused_files.txt; then
+            echo "✅ No unused files found"
+          else
+            echo "❌ Found unused files:"
+            cat unused_files.txt
+            exit 1
+          fi
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-v2-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-v2-
+
+      - name: Install dependencies
+        run: |
+          flutter clean
+          flutter pub get
+
+      - name: Run tests
+        run: |
+          if [ -d "test" ] && [ "$(find test -name '*_test.dart' | wc -l)" -gt 0 ]; then
+            flutter test
+          else
+            echo "No tests found, skipping test execution"
+          fi
+
+  dependency-check:
+    name: Dependency Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          cache: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-v2-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-v2-
+
+      - name: Verify dependencies
+        run: |
+          flutter clean
+          flutter pub get
+          flutter pub outdated

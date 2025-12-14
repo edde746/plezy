@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
+import '../services/server_registry.dart';
+import '../providers/multi_server_provider.dart';
+import '../providers/plex_client_provider.dart';
 import '../i18n/strings.g.dart';
-import 'server_selection_screen.dart';
+import '../utils/app_logger.dart';
+import 'main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -31,6 +36,84 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _initializeAuthService() async {
     _authService = await PlexAuthService.create();
+  }
+
+  /// Connect to all available servers and navigate to main screen
+  Future<void> _connectToAllServersAndNavigate(String plexToken) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isAuthenticating = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Fetch user info and servers for this user
+      final userInfo = await _authService.getUserInfo(plexToken);
+      final username = userInfo['username'] as String? ?? '';
+      final email = userInfo['email'] as String? ?? '';
+
+      final servers = await _authService.fetchServers(plexToken);
+      final storage = await StorageService.getInstance();
+
+      if (servers.isEmpty) {
+        await storage.clearCredentials();
+        setState(() {
+          _isAuthenticating = false;
+          _errorMessage = t.serverSelection.noServersFoundForAccount(
+            username: username,
+            email: email,
+          );
+        });
+        return;
+      }
+
+      // Save all servers to registry and enable them
+      final registry = ServerRegistry(storage);
+      await registry.saveServers(servers);
+
+      // Enable all servers
+      final serverIds = servers.map((s) => s.clientIdentifier).toSet();
+      await registry.saveEnabledServerIds(serverIds);
+
+      // Connect to all servers
+      if (!mounted) return;
+      final multiServerProvider = context.read<MultiServerProvider>();
+      final connectedCount = await multiServerProvider.serverManager
+          .connectToAllServers(servers);
+
+      if (connectedCount == 0) {
+        setState(() {
+          _isAuthenticating = false;
+          _errorMessage = t.serverSelection.allServerConnectionsFailed;
+        });
+        return;
+      }
+
+      // Get the first connected client for backward compatibility
+      if (!mounted) return;
+      final firstClient =
+          multiServerProvider.serverManager.onlineClients.values.first;
+
+      // Set it as the legacy client
+      final plexClientProvider = context.read<PlexClientProvider>();
+      plexClientProvider.setClient(firstClient);
+
+      // Navigate to main screen
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainScreen(client: firstClient),
+        ),
+      );
+    } catch (e) {
+      appLogger.e('Failed to connect to servers', error: e);
+      setState(() {
+        _isAuthenticating = false;
+        _errorMessage = t.serverSelection.failedToLoadServers(error: e);
+      });
+    }
   }
 
   Future<void> _startAuthentication() async {
@@ -100,23 +183,16 @@ class _AuthScreenState extends State<AuthScreen> {
       final storage = await StorageService.getInstance();
       await storage.savePlexToken(token);
 
-      // Navigate to server selection
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServerSelectionScreen(
-              authService: _authService,
-              plexToken: token,
-            ),
-          ),
-        );
-      }
       // Clear QR URL after successful auth
       setState(() {
         _qrAuthUrl = null;
         _useQrFlow = false;
       });
+
+      // Connect to all servers and navigate to main screen
+      if (mounted) {
+        await _connectToAllServersAndNavigate(token);
+      }
     } catch (e) {
       setState(() {
         _isAuthenticating = false;
@@ -197,17 +273,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       final storage = await StorageService.getInstance();
                       await storage.savePlexToken(token);
 
-                      // Close dialog and navigate
+                      // Close dialog and connect to all servers
                       if (mounted) {
                         navigator.pop();
-                        navigator.pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => ServerSelectionScreen(
-                              authService: _authService,
-                              plexToken: token,
-                            ),
-                          ),
-                        );
+                        await _connectToAllServersAndNavigate(token);
                       }
                     } catch (e) {
                       setDialogState(() {
@@ -268,57 +337,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           if (_isAuthenticating) ...[
-                            if (_useQrFlow && _qrAuthUrl != null) ...[
-                              // QR code flow - hint text above QR code
-                              Text(
-                                t.auth.scanQRCodeInstruction,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                              const SizedBox(height: 24),
-                              Center(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: QrImageView(
-                                    data: _qrAuthUrl!,
-                                    size: 300,
-                                    version: QrVersions.auto,
-                                    backgroundColor: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              OutlinedButton(
-                                onPressed: _retryAuthentication,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 24,
-                                  ),
-                                ),
-                                child: Text(t.auth.retry),
-                              ),
-                            ] else ...[
-                              // Browser auth flow - show spinner and waiting message
-                              const Center(child: CircularProgressIndicator()),
-                              const SizedBox(height: 16),
-                              Text(
-                                t.auth.waitingForAuth,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                              const SizedBox(height: 24),
-                              OutlinedButton(
-                                onPressed: _retryAuthentication,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 24,
-                                  ),
-                                ),
-                                child: Text(t.auth.retry),
-                              ),
-                            ],
+                            if (_useQrFlow && _qrAuthUrl != null)
+                              _buildQrAuthWidget(qrSize: 300)
+                            else
+                              _buildBrowserAuthWidget(),
                           ] else ...[
                             // Initial state buttons
                             ElevatedButton(
@@ -394,24 +416,10 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(height: 48),
                     if (_isAuthenticating) ...[
-                      const Center(child: CircularProgressIndicator()),
-                      const SizedBox(height: 16),
-                      Text(
-                        t.auth.waitingForAuth,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 24),
-                      OutlinedButton(
-                        onPressed: _retryAuthentication,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 24,
-                          ),
-                        ),
-                        child: Text(t.auth.retry),
-                      ),
+                      if (_useQrFlow && _qrAuthUrl != null)
+                        _buildQrAuthWidget(qrSize: 200)
+                      else
+                        _buildBrowserAuthWidget(),
                     ] else ...[
                       // add QR button here
                       ElevatedButton(
@@ -467,6 +475,66 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRetryButton() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 24),
+        OutlinedButton(
+          onPressed: _retryAuthentication,
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+          ),
+          child: Text(t.auth.retry),
+        ),
+      ],
+    );
+  }
+
+  /// Builds the QR code authentication widget
+  Widget _buildQrAuthWidget({required double qrSize}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          t.auth.scanQRCodeInstruction,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.grey),
+        ),
+        const SizedBox(height: 24),
+        Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: QrImageView(
+              data: _qrAuthUrl!,
+              size: qrSize,
+              version: QrVersions.auto,
+              backgroundColor: Colors.white,
+            ),
+          ),
+        ),
+        _buildRetryButton(),
+      ],
+    );
+  }
+
+  /// Builds the browser authentication waiting widget
+  Widget _buildBrowserAuthWidget() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Center(child: CircularProgressIndicator()),
+        const SizedBox(height: 16),
+        Text(
+          t.auth.waitingForAuth,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.grey),
+        ),
+        _buildRetryButton(),
+      ],
     );
   }
 }

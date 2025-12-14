@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex client for Flutter"
 publish_to: "none"
-version: 1.6.1+15
+version: 1.10.0+24
 
 environment:
   sdk: ^3.8.1
@@ -13,37 +13,38 @@ dependencies:
   json_annotation: ^4.8.1
   shared_preferences: ^2.2.2
   cached_network_image: ^3.4.1
-  media_kit: ^1.1.10+1
-  media_kit_video: ^1.2.4
-  media_kit_libs_video: ^1.0.4
   macos_window_utils: ^1.9.0
   url_launcher: ^6.3.0
   uuid: ^4.4.0
   window_manager: ^0.4.3
   logger: ^2.0.2
   package_info_plus: ^9.0.0
+  device_info_plus: ^11.0.0
   provider: ^6.1.2
   hotkey_manager: ^0.2.3
   flex_color_picker: ^3.6.0
   qr_flutter: ^4.1.0
   slang: ^3.31.2
   slang_flutter: ^3.31.0
+  duration: ^4.0.3
+  connectivity_plus: ^6.0.5
   os_media_controls:
     git:
       url: https://github.com/edde746/os-media-controls
-      ref: 53d803e1c228eb7eab9ca642119d404c21f4a52f
-
-dependency_overrides:
-  media_kit:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
-      path: media_kit
-  media_kit_libs_video:
-    git:
-      url: https://github.com/edde746/media-kit
-      ref: 9782771486c0356b48c2e31e47365d1ed0b7fcb5
-      path: libs/universal/media_kit_libs_video
+      ref: 75dc5642cd148c54c03fe96976702b8d31c48599
+  rate_limiter: ^1.0.0
+  wakelock_plus: ^1.2.10
+  path_provider: ^2.1.0
+  path: ^1.9.0
+  gamepads: ^0.1.9
+  drift: ^2.28.2
+  sqlite3_flutter_libs: ^0.5.41
+  workmanager: ^0.9.0+3
+  crypto: ^3.0.7
+  file_picker: ^8.0.0
+  saf_util: ^0.11.0
+  saf_stream: ^0.12.2
+  material_symbols_icons: ^4.2892.0
 
 dev_dependencies:
   flutter_test:
@@ -53,13 +54,15 @@ dev_dependencies:
   json_serializable: ^6.7.1
   flutter_launcher_icons: ^0.14.4
   slang_build_runner: ^3.31.0
+  dart_code_linter: ^3.1.1
+  drift_dev: ^2.14.0
 
 flutter:
   uses-material-design: true
   assets:
     - lib/data/iso_639_codes.json
     - assets/plezy.png
-    - assets/droid-sans.ttf
+    - assets/go-noto-current-regular.ttf
 
 flutter_launcher_icons:
   android: true

@@ -1,71 +1,21 @@
 import 'package:logger/logger.dart';
 
-/// Redacts sensitive information from log messages
+import 'log_redaction_manager.dart';
+
+/// Redacts sensitive information from log messages based on known values.
 String _redactSensitiveData(String message) {
-  String redacted = message;
+  var redacted = LogRedactionManager.redact(message);
 
-  // Redact Plex tokens (alphanumeric strings typically 20+ characters)
-  // Pattern: X-Plex-Token=... or token=... or accessToken=... or similar
+  // Fallbacks for sensitive fields we cannot track ahead of time.
   redacted = redacted.replaceAllMapped(
-    RegExp(r'([Tt]oken[=:]\s*)([A-Za-z0-9_-]{10,})', caseSensitive: false),
+    RegExp(r'([Aa]uthorization[=:]\s*)([^\s,]+)'),
     (match) => '${match.group(1)}[REDACTED]',
   );
 
-  // Redact authorization headers
   redacted = redacted.replaceAllMapped(
-    RegExp(
-      r'([Aa]uthorization[=:]\s*)([A-Za-z0-9_\-\.]+)',
-      caseSensitive: false,
-    ),
+    RegExp(r'([Pp]assword[=:]\s*)([^\s&,;]+)'),
     (match) => '${match.group(1)}[REDACTED]',
   );
-
-  // Redact API keys
-  redacted = redacted.replaceAllMapped(
-    RegExp(r'([Aa]pi[Kk]ey[=:]\s*)([A-Za-z0-9_-]{10,})', caseSensitive: false),
-    (match) => '${match.group(1)}[REDACTED]',
-  );
-
-  // Redact passwords
-  redacted = redacted.replaceAllMapped(
-    RegExp(r'([Pp]assword[=:]\s*)([^\s&,;]+)', caseSensitive: false),
-    (match) => '${match.group(1)}[REDACTED]',
-  );
-
-  // Redact full URLs with tokens in query parameters
-  redacted = redacted.replaceAllMapped(
-    RegExp(
-      r'(https?://[^\s]*[?&])([Xx]-[Pp]lex-[Tt]oken|token)=([A-Za-z0-9_-]+)',
-    ),
-    (match) => '${match.group(1)}${match.group(2)}=[REDACTED]',
-  );
-
-  // Redact IP addresses in dot notation (e.g., 192.168.1.100)
-  redacted = redacted.replaceAllMapped(
-    RegExp(r'\b(\d{1,3}\.)(\d{1,3}\.)(\d{1,3}\.)(\d{1,3})\b'),
-    (match) => '${match.group(1)}***.***.${match.group(4)}',
-  );
-
-  // Redact IP addresses in dash notation (e.g., 192-168-1-11)
-  redacted = redacted.replaceAllMapped(
-    RegExp(r'\b(\d{1,3}-)(\d{1,3}-)(\d{1,3}-)(\d{1,3})\b'),
-    (match) => '${match.group(1)}***-***-${match.group(4)}',
-  );
-
-  // Redact standalone token-like strings (20+ alphanumeric characters)
-  // Only if they appear in common token contexts
-  redacted = redacted.replaceAllMapped(RegExp(r'\b([A-Za-z0-9_-]{20,})\b'), (
-    match,
-  ) {
-    final token = match.group(1)!;
-    // Only redact if it looks like a token (mixed case or contains hyphens/underscores)
-    if (token.contains(RegExp(r'[A-Z]')) && token.contains(RegExp(r'[a-z]')) ||
-        token.contains('_') ||
-        token.contains('-')) {
-      return '[REDACTED_TOKEN]';
-    }
-    return token;
-  });
 
   return redacted;
 }

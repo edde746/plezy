@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../client/plex_client.dart';
+import '../services/plex_client.dart';
 import '../models/plex_metadata.dart';
 
 /// Mixin for screens that need to update individual items after watch state changes

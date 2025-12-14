@@ -23,6 +23,7 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   duration: (json['duration'] as num?)?.toInt(),
   addedAt: (json['addedAt'] as num?)?.toInt(),
   updatedAt: (json['updatedAt'] as num?)?.toInt(),
+  lastViewedAt: (json['lastViewedAt'] as num?)?.toInt(),
   grandparentTitle: json['grandparentTitle'] as String?,
   grandparentThumb: json['grandparentThumb'] as String?,
   grandparentArt: json['grandparentArt'] as String?,
@@ -37,9 +38,16 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   viewCount: (json['viewCount'] as num?)?.toInt(),
   leafCount: (json['leafCount'] as num?)?.toInt(),
   viewedLeafCount: (json['viewedLeafCount'] as num?)?.toInt(),
+  childCount: (json['childCount'] as num?)?.toInt(),
   role: (json['Role'] as List<dynamic>?)
       ?.map((e) => PlexRole.fromJson(e as Map<String, dynamic>))
       .toList(),
+  audioLanguage: json['audioLanguage'] as String?,
+  subtitleLanguage: json['subtitleLanguage'] as String?,
+  playlistItemID: (json['playlistItemID'] as num?)?.toInt(),
+  playQueueItemID: (json['playQueueItemID'] as num?)?.toInt(),
+  librarySectionID: (json['librarySectionID'] as num?)?.toInt(),
+  clearLogo: json['clearLogo'] as String?,
 );
 
 Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
@@ -60,6 +68,7 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
       'duration': instance.duration,
       'addedAt': instance.addedAt,
       'updatedAt': instance.updatedAt,
+      'lastViewedAt': instance.lastViewedAt,
       'grandparentTitle': instance.grandparentTitle,
       'grandparentThumb': instance.grandparentThumb,
       'grandparentArt': instance.grandparentArt,
@@ -74,5 +83,12 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) =>
       'viewCount': instance.viewCount,
       'leafCount': instance.leafCount,
       'viewedLeafCount': instance.viewedLeafCount,
+      'childCount': instance.childCount,
       'Role': instance.role,
+      'audioLanguage': instance.audioLanguage,
+      'subtitleLanguage': instance.subtitleLanguage,
+      'playlistItemID': instance.playlistItemID,
+      'playQueueItemID': instance.playQueueItemID,
+      'librarySectionID': instance.librarySectionID,
+      'clearLogo': instance.clearLogo,
     };

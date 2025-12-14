@@ -1,11 +1,20 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import '../client/plex_client.dart';
+import '../../services/plex_client.dart';
+import '../focus/key_event_utils.dart';
+import '../focus/input_mode_tracker.dart';
+import '../models/download_status.dart';
+import '../providers/download_provider.dart';
+import '../services/download_storage_service.dart';
+import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
-import '../providers/plex_client_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/duration_formatter.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
 import '../mixins/item_updatable.dart';
@@ -14,8 +23,13 @@ import '../i18n/strings.g.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
   final PlexMetadata season;
+  final bool isOffline;
 
-  const SeasonDetailScreen({super.key, required this.season});
+  const SeasonDetailScreen({
+    super.key,
+    required this.season,
+    this.isOffline = false,
+  });
 
   @override
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
@@ -23,17 +37,31 @@ class SeasonDetailScreen extends StatefulWidget {
 
 class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     with ItemUpdatable {
+  PlexClient? _client;
+
   @override
-  PlexClient get client => context.clientSafe;
+  PlexClient get client => _client!;
 
   List<PlexMetadata> _episodes = [];
   bool _isLoadingEpisodes = false;
   bool _watchStateChanged = false;
 
+  /// Get the correct PlexClient for this season's server
+  PlexClient? _getClientForSeason(BuildContext context) {
+    if (widget.isOffline || widget.season.serverId == null) {
+      return null;
+    }
+    return context.getClientForServer(widget.season.serverId!);
+  }
+
   @override
   void initState() {
     super.initState();
-    _loadEpisodes();
+    // Initialize the client once in initState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _client = _getClientForSeason(context);
+      _loadEpisodes();
+    });
   }
 
   Future<void> _loadEpisodes() async {
@@ -41,14 +69,16 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
       _isLoadingEpisodes = true;
     });
 
-    try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception('No client available');
-      }
+    if (widget.isOffline) {
+      // Load episodes from downloads
+      _loadEpisodesFromDownloads();
+      return;
+    }
 
-      final episodes = await client.getChildren(widget.season.ratingKey);
+    try {
+      // Episodes are automatically tagged with server info by PlexClient
+      final episodes = await _client!.getChildren(widget.season.ratingKey);
+
       setState(() {
         _episodes = episodes;
         _isLoadingEpisodes = false;
@@ -58,6 +88,28 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
         _isLoadingEpisodes = false;
       });
     }
+  }
+
+  /// Load episodes from downloaded content
+  void _loadEpisodesFromDownloads() {
+    final downloadProvider = context.read<DownloadProvider>();
+
+    // Get all downloaded episodes for the show (grandparentRatingKey)
+    final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(
+      widget.season.parentRatingKey ?? '',
+    );
+
+    // Filter to only this season's episodes
+    final seasonEpisodes =
+        allEpisodes
+            .where((ep) => ep.parentIndex == widget.season.index)
+            .toList()
+          ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+
+    setState(() {
+      _episodes = seasonEpisodes;
+      _isLoadingEpisodes = false;
+    });
   }
 
   @override
@@ -76,54 +128,152 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(
-            title: Text(widget.season.title),
-            pinned: true,
-            onBackPressed: () => Navigator.pop(context, _watchStateChanged),
-          ),
-          if (_isLoadingEpisodes)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_episodes.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.movie_outlined,
-                      size: 64,
-                      color: tokens(context).textMuted,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      t.messages.noEpisodesFoundGeneral,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+    return Focus(
+      onKeyEvent: (_, event) =>
+          handleBackKeyNavigation(context, event, result: _watchStateChanged),
+      child: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            CustomAppBar(
+              title: Text(widget.season.title),
+              pinned: true,
+              onBackPressed: () => Navigator.pop(context, _watchStateChanged),
+            ),
+            if (_isLoadingEpisodes)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_episodes.isEmpty)
+              SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AppIcon(
+                        Symbols.movie_rounded,
+                        fill: 1,
+                        size: 64,
                         color: tokens(context).textMuted,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        t.messages.noEpisodesFoundGeneral,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: tokens(context).textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final episode = _episodes[index];
+                  // Get local poster path for offline mode
+                  String? localPosterPath;
+                  if (widget.isOffline && episode.serverId != null) {
+                    final downloadProvider = context.read<DownloadProvider>();
+                    final globalKey =
+                        '${episode.serverId}:${episode.ratingKey}';
+                    // Get the artwork reference and convert to local file path
+                    final artworkRef = downloadProvider.getArtworkPaths(
+                      globalKey,
+                    );
+                    localPosterPath = artworkRef?.getLocalPath(
+                      DownloadStorageService.instance,
+                      episode.serverId!,
+                    );
+                  }
+                  return _EpisodeCard(
+                    episode: episode,
+                    client: _client,
+                    isOffline: widget.isOffline,
+                    localPosterPath: localPosterPath,
+                    autofocus:
+                        index == 0 && InputModeTracker.isKeyboardMode(context),
+                    onTap: () async {
+                      await navigateToVideoPlayer(
+                        context,
+                        metadata: episode,
+                        isOffline: widget.isOffline,
+                      );
+                      // Refresh episodes when returning from video player (skip if offline)
+                      if (!widget.isOffline) {
+                        _loadEpisodes();
+                      }
+                    },
+                    onRefresh: widget.isOffline ? null : updateItem,
+                  );
+                }, childCount: _episodes.length),
               ),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final episode = _episodes[index];
-                return _buildEpisodeCard(episode);
-              }, childCount: _episodes.length),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildEpisodeCard(PlexMetadata episode) {
+/// Episode card widget
+class _EpisodeCard extends StatelessWidget {
+  final PlexMetadata episode;
+  final PlexClient? client;
+  final VoidCallback onTap;
+  final Future<void> Function(String)? onRefresh;
+  final bool autofocus;
+  final bool isOffline;
+  final String? localPosterPath;
+
+  const _EpisodeCard({
+    required this.episode,
+    this.client,
+    required this.onTap,
+    this.onRefresh,
+    this.autofocus = false,
+    this.isOffline = false,
+    this.localPosterPath,
+  });
+
+  Widget _buildEpisodeMetaRow(BuildContext context) {
+    return Row(
+      children: [
+        if (episode.duration != null)
+          Text(
+            formatDurationTimestamp(Duration(milliseconds: episode.duration!)),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens(context).textMuted,
+              fontSize: 12,
+            ),
+          ),
+        // Hide watch status when offline (not tracked)
+        if (!isOffline && episode.duration != null && episode.isWatched) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              '•',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: tokens(context).textMuted,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Text(
+            '${t.discover.watched} ✓',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: tokens(context).textMuted,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Hide progress when offline (not tracked)
     final hasProgress =
+        !isOffline &&
         episode.viewOffset != null &&
         episode.duration != null &&
         episode.viewOffset! > 0;
@@ -132,15 +282,13 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
         : 0.0;
 
     return MediaContextMenu(
-      metadata: episode,
-      onRefresh: updateItem,
-      onTap: () async {
-        await navigateToVideoPlayer(context, metadata: episode);
-        // Refresh episodes when returning from video player
-        _loadEpisodes();
-      },
+      item: episode,
+      onRefresh: onRefresh,
+      onTap: onTap,
       child: InkWell(
         key: Key(episode.ratingKey),
+        autofocus: autofocus,
+        onTap: onTap,
         hoverColor: Theme.of(
           context,
         ).colorScheme.surface.withValues(alpha: 0.05),
@@ -163,49 +311,53 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                       borderRadius: BorderRadius.circular(6),
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
-                        child: episode.thumb != null
-                            ? Consumer<PlexClientProvider>(
-                                builder: (context, clientProvider, child) {
-                                  final client = clientProvider.client;
-                                  if (client == null) {
-                                    return Container(
+                        child: isOffline && localPosterPath != null
+                            ? Image.file(
+                                File(localPosterPath!),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
                                       color: Theme.of(
                                         context,
                                       ).colorScheme.surfaceContainerHighest,
-                                      child: const Center(
-                                        child: Icon(Icons.movie, size: 40),
+                                      child: const AppIcon(
+                                        Symbols.movie_rounded,
+                                        fill: 1,
+                                        size: 32,
                                       ),
-                                    );
-                                  }
-                                  return CachedNetworkImage(
-                                    imageUrl: client.getThumbnailUrl(
-                                      episode.thumb,
                                     ),
-                                    filterQuality: FilterQuality.medium,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => Container(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
-                                    ),
-                                    errorWidget: (context, url, error) =>
-                                        Container(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.surfaceContainerHighest,
-                                          child: const Icon(
-                                            Icons.movie,
-                                            size: 32,
-                                          ),
-                                        ),
-                                  );
-                                },
+                              )
+                            : episode.thumb != null
+                            ? PlexOptimizedImage.thumb(
+                                client: client,
+                                imagePath: episode.thumb,
+                                filterQuality: FilterQuality.medium,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                                  child: const AppIcon(
+                                    Symbols.movie_rounded,
+                                    fill: 1,
+                                    size: 32,
+                                  ),
+                                ),
                               )
                             : Container(
                                 color: Theme.of(
                                   context,
                                 ).colorScheme.surfaceContainerHighest,
-                                child: const Icon(Icons.movie, size: 32),
+                                child: const AppIcon(
+                                  Symbols.movie_rounded,
+                                  fill: 1,
+                                  size: 32,
+                                ),
                               ),
                       ),
                     ),
@@ -231,8 +383,9 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                               color: Colors.black.withValues(alpha: 0.6),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
-                              Icons.play_arrow,
+                            child: const AppIcon(
+                              Symbols.play_arrow_rounded,
+                              fill: 1,
                               color: Colors.white,
                               size: 20,
                             ),
@@ -270,43 +423,166 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Episode number and title
-                    Row(
-                      children: [
-                        if (episode.index != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                            child: Text(
-                              'E${episode.index}',
-                              style: TextStyle(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimaryContainer,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                    // Episode number and title with download status
+                    Consumer<DownloadProvider>(
+                      builder: (context, downloadProvider, _) {
+                        // Build download status icon based on state
+                        Widget? downloadStatusIcon;
+
+                        // Only show download status in online mode
+                        if (!isOffline && episode.serverId != null) {
+                          final globalKey =
+                              '${episode.serverId}:${episode.ratingKey}';
+                          final progress = downloadProvider.getProgress(
+                            globalKey,
+                          );
+                          final isQueueing = downloadProvider.isQueueing(
+                            globalKey,
+                          );
+
+                          // Helper to get status-specific muted color
+                          Color getMutedColor(Color baseColor) {
+                            return Color.lerp(
+                              tokens(context).textMuted,
+                              baseColor,
+                              0.3, // 30% of the status color, 70% muted
+                            )!;
+                          }
+
+                          if (isQueueing) {
+                            // Queueing state - building queue
+                            downloadStatusIcon = SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                color: tokens(context).textMuted,
+                              ),
+                            );
+                          } else if (progress?.status ==
+                              DownloadStatus.queued) {
+                            // Queued state - waiting to download
+                            downloadStatusIcon = AppIcon(
+                              Symbols.schedule_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.orange),
+                            );
+                          } else if (progress?.status ==
+                              DownloadStatus.downloading) {
+                            // Downloading state - active download with radial progress
+                            downloadStatusIcon = SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // Background circle
+                                  CircularProgressIndicator(
+                                  value: 1.0,
+                                  strokeWidth: 1.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    getMutedColor(
+                                      Colors.blue,
+                                    ).withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                  // Progress circle
+                                  CircularProgressIndicator(
+                                    value: progress?.progressPercent,
+                                    strokeWidth: 1.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      getMutedColor(Colors.blue),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else if (progress?.status ==
+                              DownloadStatus.paused) {
+                            // Paused state - download paused
+                            downloadStatusIcon = AppIcon(
+                              Symbols.pause_circle_outline_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.amber),
+                            );
+                          } else if (progress?.status ==
+                              DownloadStatus.failed) {
+                            // Failed state - download failed
+                            downloadStatusIcon = AppIcon(
+                              Symbols.error_outline_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.red),
+                            );
+                          } else if (progress?.status ==
+                              DownloadStatus.cancelled) {
+                            // Cancelled state - download cancelled
+                            downloadStatusIcon = AppIcon(
+                              Symbols.cancel_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.grey),
+                            );
+                          } else if (progress?.status ==
+                              DownloadStatus.completed) {
+                            // Completed state - download complete
+                            downloadStatusIcon = AppIcon(
+                              Symbols.file_download_done_rounded,
+                              fill: 1,
+                              size: 12,
+                              color: getMutedColor(Colors.green),
+                            );
+                          }
+                          // Note: No icon shown if not downloaded (null)
+                        }
+
+                        return Row(
+                          children: [
+                            // Episode number badge
+                            if (episode.index != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: Text(
+                                  'E${episode.index}',
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            // Download status icon (if present)
+                            if (downloadStatusIcon != null) ...[
+                              const SizedBox(width: 6),
+                              downloadStatusIcon,
+                            ],
+                            const SizedBox(width: 8),
+                            // Episode title
+                            Expanded(
+                              child: Text(
+                                episode.title,
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            episode.title,
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                          ],
+                        );
+                      },
                     ),
 
                     // Summary
@@ -326,40 +602,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
 
                     // Metadata row (duration, watched status)
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        if (episode.duration != null)
-                          Text(
-                            _formatDuration(episode.duration!),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: tokens(context).textMuted,
-                                  fontSize: 12,
-                                ),
-                          ),
-                        if (episode.duration != null && episode.isWatched) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Text(
-                              '•',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: tokens(context).textMuted,
-                                    fontSize: 12,
-                                  ),
-                            ),
-                          ),
-                          Text(
-                            'Watched ✓',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: tokens(context).textMuted,
-                                  fontSize: 12,
-                                ),
-                          ),
-                        ],
-                      ],
-                    ),
+                    _buildEpisodeMetaRow(context),
                   ],
                 ),
               ),
@@ -368,18 +611,5 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
         ),
       ),
     );
-  }
-
-  String _formatDuration(int milliseconds) {
-    final duration = Duration(milliseconds: milliseconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    } else {
-      return '$minutes:${seconds.toString().padLeft(2, '0')}';
-    }
   }
 }

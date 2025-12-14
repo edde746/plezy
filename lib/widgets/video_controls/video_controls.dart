@@ -1,32 +1,40 @@
-import 'dart:async';
+import 'dart:async' show StreamSubscription, Timer;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation;
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:rate_limiter/rate_limiter.dart';
+import 'package:flutter/services.dart'
+    show
+        SystemChrome,
+        DeviceOrientation,
+        LogicalKeyboardKey,
+        KeyDownEvent,
+        KeyRepeatEvent;
 import 'package:macos_window_utils/macos_window_utils.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../mpv/mpv.dart';
+
+import '../../services/plex_client.dart';
+import '../../services/plex_api_cache.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
 import '../../screens/video_player_screen.dart';
-import '../../services/fullscreen_state_manager.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
-import '../../services/sleep_timer_service.dart';
-import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/player_utils.dart';
 import '../../utils/provider_extensions.dart';
+import '../../utils/video_control_icons.dart';
+import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
-import '../app_bar_back_button.dart';
-import 'painters/chapter_marker_painter.dart';
-import 'sheets/audio_track_sheet.dart';
-import 'sheets/chapter_sheet.dart';
-import 'sheets/subtitle_track_sheet.dart';
-import 'sheets/version_sheet.dart';
-import 'sheets/video_settings_sheet.dart';
-import 'video_control_button.dart';
+import '../../focus/input_mode_tracker.dart';
+import 'widgets/track_chapter_controls.dart';
+import 'mobile_video_controls.dart';
+import 'desktop_video_controls.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
@@ -38,6 +46,8 @@ Widget plexVideoControlsBuilder(
   int? selectedMediaIndex,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
+  Function(AudioTrack)? onAudioTrackChanged,
+  Function(SubtitleTrack)? onSubtitleTrackChanged,
 }) {
   return PlexVideoControls(
     player: player,
@@ -48,6 +58,8 @@ Widget plexVideoControlsBuilder(
     selectedMediaIndex: selectedMediaIndex ?? 0,
     boxFitMode: boxFitMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
+    onAudioTrackChanged: onAudioTrackChanged,
+    onSubtitleTrackChanged: onSubtitleTrackChanged,
   );
 }
 
@@ -60,6 +72,8 @@ class PlexVideoControls extends StatefulWidget {
   final int selectedMediaIndex;
   final int boxFitMode;
   final VoidCallback? onCycleBoxFitMode;
+  final Function(AudioTrack)? onAudioTrackChanged;
+  final Function(SubtitleTrack)? onSubtitleTrackChanged;
 
   const PlexVideoControls({
     super.key,
@@ -71,6 +85,8 @@ class PlexVideoControls extends StatefulWidget {
     this.selectedMediaIndex = 0,
     this.boxFitMode = 0,
     this.onCycleBoxFitMode,
+    this.onAudioTrackChanged,
+    this.onSubtitleTrackChanged,
   });
 
   @override
@@ -80,6 +96,7 @@ class PlexVideoControls extends StatefulWidget {
 class _PlexVideoControlsState extends State<PlexVideoControls>
     with WindowListener, WidgetsBindingObserver {
   bool _showControls = true;
+  bool _controlsFullyHidden = false; // For Linux: true after fade-out completes
   List<PlexChapter> _chapters = [];
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
@@ -90,34 +107,78 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   int _audioSyncOffset = 0; // Default, loaded from settings
   int _subtitleSyncOffset = 0; // Default, loaded from settings
   bool _isRotationLocked = true; // Default locked (landscape only)
+
+  // GlobalKey to access DesktopVideoControls state for focus management
+  final GlobalKey<DesktopVideoControlsState> _desktopControlsKey =
+      GlobalKey<DesktopVideoControlsState>();
+
+  /// Get the correct PlexClient for this metadata's server
+  PlexClient _getClientForMetadata() {
+    return context.getClientForServer(widget.metadata.serverId!);
+  }
+
   // Double-tap feedback state
   bool _showDoubleTapFeedback = false;
   double _doubleTapFeedbackOpacity = 0.0;
   bool _lastDoubleTapWasForward = true;
   Timer? _feedbackTimer;
-  // Seek throttle state
-  Timer? _seekThrottleTimer;
-  Duration? _pendingSeekPosition;
+  // Seek throttle
+  late final Throttle _seekThrottle;
   // Current marker state
   PlexMarker? _currentMarker;
   List<PlexMarker> _markers = [];
   bool _markersLoaded = false;
+  // Playback state subscription for auto-hide timer
+  StreamSubscription<bool>? _playingSubscription;
+  // Completed subscription to show controls when video ends
+  StreamSubscription<bool>? _completedSubscription;
+  // Window resize pause state
+  Timer? _resizeDebounceTimer;
+  bool _wasPlayingBeforeResize = false;
+  // Auto-skip state
+  bool _autoSkipIntro = true;
+  bool _autoSkipCredits = true;
+  int _autoSkipDelay = 5;
+  Timer? _autoSkipTimer;
+  double _autoSkipProgress = 0.0;
+  // Video player navigation (use arrow keys to navigate controls)
+  bool _videoPlayerNavigationEnabled = false;
 
   @override
   void initState() {
     super.initState();
     _focusNode = FocusNode();
-    _loadChapters();
-    _loadMarkers();
+    _seekThrottle = throttle(
+      (Duration pos) => widget.player.seek(pos),
+      const Duration(milliseconds: 200),
+      leading: true,
+      trailing: true,
+    );
+    _loadPlaybackExtras();
     _loadSeekTimes();
     _startHideTimer();
     _initKeyboardService();
     _listenToPosition();
+    _listenToPlayingState();
+    _listenToCompleted();
     // Add lifecycle observer to reload settings when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.addListener(this);
+    }
+    // Focus play/pause button on first frame if in keyboard mode
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusPlayPauseIfKeyboardMode();
+    });
+  }
+
+  /// Focus play/pause button if we're in keyboard navigation mode (desktop only)
+  void _focusPlayPauseIfKeyboardMode() {
+    if (!mounted) return;
+    final isMobile = PlatformDetector.isMobile(context);
+    if (!isMobile && InputModeTracker.isKeyboardMode(context)) {
+      _desktopControlsKey.currentState?.requestPlayPauseFocus();
     }
   }
 
@@ -126,7 +187,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   }
 
   void _listenToPosition() {
-    widget.player.stream.position.listen((position) {
+    widget.player.streams.position.listen((position) {
       if (_markers.isEmpty || !_markersLoaded) {
         return;
       }
@@ -144,6 +205,44 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           setState(() {
             _currentMarker = foundMarker;
           });
+
+          // Start auto-skip timer for new marker
+          if (foundMarker != null) {
+            _startAutoSkipTimer(foundMarker);
+          } else {
+            _cancelAutoSkipTimer();
+          }
+        }
+      }
+    });
+  }
+
+  /// Listen to playback state changes to manage auto-hide timer on iOS/mobile
+  void _listenToPlayingState() {
+    _playingSubscription = widget.player.streams.playing.listen((isPlaying) {
+      if (isPlaying && _showControls) {
+        _startHideTimer();
+      } else if (!isPlaying) {
+        _hideTimer?.cancel();
+      }
+    });
+  }
+
+  /// Listen to completed stream to show controls when video ends
+  void _listenToCompleted() {
+    _completedSubscription = widget.player.streams.completed.listen((
+      completed,
+    ) {
+      if (completed && mounted) {
+        // Show controls when video completes (for play next dialog etc.)
+        setState(() {
+          _showControls = true;
+          _controlsFullyHidden = false;
+        });
+        _hideTimer?.cancel();
+        // On Linux, ensure Flutter view is visible
+        if (Platform.isLinux) {
+          widget.player.setControlsVisible(true);
         }
       }
     });
@@ -153,6 +252,75 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     if (_currentMarker != null) {
       widget.player.seek(_currentMarker!.endTime);
     }
+    _cancelAutoSkipTimer();
+  }
+
+  void _startAutoSkipTimer(PlexMarker marker) {
+    _cancelAutoSkipTimer();
+
+    final shouldAutoSkip =
+        (marker.isCredits && _autoSkipCredits) ||
+        (!marker.isCredits && _autoSkipIntro);
+
+    if (!shouldAutoSkip || _autoSkipDelay <= 0) return;
+
+    _autoSkipProgress = 0.0;
+    const tickDuration = Duration(milliseconds: 50);
+    final totalTicks = (_autoSkipDelay * 1000) / tickDuration.inMilliseconds;
+
+    if (totalTicks <= 0) return;
+
+    _autoSkipTimer = Timer.periodic(tickDuration, (timer) {
+      if (!mounted || _currentMarker != marker) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        _autoSkipProgress = (timer.tick / totalTicks).clamp(0.0, 1.0);
+      });
+
+      if (timer.tick >= totalTicks) {
+        timer.cancel();
+        try {
+          _performAutoSkip();
+        } catch (e) {
+          // Handle any errors during skip gracefully
+        }
+      }
+    });
+  }
+
+  void _cancelAutoSkipTimer() {
+    _autoSkipTimer?.cancel();
+    _autoSkipTimer = null;
+    if (mounted) {
+      setState(() {
+        _autoSkipProgress = 0.0;
+      });
+    }
+  }
+
+  /// Perform the appropriate skip action based on marker type and next episode availability
+  void _performAutoSkip() {
+    if (_currentMarker == null) return;
+
+    final isCredits = _currentMarker!.isCredits;
+    final hasNextEpisode = widget.onNext != null;
+    final showNextEpisode = isCredits && hasNextEpisode;
+
+    if (showNextEpisode) {
+      widget.onNext?.call();
+    } else {
+      _skipMarker();
+    }
+  }
+
+  /// Check if auto-skip should be active for the current marker
+  bool _shouldShowAutoSkip() {
+    if (_currentMarker == null) return false;
+    return (_currentMarker!.isCredits && _autoSkipCredits) ||
+        (!_currentMarker!.isCredits && _autoSkipIntro);
   }
 
   Future<void> _loadSeekTimes() async {
@@ -163,6 +331,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _audioSyncOffset = settingsService.getAudioSyncOffset();
         _subtitleSyncOffset = settingsService.getSubtitleSyncOffset();
         _isRotationLocked = settingsService.getRotationLocked();
+        _autoSkipIntro = settingsService.getAutoSkipIntro();
+        _autoSkipCredits = settingsService.getAutoSkipCredits();
+        _autoSkipDelay = settingsService.getAutoSkipDelay();
+        _videoPlayerNavigationEnabled = settingsService
+            .getVideoPlayerNavigationEnabled();
       });
 
       // Apply rotation lock setting
@@ -210,7 +383,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void dispose() {
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
-    _seekThrottleTimer?.cancel();
+    _resizeDebounceTimer?.cancel();
+    _autoSkipTimer?.cancel();
+    _seekThrottle.cancel();
+    _playingSubscription?.cancel();
+    _completedSubscription?.cancel();
     _focusNode.dispose();
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
@@ -267,6 +444,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
+  @override
+  void onWindowResize() {
+    // Pause video while resizing to prevent lag
+    if (_resizeDebounceTimer == null && widget.player.state.playing) {
+      _wasPlayingBeforeResize = true;
+      widget.player.pause();
+    }
+
+    // Reset debounce timer - resume when resizing stops
+    _resizeDebounceTimer?.cancel();
+    _resizeDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (_wasPlayingBeforeResize && mounted) {
+        widget.player.play();
+      }
+      _wasPlayingBeforeResize = false;
+      _resizeDebounceTimer = null;
+    });
+  }
+
   void _startHideTimer() {
     _hideTimer?.cancel();
     // Only auto-hide if playing
@@ -280,17 +476,56 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           if (Platform.isMacOS) {
             _updateTrafficLightVisibility();
           }
+          // On Linux, fully hide after animation completes (200ms)
+          if (Platform.isLinux) {
+            Future.delayed(const Duration(milliseconds: 250), () {
+              if (mounted && !_showControls) {
+                setState(() {
+                  _controlsFullyHidden = true;
+                });
+                // Hide Flutter view to show only video
+                widget.player.setControlsVisible(false);
+              }
+            });
+          }
         }
       });
+    }
+  }
+
+  /// Restart the hide timer on user interaction (if video is playing)
+  void _restartHideTimerIfPlaying() {
+    if (widget.player.state.playing) {
+      _startHideTimer();
     }
   }
 
   void _toggleControls() {
     setState(() {
       _showControls = !_showControls;
+      if (_showControls) {
+        _controlsFullyHidden = false;
+        // On Linux, show Flutter view when controls are shown
+        if (Platform.isLinux) {
+          widget.player.setControlsVisible(true);
+        }
+      }
     });
     if (_showControls) {
       _startHideTimer();
+      // Cancel auto-skip when user manually shows controls
+      _cancelAutoSkipTimer();
+    } else if (Platform.isLinux) {
+      // On Linux, fully hide after animation completes (200ms)
+      Future.delayed(const Duration(milliseconds: 250), () {
+        if (mounted && !_showControls) {
+          setState(() {
+            _controlsFullyHidden = true;
+          });
+          // Hide Flutter view to show only video
+          widget.player.setControlsVisible(false);
+        }
+      });
     }
 
     // On macOS, hide/show traffic lights with controls
@@ -334,201 +569,138 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
-  Future<void> _loadChapters() async {
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
-    if (client == null) return;
+  Future<void> _loadPlaybackExtras() async {
+    try {
+      appLogger.d(
+        '_loadPlaybackExtras: starting for ${widget.metadata.ratingKey}',
+      );
+      final client = _getClientForMetadata();
+      appLogger.d(
+        '_loadPlaybackExtras: got client with serverId=${client.serverId}',
+      );
 
-    final chapters = await client.getChapters(widget.metadata.ratingKey);
-    if (mounted) {
-      setState(() {
-        _chapters = chapters;
-        _chaptersLoaded = true;
-      });
+      final extras = await client.getPlaybackExtras(widget.metadata.ratingKey);
+      appLogger.d(
+        '_loadPlaybackExtras: got ${extras.chapters.length} chapters',
+      );
+
+      if (mounted) {
+        setState(() {
+          _chapters = extras.chapters;
+          _markers = extras.markers;
+          _chaptersLoaded = true;
+          _markersLoaded = true;
+        });
+      }
+    } catch (e, stack) {
+      // Fallback: try to load from cache directly (for offline playback)
+      appLogger.d(
+        '_loadPlaybackExtras: client unavailable, trying cache fallback',
+      );
+      final serverId = widget.metadata.serverId;
+      if (serverId != null) {
+        final cacheKey = '/library/metadata/${widget.metadata.ratingKey}';
+        final cached = await PlexApiCache.instance.get(serverId, cacheKey);
+        if (cached != null) {
+          final extras = _parsePlaybackExtrasFromCache(cached);
+          appLogger.d(
+            '_loadPlaybackExtras: loaded ${extras.chapters.length} chapters from cache',
+          );
+          if (mounted) {
+            setState(() {
+              _chapters = extras.chapters;
+              _markers = extras.markers;
+              _chaptersLoaded = true;
+              _markersLoaded = true;
+            });
+          }
+          return;
+        }
+      }
+      appLogger.e('_loadPlaybackExtras failed', error: e, stackTrace: stack);
     }
   }
 
-  Future<void> _loadMarkers() async {
-    final clientProvider = context.plexClient;
-    final client = clientProvider.client;
-    if (client == null) return;
+  /// Parse PlaybackExtras from cached API response (for offline playback)
+  PlaybackExtras _parsePlaybackExtrasFromCache(Map<String, dynamic> cached) {
+    final chapters = <PlexChapter>[];
+    final markers = <PlexMarker>[];
 
-    final markers = await client.getMarkers(widget.metadata.ratingKey);
-
-    if (mounted) {
-      setState(() {
-        _markers = markers;
-        _markersLoaded = true;
-      });
-    }
-  }
-
-  bool _hasMultipleAudioTracks(Tracks? tracks) {
-    if (tracks == null) return false;
-    final audioTracks = tracks.audio
-        .where((track) => track.id != 'auto' && track.id != 'no')
-        .toList();
-    return audioTracks.length > 1;
-  }
-
-  bool _hasSubtitles(Tracks? tracks) {
-    if (tracks == null) return false;
-    final subtitles = tracks.subtitle
-        .where((track) => track.id != 'auto' && track.id != 'no')
-        .toList();
-    return subtitles.isNotEmpty;
-  }
-
-  IconData _getBoxFitIcon(int mode) {
-    switch (mode) {
-      case 0:
-        return Icons.fit_screen; // contain (letterbox)
-      case 1:
-        return Icons.aspect_ratio; // cover (fill screen)
-      case 2:
-        return Icons.settings_overscan; // fill (stretch)
-      default:
-        return Icons.fit_screen;
-    }
-  }
-
-  String _getBoxFitTooltip(int mode) {
-    switch (mode) {
-      case 0:
-        return t.videoControls.letterbox;
-      case 1:
-        return t.videoControls.fillScreen;
-      case 2:
-        return t.videoControls.stretch;
-      default:
-        return t.videoControls.letterbox;
-    }
-  }
-
-  /// Conditionally wraps child with SafeArea only in portrait mode
-  Widget _conditionalSafeArea({
-    required Widget child,
-    bool top = true,
-    bool bottom = true,
-  }) {
-    final orientation = MediaQuery.of(context).orientation;
-    final isPortrait = orientation == Orientation.portrait;
-
-    // Only apply SafeArea in portrait mode
-    if (isPortrait) {
-      return SafeArea(top: top, bottom: bottom, child: child);
+    Map<String, dynamic>? metadataJson;
+    if (cached['MediaContainer']?['Metadata'] != null &&
+        (cached['MediaContainer']['Metadata'] as List).isNotEmpty) {
+      metadataJson =
+          cached['MediaContainer']['Metadata'][0] as Map<String, dynamic>;
     }
 
-    // In landscape, return child without SafeArea
-    return child;
+    if (metadataJson != null) {
+      // Parse chapters
+      if (metadataJson['Chapter'] != null) {
+        for (var chapter in metadataJson['Chapter'] as List) {
+          chapters.add(
+            PlexChapter(
+              id: chapter['id'] as int,
+              index: chapter['index'] as int?,
+              startTimeOffset: chapter['startTimeOffset'] as int?,
+              endTimeOffset: chapter['endTimeOffset'] as int?,
+              title: chapter['tag'] as String?,
+              thumb: chapter['thumb'] as String?,
+            ),
+          );
+        }
+      }
+
+      // Parse markers
+      if (metadataJson['Marker'] != null) {
+        for (var marker in metadataJson['Marker'] as List) {
+          markers.add(
+            PlexMarker(
+              id: marker['id'] as int,
+              type: marker['type'] as String,
+              startTimeOffset: marker['startTimeOffset'] as int,
+              endTimeOffset: marker['endTimeOffset'] as int,
+            ),
+          );
+        }
+      }
+    }
+
+    return PlaybackExtras(chapters: chapters, markers: markers);
   }
 
-  Widget _buildTrackAndChapterControls() {
-    return StreamBuilder<Tracks>(
-      stream: widget.player.stream.tracks,
-      initialData: widget.player.state.tracks,
-      builder: (context, snapshot) {
-        final tracks = snapshot.data;
-        return IntrinsicHeight(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Unified settings button (speed, sleep timer, audio sync, subtitle sync)
-              ListenableBuilder(
-                listenable: SleepTimerService(),
-                builder: (context, _) {
-                  final sleepTimer = SleepTimerService();
-                  final isActive =
-                      sleepTimer.isActive ||
-                      _audioSyncOffset != 0 ||
-                      _subtitleSyncOffset != 0;
-                  return VideoControlButton(
-                    icon: Icons.tune,
-                    isActive: isActive,
-                    onPressed: () async {
-                      await VideoSettingsSheet.show(
-                        context,
-                        widget.player,
-                        _audioSyncOffset,
-                        _subtitleSyncOffset,
-                      );
-                      // Sheet is now closed, reload immediately
-                      if (mounted) {
-                        await _loadSeekTimes();
-                      }
-                    },
-                  );
-                },
-              ),
-              if (_hasMultipleAudioTracks(tracks))
-                VideoControlButton(
-                  icon: Icons.audiotrack,
-                  onPressed: () => AudioTrackSheet.show(context, widget.player),
-                ),
-              if (_hasSubtitles(tracks))
-                VideoControlButton(
-                  icon: Icons.subtitles,
-                  onPressed: () =>
-                      SubtitleTrackSheet.show(context, widget.player),
-                ),
-              if (_chapters.isNotEmpty)
-                VideoControlButton(
-                  icon: Icons.video_library,
-                  onPressed: () => ChapterSheet.show(
-                    context,
-                    widget.player,
-                    _chapters,
-                    _chaptersLoaded,
-                  ),
-                ),
-              if (widget.availableVersions.length > 1)
-                VideoControlButton(
-                  icon: Icons.video_file,
-                  onPressed: () => VersionSheet.show(
-                    context,
-                    widget.availableVersions,
-                    widget.selectedMediaIndex,
-                    _switchMediaVersion,
-                  ),
-                ),
-              // BoxFit mode cycle button
-              if (widget.onCycleBoxFitMode != null)
-                VideoControlButton(
-                  icon: _getBoxFitIcon(widget.boxFitMode),
-                  tooltip: _getBoxFitTooltip(widget.boxFitMode),
-                  onPressed: widget.onCycleBoxFitMode,
-                ),
-              // Rotation lock toggle (mobile only)
-              if (PlatformDetector.isMobile(context))
-                VideoControlButton(
-                  icon: _isRotationLocked
-                      ? Icons.screen_lock_rotation
-                      : Icons.screen_rotation,
-                  tooltip: _isRotationLocked
-                      ? t.videoControls.unlockRotation
-                      : t.videoControls.lockRotation,
-                  onPressed: _toggleRotationLock,
-                ),
-              // Fullscreen toggle (desktop only)
-              if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-                VideoControlButton(
-                  icon: _isFullscreen
-                      ? Icons.fullscreen_exit
-                      : Icons.fullscreen,
-                  onPressed: _toggleFullscreen,
-                ),
-            ],
-          ),
-        );
+  Widget _buildTrackChapterControlsWidget() {
+    return TrackChapterControls(
+      player: widget.player,
+      chapters: _chapters,
+      chaptersLoaded: _chaptersLoaded,
+      availableVersions: widget.availableVersions,
+      selectedMediaIndex: widget.selectedMediaIndex,
+      boxFitMode: widget.boxFitMode,
+      audioSyncOffset: _audioSyncOffset,
+      subtitleSyncOffset: _subtitleSyncOffset,
+      isRotationLocked: _isRotationLocked,
+      isFullscreen: _isFullscreen,
+      onCycleBoxFitMode: widget.onCycleBoxFitMode,
+      onToggleRotationLock: _toggleRotationLock,
+      onToggleFullscreen: _toggleFullscreen,
+      onSwitchVersion: _switchMediaVersion,
+      onAudioTrackChanged: widget.onAudioTrackChanged,
+      onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
+      onLoadSeekTimes: () async {
+        if (mounted) {
+          await _loadSeekTimes();
+        }
       },
+      onCancelAutoHide: () => _hideTimer?.cancel(),
+      onStartAutoHide: _startHideTimer,
+      serverId: widget.metadata.serverId ?? '',
     );
   }
 
   void _seekToPreviousChapter() {
     if (_chapters.isEmpty) {
       // No chapters - seek backward by configured amount
-      _seekWithClamping(Duration(seconds: -_seekTimeSmall));
+      seekWithClamping(widget.player, Duration(seconds: -_seekTimeSmall));
       return;
     }
 
@@ -551,7 +723,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   void _seekToNextChapter() {
     if (_chapters.isEmpty) {
       // No chapters - seek forward by configured amount
-      _seekWithClamping(Duration(seconds: _seekTimeSmall));
+      seekWithClamping(widget.player, Duration(seconds: _seekTimeSmall));
       return;
     }
 
@@ -567,91 +739,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
-  /// Seeks by the given offset (can be positive or negative) while clamping
-  /// the result between 0 and the video duration
-  void _seekWithClamping(Duration offset) {
-    final currentPosition = widget.player.state.position;
-    final duration = widget.player.state.duration;
-    final newPosition = currentPosition + offset;
-
-    // Clamp between 0 and video duration
-    final clampedPosition = newPosition.isNegative
-        ? Duration.zero
-        : (newPosition > duration ? duration : newPosition);
-
-    widget.player.seek(clampedPosition);
-  }
-
-  /// Throttled seek for timeline slider - only sends seek events at most every 100ms
-  void _throttledSeek(Duration position) {
-    // Store the pending position
-    _pendingSeekPosition = position;
-
-    // If timer is already active, just update the pending position
-    if (_seekThrottleTimer?.isActive ?? false) {
-      return;
-    }
-
-    // Execute the seek immediately for the first call
-    widget.player.seek(position);
-
-    // Start a timer to throttle subsequent seeks
-    _seekThrottleTimer = Timer(const Duration(milliseconds: 200), () {
-      // If there's a pending position that's different, execute it
-      if (_pendingSeekPosition != null && _pendingSeekPosition != position) {
-        widget.player.seek(_pendingSeekPosition!);
-      }
-      _pendingSeekPosition = null;
-    });
-  }
+  /// Throttled seek for timeline slider - executes immediately then throttles to 200ms
+  void _throttledSeek(Duration position) => _seekThrottle([position]);
 
   /// Finalizes the seek when user stops scrubbing the timeline
   void _finalizeSeek(Duration position) {
-    // Cancel any pending throttled seek
-    _seekThrottleTimer?.cancel();
-    _seekThrottleTimer = null;
-
-    // Execute the final position immediately to ensure accuracy
+    _seekThrottle.cancel();
     widget.player.seek(position);
-    _pendingSeekPosition = null;
-  }
-
-  /// Get the replay icon based on the duration
-  /// Returns numbered icons (replay_5, replay_10, replay_30) when available,
-  /// otherwise returns generic replay icon
-  IconData _getReplayIcon(int seconds) {
-    switch (seconds) {
-      case 5:
-        return Icons.replay_5;
-      case 10:
-        return Icons.replay_10;
-      case 30:
-        return Icons.replay_30;
-      default:
-        return Icons.replay; // Generic icon for custom durations
-    }
-  }
-
-  /// Get the forward icon based on the duration
-  /// Returns numbered icons (forward_5, forward_10, forward_30) when available,
-  /// otherwise returns generic forward icon
-  IconData _getForwardIcon(int seconds) {
-    switch (seconds) {
-      case 5:
-        return Icons.forward_5;
-      case 10:
-        return Icons.forward_10;
-      case 30:
-        return Icons.forward_30;
-      default:
-        return Icons.forward; // Generic icon for custom durations
-    }
   }
 
   /// Handle double-tap skip forward or backward
   void _handleDoubleTapSkip({required bool isForward}) {
     // Perform the seek
-    _seekWithClamping(
+    seekWithClamping(
+      widget.player,
       Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall),
     );
 
@@ -700,10 +801,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           color: Colors.black.withValues(alpha: 0.6),
           shape: BoxShape.circle,
         ),
-        child: Icon(
+        child: AppIcon(
           _lastDoubleTapWasForward
-              ? _getForwardIcon(_seekTimeSmall)
-              : _getReplayIcon(_seekTimeSmall),
+              ? getForwardIcon(_seekTimeSmall)
+              : getReplayIcon(_seekTimeSmall),
+          fill: 1,
           color: Colors.white,
           size: 48,
         ),
@@ -737,14 +839,133 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
+  /// Check if a key is a directional key (arrow keys)
+  bool _isDirectionalKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight;
+  }
+
+  /// Check if a key is a back/escape key
+  bool _isBackKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.escape ||
+        key == LogicalKeyboardKey.goBack ||
+        key == LogicalKeyboardKey.browserBack ||
+        key == LogicalKeyboardKey.gameButtonB;
+  }
+
+  /// Check if a key is a select/enter key
+  bool _isSelectKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.gameButtonA;
+  }
+
+  /// Show controls and focus play/pause on keyboard input (desktop only)
+  void _showControlsWithFocus() {
+    if (!_showControls) {
+      setState(() {
+        _showControls = true;
+        _controlsFullyHidden = false;
+      });
+      if (Platform.isLinux) {
+        widget.player.setControlsVisible(true);
+      }
+      if (Platform.isMacOS) {
+        _updateTrafficLightVisibility();
+      }
+    }
+    _startHideTimer();
+
+    // Request focus on play/pause button after controls are shown
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _desktopControlsKey.currentState?.requestPlayPauseFocus();
+    });
+  }
+
+  /// Hide controls when navigating up from timeline (keyboard mode)
+  void _hideControlsFromKeyboard() {
+    if (_showControls) {
+      setState(() {
+        _showControls = false;
+      });
+      // Return focus to the main focus node
+      _focusNode.requestFocus();
+      if (Platform.isMacOS) {
+        _updateTrafficLightVisibility();
+      }
+      if (Platform.isLinux) {
+        Future.delayed(const Duration(milliseconds: 250), () {
+          if (mounted && !_showControls) {
+            setState(() {
+              _controlsFullyHidden = true;
+            });
+            widget.player.setControlsVisible(false);
+          }
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isMobile = PlatformDetector.isMobile(context);
+    // Use desktop controls for desktop platforms AND Android TV
+    final isMobile =
+        PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
 
     return Focus(
       focusNode: _focusNode,
       autofocus: true,
       onKeyEvent: (node, event) {
+        // Only handle KeyDown and KeyRepeat events
+        if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+          return KeyEventResult.ignored;
+        }
+
+        // Reset hide timer on any keyboard/controller input when controls are visible
+        if (_showControls) {
+          _restartHideTimerIfPlaying();
+        }
+
+        final key = event.logicalKey;
+
+        // Handle Back/Escape: show controls if hidden, navigate back if visible
+        if (_isBackKey(key)) {
+          if (!_showControls) {
+            _showControlsWithFocus();
+            return KeyEventResult.handled;
+          }
+          // Controls visible - navigate back
+          Navigator.of(context).pop(true);
+          return KeyEventResult.handled;
+        }
+
+        // Handle Select/Enter when controls are hidden: pause and show controls
+        // Only intercept if this Focus node itself has primary focus (not a descendant)
+        if (_isSelectKey(key) && !_showControls && _focusNode.hasPrimaryFocus) {
+          widget.player.playOrPause();
+          _showControlsWithFocus();
+          return KeyEventResult.handled;
+        }
+
+        // On desktop, show controls and focus play/pause on directional input
+        // Only handle navigation if video player navigation is enabled
+        if (!isMobile &&
+            _isDirectionalKey(key) &&
+            _videoPlayerNavigationEnabled) {
+          // If controls are hidden, show them and focus play/pause
+          if (!_showControls) {
+            _showControlsWithFocus();
+            return KeyEventResult.handled;
+          }
+          // If controls are shown, let the event propagate to the focused control
+          // The DesktopVideoControls will handle navigation
+          return KeyEventResult.ignored;
+        }
+
+        // Pass other events to the keyboard shortcuts service
         if (_keyboardService == null) return KeyEventResult.ignored;
 
         return _keyboardService!.handleVideoPlayerKeyEvent(
@@ -756,6 +977,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           _nextSubtitleTrack,
           _nextChapter,
           _previousChapter,
+          onBack: () => Navigator.of(context).pop(true),
         );
       },
       child: MouseRegion(
@@ -767,7 +989,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           if (!_showControls) {
             setState(() {
               _showControls = true;
+              _controlsFullyHidden = false;
             });
+            // On Linux, show Flutter view when controls are shown
+            if (Platform.isLinux) {
+              widget.player.setControlsVisible(true);
+            }
             _startHideTimer();
             // On macOS, show traffic lights when controls appear
             if (Platform.isMacOS) {
@@ -786,32 +1013,107 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               ),
             ),
             // Custom controls overlay - use AnimatedOpacity to keep widget tree alive
+            // On Linux, use Offstage after fade completes to fully hide
             Positioned.fill(
-              child: IgnorePointer(
-                ignoring: !_showControls,
-                child: AnimatedOpacity(
-                  opacity: _showControls ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: GestureDetector(
-                    onTap: _toggleControls,
-                    behavior: HitTestBehavior.deferToChild,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.7),
-                            Colors.transparent,
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.7),
-                          ],
-                          stops: const [0.0, 0.2, 0.8, 1.0],
+              child: Offstage(
+                offstage: Platform.isLinux && _controlsFullyHidden,
+                child: IgnorePointer(
+                  ignoring: !_showControls,
+                  child: FocusScope(
+                    // Prevent focus from entering controls when hidden
+                    canRequestFocus: _showControls,
+                    child: AnimatedOpacity(
+                      opacity: _showControls ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: GestureDetector(
+                        onTap: _toggleControls,
+                        behavior: HitTestBehavior.deferToChild,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.7),
+                                Colors.transparent,
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.7),
+                              ],
+                              stops: const [0.0, 0.2, 0.8, 1.0],
+                            ),
+                          ),
+                          child: isMobile
+                              ? Listener(
+                                  behavior: HitTestBehavior.translucent,
+                                  onPointerDown: (_) =>
+                                      _restartHideTimerIfPlaying(),
+                                  child: MobileVideoControls(
+                                    player: widget.player,
+                                    metadata: widget.metadata,
+                                    chapters: _chapters,
+                                    chaptersLoaded: _chaptersLoaded,
+                                    seekTimeSmall: _seekTimeSmall,
+                                    trackChapterControls:
+                                        _buildTrackChapterControlsWidget(),
+                                    onSeek: _throttledSeek,
+                                    onSeekEnd: _finalizeSeek,
+                                    onPlayPause:
+                                        () {}, // Not used, handled internally
+                                    onCancelAutoHide: () =>
+                                        _hideTimer?.cancel(),
+                                    onStartAutoHide: _startHideTimer,
+                                  ),
+                                )
+                              : Listener(
+                                  behavior: HitTestBehavior.translucent,
+                                  onPointerDown: (_) =>
+                                      _restartHideTimerIfPlaying(),
+                                  child: DesktopVideoControls(
+                                    key: _desktopControlsKey,
+                                    player: widget.player,
+                                    metadata: widget.metadata,
+                                    onNext: widget.onNext,
+                                    onPrevious: widget.onPrevious,
+                                    chapters: _chapters,
+                                    chaptersLoaded: _chaptersLoaded,
+                                    seekTimeSmall: _seekTimeSmall,
+                                    onSeekToPreviousChapter:
+                                        _seekToPreviousChapter,
+                                    onSeekToNextChapter: _seekToNextChapter,
+                                    onSeek: _throttledSeek,
+                                    onSeekEnd: _finalizeSeek,
+                                    getReplayIcon: getReplayIcon,
+                                    getForwardIcon: getForwardIcon,
+                                    onFocusActivity: _restartHideTimerIfPlaying,
+                                    onHideControls: _hideControlsFromKeyboard,
+                                    // Track chapter controls data
+                                    availableVersions: widget.availableVersions,
+                                    selectedMediaIndex:
+                                        widget.selectedMediaIndex,
+                                    boxFitMode: widget.boxFitMode,
+                                    audioSyncOffset: _audioSyncOffset,
+                                    subtitleSyncOffset: _subtitleSyncOffset,
+                                    isFullscreen: _isFullscreen,
+                                    onCycleBoxFitMode: widget.onCycleBoxFitMode,
+                                    onToggleFullscreen: _toggleFullscreen,
+                                    onSwitchVersion: _switchMediaVersion,
+                                    onAudioTrackChanged:
+                                        widget.onAudioTrackChanged,
+                                    onSubtitleTrackChanged:
+                                        widget.onSubtitleTrackChanged,
+                                    onLoadSeekTimes: () async {
+                                      if (mounted) {
+                                        await _loadSeekTimes();
+                                      }
+                                    },
+                                    onCancelAutoHide: () =>
+                                        _hideTimer?.cancel(),
+                                    onStartAutoHide: _startHideTimer,
+                                    serverId: widget.metadata.serverId ?? '',
+                                  ),
+                                ),
                         ),
                       ),
-                      child: isMobile
-                          ? _buildMobileLayout()
-                          : _buildDesktopLayout(),
                     ),
                   ),
                 ),
@@ -932,630 +1234,101 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
     // Show "Next Episode" for credits when next episode is available
     final bool showNextEpisode = isCredits && hasNextEpisode;
-    final String buttonText = showNextEpisode
+    final String baseButtonText = showNextEpisode
         ? 'Next Episode'
         : (isCredits ? 'Skip Credits' : 'Skip Intro');
+
+    final isAutoSkipActive = _autoSkipTimer?.isActive ?? false;
+    final shouldShowAutoSkip = _shouldShowAutoSkip();
+
+    final int remainingSeconds = isAutoSkipActive && shouldShowAutoSkip
+        ? (_autoSkipDelay - (_autoSkipProgress * _autoSkipDelay)).ceil().clamp(
+            0,
+            _autoSkipDelay,
+          )
+        : 0;
+
+    final String buttonText =
+        isAutoSkipActive && shouldShowAutoSkip && remainingSeconds > 0
+        ? '$baseButtonText ($remainingSeconds)'
+        : baseButtonText;
     final IconData buttonIcon = showNextEpisode
-        ? Icons.skip_next
-        : Icons.fast_forward;
+        ? Symbols.skip_next_rounded
+        : Symbols.fast_forward_rounded;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: showNextEpisode ? widget.onNext : _skipMarker,
+        onTap: () {
+          if (isAutoSkipActive) {
+            _cancelAutoSkipTimer();
+          }
+          // Always perform the skip action when tapped
+          _performAutoSkip();
+        },
         borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                buttonText,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(buttonIcon, color: Colors.black, size: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMobileLayout() {
-    return Column(
-      children: [
-        // Top bar with back button and track/chapter controls
-        _buildMobileTopBar(),
-        const Spacer(),
-        // Centered large playback controls
-        _buildMobilePlaybackControls(),
-        const Spacer(),
-        // Progress bar at bottom
-        _buildMobileBottomBar(),
-      ],
-    );
-  }
-
-  Widget _buildDesktopLayout() {
-    return Column(
-      children: [
-        // Top bar with back button and title
-        _buildDesktopTopBar(),
-        const Spacer(),
-        // Bottom controls
-        _buildDesktopBottomControls(),
-      ],
-    );
-  }
-
-  // Mobile layout components
-  Widget _buildMobileTopBar() {
-    final topBar = _conditionalSafeArea(
-      bottom: false, // Only respect top safe area when in portrait
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Stack(
           children: [
-            AppBarBackButton(
-              style: BackButtonStyle.video,
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    widget.metadata.grandparentTitle ?? widget.metadata.title,
+                    buttonText,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  if (widget.metadata.parentIndex != null &&
-                      widget.metadata.index != null)
-                    Text(
-                      'S${widget.metadata.parentIndex} · E${widget.metadata.index} · ${widget.metadata.title}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  const SizedBox(width: 8),
+                  AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
                 ],
               ),
             ),
-            // Track and chapter controls in top right
-            _buildTrackAndChapterControls(),
-          ],
-        ),
-      ),
-    );
-
-    // On macOS, wrap with GestureDetector to prevent window dragging
-    if (Platform.isMacOS) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
-        child: topBar,
-      );
-    }
-
-    return topBar;
-  }
-
-  Widget _buildMobilePlaybackControls() {
-    return StreamBuilder<bool>(
-      stream: widget.player.stream.playing,
-      initialData: widget.player.state.playing,
-      builder: (context, snapshot) {
-        final isPlaying = snapshot.data ?? false;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  _getReplayIcon(_seekTimeSmall),
-                  color: Colors.white,
-                  size: 48,
-                ),
-                iconSize: 48,
-                onPressed: () {
-                  _seekWithClamping(Duration(seconds: -_seekTimeSmall));
-                },
-              ),
-            ),
-            const SizedBox(width: 48),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                  size: 72,
-                ),
-                iconSize: 72,
-                onPressed: () {
-                  if (isPlaying) {
-                    widget.player.pause();
-                    _hideTimer?.cancel(); // Cancel auto-hide when paused
-                  } else {
-                    widget.player.play();
-                    _startHideTimer(); // Start auto-hide when playing
-                  }
-                },
-              ),
-            ),
-            const SizedBox(width: 48),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  _getForwardIcon(_seekTimeSmall),
-                  color: Colors.white,
-                  size: 48,
-                ),
-                iconSize: 48,
-                onPressed: () {
-                  _seekWithClamping(Duration(seconds: _seekTimeSmall));
-                },
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildMobileBottomBar() {
-    return _conditionalSafeArea(
-      top: false, // Only respect bottom safe area when in portrait
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: StreamBuilder<Duration>(
-          stream: widget.player.stream.position,
-          initialData: widget.player.state.position,
-          builder: (context, positionSnapshot) {
-            return StreamBuilder<Duration>(
-              stream: widget.player.stream.duration,
-              initialData: widget.player.state.duration,
-              builder: (context, durationSnapshot) {
-                final position = positionSnapshot.data ?? Duration.zero;
-                final duration = durationSnapshot.data ?? Duration.zero;
-
-                return Column(
-                  children: [
-                    _buildTimelineWithChapters(
-                      position: position,
-                      duration: duration,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _formatDuration(position),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            _formatDuration(duration),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  // Desktop layout components
-  Widget _buildDesktopTopBar() {
-    // Use global fullscreen state for padding
-    return ListenableBuilder(
-      listenable: FullscreenStateManager(),
-      builder: (context, _) {
-        final isFullscreen = FullscreenStateManager().isFullscreen;
-        // In fullscreen on macOS, use less left padding since traffic lights auto-hide
-        // In normal mode on macOS, need more padding to avoid traffic lights
-        final leftPadding = Platform.isMacOS
-            ? (isFullscreen
-                  ? DesktopWindowPadding.macOSLeftFullscreen
-                  : DesktopWindowPadding.macOSLeft)
-            : DesktopWindowPadding.macOSLeftFullscreen;
-
-        return _buildDesktopTopBarContent(leftPadding);
-      },
-    );
-  }
-
-  Widget _buildDesktopTopBarContent(double leftPadding) {
-    final topBar = Padding(
-      padding: EdgeInsets.only(left: leftPadding, right: 16),
-      child: Row(
-        children: [
-          AppBarBackButton(
-            style: BackButtonStyle.video,
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Platform.isMacOS
-                ? _buildMacOSSingleLineTitle()
-                : _buildMultiLineTitle(),
-          ),
-        ],
-      ),
-    );
-
-    // On macOS, wrap with GestureDetector to prevent window dragging
-    if (Platform.isMacOS) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
-        child: topBar,
-      );
-    }
-
-    return topBar;
-  }
-
-  Widget _buildMacOSSingleLineTitle() {
-    // Build single-line title combining series and episode info
-    final seriesName =
-        widget.metadata.grandparentTitle ?? widget.metadata.title;
-    final hasEpisodeInfo =
-        widget.metadata.parentIndex != null && widget.metadata.index != null;
-
-    final titleText = hasEpisodeInfo
-        ? '$seriesName · S${widget.metadata.parentIndex} E${widget.metadata.index} · ${widget.metadata.title}'
-        : seriesName;
-
-    return Text(
-      titleText,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 15,
-        fontWeight: FontWeight.w500,
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildMultiLineTitle() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.metadata.grandparentTitle ?? widget.metadata.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        if (widget.metadata.parentIndex != null &&
-            widget.metadata.index != null)
-          Text(
-            'S${widget.metadata.parentIndex} · E${widget.metadata.index} · ${widget.metadata.title}',
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-      ],
-    );
-  }
-
-  Widget _buildDesktopBottomControls() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
-        children: [
-          // Row 1: Timeline with time indicators
-          StreamBuilder<Duration>(
-            stream: widget.player.stream.position,
-            initialData: widget.player.state.position,
-            builder: (context, positionSnapshot) {
-              return StreamBuilder<Duration>(
-                stream: widget.player.stream.duration,
-                initialData: widget.player.state.duration,
-                builder: (context, durationSnapshot) {
-                  final position = positionSnapshot.data ?? Duration.zero;
-                  final duration = durationSnapshot.data ?? Duration.zero;
-
-                  return Row(
+            // Progress indicator overlay
+            if (isAutoSkipActive && shouldShowAutoSkip)
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Row(
                     children: [
-                      Text(
-                        _formatDuration(position),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
                       Expanded(
-                        child: _buildTimelineWithChapters(
-                          position: position,
-                          duration: duration,
+                        flex: (_autoSkipProgress * 100).round(),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        _formatDuration(duration),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
+                      Expanded(
+                        flex: ((1.0 - _autoSkipProgress) * 100).round(),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.transparent,
+                          ),
                         ),
                       ),
                     ],
-                  );
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 4),
-          // Row 2: Playback controls and options
-          Row(
-            children: [
-              // Previous item
-              IconButton(
-                icon: Icon(
-                  Icons.skip_previous,
-                  color: widget.onPrevious != null
-                      ? Colors.white
-                      : Colors.white54,
-                ),
-                onPressed: widget.onPrevious,
-              ),
-              // Previous chapter (or skip backward if no chapters)
-              IconButton(
-                icon: Icon(
-                  _chapters.isEmpty
-                      ? _getReplayIcon(_seekTimeSmall)
-                      : Icons.fast_rewind,
-                  color: Colors.white,
-                ),
-                onPressed: _seekToPreviousChapter,
-              ),
-              // Play/Pause
-              StreamBuilder<bool>(
-                stream: widget.player.stream.playing,
-                initialData: widget.player.state.playing,
-                builder: (context, snapshot) {
-                  final isPlaying = snapshot.data ?? false;
-                  return IconButton(
-                    icon: Icon(
-                      isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                    iconSize: 32,
-                    onPressed: () {
-                      if (isPlaying) {
-                        widget.player.pause();
-                        _hideTimer?.cancel(); // Cancel auto-hide when paused
-                      } else {
-                        widget.player.play();
-                        _startHideTimer(); // Start auto-hide when playing
-                      }
-                    },
-                  );
-                },
-              ),
-              // Next chapter (or skip forward if no chapters)
-              IconButton(
-                icon: Icon(
-                  _chapters.isEmpty
-                      ? _getForwardIcon(_seekTimeSmall)
-                      : Icons.fast_forward,
-                  color: Colors.white,
-                ),
-                onPressed: _seekToNextChapter,
-              ),
-              // Next item
-              IconButton(
-                icon: Icon(
-                  Icons.skip_next,
-                  color: widget.onNext != null ? Colors.white : Colors.white54,
-                ),
-                onPressed: widget.onNext,
-              ),
-              const Spacer(),
-              // Volume control
-              _buildVolumeControl(),
-              const SizedBox(width: 16),
-              // Audio track, subtitle, and chapter controls
-              _buildTrackAndChapterControls(),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimelineWithChapters({
-    required Duration position,
-    required Duration duration,
-  }) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // Chapter markers layer
-        if (_chaptersLoaded &&
-            _chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children:
-                    _chapters.map((chapter) {
-                      final chapterPosition =
-                          (chapter.startTimeOffset ?? 0) /
-                          duration.inMilliseconds;
-                      return Expanded(
-                        flex: (chapterPosition * 1000).toInt(),
-                        child: const SizedBox(),
-                      );
-                    }).toList()..add(
-                      Expanded(
-                        flex:
-                            1000 -
-                            _chapters.fold<int>(
-                              0,
-                              (sum, chapter) =>
-                                  sum +
-                                  ((chapter.startTimeOffset ?? 0) /
-                                          duration.inMilliseconds *
-                                          1000)
-                                      .toInt(),
-                            ),
-                        child: const SizedBox(),
-                      ),
-                    ),
-              ),
-            ),
-          ),
-        // Slider
-        Slider(
-          value: duration.inMilliseconds > 0
-              ? position.inMilliseconds.toDouble()
-              : 0.0,
-          min: 0.0,
-          max: duration.inMilliseconds.toDouble(),
-          onChanged: (value) {
-            _throttledSeek(Duration(milliseconds: value.toInt()));
-          },
-          onChangeEnd: (value) {
-            _finalizeSeek(Duration(milliseconds: value.toInt()));
-          },
-          activeColor: Colors.white,
-          inactiveColor: Colors.white.withValues(alpha: 0.3),
-        ),
-        // Chapter marker indicators
-        if (_chaptersLoaded &&
-            _chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: CustomPaint(
-                  painter: ChapterMarkerPainter(
-                    chapters: _chapters,
-                    duration: duration,
                   ),
                 ),
               ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildVolumeControl() {
-    return StreamBuilder<double>(
-      stream: widget.player.stream.volume,
-      initialData: widget.player.state.volume,
-      builder: (context, snapshot) {
-        final volume = snapshot.data ?? 100.0;
-        final isMuted = volume == 0;
-
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(
-                isMuted ? Icons.volume_off : Icons.volume_up,
-                color: Colors.white,
-              ),
-              onPressed: () async {
-                final newVolume = isMuted ? 100.0 : 0.0;
-                widget.player.setVolume(newVolume);
-                final settings = await SettingsService.getInstance();
-                await settings.setVolume(newVolume);
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 100,
-              child: SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 3,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 6,
-                  ),
-                  overlayShape: const RoundSliderOverlayShape(
-                    overlayRadius: 12,
-                  ),
-                ),
-                child: Slider(
-                  value: volume,
-                  min: 0.0,
-                  max: 100.0,
-                  onChanged: (value) {
-                    widget.player.setVolume(value);
-                  },
-                  onChangeEnd: (value) async {
-                    final settings = await SettingsService.getInstance();
-                    await settings.setVolume(value);
-                  },
-                  activeColor: Colors.white,
-                  inactiveColor: Colors.white.withValues(alpha: 0.3),
-                ),
-              ),
-            ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -1581,6 +1354,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
       // Set flag on parent VideoPlayerScreen to skip orientation restoration
       videoPlayerState?.setReplacingWithVideo();
+      // Dispose the existing player before spinning up the replacement to avoid race conditions
+      await videoPlayerState?.disposePlayerForNavigation();
 
       // Navigate to new player screen with the selected version
       // Use PageRouteBuilder with zero-duration transitions to prevent orientation reset
@@ -1606,18 +1381,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
         );
       }
-    }
-  }
-
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    } else {
-      return '$minutes:${seconds.toString().padLeft(2, '0')}';
     }
   }
 }

@@ -1,29 +1,41 @@
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
-import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
-import 'services/plex_auth_service.dart';
-import 'services/server_connection_service.dart';
 import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/update_service.dart';
 import 'services/settings_service.dart';
+import 'services/tv_detection_service.dart';
+import 'services/gamepad_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';
+import 'providers/multi_server_provider.dart';
+import 'providers/server_state_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/hidden_libraries_provider.dart';
 import 'providers/playback_state_provider.dart';
-import 'utils/language_codes.dart';
+import 'providers/download_provider.dart';
+import 'providers/offline_mode_provider.dart';
+import 'providers/offline_watch_provider.dart';
+import 'services/multi_server_manager.dart';
+import 'services/offline_watch_sync_service.dart';
+import 'services/data_aggregation_service.dart';
+import 'services/server_registry.dart';
+import 'services/download_manager_service.dart';
+import 'services/download_storage_service.dart';
+import 'services/plex_api_cache.dart';
+import 'database/app_database.dart';
 import 'utils/app_logger.dart';
-import 'utils/provider_extensions.dart';
 import 'utils/orientation_helper.dart';
+import 'utils/language_codes.dart';
 import 'i18n/strings.g.dart';
+import 'focus/input_mode_tracker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,33 +48,47 @@ void main() async {
   LocaleSettings.setLocale(savedLocale);
 
   // Configure image cache for large libraries
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 500 << 20; // 500MB
-  PaintingBinding.instance.imageCache.maximumSize = 500; // 500 images
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20; // 200MB
+
+  // Initialize services in parallel where possible
+  final futures = <Future<void>>[];
 
   // Initialize window_manager for desktop platforms
   if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    await windowManager.ensureInitialized();
+    futures.add(windowManager.ensureInitialized());
   }
 
-  // Configure macOS window with custom titlebar
-  await MacOSTitlebarService.setupCustomTitlebar();
+  // Initialize TV detection for Android
+  if (Platform.isAndroid) {
+    futures.add(TvDetectionService.getInstance().then((_) {}));
+  }
 
-  // Initialize MediaKit
-  MediaKit.ensureInitialized();
+  // Configure macOS window with custom titlebar (depends on window manager)
+  futures.add(MacOSTitlebarService.setupCustomTitlebar());
 
-  // Note: Orientation will be set dynamically based on device type in MainApp
-
-  await StorageService.getInstance();
+  // Initialize storage service
+  futures.add(StorageService.getInstance().then((_) {}));
 
   // Initialize language codes for track selection
-  await LanguageCodes.initialize();
+  futures.add(LanguageCodes.initialize());
+
+  // Wait for all parallel services to complete
+  await Future.wait(futures);
 
   // Initialize logger level based on debug setting
   final debugEnabled = settings.getEnableDebugLogging();
   setLoggerLevel(debugEnabled);
 
+  // Initialize download storage service with settings
+  await DownloadStorageService.instance.initialize(settings);
+
   // Start global fullscreen state monitoring
   FullscreenStateManager().startMonitoring();
+
+  // Initialize gamepad service for desktop platforms
+  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    GamepadService.instance.start();
+  }
 
   // DTD service is available for MCP tooling connection if needed
 
@@ -72,33 +98,151 @@ void main() async {
 // Global RouteObserver for tracking navigation
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
+  // Initialize multi-server infrastructure
+  late final MultiServerManager _serverManager;
+  late final DataAggregationService _aggregationService;
+  late final AppDatabase _appDatabase;
+  late final DownloadManagerService _downloadManager;
+  late final OfflineWatchSyncService _offlineWatchSyncService;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    _serverManager = MultiServerManager();
+    _aggregationService = DataAggregationService(_serverManager);
+    _appDatabase = AppDatabase();
+
+    // Initialize API cache with database
+    PlexApiCache.initialize(_appDatabase);
+
+    _downloadManager = DownloadManagerService(
+      database: _appDatabase,
+      storageService: DownloadStorageService.instance,
+    );
+
+    _offlineWatchSyncService = OfflineWatchSyncService(
+      database: _appDatabase,
+      serverManager: _serverManager,
+    );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App came back to foreground - trigger sync check
+      _offlineWatchSyncService.onAppResumed();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Legacy provider for backward compatibility
         ChangeNotifierProvider(create: (context) => PlexClientProvider()),
+        // New multi-server providers
         ChangeNotifierProvider(
-          create: (context) => UserProfileProvider()..initialize(),
+          create: (context) =>
+              MultiServerProvider(_serverManager, _aggregationService),
         ),
+        ChangeNotifierProvider(create: (context) => ServerStateProvider()),
+        // Offline mode provider - depends on MultiServerProvider
+        ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
+          create: (_) {
+            final provider = OfflineModeProvider(_serverManager);
+            provider.initialize(); // Initialize immediately so statusStream listener is ready
+            return provider;
+          },
+          update: (_, multiServerProvider, previous) {
+            final provider = previous ?? OfflineModeProvider(_serverManager);
+            provider.initialize(); // Idempotent - safe to call again
+            return provider;
+          },
+        ),
+        // Download provider
+        ChangeNotifierProvider(
+          create: (context) =>
+              DownloadProvider(downloadManager: _downloadManager),
+        ),
+        // Offline watch sync service
+        ChangeNotifierProvider<OfflineWatchSyncService>(
+          create: (context) {
+            final offlineModeProvider = context.read<OfflineModeProvider>();
+            final downloadProvider = context.read<DownloadProvider>();
+
+            // Wire up callback to refresh download provider after watch state sync
+            _offlineWatchSyncService.onWatchStatesRefreshed = () {
+              downloadProvider.refreshMetadataFromCache();
+            };
+
+            _offlineWatchSyncService.startConnectivityMonitoring(
+              offlineModeProvider,
+            );
+            return _offlineWatchSyncService;
+          },
+        ),
+        // Offline watch provider - depends on sync service and download provider
+        ChangeNotifierProxyProvider2<
+          OfflineWatchSyncService,
+          DownloadProvider,
+          OfflineWatchProvider
+        >(
+          create: (context) => OfflineWatchProvider(
+            syncService: _offlineWatchSyncService,
+            downloadProvider: context.read<DownloadProvider>(),
+            apiCache: PlexApiCache.instance,
+          ),
+          update: (_, syncService, downloadProvider, previous) {
+            return previous ??
+                OfflineWatchProvider(
+                  syncService: syncService,
+                  downloadProvider: downloadProvider,
+                  apiCache: PlexApiCache.instance,
+                );
+          },
+        ),
+        // Existing providers
+        ChangeNotifierProvider(create: (context) => UserProfileProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(create: (context) => SettingsProvider()),
-        ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider()),
+        ChangeNotifierProvider(
+          create: (context) => SettingsProvider(),
+          lazy: true,
+        ),
+        ChangeNotifierProvider(
+          create: (context) => HiddenLibrariesProvider(),
+          lazy: true,
+        ),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return TranslationProvider(
-            child: MaterialApp(
-              title: t.app.title,
-              debugShowCheckedModeBanner: false,
-              theme: themeProvider.lightTheme,
-              darkTheme: themeProvider.darkTheme,
-              themeMode: themeProvider.materialThemeMode,
-              navigatorObservers: [routeObserver],
-              home: const OrientationAwareSetup(),
+            child: InputModeTracker(
+              child: MaterialApp(
+                title: t.app.title,
+                debugShowCheckedModeBanner: false,
+                theme: themeProvider.lightTheme,
+                darkTheme: themeProvider.darkTheme,
+                themeMode: themeProvider.materialThemeMode,
+                navigatorObservers: [routeObserver],
+                home: const OrientationAwareSetup(),
+              ),
             ),
           );
         },
@@ -145,7 +289,7 @@ class _SetupScreenState extends State<SetupScreen> {
     _loadSavedCredentials();
   }
 
-  void _checkForUpdatesOnStartup() async {
+  Future<void> _checkForUpdatesOnStartup() async {
     // Delay slightly to allow UI to settle
     await Future.delayed(const Duration(milliseconds: 500));
 
@@ -219,86 +363,110 @@ class _SetupScreenState extends State<SetupScreen> {
 
   Future<void> _loadSavedCredentials() async {
     final storage = await StorageService.getInstance();
+    final registry = ServerRegistry(storage);
 
-    // Check if we have server data
-    final serverData = storage.getServerData();
-    final clientId = storage.getClientIdentifier();
-    final plexToken = storage.getPlexToken();
+    // Migrate from single-server to multi-server if needed
+    await registry.migrateFromSingleServer();
 
-    // Get current user's server token (prioritize over original server token)
-    final currentUserToken = storage.getToken();
+    // Load enabled servers
+    final servers = await registry.getEnabledServers();
 
-    if (serverData != null && clientId != null) {
-      try {
-        // Recreate PlexServer from stored data
-        final server = PlexServer.fromJson(serverData);
-
-        // Use current user's token if available, fallback to server's original token
-        final tokenToUse = currentUserToken ?? server.accessToken;
-
-        appLogger.d(
-          'App startup token selection: currentUserToken=${currentUserToken != null ? 'present' : 'null'}, using=${currentUserToken != null ? 'current user' : 'original server'} token',
+    if (servers.isEmpty) {
+      // No servers configured - show auth screen
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
         );
-
-        // Create updated server with correct token for current user
-        final serverWithCurrentToken = PlexServer(
-          name: server.name,
-          clientIdentifier: server.clientIdentifier,
-          accessToken: tokenToUse,
-          connections: server.connections,
-          owned: server.owned,
-          product: server.product,
-          platform: server.platform,
-          lastSeenAt: server.lastSeenAt,
-          presence: server.presence,
-        );
-
-        // Connect using the optimized service with current user's token
-        final result = await ServerConnectionService.connectToServer(
-          serverWithCurrentToken,
-          clientIdentifier: clientId,
-          verifyServer: true,
-          fetchUserProfile: plexToken != null,
-          plexToken: plexToken,
-        );
-
-        // Handle result
-        if (result.isSuccess) {
-          // Success! Set client in provider
-          if (mounted) {
-            context.plexClient.setClient(result.client!);
-
-            // Check for updates BEFORE navigation to keep context valid
-            _checkForUpdatesOnStartup();
-
-            // Navigate to main screen after update check is initiated
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MainScreen(client: result.client!),
-                ),
-              );
-            }
-          }
-          return;
-        } else {
-          // Connection failed, clear credentials
-          await storage.clearCredentials();
-        }
-      } catch (e) {
-        // Error loading or testing server
-        appLogger.e('Error during auto-login', error: e);
-        await storage.clearCredentials();
       }
+      return;
     }
 
-    // No saved credentials or auto-login failed - show auth screen
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const AuthScreen()),
+    // Get multi-server provider
+    if (!mounted) return;
+    final multiServerProvider = Provider.of<MultiServerProvider>(
+      context,
+      listen: false,
+    );
+
+    try {
+      appLogger.i('Connecting to ${servers.length} enabled servers...');
+
+      // Get or generate client identifier
+      final clientId = storage.getClientIdentifier();
+
+      // Connect to all servers in parallel
+      final connectedCount = await multiServerProvider.serverManager
+          .connectToAllServers(
+            servers,
+            clientIdentifier: clientId,
+            timeout: const Duration(seconds: 10),
+            onServerConnected: (serverId, client) {
+              // Set first connected client in legacy provider for backward compatibility
+              final legacyProvider = Provider.of<PlexClientProvider>(
+                context,
+                listen: false,
+              );
+              if (legacyProvider.client == null) {
+                legacyProvider.setClient(client);
+              }
+            },
+          );
+
+      if (connectedCount > 0) {
+        // At least one server connected successfully
+        appLogger.i('Successfully connected to $connectedCount servers');
+
+        if (mounted) {
+          // Now that Plex clients are available, trigger initial watch sync
+          context.read<OfflineWatchSyncService>().onServersConnected();
+
+          // Navigate to main screen immediately
+          // Get first connected client for backward compatibility
+          final firstClient =
+              multiServerProvider.serverManager.onlineClients.values.first;
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MainScreen(client: firstClient),
+            ),
+          );
+
+          // Check for updates in background after navigation
+          _checkForUpdatesOnStartup();
+        }
+      } else {
+        // All connections failed - navigate to offline mode
+        appLogger.w('Failed to connect to any servers, entering offline mode');
+
+        if (mounted) {
+          // Navigate to MainScreen in offline mode
+          // User can still access Downloads and Settings
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MainScreen(isOfflineMode: true),
+            ),
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      appLogger.e(
+        'Error during multi-server connection',
+        error: e,
+        stackTrace: stackTrace,
       );
+
+      if (mounted) {
+        // Navigate to MainScreen in offline mode
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MainScreen(isOfflineMode: true),
+          ),
+        );
+      }
     }
   }
 

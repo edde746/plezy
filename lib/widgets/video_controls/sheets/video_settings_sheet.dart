@@ -1,12 +1,78 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
+import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
+import '../../../utils/duration_formatter.dart';
 import '../../../utils/platform_detector.dart';
+import '../../../widgets/focusable_bottom_sheet.dart';
+import '../../../widgets/focusable_list_tile.dart';
 import '../widgets/sync_offset_control.dart';
+import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
+import 'base_video_control_sheet.dart';
 
 enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice }
+
+/// Reusable menu item widget for settings sheet
+class _SettingsMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String valueText;
+  final VoidCallback onTap;
+  final bool isHighlighted;
+  final bool allowValueOverflow;
+  final FocusNode? focusNode;
+
+  const _SettingsMenuItem({
+    required this.icon,
+    required this.title,
+    required this.valueText,
+    required this.onTap,
+    this.isHighlighted = false,
+    this.allowValueOverflow = false,
+    this.focusNode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final valueWidget = Text(
+      valueText,
+      style: TextStyle(
+        color: isHighlighted ? Colors.amber : Colors.white70,
+        fontSize: 14,
+      ),
+      overflow: allowValueOverflow ? TextOverflow.ellipsis : null,
+    );
+
+    return FocusableListTile(
+      focusNode: focusNode,
+      leading: AppIcon(
+        icon,
+        fill: 1,
+        color: isHighlighted ? Colors.amber : Colors.white70,
+      ),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (allowValueOverflow) Flexible(child: valueWidget) else valueWidget,
+          const SizedBox(width: 8),
+          const AppIcon(
+            Symbols.chevron_right_rounded,
+            fill: 1,
+            color: Colors.white70,
+          ),
+        ],
+      ),
+      onTap: onTap,
+    );
+  }
+}
 
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
@@ -21,28 +87,18 @@ class VideoSettingsSheet extends StatefulWidget {
     required this.subtitleSyncOffset,
   });
 
-  static BoxConstraints getBottomSheetConstraints(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 600;
-
-    return BoxConstraints(
-      maxWidth: isDesktop ? 700 : double.infinity,
-      maxHeight: isDesktop ? 400 : size.height * 0.75,
-      minHeight: isDesktop ? 300 : size.height * 0.5,
-    );
-  }
-
   static Future<void> show(
     BuildContext context,
     Player player,
     int audioSyncOffset,
-    int subtitleSyncOffset,
-  ) {
-    return showModalBottomSheet(
+    int subtitleSyncOffset, {
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
+  }) {
+    return BaseVideoControlSheet.showSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: getBottomSheetConstraints(context),
+      onOpen: onOpen,
+      onClose: onClose,
       builder: (context) => VideoSettingsSheet(
         player: player,
         audioSyncOffset: audioSyncOffset,
@@ -59,12 +115,40 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   _SettingsView _currentView = _SettingsView.menu;
   late int _audioSyncOffset;
   late int _subtitleSyncOffset;
+  bool _enableHDR = true;
+  late final FocusNode _initialFocusNode;
 
   @override
   void initState() {
     super.initState();
     _audioSyncOffset = widget.audioSyncOffset;
     _subtitleSyncOffset = widget.subtitleSyncOffset;
+    _initialFocusNode = FocusNode(debugLabel: 'VideoSettingsInitialFocus');
+    _loadHDRSetting();
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadHDRSetting() async {
+    final settings = await SettingsService.getInstance();
+    setState(() {
+      _enableHDR = settings.getEnableHDR();
+    });
+  }
+
+  Future<void> _toggleHDR() async {
+    final newValue = !_enableHDR;
+    final settings = await SettingsService.getInstance();
+    await settings.setEnableHDR(newValue);
+    setState(() {
+      _enableHDR = newValue;
+    });
+    // Apply to player immediately
+    await widget.player.setProperty('hdr-enabled', newValue ? 'yes' : 'no');
   }
 
   void _navigateTo(_SettingsView view) {
@@ -99,17 +183,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   IconData _getIcon() {
     switch (_currentView) {
       case _SettingsView.menu:
-        return Icons.tune;
+        return Symbols.tune_rounded;
       case _SettingsView.speed:
-        return Icons.speed;
+        return Symbols.speed_rounded;
       case _SettingsView.sleep:
-        return Icons.bedtime;
+        return Symbols.bedtime_rounded;
       case _SettingsView.audioSync:
-        return Icons.sync;
+        return Symbols.sync_rounded;
       case _SettingsView.subtitleSync:
-        return Icons.subtitles;
+        return Symbols.subtitles_rounded;
       case _SettingsView.audioDevice:
-        return Icons.speaker;
+        return Symbols.speaker_rounded;
     }
   }
 
@@ -118,78 +202,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return '${speed.toStringAsFixed(2)}x';
   }
 
-  String _formatAudioSync(int offsetMs) {
-    if (offsetMs == 0) return '0ms';
-    final sign = offsetMs >= 0 ? '+' : '';
-    return '$sign${offsetMs}ms';
-  }
-
   String _formatSleepTimer(SleepTimerService sleepTimer) {
     if (!sleepTimer.isActive) return 'Off';
     final remaining = sleepTimer.remainingTime;
     if (remaining == null) return 'Off';
-
-    final minutes = remaining.inMinutes;
-    final seconds = remaining.inSeconds.remainder(60);
-
-    if (minutes > 0) {
-      return 'Active (${minutes}m ${seconds}s)';
-    } else {
-      return 'Active (${seconds}s)';
-    }
-  }
-
-  String _formatSleepTimerDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-
-    if (hours > 0) {
-      return '${hours}h ${minutes}m ${seconds}s';
-    } else if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    } else {
-      return '${seconds}s';
-    }
-  }
-
-  Widget _buildHeader() {
-    final sleepTimer = SleepTimerService();
-    final isIconActive =
-        _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive ||
-            _audioSyncOffset != 0 ||
-            _subtitleSyncOffset != 0);
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          // Back button or icon
-          if (_currentView != _SettingsView.menu)
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: _navigateBack,
-            )
-          else
-            Icon(_getIcon(), color: isIconActive ? Colors.amber : Colors.white),
-          const SizedBox(width: 12),
-          Text(
-            _getTitle(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
-    );
+    return 'Active (${formatDurationWithSeconds(remaining)})';
   }
 
   Widget _buildMenuView() {
@@ -200,27 +217,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       children: [
         // Playback Speed
         StreamBuilder<double>(
-          stream: widget.player.stream.rate,
+          stream: widget.player.streams.rate,
           initialData: widget.player.state.rate,
           builder: (context, snapshot) {
             final currentRate = snapshot.data ?? 1.0;
-            return ListTile(
-              leading: const Icon(Icons.speed, color: Colors.white70),
-              title: const Text(
-                'Playback Speed',
-                style: TextStyle(color: Colors.white),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatSpeed(currentRate),
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right, color: Colors.white70),
-                ],
-              ),
+            return _SettingsMenuItem(
+              focusNode: _initialFocusNode,
+              icon: Symbols.speed_rounded,
+              title: 'Playback Speed',
+              valueText: _formatSpeed(currentRate),
               onTap: () => _navigateTo(_SettingsView.speed),
             );
           },
@@ -231,125 +236,70 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           listenable: sleepTimer,
           builder: (context, _) {
             final isActive = sleepTimer.isActive;
-            return ListTile(
-              leading: Icon(
-                isActive ? Icons.bedtime : Icons.bedtime_outlined,
-                color: isActive ? Colors.amber : Colors.white70,
-              ),
-              title: const Text(
-                'Sleep Timer',
-                style: TextStyle(color: Colors.white),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatSleepTimer(sleepTimer),
-                    style: TextStyle(
-                      color: isActive ? Colors.amber : Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.chevron_right, color: Colors.white70),
-                ],
-              ),
+            return _SettingsMenuItem(
+              icon: isActive
+                  ? Symbols.bedtime_rounded
+                  : Symbols.bedtime_rounded,
+              title: 'Sleep Timer',
+              valueText: _formatSleepTimer(sleepTimer),
+              isHighlighted: isActive,
               onTap: () => _navigateTo(_SettingsView.sleep),
             );
           },
         ),
 
         // Audio Sync
-        ListTile(
-          leading: Icon(
-            Icons.sync,
-            color: _audioSyncOffset != 0 ? Colors.amber : Colors.white70,
-          ),
-          title: const Text(
-            'Audio Sync',
-            style: TextStyle(color: Colors.white),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _formatAudioSync(_audioSyncOffset),
-                style: TextStyle(
-                  color: _audioSyncOffset != 0 ? Colors.amber : Colors.white70,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.white70),
-            ],
-          ),
+        _SettingsMenuItem(
+          icon: Symbols.sync_rounded,
+          title: 'Audio Sync',
+          valueText: formatSyncOffset(_audioSyncOffset.toDouble()),
+          isHighlighted: _audioSyncOffset != 0,
           onTap: () => _navigateTo(_SettingsView.audioSync),
         ),
 
         // Subtitle Sync
-        ListTile(
-          leading: Icon(
-            Icons.subtitles,
-            color: _subtitleSyncOffset != 0 ? Colors.amber : Colors.white70,
-          ),
-          title: const Text(
-            'Subtitle Sync',
-            style: TextStyle(color: Colors.white),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _formatAudioSync(_subtitleSyncOffset),
-                style: TextStyle(
-                  color: _subtitleSyncOffset != 0
-                      ? Colors.amber
-                      : Colors.white70,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.white70),
-            ],
-          ),
+        _SettingsMenuItem(
+          icon: Symbols.subtitles_rounded,
+          title: 'Subtitle Sync',
+          valueText: formatSyncOffset(_subtitleSyncOffset.toDouble()),
+          isHighlighted: _subtitleSyncOffset != 0,
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),
+
+        // HDR Toggle (iOS, macOS, and Windows)
+        if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
+          ListTile(
+            leading: AppIcon(
+              Symbols.hdr_strong_rounded,
+              fill: 1,
+              color: _enableHDR ? Colors.amber : Colors.white70,
+            ),
+            title: const Text('HDR', style: TextStyle(color: Colors.white)),
+            trailing: Switch(
+              value: _enableHDR,
+              onChanged: (_) => _toggleHDR(),
+              activeThumbColor: Colors.amber,
+            ),
+            onTap: _toggleHDR,
+          ),
 
         // Audio Output Device (Desktop only)
         if (isDesktop)
           StreamBuilder<AudioDevice>(
-            stream: widget.player.stream.audioDevice,
+            stream: widget.player.streams.audioDevice,
             initialData: widget.player.state.audioDevice,
             builder: (context, snapshot) {
               final currentDevice =
                   snapshot.data ?? widget.player.state.audioDevice;
               final deviceLabel = currentDevice.description.isEmpty
                   ? currentDevice.name
-                  : currentDevice.description;
+                  : '${currentDevice.name} · ${currentDevice.description}';
 
-              return ListTile(
-                leading: const Icon(Icons.speaker, color: Colors.white70),
-                title: const Text(
-                  'Audio Output',
-                  style: TextStyle(color: Colors.white),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        deviceLabel,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right, color: Colors.white70),
-                  ],
-                ),
+              return _SettingsMenuItem(
+                icon: Symbols.speaker_rounded,
+                title: 'Audio Output',
+                valueText: deviceLabel,
+                allowValueOverflow: true,
                 onTap: () => _navigateTo(_SettingsView.audioDevice),
               );
             },
@@ -360,7 +310,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   Widget _buildSpeedView() {
     return StreamBuilder<double>(
-      stream: widget.player.stream.rate,
+      stream: widget.player.streams.rate,
       initialData: widget.player.state.rate,
       builder: (context, snapshot) {
         final currentRate = snapshot.data ?? 1.0;
@@ -383,7 +333,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 ),
               ),
               trailing: isSelected
-                  ? const Icon(Icons.check, color: Colors.blue)
+                  ? const AppIcon(
+                      Symbols.check_rounded,
+                      fill: 1,
+                      color: Colors.blue,
+                    )
                   : null,
               onTap: () {
                 widget.player.setRate(speed);
@@ -399,119 +353,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget _buildSleepView() {
     final sleepTimer = SleepTimerService();
 
-    return ListenableBuilder(
-      listenable: sleepTimer,
-      builder: (context, _) {
-        final durations = [5, 10, 15, 30, 45, 60, 90, 120];
-        final remainingTime = sleepTimer.remainingTime;
-
-        return Column(
-          children: [
-            // Active timer status
-            if (sleepTimer.isActive && remainingTime != null) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.amber.withValues(alpha: 0.1),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Timer Active',
-                      style: TextStyle(
-                        color: Colors.amber,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Playback will pause in ${_formatSleepTimerDuration(remainingTime)}',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.add),
-                          label: Text(
-                            t.videoControls.addTime(amount: "15", unit: " min"),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white54),
-                          ),
-                          onPressed: () {
-                            sleepTimer.extendTimer(const Duration(minutes: 15));
-                          },
-                        ),
-                        const SizedBox(width: 12),
-                        FilledButton.icon(
-                          icon: const Icon(Icons.cancel),
-                          label: Text(t.common.cancel),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.red,
-                          ),
-                          onPressed: () {
-                            sleepTimer.cancelTimer();
-                            Navigator.pop(context); // Close after cancel
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(color: Colors.white24, height: 1),
-            ],
-
-            // Duration list
-            Expanded(
-              child: ListView.builder(
-                itemCount: durations.length,
-                itemBuilder: (context, index) {
-                  final minutes = durations[index];
-                  final label = minutes < 60
-                      ? '$minutes minutes'
-                      : '${(minutes / 60).toStringAsFixed(minutes % 60 == 0 ? 0 : 1)} ${minutes == 60 ? 'hour' : 'hours'}';
-
-                  return ListTile(
-                    leading: const Icon(Icons.timer, color: Colors.white70),
-                    title: Text(
-                      label,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    onTap: () {
-                      sleepTimer.startTimer(Duration(minutes: minutes), () {
-                        widget.player.pause();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Sleep timer completed - playback paused',
-                              ),
-                              duration: Duration(seconds: 3),
-                            ),
-                          );
-                        }
-                      });
-                      Navigator.pop(context); // Close after selection
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(t.messages.sleepTimerSet(label: label)),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
+    return SleepTimerContent(
+      player: widget.player,
+      sleepTimer: sleepTimer,
+      onCancel: () => Navigator.pop(context),
     );
   }
 
@@ -549,13 +394,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   Widget _buildAudioDeviceView() {
     return StreamBuilder<List<AudioDevice>>(
-      stream: widget.player.stream.audioDevices,
+      stream: widget.player.streams.audioDevices,
       initialData: widget.player.state.audioDevices,
       builder: (context, snapshot) {
         final devices = snapshot.data ?? [];
 
         return StreamBuilder<AudioDevice>(
-          stream: widget.player.stream.audioDevice,
+          stream: widget.player.streams.audioDevice,
           initialData: widget.player.state.audioDevice,
           builder: (context, selectedSnapshot) {
             final currentDevice =
@@ -578,7 +423,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                     ),
                   ),
                   trailing: isSelected
-                      ? const Icon(Icons.check, color: Colors.blue)
+                      ? const AppIcon(
+                          Symbols.check_rounded,
+                          fill: 1,
+                          color: Colors.blue,
+                        )
                       : null,
                   onTap: () {
                     widget.player.setAudioDevice(device);
@@ -595,33 +444,36 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.75,
-        child: Column(
-          children: [
-            _buildHeader(),
-            const Divider(color: Colors.white24, height: 1),
-            Expanded(
-              child: () {
-                switch (_currentView) {
-                  case _SettingsView.menu:
-                    return _buildMenuView();
-                  case _SettingsView.speed:
-                    return _buildSpeedView();
-                  case _SettingsView.sleep:
-                    return _buildSleepView();
-                  case _SettingsView.audioSync:
-                    return _buildAudioSyncView();
-                  case _SettingsView.subtitleSync:
-                    return _buildSubtitleSyncView();
-                  case _SettingsView.audioDevice:
-                    return _buildAudioDeviceView();
-                }
-              }(),
-            ),
-          ],
-        ),
+    final sleepTimer = SleepTimerService();
+    final isIconActive =
+        _currentView == _SettingsView.menu &&
+        (sleepTimer.isActive ||
+            _audioSyncOffset != 0 ||
+            _subtitleSyncOffset != 0);
+
+    return FocusableBottomSheet(
+      initialFocusNode: _initialFocusNode,
+      child: BaseVideoControlSheet(
+        title: _getTitle(),
+        icon: _getIcon(),
+        iconColor: isIconActive ? Colors.amber : Colors.white,
+        onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
+        child: () {
+          switch (_currentView) {
+            case _SettingsView.menu:
+              return _buildMenuView();
+            case _SettingsView.speed:
+              return _buildSpeedView();
+            case _SettingsView.sleep:
+              return _buildSleepView();
+            case _SettingsView.audioSync:
+              return _buildAudioSyncView();
+            case _SettingsView.subtitleSync:
+              return _buildSubtitleSyncView();
+            case _SettingsView.audioDevice:
+              return _buildAudioDeviceView();
+          }
+        }(),
       ),
     );
   }

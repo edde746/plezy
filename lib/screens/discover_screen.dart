@@ -1,20 +1,22 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../client/plex_client.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../services/plex_client.dart';
+import '../utils/plex_image_helper.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_hub.dart';
-import '../providers/plex_client_provider.dart';
-import '../services/storage_service.dart';
-import '../services/plex_auth_service.dart';
-import '../widgets/media_card.dart';
+import '../providers/multi_server_provider.dart';
+import '../providers/server_state_provider.dart';
+import '../providers/hidden_libraries_provider.dart';
+import '../providers/playback_state_provider.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../widgets/user_avatar_widget.dart';
-import '../widgets/horizontal_scroll_with_arrows.dart';
-import 'profile_switch_screen.dart';
-import 'server_selection_screen.dart';
-import 'hub_detail_screen.dart';
+import 'profile/user_avatar_widget.dart';
+import '../widgets/hub_section.dart';
+import 'profile/profile_switch_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/settings_provider.dart';
 import '../mixins/refreshable.dart';
@@ -24,6 +26,8 @@ import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
+import '../utils/layout_constants.dart';
+import '../focus/dpad_navigator.dart';
 import 'auth_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -36,15 +40,27 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen>
-    with Refreshable, ItemUpdatable, SingleTickerProviderStateMixin {
+    with Refreshable, FullRefreshable, ItemUpdatable, SingleTickerProviderStateMixin {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
 
   @override
-  PlexClient get client => context.clientSafe;
+  PlexClient get client {
+    final multiServerProvider = Provider.of<MultiServerProvider>(
+      context,
+      listen: false,
+    );
+    if (!multiServerProvider.hasConnectedServers) {
+      throw Exception('No servers available');
+    }
+    return context.getClientForServer(
+      multiServerProvider.onlineServerIds.first,
+    );
+  }
 
   List<PlexMetadata> _onDeck = [];
   List<PlexHub> _hubs = [];
   bool _isLoading = true;
+  bool _areHubsLoading = true;
   String? _errorMessage;
   final PageController _heroController = PageController();
   final ScrollController _scrollController = ScrollController();
@@ -53,6 +69,99 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   late AnimationController _indicatorAnimationController;
   bool _isAutoScrollPaused = false;
 
+  // Hub navigation keys
+  GlobalKey<HubSectionState>? _continueWatchingHubKey;
+  final List<GlobalKey<HubSectionState>> _hubKeys = [];
+
+  // Hero and app bar focus
+  late FocusNode _heroFocusNode;
+  late FocusNode _refreshButtonFocusNode;
+  late FocusNode _userButtonFocusNode;
+  bool _isRefreshFocused = false;
+  bool _isUserFocused = false;
+
+  /// Get the correct PlexClient for an item's server
+  PlexClient _getClientForItem(PlexMetadata? item) {
+    // Items should always have a serverId, but if not, fall back to first available server
+    final serverId = item?.serverId;
+    if (serverId == null) {
+      final multiServerProvider = Provider.of<MultiServerProvider>(
+        context,
+        listen: false,
+      );
+      if (!multiServerProvider.hasConnectedServers) {
+        throw Exception('No servers available');
+      }
+      return context.getClientForServer(
+        multiServerProvider.onlineServerIds.first,
+      );
+    }
+    return context.getClientForServer(serverId);
+  }
+
+  /// Update hub keys when hubs list changes
+  void _updateHubKeys() {
+    _hubKeys.clear();
+    for (int i = 0; i < _hubs.length; i++) {
+      _hubKeys.add(GlobalKey<HubSectionState>());
+    }
+    // Create continue watching hub key if needed
+    if (_onDeck.isNotEmpty) {
+      _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
+    }
+  }
+
+  /// Get all hub states (continue watching + other hubs)
+  List<GlobalKey<HubSectionState>> get _allHubKeys {
+    final keys = <GlobalKey<HubSectionState>>[];
+    if (_continueWatchingHubKey != null && _onDeck.isNotEmpty) {
+      keys.add(_continueWatchingHubKey!);
+    }
+    keys.addAll(_hubKeys);
+    return keys;
+  }
+
+  /// Handle vertical navigation between hubs
+  /// Returns true if the navigation was handled
+  bool _handleVerticalNavigation(int hubIndex, bool isUp) {
+    final keys = _allHubKeys;
+    if (keys.isEmpty) return false;
+
+    // UP from first hub: Navigate to hero section
+    if (isUp && hubIndex == 0) {
+      _heroFocusNode.requestFocus();
+      // Scroll to top to show hero fully
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+      return true;
+    }
+
+    int targetIndex;
+    if (isUp) {
+      targetIndex = hubIndex - 1;
+    } else {
+      targetIndex = hubIndex + 1;
+    }
+
+    // Check if target is valid
+    if (targetIndex < 0 || targetIndex >= keys.length) {
+      // At boundary, block navigation (return true to consume the event)
+      return true;
+    }
+
+    // Navigate to target hub, clamping to available items
+    final targetState = keys[targetIndex].currentState;
+    if (targetState != null) {
+      targetState.requestFocusFromMemory();
+      return true;
+    }
+
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -60,8 +169,154 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       vsync: this,
       duration: _heroAutoScrollDuration,
     );
+    _heroFocusNode = FocusNode(debugLabel: 'hero_section');
+    _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
+    _userButtonFocusNode = FocusNode(debugLabel: 'user_button');
+    _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
+    _userButtonFocusNode.addListener(_onUserFocusChange);
     _loadContent();
     _startAutoScroll();
+  }
+
+  void _onRefreshFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isRefreshFocused = _refreshButtonFocusNode.hasFocus;
+      });
+    }
+  }
+
+  void _onUserFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isUserFocused = _userButtonFocusNode.hasFocus;
+      });
+    }
+  }
+
+  /// Handle key events for the hero section
+  KeyEventResult _handleHeroKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // DOWN: Move to first hub
+    if (key.isDownKey) {
+      final keys = _allHubKeys;
+      if (keys.isNotEmpty) {
+        keys.first.currentState?.requestFocusFromMemory();
+      }
+      return KeyEventResult.handled;
+    }
+
+    // UP: Move to app bar (refresh button)
+    if (key.isUpKey) {
+      _refreshButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT: Navigate hero carousel to previous
+    if (key.isLeftKey) {
+      if (_currentHeroIndex > 0) {
+        _heroController.previousPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: Navigate hero carousel to next
+    if (key.isRightKey) {
+      if (_currentHeroIndex < _onDeck.length - 1) {
+        _heroController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+      return KeyEventResult.handled;
+    }
+
+    // SELECT: Play current hero item
+    if (key.isSelectKey) {
+      if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
+        navigateToVideoPlayer(context, metadata: _onDeck[_currentHeroIndex]);
+      }
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  /// Handle key events for the refresh button in app bar
+  KeyEventResult _handleRefreshKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // DOWN: Return to hero
+    if (key.isDownKey) {
+      _heroFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: Move to user button
+    if (key.isRightKey) {
+      _userButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT/UP: Block at boundary
+    if (key.isLeftKey || key.isUpKey) {
+      return KeyEventResult.handled;
+    }
+
+    // SELECT: Trigger refresh
+    if (key.isSelectKey) {
+      _loadContent();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  /// Handle key events for the user button in app bar
+  KeyEventResult _handleUserKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // DOWN: Return to hero
+    if (key.isDownKey) {
+      _heroFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT: Move to refresh button
+    if (key.isLeftKey) {
+      _refreshButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT/UP: Block at boundary
+    if (key.isRightKey || key.isUpKey) {
+      return KeyEventResult.handled;
+    }
+
+    // SELECT: Show user menu
+    if (key.isSelectKey) {
+      final userProvider = context.read<UserProfileProvider>();
+      _showUserMenu(context, userProvider);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -70,6 +325,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroController.dispose();
     _scrollController.dispose();
     _indicatorAnimationController.dispose();
+    _heroFocusNode.dispose();
+    _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
+    _refreshButtonFocusNode.dispose();
+    _userButtonFocusNode.removeListener(_onUserFocusChange);
+    _userButtonFocusNode.dispose();
     super.dispose();
   }
 
@@ -160,71 +420,89 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Future<void> _loadContent() async {
-    appLogger.d('Loading discover content');
+    appLogger.d('Loading discover content from all servers');
     setState(() {
       _isLoading = true;
+      _areHubsLoading = true;
       _errorMessage = null;
     });
 
     try {
-      appLogger.d('Fetching onDeck and hubs from Plex');
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        throw Exception('No client available');
-      }
-
-      final onDeck = await client.getOnDeck();
-
-      // Load hubs from all libraries
-      final libraries = await client.getLibraries();
-      final allHubs = <PlexHub>[];
-
-      for (final library in libraries) {
-        // Skip libraries that are not movie/show or are hidden
-        if (library.type != 'movie' && library.type != 'show') continue;
-        if (library.hidden != 0) continue;
-
-        try {
-          final libraryHubs = await client.getLibraryHubs(
-            library.key,
-            limit: 12,
-          );
-          // Filter out duplicate hubs that we already fetch separately
-          final filteredHubs = libraryHubs.where((hub) {
-            final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
-            final title = hub.title.toLowerCase();
-            // Skip "Continue Watching" and "On Deck" hubs (we handle these separately)
-            return !hubId.contains('ondeck') &&
-                !hubId.contains('continue') &&
-                !title.contains('continue watching') &&
-                !title.contains('on deck');
-          }).toList();
-          allHubs.addAll(filteredHubs);
-        } catch (e) {
-          appLogger.w(
-            'Failed to load hubs for library ${library.title}',
-            error: e,
-          );
-        }
-      }
-
-      appLogger.d(
-        'Received ${onDeck.length} on deck items and ${allHubs.length} hubs',
+      appLogger.d('Fetching onDeck and hubs from all Plex servers');
+      final multiServerProvider = Provider.of<MultiServerProvider>(
+        context,
+        listen: false,
       );
+
+      if (!multiServerProvider.hasConnectedServers) {
+        throw Exception('No servers available');
+      }
+
+      // Start OnDeck and libraries fetch in parallel
+      final onDeckFuture = multiServerProvider.aggregationService
+          .getOnDeckFromAllServers(limit: 20);
+      final librariesFuture = multiServerProvider.aggregationService
+          .getLibrariesFromAllServersGrouped();
+
+      // Wait for OnDeck to complete and show it immediately
+      final onDeck = await onDeckFuture;
+
       setState(() {
         _onDeck = onDeck;
-        _hubs = allHubs;
-        _isLoading = false;
+        _isLoading = false; // Show content, but hubs still loading
 
         // Reset hero index to avoid sync issues
         _currentHeroIndex = 0;
+
+        // Create continue watching hub key if needed
+        if (_onDeck.isNotEmpty) {
+          _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
+        }
       });
 
-      // Sync PageController to first page after data loads
+      // Sync PageController to first page after OnDeck loads
       if (_heroController.hasClients && onDeck.isNotEmpty) {
         _heroController.jumpToPage(0);
       }
+
+      // Wait for libraries and then fetch hubs
+      final librariesByServer = await librariesFuture;
+
+      if (!mounted) return;
+
+      // Get hidden libraries to filter from hubs
+      final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
+        context,
+        listen: false,
+      );
+
+      // Fetch hubs using the pre-fetched libraries and hidden keys
+      final allHubs = await multiServerProvider.aggregationService
+          .getHubsFromAllServers(
+            librariesByServer: librariesByServer,
+            hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+          );
+
+      // Filter out duplicate hubs that we already fetch separately
+      final filteredHubs = allHubs.where((hub) {
+        final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+        final title = hub.title.toLowerCase();
+        // Skip "Continue Watching" and "On Deck" hubs (we handle these separately)
+        return !hubId.contains('ondeck') &&
+            !hubId.contains('continue') &&
+            !title.contains('continue watching') &&
+            !title.contains('on deck');
+      }).toList();
+
+      appLogger.d(
+        'Received ${onDeck.length} on deck items and ${filteredHubs.length} hubs from all servers',
+      );
+      if (!mounted) return;
+      setState(() {
+        _hubs = filteredHubs;
+        _areHubsLoading = false;
+        _updateHubKeys();
+      });
 
       appLogger.d('Discover content loaded successfully');
     } catch (e) {
@@ -232,6 +510,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       setState(() {
         _errorMessage = 'Failed to load content: $e';
         _isLoading = false;
+        _areHubsLoading = false;
       });
     }
   }
@@ -239,17 +518,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// Refresh only the Continue Watching section in the background
   /// This is called when returning to the home screen to avoid blocking UI
   Future<void> _refreshContinueWatching() async {
-    appLogger.d('Refreshing Continue Watching in background');
+    appLogger.d('Refreshing Continue Watching in background from all servers');
 
     try {
-      final clientProvider = context.plexClient;
-      final client = clientProvider.client;
-      if (client == null) {
-        appLogger.w('No client available for background refresh');
+      final multiServerProvider = context.read<MultiServerProvider>();
+      if (!multiServerProvider.hasConnectedServers) {
+        appLogger.w('No servers available for background refresh');
         return;
       }
 
-      final onDeck = await client.getOnDeck();
+      final onDeck = await multiServerProvider.aggregationService
+          .getOnDeckFromAllServers(limit: 20);
 
       if (mounted) {
         setState(() {
@@ -279,6 +558,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   // Public method to fully reload all content (for profile switches)
+  @override
   void fullRefresh() {
     appLogger.d('DiscoverScreen.fullRefresh() called - reloading all content');
     // Reload all content including On Deck and content hubs
@@ -291,98 +571,98 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     // Trending/Popular content
     if (lowerTitle.contains('trending')) {
-      return Icons.trending_up;
+      return Symbols.trending_up_rounded;
     }
     if (lowerTitle.contains('popular') || lowerTitle.contains('imdb')) {
-      return Icons.whatshot;
+      return Symbols.whatshot_rounded;
     }
 
     // Seasonal/Time-based
     if (lowerTitle.contains('seasonal')) {
-      return Icons.calendar_month;
+      return Symbols.calendar_month_rounded;
     }
     if (lowerTitle.contains('newly') || lowerTitle.contains('new release')) {
-      return Icons.new_releases;
+      return Symbols.new_releases_rounded;
     }
     if (lowerTitle.contains('recently released') ||
         lowerTitle.contains('recent')) {
-      return Icons.schedule;
+      return Symbols.schedule_rounded;
     }
 
     // Top/Rated content
     if (lowerTitle.contains('top rated') ||
         lowerTitle.contains('highest rated')) {
-      return Icons.star;
+      return Symbols.star_rounded;
     }
     if (lowerTitle.contains('top ')) {
-      return Icons.military_tech;
+      return Symbols.military_tech_rounded;
     }
 
     // Genre-specific
     if (lowerTitle.contains('thriller')) {
-      return Icons.warning_amber_rounded;
+      return Symbols.warning_amber_rounded;
     }
     if (lowerTitle.contains('comedy') || lowerTitle.contains('comedier')) {
-      return Icons.mood;
+      return Symbols.mood_rounded;
     }
     if (lowerTitle.contains('action')) {
-      return Icons.flash_on;
+      return Symbols.flash_on_rounded;
     }
     if (lowerTitle.contains('drama')) {
-      return Icons.theater_comedy;
+      return Symbols.theater_comedy_rounded;
     }
     if (lowerTitle.contains('fantasy')) {
-      return Icons.auto_fix_high;
+      return Symbols.auto_fix_high_rounded;
     }
     if (lowerTitle.contains('science') || lowerTitle.contains('sci-fi')) {
-      return Icons.rocket_launch;
+      return Symbols.rocket_launch_rounded;
     }
     if (lowerTitle.contains('horror') || lowerTitle.contains('skräck')) {
-      return Icons.nights_stay;
+      return Symbols.nights_stay_rounded;
     }
     if (lowerTitle.contains('romance') || lowerTitle.contains('romantic')) {
-      return Icons.favorite_border;
+      return Symbols.favorite_border_rounded;
     }
     if (lowerTitle.contains('adventure') || lowerTitle.contains('äventyr')) {
-      return Icons.explore;
+      return Symbols.explore_rounded;
     }
 
     // Watchlist/Playlists
     if (lowerTitle.contains('playlist') || lowerTitle.contains('watchlist')) {
-      return Icons.playlist_play;
+      return Symbols.playlist_play_rounded;
     }
     if (lowerTitle.contains('unwatched') || lowerTitle.contains('unplayed')) {
-      return Icons.visibility_off;
+      return Symbols.visibility_off_rounded;
     }
     if (lowerTitle.contains('watched') || lowerTitle.contains('played')) {
-      return Icons.visibility;
+      return Symbols.visibility_rounded;
     }
 
     // Network/Studio
     if (lowerTitle.contains('network') || lowerTitle.contains('more from')) {
-      return Icons.tv;
+      return Symbols.tv_rounded;
     }
 
     // Actor/Director
     if (lowerTitle.contains('actor') || lowerTitle.contains('director')) {
-      return Icons.person;
+      return Symbols.person_rounded;
     }
 
     // Year-based (80s, 90s, etc.)
     if (lowerTitle.contains('80') ||
         lowerTitle.contains('90') ||
         lowerTitle.contains('00')) {
-      return Icons.history;
+      return Symbols.history_rounded;
     }
 
     // Rediscover/Start Watching
     if (lowerTitle.contains('rediscover') ||
         lowerTitle.contains('start watching')) {
-      return Icons.play_arrow;
+      return Symbols.play_arrow_rounded;
     }
 
     // Default icon for other hubs
-    return Icons.auto_awesome;
+    return Symbols.auto_awesome_rounded;
   }
 
   @override
@@ -402,43 +682,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       );
       if (itemIndex != -1) {
         hub.items[itemIndex] = updatedMetadata;
-      }
-    }
-  }
-
-  Future<void> _handleSwitchServer() async {
-    final storage = await StorageService.getInstance();
-    final plexToken = storage.getPlexToken();
-
-    if (plexToken == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.messages.noPlexToken)));
-      }
-      return;
-    }
-
-    try {
-      final authService = await PlexAuthService.create();
-
-      // Navigate to server selection screen
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServerSelectionScreen(
-              authService: authService,
-              plexToken: plexToken,
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
-        );
       }
     }
   }
@@ -468,14 +711,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         context,
         listen: false,
       );
-      final plexClientProvider = Provider.of<PlexClientProvider>(
-        context,
-        listen: false,
-      );
+      final plexClientProvider = context.plexClient;
+      final multiServerProvider = context.read<MultiServerProvider>();
+      final serverStateProvider = context.read<ServerStateProvider>();
+      final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+      final playbackStateProvider = context.read<PlaybackStateProvider>();
 
       // Clear all user data and provider states
       await userProfileProvider.logout();
       plexClientProvider.clearClient();
+      multiServerProvider.clearAllConnections();
+      serverStateProvider.reset();
+      await hiddenLibrariesProvider.refresh();
+      playbackStateProvider.clearShuffle();
 
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -491,6 +739,61 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       context,
       MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()),
     );
+  }
+
+  /// Show user menu programmatically (for D-pad select)
+  void _showUserMenu(BuildContext context, UserProfileProvider userProvider) {
+    final RenderBox? button =
+        _userButtonFocusNode.context?.findRenderObject() as RenderBox?;
+    if (button == null) return;
+
+    final RenderBox overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu<String>(
+      context: context,
+      position: position,
+      items: [
+        if (userProvider.hasMultipleUsers)
+          PopupMenuItem(
+            value: 'switch_profile',
+            child: Row(
+              children: [
+                AppIcon(Symbols.people_rounded, fill: 1),
+                SizedBox(width: 8),
+                Text(t.discover.switchProfile),
+              ],
+            ),
+          ),
+        PopupMenuItem(
+          value: 'logout',
+          child: Row(
+            children: [
+              AppIcon(Symbols.logout_rounded, fill: 1),
+              SizedBox(width: 8),
+              Text(t.discover.logout),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (!context.mounted) return;
+      if (value == 'switch_profile') {
+        _handleSwitchProfile(context);
+      } else if (value == 'logout') {
+        _handleLogout();
+      }
+    });
   }
 
   @override
@@ -509,63 +812,83 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               shadowColor: Colors.transparent,
               scrolledUnderElevation: 0,
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _loadContent,
+                Focus(
+                  focusNode: _refreshButtonFocusNode,
+                  onKeyEvent: _handleRefreshKeyEvent,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _isRefreshFocused
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.08)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: IconButton(
+                      icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
+                      onPressed: _loadContent,
+                    ),
+                  ),
                 ),
                 Consumer<UserProfileProvider>(
                   builder: (context, userProvider, child) {
-                    return PopupMenuButton<String>(
-                      icon: userProvider.currentUser?.thumb != null
-                          ? UserAvatarWidget(
-                              user: userProvider.currentUser!,
-                              size: 32,
-                              showIndicators: false,
-                            )
-                          : const Icon(Icons.account_circle, size: 32),
-                      onSelected: (value) {
-                        if (value == 'switch_profile') {
-                          _handleSwitchProfile(context);
-                        } else if (value == 'switch_server') {
-                          _handleSwitchServer();
-                        } else if (value == 'logout') {
-                          _handleLogout();
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        // Only show Switch Profile if multiple users available
-                        if (userProvider.hasMultipleUsers)
-                          PopupMenuItem(
-                            value: 'switch_profile',
-                            child: Row(
-                              children: [
-                                Icon(Icons.people),
-                                SizedBox(width: 8),
-                                Text(t.discover.switchProfile),
-                              ],
+                    return Focus(
+                      focusNode: _userButtonFocusNode,
+                      onKeyEvent: _handleUserKeyEvent,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: _isUserFocused
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.08)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: PopupMenuButton<String>(
+                          icon: userProvider.currentUser?.thumb != null
+                              ? UserAvatarWidget(
+                                  user: userProvider.currentUser!,
+                                  size: 32,
+                                  showIndicators: false,
+                                )
+                              : const AppIcon(
+                                  Symbols.account_circle_rounded,
+                                  fill: 1,
+                                  size: 32,
+                                ),
+                          onSelected: (value) {
+                            if (value == 'switch_profile') {
+                              _handleSwitchProfile(context);
+                            } else if (value == 'logout') {
+                              _handleLogout();
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            // Only show Switch Profile if multiple users available
+                            if (userProvider.hasMultipleUsers)
+                              PopupMenuItem(
+                                value: 'switch_profile',
+                                child: Row(
+                                  children: [
+                                    AppIcon(Symbols.people_rounded, fill: 1),
+                                    SizedBox(width: 8),
+                                    Text(t.discover.switchProfile),
+                                  ],
+                                ),
+                              ),
+                            PopupMenuItem(
+                              value: 'logout',
+                              child: Row(
+                                children: [
+                                  AppIcon(Symbols.logout_rounded, fill: 1),
+                                  SizedBox(width: 8),
+                                  Text(t.discover.logout),
+                                ],
+                              ),
                             ),
-                          ),
-                        PopupMenuItem(
-                          value: 'switch_server',
-                          child: Row(
-                            children: [
-                              Icon(Icons.swap_horiz),
-                              SizedBox(width: 8),
-                              Text(t.discover.switchServer),
-                            ],
-                          ),
+                          ],
                         ),
-                        PopupMenuItem(
-                          value: 'logout',
-                          child: Row(
-                            children: [
-                              Icon(Icons.logout),
-                              SizedBox(width: 8),
-                              Text(t.discover.logout),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     );
                   },
                 ),
@@ -581,8 +904,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.error_outline,
+                      const AppIcon(
+                        Symbols.error_outline_rounded,
+                        fill: 1,
                         size: 48,
                         color: Colors.red,
                       ),
@@ -609,76 +933,99 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
 
               // On Deck / Continue Watching
-              if (_onDeck.isNotEmpty) ...[
+              if (_onDeck.isNotEmpty)
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.play_circle_outline),
-                        const SizedBox(width: 8),
-                        Text(
-                          t.discover.continueWatching,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ],
+                  child: HubSection(
+                    key: _continueWatchingHubKey,
+                    hub: PlexHub(
+                      hubKey: 'continue_watching',
+                      title: t.discover.continueWatching,
+                      type: 'mixed',
+                      hubIdentifier: '_continue_watching_',
+                      size: _onDeck.length,
+                      more: false,
+                      items: _onDeck,
+                    ),
+                    icon: Symbols.play_circle_rounded,
+                    onRefresh: updateItem,
+                    onRemoveFromContinueWatching: _refreshContinueWatching,
+                    isInContinueWatching: true,
+                    onVerticalNavigation: (isUp) =>
+                        _handleVerticalNavigation(0, isUp),
+                  ),
+                ),
+
+              // Recommendation Hubs (Trending, Top in Genre, etc.)
+              for (int i = 0; i < _hubs.length; i++)
+                SliverToBoxAdapter(
+                  child: HubSection(
+                    key: i < _hubKeys.length ? _hubKeys[i] : null,
+                    hub: _hubs[i],
+                    icon: _getHubIcon(_hubs[i].title),
+                    onRefresh: updateItem,
+                    // Hub index is i + 1 if continue watching exists, otherwise i
+                    onVerticalNavigation: (isUp) => _handleVerticalNavigation(
+                      _onDeck.isNotEmpty ? i + 1 : i,
+                      isUp,
                     ),
                   ),
                 ),
-                _buildHorizontalList(
-                  _onDeck,
-                  isLarge: false,
-                  isInContinueWatching: true,
-                ),
-              ],
 
-              // Recommendation Hubs (Trending, Top in Genre, etc.)
-              for (final hub in _hubs) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HubDetailScreen(hub: hub),
-                          ),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(_getHubIcon(hub.title)),
-                            const SizedBox(width: 8),
-                            Text(
-                              hub.title,
-                              style: Theme.of(context).textTheme.titleLarge,
+              // Show loading skeleton for hubs while they're loading
+              if (_areHubsLoading && _hubs.isEmpty)
+                for (int i = 0; i < 3; i++)
+                  SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Hub title skeleton
+                          Container(
+                            width: 200,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.chevron_right, size: 20),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Hub items skeleton
+                          SizedBox(
+                            height: 200,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: 5,
+                              itemBuilder: (context, index) {
+                                return Container(
+                                  margin: const EdgeInsets.only(right: 12),
+                                  width: 140,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-                _buildHorizontalList(hub.items, isLarge: false),
-              ],
 
-              if (_onDeck.isEmpty && _hubs.isEmpty)
+              if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
                 SliverFillRemaining(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.movie_outlined,
+                        AppIcon(
+                          Symbols.movie_rounded,
+                          fill: 1,
                           size: 64,
                           color: Colors.grey,
                         ),
@@ -704,125 +1051,136 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   Widget _buildHeroSection() {
     return SliverToBoxAdapter(
-      child: SizedBox(
-        height: 500,
-        child: Stack(
-          children: [
-            PageView.builder(
-              controller: _heroController,
-              itemCount: _onDeck.length,
-              onPageChanged: (index) {
-                // Validate index is within bounds before updating
-                if (index >= 0 && index < _onDeck.length) {
-                  setState(() {
-                    _currentHeroIndex = index;
-                  });
-                  _resetAutoScrollTimer();
-                }
-              },
-              itemBuilder: (context, index) {
-                return _buildHeroItem(_onDeck[index]);
-              },
-            ),
-            // Page indicators with animated progress and pause/play button
-            Positioned(
-              bottom: 16,
-              left: -26,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Pause/Play button
-                  GestureDetector(
-                    onTap: () {
-                      if (_isAutoScrollPaused) {
-                        _resumeAutoScroll();
-                      } else {
-                        _pauseAutoScroll();
-                      }
-                    },
-                    child: Icon(
-                      _isAutoScrollPaused ? Icons.play_arrow : Icons.pause,
-                      color: Colors.white,
-                      size: 18,
-                      semanticLabel:
-                          '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
+      child: Focus(
+        focusNode: _heroFocusNode,
+        autofocus: true,
+        onKeyEvent: _handleHeroKeyEvent,
+        child: SizedBox(
+          height: 500,
+          child: Stack(
+            children: [
+              PageView.builder(
+                controller: _heroController,
+                itemCount: _onDeck.length,
+                onPageChanged: (index) {
+                  // Validate index is within bounds before updating
+                  if (index >= 0 && index < _onDeck.length) {
+                    setState(() {
+                      _currentHeroIndex = index;
+                    });
+                    _resetAutoScrollTimer();
+                  }
+                },
+                itemBuilder: (context, index) {
+                  return _buildHeroItem(_onDeck[index]);
+                },
+              ),
+              // Page indicators with animated progress and pause/play button
+              Positioned(
+                bottom: 16,
+                left: -26,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Pause/Play button
+                    GestureDetector(
+                      onTap: () {
+                        if (_isAutoScrollPaused) {
+                          _resumeAutoScroll();
+                        } else {
+                          _pauseAutoScroll();
+                        }
+                      },
+                      child: AppIcon(
+                        _isAutoScrollPaused
+                            ? Symbols.play_arrow_rounded
+                            : Symbols.pause_rounded,
+                        fill: 1,
+                        color: Colors.white,
+                        size: 18,
+                        semanticLabel:
+                            '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
+                      ),
                     ),
-                  ),
-                  // Spacer to separate indicators from button
-                  const SizedBox(width: 8),
-                  // Page indicators (limited to 5 dots)
-                  ...() {
-                    final range = _getVisibleDotRange();
-                    return List.generate(range.end - range.start + 1, (i) {
-                      final index = range.start + i;
-                      final isActive = _currentHeroIndex == index;
-                      final dotSize = _getDotSize(
-                        index,
-                        range.start,
-                        range.end,
-                      );
+                    // Spacer to separate indicators from button
+                    const SizedBox(width: 8),
+                    // Page indicators (limited to 5 dots)
+                    ...() {
+                      final range = _getVisibleDotRange();
+                      return List.generate(range.end - range.start + 1, (i) {
+                        final index = range.start + i;
+                        final isActive = _currentHeroIndex == index;
+                        final dotSize = _getDotSize(
+                          index,
+                          range.start,
+                          range.end,
+                        );
 
-                      if (isActive) {
-                        // Animated progress indicator for active page
-                        return AnimatedBuilder(
-                          animation: _indicatorAnimationController,
-                          builder: (context, child) {
-                            // Fill width animates based on dot size
-                            final maxWidth =
-                                dotSize * 3; // 24px for normal, 15px for small
-                            final fillWidth =
-                                dotSize +
-                                ((maxWidth - dotSize) *
-                                    _indicatorAnimationController.value);
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: maxWidth,
-                              height: dotSize,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.4),
-                                borderRadius: BorderRadius.circular(
-                                  dotSize / 2,
+                        if (isActive) {
+                          // Animated progress indicator for active page
+                          return AnimatedBuilder(
+                            animation: _indicatorAnimationController,
+                            builder: (context, child) {
+                              // Fill width animates based on dot size
+                              final maxWidth =
+                                  dotSize *
+                                  3; // 24px for normal, 15px for small
+                              final fillWidth =
+                                  dotSize +
+                                  ((maxWidth - dotSize) *
+                                      _indicatorAnimationController.value);
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
                                 ),
-                              ),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Container(
-                                  width: fillWidth,
-                                  height: dotSize,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(
-                                      dotSize / 2,
+                                width: maxWidth,
+                                height: dotSize,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  borderRadius: BorderRadius.circular(
+                                    dotSize / 2,
+                                  ),
+                                ),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    width: fillWidth,
+                                    height: dotSize,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(
+                                        dotSize / 2,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        );
-                      } else {
-                        // Static indicator for inactive pages
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: dotSize,
-                          height: dotSize,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(dotSize / 2),
-                          ),
-                        );
-                      }
-                    });
-                  }(),
-                ],
+                              );
+                            },
+                          );
+                        } else {
+                          // Static indicator for inactive pages
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: dotSize,
+                            height: dotSize,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(dotSize / 2),
+                            ),
+                          );
+                        }
+                      });
+                    }(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -832,24 +1190,24 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final isEpisode = heroItem.type.toLowerCase() == 'episode';
     final showName = heroItem.grandparentTitle ?? heroItem.title;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isLargeScreen = screenWidth > 800;
+    final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.type.toLowerCase() == 'movie'
         ? t.discover.movie
         : t.discover.tvShow;
 
+    // Build semantic label for hero item
+    final heroLabel = isEpisode
+        ? "${heroItem.grandparentTitle}, ${heroItem.title}"
+        : heroItem.title;
+
     return Semantics(
-      label: "media-hero-${heroItem.ratingKey}",
-      identifier: "media-hero-${heroItem.ratingKey}",
+      label: heroLabel,
       button: true,
-      hint: "Tap to play ${heroItem.title}",
+      hint: t.accessibility.tapToPlay,
       child: GestureDetector(
         onTap: () {
-          final clientProvider = context.plexClient;
-          final client = clientProvider.client;
-          if (client == null) return;
-
           appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
           navigateToVideoPlayer(context, metadata: heroItem);
         },
@@ -893,20 +1251,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           child: Opacity(opacity: value, child: child),
                         );
                       },
-                      child: Consumer<PlexClientProvider>(
-                        builder: (context, clientProvider, child) {
-                          final client = clientProvider.client;
-                          if (client == null) {
-                            return Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                            );
-                          }
+                      child: Builder(
+                        builder: (context) {
+                          final client = _getClientForItem(heroItem);
+                          final mediaQuery = MediaQuery.of(context);
+                          final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+                            client: client,
+                            thumbPath: heroItem.art ?? heroItem.grandparentArt,
+                            maxWidth: mediaQuery.size.width,
+                            maxHeight: mediaQuery.size.height * 0.7,
+                            devicePixelRatio: mediaQuery.devicePixelRatio,
+                            imageType: ImageType.art,
+                          );
+
                           return CachedNetworkImage(
-                            imageUrl: client.getThumbnailUrl(
-                              heroItem.art ?? heroItem.grandparentArt,
-                            ),
+                            imageUrl: imageUrl,
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
                               color: Theme.of(
@@ -966,18 +1325,29 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           SizedBox(
                             height: 120,
                             width: 400,
-                            child: Consumer<PlexClientProvider>(
-                              builder: (context, clientProvider, child) {
-                                final client = clientProvider.client;
-                                if (client == null) {
-                                  return Container();
-                                }
+                            child: Builder(
+                              builder: (context) {
+                                final client = _getClientForItem(heroItem);
+                                final dpr = MediaQuery.of(
+                                  context,
+                                ).devicePixelRatio;
+                                final logoUrl =
+                                    PlexImageHelper.getOptimizedImageUrl(
+                                      client: client,
+                                      thumbPath: heroItem.clearLogo,
+                                      maxWidth: 400,
+                                      maxHeight: 120,
+                                      devicePixelRatio: dpr,
+                                      imageType: ImageType.logo,
+                                    );
+
                                 return CachedNetworkImage(
-                                  imageUrl: client.getThumbnailUrl(
-                                    heroItem.clearLogo,
-                                  ),
+                                  imageUrl: logoUrl,
                                   filterQuality: FilterQuality.medium,
                                   fit: BoxFit.contain,
+                                  memCacheWidth: (400 * dpr)
+                                      .clamp(200, 800)
+                                      .round(),
                                   alignment: isLargeScreen
                                       ? Alignment.bottomLeft
                                       : Alignment.bottomCenter,
@@ -1171,10 +1541,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     return InkWell(
       onTap: () {
-        final clientProvider = context.plexClient;
-        final client = clientProvider.client;
-        if (client == null) return;
-
         appLogger.d('Playing: ${heroItem.title}');
         navigateToVideoPlayer(context, metadata: heroItem);
       },
@@ -1188,7 +1554,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.play_arrow, size: 20, color: Colors.black),
+            const AppIcon(
+              Symbols.play_arrow_rounded,
+              fill: 1,
+              size: 20,
+              color: Colors.black,
+            ),
             const SizedBox(width: 8),
             if (hasProgress) ...[
               // Progress bar
@@ -1230,68 +1601,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHorizontalList(
-    List<PlexMetadata> items, {
-    bool isLarge = false,
-    bool isInContinueWatching = false,
-  }) {
-    return SliverToBoxAdapter(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Responsive card width based on screen size
-          // Match Libraries screen sizing (190px baseline)
-          final screenWidth = constraints.maxWidth;
-          final cardWidth = screenWidth > 1600
-              ? 220.0
-              : screenWidth > 1200
-              ? 200.0
-              : screenWidth > 800
-              ? 190.0
-              : 160.0;
-
-          // MediaCard has 8px padding on all sides (16px total horizontally)
-          // So actual poster width is cardWidth - 16
-          final posterWidth = cardWidth - 16;
-          // 2:3 poster aspect ratio (height is 1.5x width)
-          final posterHeight = posterWidth * 1.5;
-          // Container height = poster + padding + spacing + text
-          // 8px top padding + posterHeight + 4px spacing + ~26px text + 8px bottom padding
-          final containerHeight = posterHeight + 46;
-
-          return SizedBox(
-            height: containerHeight,
-            child: HorizontalScrollWithArrows(
-              builder: (scrollController) => ListView.builder(
-                controller: scrollController,
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: MediaCard(
-                      key: Key(item.ratingKey),
-                      item: item,
-                      width: cardWidth,
-                      height: posterHeight,
-                      onRefresh: updateItem,
-                      onRemoveFromContinueWatching: isInContinueWatching
-                          ? _refreshContinueWatching
-                          : null,
-                      forceGridMode: true,
-                      isInContinueWatching: isInContinueWatching,
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        },
       ),
     );
   }

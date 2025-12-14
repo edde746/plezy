@@ -7,7 +7,7 @@ import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
-import '../widgets/pin_entry_dialog.dart';
+import '../screens/profile/pin_entry_dialog.dart';
 import 'plex_client_provider.dart';
 
 class UserProfileProvider extends ChangeNotifier {
@@ -16,6 +16,7 @@ class UserProfileProvider extends ChangeNotifier {
   PlexUserProfile? _profileSettings;
   bool _isLoading = false;
   String? _error;
+  bool _isInitialized = false;
 
   PlexHome? get home => _home;
   PlexHomeUser? get currentUser => _currentUser;
@@ -34,22 +35,34 @@ class UserProfileProvider extends ChangeNotifier {
   StorageService? _storageService;
 
   // Callback for data invalidation when switching profiles
-  VoidCallback? _onDataInvalidationRequested;
+  // Receives the list of servers with new profile tokens for reconnection
+  Future<void> Function(List<PlexServer>)? _onDataInvalidationRequested;
 
   /// Set a callback to be called when profile switching requires data invalidation
-  void setDataInvalidationCallback(VoidCallback? callback) {
+  /// The callback receives the list of servers with the new profile's access tokens
+  void setDataInvalidationCallback(
+    Future<void> Function(List<PlexServer>)? callback,
+  ) {
     _onDataInvalidationRequested = callback;
   }
 
-  /// Trigger data invalidation for all screens
-  void _invalidateAllData() {
+  /// Trigger data invalidation for all screens with the new profile's servers
+  Future<void> _invalidateAllData(List<PlexServer> servers) async {
     if (_onDataInvalidationRequested != null) {
-      _onDataInvalidationRequested!();
-      appLogger.d('Data invalidation triggered for profile switch');
+      await _onDataInvalidationRequested!(servers);
+      appLogger.d(
+        'Data invalidation triggered for profile switch with ${servers.length} servers',
+      );
     }
   }
 
   Future<void> initialize() async {
+    // Prevent duplicate initialization
+    if (_isInitialized) {
+      appLogger.d('UserProfileProvider: Already initialized, skipping');
+      return;
+    }
+
     appLogger.d('UserProfileProvider: Initializing...');
     try {
       _authService = await PlexAuthService.create();
@@ -84,6 +97,7 @@ class UserProfileProvider extends ChangeNotifier {
         // Don't set error here, cached profile (if any) was already loaded
       }
 
+      _isInitialized = true;
       appLogger.d('UserProfileProvider: Initialization complete');
     } catch (e) {
       appLogger.e(
@@ -94,6 +108,7 @@ class UserProfileProvider extends ChangeNotifier {
       // Ensure services are null on failure
       _authService = null;
       _storageService = null;
+      _isInitialized = false; // Allow retry on failure
     }
   }
 
@@ -294,7 +309,7 @@ class UserProfileProvider extends ChangeNotifier {
       );
 
       // switchResponse.authToken is the new user's Plex.tv token
-      // We need to fetch servers with this token to get the proper server access token
+      // Fetch servers with this token to get the proper server access tokens
       appLogger.d('Got new user Plex.tv token, fetching servers...');
 
       final servers = await _authService!.fetchServers(
@@ -304,37 +319,13 @@ class UserProfileProvider extends ChangeNotifier {
         throw Exception('No servers available for this user');
       }
 
-      // Find the current server from storage
-      final currentServerData = _storageService!.getServerData();
-      if (currentServerData == null) {
-        throw Exception('No current server data found');
-      }
+      appLogger.d('Fetched ${servers.length} servers for new profile');
 
-      // Find matching server by name or client identifier
-      final currentServerName = currentServerData['name'] as String?;
-      final currentServerClientId =
-          currentServerData['clientIdentifier'] as String?;
-
-      final matchingServer = servers.firstWhere(
-        (server) =>
-            server.name == currentServerName ||
-            server.clientIdentifier == currentServerClientId,
-        orElse: () => servers.first, // Fallback to first server
-      );
-
-      appLogger.d(
-        'Found matching server: ${matchingServer.name}, getting access token',
-      );
-
-      // Update storage with new tokens
-      await _storageService!.updateCurrentUser(
-        user.uuid,
-        matchingServer
-            .accessToken, // Use server access token, not Plex.tv token
-      );
-
-      // Also save the new Plex.tv token for future profile operations
+      // Save the new Plex.tv token for future profile operations
       await _storageService!.savePlexToken(switchResponse.authToken);
+
+      // Update current user UUID in storage
+      await _storageService!.saveCurrentUserUUID(user.uuid);
 
       // Update current user
       _currentUser = user;
@@ -351,26 +342,14 @@ class UserProfileProvider extends ChangeNotifier {
         },
       );
 
-      // Update PlexClient with proper server access token
-      if (clientProvider != null) {
-        try {
-          clientProvider.updateToken(matchingServer.accessToken);
-          appLogger.d(
-            'Updated PlexClient with server access token for user: ${user.displayName}',
-          );
-        } catch (e) {
-          appLogger.w('Failed to update PlexClient token', error: e);
-        }
-      }
-
       notifyListeners();
 
-      // Invalidate all cached data for the new profile
-      // This will cause screens to refresh and rebuild widgets with the new token
-      _invalidateAllData();
+      // Invalidate all cached data and reconnect to all servers with new tokens
+      // The callback will handle server reconnection using the servers list
+      await _invalidateAllData(servers);
 
       appLogger.d(
-        'Profile switch complete, all data and images should refresh with new token',
+        'Profile switch complete, all servers reconnected with new tokens',
       );
 
       appLogger.i('Successfully switched to user: ${user.displayName}');

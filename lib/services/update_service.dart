@@ -63,12 +63,17 @@ class UpdateService {
     await prefs.setString(_keyLastCheckTime, DateTime.now().toIso8601String());
   }
 
-  /// Check for updates on GitHub (manual check, ignores cooldown)
-  /// Returns a map with update info, or null if no update or error
-  static Future<Map<String, dynamic>?> checkForUpdates({
-    bool silent = false,
+  /// Internal method that performs the actual update check
+  /// [respectCooldown] - if true, checks cooldown and updates last check time
+  static Future<Map<String, dynamic>?> _performUpdateCheck({
+    required bool respectCooldown,
   }) async {
     if (!isUpdateCheckEnabled) {
+      return null;
+    }
+
+    // Check cooldown if requested
+    if (respectCooldown && !await shouldCheckForUpdates()) {
       return null;
     }
 
@@ -94,10 +99,19 @@ class UpdateService {
         final hasUpdate = _isNewerVersion(cleanVersion, currentVersion);
 
         if (hasUpdate) {
-          // Check if this version was skipped (always check, regardless of silent mode)
+          // Check if this version was skipped
           final skippedVersion = await getSkippedVersion();
           if (skippedVersion == cleanVersion) {
+            // Update last check time even when skipped (if respecting cooldown)
+            if (respectCooldown) {
+              await _updateLastCheckTime();
+            }
             return null;
+          }
+
+          // Update last check time on success (if respecting cooldown)
+          if (respectCooldown) {
+            await _updateLastCheckTime();
           }
 
           return {
@@ -111,6 +125,11 @@ class UpdateService {
           };
         }
       }
+
+      // Update last check time even when no update (if respecting cooldown)
+      if (respectCooldown) {
+        await _updateLastCheckTime();
+      }
     } catch (e) {
       _logger.e('Failed to check for updates: $e');
     }
@@ -118,42 +137,35 @@ class UpdateService {
     return null;
   }
 
+  /// Check for updates on GitHub (manual check, ignores cooldown)
+  /// Returns a map with update info, or null if no update or error
+  static Future<Map<String, dynamic>?> checkForUpdates({
+    bool silent = false,
+  }) async {
+    return _performUpdateCheck(respectCooldown: false);
+  }
+
   /// Check for updates on startup (respects cooldown and skipped versions)
   /// Returns update info if available, null otherwise
   static Future<Map<String, dynamic>?> checkForUpdatesOnStartup() async {
-    if (!isUpdateCheckEnabled) {
-      return null;
-    }
+    return _performUpdateCheck(respectCooldown: true);
+  }
 
-    // Check cooldown
-    if (!await shouldCheckForUpdates()) {
-      return null;
-    }
-
-    // Perform the check
-    final updateInfo = await checkForUpdates(silent: true);
-
-    // Update last check time
-    await _updateLastCheckTime();
-
-    return updateInfo;
+  /// Parse version string into list of integers
+  /// Handles versions like "1.2.3+4" by taking only the numeric parts
+  static List<int> _parseVersionParts(String version) {
+    return version.split('.').map((p) {
+      final numPart = p.split('+').first.split('-').first;
+      return int.tryParse(numPart) ?? 0;
+    }).toList();
   }
 
   /// Compare two version strings
   /// Returns true if newVersion is newer than currentVersion
   static bool _isNewerVersion(String newVersion, String currentVersion) {
     try {
-      // Split by '.' and parse as integers
-      final newParts = newVersion.split('.').map((p) {
-        // Handle versions like "1.2.3+4" by taking only the numeric part
-        final numPart = p.split('+').first.split('-').first;
-        return int.tryParse(numPart) ?? 0;
-      }).toList();
-
-      final currentParts = currentVersion.split('.').map((p) {
-        final numPart = p.split('+').first.split('-').first;
-        return int.tryParse(numPart) ?? 0;
-      }).toList();
+      final newParts = _parseVersionParts(newVersion);
+      final currentParts = _parseVersionParts(currentVersion);
 
       // Compare each part
       final maxLength = newParts.length > currentParts.length

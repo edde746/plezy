@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../../../models/plex_media_version.dart';
+import '../../../widgets/focusable_bottom_sheet.dart';
+import '../../../widgets/focusable_list_tile.dart';
+import 'base_video_control_sheet.dart';
+import 'video_control_sheet_launcher.dart';
 
 /// Bottom sheet for selecting video version
-class VersionSheet extends StatelessWidget {
+class VersionSheet extends StatefulWidget {
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
   final Function(int) onVersionSelected;
@@ -14,28 +20,18 @@ class VersionSheet extends StatelessWidget {
     required this.onVersionSelected,
   });
 
-  static BoxConstraints getBottomSheetConstraints(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 600;
-
-    return BoxConstraints(
-      maxWidth: isDesktop ? 700 : double.infinity,
-      maxHeight: isDesktop ? 400 : size.height * 0.75,
-      minHeight: isDesktop ? 300 : size.height * 0.5,
-    );
-  }
-
   static void show(
     BuildContext context,
     List<PlexMediaVersion> availableVersions,
     int selectedMediaIndex,
-    Function(int) onVersionSelected,
-  ) {
-    showModalBottomSheet(
+    Function(int) onVersionSelected, {
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
+  }) {
+    VideoControlSheetLauncher.show(
       context: context,
-      backgroundColor: Colors.grey[900],
-      isScrollControlled: true,
-      constraints: getBottomSheetConstraints(context),
+      onOpen: onOpen,
+      onClose: onClose,
       builder: (context) => VersionSheet(
         availableVersions: availableVersions,
         selectedMediaIndex: selectedMediaIndex,
@@ -45,61 +41,58 @@ class VersionSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.75,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Icon(Icons.video_file, color: Colors.white),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Video Version',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(color: Colors.white24, height: 1),
-            Expanded(
-              child: ListView.builder(
-                itemCount: availableVersions.length,
-                itemBuilder: (context, index) {
-                  final version = availableVersions[index];
-                  final isSelected = index == selectedMediaIndex;
+  State<VersionSheet> createState() => _VersionSheetState();
+}
 
-                  return ListTile(
-                    title: Text(
-                      version.displayLabel,
-                      style: TextStyle(
-                        color: isSelected ? Colors.blue : Colors.white,
-                      ),
-                    ),
-                    trailing: isSelected
-                        ? const Icon(Icons.check, color: Colors.blue)
-                        : null,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onVersionSelected(index);
-                    },
-                  );
-                },
+class _VersionSheetState extends State<VersionSheet> {
+  late final FocusNode _initialFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialFocusNode = FocusNode(debugLabel: 'VersionSheetInitialFocus');
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FocusableBottomSheet(
+      initialFocusNode: _initialFocusNode,
+      child: BaseVideoControlSheet(
+        title: 'Video Version',
+        icon: Symbols.video_file_rounded,
+        child: ListView.builder(
+          itemCount: widget.availableVersions.length,
+          itemBuilder: (context, index) {
+            final version = widget.availableVersions[index];
+            final isSelected = index == widget.selectedMediaIndex;
+
+            return FocusableListTile(
+              focusNode: index == 0 ? _initialFocusNode : null,
+              title: Text(
+                version.displayLabel,
+                style: TextStyle(
+                  color: isSelected ? Colors.blue : Colors.white,
+                ),
               ),
-            ),
-          ],
+              trailing: isSelected
+                  ? const AppIcon(
+                      Symbols.check_rounded,
+                      fill: 1,
+                      color: Colors.blue,
+                    )
+                  : null,
+              onTap: () {
+                Navigator.pop(context);
+                widget.onVersionSelected(index);
+              },
+            );
+          },
         ),
       ),
     );

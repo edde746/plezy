@@ -1,74 +1,302 @@
 import 'package:flutter/material.dart';
-import '../client/plex_client.dart';
-import '../i18n/strings.g.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../services/plex_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/platform_detector.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
+import '../navigation/navigation_tabs.dart';
+import '../providers/multi_server_provider.dart';
+import '../providers/server_state_provider.dart';
+import '../providers/hidden_libraries_provider.dart';
+import '../providers/playback_state_provider.dart';
+import '../services/offline_watch_sync_service.dart';
+import '../providers/offline_mode_provider.dart';
+import '../services/plex_auth_service.dart';
+import '../services/storage_service.dart';
+import '../utils/desktop_window_padding.dart';
+import '../widgets/side_navigation_rail.dart';
 import 'discover_screen.dart';
-import 'libraries_screen.dart';
+import 'libraries/libraries_screen.dart';
 import 'search_screen.dart';
-import 'settings_screen.dart';
+import 'downloads/downloads_screen.dart';
+import 'settings/settings_screen.dart';
+
+/// Provides access to the main screen's focus control.
+class MainScreenFocusScope extends InheritedWidget {
+  final VoidCallback focusSidebar;
+  final VoidCallback focusContent;
+  final bool isSidebarFocused;
+
+  const MainScreenFocusScope({
+    super.key,
+    required this.focusSidebar,
+    required this.focusContent,
+    required this.isSidebarFocused,
+    required super.child,
+  });
+
+  static MainScreenFocusScope? of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
+  }
+
+  @override
+  bool updateShouldNotify(MainScreenFocusScope oldWidget) {
+    return isSidebarFocused != oldWidget.isSidebarFocused;
+  }
+}
 
 class MainScreen extends StatefulWidget {
-  final PlexClient client;
+  final PlexClient? client;
+  final bool isOfflineMode;
 
-  const MainScreen({super.key, required this.client});
+  const MainScreen({super.key, this.client, this.isOfflineMode = false});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> with RouteAware {
-  int _currentIndex = 0;
+  late int _currentIndex;
+  String? _selectedLibraryGlobalKey;
 
-  late final List<Widget> _screens;
+  /// Whether the app is in offline mode (no server connection)
+  bool _isOffline = false;
+
+  /// Last selected online tab (restored when coming back online after an offline fallback)
+  NavigationTabId? _lastOnlineTabId;
+
+  /// Whether we auto-switched to Downloads because the previous tab was unavailable offline
+  bool _autoSwitchedToDownloads = false;
+
+  OfflineModeProvider? _offlineModeProvider;
+
+  late List<Widget> _screens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
   final GlobalKey<State<LibrariesScreen>> _librariesKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
+  final GlobalKey<State<DownloadsScreen>> _downloadsKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
+  final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
+
+  // Focus management for sidebar/content switching
+  final FocusScopeNode _sidebarFocusScope = FocusScopeNode(
+    debugLabel: 'Sidebar',
+  );
+  final FocusScopeNode _contentFocusScope = FocusScopeNode(
+    debugLabel: 'Content',
+  );
+  bool _isSidebarFocused = false;
 
   @override
   void initState() {
     super.initState();
+    _isOffline = widget.isOfflineMode;
 
-    _screens = [
-      DiscoverScreen(
-        key: _discoverKey,
-        onBecameVisible: _onDiscoverBecameVisible,
-      ),
-      LibrariesScreen(key: _librariesKey),
-      SearchScreen(key: _searchKey),
-      SettingsScreen(key: _settingsKey),
-    ];
+    // Start on Downloads tab when in offline mode
+    // In offline mode: visual index 0 = Downloads (screen 3), 1 = Settings (screen 4)
+    // In online mode: indices match directly
+    _currentIndex = _isOffline ? 0 : 0;
+    _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
+    _autoSwitchedToDownloads = _isOffline;
 
-    // Set up data invalidation callback for profile switching
+    _screens = _buildScreens(_isOffline);
+
+    // Set up data invalidation callback for profile switching (skip in offline mode)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Initialize UserProfileProvider to ensure it's ready after sign-in
-      final userProfileProvider = context.userProfile;
-      await userProfileProvider.initialize();
+      if (!_isOffline) {
+        // Initialize UserProfileProvider to ensure it's ready after sign-in
+        final userProfileProvider = context.userProfile;
+        await userProfileProvider.initialize();
 
-      // Set up data invalidation callback for profile switching
-      userProfileProvider.setDataInvalidationCallback(_invalidateAllScreens);
+        // Set up data invalidation callback for profile switching
+        userProfileProvider.setDataInvalidationCallback(_invalidateAllScreens);
+      }
+
+      // Focus content initially (replaces autofocus which caused focus stealing issues)
+      if (!_isSidebarFocused) {
+        _contentFocusScope.requestFocus();
+      }
     });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
+    // Listen for offline/online transitions to refresh navigation & screens
+    // Note: We don't call _handleOfflineStatusChanged() immediately because
+    // widget.isOfflineMode (from SetupScreen navigation) is authoritative for
+    // initial state. The provider may not yet have received the server status
+    // update due to initialization timing. The listener handles runtime changes.
+    final provider = context.read<OfflineModeProvider?>();
+    if (provider != null && provider != _offlineModeProvider) {
+      _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
+      _offlineModeProvider = provider;
+      _offlineModeProvider!.addListener(_handleOfflineStatusChanged);
+    }
+
     routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
   }
 
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
+    _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
+    _sidebarFocusScope.dispose();
+    _contentFocusScope.dispose();
     super.dispose();
+  }
+
+  List<Widget> _buildScreens(bool offline) {
+    // In offline mode, only show Downloads and Settings
+    // In online mode, show all 5 screens
+    if (offline) {
+      return [
+        DownloadsScreen(key: _downloadsKey),
+        SettingsScreen(key: _settingsKey),
+      ];
+    }
+
+    return [
+      DiscoverScreen(
+        key: _discoverKey,
+        onBecameVisible: _onDiscoverBecameVisible,
+      ),
+      LibrariesScreen(
+        key: _librariesKey,
+        onLibraryOrderChanged: _onLibraryOrderChanged,
+      ),
+      SearchScreen(key: _searchKey),
+      DownloadsScreen(key: _downloadsKey),
+      SettingsScreen(key: _settingsKey),
+    ];
+  }
+
+  /// Normalize tab index when switching between offline/online modes.
+  /// Preserves the current tab if it exists in the new mode, otherwise defaults to first tab.
+  int _normalizeIndexForMode(int currentIndex, bool wasOffline, bool isOffline) {
+    if (wasOffline == isOffline) return currentIndex;
+
+    final oldTabs = _getVisibleTabs(wasOffline);
+    final newTabs = _getVisibleTabs(isOffline);
+
+    // Get the tab ID at the current index (or first tab if out of bounds)
+    final currentTabId = currentIndex >= 0 && currentIndex < oldTabs.length
+        ? oldTabs[currentIndex].id
+        : oldTabs.first.id;
+
+    // Find the same tab in the new mode's tab list
+    final newIndex = newTabs.indexWhere((tab) => tab.id == currentTabId);
+    return newIndex >= 0 ? newIndex : 0;
+  }
+
+  void _handleOfflineStatusChanged() {
+    final newOffline = _offlineModeProvider?.isOffline ?? widget.isOfflineMode;
+
+    if (newOffline == _isOffline) return;
+
+    final previousTabId = _tabIdForIndex(_isOffline, _currentIndex);
+    final wasOffline = _isOffline;
+    setState(() {
+      _isOffline = newOffline;
+      _screens = _buildScreens(_isOffline);
+      _selectedLibraryGlobalKey = _isOffline ? null : _selectedLibraryGlobalKey;
+
+      if (_isOffline) {
+        // Remember the online tab so we can restore it when reconnecting.
+        if (!wasOffline) {
+          _lastOnlineTabId = previousTabId;
+        }
+
+        _currentIndex =
+            _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
+
+        // Track if we auto-switched to Downloads because the previous tab was unavailable.
+        _autoSwitchedToDownloads =
+            previousTabId != NavigationTabId.downloads &&
+            _tabIdForIndex(true, _currentIndex) == NavigationTabId.downloads;
+      } else {
+        // Coming back online: restore the last online tab if we forced a switch to Downloads.
+        if (_autoSwitchedToDownloads) {
+          final restoredTab = _lastOnlineTabId ?? NavigationTabId.discover;
+          final restoredIndex = NavigationTab.indexFor(
+            restoredTab,
+            isOffline: _isOffline,
+          );
+          _currentIndex = restoredIndex >= 0 ? restoredIndex : 0;
+        } else {
+          _currentIndex =
+              _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
+        }
+        _autoSwitchedToDownloads = false;
+      }
+    });
+
+    // Refresh sidebar focus after rebuilding navigation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sideNavKey.currentState?.focusActiveItem();
+    });
+
+    // Ensure profile provider is initialized when coming back online
+    if (!_isOffline) {
+      final userProfileProvider = context.userProfile;
+      userProfileProvider.initialize().then((_) {
+        userProfileProvider.setDataInvalidationCallback(_invalidateAllScreens);
+      });
+    }
+  }
+
+  void _focusSidebar() {
+    setState(() => _isSidebarFocused = true);
+    _sidebarFocusScope.requestFocus();
+    // Focus the active item after the focus scope has focus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sideNavKey.currentState?.focusActiveItem();
+    });
+  }
+
+  void _focusContent() {
+    setState(() => _isSidebarFocused = false);
+    _contentFocusScope.requestFocus();
+    // When content regains focus while on Libraries, retry focusing the active tab
+    if (_currentIndex == 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_librariesKey.currentState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
+        }
+      });
+    }
+  }
+
+  KeyEventResult _handleBackKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    // Handle all back keys - this handler is only reached if lower widgets
+    // (e.g., LibrariesScreen tab content/chips) don't handle the back key first
+    final isBackKey =
+        event.logicalKey == LogicalKeyboardKey.escape ||
+        event.logicalKey == LogicalKeyboardKey.goBack ||
+        event.logicalKey == LogicalKeyboardKey.browserBack ||
+        event.logicalKey == LogicalKeyboardKey.gameButtonB;
+
+    if (!isBackKey) return KeyEventResult.ignored;
+
+    // Toggle focus between sidebar and content
+    if (_isSidebarFocused) {
+      _focusContent();
+    } else {
+      _focusSidebar();
+    }
+    return KeyEventResult.handled;
   }
 
   @override
   void didPush() {
     // Called when this route has been pushed (initial navigation)
-    if (_currentIndex == 0) {
+    if (_currentIndex == 0 && !_isOffline) {
       _onDiscoverBecameVisible();
     }
   }
@@ -76,7 +304,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   @override
   void didPopNext() {
     // Called when returning to this route from a child route (e.g., from video player)
-    if (_currentIndex == 0) {
+    if (_currentIndex == 0 && !_isOffline) {
       _onDiscoverBecameVisible();
     }
   }
@@ -90,66 +318,199 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     }
   }
 
+  void _onLibraryOrderChanged() {
+    // Refresh side navigation when library order changes
+    _sideNavKey.currentState?.reloadLibraries();
+  }
+
   /// Invalidate all cached data across all screens when profile is switched
-  void _invalidateAllScreens() {
-    appLogger.d('Invalidating all screen data due to profile switch');
+  /// Receives the list of servers with new profile tokens for reconnection
+  Future<void> _invalidateAllScreens(List<PlexServer> servers) async {
+    appLogger.d(
+      'Invalidating all screen data due to profile switch with ${servers.length} servers',
+    );
+
+    // Get all providers
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final serverStateProvider = context.read<ServerStateProvider>();
+    final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+    final playbackStateProvider = context.read<PlaybackStateProvider>();
+
+    // Reconnect to all servers with new profile tokens
+    if (servers.isNotEmpty) {
+      final storage = await StorageService.getInstance();
+      final clientId = storage.getClientIdentifier();
+
+      final connectedCount = await multiServerProvider.reconnectWithServers(
+        servers,
+        clientIdentifier: clientId,
+      );
+      appLogger.d(
+        'Reconnected to $connectedCount/${servers.length} servers after profile switch',
+      );
+
+      // Trigger watch state sync now that servers are connected
+      if (connectedCount > 0) {
+        if (!mounted) return;
+        context.read<OfflineWatchSyncService>().onServersConnected();
+      }
+    }
+
+    // Reset other provider states
+    serverStateProvider.reset();
+    hiddenLibrariesProvider.refresh();
+    playbackStateProvider.clearShuffle();
+
+    appLogger.d('Cleared all provider states for profile switch');
 
     // Full refresh discover screen (reload all content for new profile)
-    final discoverState = _discoverKey.currentState;
-    if (discoverState != null) {
-      (discoverState as dynamic).fullRefresh();
+    if (_discoverKey.currentState case final FullRefreshable refreshable) {
+      refreshable.fullRefresh();
     }
 
     // Full refresh libraries screen (clear filters and reload for new profile)
-    final librariesState = _librariesKey.currentState;
-    if (librariesState != null) {
-      (librariesState as dynamic).fullRefresh();
+    if (_librariesKey.currentState case final FullRefreshable refreshable) {
+      refreshable.fullRefresh();
     }
 
     // Full refresh search screen (clear search for new profile)
-    final searchState = _searchKey.currentState;
-    if (searchState != null) {
-      (searchState as dynamic).fullRefresh();
+    if (_searchKey.currentState case final FullRefreshable refreshable) {
+      refreshable.fullRefresh();
     }
+  }
+
+  void _selectTab(int index) {
+    final previousIndex = _currentIndex;
+    setState(() {
+      _currentIndex = index;
+      if (!_isOffline) {
+        _lastOnlineTabId = _tabIdForIndex(false, index);
+      } else if (previousIndex != index) {
+        // User made an explicit offline selection, so don't auto-restore later.
+        _autoSwitchedToDownloads = false;
+      }
+    });
+
+    // Skip screen-specific logic in offline mode (only Downloads and Settings available)
+    if (_isOffline) return;
+
+    // Notify discover screen when it becomes visible via tab switch
+    if (index == 0) {
+      _onDiscoverBecameVisible();
+    }
+    // Ensure the libraries screen applies focus when brought into view
+    if (index == 1 && previousIndex != 1) {
+      if (_librariesKey.currentState case final FocusableTab focusable) {
+        focusable.focusActiveTabIfReady();
+      }
+    }
+    // Focus search input when selecting Search tab
+    if (index == 2) {
+      if (_searchKey.currentState case final SearchInputFocusable searchable) {
+        searchable.focusSearchInput();
+      }
+    }
+  }
+
+  /// Handle library selection from side navigation rail
+  void _selectLibrary(String libraryGlobalKey) {
+    setState(() {
+      _selectedLibraryGlobalKey = libraryGlobalKey;
+      _currentIndex = 1; // Switch to Libraries tab
+      if (!_isOffline) {
+        _lastOnlineTabId = NavigationTabId.libraries;
+      }
+    });
+    // Tell LibrariesScreen to load this library
+    if (_librariesKey.currentState case final LibraryLoadable loadable) {
+      loadable.loadLibraryByKey(libraryGlobalKey);
+    }
+    if (_librariesKey.currentState case final FocusableTab focusable) {
+      focusable.focusActiveTabIfReady();
+    }
+  }
+
+  /// Get navigation tabs filtered by offline mode
+  List<NavigationTab> _getVisibleTabs(bool isOffline) {
+    return NavigationTab.getVisibleTabs(isOffline: isOffline);
+  }
+
+  /// Get the tab ID for a given index, clamping to the available range.
+  NavigationTabId _tabIdForIndex(bool isOffline, int index) {
+    final tabs = _getVisibleTabs(isOffline);
+    if (tabs.isEmpty) return NavigationTabId.discover;
+    final safeIndex = index.clamp(0, tabs.length - 1).toInt();
+    return tabs[safeIndex].id;
+  }
+
+  /// Build navigation destinations for bottom navigation bar.
+  List<NavigationDestination> _buildNavDestinations(bool isOffline) {
+    return _getVisibleTabs(isOffline).map((tab) => tab.toDestination()).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
+
+    if (useSideNav) {
+      return PopScope(
+        canPop: false, // Prevent system back from popping on Android TV
+        onPopInvokedWithResult: (didPop, result) {
+          // No-op: back key events bubble through widget tree and are handled
+          // by content screens (e.g., LibrariesScreen) or MainScreen's _handleBackKey.
+          // We only use PopScope to prevent the system from popping the route.
+        },
+        child: Focus(
+          onKeyEvent: (node, event) => _handleBackKey(event),
+          child: MainScreenFocusScope(
+            focusSidebar: _focusSidebar,
+            focusContent: _focusContent,
+            isSidebarFocused: _isSidebarFocused,
+            child: SideNavigationScope(
+              child: Row(
+                children: [
+                  FocusScope(
+                    node: _sidebarFocusScope,
+                    child: SideNavigationRail(
+                      key: _sideNavKey,
+                      selectedIndex: _currentIndex,
+                      selectedLibraryKey: _selectedLibraryGlobalKey,
+                      isOfflineMode: _isOffline,
+                      onDestinationSelected: (index) {
+                        _selectTab(index);
+                        _focusContent();
+                      },
+                      onLibrarySelected: (key) {
+                        _selectLibrary(key);
+                        _focusContent();
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: FocusScope(
+                      node: _contentFocusScope,
+                      // No autofocus - we control focus programmatically to prevent
+                      // autofocus from stealing focus back after setState() rebuilds
+                      child: IndexedStack(
+                        index: _currentIndex,
+                        children: _screens,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          // Notify discover screen when it becomes visible via tab switch
-          if (index == 0) {
-            _onDiscoverBecameVisible();
-          }
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: t.navigation.home,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.video_library_outlined),
-            selectedIcon: const Icon(Icons.video_library),
-            label: t.navigation.libraries,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.search),
-            selectedIcon: const Icon(Icons.search),
-            label: t.navigation.search,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings),
-            label: t.navigation.settings,
-          ),
-        ],
+        onDestinationSelected: _selectTab,
+        destinations: _buildNavDestinations(_isOffline),
       ),
     );
   }

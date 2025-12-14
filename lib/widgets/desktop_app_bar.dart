@@ -1,58 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/widgets/app_icon.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../utils/desktop_window_padding.dart';
 import '../services/fullscreen_state_manager.dart';
 import 'app_bar_back_button.dart';
 
-/// A custom app bar that automatically handles desktop window controls spacing.
-/// Use this instead of AppBar for consistent desktop platform behavior.
-class DesktopAppBar extends StatelessWidget implements PreferredSizeWidget {
+/// Configuration class for common app bar properties.
+/// Reduces duplication between different app bar implementations.
+class DesktopAppBarConfig {
   final Widget? title;
   final List<Widget>? actions;
-  final Widget? leading;
-  final bool automaticallyImplyLeading;
   final double? elevation;
   final Color? backgroundColor;
   final Color? surfaceTintColor;
   final Color? shadowColor;
   final double? scrolledUnderElevation;
+  final bool floating;
+  final bool pinned;
+  final double? expandedHeight;
+  final Widget? flexibleSpace;
+  final PreferredSizeWidget? bottom;
 
-  const DesktopAppBar({
-    super.key,
+  const DesktopAppBarConfig({
     this.title,
     this.actions,
-    this.leading,
-    this.automaticallyImplyLeading = true,
     this.elevation,
     this.backgroundColor,
     this.surfaceTintColor,
     this.shadowColor,
     this.scrolledUnderElevation,
+    this.floating = false,
+    this.pinned = false,
+    this.expandedHeight,
+    this.flexibleSpace,
+    this.bottom,
   });
+}
 
-  @override
-  Widget build(BuildContext context) {
-    final appBar = AppBar(
-      title: title != null
-          ? DesktopTitleBarPadding(
-              leftPadding: leading != null ? 0 : null,
-              child: title!,
-            )
-          : null,
-      actions: DesktopAppBarHelper.buildAdjustedActions(actions),
-      leading: DesktopAppBarHelper.buildAdjustedLeading(leading),
-      automaticallyImplyLeading: automaticallyImplyLeading,
-      elevation: elevation,
-      backgroundColor: backgroundColor,
-      surfaceTintColor: surfaceTintColor,
-      shadowColor: shadowColor,
-      scrolledUnderElevation: scrolledUnderElevation,
+/// Helper class for building app bar sections with consistent desktop behavior.
+class DesktopAppBarSections {
+  /// Builds the leading section with proper padding and back button handling.
+  static Widget? buildLeadingSection({
+    Widget? leading,
+    bool automaticallyImplyLeading = true,
+    required BuildContext context,
+  }) {
+    Widget? effectiveLeading = leading;
+
+    // If no leading is provided but automaticallyImplyLeading is true,
+    // create a back button manually so it goes through our padding logic
+    if (leading == null && automaticallyImplyLeading) {
+      final parentRoute = ModalRoute.of(context);
+      final canPop = parentRoute?.canPop ?? false;
+
+      if (canPop) {
+        effectiveLeading = IconButton(
+          icon: const AppIcon(Symbols.arrow_back_rounded, fill: 1),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        );
+      }
+    }
+
+    return DesktopAppBarHelper.buildAdjustedLeading(
+      effectiveLeading,
+      includeGestureDetector: true,
+      context: context,
     );
-
-    return DesktopAppBarHelper.wrapWithGestureDetector(appBar);
   }
 
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  /// Builds the title section with proper padding.
+  static Widget? buildTitleSection({
+    required Widget? title,
+    required Widget? leading,
+  }) {
+    if (title == null) return null;
+
+    return DesktopTitleBarPadding(
+      leftPadding: leading != null ? 0 : null,
+      child: title,
+    );
+  }
+
+  /// Builds the actions section with proper padding.
+  static List<Widget>? buildActionsSection(List<Widget>? actions) {
+    return DesktopAppBarHelper.buildAdjustedActions(actions);
+  }
+
+  /// Calculates the leading width for the app bar.
+  static double? calculateLeadingWidthForSection({
+    required Widget? leading,
+    required BuildContext context,
+  }) {
+    return DesktopAppBarHelper.calculateLeadingWidth(leading, context: context);
+  }
+
+  /// Builds the flexible space section with gesture handling.
+  static Widget? buildFlexibleSpaceSection(Widget? flexibleSpace) {
+    return DesktopAppBarHelper.buildAdjustedFlexibleSpace(flexibleSpace);
+  }
 }
 
 /// A custom sliver app bar that automatically handles desktop window controls spacing.
@@ -93,37 +139,23 @@ class DesktopSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine the effective leading widget
-    Widget? effectiveLeading = leading;
-
-    // If no leading is provided but automaticallyImplyLeading is true,
-    // create a back button manually so it goes through our padding logic
-    if (leading == null && automaticallyImplyLeading) {
-      final parentRoute = ModalRoute.of(context);
-      final canPop = parentRoute?.canPop ?? false;
-
-      if (canPop) {
-        effectiveLeading = IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-        );
-      }
-    }
+    final effectiveLeading = DesktopAppBarSections.buildLeadingSection(
+      leading: leading,
+      automaticallyImplyLeading: automaticallyImplyLeading,
+      context: context,
+    );
 
     return SliverAppBar(
-      title: title != null
-          ? DesktopTitleBarPadding(
-              leftPadding: effectiveLeading != null ? 0 : null,
-              child: title!,
-            )
-          : null,
-      actions: DesktopAppBarHelper.buildAdjustedActions(actions),
-      leading: DesktopAppBarHelper.buildAdjustedLeading(
-        effectiveLeading,
-        includeGestureDetector: true,
+      title: DesktopAppBarSections.buildTitleSection(
+        title: title,
+        leading: effectiveLeading,
       ),
-      leadingWidth: DesktopAppBarHelper.calculateLeadingWidth(effectiveLeading),
+      actions: DesktopAppBarSections.buildActionsSection(actions),
+      leading: effectiveLeading,
+      leadingWidth: DesktopAppBarSections.calculateLeadingWidthForSection(
+        leading: effectiveLeading,
+        context: context,
+      ),
       automaticallyImplyLeading:
           false, // Always false since we handle it manually
       elevation: elevation,
@@ -134,7 +166,7 @@ class DesktopSliverAppBar extends StatelessWidget {
       floating: floating,
       pinned: pinned,
       expandedHeight: expandedHeight,
-      flexibleSpace: DesktopAppBarHelper.buildAdjustedFlexibleSpace(
+      flexibleSpace: DesktopAppBarSections.buildFlexibleSpaceSection(
         flexibleSpace,
       ),
       bottom: bottom,
@@ -142,27 +174,20 @@ class DesktopSliverAppBar extends StatelessWidget {
   }
 }
 
-/// Convenient wrapper for DesktopAppBar with built-in back button handling
-class PlexAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final Widget? title;
-  final List<Widget>? actions;
+/// Unified widget for desktop top bars that handles fullscreen state and back button logic.
+/// Reduces UI drift by centralizing the app bar implementation.
+class DesktopTopBar extends StatelessWidget {
+  final DesktopAppBarConfig config;
+  final Widget? leading;
   final VoidCallback? onBackPressed;
-  final double? elevation;
-  final Color? backgroundColor;
-  final Color? surfaceTintColor;
-  final Color? shadowColor;
-  final double? scrolledUnderElevation;
+  final bool automaticallyImplyLeading;
 
-  const PlexAppBar({
+  const DesktopTopBar({
     super.key,
-    this.title,
-    this.actions,
+    required this.config,
+    this.leading,
     this.onBackPressed,
-    this.elevation,
-    this.backgroundColor,
-    this.surfaceTintColor,
-    this.shadowColor,
-    this.scrolledUnderElevation,
+    this.automaticallyImplyLeading = true,
   });
 
   @override
@@ -172,37 +197,46 @@ class PlexAppBar extends StatelessWidget implements PreferredSizeWidget {
       builder: (context, _) {
         final isFullscreen = FullscreenStateManager().isFullscreen;
 
-        return DesktopAppBar(
-          key: ValueKey('plex_app_bar_$isFullscreen'),
-          title: title,
-          actions: actions,
-          leading: _shouldShowBackButton(context)
-              ? AppBarBackButton(
-                  style: BackButtonStyle.plain,
-                  onPressed: onBackPressed,
-                )
-              : null,
+        // Determine the effective leading widget
+        Widget? effectiveLeading = leading;
+        if (effectiveLeading == null && automaticallyImplyLeading) {
+          final parentRoute = ModalRoute.of(context);
+          final canPop = parentRoute?.canPop ?? false;
+
+          if (canPop) {
+            effectiveLeading = AppBarBackButton(
+              style: BackButtonStyle.plain,
+              onPressed: onBackPressed,
+            );
+          }
+        }
+
+        return DesktopSliverAppBar(
+          key: ValueKey('desktop_top_bar_$isFullscreen'),
+          title: config.title,
+          actions: config.actions,
+          leading: effectiveLeading,
           automaticallyImplyLeading: false,
-          elevation: elevation,
-          backgroundColor: backgroundColor,
-          surfaceTintColor: surfaceTintColor,
-          shadowColor: shadowColor,
-          scrolledUnderElevation: scrolledUnderElevation,
+          elevation: config.elevation,
+          backgroundColor: config.backgroundColor,
+          surfaceTintColor: config.surfaceTintColor,
+          shadowColor: config.shadowColor,
+          scrolledUnderElevation: config.scrolledUnderElevation,
+          floating: config.floating,
+          pinned: config.pinned,
+          expandedHeight: config.expandedHeight,
+          flexibleSpace: config.flexibleSpace,
+          bottom: config.bottom,
         );
       },
     );
   }
-
-  bool _shouldShowBackButton(BuildContext context) {
-    final parentRoute = ModalRoute.of(context);
-    return parentRoute?.canPop ?? false;
-  }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-/// Convenient wrapper for DesktopSliverAppBar with built-in back button handling
+/// Convenient wrapper for DesktopSliverAppBar with built-in back button handling.
+///
+/// This widget is maintained for backward compatibility. For new code, consider
+/// using [DesktopTopBar] directly for a more unified approach.
 class CustomAppBar extends StatelessWidget {
   final Widget? title;
   final List<Widget>? actions;
@@ -237,39 +271,23 @@ class CustomAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: FullscreenStateManager(),
-      builder: (context, _) {
-        final isFullscreen = FullscreenStateManager().isFullscreen;
-
-        return DesktopSliverAppBar(
-          key: ValueKey('plex_sliver_app_bar_$isFullscreen'),
-          title: title,
-          actions: actions,
-          leading: _shouldShowBackButton(context)
-              ? AppBarBackButton(
-                  style: BackButtonStyle.plain,
-                  onPressed: onBackPressed,
-                )
-              : null,
-          automaticallyImplyLeading: false,
-          elevation: elevation,
-          backgroundColor: backgroundColor,
-          surfaceTintColor: surfaceTintColor,
-          shadowColor: shadowColor,
-          scrolledUnderElevation: scrolledUnderElevation,
-          floating: floating,
-          pinned: pinned,
-          expandedHeight: expandedHeight,
-          flexibleSpace: flexibleSpace,
-          bottom: bottom,
-        );
-      },
+    return DesktopTopBar(
+      config: DesktopAppBarConfig(
+        title: title,
+        actions: actions,
+        elevation: elevation,
+        backgroundColor: backgroundColor,
+        surfaceTintColor: surfaceTintColor,
+        shadowColor: shadowColor,
+        scrolledUnderElevation: scrolledUnderElevation,
+        floating: floating,
+        pinned: pinned,
+        expandedHeight: expandedHeight,
+        flexibleSpace: flexibleSpace,
+        bottom: bottom,
+      ),
+      onBackPressed: onBackPressed,
+      automaticallyImplyLeading: true,
     );
-  }
-
-  bool _shouldShowBackButton(BuildContext context) {
-    final parentRoute = ModalRoute.of(context);
-    return parentRoute?.canPop ?? false;
   }
 }
