@@ -66,7 +66,7 @@ class PlayQueueLauncher {
     return _executeWithLoading(
       showLoading: showLoadingIndicator,
       action: t.common.shuffle,
-      execute: () async {
+      execute: (dismissLoading) async {
         final String ratingKey = item.ratingKey;
         final String? itemServerId = item.serverId ?? serverId;
         final String? itemServerName = item.serverName ?? serverName;
@@ -110,6 +110,9 @@ class PlayQueueLauncher {
           }
         }
 
+        // Close loading dialog before navigating to the player
+        await dismissLoading();
+
         return _launchFromQueue(
           playQueue: playQueue,
           ratingKey: ratingKey,
@@ -129,12 +132,15 @@ class PlayQueueLauncher {
     return _executeWithLoading(
       showLoading: showLoadingIndicator,
       action: t.discover.play,
-      execute: () async {
+      execute: (dismissLoading) async {
         final playQueue = await client.createPlayQueue(
           playlistID: int.parse(playlist.ratingKey),
           type: 'video',
           key: selectedItem.key,
         );
+
+        // Close loading dialog before navigating to the player
+        await dismissLoading();
 
         return _launchFromQueue(
           playQueue: playQueue,
@@ -163,7 +169,7 @@ class PlayQueueLauncher {
     return _executeWithLoading(
       showLoading: showLoadingIndicator,
       action: t.common.shuffle,
-      execute: () async {
+      execute: (dismissLoading) async {
         // Determine the rating key for the play queue
         String showRatingKey;
         if (mediaType == PlexMediaType.show) {
@@ -180,6 +186,9 @@ class PlayQueueLauncher {
           showRatingKey: showRatingKey,
           shuffle: 1,
         );
+
+        // Close loading dialog before navigating to the player
+        await dismissLoading();
 
         return _launchFromQueue(
           playQueue: playQueue,
@@ -242,19 +251,43 @@ class PlayQueueLauncher {
   Future<PlayQueueResult> _executeWithLoading({
     required bool showLoading,
     required String action,
-    required Future<PlayQueueResult> Function() execute,
+    required Future<PlayQueueResult> Function(
+      Future<void> Function() dismissLoading,
+    ) execute,
   }) async {
+    BuildContext? loadingDialogContext;
+    var loadingVisible = false;
+
     // Show loading indicator
     if (showLoading && context.mounted) {
+      loadingVisible = true;
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
+        builder: (dialogContext) {
+          loadingDialogContext = dialogContext;
+          return const Center(child: CircularProgressIndicator());
+        },
       );
     }
 
+    Future<void> dismissLoading() async {
+      if (!showLoading || !loadingVisible) return;
+      final dialogContext = loadingDialogContext;
+      if (dialogContext == null) return;
+
+      // Only dismiss if the dialog is still the current route to avoid
+      // accidentally popping the player after navigation.
+      final route = ModalRoute.of(dialogContext);
+      if (route?.isCurrent ?? false) {
+        Navigator.of(dialogContext).pop();
+      }
+
+      loadingVisible = false;
+    }
+
     try {
-      final result = await execute();
+      final result = await execute(dismissLoading);
 
       // Handle empty queue result
       if (result is PlayQueueEmpty && context.mounted) {
@@ -263,6 +296,7 @@ class PlayQueueLauncher {
         );
       }
 
+      await dismissLoading();
       return result;
     } catch (e) {
       appLogger.e('Failed to $action', error: e);
@@ -277,12 +311,10 @@ class PlayQueueLauncher {
         );
       }
 
+      await dismissLoading();
       return PlayQueueError(e);
     } finally {
-      // Close loading indicator (guaranteed cleanup)
-      if (showLoading && context.mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
+      await dismissLoading();
     }
   }
 }
