@@ -556,6 +556,7 @@ class DownloadStorageService {
 
   /// Copy a file from temp cache to SAF and return the SAF URI
   /// Returns null if SAF is not available or copy fails
+  /// Always cleans up temp file regardless of success/failure
   Future<String?> copyToSaf(
     String tempFilePath,
     List<String> pathComponents,
@@ -566,34 +567,37 @@ class DownloadStorageService {
 
     final safService = SafStorageService.instance;
 
-    // Create nested directory structure in SAF
-    final targetDirUri = await safService.createNestedDirectories(
-      _customDownloadPath!,
-      pathComponents,
-    );
+    try {
+      // Create nested directory structure in SAF
+      final targetDirUri = await safService.createNestedDirectories(
+        _customDownloadPath!,
+        pathComponents,
+      );
 
-    if (targetDirUri == null) {
-      return null;
-    }
+      if (targetDirUri == null) {
+        return null;
+      }
 
-    // Copy the file to SAF
-    final safUri = await safService.copyFileToSaf(
-      tempFilePath,
-      targetDirUri,
-      fileName,
-      mimeType,
-    );
+      // Copy the file to SAF using native copy
+      final safUri = await safService.copyFileToSaf(
+        tempFilePath,
+        targetDirUri,
+        fileName,
+        mimeType,
+      );
 
-    // Delete temp file after successful copy
-    if (safUri != null) {
+      return safUri;
+    } finally {
+      // Always clean up temp file regardless of success/failure
       try {
-        await File(tempFilePath).delete();
+        final tempFile = File(tempFilePath);
+        if (await tempFile.exists()) {
+          await tempFile.delete();
+        }
       } catch (_) {
         // Ignore cleanup errors
       }
     }
-
-    return safUri;
   }
 
   /// Get the MIME type for a file extension

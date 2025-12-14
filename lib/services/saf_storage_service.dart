@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -138,7 +139,7 @@ class SafStorageService {
     }
   }
 
-  /// Copy a file from local storage to SAF directory using streaming
+  /// Copy a file from local storage to SAF directory using native copy
   /// Returns the SAF URI of the copied file, or null on failure
   Future<String?> copyFileToSaf(
     String sourceFilePath,
@@ -147,6 +148,7 @@ class SafStorageService {
     String mimeType,
   ) async {
     if (!isAvailable) return null;
+
     try {
       final sourceFile = File(sourceFilePath);
       if (!await sourceFile.exists()) {
@@ -154,27 +156,26 @@ class SafStorageService {
         return null;
       }
 
-      // Start a write stream session
-      final writeInfo = await _safStream.startWriteStream(
-        targetDirectoryUri,
-        fileName,
-        mimeType,
-      );
-      final sessionId = writeInfo.session;
+      // Use pasteLocalFile for native-side copy (no method channel streaming)
+      // This is much more efficient for large files and avoids hangs
+      final result = await _safStream
+          .pasteLocalFile(
+            sourceFilePath,
+            targetDirectoryUri,
+            fileName,
+            mimeType,
+            overwrite: true,
+          )
+          .timeout(
+            const Duration(minutes: 30),
+            onTimeout: () => throw TimeoutException('SAF copy timed out'),
+          );
 
-      final stream = sourceFile.openRead();
-
-      await for (final chunk in stream) {
-        await _safStream.writeChunk(sessionId, Uint8List.fromList(chunk));
-      }
-
-      // End the write stream
-      await _safStream.endWriteStream(sessionId);
-
-      debugPrint(
-        'SAF copyFileToSaf: successfully copied to $targetDirectoryUri/$fileName',
-      );
-      return writeInfo.fileResult.uri.toString();
+      debugPrint('SAF copyFileToSaf: successfully copied to ${result.uri}');
+      return result.uri.toString();
+    } on TimeoutException catch (e) {
+      debugPrint('SAF copyFileToSaf timeout: $e');
+      return null;
     } catch (e) {
       debugPrint('SAF copyFileToSaf error: $e');
       return null;
