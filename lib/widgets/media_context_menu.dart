@@ -1609,16 +1609,25 @@ class _FocusableContextMenuSheetState
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            ...widget.actions.asMap().entries.map((entry) {
-              final index = entry.key;
-              final action = entry.value;
-              return FocusableListTile(
-                focusNode: index == 0 ? _initialFocusNode : null,
-                leading: AppIcon(action.icon, fill: 1),
-                title: Text(action.label),
-                onTap: () => Navigator.pop(context, action.value),
-              );
-            }),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...widget.actions.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final action = entry.value;
+                      return FocusableListTile(
+                        focusNode: index == 0 ? _initialFocusNode : null,
+                        leading: AppIcon(action.icon, fill: 1),
+                        title: Text(action.label),
+                        onTap: () => Navigator.pop(context, action.value),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
