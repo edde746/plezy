@@ -16,6 +16,8 @@ import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
+import '../../utils/snackbar_helper.dart';
+import '../../utils/content_type_helper.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
 import '../main_screen.dart';
@@ -351,7 +353,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       // Filter out music libraries (type: 'artist') since music playback is not yet supported
       // Only show movie and TV show libraries
       final filteredLibraries = allLibraries
-          .where((lib) => lib.type.toLowerCase() != 'artist')
+          .where((lib) => !ContentTypeHelper.isMusicLibrary(lib))
           .toList();
 
       // Load saved library order and apply it
@@ -864,34 +866,22 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final client = context.getClientForLibrary(library);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(progressMessage),
-            duration: const Duration(seconds: 2),
-          ),
+        showAppSnackBar(
+          context,
+          progressMessage,
+          duration: const Duration(seconds: 2),
         );
       }
 
       await action(client);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(successMessage),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        showSuccessSnackBar(context, successMessage);
       }
     } catch (e) {
       appLogger.e('Library action failed', error: e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(failureMessage(e)),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        showErrorSnackBar(context, failureMessage(e));
       }
     }
   }

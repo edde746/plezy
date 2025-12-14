@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/duration_formatter.dart';
+import '../../../utils/snackbar_helper.dart';
 import '../../../i18n/strings.g.dart';
 
 /// Widget displaying list of sleep timer durations for selection
@@ -58,23 +59,13 @@ class SleepTimerDurationList extends StatelessWidget {
 
               // Show a snackbar notification
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(t.videoControls.sleepTimerCompleted),
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
+                showSuccessSnackBar(context, t.videoControls.sleepTimerCompleted);
               }
             });
             Navigator.pop(context);
 
             // Show confirmation snackbar
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(t.messages.sleepTimerSet(label: label)),
-                duration: const Duration(seconds: 2),
-              ),
-            );
+            showSuccessSnackBar(context, t.messages.sleepTimerSet(label: label));
           },
         );
       },

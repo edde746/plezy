@@ -14,6 +14,7 @@ import '../providers/offline_watch_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
+import '../utils/snackbar_helper.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
@@ -379,9 +380,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               ratingKey: metadata.ratingKey,
             );
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(t.messages.markedAsWatchedOffline)),
-              );
+              showAppSnackBar(context, t.messages.markedAsWatchedOffline);
               widget.onRefresh?.call(metadata.ratingKey);
             }
           } else {
@@ -402,9 +401,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               ratingKey: metadata.ratingKey,
             );
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(t.messages.markedAsUnwatchedOffline)),
-              );
+              showAppSnackBar(context, t.messages.markedAsUnwatchedOffline);
               widget.onRefresh?.call(metadata.ratingKey);
             }
           } else {
@@ -423,8 +420,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           try {
             await client.removeFromOnDeck(metadata!.ratingKey);
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(t.messages.removedFromContinueWatching)),
+              showSuccessSnackBar(
+                context,
+                t.messages.removedFromContinueWatching,
               );
               // Use specific callback if provided, otherwise fallback to onRefresh
               if (widget.onRemoveFromContinueWatching != null) {
@@ -435,10 +433,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             }
           } catch (e) {
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(t.messages.errorLoading(error: e.toString())),
-                ),
+              showErrorSnackBar(
+                context,
+                t.messages.errorLoading(error: e.toString()),
               );
             }
           }
@@ -512,15 +509,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     try {
       await action();
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(successMessage)));
+        showSuccessSnackBar(context, successMessage);
         widget.onRefresh?.call(widget.item.ratingKey);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: e.toString()),
         );
       }
     }
@@ -548,9 +544,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$errorPrefix: $e')));
+        showErrorSnackBar(context, '$errorPrefix: $e');
       }
     }
   }
@@ -589,9 +583,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
         );
       } else if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.fileInfoNotAvailable)),
-        );
+        showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
       }
     } catch (e) {
       // Close loading indicator if it's still open
@@ -600,10 +592,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.messages.errorLoadingFileInfo(error: e.toString())),
-          ),
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoadingFileInfo(error: e.toString()),
         );
       }
     }
@@ -761,16 +752,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         if (context.mounted) {
           if (newPlaylist != null) {
             appLogger.d('Successfully created playlist: ${newPlaylist.title}');
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(t.playlists.created)));
+            showSuccessSnackBar(context, t.playlists.created);
             // Trigger refresh of playlists tab
             LibraryRefreshNotifier().notifyPlaylistsChanged();
           } else {
             appLogger.e('Failed to create playlist - API returned null');
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(t.playlists.errorCreating)));
+            showErrorSnackBar(context, t.playlists.errorCreating);
           }
         }
       } else {
@@ -786,18 +773,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         if (context.mounted) {
           if (success) {
             appLogger.d('Successfully added item(s) to playlist $result');
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(t.playlists.itemAdded)));
+            showSuccessSnackBar(context, t.playlists.itemAdded);
             // Trigger refresh of playlists tab
             LibraryRefreshNotifier().notifyPlaylistsChanged();
           } else {
             appLogger.e(
               'Failed to add item(s) to playlist $result - API returned false',
             );
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(t.playlists.errorAdding)));
+            showErrorSnackBar(context, t.playlists.errorAdding);
           }
         }
       }
@@ -808,11 +791,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         stackTrace: stackTrace,
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${t.playlists.errorLoading}: ${e.toString()}'),
-            duration: const Duration(seconds: 5),
-          ),
+        showErrorSnackBar(
+          context,
+          '${t.playlists.errorLoading}: ${e.toString()}',
         );
       }
     }
@@ -880,12 +861,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (sectionId == null) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Unable to determine library section for this item',
-              ),
-            ),
+          showErrorSnackBar(
+            context,
+            'Unable to determine library section for this item',
           );
         }
         return;
@@ -975,22 +953,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
             if (addSuccess) {
               appLogger.d('Successfully added item to new collection');
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(t.collections.created)));
+              showSuccessSnackBar(context, t.collections.created);
               // Trigger refresh of collections tab
               LibraryRefreshNotifier().notifyCollectionsChanged();
             } else {
               appLogger.e('Failed to add item to new collection');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(t.collections.errorAddingToCollection)),
+              showErrorSnackBar(
+                context,
+                t.collections.errorAddingToCollection,
               );
             }
           } else {
             appLogger.e('Failed to create collection - API returned null');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.collections.errorAddingToCollection)),
-            );
+            showErrorSnackBar(context, t.collections.errorAddingToCollection);
           }
         }
       } else {
@@ -1006,18 +981,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         if (context.mounted) {
           if (success) {
             appLogger.d('Successfully added item(s) to collection $result');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.collections.addedToCollection)),
-            );
+            showSuccessSnackBar(context, t.collections.addedToCollection);
             // Trigger refresh of collections tab
             LibraryRefreshNotifier().notifyCollectionsChanged();
           } else {
             appLogger.e(
               'Failed to add item(s) to collection $result - API returned false',
             );
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(t.collections.errorAddingToCollection)),
-            );
+            showErrorSnackBar(context, t.collections.errorAddingToCollection);
           }
         }
       }
@@ -1028,13 +999,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         stackTrace: stackTrace,
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${t.collections.errorAddingToCollection}: ${e.toString()}',
-            ),
-            duration: const Duration(seconds: 5),
-          ),
+        showErrorSnackBar(
+          context,
+          '${t.collections.errorAddingToCollection}: ${e.toString()}',
         );
       }
     }
@@ -1087,28 +1054,24 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (context.mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.collections.removedFromCollection)),
-          );
+          showSuccessSnackBar(context, t.collections.removedFromCollection);
           // Trigger refresh of collections tab
           LibraryRefreshNotifier().notifyCollectionsChanged();
           // Trigger list refresh to remove the item from the view
           widget.onListRefresh?.call();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.collections.removeFromCollectionFailed)),
+          showErrorSnackBar(
+            context,
+            t.collections.removeFromCollectionFailed,
           );
         }
       }
     } catch (e) {
       appLogger.e('Failed to remove from collection', error: e);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t.collections.removeFromCollectionError(error: e.toString()),
-            ),
-          ),
+        showErrorSnackBar(
+          context,
+          t.collections.removeFromCollectionError(error: e.toString()),
         );
       }
     }
@@ -1213,38 +1176,29 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (context.mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isCollection ? t.collections.deleted : t.playlists.deleted,
-              ),
-            ),
+          showSuccessSnackBar(
+            context,
+            isCollection ? t.collections.deleted : t.playlists.deleted,
           );
           // Trigger list refresh
           widget.onListRefresh?.call();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isCollection
-                    ? t.collections.deleteFailed
-                    : t.playlists.errorDeleting,
-              ),
-            ),
+          showErrorSnackBar(
+            context,
+            isCollection
+                ? t.collections.deleteFailed
+                : t.playlists.errorDeleting,
           );
         }
       }
     } catch (e) {
       appLogger.e('Failed to delete $itemTypeLabel', error: e);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isCollection
-                  ? t.collections.deleteFailedWithError(error: e.toString())
-                  : t.playlists.errorDeleting,
-            ),
-          ),
+        showErrorSnackBar(
+          context,
+          isCollection
+              ? t.collections.deleteFailedWithError(error: e.toString())
+              : t.playlists.errorDeleting,
         );
       }
     }
@@ -1266,21 +1220,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         final message = count > 1
             ? t.downloads.episodesQueued(count: count)
             : t.downloads.downloadQueued;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        showSuccessSnackBar(context, message);
       }
     } on CellularDownloadBlockedException {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.settings.cellularDownloadBlocked)),
-        );
+        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
       }
     } catch (e) {
       appLogger.e('Failed to queue download', error: e);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: e.toString()),
         );
       }
     }
@@ -1326,17 +1277,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       );
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.downloads.downloadDeleted)));
+        showSuccessSnackBar(context, t.downloads.downloadDeleted);
         // Refresh the view if needed
         widget.onRefresh?.call(metadata.ratingKey);
       }
     } catch (e) {
       appLogger.e('Failed to delete download', error: e);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: e.toString()),
         );
       }
     }

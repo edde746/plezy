@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_metadata_extensions.dart';
 import '../models/plex_hub.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/server_state_provider.dart';
@@ -1187,13 +1188,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildHeroItem(PlexMetadata heroItem) {
-    final isEpisode = heroItem.type.toLowerCase() == 'episode';
+    final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.title;
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
 
     // Determine content type label for chip
-    final contentTypeLabel = heroItem.type.toLowerCase() == 'movie'
+    final contentTypeLabel = heroItem.isMovie
         ? t.discover.movie
         : t.discover.tvShow;
 

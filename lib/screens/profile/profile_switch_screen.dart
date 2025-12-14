@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/plex_home_user.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../utils/provider_extensions.dart';
+import '../../utils/snackbar_helper.dart';
 import 'profile_list_tile.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../i18n/strings.g.dart';
@@ -117,13 +118,9 @@ class ProfileSwitchScreen extends StatelessWidget {
     if (success && context.mounted) {
       Navigator.of(context).pop();
     } else if (!success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t.errors.failedToSwitchProfile(displayName: user.displayName),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      showErrorSnackBar(
+        context,
+        t.errors.failedToSwitchProfile(displayName: user.displayName),
       );
     }
   }

@@ -6,6 +6,7 @@ import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../i18n/strings.g.dart';
 import 'plex_client.dart';
@@ -291,9 +292,7 @@ class PlayQueueLauncher {
 
       // Handle empty queue result
       if (result is PlayQueueEmpty && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.failedToCreatePlayQueueNoItems)),
-        );
+        showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
       }
 
       await dismissLoading();
@@ -302,12 +301,9 @@ class PlayQueueLauncher {
       appLogger.e('Failed to $action', error: e);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t.messages.failedPlayback(action: action, error: e.toString()),
-            ),
-          ),
+        showErrorSnackBar(
+          context,
+          t.messages.failedPlayback(action: action, error: e.toString()),
         );
       }
 

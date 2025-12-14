@@ -3,6 +3,7 @@ import 'package:rate_limiter/rate_limiter.dart';
 
 import 'plex_client.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_metadata_extensions.dart';
 import '../utils/app_logger.dart';
 
 /// Manages OS media controls integration for video playback.
@@ -175,7 +176,7 @@ class MediaControlsManager {
   /// For movies: Director or studio
   /// For other content: Fallback to year or empty
   String _buildArtist(PlexMetadata metadata) {
-    if (metadata.type.toLowerCase() == 'episode') {
+    if (metadata.isEpisode) {
       final parts = <String>[];
 
       // Add show name
@@ -191,7 +192,7 @@ class MediaControlsManager {
       }
 
       return parts.join(' • ');
-    } else if (metadata.type.toLowerCase() == 'movie') {
+    } else if (metadata.isMovie) {
       // For movies, use director or studio
       // Note: These fields may need to be added to PlexMetadata model
       if (metadata.year != null) {

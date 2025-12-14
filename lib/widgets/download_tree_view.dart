@@ -5,6 +5,7 @@ import '../i18n/strings.g.dart';
 import '../models/download_progress.dart';
 import '../models/download_status.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_metadata_extensions.dart';
 
 /// Represents a node in the download tree
 class DownloadTreeNode {
@@ -111,12 +112,12 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
       if (meta == null) continue;
 
-      if (meta.type.toLowerCase() == 'episode') {
+      if (meta.isEpisode) {
         // Group episodes by show
         final showKey = meta.grandparentRatingKey ?? 'unknown';
         showGroups.putIfAbsent(showKey, () => []);
         showGroups[showKey]!.add(entry);
-      } else if (meta.type.toLowerCase() == 'movie') {
+      } else if (meta.isMovie) {
         // Movies go at top level
         movies.add(
           DownloadTreeNode(

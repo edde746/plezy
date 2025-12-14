@@ -13,6 +13,7 @@ import '../widgets/plex_optimized_image.dart';
 import '../utils/plex_image_helper.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_metadata_extensions.dart';
 import '../models/download_status.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/download_provider.dart';
@@ -22,6 +23,7 @@ import '../utils/app_logger.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/duration_formatter.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../utils/desktop_window_padding.dart';
@@ -139,7 +141,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
             onPressed: () async {
               // For TV shows, play the OnDeck episode if available
               // Otherwise, play the first episode of the first season
-              if (metadata.type.toLowerCase() == 'show') {
+              if (metadata.isShow) {
                 if (_onDeckEpisode != null) {
                   appLogger.d(
                     'Playing on deck episode: ${_onDeckEpisode!.title}',
@@ -195,8 +197,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         ),
         const SizedBox(width: 12),
         // Shuffle button (only for shows and seasons)
-        if (metadata.type.toLowerCase() == 'show' ||
-            metadata.type.toLowerCase() == 'season') ...[
+        if (metadata.isShow || metadata.isSeason) ...[
           IconButton.filledTonal(
             onPressed: () async {
               await _handleShufflePlayWithQueue(
@@ -318,13 +319,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       client,
                     );
                     if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(
-                        const SnackBar(
-                          content: Text('Download resumed'),
-                        ),
-                      );
+                      showAppSnackBar(context, 'Download resumed');
                     }
                   },
                   icon: const AppIcon(
@@ -361,28 +356,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       );
 
                       if (context.mounted) {
-                        ScaffoldMessenger.of(
+                        showSuccessSnackBar(
                           context,
-                        ).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              t.downloads.downloadQueued,
-                            ),
-                          ),
+                          t.downloads.downloadQueued,
                         );
                       }
                     } on CellularDownloadBlockedException {
                       if (context.mounted) {
-                        ScaffoldMessenger.of(
+                        showErrorSnackBar(
                           context,
-                        ).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              t
-                                  .settings
-                                  .cellularDownloadBlocked,
-                            ),
-                          ),
+                          t.settings.cellularDownloadBlocked,
                         );
                       }
                     }
@@ -436,14 +419,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         globalKey,
                       );
                       if (context.mounted) {
-                        ScaffoldMessenger.of(
+                        showSuccessSnackBar(
                           context,
-                        ).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              t.downloads.downloadDeleted,
-                            ),
-                          ),
+                          t.downloads.downloadDeleted,
                         );
                       }
                     } else if (action == 'retry' &&
@@ -461,28 +439,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                           client,
                         );
                         if (context.mounted) {
-                          ScaffoldMessenger.of(
+                          showSuccessSnackBar(
                             context,
-                          ).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                t.downloads.downloadQueued,
-                              ),
-                            ),
+                            t.downloads.downloadQueued,
                           );
                         }
                       } on CellularDownloadBlockedException {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(
+                          showErrorSnackBar(
                             context,
-                          ).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                t
-                                    .settings
-                                    .cellularDownloadBlocked,
-                              ),
-                            ),
+                            t.settings.cellularDownloadBlocked,
                           );
                         }
                       }
@@ -526,11 +492,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               count: count,
                             )
                           : 'All episodes already downloaded';
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(
-                        SnackBar(content: Text(message)),
-                      );
+                      showAppSnackBar(context, message);
                     }
                   },
                   tooltip: tooltip,
@@ -584,14 +546,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                         globalKey,
                       );
                       if (context.mounted) {
-                        ScaffoldMessenger.of(
+                        showSuccessSnackBar(
                           context,
-                        ).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              t.downloads.downloadDeleted,
-                            ),
-                          ),
+                          t.downloads.downloadDeleted,
                         );
                       }
                     }
@@ -623,9 +580,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                             count: count,
                           )
                         : t.downloads.downloadQueued;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(message)),
-                    );
+                    showSuccessSnackBar(context, message);
                   }
                 },
                 icon: const AppIcon(
@@ -663,16 +618,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                   );
                 }
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        isWatched
-                            ? t
-                                  .messages
-                                  .markedAsUnwatchedOffline
-                            : t.messages.markedAsWatchedOffline,
-                      ),
-                    ),
+                  showAppSnackBar(
+                    context,
+                    isWatched
+                        ? t.messages.markedAsUnwatchedOffline
+                        : t.messages.markedAsWatchedOffline,
                   );
                   // Refresh offline OnDeck
                   _loadOfflineOnDeckEpisode();
@@ -693,14 +643,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 }
                 if (context.mounted) {
                   _watchStateChanged = true;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        isWatched
-                            ? t.messages.markedAsUnwatched
-                            : t.messages.markedAsWatched,
-                      ),
-                    ),
+                  showSuccessSnackBar(
+                    context,
+                    isWatched
+                        ? t.messages.markedAsUnwatched
+                        : t.messages.markedAsWatched,
                   );
                   // Update watch state without full rebuild
                   _updateWatchState();
@@ -708,14 +655,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
               }
             } catch (e) {
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      t.messages.errorLoading(
-                        error: e.toString(),
-                      ),
-                    ),
-                  ),
+                showErrorSnackBar(
+                  context,
+                  t.messages.errorLoading(error: e.toString()),
                 );
               }
             }
@@ -795,14 +737,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
     // Offline mode: use passed metadata directly, load seasons from downloads
     if (widget.isOffline) {
-      final type = widget.metadata.type.toLowerCase();
-
       setState(() {
         _fullMetadata = widget.metadata;
         _isLoadingMetadata = false;
       });
 
-      if (type == 'show') {
+      if (widget.metadata.isShow) {
         _loadSeasonsFromDownloads();
         // Get offline OnDeck episode
         _loadOfflineOnDeckEpisode();
@@ -847,7 +787,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         });
 
         // Load seasons if it's a show
-        if (metadata.type.toLowerCase() == 'show') {
+        if (metadata.isShow) {
           _loadSeasons();
         }
         return;
@@ -859,7 +799,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         _isLoadingMetadata = false;
       });
 
-      if (widget.metadata.type.toLowerCase() == 'show') {
+      if (widget.metadata.isShow) {
         _loadSeasons();
       }
     } catch (e) {
@@ -869,7 +809,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         _isLoadingMetadata = false;
       });
 
-      if (widget.metadata.type.toLowerCase() == 'show') {
+      if (widget.metadata.isShow) {
         _loadSeasons();
       }
     }
@@ -1083,7 +1023,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
         // For shows, also refetch seasons to update their watch counts
         List<PlexMetadata>? updatedSeasons;
-        if (metadata.type.toLowerCase() == 'show') {
+        if (metadata.isShow) {
           final seasons = await client.getChildren(widget.metadata.ratingKey);
           // Preserve serverId for each season
           updatedSeasons = seasons
@@ -1130,9 +1070,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
       if (_seasons.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(t.messages.noSeasonsFound)));
+          showErrorSnackBar(context, t.messages.noSeasonsFound);
         }
         return;
       }
@@ -1163,9 +1101,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
       if (episodes.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(t.messages.noEpisodesFound)));
+          showErrorSnackBar(context, t.messages.noEpisodesFound);
         }
         return;
       }
@@ -1192,8 +1128,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: e.toString()),
         );
       }
     }
@@ -1208,9 +1145,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     // Shuffle requires server connectivity
     if (widget.isOffline) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Shuffle not available offline')),
-        );
+        showErrorSnackBar(context, 'Shuffle not available offline');
       }
       return;
     }
@@ -1219,7 +1154,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     if (client == null) return;
 
     final playbackState = context.read<PlaybackStateProvider>();
-    final itemType = metadata.type.toLowerCase();
 
     try {
       // Show loading indicator
@@ -1234,9 +1168,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
       // Determine the rating key for the play queue
       String showRatingKey;
-      if (itemType == 'show') {
+      if (metadata.isShow) {
         showRatingKey = metadata.ratingKey;
-      } else if (itemType == 'season') {
+      } else if (metadata.isSeason) {
         // For seasons, we need the show's rating key
         // The season's parentRatingKey should point to the show
         if (metadata.parentRatingKey == null) {
@@ -1262,9 +1196,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
           playQueue.items == null ||
           playQueue.items!.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(t.messages.noEpisodesFound)));
+          showErrorSnackBar(context, t.messages.noEpisodesFound);
         }
         return;
       }
@@ -1298,8 +1230,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       }
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: e.toString()),
         );
       }
     }
@@ -1309,7 +1242,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   Widget build(BuildContext context) {
     // Use full metadata if loaded, otherwise use passed metadata
     final metadata = _fullMetadata ?? widget.metadata;
-    final isShow = metadata.type.toLowerCase() == 'show';
+    final isShow = metadata.isShow;
 
     KeyEventResult handleBack(FocusNode _, KeyEvent event) =>
         handleBackKeyNavigation(context, event, result: _watchStateChanged);
@@ -1886,7 +1819,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   String _getPlayButtonLabel(PlexMetadata metadata) {
     // For TV shows - use compact S1E1 format
-    if (metadata.type.toLowerCase() == 'show') {
+    if (metadata.isShow) {
       if (_onDeckEpisode != null) {
         final episode = _onDeckEpisode!;
         final seasonNum = episode.parentIndex ?? 0;
@@ -1910,7 +1843,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   IconData _getPlayButtonIcon(PlexMetadata metadata) {
     // For TV shows
-    if (metadata.type.toLowerCase() == 'show') {
+    if (metadata.isShow) {
       if (_onDeckEpisode != null) {
         final episode = _onDeckEpisode!;
         // Check if episode has been partially watched

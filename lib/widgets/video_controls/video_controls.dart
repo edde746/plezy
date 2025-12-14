@@ -28,6 +28,7 @@ import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/player_utils.dart';
 import '../../utils/provider_extensions.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../utils/video_control_icons.dart';
 import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
@@ -1377,9 +1378,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
-        );
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
   }

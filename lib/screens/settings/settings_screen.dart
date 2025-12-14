@@ -16,6 +16,7 @@ import '../../providers/theme_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../widgets/desktop_app_bar.dart';
 import 'hotkey_recorder_widget.dart';
 import 'about_screen.dart';
@@ -493,9 +494,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               .isDirectoryWritable(dir);
           if (!isWritable) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(t.settings.downloadLocationInvalid)),
-              );
+              showErrorSnackBar(context, t.settings.downloadLocationInvalid);
             }
             return;
           }
@@ -510,16 +509,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         if (mounted) {
           setState(() {});
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t.settings.downloadLocationChanged)),
-          );
+          showSuccessSnackBar(context, t.settings.downloadLocationChanged);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.settings.downloadLocationSelectError)),
-        );
+        showErrorSnackBar(context, t.settings.downloadLocationSelectError);
       }
     }
   }
@@ -530,9 +525,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (mounted) {
       setState(() {});
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(t.settings.downloadLocationReset)));
+      showAppSnackBar(context, t.settings.downloadLocationReset);
     }
   }
 
@@ -1254,12 +1247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         if (updateInfo == null || updateInfo['hasUpdate'] != true) {
           // Show "no updates" message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(t.update.latestVersion),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          showAppSnackBar(context, t.update.latestVersion);
         }
       }
     } catch (e) {
@@ -1268,12 +1256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _isCheckingForUpdate = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.update.checkFailed),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        showErrorSnackBar(context, t.update.checkFailed);
       }
     }
   }

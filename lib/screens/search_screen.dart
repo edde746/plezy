@@ -11,6 +11,7 @@ import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/sliver_adaptive_media_builder.dart';
+import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_card.dart';
 
@@ -115,9 +116,7 @@ class _SearchScreenState extends State<SearchScreen>
         setState(() {
           _isSearching = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.errors.searchFailed(error: e))),
-        );
+        showErrorSnackBar(context, t.errors.searchFailed(error: e));
       }
     }
   }

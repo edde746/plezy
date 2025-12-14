@@ -4,6 +4,7 @@ import '../../models/plex_metadata.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/media_navigation_helper.dart';
 import '../../utils/provider_extensions.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../i18n/strings.g.dart';
 import 'folder_tree_item.dart';
 import 'empty_state_widget.dart';
@@ -125,14 +126,11 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t.errors.failedToLoad(
-                context: t.libraries.folders,
-                error: e.toString(),
-              ),
-            ),
+        showErrorSnackBar(
+          context,
+          t.errors.failedToLoad(
+            context: t.libraries.folders,
+            error: e.toString(),
           ),
         );
       }

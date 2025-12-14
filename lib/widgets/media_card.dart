@@ -14,9 +14,11 @@ import '../utils/provider_extensions.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/duration_formatter.dart';
 import '../utils/media_navigation_helper.dart';
+import '../utils/snackbar_helper.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
 import 'media_context_menu.dart';
+import 'media_progress_bar.dart';
 import 'plex_optimized_image.dart';
 
 class MediaCard extends StatefulWidget {
@@ -128,12 +130,7 @@ class MediaCardState extends State<MediaCard> {
 
     switch (result) {
       case MediaNavigationResult.unsupported:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.messages.musicNotSupported),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        showAppSnackBar(context, t.messages.musicNotSupported);
       case MediaNavigationResult.listRefreshNeeded:
         widget.onListRefresh?.call();
       case MediaNavigationResult.navigated:
@@ -802,13 +799,9 @@ class _MediaCardHelpers {
                 bottomLeft: Radius.circular(8),
                 bottomRight: Radius.circular(8),
               ),
-              child: LinearProgressIndicator(
-                value: metadata.viewOffset! / metadata.duration!,
-                backgroundColor: tokens(context).outline,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary,
-                ),
-                minHeight: 4,
+              child: MediaProgressBar(
+                viewOffset: metadata.viewOffset!,
+                duration: metadata.duration!,
               ),
             ),
           ),

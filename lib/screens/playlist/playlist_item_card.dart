@@ -7,6 +7,7 @@ import '../../utils/duration_formatter.dart';
 import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/media_context_menu.dart';
+import '../../widgets/media_progress_bar.dart';
 import '../../widgets/plex_optimized_image.dart';
 
 /// Custom list item widget for playlist items
@@ -102,12 +103,9 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                       if (item.viewOffset != null && item.duration != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
-                          child: LinearProgressIndicator(
-                            value: item.viewOffset! / item.duration!,
-                            backgroundColor: Colors.grey[800],
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).colorScheme.primary,
-                            ),
+                          child: MediaProgressBar(
+                            viewOffset: item.viewOffset!,
+                            duration: item.duration!,
                             minHeight: 3,
                           ),
                         ),

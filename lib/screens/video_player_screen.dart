@@ -15,6 +15,7 @@ import '../../services/plex_client.dart';
 import '../services/plex_api_cache.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
+import '../models/plex_metadata_extensions.dart';
 import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/playback_state_provider.dart';
@@ -32,6 +33,7 @@ import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/language_codes.dart';
+import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../i18n/strings.g.dart';
@@ -545,7 +547,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     // Set controls enabled based on content type
     final playbackState = context.read<PlaybackStateProvider>();
-    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    final isEpisode = widget.metadata.isEpisode;
     final isInPlaylist = playbackState.isPlaylistActive;
 
     await _mediaControlsManager!.setControlsEnabled(
@@ -576,7 +578,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (widget.isOffline) return;
 
     // Only create play queues for episodes
-    if (widget.metadata.type.toLowerCase() != 'episode') {
+    if (!widget.metadata.isEpisode) {
       return;
     }
 
@@ -748,9 +750,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.messages.errorLoading(error: e.toString()))),
-        );
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
   }
@@ -1022,7 +1022,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
     }
 
-    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    final isEpisode = widget.metadata.isEpisode;
     final languagePrefRatingKey = isEpisode
         ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
         : widget.metadata.ratingKey;
@@ -1145,7 +1145,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
 
     // Determine ratingKeys
-    final isEpisode = widget.metadata.type.toLowerCase() == 'episode';
+    final isEpisode = widget.metadata.isEpisode;
     final languagePrefRatingKey = isEpisode
         ? (widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey)
         : widget.metadata.ratingKey;

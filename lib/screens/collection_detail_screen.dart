@@ -5,6 +5,7 @@ import '../widgets/focused_scroll_scaffold.dart';
 import '../i18n/strings.g.dart';
 import '../utils/dialogs.dart';
 import '../utils/app_logger.dart';
+import '../utils/snackbar_helper.dart';
 import 'base_media_list_detail_screen.dart';
 
 /// Screen to display the contents of a collection
@@ -55,9 +56,7 @@ class _CollectionDetailScreenState
 
     if (sectionId == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.collections.unknownLibrarySection)),
-        );
+        showErrorSnackBar(context, t.collections.unknownLibrarySection);
       }
       return;
     }
@@ -82,28 +81,21 @@ class _CollectionDetailScreenState
 
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(t.collections.deleted)));
+          showSuccessSnackBar(context, t.collections.deleted);
           Navigator.pop(
             context,
             true,
           ); // Return true to indicate refresh needed
         } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(t.collections.deleteFailed)));
+          showErrorSnackBar(context, t.collections.deleteFailed);
         }
       }
     } catch (e) {
       appLogger.e('Failed to delete collection', error: e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t.collections.deleteFailedWithError(error: e.toString()),
-            ),
-          ),
+        showErrorSnackBar(
+          context,
+          t.collections.deleteFailedWithError(error: e.toString()),
         );
       }
     }
