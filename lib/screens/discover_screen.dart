@@ -4,6 +4,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../focus/dpad_navigator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
@@ -28,8 +29,9 @@ import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/content_rating_formatter.dart';
 import '../utils/layout_constants.dart';
-import '../focus/dpad_navigator.dart';
+import '../theme/theme_helper.dart';
 import 'auth_screen.dart';
+import 'libraries/error_state_widget.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final VoidCallback? onBecameVisible;
@@ -197,7 +199,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Handle key events for the hero section
   KeyEventResult _handleHeroKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 
@@ -222,7 +224,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (key.isLeftKey) {
       if (_currentHeroIndex > 0) {
         _heroController.previousPage(
-          duration: const Duration(milliseconds: 300),
+          duration: tokens(context).slow,
           curve: Curves.easeInOut,
         );
       }
@@ -233,7 +235,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (key.isRightKey) {
       if (_currentHeroIndex < _onDeck.length - 1) {
         _heroController.nextPage(
-          duration: const Duration(milliseconds: 300),
+          duration: tokens(context).slow,
           curve: Curves.easeInOut,
         );
       }
@@ -253,7 +255,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Handle key events for the refresh button in app bar
   KeyEventResult _handleRefreshKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 
@@ -287,7 +289,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Handle key events for the user button in app bar
   KeyEventResult _handleUserKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 
@@ -901,25 +903,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
             if (_errorMessage != null)
               SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const AppIcon(
-                        Symbols.error_outline_rounded,
-                        fill: 1,
-                        size: 48,
-                        color: Colors.red,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(_errorMessage!),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadContent,
-                        child: Text(t.common.retry),
-                      ),
-                    ],
-                  ),
+                child: ErrorStateWidget(
+                  message: _errorMessage!,
+                  icon: Symbols.error_outline_rounded,
+                  onRetry: _loadContent,
                 ),
               ),
             if (!_isLoading && _errorMessage == null) ...[
@@ -1007,7 +994,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(
+                                      tokens(context).radiusSm,
+                                    ),
                                   ),
                                 );
                               },
@@ -1132,7 +1121,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   ((maxWidth - dotSize) *
                                       _indicatorAnimationController.value);
                               return AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
+                                duration: tokens(context).slow,
                                 curve: Curves.easeInOut,
                                 margin: const EdgeInsets.symmetric(
                                   horizontal: 4,
@@ -1164,7 +1153,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         } else {
                           // Static indicator for inactive pages
                           return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
+                            duration: tokens(context).slow,
                             curve: Curves.easeInOut,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             width: dotSize,

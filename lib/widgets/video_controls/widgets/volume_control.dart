@@ -73,7 +73,7 @@ class _VolumeControlState extends State<VolumeControl> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 

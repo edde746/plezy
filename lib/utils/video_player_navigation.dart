@@ -4,6 +4,7 @@ import '../mpv/mpv.dart';
 import '../models/plex_metadata.dart';
 import '../screens/video_player_screen.dart';
 import '../services/settings_service.dart';
+import 'app_logger.dart';
 
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
 ///
@@ -73,4 +74,50 @@ Future<bool?> navigateToVideoPlayer(
   } else {
     return navigator.push<bool>(route);
   }
+}
+
+/// Navigates to the video player and optionally refreshes content when returning.
+///
+/// This helper consolidates the common pattern of:
+/// 1. Navigating to the video player
+/// 2. Logging the return
+/// 3. Calling a refresh callback if not offline
+///
+/// Parameters:
+/// - [context]: The build context for navigation
+/// - [metadata]: The Plex metadata for the content to play
+/// - [isOffline]: If true, plays from downloaded content
+/// - [onRefresh]: Optional callback to refresh data when returning from playback
+///   (only called when not offline)
+/// - All other parameters are passed through to [navigateToVideoPlayer]
+Future<bool?> navigateToVideoPlayerWithRefresh(
+  BuildContext context, {
+  required PlexMetadata metadata,
+  bool isOffline = false,
+  VoidCallback? onRefresh,
+  AudioTrack? preferredAudioTrack,
+  SubtitleTrack? preferredSubtitleTrack,
+  double? preferredPlaybackRate,
+  int? selectedMediaIndex,
+  bool usePushReplacement = false,
+}) async {
+  final result = await navigateToVideoPlayer(
+    context,
+    metadata: metadata,
+    isOffline: isOffline,
+    preferredAudioTrack: preferredAudioTrack,
+    preferredSubtitleTrack: preferredSubtitleTrack,
+    preferredPlaybackRate: preferredPlaybackRate,
+    selectedMediaIndex: selectedMediaIndex,
+    usePushReplacement: usePushReplacement,
+  );
+
+  appLogger.d('Returned from playback, refreshing metadata');
+
+  // Refresh data when returning from video player (skip if offline)
+  if (!isOffline && onRefresh != null) {
+    onRefresh();
+  }
+
+  return result;
 }

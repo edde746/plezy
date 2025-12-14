@@ -10,6 +10,7 @@ import '../utils/app_logger.dart';
 import '../widgets/media_grid_sliver.dart';
 import '../widgets/focused_scroll_scaffold.dart';
 import 'libraries/sort_bottom_sheet.dart';
+import 'libraries/error_state_widget.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
 
@@ -256,25 +257,10 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       slivers: [
         if (_errorMessage != null)
           SliverFillRemaining(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const AppIcon(
-                    Symbols.error_outline_rounded,
-                    fill: 1,
-                    size: 48,
-                    color: Colors.red,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(_errorMessage!),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadMoreItems,
-                    child: Text(t.common.retry),
-                  ),
-                ],
-              ),
+            child: ErrorStateWidget(
+              message: _errorMessage!,
+              icon: Symbols.error_outline_rounded,
+              onRetry: _loadMoreItems,
             ),
           )
         else if (_filteredItems.isEmpty && _isLoading)

@@ -12,6 +12,8 @@ import '../utils/app_logger.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../i18n/strings.g.dart';
+import 'libraries/error_state_widget.dart';
+import 'libraries/empty_state_widget.dart';
 
 /// Abstract base class for screens displaying media lists (collections/playlists)
 /// Provides common state management and playback functionality
@@ -141,25 +143,10 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
     if (errorMessage != null) {
       return [
         SliverFillRemaining(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const AppIcon(
-                  Symbols.error_outline_rounded,
-                  fill: 1,
-                  size: 48,
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 16),
-                Text(errorMessage!),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: loadItems,
-                  child: Text(t.common.retry),
-                ),
-              ],
-            ),
+          child: ErrorStateWidget(
+            message: errorMessage!,
+            icon: Symbols.error_outline_rounded,
+            onRetry: loadItems,
           ),
         ),
       ];
@@ -174,26 +161,11 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget>
     }
 
     if (items.isEmpty) {
-      final icon = emptyIcon;
       return [
         SliverFillRemaining(
-          child: Center(
-            child: icon != null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AppIcon(icon, fill: 1, size: 64, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      Text(
-                        emptyMessage,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(emptyMessage),
+          child: EmptyStateWidget(
+            message: emptyMessage,
+            icon: emptyIcon,
           ),
         ),
       ];

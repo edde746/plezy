@@ -10,12 +10,14 @@ import 'package:flutter/services.dart'
         SystemChrome,
         DeviceOrientation,
         LogicalKeyboardKey,
+        KeyEvent,
         KeyDownEvent,
         KeyRepeatEvent;
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../mpv/mpv.dart';
+import '../../focus/dpad_navigator.dart';
 
 import '../../services/plex_client.dart';
 import '../../services/plex_api_cache.dart';
@@ -26,7 +28,9 @@ import '../../screens/video_player_screen.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/plex_cache_parser.dart';
 import '../../utils/player_utils.dart';
+import '../../theme/theme_helper.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/video_control_icons.dart';
@@ -241,10 +245,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           _controlsFullyHidden = false;
         });
         _hideTimer?.cancel();
-        // On Linux, ensure Flutter view is visible
-        if (Platform.isLinux) {
-          widget.player.setControlsVisible(true);
-        }
+        _showLinuxControls();
       }
     });
   }
@@ -455,7 +456,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
     // Reset debounce timer - resume when resizing stops
     _resizeDebounceTimer?.cancel();
-    _resizeDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+    final slowDuration = tokens(context).slow;
+    _resizeDebounceTimer = Timer(slowDuration, () {
       if (_wasPlayingBeforeResize && mounted) {
         widget.player.play();
       }
@@ -477,18 +479,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           if (Platform.isMacOS) {
             _updateTrafficLightVisibility();
           }
-          // On Linux, fully hide after animation completes (200ms)
-          if (Platform.isLinux) {
-            Future.delayed(const Duration(milliseconds: 250), () {
-              if (mounted && !_showControls) {
-                setState(() {
-                  _controlsFullyHidden = true;
-                });
-                // Hide Flutter view to show only video
-                widget.player.setControlsVisible(false);
-              }
-            });
-          }
+          _hideLinuxControlsAfterAnimation();
         }
       });
     }
@@ -501,32 +492,41 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
+  /// Show controls immediately on Linux
+  void _showLinuxControls() {
+    if (Platform.isLinux) {
+      widget.player.setControlsVisible(true);
+    }
+  }
+
+  /// Hide controls on Linux after animation completes (250ms delay)
+  void _hideLinuxControlsAfterAnimation() {
+    if (Platform.isLinux) {
+      Future.delayed(const Duration(milliseconds: 250), () {
+        if (mounted && !_showControls) {
+          setState(() {
+            _controlsFullyHidden = true;
+          });
+          widget.player.setControlsVisible(false);
+        }
+      });
+    }
+  }
+
   void _toggleControls() {
     setState(() {
       _showControls = !_showControls;
       if (_showControls) {
         _controlsFullyHidden = false;
-        // On Linux, show Flutter view when controls are shown
-        if (Platform.isLinux) {
-          widget.player.setControlsVisible(true);
-        }
+        _showLinuxControls();
       }
     });
     if (_showControls) {
       _startHideTimer();
       // Cancel auto-skip when user manually shows controls
       _cancelAutoSkipTimer();
-    } else if (Platform.isLinux) {
-      // On Linux, fully hide after animation completes (200ms)
-      Future.delayed(const Duration(milliseconds: 250), () {
-        if (mounted && !_showControls) {
-          setState(() {
-            _controlsFullyHidden = true;
-          });
-          // Hide Flutter view to show only video
-          widget.player.setControlsVisible(false);
-        }
-      });
+    } else {
+      _hideLinuxControlsAfterAnimation();
     }
 
     // On macOS, hide/show traffic lights with controls
@@ -627,13 +627,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     final chapters = <PlexChapter>[];
     final markers = <PlexMarker>[];
 
-    Map<String, dynamic>? metadataJson;
-    if (cached['MediaContainer']?['Metadata'] != null &&
-        (cached['MediaContainer']['Metadata'] as List).isNotEmpty) {
-      metadataJson =
-          cached['MediaContainer']['Metadata'][0] as Map<String, dynamic>;
-    }
-
+    final metadataJson = PlexCacheParser.extractFirstMetadata(cached);
     if (metadataJson != null) {
       // Parse chapters
       if (metadataJson['Chapter'] != null) {
@@ -771,6 +765,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _doubleTapFeedbackOpacity = 1.0;
     });
 
+    // Capture duration before timer to avoid context access in callback
+    final slowDuration = tokens(context).slow;
+
     // Fade out after delay
     _feedbackTimer = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
@@ -778,7 +775,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           _doubleTapFeedbackOpacity = 0.0;
         });
 
-        Timer(const Duration(milliseconds: 300), () {
+        Timer(slowDuration, () {
           if (mounted) {
             setState(() {
               _showDoubleTapFeedback = false;
@@ -871,9 +868,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _showControls = true;
         _controlsFullyHidden = false;
       });
-      if (Platform.isLinux) {
-        widget.player.setControlsVisible(true);
-      }
+      _showLinuxControls();
       if (Platform.isMacOS) {
         _updateTrafficLightVisibility();
       }
@@ -897,16 +892,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       if (Platform.isMacOS) {
         _updateTrafficLightVisibility();
       }
-      if (Platform.isLinux) {
-        Future.delayed(const Duration(milliseconds: 250), () {
-          if (mounted && !_showControls) {
-            setState(() {
-              _controlsFullyHidden = true;
-            });
-            widget.player.setControlsVisible(false);
-          }
-        });
-      }
+      _hideLinuxControlsAfterAnimation();
     }
   }
 
@@ -921,7 +907,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       autofocus: true,
       onKeyEvent: (node, event) {
         // Only handle KeyDown and KeyRepeat events
-        if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+        if (!event.isActionable) {
           return KeyEventResult.ignored;
         }
 
@@ -992,10 +978,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               _showControls = true;
               _controlsFullyHidden = false;
             });
-            // On Linux, show Flutter view when controls are shown
-            if (Platform.isLinux) {
-              widget.player.setControlsVisible(true);
-            }
+            _showLinuxControls();
             _startHideTimer();
             // On macOS, show traffic lights when controls appear
             if (Platform.isMacOS) {
@@ -1207,7 +1190,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 child: IgnorePointer(
                   child: AnimatedOpacity(
                     opacity: _doubleTapFeedbackOpacity,
-                    duration: const Duration(milliseconds: 300),
+                    duration: tokens(context).slow,
                     child: _buildDoubleTapFeedback(),
                   ),
                 ),
@@ -1219,7 +1202,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                 bottom: isMobile ? 80 : 115,
                 child: AnimatedOpacity(
                   opacity: 1.0,
-                  duration: const Duration(milliseconds: 300),
+                  duration: tokens(context).slow,
                   child: _buildSkipMarkerButton(),
                 ),
               ),
@@ -1267,14 +1250,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           // Always perform the skip action when tapped
           _performAutoSkip();
         },
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
         child: Stack(
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.3),
@@ -1303,7 +1286,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             if (isAutoSkipActive && shouldShowAutoSkip)
               Positioned.fill(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                   child: Row(
                     children: [
                       Expanded(
@@ -1311,7 +1294,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.blue.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius:
+                                BorderRadius.circular(tokens(context).radiusSm),
                           ),
                         ),
                       ),

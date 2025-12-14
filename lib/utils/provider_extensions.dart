@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../models/plex_library.dart';
+import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -65,5 +66,48 @@ extension ProviderExtensions on BuildContext {
       return getClientForServer(multiServerProvider.onlineServerIds.first);
     }
     return getClientForServer(library.serverId!);
+  }
+
+  /// Get PlexClient for metadata, with fallback to first available server
+  /// Throws an exception if no servers are available
+  PlexClient getClientForMetadata(PlexMetadata metadata) {
+    if (metadata.serverId != null) {
+      return getClientForServer(metadata.serverId!);
+    }
+    return getFirstAvailableClient();
+  }
+
+  /// Get PlexClient for metadata, or null if offline mode or no serverId
+  /// Use this for screens that support offline mode
+  PlexClient? getClientForMetadataOrNull(
+    PlexMetadata metadata, {
+    bool isOffline = false,
+  }) {
+    if (isOffline || metadata.serverId == null) {
+      return null;
+    }
+    return getClientForServer(metadata.serverId!);
+  }
+
+  /// Get the first available client from connected servers
+  /// Throws an exception if no servers are available
+  PlexClient getFirstAvailableClient() {
+    final multiServerProvider = Provider.of<MultiServerProvider>(
+      this,
+      listen: false,
+    );
+    if (!multiServerProvider.hasConnectedServers) {
+      throw Exception(t.errors.noClientAvailable);
+    }
+    return getClientForServer(multiServerProvider.onlineServerIds.first);
+  }
+
+  /// Get client for a serverId with fallback to first available server
+  /// Useful for items that might not have a serverId
+  PlexClient getClientWithFallback(String? serverId) {
+    if (serverId != null) {
+      return getClientForServer(serverId);
+    }
+    return getFirstAvailableClient();
   }
 }

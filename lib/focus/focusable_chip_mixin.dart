@@ -108,7 +108,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
     KeyEvent event,
     ChipKeyCallbacks callbacks,
   ) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 

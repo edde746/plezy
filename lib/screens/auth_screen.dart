@@ -10,6 +10,7 @@ import '../services/server_registry.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/plex_client_provider.dart';
 import '../i18n/strings.g.dart';
+import '../theme/theme_helper.dart';
 import '../utils/app_logger.dart';
 import 'main_screen.dart';
 
@@ -507,7 +508,7 @@ class _AuthScreenState extends State<AuthScreen> {
         const SizedBox(height: 24),
         Center(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(tokens(context).radiusMd),
             child: QrImageView(
               data: _qrAuthUrl!,
               size: qrSize,

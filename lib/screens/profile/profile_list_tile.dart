@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/plex_home_user.dart';
+import '../../theme/theme_helper.dart';
 import 'user_avatar_widget.dart';
 
 enum UserAttribute { admin, restricted, protected }
@@ -36,7 +37,7 @@ class ProfileListTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(tokens(context).radiusMd),
               ),
               child: Text(
                 t.userStatus.current,

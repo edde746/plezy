@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../models/plex_metadata.dart';
@@ -14,6 +13,7 @@ import '../../widgets/focusable_media_card.dart';
 import '../../widgets/media_grid_delegate.dart';
 import '../../widgets/download_tree_view.dart';
 import '../main_screen.dart';
+import '../libraries/empty_state_widget.dart';
 import '../../i18n/strings.g.dart';
 
 class DownloadsScreen extends StatefulWidget {
@@ -341,36 +341,11 @@ class _DownloadsGridContent extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppIcon(
-              Symbols.download_rounded,
-              fill: 1,
-              size: 80,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              t.downloads.noDownloads,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              t.downloads.noDownloadsDescription,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+    return EmptyStateWidget(
+      message: t.downloads.noDownloads,
+      subtitle: t.downloads.noDownloadsDescription,
+      icon: Symbols.download_rounded,
+      iconSize: 80,
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
+import '../../focus/dpad_navigator.dart';
 import '../../mpv/mpv.dart';
 import '../../models/plex_media_info.dart';
 import '../../models/plex_media_version.dart';
@@ -191,7 +192,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     FocusNode? leftTarget,
     FocusNode? rightTarget,
   }) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 
@@ -249,7 +250,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   /// Handle key events for timeline navigation
   KeyEventResult _handleTimelineKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 

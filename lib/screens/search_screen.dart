@@ -14,6 +14,8 @@ import '../utils/sliver_adaptive_media_builder.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_card.dart';
+import '../utils/focus_utils.dart';
+import 'libraries/state_message_widget.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -41,9 +43,7 @@ class _SearchScreenState extends State<SearchScreen>
     );
     _searchController.addListener(_onSearchChanged);
     // Focus the search input when the screen is shown
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchFocusNode.requestFocus();
-    });
+    FocusUtils.requestFocusAfterBuild(this, _searchFocusNode);
   }
 
   @override
@@ -132,9 +132,7 @@ class _SearchScreenState extends State<SearchScreen>
   /// Focus the search input field
   @override
   void focusSearchInput() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchFocusNode.requestFocus();
-    });
+    FocusUtils.requestFocusAfterBuild(this, _searchFocusNode);
   }
 
   // Public method to fully reload all content (for profile switches)
@@ -214,16 +212,22 @@ class _SearchScreenState extends State<SearchScreen>
                 child: Center(child: CircularProgressIndicator()),
               )
             else if (!_hasSearched)
-              _SearchEmptyState(
-                icon: Symbols.search_rounded,
-                title: t.search.searchYourMedia,
-                subtitle: t.search.enterTitleActorOrKeyword,
+              SliverFillRemaining(
+                child: StateMessageWidget(
+                  message: t.search.searchYourMedia,
+                  subtitle: t.search.enterTitleActorOrKeyword,
+                  icon: Symbols.search_rounded,
+                  iconSize: 80,
+                ),
               )
             else if (_searchResults.isEmpty)
-              _SearchEmptyState(
-                icon: Symbols.search_off_rounded,
-                title: t.messages.noResultsFound,
-                subtitle: t.search.tryDifferentTerm,
+              SliverFillRemaining(
+                child: StateMessageWidget(
+                  message: t.messages.noResultsFound,
+                  subtitle: t.search.tryDifferentTerm,
+                  icon: Symbols.search_off_rounded,
+                  iconSize: 80,
+                ),
               )
             else
               Consumer<SettingsProvider>(
@@ -247,42 +251,6 @@ class _SearchScreenState extends State<SearchScreen>
                   );
                 },
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Empty state widget for search screen with icon, title, and subtitle.
-class _SearchEmptyState extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  const _SearchEmptyState({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverFillRemaining(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppIcon(icon, fill: 1, size: 80, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 8),
-            Text(subtitle, style: TextStyle(color: Colors.grey.shade600)),
           ],
         ),
       ),

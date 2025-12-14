@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
+import '../../../focus/dpad_navigator.dart';
 import '../../../mpv/mpv.dart';
 import '../../../models/plex_media_info.dart';
 import '../../../models/plex_media_version.dart';
@@ -84,7 +85,7 @@ class TrackChapterControls extends StatelessWidget {
     int index,
     int totalButtons,
   ) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 
@@ -117,6 +118,39 @@ class TrackChapterControls extends StatelessWidget {
     return KeyEventResult.ignored;
   }
 
+  /// Build a track control button with consistent focus handling
+  Widget _buildTrackButton({
+    required int buttonIndex,
+    required IconData icon,
+    required String semanticLabel,
+    required VoidCallback? onPressed,
+    required Tracks? tracks,
+    required bool isMobile,
+    required bool isDesktop,
+    String? tooltip,
+    bool isActive = false,
+  }) {
+    return VideoControlButton(
+      icon: icon,
+      tooltip: tooltip,
+      semanticLabel: semanticLabel,
+      isActive: isActive,
+      focusNode: focusNodes != null && focusNodes!.length > buttonIndex
+          ? focusNodes![buttonIndex]
+          : null,
+      onKeyEvent: focusNodes != null
+          ? (node, event) => _handleButtonKeyEvent(
+              node,
+              event,
+              buttonIndex,
+              _getButtonCount(tracks, isMobile, isDesktop),
+            )
+          : null,
+      onFocusChange: onFocusChange,
+      onPressed: onPressed,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Tracks>(
@@ -142,23 +176,14 @@ class TrackChapterControls extends StatelessWidget {
                   sleepTimer.isActive ||
                   audioSyncOffset != 0 ||
                   subtitleSyncOffset != 0;
-              final currentIndex = 0;
-              return VideoControlButton(
+              return _buildTrackButton(
+                buttonIndex: 0,
                 icon: Symbols.tune_rounded,
                 isActive: isActive,
                 semanticLabel: t.videoControls.settingsButton,
-                focusNode: focusNodes != null && focusNodes!.isNotEmpty
-                    ? focusNodes![currentIndex]
-                    : null,
-                onKeyEvent: focusNodes != null
-                    ? (node, event) => _handleButtonKeyEvent(
-                        node,
-                        event,
-                        currentIndex,
-                        _getButtonCount(tracks, isMobile, isDesktop),
-                      )
-                    : null,
-                onFocusChange: onFocusChange,
+                tracks: tracks,
+                isMobile: isMobile,
+                isDesktop: isDesktop,
                 onPressed: () async {
                   await VideoSettingsSheet.show(
                     context,
@@ -180,21 +205,13 @@ class TrackChapterControls extends StatelessWidget {
         if (_hasMultipleAudioTracks(tracks)) {
           final currentIndex = buttonIndex;
           buttons.add(
-            VideoControlButton(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
               icon: Symbols.audiotrack_rounded,
               semanticLabel: t.videoControls.audioTrackButton,
-              focusNode: focusNodes != null && focusNodes!.length > currentIndex
-                  ? focusNodes![currentIndex]
-                  : null,
-              onKeyEvent: focusNodes != null
-                  ? (node, event) => _handleButtonKeyEvent(
-                      node,
-                      event,
-                      currentIndex,
-                      _getButtonCount(tracks, isMobile, isDesktop),
-                    )
-                  : null,
-              onFocusChange: onFocusChange,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
               onPressed: () => AudioTrackSheet.show(
                 context,
                 player,
@@ -211,21 +228,13 @@ class TrackChapterControls extends StatelessWidget {
         if (_hasSubtitles(tracks)) {
           final currentIndex = buttonIndex;
           buttons.add(
-            VideoControlButton(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
               icon: Symbols.subtitles_rounded,
               semanticLabel: t.videoControls.subtitlesButton,
-              focusNode: focusNodes != null && focusNodes!.length > currentIndex
-                  ? focusNodes![currentIndex]
-                  : null,
-              onKeyEvent: focusNodes != null
-                  ? (node, event) => _handleButtonKeyEvent(
-                      node,
-                      event,
-                      currentIndex,
-                      _getButtonCount(tracks, isMobile, isDesktop),
-                    )
-                  : null,
-              onFocusChange: onFocusChange,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
               onPressed: () => SubtitleTrackSheet.show(
                 context,
                 player,
@@ -242,21 +251,13 @@ class TrackChapterControls extends StatelessWidget {
         if (chapters.isNotEmpty) {
           final currentIndex = buttonIndex;
           buttons.add(
-            VideoControlButton(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
               icon: Symbols.video_library_rounded,
               semanticLabel: t.videoControls.chaptersButton,
-              focusNode: focusNodes != null && focusNodes!.length > currentIndex
-                  ? focusNodes![currentIndex]
-                  : null,
-              onKeyEvent: focusNodes != null
-                  ? (node, event) => _handleButtonKeyEvent(
-                      node,
-                      event,
-                      currentIndex,
-                      _getButtonCount(tracks, isMobile, isDesktop),
-                    )
-                  : null,
-              onFocusChange: onFocusChange,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
               onPressed: () => ChapterSheet.show(
                 context,
                 player,
@@ -275,21 +276,13 @@ class TrackChapterControls extends StatelessWidget {
         if (availableVersions.length > 1 && onSwitchVersion != null) {
           final currentIndex = buttonIndex;
           buttons.add(
-            VideoControlButton(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
               icon: Symbols.video_file_rounded,
               semanticLabel: t.videoControls.versionsButton,
-              focusNode: focusNodes != null && focusNodes!.length > currentIndex
-                  ? focusNodes![currentIndex]
-                  : null,
-              onKeyEvent: focusNodes != null
-                  ? (node, event) => _handleButtonKeyEvent(
-                      node,
-                      event,
-                      currentIndex,
-                      _getButtonCount(tracks, isMobile, isDesktop),
-                    )
-                  : null,
-              onFocusChange: onFocusChange,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
               onPressed: () => VersionSheet.show(
                 context,
                 availableVersions,
@@ -307,22 +300,14 @@ class TrackChapterControls extends StatelessWidget {
         if (onCycleBoxFitMode != null) {
           final currentIndex = buttonIndex;
           buttons.add(
-            VideoControlButton(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
               icon: _getBoxFitIcon(boxFitMode),
               tooltip: _getBoxFitTooltip(boxFitMode),
               semanticLabel: t.videoControls.aspectRatioButton,
-              focusNode: focusNodes != null && focusNodes!.length > currentIndex
-                  ? focusNodes![currentIndex]
-                  : null,
-              onKeyEvent: focusNodes != null
-                  ? (node, event) => _handleButtonKeyEvent(
-                      node,
-                      event,
-                      currentIndex,
-                      _getButtonCount(tracks, isMobile, isDesktop),
-                    )
-                  : null,
-              onFocusChange: onFocusChange,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
               onPressed: onCycleBoxFitMode,
             ),
           );
@@ -333,7 +318,8 @@ class TrackChapterControls extends StatelessWidget {
         if (isMobile) {
           final currentIndex = buttonIndex;
           buttons.add(
-            VideoControlButton(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
               icon: isRotationLocked
                   ? Symbols.screen_lock_rotation_rounded
                   : Symbols.screen_rotation_rounded,
@@ -341,18 +327,9 @@ class TrackChapterControls extends StatelessWidget {
                   ? t.videoControls.unlockRotation
                   : t.videoControls.lockRotation,
               semanticLabel: t.videoControls.rotationLockButton,
-              focusNode: focusNodes != null && focusNodes!.length > currentIndex
-                  ? focusNodes![currentIndex]
-                  : null,
-              onKeyEvent: focusNodes != null
-                  ? (node, event) => _handleButtonKeyEvent(
-                      node,
-                      event,
-                      currentIndex,
-                      _getButtonCount(tracks, isMobile, isDesktop),
-                    )
-                  : null,
-              onFocusChange: onFocusChange,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
               onPressed: onToggleRotationLock,
             ),
           );
@@ -363,25 +340,17 @@ class TrackChapterControls extends StatelessWidget {
         if (isDesktop) {
           final currentIndex = buttonIndex;
           buttons.add(
-            VideoControlButton(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
               icon: isFullscreen
                   ? Symbols.fullscreen_exit_rounded
                   : Symbols.fullscreen_rounded,
               semanticLabel: isFullscreen
                   ? t.videoControls.exitFullscreenButton
                   : t.videoControls.fullscreenButton,
-              focusNode: focusNodes != null && focusNodes!.length > currentIndex
-                  ? focusNodes![currentIndex]
-                  : null,
-              onKeyEvent: focusNodes != null
-                  ? (node, event) => _handleButtonKeyEvent(
-                      node,
-                      event,
-                      currentIndex,
-                      _getButtonCount(tracks, isMobile, isDesktop),
-                    )
-                  : null,
-              onFocusChange: onFocusChange,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
               onPressed: onToggleFullscreen,
             ),
           );

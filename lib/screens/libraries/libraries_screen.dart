@@ -27,6 +27,8 @@ import '../../mixins/refreshable.dart';
 import '../../mixins/item_updatable.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/error_message_utils.dart';
+import 'error_state_widget.dart';
+import 'empty_state_widget.dart';
 import 'tabs/library_browse_tab.dart';
 import 'tabs/library_recommended_tab.dart';
 import 'tabs/library_collections_tab.dart';
@@ -957,7 +959,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         child: Row(
           children: [
             AppIcon(
-              _getLibraryIcon(library.type),
+              ContentTypeHelper.getLibraryIcon(library.type),
               fill: 1,
               size: 20,
               color: isSelected ? Theme.of(context).colorScheme.primary : null,
@@ -1088,7 +1090,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(_getLibraryIcon(selectedLibrary.type), fill: 1, size: 20),
+            AppIcon(ContentTypeHelper.getLibraryIcon(selectedLibrary.type), fill: 1, size: 20),
             const SizedBox(width: 8),
             if (_hasMultipleServers && selectedLibrary.serverName != null)
               Column(
@@ -1164,43 +1166,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             )
           else if (_errorMessage != null && visibleLibraries.isEmpty)
             SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const AppIcon(
-                      Symbols.error_outline_rounded,
-                      fill: 1,
-                      size: 48,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(_errorMessage!),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadLibraries,
-                      child: Text(t.common.retry),
-                    ),
-                  ],
-                ),
+              child: ErrorStateWidget(
+                message: _errorMessage!,
+                icon: Symbols.error_outline_rounded,
+                onRetry: _loadLibraries,
               ),
             )
           else if (visibleLibraries.isEmpty)
             SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const AppIcon(
-                      Symbols.video_library_rounded,
-                      fill: 1,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(t.libraries.noLibrariesFound),
-                  ],
-                ),
+              child: EmptyStateWidget(
+                message: t.libraries.noLibrariesFound,
+                icon: Symbols.video_library_rounded,
               ),
             )
           else ...[
@@ -1286,20 +1262,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
-  IconData _getLibraryIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'movie':
-        return Symbols.movie_rounded;
-      case 'show':
-        return Symbols.tv_rounded;
-      case 'artist':
-        return Symbols.music_note_rounded;
-      case 'photo':
-        return Symbols.photo_rounded;
-      default:
-        return Symbols.folder_rounded;
-    }
-  }
 }
 
 class _LibraryManagementSheet extends StatefulWidget {
@@ -1533,21 +1495,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     }
   }
 
-  IconData _getLibraryIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'movie':
-        return Symbols.movie_rounded;
-      case 'show':
-        return Symbols.tv_rounded;
-      case 'artist':
-        return Symbols.music_note_rounded;
-      case 'photo':
-        return Symbols.photo_rounded;
-      default:
-        return Symbols.folder_rounded;
-    }
-  }
-
   /// Get set of library names that appear more than once (not globally unique)
   Set<String> _getNonUniqueLibraryNames() {
     final nameCounts = <String, int>{};
@@ -1703,7 +1650,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                 ),
               ),
               const SizedBox(width: 8),
-              AppIcon(_getLibraryIcon(library.type), fill: 1),
+              AppIcon(ContentTypeHelper.getLibraryIcon(library.type), fill: 1),
             ],
           ),
           title: Text(library.title),

@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/plex_home_user.dart';
+import '../../theme/theme_helper.dart';
 import '../../i18n/strings.g.dart';
 
 class UserAvatarWidget extends StatelessWidget {
@@ -92,7 +93,7 @@ class UserAvatarWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
       ),
       child: Text(
         text,

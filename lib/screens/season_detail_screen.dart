@@ -17,6 +17,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/duration_formatter.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
+import '../widgets/placeholder_container.dart';
 import '../mixins/item_updatable.dart';
 import '../theme/theme_helper.dart';
 import '../i18n/strings.g.dart';
@@ -193,15 +194,12 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                     autofocus:
                         index == 0 && InputModeTracker.isKeyboardMode(context),
                     onTap: () async {
-                      await navigateToVideoPlayer(
+                      await navigateToVideoPlayerWithRefresh(
                         context,
                         metadata: episode,
                         isOffline: widget.isOffline,
+                        onRefresh: _loadEpisodes,
                       );
-                      // Refresh episodes when returning from video player (skip if offline)
-                      if (!widget.isOffline) {
-                        _loadEpisodes();
-                      }
                     },
                     onRefresh: widget.isOffline ? null : updateItem,
                   );
@@ -316,11 +314,8 @@ class _EpisodeCard extends StatelessWidget {
                                 File(localPosterPath!),
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
-                                    Container(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
-                                      child: const AppIcon(
+                                    const PlaceholderContainer(
+                                      child: AppIcon(
                                         Symbols.movie_rounded,
                                         fill: 1,
                                         size: 32,
@@ -333,27 +328,19 @@ class _EpisodeCard extends StatelessWidget {
                                 imagePath: episode.thumb,
                                 filterQuality: FilterQuality.medium,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                ),
-                                errorWidget: (context, url, error) => Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                  child: const AppIcon(
-                                    Symbols.movie_rounded,
-                                    fill: 1,
-                                    size: 32,
-                                  ),
-                                ),
+                                placeholder: (context, url) =>
+                                    const PlaceholderContainer(),
+                                errorWidget: (context, url, error) =>
+                                    const PlaceholderContainer(
+                                      child: AppIcon(
+                                        Symbols.movie_rounded,
+                                        fill: 1,
+                                        size: 32,
+                                      ),
+                                    ),
                               )
-                            : Container(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.surfaceContainerHighest,
-                                child: const AppIcon(
+                            : const PlaceholderContainer(
+                                child: AppIcon(
                                   Symbols.movie_rounded,
                                   fill: 1,
                                   size: 32,

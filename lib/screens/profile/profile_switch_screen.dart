@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../models/plex_home_user.dart';
@@ -8,6 +7,7 @@ import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import 'profile_list_tile.dart';
 import '../../widgets/desktop_app_bar.dart';
+import '../libraries/empty_state_widget.dart';
 import '../../i18n/strings.g.dart';
 
 class ProfileSwitchScreen extends StatelessWidget {
@@ -53,33 +53,10 @@ class ProfileSwitchScreen extends StatelessWidget {
                 }
 
                 if (users.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AppIcon(
-                          Symbols.person_off_rounded,
-                          fill: 1,
-                          size: 64,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No profiles available',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Contact your Plex administrator to add profiles',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                  return const EmptyStateWidget(
+                    message: 'No profiles available',
+                    subtitle: 'Contact your Plex administrator to add profiles',
+                    icon: Symbols.person_off_rounded,
                   );
                 }
 

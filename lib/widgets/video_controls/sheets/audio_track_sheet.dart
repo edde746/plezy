@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../utils/track_label_builder.dart';
 import 'track_selection_sheet.dart';
 
 /// Bottom sheet for selecting audio tracks
@@ -21,22 +22,13 @@ class AudioTrackSheet {
       icon: Symbols.audiotrack_rounded,
       extractTracks: (tracks) => tracks?.audio ?? [],
       getCurrentTrack: (track) => track.audio,
-      buildLabel: (audioTrack, index) {
-        final parts = <String>[];
-        if (audioTrack.title != null && audioTrack.title!.isNotEmpty) {
-          parts.add(audioTrack.title!);
-        }
-        if (audioTrack.language != null && audioTrack.language!.isNotEmpty) {
-          parts.add(audioTrack.language!.toUpperCase());
-        }
-        if (audioTrack.codec != null && audioTrack.codec!.isNotEmpty) {
-          parts.add(audioTrack.codec!.toUpperCase());
-        }
-        if (audioTrack.channelsCount != null) {
-          parts.add('${audioTrack.channelsCount}ch');
-        }
-        return parts.isEmpty ? 'Audio Track ${index + 1}' : parts.join(' · ');
-      },
+      buildLabel: (audioTrack, index) => TrackLabelBuilder.buildAudioLabel(
+        title: audioTrack.title,
+        language: audioTrack.language,
+        codec: audioTrack.codec,
+        channelsCount: audioTrack.channelsCount,
+        index: index,
+      ),
       setTrack: (track) => player.selectAudioTrack(track),
       onTrackChanged: onTrackChanged,
       onOpen: onOpen,

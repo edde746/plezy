@@ -5,17 +5,26 @@ import 'package:material_symbols_icons/symbols.dart';
 /// Base widget for displaying state messages (empty, error, etc.)
 /// Provides a consistent UI pattern for showing icons, messages, and actions
 class StateMessageWidget extends StatelessWidget {
-  /// The message to display
+  /// The main message/title to display
   final String message;
+
+  /// Optional subtitle/description below the message
+  final String? subtitle;
 
   /// Optional icon to display above the message
   final IconData? icon;
+
+  /// Optional size for the icon (default: 64)
+  final double iconSize;
 
   /// Optional color for the icon
   final Color? iconColor;
 
   /// Optional color for the message text
   final Color? textColor;
+
+  /// Optional color for the subtitle text
+  final Color? subtitleColor;
 
   /// Optional callback for action button
   final VoidCallback? onAction;
@@ -29,9 +38,12 @@ class StateMessageWidget extends StatelessWidget {
   const StateMessageWidget({
     super.key,
     required this.message,
+    this.subtitle,
     this.icon,
+    this.iconSize = 64,
     this.iconColor,
     this.textColor,
+    this.subtitleColor,
     this.onAction,
     this.actionLabel,
     this.actionIcon,
@@ -39,6 +51,7 @@ class StateMessageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -49,26 +62,34 @@ class StateMessageWidget extends StatelessWidget {
               AppIcon(
                 icon,
                 fill: 1,
-                size: 64,
+                size: iconSize,
                 color:
                     iconColor ??
-                    Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.4),
+                    theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
               const SizedBox(height: 16),
             ],
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              style: theme.textTheme.titleLarge?.copyWith(
                 color:
                     textColor ??
-                    Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                    theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color:
+                      subtitleColor ??
+                      theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             if (onAction != null && actionLabel != null) ...[
               const SizedBox(height: 24),
               FilledButton.icon(

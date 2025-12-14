@@ -496,7 +496,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                   _librariesExpanded = !_librariesExpanded;
                 });
               },
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(tokens(context).radiusMd),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -508,7 +508,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                       : isLibrariesFocused
                       ? t.text.withValues(alpha: 0.08)
                       : null,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(tokens(context).radiusMd),
                 ),
                 child: Row(
                   children: [
@@ -652,7 +652,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       onTap: () => widget.onLibrarySelected(library.globalKey),
       focusNode: focusNode,
       padding: const EdgeInsets.only(left: 28, right: 12, top: 10, bottom: 10),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
       iconSize: 18,
     );
   }

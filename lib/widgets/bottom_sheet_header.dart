@@ -43,6 +43,9 @@ class BottomSheetHeader extends StatelessWidget {
   /// Defaults to true
   final bool showBorder;
 
+  /// Optional focus node for the close button
+  final FocusNode? closeFocusNode;
+
   const BottomSheetHeader({
     super.key,
     required this.title,
@@ -55,6 +58,7 @@ class BottomSheetHeader extends StatelessWidget {
     this.titleStyle,
     this.titleColor,
     this.showBorder = true,
+    this.closeFocusNode,
   });
 
   @override
@@ -107,6 +111,7 @@ class BottomSheetHeader extends StatelessWidget {
           ),
           if (action != null) action!,
           IconButton(
+            focusNode: closeFocusNode,
             icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),
             onPressed: onClose ?? () => Navigator.pop(context),
           ),

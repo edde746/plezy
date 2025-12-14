@@ -1,3 +1,5 @@
+import '../utils/codec_utils.dart';
+
 class PlexMediaInfo {
   final String videoUrl;
   final List<PlexAudioTrack> audioTracks;
@@ -67,7 +69,7 @@ class PlexAudioTrack with TrackLabelBuilder {
 
   String get label {
     final additionalParts = <String>[];
-    if (codec != null) additionalParts.add(codec!.toUpperCase());
+    if (codec != null) additionalParts.add(CodecUtils.formatAudioCodec(codec!));
     if (channels != null) additionalParts.add('${channels!}ch');
     return buildLabel(additionalParts);
   }
@@ -118,38 +120,10 @@ class PlexSubtitleTrack with TrackLabelBuilder {
     if (!isExternal) return null;
 
     // Determine file extension based on codec
-    final ext = _getExtensionFromCodec(codec);
+    final ext = CodecUtils.getSubtitleExtension(codec);
 
     // Construct URL with authentication token
     return '$baseUrl$key.$ext?X-Plex-Token=$token';
-  }
-
-  /// Maps Plex subtitle codec names to file extensions
-  String _getExtensionFromCodec(String? codec) {
-    if (codec == null) return 'srt';
-
-    switch (codec.toLowerCase()) {
-      case 'subrip':
-      case 'srt':
-        return 'srt';
-      case 'ass':
-        return 'ass';
-      case 'ssa':
-        return 'ssa';
-      case 'webvtt':
-      case 'vtt':
-        return 'vtt';
-      case 'mov_text':
-        return 'srt';
-      case 'pgs':
-      case 'hdmv_pgs_subtitle':
-        return 'sup';
-      case 'dvd_subtitle':
-      case 'dvdsub':
-        return 'sub';
-      default:
-        return 'srt'; // Default to SRT for unknown codecs
-    }
   }
 }
 

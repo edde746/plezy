@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/models/plex_metadata_extensions.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -6,7 +7,6 @@ import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../providers/download_provider.dart';
-import '../providers/multi_server_provider.dart';
 import '../services/download_storage_service.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
@@ -236,7 +236,7 @@ class _MediaCardGrid extends StatelessWidget {
         child: InkWell(
           canRequestFocus: false, // Keyboard handled by FocusableMediaCard
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Column(
@@ -293,7 +293,7 @@ class _MediaCardGrid extends StatelessWidget {
     return Stack(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
           child: _buildPosterImage(
             context,
             item,
@@ -490,7 +490,7 @@ class _MediaCardList extends StatelessWidget {
       child: InkWell(
         canRequestFocus: false, // Keyboard handled by FocusableMediaCard
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Row(
@@ -503,7 +503,7 @@ class _MediaCardList extends StatelessWidget {
                 child: Stack(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                       child: _buildPosterImage(
                         context,
                         item,
@@ -591,31 +591,6 @@ class _MediaCardList extends StatelessWidget {
   }
 }
 
-/// Helper to get the correct PlexClient for an item's server
-PlexClient _getClientForItem(BuildContext context, dynamic item) {
-  String? serverId;
-
-  if (item is PlexMetadata) {
-    serverId = item.serverId;
-  } else if (item is PlexPlaylist) {
-    serverId = item.serverId;
-  }
-
-  // If serverId is null, fall back to first available server
-  if (serverId == null) {
-    final multiServerProvider = Provider.of<MultiServerProvider>(
-      context,
-      listen: false,
-    );
-    if (!multiServerProvider.hasConnectedServers) {
-      throw Exception('No servers available');
-    }
-    serverId = multiServerProvider.onlineServerIds.first;
-  }
-
-  return context.getClientForServer(serverId);
-}
-
 Widget _buildPosterImage(
   BuildContext context,
   dynamic item, {
@@ -630,7 +605,7 @@ Widget _buildPosterImage(
     fallbackIcon = Symbols.playlist_play_rounded;
 
     return PlexOptimizedImage.playlist(
-      client: isOffline ? null : _getClientForItem(context, item),
+      client: isOffline ? null : context.getClientWithFallback(item.serverId),
       imagePath: posterUrl,
       width: double.infinity,
       height: double.infinity,
@@ -642,7 +617,7 @@ Widget _buildPosterImage(
     posterUrl = item.posterThumb(useSeasonPoster: useSeasonPoster);
 
     return PlexOptimizedImage.poster(
-      client: isOffline ? null : _getClientForItem(context, item),
+      client: isOffline ? null : context.getClientWithFallback(item.serverId),
       imagePath: posterUrl,
       width: double.infinity,
       height: double.infinity,
@@ -806,7 +781,7 @@ class _MediaCardHelpers {
             ),
           ),
         // Progress bar for seasons (viewedLeafCount / leafCount)
-        if (metadata.type == 'season' &&
+        if (metadata.isSeason &&
             metadata.viewedLeafCount != null &&
             metadata.leafCount != null &&
             metadata.leafCount! > 0 &&
@@ -883,7 +858,8 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainerHighest
                   .withValues(alpha: _animation.value),
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
+              borderRadius: widget.borderRadius ??
+                  BorderRadius.circular(tokens(context).radiusSm),
             ),
             child: widget.child,
           ),

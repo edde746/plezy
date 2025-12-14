@@ -1,3 +1,6 @@
+import '../utils/byte_formatter.dart';
+import '../utils/codec_utils.dart';
+
 class PlexMediaVersion {
   final int id;
   final String? videoResolution;
@@ -52,7 +55,7 @@ class PlexMediaVersion {
 
     // Add codec
     if (videoCodec != null && videoCodec!.isNotEmpty) {
-      parts.add(videoCodec!.toUpperCase());
+      parts.add(CodecUtils.formatVideoCodec(videoCodec!));
     }
 
     // Add container
@@ -65,8 +68,7 @@ class PlexMediaVersion {
 
     // Add bitrate in parentheses
     if (bitrate != null && bitrate! > 0) {
-      final bitrateInMbps = (bitrate! / 1000).toStringAsFixed(1);
-      label += ' ($bitrateInMbps Mbps)';
+      label += ' (${ByteFormatter.formatBitrate(bitrate!)})';
     }
 
     return label;

@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
 import 'package:path/path.dart' as path;
+import 'package:plezy/models/plex_metadata_extensions.dart';
 import '../database/app_database.dart';
 import 'settings_service.dart';
 import '../models/download_status.dart';
@@ -15,6 +16,8 @@ import '../services/plex_client.dart';
 import '../services/download_storage_service.dart';
 import '../services/plex_api_cache.dart';
 import '../utils/app_logger.dart';
+import '../utils/codec_utils.dart';
+import '../utils/plex_cache_parser.dart';
 
 /// Extension methods on AppDatabase for download operations
 extension DownloadDatabaseOperations on AppDatabase {
@@ -186,6 +189,20 @@ extension DownloadDatabaseOperations on AppDatabase {
       downloadQueue,
     )..where((t) => t.mediaGlobalKey.equals(globalKey))).go();
   }
+
+  /// Get all downloaded episodes for a season
+  Future<List<DownloadedMediaItem>> getEpisodesBySeason(String seasonKey) {
+    return (select(downloadedMedia)
+          ..where((t) => t.parentRatingKey.equals(seasonKey)))
+        .get();
+  }
+
+  /// Get all downloaded episodes for a show
+  Future<List<DownloadedMediaItem>> getEpisodesByShow(String showKey) {
+    return (select(downloadedMedia)
+          ..where((t) => t.grandparentRatingKey.equals(showKey)))
+        .get();
+  }
 }
 
 class DownloadManagerService {
@@ -241,6 +258,17 @@ class DownloadManagerService {
   }) : _database = database,
        _storageService = storageService,
        _dio = dio ?? Dio();
+
+  /// Delete a file if it exists and log the deletion
+  /// Returns true if file was deleted, false otherwise
+  Future<bool> _deleteFileIfExists(File file, String description) async {
+    if (await file.exists()) {
+      await file.delete();
+      appLogger.i('Deleted $description: ${file.path}');
+      return true;
+    }
+    return false;
+  }
 
   /// Queue a download for a media item
   Future<void> queueDownload({
@@ -355,12 +383,8 @@ class DownloadManagerService {
       appLogger.i('Starting download for $globalKey');
 
       // Update status to downloading
-      await _database.updateDownloadStatus(
-        globalKey,
-        DownloadStatus.downloading.index,
-      );
-      appLogger.d('Status updated to downloading, emitting initial progress');
-      _emitProgress(globalKey, DownloadStatus.downloading, 0);
+      await _transitionStatus(globalKey, DownloadStatus.downloading);
+      appLogger.d('Status updated to downloading');
 
       // Parse globalKey to get serverId and ratingKey
       final parts = globalKey.split(':');
@@ -377,13 +401,12 @@ class DownloadManagerService {
       }
 
       // Parse metadata from cached response
-      final metadataList =
-          cachedResponse['MediaContainer']?['Metadata'] as List?;
-      if (metadataList == null || metadataList.isEmpty) {
+      final firstMetadata = PlexCacheParser.extractFirstMetadata(cachedResponse);
+      if (firstMetadata == null) {
         throw Exception('Invalid cached metadata for $globalKey');
       }
       final metadata = PlexMetadata.fromJson(
-        metadataList[0],
+        firstMetadata,
       ).copyWith(serverId: serverId);
 
       // Get video playback data (includes URL, streams, etc.)
@@ -411,12 +434,10 @@ class DownloadManagerService {
           serverId,
           '/library/metadata/${metadataWithServer.grandparentRatingKey}',
         );
-        if (showCached != null) {
-          final showList = showCached['MediaContainer']?['Metadata'] as List?;
-          if (showList != null && showList.isNotEmpty) {
-            final showMetadata = PlexMetadata.fromJson(showList[0]);
-            showYear = showMetadata.year;
-          }
+        final showJson = PlexCacheParser.extractFirstMetadata(showCached);
+        if (showJson != null) {
+          final showMetadata = PlexMetadata.fromJson(showJson);
+          showYear = showMetadata.year;
         }
       }
 
@@ -552,12 +573,8 @@ class DownloadManagerService {
       }
 
       // Mark as completed
-      await _database.updateDownloadStatus(
-        globalKey,
-        DownloadStatus.completed.index,
-      );
+      await _transitionStatus(globalKey, DownloadStatus.completed);
       await _database.removeFromQueue(globalKey);
-      _emitProgress(globalKey, DownloadStatus.completed, 100);
 
       _activeDownloads.remove(globalKey);
 
@@ -573,19 +590,14 @@ class DownloadManagerService {
       }
 
       appLogger.e('Download failed for $globalKey', error: e);
-      await _database.updateDownloadStatus(
+      await _transitionStatus(
         globalKey,
-        DownloadStatus.failed.index,
+        DownloadStatus.failed,
+        errorMessage: e.toString(),
       );
       await _database.updateDownloadError(globalKey, e.toString());
       // Remove from queue to prevent endless retry loop
       await _database.removeFromQueue(globalKey);
-      _emitProgress(
-        globalKey,
-        DownloadStatus.failed,
-        0,
-        errorMessage: e.toString(),
-      );
       _activeDownloads.remove(globalKey);
     }
   }
@@ -818,18 +830,18 @@ class DownloadManagerService {
         if (subtitleUrl == null) continue;
 
         // Determine file extension
-        final extension = _getExtensionFromCodec(subtitle.codec);
+        final extension = CodecUtils.getSubtitleExtension(subtitle.codec);
 
         // Get user-friendly subtitle path based on media type
         final String subtitlePath;
-        if (metadata.type == 'episode') {
+        if (metadata.isEpisode) {
           subtitlePath = await _storageService.getEpisodeSubtitlePath(
             metadata,
             subtitle.id,
             extension,
             showYear: showYear,
           );
-        } else if (metadata.type == 'movie') {
+        } else if (metadata.isMovie) {
           subtitlePath = await _storageService.getMovieSubtitlePath(
             metadata,
             subtitle.id,
@@ -867,33 +879,6 @@ class DownloadManagerService {
     return path.substring(lastDot + 1).split('?').first;
   }
 
-  String _getExtensionFromCodec(String? codec) {
-    if (codec == null) return 'srt';
-
-    switch (codec.toLowerCase()) {
-      case 'subrip':
-      case 'srt':
-        return 'srt';
-      case 'ass':
-        return 'ass';
-      case 'ssa':
-        return 'ssa';
-      case 'webvtt':
-      case 'vtt':
-        return 'vtt';
-      case 'mov_text':
-        return 'srt';
-      case 'pgs':
-      case 'hdmv_pgs_subtitle':
-        return 'sup';
-      case 'dvd_subtitle':
-      case 'dvdsub':
-        return 'sub';
-      default:
-        return 'srt';
-    }
-  }
-
   void _emitProgress(
     String globalKey,
     DownloadStatus status,
@@ -909,6 +894,28 @@ class DownloadManagerService {
         errorMessage: errorMessage,
         currentFile: currentFile,
       ),
+    );
+  }
+
+  /// Update download status in database and emit progress notification.
+  ///
+  /// This helper combines two common operations:
+  /// 1. Update status in the database
+  /// 2. Emit progress to listeners
+  ///
+  /// Default progress is 0 for most statuses, 100 for completed.
+  Future<void> _transitionStatus(
+    String globalKey,
+    DownloadStatus status, {
+    int? progress,
+    String? errorMessage,
+  }) async {
+    await _database.updateDownloadStatus(globalKey, status.index);
+    _emitProgress(
+      globalKey,
+      status,
+      progress ?? (status == DownloadStatus.completed ? 100 : 0),
+      errorMessage: errorMessage,
     );
   }
 
@@ -935,25 +942,16 @@ class DownloadManagerService {
       cancelToken.cancel('Paused by user');
       _activeDownloads.remove(globalKey);
     }
-    // Update status to paused
-    await _database.updateDownloadStatus(
-      globalKey,
-      DownloadStatus.paused.index,
-    );
-    // Remove from queue so it doesn't restart
+    // Update status to paused and remove from queue so it doesn't restart
+    await _transitionStatus(globalKey, DownloadStatus.paused);
     await _database.removeFromQueue(globalKey);
-    _emitProgress(globalKey, DownloadStatus.paused, 0);
   }
 
   /// Resume a paused download
   Future<void> resumeDownload(String globalKey, PlexClient client) async {
-    await _database.updateDownloadStatus(
-      globalKey,
-      DownloadStatus.queued.index,
-    );
+    await _transitionStatus(globalKey, DownloadStatus.queued);
     // Re-add to queue (pauseDownload removes from queue)
     await _database.addToQueue(mediaGlobalKey: globalKey);
-    _emitProgress(globalKey, DownloadStatus.queued, 0);
     _processQueue(client);
   }
 
@@ -962,13 +960,9 @@ class DownloadManagerService {
     // Clear error and reset retry count
     await _database.clearDownloadError(globalKey);
     // Reset status to queued
-    await _database.updateDownloadStatus(
-      globalKey,
-      DownloadStatus.queued.index,
-    );
+    await _transitionStatus(globalKey, DownloadStatus.queued);
     // Re-add to queue
     await _database.addToQueue(mediaGlobalKey: globalKey);
-    _emitProgress(globalKey, DownloadStatus.queued, 0);
     _processQueue(client);
   }
 
@@ -979,12 +973,8 @@ class DownloadManagerService {
       cancelToken.cancel('Cancelled by user');
       _activeDownloads.remove(globalKey);
     }
-    await _database.updateDownloadStatus(
-      globalKey,
-      DownloadStatus.cancelled.index,
-    );
+    await _transitionStatus(globalKey, DownloadStatus.cancelled);
     await _database.removeFromQueue(globalKey);
-    _emitProgress(globalKey, DownloadStatus.cancelled, 0);
   }
 
   /// Delete a downloaded item and its files
@@ -1065,17 +1055,11 @@ class DownloadManagerService {
         return 1; // Single movie
       case 'season':
         // Count episodes in season
-        final seasonKey = metadata.ratingKey;
-        final episodes = await (_database.select(
-          _database.downloadedMedia,
-        )..where((t) => t.parentRatingKey.equals(seasonKey))).get();
+        final episodes = await _database.getEpisodesBySeason(metadata.ratingKey);
         return episodes.length;
       case 'show':
         // Count all episodes in show
-        final showKey = metadata.ratingKey;
-        final episodes = await (_database.select(
-          _database.downloadedMedia,
-        )..where((t) => t.grandparentRatingKey.equals(showKey))).get();
+        final episodes = await _database.getEpisodesByShow(metadata.ratingKey);
         return episodes.length;
       default:
         return 1;
@@ -1135,13 +1119,9 @@ class DownloadManagerService {
       serverId,
       '/library/metadata/$ratingKey',
     );
-    if (cachedData != null && cachedData['MediaContainer'] != null) {
-      final container = cachedData['MediaContainer'] as Map<String, dynamic>;
-      if (container['Metadata'] != null &&
-          (container['Metadata'] as List).isNotEmpty) {
-        final metadataJson = container['Metadata'][0] as Map<String, dynamic>;
-        return PlexMetadata.fromJson(metadataJson).copyWith(serverId: serverId);
-      }
+    final metadataJson = PlexCacheParser.extractFirstMetadata(cachedData);
+    if (metadataJson != null) {
+      return PlexMetadata.fromJson(metadataJson).copyWith(serverId: serverId);
     }
     return null;
   }
@@ -1156,34 +1136,14 @@ class DownloadManagerService {
         serverId,
         '/library/metadata/$ratingKey',
       );
+      final chapters = PlexCacheParser.extractChapters(cachedData);
+      if (chapters == null) return [];
 
-      if (cachedData == null || cachedData['MediaContainer'] == null) {
-        return [];
-      }
-
-      final container = cachedData['MediaContainer'] as Map<String, dynamic>;
-      final metadataList = container['Metadata'] as List?;
-
-      if (metadataList == null || metadataList.isEmpty) {
-        return [];
-      }
-
-      final metadata = metadataList[0] as Map<String, dynamic>;
-      final chapters = metadata['Chapter'] as List?;
-
-      if (chapters == null) {
-        return [];
-      }
-
-      final thumbPaths = <String>[];
-      for (final chapter in chapters) {
-        final thumbPath = chapter['thumb'] as String?;
-        if (thumbPath != null && thumbPath.isNotEmpty) {
-          thumbPaths.add(thumbPath);
-        }
-      }
-
-      return thumbPaths;
+      return chapters
+          .map((ch) => ch['thumb'] as String?)
+          .where((thumb) => thumb != null && thumb.isNotEmpty)
+          .cast<String>()
+          .toList();
     } catch (e) {
       appLogger.w('Error getting chapter thumb paths for $ratingKey', error: e);
       return [];
@@ -1266,12 +1226,11 @@ class DownloadManagerService {
             serverId,
             thumbPath,
           );
-          final file = File(artworkPath);
-
-          if (await file.exists()) {
-            await file.delete();
+          if (await _deleteFileIfExists(
+            File(artworkPath),
+            'chapter thumbnail',
+          )) {
             deletedCount++;
-            appLogger.d('Deleted chapter thumbnail: $thumbPath');
           }
         } catch (e) {
           appLogger.w(
@@ -1321,9 +1280,8 @@ class DownloadManagerService {
       final actualVideoFile = await _findFileWithAnyExtension(
         videoPathWithoutExt,
       );
-      if (actualVideoFile != null && await actualVideoFile.exists()) {
-        await actualVideoFile.delete();
-        appLogger.i('Deleted episode video: ${actualVideoFile.path}');
+      if (actualVideoFile != null) {
+        await _deleteFileIfExists(actualVideoFile, 'episode video');
       }
 
       // Delete thumbnail
@@ -1331,11 +1289,7 @@ class DownloadManagerService {
         episode,
         showYear: showYear,
       );
-      final thumbFile = File(thumbPath);
-      if (await thumbFile.exists()) {
-        await thumbFile.delete();
-        appLogger.i('Deleted episode thumbnail: $thumbPath');
-      }
+      await _deleteFileIfExists(File(thumbPath), 'episode thumbnail');
 
       // Delete subtitles directory
       final subsDir = await _storageService.getEpisodeSubtitlesDirectory(
@@ -1366,42 +1320,18 @@ class DownloadManagerService {
       final showYear = parentMetadata?.year;
 
       // Get all episodes in this season
-      final seasonKey = season.ratingKey;
-      final episodesInSeason = await (_database.select(
-        _database.downloadedMedia,
-      )..where((t) => t.parentRatingKey.equals(seasonKey))).get();
+      final episodesInSeason =
+          await _database.getEpisodesBySeason(season.ratingKey);
 
       appLogger.d(
-        'Deleting ${episodesInSeason.length} episodes in season $seasonKey',
+        'Deleting ${episodesInSeason.length} episodes in season ${season.ratingKey}',
       );
-      for (int i = 0; i < episodesInSeason.length; i++) {
-        final episode = episodesInSeason[i];
-        final episodeGlobalKey = '$serverId:${episode.ratingKey}';
-
-        // Emit progress update
-        _emitDeletionProgress(
-          DeletionProgress(
-            globalKey: '$serverId:$seasonKey',
-            itemTitle: season.title,
-            currentItem: i + 1,
-            totalItems: episodesInSeason.length,
-            currentOperation:
-                'Deleting episode ${i + 1} of ${episodesInSeason.length}',
-          ),
-        );
-
-        // Delete chapter thumbnails
-        await _deleteChapterThumbnails(serverId, episode.ratingKey);
-
-        // Delete episode files (video, subtitles) if stored outside season directory
-        await _deleteByFilePath(episode);
-
-        // Delete episode from API cache
-        await _apiCache.deleteForItem(serverId, episode.ratingKey);
-
-        // Delete episode DB entry
-        await _database.deleteDownload(episodeGlobalKey);
-      }
+      await _deleteEpisodesInCollection(
+        episodes: episodesInSeason,
+        serverId: serverId,
+        parentKey: season.ratingKey,
+        parentTitle: season.title,
+      );
 
       final seasonDir = await _storageService.getSeasonDirectory(
         season,
@@ -1418,46 +1348,59 @@ class DownloadManagerService {
     }
   }
 
+  /// Delete episodes in a collection (season or show)
+  /// Returns the number of episodes deleted
+  Future<void> _deleteEpisodesInCollection({
+    required List<DownloadedMediaItem> episodes,
+    required String serverId,
+    required String parentKey,
+    required String parentTitle,
+  }) async {
+    for (int i = 0; i < episodes.length; i++) {
+      final episode = episodes[i];
+      final episodeGlobalKey = '$serverId:${episode.ratingKey}';
+
+      // Emit progress update
+      _emitDeletionProgress(
+        DeletionProgress(
+          globalKey: '$serverId:$parentKey',
+          itemTitle: parentTitle,
+          currentItem: i + 1,
+          totalItems: episodes.length,
+          currentOperation:
+              'Deleting episode ${i + 1} of ${episodes.length}',
+        ),
+      );
+
+      // Delete chapter thumbnails
+      await _deleteChapterThumbnails(serverId, episode.ratingKey);
+
+      // Delete episode files (video, subtitles)
+      await _deleteByFilePath(episode);
+
+      // Delete episode from API cache
+      await _apiCache.deleteForItem(serverId, episode.ratingKey);
+
+      // Delete episode DB entry
+      await _database.deleteDownload(episodeGlobalKey);
+    }
+  }
+
   /// Delete show files
   Future<void> _deleteShowFiles(PlexMetadata show, String serverId) async {
     try {
       // Get all episodes in this show
-      final showKey = show.ratingKey;
-      final episodesInShow = await (_database.select(
-        _database.downloadedMedia,
-      )..where((t) => t.grandparentRatingKey.equals(showKey))).get();
+      final episodesInShow = await _database.getEpisodesByShow(show.ratingKey);
 
       appLogger.d(
-        'Deleting ${episodesInShow.length} episodes in show $showKey',
+        'Deleting ${episodesInShow.length} episodes in show ${show.ratingKey}',
       );
-      for (int i = 0; i < episodesInShow.length; i++) {
-        final episode = episodesInShow[i];
-        final episodeGlobalKey = '$serverId:${episode.ratingKey}';
-
-        // Emit progress update
-        _emitDeletionProgress(
-          DeletionProgress(
-            globalKey: '$serverId:$showKey',
-            itemTitle: show.title,
-            currentItem: i + 1,
-            totalItems: episodesInShow.length,
-            currentOperation:
-                'Deleting episode ${i + 1} of ${episodesInShow.length}',
-          ),
-        );
-
-        // Delete chapter thumbnails
-        await _deleteChapterThumbnails(serverId, episode.ratingKey);
-
-        // Delete episode files (video, subtitles) if stored outside show directory
-        await _deleteByFilePath(episode);
-
-        // Delete episode from API cache
-        await _apiCache.deleteForItem(serverId, episode.ratingKey);
-
-        // Delete episode DB entry
-        await _database.deleteDownload(episodeGlobalKey);
-      }
+      await _deleteEpisodesInCollection(
+        episodes: episodesInShow,
+        serverId: serverId,
+        parentKey: show.ratingKey,
+        parentTitle: show.title,
+      );
 
       final showDir = await _storageService.getShowDirectory(show);
       if (await showDir.exists()) {
@@ -1550,9 +1493,7 @@ class DownloadManagerService {
     final seasonKey = episode.parentRatingKey;
     if (seasonKey == null) return false;
 
-    final otherEpisodes = await (_database.select(
-      _database.downloadedMedia,
-    )..where((t) => t.parentRatingKey.equals(seasonKey))).get();
+    final otherEpisodes = await _database.getEpisodesBySeason(seasonKey);
 
     // Check if any episodes besides this one
     return otherEpisodes.any(
@@ -1608,12 +1549,11 @@ class DownloadManagerService {
         final videoPath = await _storageService.toAbsolutePath(
           record.videoFilePath!,
         );
-        final videoFile = File(videoPath);
-        if (await videoFile.exists()) {
-          await videoFile.delete();
-          appLogger.i('Deleted video file: $videoPath');
+        final videoDeleted =
+            await _deleteFileIfExists(File(videoPath), 'video file');
 
-          // Delete subtitle directory
+        // Delete subtitle directory if video was deleted
+        if (videoDeleted) {
           final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
           final subsDir = Directory(subsPath);
           if (await subsDir.exists()) {
@@ -1627,11 +1567,7 @@ class DownloadManagerService {
         final thumbPath = await _storageService.toAbsolutePath(
           record.thumbPath!,
         );
-        final thumbFile = File(thumbPath);
-        if (await thumbFile.exists()) {
-          await thumbFile.delete();
-          appLogger.i('Deleted thumbnail: $thumbPath');
-        }
+        await _deleteFileIfExists(File(thumbPath), 'thumbnail');
       }
     } catch (e, stack) {
       appLogger.e('Error in fallback deletion', error: e, stackTrace: stack);

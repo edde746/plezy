@@ -23,6 +23,19 @@ import 'about_screen.dart';
 import 'logs_screen.dart';
 import 'subtitle_styling_screen.dart';
 
+/// Helper class for option selection dialog items
+class _DialogOption<T> {
+  final T value;
+  final String title;
+  final String? subtitle;
+
+  const _DialogOption({
+    required this.value,
+    required this.title,
+    this.subtitle,
+  });
+}
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -803,8 +816,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showSeekTimeSmallDialog() {
-    final controller = TextEditingController(text: _seekTimeSmall.toString());
+  /// Generic numeric input dialog to avoid duplication across settings
+  void _showNumericInputDialog({
+    required String title,
+    required String labelText,
+    required String suffixText,
+    required int min,
+    required int max,
+    required int currentValue,
+    required Future<void> Function(int value) onSave,
+  }) {
+    final controller = TextEditingController(text: currentValue.toString());
     String? errorText;
 
     showDialog(
@@ -813,15 +835,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(t.settings.smallSkipDuration),
+              title: Text(title),
               content: TextField(
                 controller: controller,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: t.settings.secondsLabel,
-                  hintText: t.settings.durationHint(min: 1, max: 120),
+                  labelText: labelText,
+                  hintText: t.settings.durationHint(min: min, max: max),
                   errorText: errorText,
-                  suffixText: t.settings.secondsShort,
+                  suffixText: suffixText,
                 ),
                 autofocus: true,
                 onChanged: (value) {
@@ -829,11 +851,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   setDialogState(() {
                     if (parsed == null) {
                       errorText = t.settings.validationErrorEnterNumber;
-                    } else if (parsed < 1 || parsed > 120) {
+                    } else if (parsed < min || parsed > max) {
                       errorText = t.settings.validationErrorDuration(
-                        min: 1,
-                        max: 120,
-                        unit: t.settings.secondsLabel.toLowerCase(),
+                        min: min,
+                        max: max,
+                        unit: labelText.toLowerCase(),
                       );
                     } else {
                       errorText = null;
@@ -849,13 +871,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 TextButton(
                   onPressed: () async {
                     final parsed = int.tryParse(controller.text);
-                    if (parsed != null && parsed >= 1 && parsed <= 120) {
-                      setState(() {
-                        _seekTimeSmall = parsed;
-                        _settingsService.setSeekTimeSmall(parsed);
-                      });
-                      // Reload keyboard shortcuts service to use new settings
-                      await _keyboardService?.refreshFromStorage();
+                    if (parsed != null && parsed >= min && parsed <= max) {
+                      await onSave(parsed);
                       if (dialogContext.mounted) {
                         Navigator.pop(dialogContext);
                       }
@@ -867,208 +884,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           },
         );
+      },
+    );
+  }
+
+  void _showSeekTimeSmallDialog() {
+    _showNumericInputDialog(
+      title: t.settings.smallSkipDuration,
+      labelText: t.settings.secondsLabel,
+      suffixText: t.settings.secondsShort,
+      min: 1,
+      max: 120,
+      currentValue: _seekTimeSmall,
+      onSave: (value) async {
+        setState(() {
+          _seekTimeSmall = value;
+          _settingsService.setSeekTimeSmall(value);
+        });
+        await _keyboardService?.refreshFromStorage();
       },
     );
   }
 
   void _showSeekTimeLargeDialog() {
-    final controller = TextEditingController(text: _seekTimeLarge.toString());
-    String? errorText;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(t.settings.largeSkipDuration),
-              content: TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: t.settings.secondsLabel,
-                  hintText: t.settings.durationHint(min: 1, max: 120),
-                  errorText: errorText,
-                  suffixText: t.settings.secondsShort,
-                ),
-                autofocus: true,
-                onChanged: (value) {
-                  final parsed = int.tryParse(value);
-                  setDialogState(() {
-                    if (parsed == null) {
-                      errorText = t.settings.validationErrorEnterNumber;
-                    } else if (parsed < 1 || parsed > 120) {
-                      errorText = t.settings.validationErrorDuration(
-                        min: 1,
-                        max: 120,
-                        unit: t.settings.secondsLabel.toLowerCase(),
-                      );
-                    } else {
-                      errorText = null;
-                    }
-                  });
-                },
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: Text(t.common.cancel),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    final parsed = int.tryParse(controller.text);
-                    if (parsed != null && parsed >= 1 && parsed <= 120) {
-                      setState(() {
-                        _seekTimeLarge = parsed;
-                        _settingsService.setSeekTimeLarge(parsed);
-                      });
-                      // Reload keyboard shortcuts service to use new settings
-                      await _keyboardService?.refreshFromStorage();
-                      if (dialogContext.mounted) {
-                        Navigator.pop(dialogContext);
-                      }
-                    }
-                  },
-                  child: Text(t.common.save),
-                ),
-              ],
-            );
-          },
-        );
+    _showNumericInputDialog(
+      title: t.settings.largeSkipDuration,
+      labelText: t.settings.secondsLabel,
+      suffixText: t.settings.secondsShort,
+      min: 1,
+      max: 120,
+      currentValue: _seekTimeLarge,
+      onSave: (value) async {
+        setState(() {
+          _seekTimeLarge = value;
+          _settingsService.setSeekTimeLarge(value);
+        });
+        await _keyboardService?.refreshFromStorage();
       },
     );
   }
 
   void _showSleepTimerDurationDialog() {
-    final controller = TextEditingController(
-      text: _sleepTimerDuration.toString(),
-    );
-    String? errorText;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(t.settings.defaultSleepTimer),
-              content: TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: t.settings.minutesLabel,
-                  hintText: t.settings.durationHint(min: 5, max: 240),
-                  errorText: errorText,
-                  suffixText: t.settings.minutesShort,
-                ),
-                autofocus: true,
-                onChanged: (value) {
-                  final parsed = int.tryParse(value);
-                  setDialogState(() {
-                    if (parsed == null) {
-                      errorText = t.settings.validationErrorEnterNumber;
-                    } else if (parsed < 5 || parsed > 240) {
-                      errorText = t.settings.validationErrorDuration(
-                        min: 5,
-                        max: 240,
-                        unit: t.settings.minutesLabel.toLowerCase(),
-                      );
-                    } else {
-                      errorText = null;
-                    }
-                  });
-                },
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: Text(t.common.cancel),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    final parsed = int.tryParse(controller.text);
-                    if (parsed != null && parsed >= 5 && parsed <= 240) {
-                      setState(() {
-                        _sleepTimerDuration = parsed;
-                      });
-                      await _settingsService.setSleepTimerDuration(parsed);
-                      if (dialogContext.mounted) {
-                        Navigator.pop(dialogContext);
-                      }
-                    }
-                  },
-                  child: Text(t.common.save),
-                ),
-              ],
-            );
-          },
-        );
+    _showNumericInputDialog(
+      title: t.settings.defaultSleepTimer,
+      labelText: t.settings.minutesLabel,
+      suffixText: t.settings.minutesShort,
+      min: 5,
+      max: 240,
+      currentValue: _sleepTimerDuration,
+      onSave: (value) async {
+        setState(() => _sleepTimerDuration = value);
+        await _settingsService.setSleepTimerDuration(value);
       },
     );
   }
 
   void _showAutoSkipDelayDialog() {
-    final controller = TextEditingController(text: _autoSkipDelay.toString());
-    String? errorText;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(t.settings.autoSkipDelay),
-              content: TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: t.settings.secondsLabel,
-                  hintText: t.settings.durationHint(min: 1, max: 30),
-                  errorText: errorText,
-                  suffixText: t.settings.secondsShort,
-                ),
-                autofocus: true,
-                onChanged: (value) {
-                  final parsed = int.tryParse(value);
-                  setDialogState(() {
-                    if (parsed == null) {
-                      errorText = t.settings.validationErrorEnterNumber;
-                    } else if (parsed < 1 || parsed > 30) {
-                      errorText = t.settings.validationErrorDuration(
-                        min: 1,
-                        max: 30,
-                        unit: t.settings.secondsLabel.toLowerCase(),
-                      );
-                    } else {
-                      errorText = null;
-                    }
-                  });
-                },
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: Text(t.common.cancel),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    final parsed = int.tryParse(controller.text);
-                    if (parsed != null && parsed >= 1 && parsed <= 30) {
-                      setState(() {
-                        _autoSkipDelay = parsed;
-                      });
-                      await _settingsService.setAutoSkipDelay(parsed);
-                      if (dialogContext.mounted) {
-                        Navigator.pop(dialogContext);
-                      }
-                    }
-                  },
-                  child: Text(t.common.save),
-                ),
-              ],
-            );
-          },
-        );
+    _showNumericInputDialog(
+      title: t.settings.autoSkipDelay,
+      labelText: t.settings.secondsLabel,
+      suffixText: t.settings.secondsShort,
+      min: 1,
+      max: 30,
+      currentValue: _autoSkipDelay,
+      onSave: (value) async {
+        setState(() => _autoSkipDelay = value);
+        await _settingsService.setAutoSkipDelay(value);
       },
     );
   }
@@ -1309,68 +1190,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLibraryDensityDialog() {
+  /// Generic option selection dialog for settings with SettingsProvider
+  void _showOptionSelectionDialog<T>({
+    required String title,
+    required List<_DialogOption<T>> options,
+    required T Function(SettingsProvider) getCurrentValue,
+    required Future<void> Function(T value, SettingsProvider provider) onSelect,
+  }) {
     final settingsProvider = context.read<SettingsProvider>();
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Consumer<SettingsProvider>(
           builder: (context, provider, child) {
+            final currentValue = getCurrentValue(provider);
             return AlertDialog(
-              title: Text(t.settings.libraryDensity),
+              title: Text(title),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
+                children: options.map((option) {
+                  return ListTile(
                     leading: AppIcon(
-                      provider.libraryDensity == settings.LibraryDensity.compact
+                      currentValue == option.value
                           ? Symbols.radio_button_checked_rounded
                           : Symbols.radio_button_unchecked_rounded,
                       fill: 1,
                     ),
-                    title: Text(t.settings.compact),
-                    subtitle: Text(t.settings.compactDescription),
+                    title: Text(option.title),
+                    subtitle:
+                        option.subtitle != null ? Text(option.subtitle!) : null,
                     onTap: () async {
-                      await settingsProvider.setLibraryDensity(
-                        settings.LibraryDensity.compact,
-                      );
+                      await onSelect(option.value, settingsProvider);
                       if (context.mounted) Navigator.pop(context);
                     },
-                  ),
-                  ListTile(
-                    leading: AppIcon(
-                      provider.libraryDensity == settings.LibraryDensity.normal
-                          ? Symbols.radio_button_checked_rounded
-                          : Symbols.radio_button_unchecked_rounded,
-                      fill: 1,
-                    ),
-                    title: Text(t.settings.normal),
-                    subtitle: Text(t.settings.normalDescription),
-                    onTap: () async {
-                      await settingsProvider.setLibraryDensity(
-                        settings.LibraryDensity.normal,
-                      );
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                  ),
-                  ListTile(
-                    leading: AppIcon(
-                      provider.libraryDensity ==
-                              settings.LibraryDensity.comfortable
-                          ? Symbols.radio_button_checked_rounded
-                          : Symbols.radio_button_unchecked_rounded,
-                      fill: 1,
-                    ),
-                    title: Text(t.settings.comfortable),
-                    subtitle: Text(t.settings.comfortableDescription),
-                    onTap: () async {
-                      await settingsProvider.setLibraryDensity(
-                        settings.LibraryDensity.comfortable,
-                      );
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                  ),
-                ],
+                  );
+                }).toList(),
               ),
               actions: [
                 TextButton(
@@ -1385,62 +1239,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showLibraryDensityDialog() {
+    _showOptionSelectionDialog<settings.LibraryDensity>(
+      title: t.settings.libraryDensity,
+      options: [
+        _DialogOption(
+          value: settings.LibraryDensity.compact,
+          title: t.settings.compact,
+          subtitle: t.settings.compactDescription,
+        ),
+        _DialogOption(
+          value: settings.LibraryDensity.normal,
+          title: t.settings.normal,
+          subtitle: t.settings.normalDescription,
+        ),
+        _DialogOption(
+          value: settings.LibraryDensity.comfortable,
+          title: t.settings.comfortable,
+          subtitle: t.settings.comfortableDescription,
+        ),
+      ],
+      getCurrentValue: (p) => p.libraryDensity,
+      onSelect: (value, provider) => provider.setLibraryDensity(value),
+    );
+  }
+
   void _showViewModeDialog() {
-    final settingsProvider = context.read<SettingsProvider>();
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Consumer<SettingsProvider>(
-          builder: (context, provider, child) {
-            return AlertDialog(
-              title: Text(t.settings.viewMode),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: AppIcon(
-                      provider.viewMode == settings.ViewMode.grid
-                          ? Symbols.radio_button_checked_rounded
-                          : Symbols.radio_button_unchecked_rounded,
-                      fill: 1,
-                    ),
-                    title: Text(t.settings.gridView),
-                    subtitle: Text(t.settings.gridViewDescription),
-                    onTap: () async {
-                      await settingsProvider.setViewMode(
-                        settings.ViewMode.grid,
-                      );
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                  ),
-                  ListTile(
-                    leading: AppIcon(
-                      provider.viewMode == settings.ViewMode.list
-                          ? Symbols.radio_button_checked_rounded
-                          : Symbols.radio_button_unchecked_rounded,
-                      fill: 1,
-                    ),
-                    title: Text(t.settings.listView),
-                    subtitle: Text(t.settings.listViewDescription),
-                    onTap: () async {
-                      await settingsProvider.setViewMode(
-                        settings.ViewMode.list,
-                      );
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(t.common.cancel),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    _showOptionSelectionDialog<settings.ViewMode>(
+      title: t.settings.viewMode,
+      options: [
+        _DialogOption(
+          value: settings.ViewMode.grid,
+          title: t.settings.gridView,
+          subtitle: t.settings.gridViewDescription,
+        ),
+        _DialogOption(
+          value: settings.ViewMode.list,
+          title: t.settings.listView,
+          subtitle: t.settings.listViewDescription,
+        ),
+      ],
+      getCurrentValue: (p) => p.viewMode,
+      onSelect: (value, provider) => provider.setViewMode(value),
     );
   }
 }

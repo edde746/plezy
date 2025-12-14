@@ -7,8 +7,14 @@ class EmptyStateWidget extends StatelessWidget {
   /// The message to display
   final String message;
 
+  /// Optional subtitle/description below the message
+  final String? subtitle;
+
   /// Optional icon to display above the message
   final IconData? icon;
+
+  /// Optional size for the icon
+  final double iconSize;
 
   /// Optional callback for action button
   final VoidCallback? onAction;
@@ -19,7 +25,9 @@ class EmptyStateWidget extends StatelessWidget {
   const EmptyStateWidget({
     super.key,
     required this.message,
+    this.subtitle,
     this.icon,
+    this.iconSize = 64,
     this.onAction,
     this.actionLabel,
   });
@@ -28,7 +36,9 @@ class EmptyStateWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return StateMessageWidget(
       message: message,
+      subtitle: subtitle,
       icon: icon,
+      iconSize: iconSize,
       onAction: onAction,
       actionLabel: actionLabel,
       actionIcon: Symbols.add_rounded,

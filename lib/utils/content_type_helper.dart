@@ -1,56 +1,67 @@
+import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
+/// Content type constants used throughout the app
+class ContentTypes {
+  ContentTypes._();
+
+  static const String movie = 'movie';
+  static const String show = 'show';
+  static const String season = 'season';
+  static const String episode = 'episode';
+  static const String artist = 'artist';
+  static const String album = 'album';
+  static const String track = 'track';
+  static const String collection = 'collection';
+  static const String playlist = 'playlist';
+  static const String clip = 'clip';
+
+  static const Set<String> musicTypes = {artist, album, track};
+  static const Set<String> videoTypes = {movie, show, season, episode};
+  static const Set<String> playableTypes = {movie, episode, clip, track};
+}
+
 /// Utility class for content type checking and filtering
 class ContentTypeHelper {
+  ContentTypeHelper._();
+
   /// Checks if the given type is music content (artist, album, or track)
-  ///
-  /// [type] The content type string to check
-  /// Returns true if the type is artist, album, or track (case-insensitive)
-  static bool isMusicContent(String type) {
-    final lowerType = type.toLowerCase();
-    return lowerType == 'artist' ||
-        lowerType == 'album' ||
-        lowerType == 'track';
-  }
+  static bool isMusicContent(String type) =>
+      ContentTypes.musicTypes.contains(type.toLowerCase());
+
+  /// Checks if the given type is video content (movie, show, episode, or season)
+  static bool isVideoContent(String type) =>
+      ContentTypes.videoTypes.contains(type.toLowerCase());
 
   /// Checks if the given library is a music library
-  ///
-  /// [lib] The library object to check (must have a 'type' property)
-  /// Returns true if the library type is 'artist' (case-insensitive)
   static bool isMusicLibrary(dynamic lib) {
     if (lib == null) return false;
     try {
       final type = (lib as dynamic).type as String?;
-      return type?.toLowerCase() == 'artist';
+      return type?.toLowerCase() == ContentTypes.artist;
     } catch (e) {
       return false;
     }
   }
 
-  /// Checks if the given type is video content (movie, show, episode, or season)
-  ///
-  /// [type] The content type string to check
-  /// Returns true if the type is movie, show, episode, or season (case-insensitive)
-  static bool isVideoContent(String type) {
-    final lowerType = type.toLowerCase();
-    return lowerType == 'movie' ||
-        lowerType == 'show' ||
-        lowerType == 'episode' ||
-        lowerType == 'season';
-  }
-
   /// Filters out music content from a list of items
-  ///
-  /// [items] The list of items to filter
-  /// [getType] A function that extracts the type string from each item
-  /// Returns a new list with music content removed
-  ///
-  /// Example:
-  /// ```dart
-  /// final filtered = ContentTypeHelper.filterOutMusic(
-  ///   items,
-  ///   (item) => item.type,
-  /// );
-  /// ```
   static List<T> filterOutMusic<T>(List<T> items, String Function(T) getType) {
     return items.where((item) => !isMusicContent(getType(item))).toList();
+  }
+
+  /// Returns the appropriate icon for a given library type
+  static IconData getLibraryIcon(String type) {
+    switch (type.toLowerCase()) {
+      case ContentTypes.movie:
+        return Symbols.movie_rounded;
+      case ContentTypes.show:
+        return Symbols.tv_rounded;
+      case ContentTypes.artist:
+        return Symbols.music_note_rounded;
+      case 'photo':
+        return Symbols.photo_rounded;
+      default:
+        return Symbols.folder_rounded;
+    }
   }
 }

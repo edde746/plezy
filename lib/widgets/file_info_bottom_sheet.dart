@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../models/plex_file_info.dart';
 import '../i18n/strings.g.dart';
+import 'bottom_sheet_header.dart';
 import 'focusable_bottom_sheet.dart';
 
 class FileInfoBottomSheet extends StatefulWidget {
@@ -54,40 +54,13 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
             child: Column(
               children: [
                 // Header
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      const AppIcon(
-                        Symbols.info_rounded,
-                        fill: 1,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          t.fileInfo.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        focusNode: _initialFocusNode,
-                        icon: const AppIcon(
-                          Symbols.close_rounded,
-                          fill: 1,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
+                BottomSheetHeader(
+                  title: t.fileInfo.title,
+                  icon: Symbols.info_rounded,
+                  iconColor: Colors.white,
+                  titleColor: Colors.white,
+                  closeFocusNode: _initialFocusNode,
                 ),
-                const Divider(color: Colors.grey, height: 1),
                 // Content
                 Expanded(
                   child: ListView(

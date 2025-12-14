@@ -8,23 +8,26 @@ class HiddenLibrariesProvider extends ChangeNotifier {
   late StorageService _storageService;
   Set<String> _hiddenLibraryKeys = {};
   bool _isInitialized = false;
+  Future<void>? _initFuture;
 
-  /// Get an unmodifiable copy of hidden library keys
-  Set<String> get hiddenLibraryKeys {
-    if (!_isInitialized) _initialize();
-    return Set.unmodifiable(_hiddenLibraryKeys);
+  HiddenLibrariesProvider() {
+    // Start initialization eagerly to reduce race conditions
+    _initFuture = _initialize();
   }
+
+  /// Ensures the provider is initialized. Call this before accessing hidden
+  /// libraries in contexts where you need the actual persisted values.
+  Future<void> ensureInitialized() => _initFuture ?? _initialize();
 
   /// Check if the provider has completed initialization
   bool get isInitialized => _isInitialized;
 
-  HiddenLibrariesProvider() {
-    // Don't initialize immediately if lazy-loaded
-    // _initialize() will be called when first accessed
-  }
+  /// Get an unmodifiable copy of hidden library keys
+  Set<String> get hiddenLibraryKeys => Set.unmodifiable(_hiddenLibraryKeys);
 
   /// Initialize the provider by loading hidden libraries from storage
   Future<void> _initialize() async {
+    if (_isInitialized) return;
     _storageService = await StorageService.getInstance();
     _hiddenLibraryKeys = _storageService.getHiddenLibraries();
     _isInitialized = true;
@@ -54,10 +57,8 @@ class HiddenLibrariesProvider extends ChangeNotifier {
   }
 
   /// Check if a specific library is hidden
-  bool isLibraryHidden(String libraryKey) {
-    if (!_isInitialized) _initialize();
-    return _hiddenLibraryKeys.contains(libraryKey);
-  }
+  bool isLibraryHidden(String libraryKey) =>
+      _hiddenLibraryKeys.contains(libraryKey);
 
   /// Refresh hidden libraries from storage
   /// Useful if storage was modified outside the provider

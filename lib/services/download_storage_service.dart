@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import '../models/plex_metadata.dart';
+import '../utils/byte_formatter.dart';
+import '../utils/number_formatter.dart';
 import 'settings_service.dart';
 import 'saf_storage_service.dart';
 
@@ -65,10 +67,12 @@ class DownloadStorageService {
 
   /// Format episode filename base: S{XX}E{XX} - {Title}
   String _formatEpisodeFileName(PlexMetadata episode) {
-    final seasonNum = (episode.parentIndex ?? 0).toString().padLeft(2, '0');
-    final episodeNum = (episode.index ?? 0).toString().padLeft(2, '0');
+    final seCode = NumberFormatter.formatSeasonEpisode(
+      episode.parentIndex,
+      episode.index,
+    );
     final episodeName = _sanitizeFileName(episode.title);
-    return 'S${seasonNum}E$episodeNum - $episodeName';
+    return '$seCode - $episodeName';
   }
 
   /// Check if using custom download path
@@ -346,7 +350,7 @@ class DownloadStorageService {
     int? showYear,
   }) async {
     final showDir = await getShowDirectory(metadata, showYear: showYear);
-    final seasonNum = (metadata.parentIndex ?? 0).toString().padLeft(2, '0');
+    final seasonNum = NumberFormatter.formatSeason(metadata.parentIndex);
     return _ensureDirectoryExists(
       Directory(path.join(showDir.path, 'Season $seasonNum')),
     );
@@ -526,14 +530,7 @@ class DownloadStorageService {
   }
 
   /// Format bytes to human readable string
-  static String formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-  }
+  static String formatBytes(int bytes) => ByteFormatter.formatBytes(bytes);
 
   // ============================================================
   // SAF (Storage Access Framework) SUPPORT FOR ANDROID
@@ -644,7 +641,7 @@ class DownloadStorageService {
     int? showYear,
   }) {
     final showFolder = _getShowFolderName(episode, showYear: showYear);
-    final seasonNum = (episode.parentIndex ?? 0).toString().padLeft(2, '0');
+    final seasonNum = NumberFormatter.formatSeason(episode.parentIndex);
     return ['TV Shows', showFolder, 'Season $seasonNum'];
   }
 

@@ -7,7 +7,6 @@ import '../services/plex_client.dart';
 import '../services/play_queue_launcher.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
-import '../providers/multi_server_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../providers/offline_watch_provider.dart';
@@ -15,9 +14,12 @@ import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/dialogs.dart';
+import '../utils/focus_utils.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
+import '../theme/theme_helper.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/focusable_bottom_sheet.dart';
 import '../widgets/focusable_list_tile.dart';
@@ -95,31 +97,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _showContextMenu(menuContext);
   }
 
-  /// Get the correct PlexClient for this item's server
-  PlexClient _getClientForItem() {
-    String? serverId;
-
-    // Get serverId from the item (could be PlexMetadata or PlexPlaylist)
-    if (widget.item is PlexMetadata) {
-      serverId = (widget.item as PlexMetadata).serverId;
-    } else if (widget.item is PlexPlaylist) {
-      serverId = (widget.item as PlexPlaylist).serverId;
-    }
-
-    // If serverId is null, fall back to first available server
-    if (serverId == null) {
-      final multiServerProvider = Provider.of<MultiServerProvider>(
-        context,
-        listen: false,
-      );
-      if (!multiServerProvider.hasConnectedServers) {
-        throw Exception('No servers available');
-      }
-      serverId = multiServerProvider.onlineServerIds.first;
-    }
-
-    return context.getClientForServer(serverId);
+  /// Get the serverId from the item (PlexMetadata or PlexPlaylist)
+  String? get _itemServerId {
+    if (widget.item is PlexMetadata) return (widget.item as PlexMetadata).serverId;
+    if (widget.item is PlexPlaylist) return (widget.item as PlexPlaylist).serverId;
+    return null;
   }
+
+  /// Get the correct PlexClient for this item's server
+  PlexClient _getClientForItem() => context.getClientWithFallback(_itemServerId);
 
   void _handleTap() {
     if (_isContextMenuOpen) return;
@@ -729,9 +715,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (result == '_create_new') {
         // Create new playlist flow
-        final playlistName = await showDialog<String>(
-          context: context,
-          builder: (context) => _CreatePlaylistDialog(),
+        final playlistName = await showTextInputDialog(
+          context,
+          title: t.playlists.create,
+          labelText: t.playlists.playlistName,
+          hintText: t.playlists.enterPlaylistName,
         );
 
         if (playlistName == null || playlistName.isEmpty || !context.mounted) {
@@ -893,9 +881,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (result == '_create_new') {
         // Create new collection flow
-        final collectionName = await showDialog<String>(
-          context: context,
-          builder: (context) => _CreateCollectionDialog(),
+        final collectionName = await showTextInputDialog(
+          context,
+          title: t.collections.createNewCollection,
+          labelText: t.collections.collectionName,
+          hintText: t.collections.enterCollectionName,
         );
 
         if (collectionName == null ||
@@ -1020,28 +1010,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
 
     // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.collections.removeFromCollection),
-        content: Text(
-          t.collections.removeFromCollectionConfirm(title: metadata.title),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(t.common.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(t.common.delete),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: t.collections.removeFromCollection,
+      message: t.collections.removeFromCollectionConfirm(title: metadata.title),
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
 
     try {
       appLogger.d(
@@ -1135,32 +1110,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         : t.playlists.playlist;
 
     // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          isCollection ? t.collections.deleteCollection : t.playlists.delete,
-        ),
-        content: Text(
-          isCollection
-              ? t.collections.deleteConfirm(title: itemTitle)
-              : t.playlists.deleteMessage(name: itemTitle),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(t.common.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(t.common.delete),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: isCollection ? t.collections.deleteCollection : t.playlists.delete,
+      message: isCollection
+          ? t.collections.deleteConfirm(title: itemTitle)
+          : t.playlists.deleteMessage(name: itemTitle),
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
 
     try {
       bool success = false;
@@ -1247,26 +1205,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
 
     // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.downloads.deleteDownload),
-        content: Text(t.downloads.deleteConfirm(title: metadata.title)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(t.common.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(t.common.delete),
-          ),
-        ],
-      ),
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: t.downloads.deleteDownload,
+      message: t.downloads.deleteConfirm(title: metadata.title),
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
 
     try {
       // Use smart deletion handler (shows progress only if >500ms)
@@ -1361,56 +1306,6 @@ class _PlaylistSelectionDialog extends StatelessWidget {
   }
 }
 
-/// Dialog to create a new playlist
-class _CreatePlaylistDialog extends StatefulWidget {
-  @override
-  State<_CreatePlaylistDialog> createState() => _CreatePlaylistDialogState();
-}
-
-class _CreatePlaylistDialogState extends State<_CreatePlaylistDialog> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(t.playlists.create),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        decoration: InputDecoration(
-          labelText: t.playlists.playlistName,
-          hintText: t.playlists.enterPlaylistName,
-        ),
-        onSubmitted: (value) {
-          if (value.isNotEmpty) {
-            Navigator.pop(context, value);
-          }
-        },
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(t.common.cancel),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_controller.text.isNotEmpty) {
-              Navigator.pop(context, _controller.text);
-            }
-          },
-          child: Text(t.common.save),
-        ),
-      ],
-    );
-  }
-}
-
 /// Dialog to select a collection or create a new one
 class _CollectionSelectionDialog extends StatelessWidget {
   final List<PlexMetadata> collections;
@@ -1452,57 +1347,6 @@ class _CollectionSelectionDialog extends StatelessWidget {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(t.common.cancel),
-        ),
-      ],
-    );
-  }
-}
-
-/// Dialog to create a new collection
-class _CreateCollectionDialog extends StatefulWidget {
-  @override
-  State<_CreateCollectionDialog> createState() =>
-      _CreateCollectionDialogState();
-}
-
-class _CreateCollectionDialogState extends State<_CreateCollectionDialog> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(t.collections.createNewCollection),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        decoration: InputDecoration(
-          labelText: t.collections.collectionName,
-          hintText: t.collections.enterCollectionName,
-        ),
-        onSubmitted: (value) {
-          if (value.isNotEmpty) {
-            Navigator.pop(context, value);
-          }
-        },
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(t.common.cancel),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_controller.text.isNotEmpty) {
-              Navigator.pop(context, _controller.text);
-            }
-          },
-          child: Text(t.common.save),
         ),
       ],
     );
@@ -1609,11 +1453,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
     super.initState();
     _initialFocusNode = FocusNode(debugLabel: 'PopupMenuInitialFocus');
     if (widget.focusFirstItem) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _initialFocusNode.requestFocus();
-        }
-      });
+      FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
     }
   }
 
@@ -1659,7 +1499,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
           top: top,
           child: Material(
             elevation: 8,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
             clipBehavior: Clip.antiAlias,
             child: ConstrainedBox(
               constraints: const BoxConstraints(

@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
+import '../theme/theme_helper.dart';
 import '../utils/layout_constants.dart';
 import '../focus/locked_hub_controller.dart';
 import '../models/plex_hub.dart';
@@ -165,7 +166,7 @@ class HubSectionState extends State<HubSection> {
   /// Handle ALL key events at the hub level
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     // Handle key down and repeat events
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 
@@ -270,7 +271,7 @@ class HubSectionState extends State<HubSection> {
               onTap: widget.hub.more
                   ? () => _navigateToHubDetail(context)
                   : null,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Row(

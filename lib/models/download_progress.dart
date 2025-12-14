@@ -1,3 +1,4 @@
+import '../utils/byte_formatter.dart';
 import 'download_status.dart';
 
 class DownloadProgress {
@@ -28,23 +29,9 @@ class DownloadProgress {
 
   double get progressPercent => progress / 100.0;
 
-  String get speedFormatted {
-    if (speed < 1024) return '${speed.toStringAsFixed(0)} B/s';
-    if (speed < 1024 * 1024) return '${(speed / 1024).toStringAsFixed(1)} KB/s';
-    return '${(speed / (1024 * 1024)).toStringAsFixed(1)} MB/s';
-  }
-
-  String get downloadedFormatted => _formatBytes(downloadedBytes);
-  String get totalFormatted => _formatBytes(totalBytes);
-
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-  }
+  String get speedFormatted => ByteFormatter.formatSpeed(speed);
+  String get downloadedFormatted => ByteFormatter.formatBytes(downloadedBytes);
+  String get totalFormatted => ByteFormatter.formatBytes(totalBytes);
 
   Duration? get estimatedTimeRemaining {
     if (speed <= 0 || totalBytes <= 0) return null;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
+import 'package:plezy/models/plex_metadata_extensions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/download_status.dart';
 import '../models/download_progress.dart';
@@ -12,6 +13,7 @@ import '../services/download_storage_service.dart';
 import '../services/plex_api_cache.dart';
 import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
+import '../utils/plex_cache_parser.dart';
 
 /// Holds Plex thumb path reference for downloaded artwork.
 /// The actual file path is computed from the hash of serverId + thumb path.
@@ -104,18 +106,16 @@ class DownloadProvider extends ChangeNotifier {
           item.serverId,
           '/library/metadata/${item.ratingKey}',
         );
-        if (cached != null) {
-          final metadataList = cached['MediaContainer']?['Metadata'] as List?;
-          if (metadataList != null && metadataList.isNotEmpty) {
-            final metadata = PlexMetadata.fromJson(
-              metadataList[0],
-            ).copyWith(serverId: item.serverId);
-            _metadata[item.globalKey] = metadata;
+        final firstMetadata = PlexCacheParser.extractFirstMetadata(cached);
+        if (firstMetadata != null) {
+          final metadata = PlexMetadata.fromJson(
+            firstMetadata,
+          ).copyWith(serverId: item.serverId);
+          _metadata[item.globalKey] = metadata;
 
-            // For episodes, also load parent (show and season) metadata
-            if (metadata.type == 'episode') {
-              await _loadParentMetadataFromCache(metadata, apiCache);
-            }
+          // For episodes, also load parent (show and season) metadata
+          if (metadata.isEpisode) {
+            await _loadParentMetadataFromCache(metadata, apiCache);
           }
         }
       }
@@ -186,19 +186,17 @@ class DownloadProvider extends ChangeNotifier {
           serverId,
           '/library/metadata/$showRatingKey',
         );
-        if (cached != null) {
-          final metadataList = cached['MediaContainer']?['Metadata'] as List?;
-          if (metadataList != null && metadataList.isNotEmpty) {
-            final showMetadata = PlexMetadata.fromJson(
-              metadataList[0],
-            ).copyWith(serverId: serverId);
-            _metadata[showGlobalKey] = showMetadata;
-            // Store artwork reference for offline display
-            if (showMetadata.thumb != null) {
-              _artworkPaths[showGlobalKey] = DownloadedArtwork(
-                thumbPath: showMetadata.thumb,
-              );
-            }
+        final showJson = PlexCacheParser.extractFirstMetadata(cached);
+        if (showJson != null) {
+          final showMetadata = PlexMetadata.fromJson(
+            showJson,
+          ).copyWith(serverId: serverId);
+          _metadata[showGlobalKey] = showMetadata;
+          // Store artwork reference for offline display
+          if (showMetadata.thumb != null) {
+            _artworkPaths[showGlobalKey] = DownloadedArtwork(
+              thumbPath: showMetadata.thumb,
+            );
           }
         }
       }
@@ -213,19 +211,17 @@ class DownloadProvider extends ChangeNotifier {
           serverId,
           '/library/metadata/$seasonRatingKey',
         );
-        if (cached != null) {
-          final metadataList = cached['MediaContainer']?['Metadata'] as List?;
-          if (metadataList != null && metadataList.isNotEmpty) {
-            final seasonMetadata = PlexMetadata.fromJson(
-              metadataList[0],
-            ).copyWith(serverId: serverId);
-            _metadata[seasonGlobalKey] = seasonMetadata;
-            // Store artwork reference for offline display
-            if (seasonMetadata.thumb != null) {
-              _artworkPaths[seasonGlobalKey] = DownloadedArtwork(
-                thumbPath: seasonMetadata.thumb,
-              );
-            }
+        final seasonJson = PlexCacheParser.extractFirstMetadata(cached);
+        if (seasonJson != null) {
+          final seasonMetadata = PlexMetadata.fromJson(
+            seasonJson,
+          ).copyWith(serverId: serverId);
+          _metadata[seasonGlobalKey] = seasonMetadata;
+          // Store artwork reference for offline display
+          if (seasonMetadata.thumb != null) {
+            _artworkPaths[seasonGlobalKey] = DownloadedArtwork(
+              thumbPath: seasonMetadata.thumb,
+            );
           }
         }
       }
@@ -408,118 +404,11 @@ class DownloadProvider extends ChangeNotifier {
     String serverId,
     String showRatingKey,
   ) {
-    final globalKey = '$serverId:$showRatingKey';
-    final episodes = _getEpisodeDownloadsForShow(showRatingKey);
-
-    // DIAGNOSTIC: Check all sources of episode count
-    final showMeta = _metadata[globalKey];
-    final metadataLeafCount = showMeta?.leafCount;
-    final storedCount = _totalEpisodeCounts[globalKey];
-    final downloadedCount = episodes.length;
-
-    appLogger.d(
-      '📊 Episode count sources for show $showRatingKey:\n'
-      '  - Metadata leafCount: $metadataLeafCount\n'
-      '  - Stored count: $storedCount\n'
-      '  - Downloaded episodes: $downloadedCount\n'
-      '  - Show metadata exists: ${showMeta != null}\n'
-      '  - Show type: ${showMeta?.type}\n'
-      '  - Show title: ${showMeta?.title}',
-    );
-
-    // Get total episode count - FIXED: Use metadata.leafCount as primary source
-    int totalEpisodes;
-    String countSource;
-
-    if (metadataLeafCount != null && metadataLeafCount > 0) {
-      totalEpisodes = metadataLeafCount;
-      countSource = 'metadata.leafCount';
-    } else if (storedCount != null && storedCount > 0) {
-      totalEpisodes = storedCount;
-      countSource = 'stored count (SharedPreferences)';
-    } else {
-      totalEpisodes = downloadedCount;
-      countSource = 'downloaded episodes (fallback)';
-    }
-
-    appLogger.d(
-      '✅ Using totalEpisodes=$totalEpisodes from [$countSource] for show $showRatingKey',
-    );
-
-    // If we have stored count but no downloads, check if it's a valid partial state
-    if (totalEpisodes == 0 || (episodes.isEmpty && totalEpisodes > 0)) {
-      // No episodes downloaded yet, but we have a count stored
-      // This means user hasn't downloaded anything or deleted all episodes
-      appLogger.d(
-        '⚠️  No valid downloads for show $showRatingKey, returning null',
-      );
-      return null;
-    }
-
-    // Calculate aggregate statistics
-    int completedCount = 0;
-    int downloadingCount = 0;
-    int queuedCount = 0;
-    int failedCount = 0;
-
-    for (final ep in episodes) {
-      switch (ep.status) {
-        case DownloadStatus.completed:
-          completedCount++;
-          break;
-        case DownloadStatus.downloading:
-          downloadingCount++;
-          break;
-        case DownloadStatus.queued:
-          queuedCount++;
-          break;
-        case DownloadStatus.failed:
-          failedCount++;
-          break;
-        default:
-          break;
-      }
-    }
-
-    // Determine overall status
-    final DownloadStatus overallStatus;
-    if (completedCount == totalEpisodes) {
-      // All episodes fully downloaded
-      overallStatus = DownloadStatus.completed;
-    } else if (completedCount > 0 &&
-        downloadingCount == 0 &&
-        queuedCount == 0 &&
-        completedCount < totalEpisodes) {
-      // Some episodes downloaded, but not all, and nothing actively downloading
-      overallStatus = DownloadStatus.partial;
-    } else if (downloadingCount > 0) {
-      overallStatus = DownloadStatus.downloading;
-    } else if (queuedCount > 0) {
-      overallStatus = DownloadStatus.queued;
-    } else if (failedCount > 0) {
-      overallStatus = DownloadStatus.failed;
-    } else {
-      return null;
-    }
-
-    // Calculate overall progress percentage based on TOTAL episodes
-    final int overallProgress = totalEpisodes > 0
-        ? ((completedCount * 100) / totalEpisodes).round()
-        : 0;
-
-    appLogger.d(
-      'Aggregate progress for show $showRatingKey: $overallProgress% '
-      '($completedCount completed, $downloadingCount downloading, '
-      '$queuedCount queued of $totalEpisodes total) - Status: $overallStatus',
-    );
-
-    return DownloadProgress(
-      globalKey: globalKey,
-      status: overallStatus,
-      progress: overallProgress,
-      downloadedBytes: 0, // Not tracked at show level
-      totalBytes: 0,
-      currentFile: '$completedCount/$totalEpisodes episodes',
+    return _calculateAggregateProgress(
+      serverId: serverId,
+      ratingKey: showRatingKey,
+      episodes: _getEpisodeDownloadsForShow(showRatingKey),
+      entityType: 'show',
     );
   }
 
@@ -529,26 +418,40 @@ class DownloadProvider extends ChangeNotifier {
     String serverId,
     String seasonRatingKey,
   ) {
-    final globalKey = '$serverId:$seasonRatingKey';
-    final episodes = _getEpisodeDownloadsForSeason(seasonRatingKey);
+    return _calculateAggregateProgress(
+      serverId: serverId,
+      ratingKey: seasonRatingKey,
+      episodes: _getEpisodeDownloadsForSeason(seasonRatingKey),
+      entityType: 'season',
+    );
+  }
+
+  /// Shared helper to calculate aggregate download progress for shows/seasons
+  DownloadProgress? _calculateAggregateProgress({
+    required String serverId,
+    required String ratingKey,
+    required List<DownloadProgress> episodes,
+    required String entityType,
+  }) {
+    final globalKey = '$serverId:$ratingKey';
 
     // DIAGNOSTIC: Check all sources of episode count
-    final seasonMeta = _metadata[globalKey];
-    final metadataLeafCount = seasonMeta?.leafCount;
+    final meta = _metadata[globalKey];
+    final metadataLeafCount = meta?.leafCount;
     final storedCount = _totalEpisodeCounts[globalKey];
     final downloadedCount = episodes.length;
 
     appLogger.d(
-      '📊 Episode count sources for season $seasonRatingKey:\n'
+      '📊 Episode count sources for $entityType $ratingKey:\n'
       '  - Metadata leafCount: $metadataLeafCount\n'
       '  - Stored count: $storedCount\n'
       '  - Downloaded episodes: $downloadedCount\n'
-      '  - Season metadata exists: ${seasonMeta != null}\n'
-      '  - Season type: ${seasonMeta?.type}\n'
-      '  - Season title: ${seasonMeta?.title}',
+      '  - Metadata exists: ${meta != null}\n'
+      '  - Type: ${meta?.type}\n'
+      '  - Title: ${meta?.title}',
     );
 
-    // Get total episode count - FIXED: Use metadata.leafCount as primary source
+    // Get total episode count - Use metadata.leafCount as primary source
     int totalEpisodes;
     String countSource;
 
@@ -564,13 +467,13 @@ class DownloadProvider extends ChangeNotifier {
     }
 
     appLogger.d(
-      '✅ Using totalEpisodes=$totalEpisodes from [$countSource] for season $seasonRatingKey',
+      '✅ Using totalEpisodes=$totalEpisodes from [$countSource] for $entityType $ratingKey',
     );
 
     // If we have stored count but no downloads, check if it's a valid partial state
     if (totalEpisodes == 0 || (episodes.isEmpty && totalEpisodes > 0)) {
       appLogger.d(
-        '⚠️  No valid downloads for season $seasonRatingKey, returning null',
+        '⚠️  No valid downloads for $entityType $ratingKey, returning null',
       );
       return null;
     }
@@ -585,16 +488,12 @@ class DownloadProvider extends ChangeNotifier {
       switch (ep.status) {
         case DownloadStatus.completed:
           completedCount++;
-          break;
         case DownloadStatus.downloading:
           downloadingCount++;
-          break;
         case DownloadStatus.queued:
           queuedCount++;
-          break;
         case DownloadStatus.failed:
           failedCount++;
-          break;
         default:
           break;
       }
@@ -603,13 +502,11 @@ class DownloadProvider extends ChangeNotifier {
     // Determine overall status
     final DownloadStatus overallStatus;
     if (completedCount == totalEpisodes) {
-      // All episodes fully downloaded
       overallStatus = DownloadStatus.completed;
     } else if (completedCount > 0 &&
         downloadingCount == 0 &&
         queuedCount == 0 &&
         completedCount < totalEpisodes) {
-      // Some episodes downloaded, but not all, and nothing actively downloading
       overallStatus = DownloadStatus.partial;
     } else if (downloadingCount > 0) {
       overallStatus = DownloadStatus.downloading;
@@ -627,7 +524,7 @@ class DownloadProvider extends ChangeNotifier {
         : 0;
 
     appLogger.d(
-      'Aggregate progress for season $seasonRatingKey: $overallProgress% '
+      'Aggregate progress for $entityType $ratingKey: $overallProgress% '
       '($completedCount completed, $downloadingCount downloading, '
       '$queuedCount queued of $totalEpisodes total) - Status: $overallStatus',
     );
@@ -1248,13 +1145,11 @@ class DownloadProvider extends ChangeNotifier {
           '/library/metadata/$ratingKey',
         );
 
-        if (cached != null) {
-          final metadataList = cached['MediaContainer']?['Metadata'] as List?;
-          if (metadataList != null && metadataList.isNotEmpty) {
-            final metadata = PlexMetadata.fromJson(metadataList.first);
-            _metadata[globalKey] = metadata.copyWith(serverId: serverId);
-            updatedCount++;
-          }
+        final firstMetadata = PlexCacheParser.extractFirstMetadata(cached);
+        if (firstMetadata != null) {
+          final metadata = PlexMetadata.fromJson(firstMetadata);
+          _metadata[globalKey] = metadata.copyWith(serverId: serverId);
+          updatedCount++;
         }
       } catch (e) {
         appLogger.d('Failed to refresh metadata for $globalKey: $e');

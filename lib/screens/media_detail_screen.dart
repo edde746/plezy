@@ -30,6 +30,7 @@ import '../utils/desktop_window_padding.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/media_card.dart';
 import '../widgets/media_context_menu.dart';
+import '../widgets/placeholder_container.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -146,18 +147,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                   appLogger.d(
                     'Playing on deck episode: ${_onDeckEpisode!.title}',
                   );
-                  await navigateToVideoPlayer(
+                  await navigateToVideoPlayerWithRefresh(
                     context,
                     metadata: _onDeckEpisode!,
                     isOffline: widget.isOffline,
+                    onRefresh: _loadFullMetadata,
                   );
-                  appLogger.d(
-                    'Returned from playback, refreshing metadata',
-                  );
-                  // Refresh metadata when returning from video player
-                  if (!widget.isOffline) {
-                    _loadFullMetadata();
-                  }
                 } else {
                   // No on deck episode, fetch first episode of first season
                   await _playFirstEpisode();
@@ -165,18 +160,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
               } else {
                 appLogger.d('Playing: ${metadata.title}');
                 // For movies or episodes, play directly
-                await navigateToVideoPlayer(
+                await navigateToVideoPlayerWithRefresh(
                   context,
                   metadata: metadata,
                   isOffline: widget.isOffline,
+                  onRefresh: _loadFullMetadata,
                 );
-                appLogger.d(
-                  'Returned from playback, refreshing metadata',
-                );
-                // Refresh metadata when returning from video player
-                if (!widget.isOffline) {
-                  _loadFullMetadata();
-                }
               }
             },
             icon: AppIcon(
@@ -1115,16 +1104,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       );
       if (mounted) {
         appLogger.d('Playing first episode: ${episodeWithServerId.title}');
-        await navigateToVideoPlayer(
+        await navigateToVideoPlayerWithRefresh(
           context,
           metadata: episodeWithServerId,
           isOffline: widget.isOffline,
+          onRefresh: _loadFullMetadata,
         );
-        appLogger.d('Returned from playback, refreshing metadata');
-        // Refresh metadata when returning from video player (skip if offline)
-        if (!widget.isOffline) {
-          _loadFullMetadata();
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -1298,19 +1283,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                     fit: BoxFit.cover,
                                     errorBuilder:
                                         (context, error, stackTrace) =>
-                                            Container(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .surfaceContainerHighest,
-                                            ),
+                                            const PlaceholderContainer(),
                                   );
                                 }
                                 // Offline but no local file - show placeholder
-                                return Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                );
+                                return const PlaceholderContainer();
                               }
 
                               // Online - use network image
@@ -1330,24 +1307,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                               return CachedNetworkImage(
                                 imageUrl: imageUrl,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                ),
-                                errorWidget: (context, url, error) => Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                ),
+                                placeholder: (context, url) =>
+                                    const PlaceholderContainer(),
+                                errorWidget: (context, url, error) =>
+                                    const PlaceholderContainer(),
                               );
                             },
                           )
-                        : Container(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                          ),
+                        : const PlaceholderContainer(),
                   ),
 
                   // Gradient overlay
@@ -1631,7 +1598,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(
+                                        tokens(context).radiusSm,
+                                      ),
                                       child: actor.thumb != null
                                           ? CachedNetworkImage(
                                               imageUrl: actor.thumb!,

@@ -304,8 +304,8 @@ class _FocusableWrapperState extends State<FocusableWrapper>
       }
     }
 
-    // Ignore key repeat events for other keys
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+    // Ignore key up events for other keys
+    if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 

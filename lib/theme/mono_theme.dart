@@ -145,6 +145,7 @@ ThemeData monoTheme({required bool dark}) {
         space: 12,
         fast: const Duration(milliseconds: 120),
         normal: const Duration(milliseconds: 200),
+        slow: const Duration(milliseconds: 300),
         bg: c.bg,
         surface: c.surface,
         outline: c.outline,

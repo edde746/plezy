@@ -8,6 +8,7 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
   final double space;
   final Duration fast;
   final Duration normal;
+  final Duration slow;
   final Color bg;
   final Color surface;
   final Color outline;
@@ -21,6 +22,7 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     required this.space,
     required this.fast,
     required this.normal,
+    required this.slow,
     required this.bg,
     required this.surface,
     required this.outline,
@@ -36,6 +38,7 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     double? space,
     Duration? fast,
     Duration? normal,
+    Duration? slow,
     Color? bg,
     Color? surface,
     Color? outline,
@@ -48,6 +51,7 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     space: space ?? this.space,
     fast: fast ?? this.fast,
     normal: normal ?? this.normal,
+    slow: slow ?? this.slow,
     bg: bg ?? this.bg,
     surface: surface ?? this.surface,
     outline: outline ?? this.outline,
@@ -75,6 +79,13 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
         milliseconds: lerpDouble(
           normal.inMilliseconds.toDouble(),
           other.normal.inMilliseconds.toDouble(),
+          t,
+        )!.round(),
+      ),
+      slow: Duration(
+        milliseconds: lerpDouble(
+          slow.inMilliseconds.toDouble(),
+          other.slow.inMilliseconds.toDouble(),
           t,
         )!.round(),
       ),

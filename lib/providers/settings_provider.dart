@@ -8,11 +8,16 @@ class SettingsProvider extends ChangeNotifier {
   bool _useSeasonPoster = false;
   bool _showHeroSection = true;
   bool _isInitialized = false;
+  Future<void>? _initFuture;
 
   SettingsProvider() {
-    // Don't initialize immediately if lazy-loaded
-    // _initializeSettings() will be called when first accessed
+    // Start initialization eagerly to reduce race conditions
+    _initFuture = _initializeSettings();
   }
+
+  /// Ensures the provider is initialized. Call this before accessing settings
+  /// in contexts where you need the actual persisted values.
+  Future<void> ensureInitialized() => _initFuture ?? _initializeSettings();
 
   Future<void> _initializeSettings() async {
     if (_isInitialized) return;
@@ -26,25 +31,16 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  LibraryDensity get libraryDensity {
-    if (!_isInitialized) _initializeSettings();
-    return _libraryDensity;
-  }
+  /// Whether the provider has completed initialization
+  bool get isInitialized => _isInitialized;
 
-  ViewMode get viewMode {
-    if (!_isInitialized) _initializeSettings();
-    return _viewMode;
-  }
+  LibraryDensity get libraryDensity => _libraryDensity;
 
-  bool get useSeasonPoster {
-    if (!_isInitialized) _initializeSettings();
-    return _useSeasonPoster;
-  }
+  ViewMode get viewMode => _viewMode;
 
-  bool get showHeroSection {
-    if (!_isInitialized) _initializeSettings();
-    return _showHeroSection;
-  }
+  bool get useSeasonPoster => _useSeasonPoster;
+
+  bool get showHeroSection => _showHeroSection;
 
   Future<void> setLibraryDensity(LibraryDensity density) async {
     if (!_isInitialized) await _initializeSettings();

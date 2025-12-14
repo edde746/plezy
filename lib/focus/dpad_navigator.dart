@@ -1,5 +1,12 @@
 import 'package:flutter/services.dart';
 
+/// Extension on KeyEvent for common event type checks.
+extension KeyEventActionable on KeyEvent {
+  /// Whether this event should trigger an action (KeyDownEvent or KeyRepeatEvent).
+  /// Use this to filter out KeyUpEvents early in key handlers.
+  bool get isActionable => this is KeyDownEvent || this is KeyRepeatEvent;
+}
+
 /// Shared sets for keyboard key categories.
 final _dpadDirectionKeys = {
   LogicalKeyboardKey.arrowUp,

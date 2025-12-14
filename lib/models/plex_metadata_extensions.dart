@@ -1,17 +1,20 @@
+import '../utils/content_type_helper.dart';
 import 'plex_metadata.dart';
 
 /// Extension on PlexMetadata for type checking convenience methods
 extension PlexMetadataType on PlexMetadata {
-  bool get isShow => type.toLowerCase() == 'show';
-  bool get isMovie => type.toLowerCase() == 'movie';
-  bool get isSeason => type.toLowerCase() == 'season';
-  bool get isEpisode => type.toLowerCase() == 'episode';
-  bool get isArtist => type.toLowerCase() == 'artist';
-  bool get isAlbum => type.toLowerCase() == 'album';
-  bool get isTrack => type.toLowerCase() == 'track';
-  bool get isCollection => type.toLowerCase() == 'collection';
-  bool get isPlaylist => type.toLowerCase() == 'playlist';
-  bool get isClip => type.toLowerCase() == 'clip';
-  bool get isMusicContent => isArtist || isAlbum || isTrack;
-  bool get isVideoContent => isShow || isMovie || isSeason || isEpisode;
+  String get _lowerType => type.toLowerCase();
+
+  bool get isShow => _lowerType == ContentTypes.show;
+  bool get isMovie => _lowerType == ContentTypes.movie;
+  bool get isSeason => _lowerType == ContentTypes.season;
+  bool get isEpisode => _lowerType == ContentTypes.episode;
+  bool get isArtist => _lowerType == ContentTypes.artist;
+  bool get isAlbum => _lowerType == ContentTypes.album;
+  bool get isTrack => _lowerType == ContentTypes.track;
+  bool get isCollection => _lowerType == ContentTypes.collection;
+  bool get isPlaylist => _lowerType == ContentTypes.playlist;
+  bool get isClip => _lowerType == ContentTypes.clip;
+  bool get isMusicContent => ContentTypes.musicTypes.contains(_lowerType);
+  bool get isVideoContent => ContentTypes.videoTypes.contains(_lowerType);
 }

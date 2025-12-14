@@ -1,3 +1,5 @@
+import '../utils/byte_formatter.dart';
+
 class PlexFileInfo {
   // Media level properties
   final String? container;
@@ -61,20 +63,7 @@ class PlexFileInfo {
   /// Format file size in human-readable format (GB, MB, KB, bytes)
   String get fileSizeFormatted {
     if (fileSize == null) return 'Unknown';
-
-    const kb = 1024;
-    const mb = kb * 1024;
-    const gb = mb * 1024;
-
-    if (fileSize! >= gb) {
-      return '${(fileSize! / gb).toStringAsFixed(2)} GB';
-    } else if (fileSize! >= mb) {
-      return '${(fileSize! / mb).toStringAsFixed(2)} MB';
-    } else if (fileSize! >= kb) {
-      return '${(fileSize! / kb).toStringAsFixed(2)} KB';
-    } else {
-      return '$fileSize bytes';
-    }
+    return ByteFormatter.formatBytes(fileSize!, decimals: 2);
   }
 
   /// Format duration in HH:MM:SS or MM:SS format
@@ -96,17 +85,7 @@ class PlexFileInfo {
   /// Format bitrate in Mbps or Kbps
   String get bitrateFormatted {
     if (bitrate == null) return 'Unknown';
-
-    const kbps = 1000;
-    const mbps = kbps * 1000;
-
-    if (bitrate! >= mbps) {
-      return '${(bitrate! / mbps).toStringAsFixed(2)} Mbps';
-    } else if (bitrate! >= kbps) {
-      return '${(bitrate! / kbps).toStringAsFixed(2)} Kbps';
-    } else {
-      return '$bitrate bps';
-    }
+    return ByteFormatter.formatBitrateBps(bitrate!);
   }
 
   /// Format resolution as widthxheight
