@@ -49,11 +49,11 @@ body:
       description: Which platform(s) should this feature target?
       multiple: true
       options:
-        - Android
         - iOS
-        - Web
-        - macOS
+        - Android
         - Windows
+        - macOS
+        - Android TV
         - Linux
         - All platforms
 
