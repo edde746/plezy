@@ -344,8 +344,8 @@ class _SetupScreenState extends State<SetupScreen> {
     // Migrate from single-server to multi-server if needed
     await registry.migrateFromSingleServer();
 
-    // Load enabled servers
-    final servers = await registry.getEnabledServers();
+    // Load all configured servers
+    final servers = await registry.getServers();
 
     if (servers.isEmpty) {
       // No servers configured - show auth screen
@@ -360,7 +360,7 @@ class _SetupScreenState extends State<SetupScreen> {
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
 
     try {
-      appLogger.i('Connecting to ${servers.length} enabled servers...');
+      appLogger.i('Connecting to ${servers.length} servers...');
 
       // Get or generate client identifier
       final clientId = storage.getClientIdentifier();

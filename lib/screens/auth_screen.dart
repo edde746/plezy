@@ -66,13 +66,9 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
 
-      // Save all servers to registry and enable them
+      // Save all servers to registry (all servers are considered enabled)
       final registry = ServerRegistry(storage);
       await registry.saveServers(servers);
-
-      // Enable all servers
-      final serverIds = servers.map((s) => s.clientIdentifier).toSet();
-      await registry.saveEnabledServerIds(serverIds);
 
       // Connect to all servers
       if (!mounted) return;

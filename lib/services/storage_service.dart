@@ -19,7 +19,6 @@ class StorageService extends BaseSharedPreferencesService {
   static const String _keyHomeUsersCacheExpiry = 'home_users_cache_expiry';
   static const String _keyHiddenLibraries = 'hidden_libraries';
   static const String _keyServersList = 'servers_list';
-  static const String _keyEnabledServers = 'enabled_servers';
   static const String _keyServerOrder = 'server_order';
 
   // Key prefixes for per-id storage
@@ -329,31 +328,15 @@ class StorageService extends BaseSharedPreferencesService {
     await prefs.setString(_keyServersList, serversJson);
   }
 
-  /// Get enabled servers as JSON string
-  String? getEnabledServersJson() {
-    return prefs.getString(_keyEnabledServers);
-  }
-
-  /// Save enabled servers as JSON string
-  Future<void> saveEnabledServersJson(String enabledJson) async {
-    await prefs.setString(_keyEnabledServers, enabledJson);
-  }
-
   /// Clear servers list
   Future<void> clearServersList() async {
     await prefs.remove(_keyServersList);
-  }
-
-  /// Clear enabled servers
-  Future<void> clearEnabledServers() async {
-    await prefs.remove(_keyEnabledServers);
   }
 
   /// Clear all multi-server data
   Future<void> clearMultiServerData() async {
     await Future.wait([
       clearServersList(),
-      clearEnabledServers(),
       clearServerOrder(),
       _clearKeysWithPrefix(_prefixServerEndpoint),
     ]);

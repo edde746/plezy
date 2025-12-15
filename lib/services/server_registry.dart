@@ -5,7 +5,7 @@ import 'plex_auth_service.dart';
 import 'storage_service.dart';
 
 /// Centralized server configuration registry
-/// Manages which servers are available, enabled/disabled, and their configurations
+/// Manages which servers are available and their configurations
 class ServerRegistry {
   final StorageService _storage;
 
@@ -37,71 +37,6 @@ class ServerRegistry {
       appLogger.e('Failed to save servers to storage', error: e, stackTrace: stackTrace);
       rethrow;
     }
-  }
-
-  /// Get enabled server IDs
-  Future<Set<String>> getEnabledServerIds() async {
-    try {
-      final enabledJson = _storage.getEnabledServersJson();
-      if (enabledJson == null || enabledJson.isEmpty) {
-        // If no enabled servers are stored, all servers are enabled by default
-        final servers = await getServers();
-        return servers.map((s) => s.clientIdentifier).toSet();
-      }
-
-      final List<dynamic> enabledList = jsonDecode(enabledJson);
-      return enabledList.cast<String>().toSet();
-    } catch (e, stackTrace) {
-      appLogger.e('Failed to load enabled servers from storage', error: e, stackTrace: stackTrace);
-      return {};
-    }
-  }
-
-  /// Save enabled server IDs
-  Future<void> saveEnabledServerIds(Set<String> serverIds) async {
-    try {
-      final enabledJson = jsonEncode(serverIds.toList());
-      await _storage.saveEnabledServersJson(enabledJson);
-      appLogger.d('Saved ${serverIds.length} enabled servers to storage');
-    } catch (e, stackTrace) {
-      appLogger.e('Failed to save enabled servers to storage', error: e, stackTrace: stackTrace);
-      rethrow;
-    }
-  }
-
-  /// Get only enabled servers
-  Future<List<PlexServer>> getEnabledServers() async {
-    final servers = await getServers();
-    final enabledIds = await getEnabledServerIds();
-
-    if (enabledIds.isEmpty) {
-      // If no enabled list, all servers are enabled
-      return servers;
-    }
-
-    return servers.where((s) => enabledIds.contains(s.clientIdentifier)).toList();
-  }
-
-  /// Enable a server
-  Future<void> enableServer(String serverId) async {
-    final enabledIds = await getEnabledServerIds();
-    enabledIds.add(serverId);
-    await saveEnabledServerIds(enabledIds);
-    appLogger.i('Enabled server: $serverId');
-  }
-
-  /// Disable a server
-  Future<void> disableServer(String serverId) async {
-    final enabledIds = await getEnabledServerIds();
-    enabledIds.remove(serverId);
-    await saveEnabledServerIds(enabledIds);
-    appLogger.i('Disabled server: $serverId');
-  }
-
-  /// Check if a server is enabled
-  Future<bool> isServerEnabled(String serverId) async {
-    final enabledIds = await getEnabledServerIds();
-    return enabledIds.contains(serverId);
   }
 
   /// Get a specific server by ID
@@ -143,11 +78,6 @@ class ServerRegistry {
     }
 
     await saveServers(servers);
-
-    // Ensure new servers are enabled by default
-    if (index < 0) {
-      await enableServer(server.clientIdentifier);
-    }
   }
 
   /// Remove a server
@@ -156,18 +86,12 @@ class ServerRegistry {
     servers.removeWhere((s) => s.clientIdentifier == serverId);
     await saveServers(servers);
 
-    // Also remove from enabled list
-    final enabledIds = await getEnabledServerIds();
-    enabledIds.remove(serverId);
-    await saveEnabledServerIds(enabledIds);
-
     appLogger.i('Removed server: $serverId');
   }
 
   /// Clear all servers
   Future<void> clearAllServers() async {
     await _storage.clearServersList();
-    await _storage.clearEnabledServers();
     appLogger.i('Cleared all servers from registry');
   }
 
@@ -196,7 +120,6 @@ class ServerRegistry {
 
       // Save as first server in new format
       await saveServers([server]);
-      await enableServer(server.clientIdentifier);
 
       appLogger.i('Migration complete');
     } catch (e, stackTrace) {
