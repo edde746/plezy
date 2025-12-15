@@ -9,10 +9,7 @@ import 'package:flutter/services.dart'
     show
         SystemChrome,
         DeviceOrientation,
-        LogicalKeyboardKey,
-        KeyEvent,
-        KeyDownEvent,
-        KeyRepeatEvent;
+        LogicalKeyboardKey;
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -1216,6 +1213,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           ],
         ),
       ),
+    ),
     );
   }
 

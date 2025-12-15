@@ -1244,7 +1244,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
     // Determine header height based on screen size
     final size = MediaQuery.of(context).size;
-    final isDesktop = size.width > 600;
     final headerHeight = size.height * 0.6;
 
     return Focus(

@@ -3,7 +3,6 @@ import 'package:plezy/utils/content_utils.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import '../../services/plex_client.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../providers/download_provider.dart';
