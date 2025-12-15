@@ -1,9 +1,6 @@
 import 'dart:io' show Platform;
 
-import '../models/audio_device.dart';
-import '../models/media.dart';
-import '../models/audio_track.dart';
-import '../models/subtitle_track.dart';
+import '../models.dart';
 import 'player_native.dart';
 import 'player_state.dart';
 import 'player_streams.dart';

@@ -3,7 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
-import '../theme/theme_helper.dart';
+import '../theme/mono_tokens.dart';
 import '../utils/layout_constants.dart';
 import '../focus/locked_hub_controller.dart';
 import '../models/plex_hub.dart';

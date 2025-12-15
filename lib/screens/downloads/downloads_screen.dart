@@ -13,7 +13,7 @@ import '../../widgets/focusable_media_card.dart';
 import '../../widgets/media_grid_delegate.dart';
 import '../../widgets/download_tree_view.dart';
 import '../main_screen.dart';
-import '../libraries/empty_state_widget.dart';
+import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
 
 class DownloadsScreen extends StatefulWidget {

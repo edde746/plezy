@@ -19,7 +19,7 @@ import '../utils/focus_utils.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
-import '../theme/theme_helper.dart';
+import '../theme/mono_tokens.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/focusable_bottom_sheet.dart';
 import '../widgets/focusable_list_tile.dart';

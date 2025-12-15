@@ -17,22 +17,41 @@ import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
-import '../../utils/content_type_helper.dart';
+import '../../utils/content_utils.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
 import '../main_screen.dart';
-import 'context_menu_wrapper.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/item_updatable.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/error_message_utils.dart';
-import 'error_state_widget.dart';
-import 'empty_state_widget.dart';
+import 'state_messages.dart';
 import 'tabs/library_browse_tab.dart';
 import 'tabs/library_recommended_tab.dart';
 import 'tabs/library_collections_tab.dart';
 import 'tabs/library_playlists_tab.dart';
+
+/// A menu action item for context menus
+class ContextMenuItem {
+  final String value;
+  final IconData icon;
+  final String label;
+  final bool requiresConfirmation;
+  final String? confirmationTitle;
+  final String? confirmationMessage;
+  final bool isDestructive;
+
+  const ContextMenuItem({
+    required this.value,
+    required this.icon,
+    required this.label,
+    this.requiresConfirmation = false,
+    this.confirmationTitle,
+    this.confirmationMessage,
+    this.isDestructive = false,
+  });
+}
 
 class LibrariesScreen extends StatefulWidget {
   final VoidCallback? onLibraryOrderChanged;

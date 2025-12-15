@@ -104,3 +104,83 @@ class StateMessageWidget extends StatelessWidget {
     );
   }
 }
+
+/// A reusable widget for displaying empty states throughout the app
+class EmptyStateWidget extends StatelessWidget {
+  /// The message to display
+  final String message;
+
+  /// Optional subtitle/description below the message
+  final String? subtitle;
+
+  /// Optional icon to display above the message
+  final IconData? icon;
+
+  /// Optional size for the icon
+  final double iconSize;
+
+  /// Optional callback for action button
+  final VoidCallback? onAction;
+
+  /// Optional label for the action button
+  final String? actionLabel;
+
+  const EmptyStateWidget({
+    super.key,
+    required this.message,
+    this.subtitle,
+    this.icon,
+    this.iconSize = 64,
+    this.onAction,
+    this.actionLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StateMessageWidget(
+      message: message,
+      subtitle: subtitle,
+      icon: icon,
+      iconSize: iconSize,
+      onAction: onAction,
+      actionLabel: actionLabel,
+      actionIcon: Symbols.add_rounded,
+    );
+  }
+}
+
+/// A reusable widget for displaying error states throughout the app
+class ErrorStateWidget extends StatelessWidget {
+  /// The error message to display
+  final String message;
+
+  /// Optional icon to display above the message
+  final IconData? icon;
+
+  /// Optional callback for retry action
+  final VoidCallback? onRetry;
+
+  /// Optional label for the retry button
+  final String? retryLabel;
+
+  const ErrorStateWidget({
+    super.key,
+    required this.message,
+    this.icon,
+    this.onRetry,
+    this.retryLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StateMessageWidget(
+      message: message,
+      icon: icon,
+      iconColor: Theme.of(context).colorScheme.error,
+      textColor: Theme.of(context).colorScheme.error,
+      onAction: onRetry,
+      actionLabel: retryLabel ?? 'Retry',
+      actionIcon: Symbols.refresh_rounded,
+    );
+  }
+}

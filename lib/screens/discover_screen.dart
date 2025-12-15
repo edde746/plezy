@@ -9,7 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_metadata_extensions.dart';
+import '../utils/content_utils.dart';
 import '../models/plex_hub.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/server_state_provider.dart';
@@ -27,11 +27,10 @@ import '../mixins/item_updatable.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
-import '../utils/content_rating_formatter.dart';
 import '../utils/layout_constants.dart';
-import '../theme/theme_helper.dart';
+import '../theme/mono_tokens.dart';
 import 'auth_screen.dart';
-import 'libraries/error_state_widget.dart';
+import 'libraries/state_messages.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final VoidCallback? onBecameVisible;

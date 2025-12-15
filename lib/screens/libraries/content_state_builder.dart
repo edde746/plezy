@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
-import 'empty_state_widget.dart';
-import 'error_state_widget.dart';
+import 'state_messages.dart';
 
 /// A widget that handles loading, error, empty, and content states
 /// Provides a consistent UI pattern across the app for data-driven screens

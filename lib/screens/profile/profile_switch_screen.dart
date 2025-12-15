@@ -7,7 +7,7 @@ import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import 'profile_list_tile.dart';
 import '../../widgets/desktop_app_bar.dart';
-import '../libraries/empty_state_widget.dart';
+import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
 
 class ProfileSwitchScreen extends StatelessWidget {

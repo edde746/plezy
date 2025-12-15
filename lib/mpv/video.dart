@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../player/player.dart';
-import '../player/video_rect_support.dart';
+import 'player/player.dart';
+import 'player/video_rect_support.dart';
 
 /// Video widget for displaying player output.
 ///

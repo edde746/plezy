@@ -3,7 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../i18n/strings.g.dart';
-import '../../../utils/duration_formatter.dart';
+import '../../../utils/formatters.dart';
 
 /// Widget displaying active sleep timer status with extend/cancel actions
 class SleepTimerActiveStatus extends StatelessWidget {

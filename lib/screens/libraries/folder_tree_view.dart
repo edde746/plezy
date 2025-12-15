@@ -7,8 +7,7 @@ import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../i18n/strings.g.dart';
 import 'folder_tree_item.dart';
-import 'empty_state_widget.dart';
-import 'error_state_widget.dart';
+import 'state_messages.dart';
 
 /// Expandable tree view for browsing library folders
 /// Shows a hierarchical file/folder structure

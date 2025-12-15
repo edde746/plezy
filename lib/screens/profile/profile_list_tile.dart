@@ -3,7 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/plex_home_user.dart';
-import '../../theme/theme_helper.dart';
+import '../../theme/mono_tokens.dart';
 import 'user_avatar_widget.dart';
 
 enum UserAttribute { admin, restricted, protected }

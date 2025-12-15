@@ -7,19 +7,19 @@ import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
-import '../models/download_status.dart';
+import '../models/download_models.dart';
 import '../providers/download_provider.dart';
 import '../services/download_storage_service.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
-import '../utils/duration_formatter.dart';
+import '../utils/formatters.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
 import '../mixins/item_updatable.dart';
-import '../theme/theme_helper.dart';
+import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
 
 class SeasonDetailScreen extends StatefulWidget {

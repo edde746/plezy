@@ -15,7 +15,7 @@ import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_card.dart';
 import '../utils/focus_utils.dart';
-import 'libraries/state_message_widget.dart';
+import 'libraries/state_messages.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});

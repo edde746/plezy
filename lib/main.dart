@@ -10,7 +10,7 @@ import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/update_service.dart';
 import 'services/settings_service.dart';
-import 'services/tv_detection_service.dart';
+import 'utils/platform_detector.dart';
 import 'services/gamepad_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';

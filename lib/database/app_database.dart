@@ -4,11 +4,8 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-import 'tables/downloaded_media.dart';
-import 'tables/download_queue.dart';
-import 'tables/api_cache.dart';
-import 'tables/offline_watch_progress.dart';
-import '../models/download_status.dart';
+import 'tables.dart';
+import '../models/download_models.dart';
 import '../utils/app_logger.dart';
 
 part 'app_database.g.dart';

@@ -7,7 +7,7 @@ import '../../models/plex_media_info.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/player_utils.dart';
-import '../../utils/video_control_icons.dart';
+import 'icons.dart';
 import '../../i18n/strings.g.dart';
 import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';

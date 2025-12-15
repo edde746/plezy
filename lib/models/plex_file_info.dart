@@ -1,4 +1,4 @@
-import '../utils/byte_formatter.dart';
+import '../utils/formatters.dart';
 
 class PlexFileInfo {
   // Media level properties

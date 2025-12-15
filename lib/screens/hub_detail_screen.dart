@@ -10,7 +10,7 @@ import '../utils/app_logger.dart';
 import '../widgets/media_grid_sliver.dart';
 import '../widgets/focused_scroll_scaffold.dart';
 import 'libraries/sort_bottom_sheet.dart';
-import 'libraries/error_state_widget.dart';
+import 'libraries/state_messages.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
 

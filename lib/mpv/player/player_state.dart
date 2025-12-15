@@ -1,6 +1,4 @@
-import '../models/audio_device.dart';
-import '../models/tracks.dart';
-import '../models/track_selection.dart';
+import '../models.dart';
 
 /// Immutable snapshot of the current player state.
 ///

@@ -4,7 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../services/sleep_timer_service.dart';
-import '../../../utils/duration_formatter.dart';
+import '../../../utils/formatters.dart';
 import '../../../utils/snackbar_helper.dart';
 import '../../../i18n/strings.g.dart';
 

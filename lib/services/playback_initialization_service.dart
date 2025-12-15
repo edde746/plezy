@@ -1,7 +1,7 @@
 import 'plex_client.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_metadata.dart';
-import '../models/download_status.dart';
+import '../models/download_models.dart';
 import '../mpv/mpv.dart';
 import '../utils/app_logger.dart';
 import '../i18n/strings.g.dart';

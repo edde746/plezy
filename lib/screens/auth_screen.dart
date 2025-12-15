@@ -10,7 +10,7 @@ import '../services/server_registry.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/plex_client_provider.dart';
 import '../i18n/strings.g.dart';
-import '../theme/theme_helper.dart';
+import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import 'main_screen.dart';
 

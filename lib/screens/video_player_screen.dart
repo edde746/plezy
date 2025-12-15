@@ -15,7 +15,7 @@ import '../../services/plex_client.dart';
 import '../services/plex_api_cache.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_metadata_extensions.dart';
+import '../utils/content_utils.dart';
 import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/playback_state_provider.dart';

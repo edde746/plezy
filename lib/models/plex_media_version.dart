@@ -1,4 +1,4 @@
-import '../utils/byte_formatter.dart';
+import '../utils/formatters.dart';
 import '../utils/codec_utils.dart';
 
 class PlexMediaVersion {

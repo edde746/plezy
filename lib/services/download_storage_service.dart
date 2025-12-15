@@ -5,8 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import '../models/plex_metadata.dart';
-import '../utils/byte_formatter.dart';
-import '../utils/number_formatter.dart';
+import '../utils/formatters.dart';
 import 'settings_service.dart';
 import 'saf_storage_service.dart';
 
@@ -67,12 +66,10 @@ class DownloadStorageService {
 
   /// Format episode filename base: S{XX}E{XX} - {Title}
   String _formatEpisodeFileName(PlexMetadata episode) {
-    final seCode = NumberFormatter.formatSeasonEpisode(
-      episode.parentIndex,
-      episode.index,
-    );
+    final season = padNumber(episode.parentIndex ?? 0, 2);
+    final ep = padNumber(episode.index ?? 0, 2);
     final episodeName = _sanitizeFileName(episode.title);
-    return '$seCode - $episodeName';
+    return 'S${season}E$ep - $episodeName';
   }
 
   /// Check if using custom download path
@@ -350,7 +347,7 @@ class DownloadStorageService {
     int? showYear,
   }) async {
     final showDir = await getShowDirectory(metadata, showYear: showYear);
-    final seasonNum = NumberFormatter.formatSeason(metadata.parentIndex);
+    final seasonNum = padNumber(metadata.parentIndex ?? 0, 2);
     return _ensureDirectoryExists(
       Directory(path.join(showDir.path, 'Season $seasonNum')),
     );
@@ -641,7 +638,7 @@ class DownloadStorageService {
     int? showYear,
   }) {
     final showFolder = _getShowFolderName(episode, showYear: showYear);
-    final seasonNum = NumberFormatter.formatSeason(episode.parentIndex);
+    final seasonNum = padNumber(episode.parentIndex ?? 0, 2);
     return ['TV Shows', showFolder, 'Season $seasonNum'];
   }
 

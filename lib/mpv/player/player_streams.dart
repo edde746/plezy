@@ -1,7 +1,4 @@
-import '../models/audio_device.dart';
-import '../models/player_log.dart';
-import '../models/tracks.dart';
-import '../models/track_selection.dart';
+import '../models.dart';
 
 /// Reactive streams for player state changes.
 ///

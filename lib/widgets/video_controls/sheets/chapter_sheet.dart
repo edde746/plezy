@@ -6,7 +6,7 @@ import '../../../mpv/mpv.dart';
 import '../../../services/plex_client.dart';
 import '../../../services/download_storage_service.dart';
 import '../../../models/plex_media_info.dart';
-import '../../../utils/duration_formatter.dart';
+import '../../../utils/formatters.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../widgets/focusable_bottom_sheet.dart';
 import '../../../widgets/focusable_list_tile.dart';

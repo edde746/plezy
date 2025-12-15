@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../mpv/mpv.dart';
 import '../../../models/plex_media_info.dart';
-import '../../../utils/duration_formatter.dart';
+import '../../../utils/formatters.dart';
 import 'timeline_slider.dart';
 
 /// Encapsulates the StreamBuilder stack for video timeline with timestamps.

@@ -30,10 +30,10 @@ import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/plex_cache_parser.dart';
 import '../../utils/player_utils.dart';
-import '../../theme/theme_helper.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
-import '../../utils/video_control_icons.dart';
+import 'icons.dart';
 import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
@@ -513,6 +513,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     }
   }
 
+  /// Show controls in response to pointer activity (mouse/trackpad movement).
+  void _showControlsFromPointerActivity() {
+    if (!_showControls) {
+      setState(() {
+        _showControls = true;
+        _controlsFullyHidden = false;
+      });
+      _showLinuxControls();
+      // On macOS, keep window controls in sync with the overlay
+      if (Platform.isMacOS) {
+        _updateTrafficLightVisibility();
+      }
+    }
+
+    // Keep the overlay visible while the user is moving the pointer
+    _restartHideTimerIfPlaying();
+  }
+
   void _toggleControls() {
     setState(() {
       _showControls = !_showControls;
@@ -967,26 +985,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           onBack: () => Navigator.of(context).pop(true),
         );
       },
-      child: MouseRegion(
-        cursor: _showControls
-            ? SystemMouseCursors.basic
-            : SystemMouseCursors.none,
-        onHover: (_) {
-          // Show controls when mouse moves
-          if (!_showControls) {
-            setState(() {
-              _showControls = true;
-              _controlsFullyHidden = false;
-            });
-            _showLinuxControls();
-            _startHideTimer();
-            // On macOS, show traffic lights when controls appear
-            if (Platform.isMacOS) {
-              _updateTrafficLightVisibility();
-            }
-          }
-        },
-        child: Stack(
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerHover: (_) => _showControlsFromPointerActivity(),
+        child: MouseRegion(
+          cursor: _showControls
+              ? SystemMouseCursors.basic
+              : SystemMouseCursors.none,
+          onHover: (_) => _showControlsFromPointerActivity(),
+          child: Stack(
           children: [
             // Invisible tap detector that always covers the full area
             Positioned.fill(

@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../i18n/strings.g.dart';
-import '../models/download_progress.dart';
-import '../models/download_status.dart';
+import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_metadata_extensions.dart';
+import '../utils/content_utils.dart';
 
 /// Represents a node in the download tree
 class DownloadTreeNode {

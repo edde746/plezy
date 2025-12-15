@@ -1,5 +1,14 @@
-import '../utils/byte_formatter.dart';
-import 'download_status.dart';
+import '../utils/formatters.dart';
+
+enum DownloadStatus {
+  queued,
+  downloading,
+  paused,
+  completed,
+  failed,
+  cancelled,
+  partial, // Some episodes downloaded, but not all (for shows/seasons)
+}
 
 class DownloadProgress {
   final String globalKey;
@@ -65,5 +74,51 @@ class DownloadProgress {
       currentFile: currentFile ?? this.currentFile,
       thumbPath: thumbPath ?? this.thumbPath,
     );
+  }
+}
+
+class DeletionProgress {
+  final String globalKey;
+  final String itemTitle;
+  final int currentItem;
+  final int totalItems;
+  final String? currentOperation;
+
+  const DeletionProgress({
+    required this.globalKey,
+    required this.itemTitle,
+    required this.currentItem,
+    required this.totalItems,
+    this.currentOperation,
+  });
+
+  double get progressPercent =>
+      totalItems > 0 ? (currentItem / totalItems) : 0.0;
+
+  int get progressPercentInt => (progressPercent * 100).round();
+
+  bool get isComplete => currentItem >= totalItems;
+
+  DeletionProgress copyWith({
+    String? globalKey,
+    String? itemTitle,
+    int? currentItem,
+    int? totalItems,
+    String? currentOperation,
+  }) {
+    return DeletionProgress(
+      globalKey: globalKey ?? this.globalKey,
+      itemTitle: itemTitle ?? this.itemTitle,
+      currentItem: currentItem ?? this.currentItem,
+      totalItems: totalItems ?? this.totalItems,
+      currentOperation: currentOperation ?? this.currentOperation,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'DeletionProgress(globalKey: $globalKey, itemTitle: $itemTitle, '
+        'currentItem: $currentItem, totalItems: $totalItems, '
+        'progressPercent: $progressPercentInt%)';
   }
 }

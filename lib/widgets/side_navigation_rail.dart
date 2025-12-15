@@ -13,8 +13,8 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/storage_service.dart';
-import '../theme/theme_helper.dart';
-import '../utils/content_type_helper.dart';
+import '../theme/mono_tokens.dart';
+import '../utils/content_utils.dart';
 import '../i18n/strings.g.dart';
 
 /// Tracks focus state for a set of named items, avoiding repeated boilerplate

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../theme/theme_helper.dart';
+import '../theme/mono_tokens.dart';
 import '../utils/platform_detector.dart';
 
 /// A wrapper widget that adds hover-activated navigation arrows to horizontal scrolling content.

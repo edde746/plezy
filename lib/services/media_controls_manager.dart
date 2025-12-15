@@ -3,7 +3,7 @@ import 'package:rate_limiter/rate_limiter.dart';
 
 import 'plex_client.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_metadata_extensions.dart';
+import '../utils/content_utils.dart';
 import '../utils/app_logger.dart';
 
 /// Manages OS media controls integration for video playback.

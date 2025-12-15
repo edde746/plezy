@@ -12,8 +12,7 @@ import '../utils/app_logger.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../i18n/strings.g.dart';
-import 'libraries/error_state_widget.dart';
-import 'libraries/empty_state_widget.dart';
+import 'libraries/state_messages.dart';
 
 /// Abstract base class for screens displaying media lists (collections/playlists)
 /// Provides common state management and playback functionality

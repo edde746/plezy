@@ -7,7 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
-import '../../../utils/duration_formatter.dart';
+import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../widgets/focusable_bottom_sheet.dart';
 import '../../../widgets/focusable_list_tile.dart';

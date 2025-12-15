@@ -11,7 +11,7 @@ import '../models/plex_library.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
-import '../models/plex_metadata_extensions.dart';
+import '../utils/content_utils.dart';
 import '../models/plex_playlist.dart';
 import '../models/plex_sort.dart';
 import '../models/plex_video_playback_data.dart';

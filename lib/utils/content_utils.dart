@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../models/plex_metadata.dart';
+
 /// Content type constants used throughout the app
 class ContentTypes {
   ContentTypes._();
@@ -64,4 +66,40 @@ class ContentTypeHelper {
         return Symbols.folder_rounded;
     }
   }
+}
+
+/// Utility function to format content ratings by removing country prefixes
+String formatContentRating(String? contentRating) {
+  if (contentRating == null || contentRating.isEmpty) {
+    return '';
+  }
+
+  // Remove common country prefixes like "gb/", "us/", "de/", etc.
+  // The pattern matches: lowercase letters followed by a forward slash
+  final regex = RegExp(r'^[a-z]{2,3}/(.+)$', caseSensitive: false);
+  final match = regex.firstMatch(contentRating);
+
+  if (match != null && match.groupCount >= 1) {
+    return match.group(1) ?? contentRating;
+  }
+
+  return contentRating;
+}
+
+/// Extension on PlexMetadata for type checking convenience methods
+extension PlexMetadataType on PlexMetadata {
+  String get _lowerType => type.toLowerCase();
+
+  bool get isShow => _lowerType == ContentTypes.show;
+  bool get isMovie => _lowerType == ContentTypes.movie;
+  bool get isSeason => _lowerType == ContentTypes.season;
+  bool get isEpisode => _lowerType == ContentTypes.episode;
+  bool get isArtist => _lowerType == ContentTypes.artist;
+  bool get isAlbum => _lowerType == ContentTypes.album;
+  bool get isTrack => _lowerType == ContentTypes.track;
+  bool get isCollection => _lowerType == ContentTypes.collection;
+  bool get isPlaylist => _lowerType == ContentTypes.playlist;
+  bool get isClip => _lowerType == ContentTypes.clip;
+  bool get isMusicContent => ContentTypes.musicTypes.contains(_lowerType);
+  bool get isVideoContent => ContentTypes.videoTypes.contains(_lowerType);
 }

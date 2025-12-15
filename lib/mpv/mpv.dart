@@ -49,14 +49,7 @@ export 'player/player_state.dart';
 export 'player/player_streams.dart';
 
 // Models
-export 'models/media.dart';
-export 'models/audio_device.dart';
-export 'models/audio_track.dart';
-export 'models/subtitle_track.dart';
-export 'models/tracks.dart';
-export 'models/track_selection.dart';
-export 'models/player_log.dart';
-export 'models/player_log_level.dart';
+export 'models.dart';
 
 // Video
-export 'video/video.dart';
+export 'video.dart';

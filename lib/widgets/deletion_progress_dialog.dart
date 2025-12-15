@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/deletion_progress.dart';
+import '../models/download_models.dart';
 import '../i18n/strings.g.dart';
 
 class DeletionProgressDialog extends StatelessWidget {

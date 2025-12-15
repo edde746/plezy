@@ -4,7 +4,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:plezy/utils/app_logger.dart';
 import '../i18n/strings.g.dart';
 import 'base_shared_preferences_service.dart';
-import 'tv_detection_service.dart';
+import '../utils/platform_detector.dart';
 
 enum ThemeMode { system, light, dark }
 
