@@ -20,15 +20,9 @@ class ServerRegistry {
       }
 
       final List<dynamic> serversList = jsonDecode(serversJson);
-      return serversList
-          .map((json) => PlexServer.fromJson(json as Map<String, dynamic>))
-          .toList();
+      return serversList.map((json) => PlexServer.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Failed to load servers from storage',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to load servers from storage', error: e, stackTrace: stackTrace);
       return [];
     }
   }
@@ -40,11 +34,7 @@ class ServerRegistry {
       await _storage.saveServersListJson(serversJson);
       appLogger.d('Saved ${servers.length} servers to storage');
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Failed to save servers to storage',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to save servers to storage', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -62,11 +52,7 @@ class ServerRegistry {
       final List<dynamic> enabledList = jsonDecode(enabledJson);
       return enabledList.cast<String>().toSet();
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Failed to load enabled servers from storage',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to load enabled servers from storage', error: e, stackTrace: stackTrace);
       return {};
     }
   }
@@ -78,11 +64,7 @@ class ServerRegistry {
       await _storage.saveEnabledServersJson(enabledJson);
       appLogger.d('Saved ${serverIds.length} enabled servers to storage');
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Failed to save enabled servers to storage',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to save enabled servers to storage', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -97,9 +79,7 @@ class ServerRegistry {
       return servers;
     }
 
-    return servers
-        .where((s) => enabledIds.contains(s.clientIdentifier))
-        .toList();
+    return servers.where((s) => enabledIds.contains(s.clientIdentifier)).toList();
   }
 
   /// Enable a server
@@ -135,15 +115,9 @@ class ServerRegistry {
   }
 
   /// Update server status (called when server connection status changes)
-  Future<void> updateServerStatus(
-    String serverId, {
-    bool? online,
-    DateTime? lastSeen,
-  }) async {
+  Future<void> updateServerStatus(String serverId, {bool? online, DateTime? lastSeen}) async {
     final servers = await getServers();
-    final serverIndex = servers.indexWhere(
-      (s) => s.clientIdentifier == serverId,
-    );
+    final serverIndex = servers.indexWhere((s) => s.clientIdentifier == serverId);
 
     if (serverIndex == -1) {
       appLogger.w('Server not found for status update: $serverId');
@@ -158,9 +132,7 @@ class ServerRegistry {
   /// Add or update a single server
   Future<void> upsertServer(PlexServer server) async {
     final servers = await getServers();
-    final index = servers.indexWhere(
-      (s) => s.clientIdentifier == server.clientIdentifier,
-    );
+    final index = servers.indexWhere((s) => s.clientIdentifier == server.clientIdentifier);
 
     if (index >= 0) {
       servers[index] = server;
@@ -228,11 +200,7 @@ class ServerRegistry {
 
       appLogger.i('Migration complete');
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Failed to migrate from single server',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to migrate from single server', error: e, stackTrace: stackTrace);
       // Don't rethrow - migration failure shouldn't crash the app
     }
   }

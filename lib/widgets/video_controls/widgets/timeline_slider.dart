@@ -44,22 +44,15 @@ class TimelineSlider extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         // Chapter markers layer
-        if (chaptersLoaded &&
-            chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
+        if (chaptersLoaded && chapters.isNotEmpty && duration.inMilliseconds > 0)
           Positioned.fill(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
                 children:
                     chapters.map((chapter) {
-                      final chapterPosition =
-                          (chapter.startTimeOffset ?? 0) /
-                          duration.inMilliseconds;
-                      return Expanded(
-                        flex: (chapterPosition * 1000).toInt(),
-                        child: const SizedBox(),
-                      );
+                      final chapterPosition = (chapter.startTimeOffset ?? 0) / duration.inMilliseconds;
+                      return Expanded(flex: (chapterPosition * 1000).toInt(), child: const SizedBox());
                     }).toList()..add(
                       Expanded(
                         flex:
@@ -67,11 +60,7 @@ class TimelineSlider extends StatelessWidget {
                             chapters.fold<int>(
                               0,
                               (sum, chapter) =>
-                                  sum +
-                                  ((chapter.startTimeOffset ?? 0) /
-                                          duration.inMilliseconds *
-                                          1000)
-                                      .toInt(),
+                                  sum + ((chapter.startTimeOffset ?? 0) / duration.inMilliseconds * 1000).toInt(),
                             ),
                         child: const SizedBox(),
                       ),
@@ -84,9 +73,7 @@ class TimelineSlider extends StatelessWidget {
           label: t.videoControls.timelineSlider,
           slider: true,
           child: Slider(
-            value: duration.inMilliseconds > 0
-                ? position.inMilliseconds.toDouble()
-                : 0.0,
+            value: duration.inMilliseconds > 0 ? position.inMilliseconds.toDouble() : 0.0,
             min: 0.0,
             max: duration.inMilliseconds.toDouble(),
             onChanged: (value) {
@@ -100,18 +87,13 @@ class TimelineSlider extends StatelessWidget {
           ),
         ),
         // Chapter marker indicators
-        if (chaptersLoaded &&
-            chapters.isNotEmpty &&
-            duration.inMilliseconds > 0)
+        if (chaptersLoaded && chapters.isNotEmpty && duration.inMilliseconds > 0)
           Positioned.fill(
             child: IgnorePointer(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: CustomPaint(
-                  painter: ChapterMarkerPainter(
-                    chapters: chapters,
-                    duration: duration,
-                  ),
+                  painter: ChapterMarkerPainter(chapters: chapters, duration: duration),
                 ),
               ),
             ),

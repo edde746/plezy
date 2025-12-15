@@ -34,8 +34,7 @@ class PlexUserProfile {
 
     return PlexUserProfile(
       autoSelectAudio: profile['autoSelectAudio'] as bool? ?? true,
-      defaultAudioAccessibility:
-          profile['defaultAudioAccessibility'] as int? ?? 0,
+      defaultAudioAccessibility: profile['defaultAudioAccessibility'] as int? ?? 0,
       defaultAudioLanguage: profile['defaultAudioLanguage'] as String?,
       defaultAudioLanguages: profile['defaultAudioLanguages'] != null
           ? List<String>.from(profile['defaultAudioLanguages'] as List)
@@ -45,8 +44,7 @@ class PlexUserProfile {
           ? List<String>.from(profile['defaultSubtitleLanguages'] as List)
           : null,
       autoSelectSubtitle: profile['autoSelectSubtitle'] as int? ?? 0,
-      defaultSubtitleAccessibility:
-          profile['defaultSubtitleAccessibility'] as int? ?? 0,
+      defaultSubtitleAccessibility: profile['defaultSubtitleAccessibility'] as int? ?? 0,
       defaultSubtitleForced: profile['defaultSubtitleForced'] as int? ?? 1,
       watchedIndicator: profile['watchedIndicator'] as int? ?? 1,
       mediaReviewsVisibility: profile['mediaReviewsVisibility'] as int? ?? 0,

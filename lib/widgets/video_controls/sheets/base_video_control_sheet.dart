@@ -56,12 +56,7 @@ class BaseVideoControlSheet extends StatelessWidget {
         height: MediaQuery.of(context).size.height * 0.75,
         child: Column(
           children: [
-            VideoSheetHeader(
-              title: title,
-              icon: icon,
-              iconColor: iconColor,
-              onBack: onBack,
-            ),
+            VideoSheetHeader(title: title, icon: icon, iconColor: iconColor, onBack: onBack),
             const Divider(color: Colors.white24, height: 1),
             Expanded(child: child),
           ],

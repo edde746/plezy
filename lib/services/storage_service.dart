@@ -52,9 +52,7 @@ class StorageService extends BaseSharedPreferencesService {
   StorageService._();
 
   static Future<StorageService> getInstance() async {
-    return BaseSharedPreferencesService.initializeInstance(
-      () => StorageService._(),
-    );
+    return BaseSharedPreferencesService.initializeInstance(() => StorageService._());
   }
 
   @override
@@ -142,11 +140,7 @@ class StorageService extends BaseSharedPreferencesService {
     required String token,
     required String clientIdentifier,
   }) async {
-    await Future.wait([
-      saveServerUrl(serverUrl),
-      saveToken(token),
-      saveClientIdentifier(clientIdentifier),
-    ]);
+    await Future.wait([saveServerUrl(serverUrl), saveToken(token), saveClientIdentifier(clientIdentifier)]);
   }
 
   // Check if credentials exist
@@ -156,20 +150,13 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Clear all credentials
   Future<void> clearCredentials() async {
-    await Future.wait([
-      ..._credentialKeys.map((k) => prefs.remove(k)),
-      clearMultiServerData(),
-    ]);
+    await Future.wait([..._credentialKeys.map((k) => prefs.remove(k)), clearMultiServerData()]);
     LogRedactionManager.clearTrackedValues();
   }
 
   // Get all credentials as a map
   Map<String, String?> getCredentials() {
-    return {
-      'serverUrl': getServerUrl(),
-      'token': getToken(),
-      'clientIdentifier': getClientIdentifier(),
-    };
+    return {'serverUrl': getServerUrl(), 'token': getToken(), 'clientIdentifier': getClientIdentifier()};
   }
 
   int? getSelectedLibraryIndex() {
@@ -186,22 +173,15 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   // Library Filters (stored as JSON string)
-  Future<void> saveLibraryFilters(
-    Map<String, String> filters, {
-    String? sectionId,
-  }) async {
-    final key = sectionId != null
-        ? '$_prefixLibraryFilters$sectionId'
-        : _keyLibraryFilters;
+  Future<void> saveLibraryFilters(Map<String, String> filters, {String? sectionId}) async {
+    final key = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
     // Note: using Map<String, String> which json.encode handles correctly
     final jsonString = json.encode(filters);
     await prefs.setString(key, jsonString);
   }
 
   Map<String, String> getLibraryFilters({String? sectionId}) {
-    final scopedKey = sectionId != null
-        ? '$_prefixLibraryFilters$sectionId'
-        : _keyLibraryFilters;
+    final scopedKey = sectionId != null ? '$_prefixLibraryFilters$sectionId' : _keyLibraryFilters;
 
     // Prefer per-library filters when available
     final jsonString =
@@ -215,11 +195,7 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   // Library Sort (per-library, stored individually with descending flag)
-  Future<void> saveLibrarySort(
-    String sectionId,
-    String sortKey, {
-    bool descending = false,
-  }) async {
+  Future<void> saveLibrarySort(String sectionId, String sortKey, {bool descending = false}) async {
     final sortData = {'key': sortKey, 'descending': descending};
     await _setJsonMap('$_prefixLibrarySort$sectionId', sortData);
   }
@@ -304,9 +280,7 @@ class StorageService extends BaseSharedPreferencesService {
     await _setJsonMap(_keyHomeUsersCache, homeData);
 
     // Set cache expiry to 1 hour from now
-    final expiry = DateTime.now()
-        .add(const Duration(hours: 1))
-        .millisecondsSinceEpoch;
+    final expiry = DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch;
     await prefs.setInt(_keyHomeUsersCacheExpiry, expiry);
   }
 
@@ -322,10 +296,7 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   Future<void> clearHomeUsersCache() async {
-    await Future.wait([
-      prefs.remove(_keyHomeUsersCache),
-      prefs.remove(_keyHomeUsersCacheExpiry),
-    ]);
+    await Future.wait([prefs.remove(_keyHomeUsersCache), prefs.remove(_keyHomeUsersCacheExpiry)]);
   }
 
   // Clear current user UUID (for server switching)
@@ -420,10 +391,7 @@ class StorageService extends BaseSharedPreferencesService {
   /// [key] - The preference key to read
   /// [legacyStringOk] - If true, returns {'key': value, 'descending': false}
   ///                    when value is a plain string (for legacy library sort)
-  Map<String, dynamic>? _readJsonMap(
-    String key, {
-    bool legacyStringOk = false,
-  }) {
+  Map<String, dynamic>? _readJsonMap(String key, {bool legacyStringOk = false}) {
     final jsonString = prefs.getString(key);
     if (jsonString == null) return null;
 
@@ -435,10 +403,7 @@ class StorageService extends BaseSharedPreferencesService {
   /// [jsonString] - The JSON string to decode
   /// [legacyStringOk] - If true, returns {'key': value, 'descending': false}
   ///                    when value is a plain string (for legacy library sort)
-  Map<String, dynamic> _decodeJsonStringToMap(
-    String jsonString, {
-    bool legacyStringOk = false,
-  }) {
+  Map<String, dynamic> _decodeJsonStringToMap(String jsonString, {bool legacyStringOk = false}) {
     try {
       return json.decode(jsonString) as Map<String, dynamic>;
     } catch (e) {

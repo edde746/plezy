@@ -46,16 +46,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   PlexClient get client {
-    final multiServerProvider = Provider.of<MultiServerProvider>(
-      context,
-      listen: false,
-    );
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
     if (!multiServerProvider.hasConnectedServers) {
       throw Exception('No servers available');
     }
-    return context.getClientForServer(
-      multiServerProvider.onlineServerIds.first,
-    );
+    return context.getClientForServer(multiServerProvider.onlineServerIds.first);
   }
 
   List<PlexMetadata> _onDeck = [];
@@ -86,16 +81,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // Items should always have a serverId, but if not, fall back to first available server
     final serverId = item?.serverId;
     if (serverId == null) {
-      final multiServerProvider = Provider.of<MultiServerProvider>(
-        context,
-        listen: false,
-      );
+      final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
       if (!multiServerProvider.hasConnectedServers) {
         throw Exception('No servers available');
       }
-      return context.getClientForServer(
-        multiServerProvider.onlineServerIds.first,
-      );
+      return context.getClientForServer(multiServerProvider.onlineServerIds.first);
     }
     return context.getClientForServer(serverId);
   }
@@ -132,11 +122,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (isUp && hubIndex == 0) {
       _heroFocusNode.requestFocus();
       // Scroll to top to show hero fully
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-      );
+      _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
       return true;
     }
 
@@ -166,10 +152,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void initState() {
     super.initState();
-    _indicatorAnimationController = AnimationController(
-      vsync: this,
-      duration: _heroAutoScrollDuration,
-    );
+    _indicatorAnimationController = AnimationController(vsync: this, duration: _heroAutoScrollDuration);
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
     _userButtonFocusNode = FocusNode(debugLabel: 'user_button');
@@ -221,10 +204,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // LEFT: Navigate hero carousel to previous
     if (key.isLeftKey) {
       if (_currentHeroIndex > 0) {
-        _heroController.previousPage(
-          duration: tokens(context).slow,
-          curve: Curves.easeInOut,
-        );
+        _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
       }
       return KeyEventResult.handled;
     }
@@ -232,10 +212,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // RIGHT: Navigate hero carousel to next
     if (key.isRightKey) {
       if (_currentHeroIndex < _onDeck.length - 1) {
-        _heroController.nextPage(
-          duration: tokens(context).slow,
-          curve: Curves.easeInOut,
-        );
+        _heroController.nextPage(duration: tokens(context).slow, curve: Curves.easeInOut);
       }
       return KeyEventResult.handled;
     }
@@ -339,9 +316,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     _indicatorAnimationController.forward(from: 0.0);
     _autoScrollTimer = Timer.periodic(_heroAutoScrollDuration, (timer) {
-      if (_onDeck.isEmpty ||
-          !_heroController.hasClients ||
-          _isAutoScrollPaused) {
+      if (_onDeck.isEmpty || !_heroController.hasClients || _isAutoScrollPaused) {
         return;
       }
 
@@ -351,11 +326,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       }
 
       final nextPage = (_currentHeroIndex + 1) % _onDeck.length;
-      _heroController.animateToPage(
-        nextPage,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+      _heroController.animateToPage(nextPage, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
       // Wait for page transition to complete before resetting progress
       Future.delayed(const Duration(milliseconds: 500), () {
         if (!_isAutoScrollPaused) {
@@ -430,20 +401,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     try {
       appLogger.d('Fetching onDeck and hubs from all Plex servers');
-      final multiServerProvider = Provider.of<MultiServerProvider>(
-        context,
-        listen: false,
-      );
+      final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
 
       if (!multiServerProvider.hasConnectedServers) {
         throw Exception('No servers available');
       }
 
       // Start OnDeck and libraries fetch in parallel
-      final onDeckFuture = multiServerProvider.aggregationService
-          .getOnDeckFromAllServers(limit: 20);
-      final librariesFuture = multiServerProvider.aggregationService
-          .getLibrariesFromAllServersGrouped();
+      final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(limit: 20);
+      final librariesFuture = multiServerProvider.aggregationService.getLibrariesFromAllServersGrouped();
 
       // Wait for OnDeck to complete and show it immediately
       final onDeck = await onDeckFuture;
@@ -472,17 +438,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (!mounted) return;
 
       // Get hidden libraries to filter from hubs
-      final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
-        context,
-        listen: false,
-      );
+      final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
 
       // Fetch hubs using the pre-fetched libraries and hidden keys
-      final allHubs = await multiServerProvider.aggregationService
-          .getHubsFromAllServers(
-            librariesByServer: librariesByServer,
-            hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
-          );
+      final allHubs = await multiServerProvider.aggregationService.getHubsFromAllServers(
+        librariesByServer: librariesByServer,
+        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+      );
 
       // Filter out duplicate hubs that we already fetch separately
       final filteredHubs = allHubs.where((hub) {
@@ -495,9 +457,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             !title.contains('on deck');
       }).toList();
 
-      appLogger.d(
-        'Received ${onDeck.length} on deck items and ${filteredHubs.length} hubs from all servers',
-      );
+      appLogger.d('Received ${onDeck.length} on deck items and ${filteredHubs.length} hubs from all servers');
       if (!mounted) return;
       setState(() {
         _hubs = filteredHubs;
@@ -528,8 +488,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         return;
       }
 
-      final onDeck = await multiServerProvider.aggregationService
-          .getOnDeckFromAllServers(limit: 20);
+      final onDeck = await multiServerProvider.aggregationService.getOnDeckFromAllServers(limit: 20);
 
       if (mounted) {
         setState(() {
@@ -585,14 +544,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (lowerTitle.contains('newly') || lowerTitle.contains('new release')) {
       return Symbols.new_releases_rounded;
     }
-    if (lowerTitle.contains('recently released') ||
-        lowerTitle.contains('recent')) {
+    if (lowerTitle.contains('recently released') || lowerTitle.contains('recent')) {
       return Symbols.schedule_rounded;
     }
 
     // Top/Rated content
-    if (lowerTitle.contains('top rated') ||
-        lowerTitle.contains('highest rated')) {
+    if (lowerTitle.contains('top rated') || lowerTitle.contains('highest rated')) {
       return Symbols.star_rounded;
     }
     if (lowerTitle.contains('top ')) {
@@ -650,15 +607,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     // Year-based (80s, 90s, etc.)
-    if (lowerTitle.contains('80') ||
-        lowerTitle.contains('90') ||
-        lowerTitle.contains('00')) {
+    if (lowerTitle.contains('80') || lowerTitle.contains('90') || lowerTitle.contains('00')) {
       return Symbols.history_rounded;
     }
 
     // Rediscover/Start Watching
-    if (lowerTitle.contains('rediscover') ||
-        lowerTitle.contains('start watching')) {
+    if (lowerTitle.contains('rediscover') || lowerTitle.contains('start watching')) {
       return Symbols.play_arrow_rounded;
     }
 
@@ -669,18 +623,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
     // Check and update in _onDeck list
-    final onDeckIndex = _onDeck.indexWhere(
-      (item) => item.ratingKey == ratingKey,
-    );
+    final onDeckIndex = _onDeck.indexWhere((item) => item.ratingKey == ratingKey);
     if (onDeckIndex != -1) {
       _onDeck[onDeckIndex] = updatedMetadata;
     }
 
     // Check and update in hub items
     for (final hub in _hubs) {
-      final itemIndex = hub.items.indexWhere(
-        (item) => item.ratingKey == ratingKey,
-      );
+      final itemIndex = hub.items.indexWhere((item) => item.ratingKey == ratingKey);
       if (itemIndex != -1) {
         hub.items[itemIndex] = updatedMetadata;
       }
@@ -694,24 +644,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         title: Text(t.common.logout),
         content: Text(t.messages.logoutConfirm),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(t.common.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(t.common.logout),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.logout)),
         ],
       ),
     );
 
     if (confirm == true && mounted) {
       // Use comprehensive logout through UserProfileProvider
-      final userProfileProvider = Provider.of<UserProfileProvider>(
-        context,
-        listen: false,
-      );
+      final userProfileProvider = Provider.of<UserProfileProvider>(context, listen: false);
       final plexClientProvider = context.plexClient;
       final multiServerProvider = context.read<MultiServerProvider>();
       final serverStateProvider = context.read<ServerStateProvider>();
@@ -727,36 +668,27 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       playbackStateProvider.clearShuffle();
 
       if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const AuthScreen()),
-          (route) => false,
-        );
+        Navigator.of(
+          context,
+        ).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const AuthScreen()), (route) => false);
       }
     }
   }
 
   void _handleSwitchProfile(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()));
   }
 
   /// Show user menu programmatically (for D-pad select)
   void _showUserMenu(BuildContext context, UserProfileProvider userProvider) {
-    final RenderBox? button =
-        _userButtonFocusNode.context?.findRenderObject() as RenderBox?;
+    final RenderBox? button = _userButtonFocusNode.context?.findRenderObject() as RenderBox?;
     if (button == null) return;
 
-    final RenderBox overlay =
-        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
       Rect.fromPoints(
         button.localToGlobal(Offset.zero, ancestor: overlay),
-        button.localToGlobal(
-          button.size.bottomRight(Offset.zero),
-          ancestor: overlay,
-        ),
+        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
       ),
       Offset.zero & overlay.size,
     );
@@ -769,22 +701,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           PopupMenuItem(
             value: 'switch_profile',
             child: Row(
-              children: [
-                AppIcon(Symbols.people_rounded, fill: 1),
-                SizedBox(width: 8),
-                Text(t.discover.switchProfile),
-              ],
+              children: [AppIcon(Symbols.people_rounded, fill: 1), SizedBox(width: 8), Text(t.discover.switchProfile)],
             ),
           ),
         PopupMenuItem(
           value: 'logout',
-          child: Row(
-            children: [
-              AppIcon(Symbols.logout_rounded, fill: 1),
-              SizedBox(width: 8),
-              Text(t.discover.logout),
-            ],
-          ),
+          child: Row(children: [AppIcon(Symbols.logout_rounded, fill: 1), SizedBox(width: 8), Text(t.discover.logout)]),
         ),
       ],
     ).then((value) {
@@ -819,16 +741,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   child: Container(
                     decoration: BoxDecoration(
                       color: _isRefreshFocused
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.08)
+                          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: IconButton(
-                      icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
-                      onPressed: _loadContent,
-                    ),
+                    child: IconButton(icon: const AppIcon(Symbols.refresh_rounded, fill: 1), onPressed: _loadContent),
                   ),
                 ),
                 Consumer<UserProfileProvider>(
@@ -839,24 +756,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: _isUserFocused
-                              ? Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.08)
+                              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: PopupMenuButton<String>(
                           icon: userProvider.currentUser?.thumb != null
-                              ? UserAvatarWidget(
-                                  user: userProvider.currentUser!,
-                                  size: 32,
-                                  showIndicators: false,
-                                )
-                              : const AppIcon(
-                                  Symbols.account_circle_rounded,
-                                  fill: 1,
-                                  size: 32,
-                                ),
+                              ? UserAvatarWidget(user: userProvider.currentUser!, size: 32, showIndicators: false)
+                              : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32),
                           onSelected: (value) {
                             if (value == 'switch_profile') {
                               _handleSwitchProfile(context);
@@ -895,10 +802,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ),
               ],
             ),
-            if (_isLoading)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              ),
+            if (_isLoading) const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
             if (_errorMessage != null)
               SliverFillRemaining(
                 child: ErrorStateWidget(
@@ -936,8 +840,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     onRefresh: updateItem,
                     onRemoveFromContinueWatching: _refreshContinueWatching,
                     isInContinueWatching: true,
-                    onVerticalNavigation: (isUp) =>
-                        _handleVerticalNavigation(0, isUp),
+                    onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
                   ),
                 ),
 
@@ -950,10 +853,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     icon: _getHubIcon(_hubs[i].title),
                     onRefresh: updateItem,
                     // Hub index is i + 1 if continue watching exists, otherwise i
-                    onVerticalNavigation: (isUp) => _handleVerticalNavigation(
-                      _onDeck.isNotEmpty ? i + 1 : i,
-                      isUp,
-                    ),
+                    onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
                   ),
                 ),
 
@@ -971,9 +871,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             width: 200,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -989,12 +887,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   margin: const EdgeInsets.only(right: 12),
                                   width: 140,
                                   decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(
-                                      tokens(context).radiusSm,
-                                    ),
+                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                                   ),
                                 );
                               },
@@ -1011,19 +905,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        AppIcon(
-                          Symbols.movie_rounded,
-                          fill: 1,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
+                        AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
                         SizedBox(height: 16),
                         Text(t.discover.noContentAvailable),
                         SizedBox(height: 8),
-                        Text(
-                          t.discover.addMediaToLibraries,
-                          style: TextStyle(color: Colors.grey),
-                        ),
+                        Text(t.discover.addMediaToLibraries, style: TextStyle(color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -1081,14 +967,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         }
                       },
                       child: AppIcon(
-                        _isAutoScrollPaused
-                            ? Symbols.play_arrow_rounded
-                            : Symbols.pause_rounded,
+                        _isAutoScrollPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
                         fill: 1,
                         color: Colors.white,
                         size: 18,
-                        semanticLabel:
-                            '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
+                        semanticLabel: '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
                       ),
                     ),
                     // Spacer to separate indicators from button
@@ -1099,11 +982,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       return List.generate(range.end - range.start + 1, (i) {
                         final index = range.start + i;
                         final isActive = _currentHeroIndex == index;
-                        final dotSize = _getDotSize(
-                          index,
-                          range.start,
-                          range.end,
-                        );
+                        final dotSize = _getDotSize(index, range.start, range.end);
 
                         if (isActive) {
                           // Animated progress indicator for active page
@@ -1111,26 +990,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             animation: _indicatorAnimationController,
                             builder: (context, child) {
                               // Fill width animates based on dot size
-                              final maxWidth =
-                                  dotSize *
-                                  3; // 24px for normal, 15px for small
-                              final fillWidth =
-                                  dotSize +
-                                  ((maxWidth - dotSize) *
-                                      _indicatorAnimationController.value);
+                              final maxWidth = dotSize * 3; // 24px for normal, 15px for small
+                              final fillWidth = dotSize + ((maxWidth - dotSize) * _indicatorAnimationController.value);
                               return AnimatedContainer(
                                 duration: tokens(context).slow,
                                 curve: Curves.easeInOut,
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
                                 width: maxWidth,
                                 height: dotSize,
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.4),
-                                  borderRadius: BorderRadius.circular(
-                                    dotSize / 2,
-                                  ),
+                                  borderRadius: BorderRadius.circular(dotSize / 2),
                                 ),
                                 child: Align(
                                   alignment: Alignment.centerLeft,
@@ -1139,9 +1009,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                     height: dotSize,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius: BorderRadius.circular(
-                                        dotSize / 2,
-                                      ),
+                                      borderRadius: BorderRadius.circular(dotSize / 2),
                                     ),
                                   ),
                                 ),
@@ -1181,14 +1049,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
 
     // Determine content type label for chip
-    final contentTypeLabel = heroItem.isMovie
-        ? t.discover.movie
-        : t.discover.tvShow;
+    final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
 
     // Build semantic label for hero item
-    final heroLabel = isEpisode
-        ? "${heroItem.grandparentTitle}, ${heroItem.title}"
-        : heroItem.title;
+    final heroLabel = isEpisode ? "${heroItem.grandparentTitle}, ${heroItem.title}" : heroItem.title;
 
     return Semantics(
       label: heroLabel,
@@ -1204,11 +1068,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10)),
             ],
           ),
           child: ClipRRect(
@@ -1221,13 +1081,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   AnimatedBuilder(
                     animation: _scrollController,
                     builder: (context, child) {
-                      final scrollOffset = _scrollController.hasClients
-                          ? _scrollController.offset
-                          : 0.0;
-                      return Transform.translate(
-                        offset: Offset(0, scrollOffset * 0.3),
-                        child: child,
-                      );
+                      final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+                      return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
                     },
                     child: TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
@@ -1255,27 +1110,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           return CachedNetworkImage(
                             imageUrl: imageUrl,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                            ),
+                            placeholder: (context, url) =>
+                                Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                            errorWidget: (context, url, error) =>
+                                Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
                           );
                         },
                       ),
                     ),
                   )
                 else
-                  Container(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                  ),
+                  Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
 
                 // Gradient Overlay
                 Container(
@@ -1299,13 +1144,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   left: 0,
                   right: isLargeScreen ? 200 : 0,
                   child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isLargeScreen ? 40 : 16,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: isLargeScreen ? 40 : 16),
                     child: Column(
-                      crossAxisAlignment: isLargeScreen
-                          ? CrossAxisAlignment.start
-                          : CrossAxisAlignment.center,
+                      crossAxisAlignment: isLargeScreen ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Show logo or name/title
@@ -1316,86 +1157,50 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             child: Builder(
                               builder: (context) {
                                 final client = _getClientForItem(heroItem);
-                                final dpr = MediaQuery.of(
-                                  context,
-                                ).devicePixelRatio;
-                                final logoUrl =
-                                    PlexImageHelper.getOptimizedImageUrl(
-                                      client: client,
-                                      thumbPath: heroItem.clearLogo,
-                                      maxWidth: 400,
-                                      maxHeight: 120,
-                                      devicePixelRatio: dpr,
-                                      imageType: ImageType.logo,
-                                    );
+                                final dpr = MediaQuery.of(context).devicePixelRatio;
+                                final logoUrl = PlexImageHelper.getOptimizedImageUrl(
+                                  client: client,
+                                  thumbPath: heroItem.clearLogo,
+                                  maxWidth: 400,
+                                  maxHeight: 120,
+                                  devicePixelRatio: dpr,
+                                  imageType: ImageType.logo,
+                                );
 
                                 return CachedNetworkImage(
                                   imageUrl: logoUrl,
                                   filterQuality: FilterQuality.medium,
                                   fit: BoxFit.contain,
-                                  memCacheWidth: (400 * dpr)
-                                      .clamp(200, 800)
-                                      .round(),
-                                  alignment: isLargeScreen
-                                      ? Alignment.bottomLeft
-                                      : Alignment.bottomCenter,
+                                  memCacheWidth: (400 * dpr).clamp(200, 800).round(),
+                                  alignment: isLargeScreen ? Alignment.bottomLeft : Alignment.bottomCenter,
                                   placeholder: (context, url) => Align(
-                                    alignment: isLargeScreen
-                                        ? Alignment.centerLeft
-                                        : Alignment.center,
+                                    alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
                                     child: Text(
                                       showName,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .displaySmall
-                                          ?.copyWith(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.3,
-                                            ),
-                                            fontWeight: FontWeight.bold,
-                                            shadows: [
-                                              Shadow(
-                                                color: Colors.black.withValues(
-                                                  alpha: 0.5,
-                                                ),
-                                                blurRadius: 8,
-                                              ),
-                                            ],
-                                          ),
+                                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                        color: Colors.white.withValues(alpha: 0.3),
+                                        fontWeight: FontWeight.bold,
+                                        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
+                                      ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      textAlign: isLargeScreen
-                                          ? TextAlign.left
-                                          : TextAlign.center,
+                                      textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
                                     ),
                                   ),
                                   errorWidget: (context, url, error) {
                                     // Fallback to text if logo fails to load
                                     return Align(
-                                      alignment: isLargeScreen
-                                          ? Alignment.centerLeft
-                                          : Alignment.center,
+                                      alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
                                       child: Text(
                                         showName,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .displaySmall
-                                            ?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              shadows: [
-                                                Shadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.5),
-                                                  blurRadius: 8,
-                                                ),
-                                              ],
-                                            ),
+                                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
+                                        ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
-                                        textAlign: isLargeScreen
-                                            ? TextAlign.left
-                                            : TextAlign.center,
+                                        textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
                                       ),
                                     );
                                   },
@@ -1406,57 +1211,33 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         else
                           Text(
                             showName,
-                            style: Theme.of(context).textTheme.displaySmall
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                      blurRadius: 8,
-                                    ),
-                                  ],
-                                ),
+                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            textAlign: isLargeScreen
-                                ? TextAlign.left
-                                : TextAlign.center,
+                            textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
                           ),
 
                         // Metadata as dot-separated text with content type
-                        if (heroItem.year != null ||
-                            heroItem.contentRating != null ||
-                            heroItem.rating != null) ...[
+                        if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
                           const SizedBox(height: 16),
                           Text(
                             [
                               contentTypeLabel,
-                              if (heroItem.rating != null)
-                                '★ ${heroItem.rating!.toStringAsFixed(1)}',
-                              if (heroItem.contentRating != null)
-                                formatContentRating(heroItem.contentRating!),
-                              if (heroItem.year != null)
-                                heroItem.year.toString(),
+                              if (heroItem.rating != null) '★ ${heroItem.rating!.toStringAsFixed(1)}',
+                              if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
+                              if (heroItem.year != null) heroItem.year.toString(),
                             ].join(' • '),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: isLargeScreen
-                                ? TextAlign.left
-                                : TextAlign.center,
+                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                            textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
                           ),
                         ],
 
                         // On small screens: show button before summary
-                        if (!isLargeScreen) ...[
-                          const SizedBox(height: 20),
-                          _buildSmartPlayButton(heroItem),
-                        ],
+                        if (!isLargeScreen) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
 
                         // Summary with episode info (Apple TV style)
                         if (heroItem.summary != null) ...[
@@ -1464,26 +1245,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           RichText(
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            textAlign: isLargeScreen
-                                ? TextAlign.left
-                                : TextAlign.center,
+                            textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
                             text: TextSpan(
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                                height: 1.4,
-                              ),
+                              style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
                               children: [
-                                if (isEpisode &&
-                                    heroItem.parentIndex != null &&
-                                    heroItem.index != null)
+                                if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
                                   TextSpan(
-                                    text:
-                                        'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
+                                    text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                                   ),
                                 TextSpan(
                                   text: heroItem.summary?.isNotEmpty == true
@@ -1496,10 +1265,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         ],
 
                         // On large screens: show button after summary
-                        if (isLargeScreen) ...[
-                          const SizedBox(height: 20),
-                          _buildSmartPlayButton(heroItem),
-                        ],
+                        if (isLargeScreen) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
                       ],
                     ),
                   ),
@@ -1514,18 +1280,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   Widget _buildSmartPlayButton(PlexMetadata heroItem) {
     final hasProgress =
-        heroItem.viewOffset != null &&
-        heroItem.duration != null &&
-        heroItem.viewOffset! > 0 &&
-        heroItem.duration! > 0;
+        heroItem.viewOffset != null && heroItem.duration != null && heroItem.viewOffset! > 0 && heroItem.duration! > 0;
 
-    final minutesLeft = hasProgress
-        ? ((heroItem.duration! - heroItem.viewOffset!) / 60000).round()
-        : 0;
+    final minutesLeft = hasProgress ? ((heroItem.duration! - heroItem.viewOffset!) / 60000).round() : 0;
 
-    final progress = hasProgress
-        ? heroItem.viewOffset! / heroItem.duration!
-        : 0.0;
+    final progress = hasProgress ? heroItem.viewOffset! / heroItem.duration! : 0.0;
 
     return InkWell(
       onTap: () {
@@ -1535,57 +1294,35 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       borderRadius: BorderRadius.circular(24),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-        ),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AppIcon(
-              Symbols.play_arrow_rounded,
-              fill: 1,
-              size: 20,
-              color: Colors.black,
-            ),
+            const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 20, color: Colors.black),
             const SizedBox(width: 8),
             if (hasProgress) ...[
               // Progress bar
               Container(
                 width: 40,
                 height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(3),
-                ),
+                decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(3)),
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
                   widthFactor: progress,
                   child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                    decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(2)),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 t.discover.minutesLeft(minutes: minutesLeft),
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ] else
               Text(
                 t.discover.play,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600),
               ),
           ],
         ),

@@ -13,11 +13,7 @@ class PlexVideoPlaybackData {
   /// Available media versions/qualities for this content
   final List<PlexMediaVersion> availableVersions;
 
-  PlexVideoPlaybackData({
-    required this.videoUrl,
-    required this.mediaInfo,
-    required this.availableVersions,
-  });
+  PlexVideoPlaybackData({required this.videoUrl, required this.mediaInfo, required this.availableVersions});
 
   /// Returns true if this playback data has a valid video URL
   bool get hasValidVideoUrl => videoUrl != null && videoUrl!.isNotEmpty;

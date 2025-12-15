@@ -61,8 +61,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
 
   /// The active focus node (external if provided, otherwise internal).
   FocusNode get focusNode {
-    return widgetFocusNode ??
-        (_internalFocusNode ??= FocusNode(debugLabel: debugLabel));
+    return widgetFocusNode ?? (_internalFocusNode ??= FocusNode(debugLabel: debugLabel));
   }
 
   /// Whether this widget is currently focused.
@@ -102,11 +101,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   ///
   /// Returns [KeyEventResult.handled] if the event was consumed,
   /// [KeyEventResult.ignored] otherwise.
-  KeyEventResult handleChipKeyEvent(
-    FocusNode node,
-    KeyEvent event,
-    ChipKeyCallbacks callbacks,
-  ) {
+  KeyEventResult handleChipKeyEvent(FocusNode node, KeyEvent event, ChipKeyCallbacks callbacks) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }

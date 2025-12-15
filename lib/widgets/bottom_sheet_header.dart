@@ -69,11 +69,7 @@ class BottomSheetHeader extends StatelessWidget {
       resolvedLeading = leading;
     } else if (onBack != null) {
       resolvedLeading = IconButton(
-        icon: AppIcon(
-          Symbols.arrow_back_rounded,
-          fill: 1,
-          color: iconColor,
-        ),
+        icon: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: iconColor),
         onPressed: onBack,
       );
     } else if (icon != null) {
@@ -81,34 +77,19 @@ class BottomSheetHeader extends StatelessWidget {
     }
 
     // Determine the title style
-    final effectiveTitleStyle = titleStyle ??
-        TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: titleColor,
-        );
+    final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: titleColor);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: showBorder
           ? BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Theme.of(context).dividerColor),
-              ),
+              border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
             )
           : null,
       child: Row(
         children: [
-          if (resolvedLeading != null) ...[
-            resolvedLeading,
-            const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: Text(
-              title,
-              style: effectiveTitleStyle,
-            ),
-          ),
+          if (resolvedLeading != null) ...[resolvedLeading, const SizedBox(width: 8)],
+          Expanded(child: Text(title, style: effectiveTitleStyle)),
           if (action != null) action!,
           IconButton(
             focusNode: closeFocusNode,

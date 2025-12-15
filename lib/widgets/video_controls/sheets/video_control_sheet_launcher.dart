@@ -12,11 +12,6 @@ class VideoControlSheetLauncher {
     VoidCallback? onOpen,
     VoidCallback? onClose,
   }) {
-    return BaseVideoControlSheet.showSheet<T>(
-      context: context,
-      onOpen: onOpen,
-      onClose: onClose,
-      builder: builder,
-    );
+    return BaseVideoControlSheet.showSheet<T>(context: context, onOpen: onOpen, onClose: onClose, builder: builder);
   }
 }

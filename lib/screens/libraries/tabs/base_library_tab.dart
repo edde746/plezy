@@ -55,8 +55,7 @@ abstract class BaseLibraryTab<T> extends StatefulWidget {
 
 /// State mixin that provides the common implementation for library tabs
 /// This preserves AutomaticKeepAliveClientMixin functionality
-abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
-    extends State<W>
+abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State<W>
     with AutomaticKeepAliveClientMixin, Refreshable, LibraryTabStateMixin {
   @override
   bool get wantKeepAlive => true;
@@ -167,10 +166,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
     // Don't auto-focus if suppressed (e.g., when navigating via tab bar)
     if (widget.suppressAutoFocus) return;
 
-    if (widget.isActive &&
-        _hasLoadedData &&
-        !_hasFocused &&
-        _items.isNotEmpty) {
+    if (widget.isActive && _hasLoadedData && !_hasFocused && _items.isNotEmpty) {
       _hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -235,8 +231,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>>
       emptyIcon: emptyIcon,
       emptyMessage: emptyMessage,
       onRetry: loadItems,
-      builder: (items) =>
-          RefreshIndicator(onRefresh: loadItems, child: buildContent(items)),
+      builder: (items) => RefreshIndicator(onRefresh: loadItems, child: buildContent(items)),
     );
   }
 }

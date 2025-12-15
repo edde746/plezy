@@ -102,10 +102,7 @@ class _TrackSelectionSheetState<T> extends State<TrackSelectionSheet<T>> {
         initialData: widget.player.state.tracks,
         builder: (context, snapshot) {
           final tracks = snapshot.data;
-          final availableTracks = TrackFilterHelper.extractAndFilterTracks<T>(
-            tracks,
-            widget.extractTracks,
-          );
+          final availableTracks = TrackFilterHelper.extractAndFilterTracks<T>(tracks, widget.extractTracks);
 
           return BaseVideoControlSheet(
             title: widget.title,
@@ -116,21 +113,13 @@ class _TrackSelectionSheetState<T> extends State<TrackSelectionSheet<T>> {
                     stream: widget.player.streams.track,
                     initialData: widget.player.state.track,
                     builder: (context, selectedSnapshot) {
-                      final currentTrack =
-                          selectedSnapshot.data ?? widget.player.state.track;
-                      final selectedTrack = widget.getCurrentTrack(
-                        currentTrack,
-                      );
+                      final currentTrack = selectedSnapshot.data ?? widget.player.state.track;
+                      final selectedTrack = widget.getCurrentTrack(currentTrack);
 
                       // Determine if "Off" is selected (null or explicit off)
-                      final isOffSelected = TrackSelectionHelper.isOffSelected(
-                        selectedTrack,
-                        widget.isOffTrack,
-                      );
+                      final isOffSelected = TrackSelectionHelper.isOffSelected(selectedTrack, widget.isOffTrack);
 
-                      final itemCount =
-                          availableTracks.length +
-                          (widget.showOffOption ? 1 : 0);
+                      final itemCount = availableTracks.length + (widget.showOffOption ? 1 : 0);
 
                       return ListView.builder(
                         itemCount: itemCount,
@@ -152,15 +141,11 @@ class _TrackSelectionSheetState<T> extends State<TrackSelectionSheet<T>> {
                           }
 
                           // Subsequent items are tracks
-                          final trackIndex = widget.showOffOption
-                              ? index - 1
-                              : index;
+                          final trackIndex = widget.showOffOption ? index - 1 : index;
                           final track = availableTracks[trackIndex];
 
                           // Check if this track is selected
-                          final trackId = TrackSelectionHelper.getTrackId(
-                            track,
-                          );
+                          final trackId = TrackSelectionHelper.getTrackId(track);
                           final selectedId = selectedTrack == null
                               ? ''
                               : TrackSelectionHelper.getTrackId(selectedTrack);
@@ -169,8 +154,7 @@ class _TrackSelectionSheetState<T> extends State<TrackSelectionSheet<T>> {
                           final label = widget.buildLabel(track, trackIndex);
 
                           // Focus the first actual track if no "Off" option
-                          final shouldFocus =
-                              !widget.showOffOption && index == 0;
+                          final shouldFocus = !widget.showOffOption && index == 0;
 
                           return TrackSelectionHelper.buildTrackTile<T>(
                             label: label,

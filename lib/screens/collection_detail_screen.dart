@@ -18,8 +18,7 @@ class CollectionDetailScreen extends StatefulWidget {
   State<CollectionDetailScreen> createState() => _CollectionDetailScreenState();
 }
 
-class _CollectionDetailScreenState
-    extends BaseMediaListDetailScreen<CollectionDetailScreen>
+class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionDetailScreen>
     with StandardItemLoader<CollectionDetailScreen> {
   @override
   PlexMetadata get mediaItem => widget.collection;
@@ -72,20 +71,14 @@ class _CollectionDetailScreenState
     if (!mounted) return;
 
     try {
-      final success = await client.deleteCollection(
-        sectionId.toString(),
-        widget.collection.ratingKey,
-      );
+      final success = await client.deleteCollection(sectionId.toString(), widget.collection.ratingKey);
 
       if (!mounted) return;
 
       if (mounted) {
         if (success) {
           showSuccessSnackBar(context, t.collections.deleted);
-          Navigator.pop(
-            context,
-            true,
-          ); // Return true to indicate refresh needed
+          Navigator.pop(context, true); // Return true to indicate refresh needed
         } else {
           showErrorSnackBar(context, t.collections.deleteFailed);
         }
@@ -93,10 +86,7 @@ class _CollectionDetailScreenState
     } catch (e) {
       appLogger.e('Failed to delete collection', error: e);
       if (mounted) {
-        showErrorSnackBar(
-          context,
-          t.collections.deleteFailedWithError(error: e.toString()),
-        );
+        showErrorSnackBar(context, t.collections.deleteFailedWithError(error: e.toString()));
       }
     }
   }

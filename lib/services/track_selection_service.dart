@@ -12,20 +12,12 @@ class TrackSelectionService {
   final PlexUserProfile? profileSettings;
   final PlexMetadata metadata;
 
-  TrackSelectionService({
-    required this.player,
-    this.profileSettings,
-    required this.metadata,
-  });
+  TrackSelectionService({required this.player, this.profileSettings, required this.metadata});
 
   /// Build list of preferred languages from a user profile
   List<String> _buildPreferredLanguages(PlexUserProfile profile, {required bool isAudio}) {
-    final primary = isAudio
-        ? profile.defaultAudioLanguage
-        : profile.defaultSubtitleLanguage;
-    final list = isAudio
-        ? profile.defaultAudioLanguages
-        : profile.defaultSubtitleLanguages;
+    final primary = isAudio ? profile.defaultAudioLanguage : profile.defaultSubtitleLanguage;
+    final list = isAudio ? profile.defaultAudioLanguages : profile.defaultSubtitleLanguages;
 
     final result = <String>[];
     if (primary != null && primary.isNotEmpty) {
@@ -46,9 +38,7 @@ class TrackSelectionService {
     String trackType,
   ) {
     final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-    appLogger.d(
-      'Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}',
-    );
+    appLogger.d('Checking language variations for "$preferredLanguage": ${languageVariations.join(", ")}');
 
     return _findTrackByLanguageVariations<T>(
       tracks,
@@ -61,11 +51,7 @@ class TrackSelectionService {
   }
 
   /// Apply a filter to tracks, falling back to original if filter produces empty result
-  List<T> _applyFilterWithFallback<T>(
-    List<T> tracks,
-    List<T> Function(List<T>) filter,
-    String filterDescription,
-  ) {
+  List<T> _applyFilterWithFallback<T>(List<T> tracks, List<T> Function(List<T>) filter, String filterDescription) {
     final filtered = filter(tracks);
     if (filtered.isNotEmpty) {
       return filtered;
@@ -89,9 +75,7 @@ class TrackSelectionService {
     if (availableTracks.isEmpty) return null;
 
     // Filter out auto and no tracks
-    final validTracks = availableTracks
-        .where((t) => getId(t) != 'auto' && getId(t) != 'no')
-        .toList();
+    final validTracks = availableTracks.where((t) => getId(t) != 'auto' && getId(t) != 'no').toList();
     if (validTracks.isEmpty) return null;
 
     final preferredId = getId(preferred);
@@ -100,17 +84,14 @@ class TrackSelectionService {
 
     // Try to match: id, title, and language
     for (var track in validTracks) {
-      if (getId(track) == preferredId &&
-          getTitle(track) == preferredTitle &&
-          getLanguage(track) == preferredLanguage) {
+      if (getId(track) == preferredId && getTitle(track) == preferredTitle && getLanguage(track) == preferredLanguage) {
         return track;
       }
     }
 
     // Try to match: title and language
     for (var track in validTracks) {
-      if (getTitle(track) == preferredTitle &&
-          getLanguage(track) == preferredLanguage) {
+      if (getTitle(track) == preferredTitle && getLanguage(track) == preferredLanguage) {
         return track;
       }
     }
@@ -125,23 +106,11 @@ class TrackSelectionService {
     return null;
   }
 
-  AudioTrack? findBestAudioMatch(
-    List<AudioTrack> availableTracks,
-    AudioTrack preferred,
-  ) {
-    return findBestTrackMatch<AudioTrack>(
-      availableTracks,
-      preferred,
-      (t) => t.id,
-      (t) => t.title,
-      (t) => t.language,
-    );
+  AudioTrack? findBestAudioMatch(List<AudioTrack> availableTracks, AudioTrack preferred) {
+    return findBestTrackMatch<AudioTrack>(availableTracks, preferred, (t) => t.id, (t) => t.title, (t) => t.language);
   }
 
-  AudioTrack? findAudioTrackByProfile(
-    List<AudioTrack> availableTracks,
-    PlexUserProfile profile,
-  ) {
+  AudioTrack? findAudioTrackByProfile(List<AudioTrack> availableTracks, PlexUserProfile profile) {
     appLogger.d('Audio track selection using user profile');
     appLogger.d(
       'Profile settings - autoSelectAudio: ${profile.autoSelectAudio}, defaultAudioLanguage: ${profile.defaultAudioLanguage}, defaultAudioLanguages: ${profile.defaultAudioLanguages}',
@@ -175,16 +144,11 @@ class TrackSelectionService {
       if (match != null) return match;
     }
 
-    appLogger.d(
-      'No audio track found matching profile languages or their variations',
-    );
+    appLogger.d('No audio track found matching profile languages or their variations');
     return null;
   }
 
-  SubtitleTrack? findBestSubtitleMatch(
-    List<SubtitleTrack> availableTracks,
-    SubtitleTrack preferred,
-  ) {
+  SubtitleTrack? findBestSubtitleMatch(List<SubtitleTrack> availableTracks, SubtitleTrack preferred) {
     // Handle special "no subtitles" case
     if (preferred.id == 'no') {
       return SubtitleTrack.off;
@@ -216,28 +180,21 @@ class TrackSelectionService {
 
     // Mode 0: Manually selected - return OFF
     if (profile.autoSelectSubtitle == 0) {
-      appLogger.d(
-        'Profile specifies manual mode (autoSelectSubtitle=0) - Subtitles OFF',
-      );
+      appLogger.d('Profile specifies manual mode (autoSelectSubtitle=0) - Subtitles OFF');
       return SubtitleTrack.off;
     }
 
     // Mode 1: Shown with foreign audio
     if (profile.autoSelectSubtitle == 1) {
-      appLogger.d(
-        'Profile specifies foreign audio mode (autoSelectSubtitle=1)',
-      );
+      appLogger.d('Profile specifies foreign audio mode (autoSelectSubtitle=1)');
 
       // Check if audio language matches user's preferred subtitle language
-      if (selectedAudioTrack != null &&
-          profile.defaultSubtitleLanguage != null) {
+      if (selectedAudioTrack != null && profile.defaultSubtitleLanguage != null) {
         final audioLang = selectedAudioTrack.language?.toLowerCase();
         final prefLang = profile.defaultSubtitleLanguage!.toLowerCase();
         final languageVariations = LanguageCodes.getVariations(prefLang);
 
-        appLogger.d(
-          'Checking if audio is foreign - audio: $audioLang, preferred subtitle lang: $prefLang',
-        );
+        appLogger.d('Checking if audio is foreign - audio: $audioLang, preferred subtitle lang: $prefLang');
 
         // If audio matches preferred language, no subtitles needed
         if (audioLang != null && languageVariations.contains(audioLang)) {
@@ -255,9 +212,7 @@ class TrackSelectionService {
     final preferredLanguages = _buildPreferredLanguages(profile, isAudio: false);
 
     if (preferredLanguages.isEmpty) {
-      appLogger.d(
-        'Cannot use profile: No defaultSubtitleLanguage(s) specified',
-      );
+      appLogger.d('Cannot use profile: No defaultSubtitleLanguage(s) specified');
       return null;
     }
 
@@ -267,23 +222,13 @@ class TrackSelectionService {
     var candidateTracks = availableTracks;
 
     // Filter by SDH (defaultSubtitleAccessibility: 0-3)
-    candidateTracks = filterSubtitlesBySDH(
-      candidateTracks,
-      profile.defaultSubtitleAccessibility,
-    );
+    candidateTracks = filterSubtitlesBySDH(candidateTracks, profile.defaultSubtitleAccessibility);
 
     // Filter by forced subtitle preference (defaultSubtitleForced: 0-3)
-    candidateTracks = filterSubtitlesByForced(
-      candidateTracks,
-      profile.defaultSubtitleForced,
-    );
+    candidateTracks = filterSubtitlesByForced(candidateTracks, profile.defaultSubtitleForced);
 
     // If no candidates after filtering, relax filters
-    candidateTracks = _applyFilterWithFallback(
-      availableTracks,
-      (_) => candidateTracks,
-      'strict filters',
-    );
+    candidateTracks = _applyFilterWithFallback(availableTracks, (_) => candidateTracks, 'strict filters');
 
     // Try to find track matching any preferred language
     for (final preferredLanguage in preferredLanguages) {
@@ -297,9 +242,7 @@ class TrackSelectionService {
       if (match != null) return match;
     }
 
-    appLogger.d(
-      'No subtitle track found matching profile languages or their variations',
-    );
+    appLogger.d('No subtitle track found matching profile languages or their variations');
     return null;
   }
 
@@ -310,10 +253,7 @@ class TrackSelectionService {
   /// - 1: Prefer SDH subtitles
   /// - 2: Only show SDH subtitles
   /// - 3: Only show non-SDH subtitles
-  List<SubtitleTrack> filterSubtitlesBySDH(
-    List<SubtitleTrack> tracks,
-    int preference,
-  ) {
+  List<SubtitleTrack> filterSubtitlesBySDH(List<SubtitleTrack> tracks, int preference) {
     if (preference == 0 || preference == 1) {
       // Prefer but don't require
       final preferSDH = preference == 1;
@@ -347,16 +287,11 @@ class TrackSelectionService {
   /// - 1: Prefer forced subtitles
   /// - 2: Only show forced subtitles
   /// - 3: Only show non-forced subtitles
-  List<SubtitleTrack> filterSubtitlesByForced(
-    List<SubtitleTrack> tracks,
-    int preference,
-  ) {
+  List<SubtitleTrack> filterSubtitlesByForced(List<SubtitleTrack> tracks, int preference) {
     if (preference == 0 || preference == 1) {
       // Prefer but don't require
       final preferForced = preference == 1;
-      final preferred = tracks
-          .where((t) => isForced(t) == preferForced)
-          .toList();
+      final preferred = tracks.where((t) => isForced(t) == preferForced).toList();
       if (preferred.isNotEmpty) {
         appLogger.d(
           'Applying forced preference: ${preferForced ? "prefer forced" : "prefer non-forced"} (${preferred.length} tracks)',
@@ -410,8 +345,7 @@ class TrackSelectionService {
   ) {
     for (var track in tracks) {
       final trackLang = getLanguage(track)?.toLowerCase();
-      if (trackLang != null &&
-          languageVariations.any((lang) => trackLang.startsWith(lang))) {
+      if (trackLang != null && languageVariations.any((lang) => trackLang.startsWith(lang))) {
         appLogger.d(
           'Found $trackType matching profile language "$preferredLanguage" (matched: "$trackLang"): ${getTrackDescription(track)}',
         );
@@ -450,10 +384,7 @@ class TrackSelectionService {
   }
 
   /// Log available tracks for debugging
-  void logAvailableTracks(
-    List<AudioTrack> audioTracks,
-    List<SubtitleTrack> subtitleTracks,
-  ) {
+  void logAvailableTracks(List<AudioTrack> audioTracks, List<SubtitleTrack> subtitleTracks) {
     appLogger.d('Available audio tracks: ${audioTracks.length}');
     for (var track in audioTracks) {
       appLogger.d(
@@ -473,10 +404,7 @@ class TrackSelectionService {
   /// Priority 2: Per-media language preference
   /// Priority 3: User profile preferences
   /// Priority 4: Default or first track
-  AudioTrack? selectAudioTrack(
-    List<AudioTrack> availableTracks,
-    AudioTrack? preferredAudioTrack,
-  ) {
+  AudioTrack? selectAudioTrack(List<AudioTrack> availableTracks, AudioTrack? preferredAudioTrack) {
     if (availableTracks.isEmpty) return null;
 
     AudioTrack? trackToSelect;
@@ -519,10 +447,7 @@ class TrackSelectionService {
     // Priority 3: If no preferred track matched, try user profile preferences
     if (profileSettings != null) {
       appLogger.d('Priority 3: Checking user profile preferences');
-      trackToSelect = findAudioTrackByProfile(
-        availableTracks,
-        profileSettings!,
-      );
+      trackToSelect = findAudioTrackByProfile(availableTracks, profileSettings!);
       if (trackToSelect != null) {
         return trackToSelect;
       }
@@ -532,10 +457,7 @@ class TrackSelectionService {
 
     // Priority 4: If no match, use default or first track
     appLogger.d('Priority 4: Using default or first available track');
-    trackToSelect = availableTracks.firstWhere(
-      (t) => t.isDefault == true,
-      orElse: () => availableTracks.first,
-    );
+    trackToSelect = availableTracks.firstWhere((t) => t.isDefault == true, orElse: () => availableTracks.first);
     final isDefault = trackToSelect.isDefault == true;
     appLogger.d(
       '  Selected ${isDefault ? "default" : "first"} track: ${trackToSelect.title ?? "Track ${trackToSelect.id}"} (${trackToSelect.language ?? "unknown"})',
@@ -567,10 +489,7 @@ class TrackSelectionService {
         appLogger.d(
           '  Preferred: ${preferredSubtitleTrack.title ?? "Track ${preferredSubtitleTrack.id}"} (${preferredSubtitleTrack.language ?? "unknown"})',
         );
-        subtitleToSelect = findBestSubtitleMatch(
-          availableTracks,
-          preferredSubtitleTrack,
-        );
+        subtitleToSelect = findBestSubtitleMatch(availableTracks, preferredSubtitleTrack);
         if (subtitleToSelect != null) {
           appLogger.d('  Matched preferred track');
           return subtitleToSelect;
@@ -583,16 +502,11 @@ class TrackSelectionService {
 
     // Priority 2: If no preferred match, try per-media language preference
     if (metadata.subtitleLanguage != null) {
-      appLogger.d(
-        'Priority 2: Checking per-media subtitle language preference',
-      );
-      appLogger.d(
-        '  Per-media subtitle language: ${metadata.subtitleLanguage}',
-      );
+      appLogger.d('Priority 2: Checking per-media subtitle language preference');
+      appLogger.d('  Per-media subtitle language: ${metadata.subtitleLanguage}');
 
       // Check if subtitle should be disabled
-      if (metadata.subtitleLanguage == 'none' ||
-          metadata.subtitleLanguage!.isEmpty) {
+      if (metadata.subtitleLanguage == 'none' || metadata.subtitleLanguage!.isEmpty) {
         appLogger.d('  Per-media preference: Subtitles OFF');
         return SubtitleTrack.off;
       } else if (availableTracks.isNotEmpty) {
@@ -628,10 +542,7 @@ class TrackSelectionService {
     // Priority 4: If no profile match, check for default subtitle
     if (availableTracks.isNotEmpty) {
       appLogger.d('Priority 4: Checking for default subtitle track');
-      final defaultTrack = availableTracks.firstWhere(
-        (t) => t.isDefault == true,
-        orElse: () => availableTracks.first,
-      );
+      final defaultTrack = availableTracks.firstWhere((t) => t.isDefault == true, orElse: () => availableTracks.first);
       if (defaultTrack.isDefault == true) {
         appLogger.d(
           '  Found default track: ${defaultTrack.title ?? "Track ${defaultTrack.id}"} (${defaultTrack.language ?? "unknown"})',
@@ -656,9 +567,7 @@ class TrackSelectionService {
   }) async {
     // Wait for tracks to be loaded
     int attempts = 0;
-    while (player.state.tracks.audio.isEmpty &&
-        player.state.tracks.subtitle.isEmpty &&
-        attempts < 100) {
+    while (player.state.tracks.audio.isEmpty && player.state.tracks.subtitle.isEmpty && attempts < 100) {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
     }
@@ -666,22 +575,15 @@ class TrackSelectionService {
     appLogger.d('Starting track selection process');
 
     // Get real tracks (excluding auto and no)
-    final realAudioTracks = player.state.tracks.audio
-        .where((t) => t.id != 'auto' && t.id != 'no')
-        .toList();
-    final realSubtitleTracks = player.state.tracks.subtitle
-        .where((t) => t.id != 'auto' && t.id != 'no')
-        .toList();
+    final realAudioTracks = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
+    final realSubtitleTracks = player.state.tracks.subtitle.where((t) => t.id != 'auto' && t.id != 'no').toList();
 
     // Log available tracks
     logAvailableTracks(realAudioTracks, realSubtitleTracks);
 
     // Select and apply audio track
     appLogger.d('Audio track selection');
-    final selectedAudioTrack = selectAudioTrack(
-      realAudioTracks,
-      preferredAudioTrack,
-    );
+    final selectedAudioTrack = selectAudioTrack(realAudioTracks, preferredAudioTrack);
     if (selectedAudioTrack != null) {
       appLogger.i(
         'Final audio selection: ${selectedAudioTrack.title ?? "Track ${selectedAudioTrack.id}"} (${selectedAudioTrack.language ?? "unknown"})',
@@ -693,11 +595,7 @@ class TrackSelectionService {
 
     // Select and apply subtitle track
     appLogger.d('Subtitle track selection');
-    final selectedSubtitleTrack = selectSubtitleTrack(
-      realSubtitleTracks,
-      preferredSubtitleTrack,
-      selectedAudioTrack,
-    );
+    final selectedSubtitleTrack = selectSubtitleTrack(realSubtitleTracks, preferredSubtitleTrack, selectedAudioTrack);
     final finalSubtitle = selectedSubtitleTrack.id == 'no'
         ? 'OFF'
         : '${selectedSubtitleTrack.title ?? "Track ${selectedSubtitleTrack.id}"} (${selectedSubtitleTrack.language ?? "unknown"})';

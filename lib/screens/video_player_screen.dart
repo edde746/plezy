@@ -60,8 +60,7 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => VideoPlayerScreenState();
 }
 
-class VideoPlayerScreenState extends State<VideoPlayerScreen>
-    with WidgetsBindingObserver {
+class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver {
   Player? player;
   bool _isPlayerInitialized = false;
   PlexMetadata? _nextEpisode;
@@ -78,8 +77,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   StreamSubscription<dynamic>? _mediaControlSubscription;
   StreamSubscription<bool>? _bufferingSubscription;
   StreamSubscription<Tracks>? _trackLoadingSubscription;
-  bool _isReplacingWithVideo =
-      false; // Flag to skip orientation restoration during video-to-video navigation
+  bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
 
   // App lifecycle state tracking
@@ -89,17 +87,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   MediaControlsManager? _mediaControlsManager;
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
-  final EpisodeNavigationService _episodeNavigation =
-      EpisodeNavigationService();
+  final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata(BuildContext context) {
     return context.getClientForServer(widget.metadata.serverId!);
   }
 
-  final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(
-    false,
-  ); // Track if video is currently buffering
+  final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
 
   @override
   void initState() {
@@ -135,10 +130,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       });
     } catch (e) {
       // Provider might not be available yet during initialization
-      appLogger.d(
-        'Deferred playback state update (provider not ready)',
-        error: e,
-      );
+      appLogger.d('Deferred playback state update (provider not ready)', error: e);
     }
 
     // Register app lifecycle observer
@@ -192,9 +184,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         OsMediaControls.clear();
         // Disable wakelock when app goes to background
         WakelockPlus.disable();
-        appLogger.d(
-          'Media controls cleared and wakelock disabled due to app being paused/backgrounded',
-        );
+        appLogger.d('Media controls cleared and wakelock disabled due to app being paused/backgrounded');
         break;
       case AppLifecycleState.resumed:
         // Restore media controls and wakelock when app is resumed
@@ -208,9 +198,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             _mediaControlsManager!.updateMetadata(
               metadata: widget.metadata,
               client: client,
-              duration: widget.metadata.duration != null
-                  ? Duration(milliseconds: widget.metadata.duration!)
-                  : null,
+              duration: widget.metadata.duration != null ? Duration(milliseconds: widget.metadata.duration!) : null,
             );
           }
 
@@ -222,9 +210,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           }
 
           _updateMediaControlsPlaybackState();
-          appLogger.d(
-            'Media controls restored and wakelock re-enabled on app resume',
-          );
+          appLogger.d('Media controls restored and wakelock re-enabled on app resume');
         }
         break;
       case AppLifecycleState.detached:
@@ -263,50 +249,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       final settingsService = await SettingsService.getInstance();
       final bufferSizeMB = settingsService.getBufferSize();
       final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
-      final enableHardwareDecoding = settingsService
-          .getEnableHardwareDecoding();
+      final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
 
       // Create player
       player = Player();
 
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
-      await player!.setProperty(
-        'demuxer-max-bytes',
-        bufferSizeBytes.toString(),
-      );
-      await player!.setProperty(
-        'msg-level',
-        debugLoggingEnabled ? 'all=debug' : 'all=error',
-      );
-      await player!.setProperty(
-        'hwdec',
-        _getHwdecValue(enableHardwareDecoding),
-      );
+      await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
+      await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
+      await player!.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
       // Subtitle styling
-      await player!.setProperty(
-        'sub-font-size',
-        settingsService.getSubtitleFontSize().toString(),
-      );
-      await player!.setProperty(
-        'sub-color',
-        settingsService.getSubtitleTextColor(),
-      );
-      await player!.setProperty(
-        'sub-border-size',
-        settingsService.getSubtitleBorderSize().toString(),
-      );
-      await player!.setProperty(
-        'sub-border-color',
-        settingsService.getSubtitleBorderColor(),
-      );
-      final bgOpacity =
-          (settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt();
-      final bgColor = settingsService.getSubtitleBackgroundColor().replaceFirst(
-        '#',
-        '',
-      );
+      await player!.setProperty('sub-font-size', settingsService.getSubtitleFontSize().toString());
+      await player!.setProperty('sub-color', settingsService.getSubtitleTextColor());
+      await player!.setProperty('sub-border-size', settingsService.getSubtitleBorderSize().toString());
+      await player!.setProperty('sub-border-color', settingsService.getSubtitleBorderColor());
+      final bgOpacity = (settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt();
+      final bgColor = settingsService.getSubtitleBackgroundColor().replaceFirst('#', '');
       await player!.setProperty(
         'sub-back-color',
         '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
@@ -377,14 +337,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       // Listen to playback state changes
-      _playingSubscription = player!.streams.playing.listen(
-        _onPlayingStateChanged,
-      );
+      _playingSubscription = player!.streams.playing.listen(_onPlayingStateChanged);
 
       // Listen to completion
-      _completedSubscription = player!.streams.completed.listen(
-        _onVideoCompleted,
-      );
+      _completedSubscription = player!.streams.completed.listen(_onVideoCompleted);
 
       // Listen to MPV logs
       _logSubscription = player!.streams.log.listen(_onPlayerLog);
@@ -416,14 +372,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   /// Add external subtitle tracks to the player
-  Future<void> _addExternalSubtitles(
-    List<SubtitleTrack> externalSubtitles,
-  ) async {
+  Future<void> _addExternalSubtitles(List<SubtitleTrack> externalSubtitles) async {
     if (player == null || externalSubtitles.isEmpty) return;
 
-    appLogger.d(
-      'Adding ${externalSubtitles.length} external subtitle(s) to player',
-    );
+    appLogger.d('Adding ${externalSubtitles.length} external subtitle(s) to player');
 
     // Wait for media to be ready
     await _waitForMediaReady();
@@ -438,14 +390,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           language: subtitleTrack.language,
           select: false, // Don't auto-select
         );
-        appLogger.d(
-          'Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}',
-        );
+        appLogger.d('Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}');
       } catch (e) {
-        appLogger.w(
-          'Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}',
-          error: e,
-        );
+        appLogger.w('Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}', error: e);
       }
     }
   }
@@ -486,11 +433,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       _progressTracker!.startTracking();
     } else if (client != null) {
       // Online mode: send progress to server
-      _progressTracker = PlaybackProgressTracker(
-        client: client,
-        metadata: widget.metadata,
-        player: player!,
-      );
+      _progressTracker = PlaybackProgressTracker(client: client, metadata: widget.metadata, player: player!);
       _progressTracker!.startTracking();
     }
 
@@ -498,17 +441,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _mediaControlsManager = MediaControlsManager();
 
     // Set up media control event handling
-    _mediaControlSubscription = _mediaControlsManager!.controlEvents.listen((
-      event,
-    ) {
+    _mediaControlSubscription = _mediaControlsManager!.controlEvents.listen((event) {
       if (event is PlayEvent) {
         appLogger.d('Media control: Play event received');
         if (player != null) {
           player!.play();
           _wasPlayingBeforeInactive = false;
-          appLogger.d(
-            'Cleared _wasPlayingBeforeInactive due to manual play via media controls',
-          );
+          appLogger.d('Cleared _wasPlayingBeforeInactive due to manual play via media controls');
           _updateMediaControlsPlaybackState();
         }
       } else if (event is PauseEvent) {
@@ -538,9 +477,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     await _mediaControlsManager!.updateMetadata(
       metadata: widget.metadata,
       client: client,
-      duration: widget.metadata.duration != null
-          ? Duration(milliseconds: widget.metadata.duration!)
-          : null,
+      duration: widget.metadata.duration != null ? Duration(milliseconds: widget.metadata.duration!) : null,
     );
 
     if (!mounted) return;
@@ -591,9 +528,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // For episodes, grandparentRatingKey points to the show
       final showRatingKey = widget.metadata.grandparentRatingKey;
       if (showRatingKey == null) {
-        appLogger.d(
-          'Episode missing grandparentRatingKey, skipping play queue creation',
-        );
+        appLogger.d('Episode missing grandparentRatingKey, skipping play queue creation');
         return;
       }
 
@@ -617,9 +552,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         startingEpisodeKey: widget.metadata.ratingKey,
       );
 
-      if (playQueue != null &&
-          playQueue.items != null &&
-          playQueue.items!.isNotEmpty) {
+      if (playQueue != null && playQueue.items != null && playQueue.items!.isNotEmpty) {
         // Initialize playback state with the play queue
         await playbackState.setPlaybackFromPlayQueue(
           playQueue,
@@ -631,16 +564,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // Set the client for loading more items
         playbackState.setClient(client);
 
-        appLogger.d(
-          'Sequential play queue created with ${playQueue.items!.length} items',
-        );
+        appLogger.d('Sequential play queue created with ${playQueue.items!.length} items');
       }
     } catch (e) {
       // Non-critical: Sequential playback will fall back to non-queue navigation
-      appLogger.d(
-        'Could not create play queue for sequential playback',
-        error: e,
-      );
+      appLogger.d('Could not create play queue for sequential playback', error: e);
     }
   }
 
@@ -685,10 +613,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       } else {
         // Online mode: use server-specific client
         final client = _getClientForMetadata(context);
-        final playbackService = PlaybackInitializationService(
-          client: client,
-          database: PlexApiCache.instance.database,
-        );
+        final playbackService = PlaybackInitializationService(client: client, database: PlexApiCache.instance.database);
         result = await playbackService.getPlaybackData(
           metadata: widget.metadata,
           selectedMediaIndex: widget.selectedMediaIndex,
@@ -744,9 +669,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       });
     } on PlaybackException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } catch (e) {
       if (mounted) {
@@ -760,12 +683,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final downloadProvider = context.read<DownloadProvider>();
 
     // Debug: log metadata info
-    appLogger.d(
-      'Offline playback - serverId: ${widget.metadata.serverId}, ratingKey: ${widget.metadata.ratingKey}',
-    );
+    appLogger.d('Offline playback - serverId: ${widget.metadata.serverId}, ratingKey: ${widget.metadata.ratingKey}');
 
-    final globalKey =
-        '${widget.metadata.serverId}:${widget.metadata.ratingKey}';
+    final globalKey = '${widget.metadata.serverId}:${widget.metadata.ratingKey}';
     appLogger.d('Looking up video with globalKey: $globalKey');
 
     final videoPath = await downloadProvider.getVideoFilePath(globalKey);
@@ -840,10 +760,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       try {
         if (_isPhone) {
           // Phone: portrait only
-          SystemChrome.setPreferredOrientations([
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-          ]);
+          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
         } else {
           // Tablet/Desktop: all orientations
           SystemChrome.setPreferredOrientations([
@@ -979,16 +896,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     PlexAudioTrack? matched;
     final normalizedTrackLang = _iso6391ToPlex6392(track.language);
 
-    appLogger.d(
-      'Normalized media_kit language: ${track.language} -> $normalizedTrackLang',
-    );
+    appLogger.d('Normalized media_kit language: ${track.language} -> $normalizedTrackLang');
 
     for (final plexTrack in _currentMediaInfo!.audioTracks) {
       final matchLang = plexTrack.languageCode == normalizedTrackLang;
       final matchTitle = (track.title == null || track.title!.isEmpty)
           ? true
-          : (plexTrack.displayTitle == track.title ||
-                plexTrack.title == track.title);
+          : (plexTrack.displayTitle == track.title || plexTrack.title == track.title);
 
       if (matchLang && matchTitle) {
         matched = plexTrack;
@@ -1006,16 +920,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       try {
         final trackIndex = int.parse(track.id);
 
-        if (trackIndex >= 0 &&
-            trackIndex < _currentMediaInfo!.audioTracks.length) {
+        if (trackIndex >= 0 && trackIndex < _currentMediaInfo!.audioTracks.length) {
           streamID = _currentMediaInfo!.audioTracks[trackIndex].id;
-          appLogger.d(
-            'Using fallback: audio index $trackIndex -> streamID $streamID',
-          );
+          appLogger.d('Using fallback: audio index $trackIndex -> streamID $streamID');
         } else {
-          appLogger.e(
-            'Fallback index $trackIndex out of bounds (total: ${_currentMediaInfo!.audioTracks.length})',
-          );
+          appLogger.e('Fallback index $trackIndex out of bounds (total: ${_currentMediaInfo!.audioTracks.length})');
         }
       } catch (e) {
         appLogger.e('Failed to parse track index', error: e);
@@ -1035,18 +944,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
       // 1. Language preference (series/movie level)
       if (languageCode != null && languageCode.isNotEmpty) {
-        futures.add(
-          client.setMetadataPreferences(
-            languagePrefRatingKey,
-            audioLanguage: languageCode,
-          ),
-        );
+        futures.add(client.setMetadataPreferences(languagePrefRatingKey, audioLanguage: languageCode));
       }
       // 2. Exact stream selection (part level)
       if (streamID != null) {
-        futures.add(
-          client.selectStreams(partId, audioStreamID: streamID, allParts: true),
-        );
+        futures.add(client.selectStreams(partId, audioStreamID: streamID, allParts: true));
       }
 
       await Future.wait(futures);
@@ -1090,21 +992,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       PlexSubtitleTrack? matched;
       final normalizedTrackLang = _iso6391ToPlex6392(track.language);
 
-      appLogger.d(
-        'Normalized media_kit language: ${track.language} -> $normalizedTrackLang',
-      );
+      appLogger.d('Normalized media_kit language: ${track.language} -> $normalizedTrackLang');
 
       for (final plexTrack in _currentMediaInfo!.subtitleTracks) {
         final matchLang = plexTrack.languageCode == normalizedTrackLang;
         final matchTitle = (track.title == null || track.title!.isEmpty)
             ? true
-            : (plexTrack.displayTitle == track.title ||
-                  plexTrack.title == track.title);
+            : (plexTrack.displayTitle == track.title || plexTrack.title == track.title);
 
         appLogger.d('Comparing with streamID ${plexTrack.id}:');
-        appLogger.d(
-          '  matchLang: $matchLang (${plexTrack.languageCode} == $normalizedTrackLang)',
-        );
+        appLogger.d('  matchLang: $matchLang (${plexTrack.languageCode} == $normalizedTrackLang)');
         appLogger.d('  matchTitle: $matchTitle');
 
         if (matchLang && matchTitle) {
@@ -1127,16 +1024,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           // We need to subtract 1 to get the actual index in PlexMediaInfo
           final plexIndex = trackIndex > 0 ? trackIndex - 1 : 0;
 
-          if (plexIndex >= 0 &&
-              plexIndex < _currentMediaInfo!.subtitleTracks.length) {
+          if (plexIndex >= 0 && plexIndex < _currentMediaInfo!.subtitleTracks.length) {
             streamID = _currentMediaInfo!.subtitleTracks[plexIndex].id;
-            appLogger.d(
-              'Using fallback: media_kit index $trackIndex -> Plex index $plexIndex -> streamID $streamID',
-            );
+            appLogger.d('Using fallback: media_kit index $trackIndex -> Plex index $plexIndex -> streamID $streamID');
           } else {
-            appLogger.e(
-              'Fallback index $plexIndex out of bounds (total: ${_currentMediaInfo!.subtitleTracks.length})',
-            );
+            appLogger.e('Fallback index $plexIndex out of bounds (total: ${_currentMediaInfo!.subtitleTracks.length})');
           }
         } catch (e) {
           appLogger.e('Failed to parse track index', error: e);
@@ -1162,28 +1054,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
       // 1. Save language preference at series/movie level
       if (languageCode != null) {
-        futures.add(
-          client.setMetadataPreferences(
-            languagePrefRatingKey,
-            subtitleLanguage: languageCode,
-          ),
-        );
+        futures.add(client.setMetadataPreferences(languagePrefRatingKey, subtitleLanguage: languageCode));
       }
       // 2. Save exact stream selection using part ID
       if (streamID != null) {
-        futures.add(
-          client.selectStreams(
-            partId,
-            subtitleStreamID: streamID,
-            allParts: true,
-          ),
-        );
+        futures.add(client.selectStreams(partId, subtitleStreamID: streamID, allParts: true));
       }
 
       await Future.wait(futures);
-      appLogger.d(
-        'Successfully saved subtitle preferences (language + stream)',
-      );
+      appLogger.d('Successfully saved subtitle preferences (language + stream)');
     } catch (e) {
       appLogger.e('Failed to save subtitle preferences', error: e);
     }
@@ -1202,11 +1081,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // If player isn't available, navigate without preserving settings
     if (player == null) {
       if (mounted) {
-        navigateToVideoPlayer(
-          context,
-          metadata: episodeMetadata,
-          usePushReplacement: true,
-        );
+        navigateToVideoPlayer(context, metadata: episodeMetadata, usePushReplacement: true);
       }
       return;
     }
@@ -1216,11 +1091,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (currentPlayer == null) {
       // Player already disposed, navigate without preserving settings
       if (mounted) {
-        navigateToVideoPlayer(
-          context,
-          metadata: episodeMetadata,
-          usePushReplacement: true,
-        );
+        navigateToVideoPlayer(context, metadata: episodeMetadata, usePushReplacement: true);
       }
       return;
     }
@@ -1281,8 +1152,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     final isMobile = PlatformDetector.isMobile(context);
 
     return PopScope(
-      canPop:
-          false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
+      canPop: false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
       onPopInvokedWithResult: (didPop, result) {
         // Allow programmatic back navigation from UI controls
         if (!didPop) {
@@ -1293,8 +1163,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // Use transparent background on macOS when native video layer is active
         backgroundColor: Colors.transparent,
         body: GestureDetector(
-          behavior: HitTestBehavior
-              .translucent, // Allow taps to pass through to controls
+          behavior: HitTestBehavior.translucent, // Allow taps to pass through to controls
           onScaleStart: (details) {
             // Initialize pinch gesture tracking (mobile only)
             if (!isMobile) return;
@@ -1312,8 +1181,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           onScaleEnd: (details) {
             // Only toggle if we detected a pinch gesture on mobile
             if (!isMobile) return;
-            if (_videoFilterManager != null &&
-                _videoFilterManager!.isPinching) {
+            if (_videoFilterManager != null && _videoFilterManager!.isPinching) {
               _toggleContainCover();
               _videoFilterManager!.isPinching = false;
             }
@@ -1325,10 +1193,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     // Update player size when layout changes
-                    final newSize = Size(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
+                    final newSize = Size(constraints.maxWidth, constraints.maxHeight);
 
                     // Update player size in video filter manager and native layer
                     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1345,9 +1210,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                         player!,
                         widget.metadata,
                         onNext: _nextEpisode != null ? _playNext : null,
-                        onPrevious: _previousEpisode != null
-                            ? _playPrevious
-                            : null,
+                        onPrevious: _previousEpisode != null ? _playPrevious : null,
                         availableVersions: _availableVersions,
                         selectedMediaIndex: widget.selectedMediaIndex,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
@@ -1368,43 +1231,25 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 32),
                         padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[900],
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                        decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(16)),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const AppIcon(
-                              Symbols.play_circle_rounded,
-                              fill: 1,
-                              size: 64,
-                              color: Colors.white,
-                            ),
+                            const AppIcon(Symbols.play_circle_rounded, fill: 1, size: 64, color: Colors.white),
                             const SizedBox(height: 24),
                             Consumer<PlaybackStateProvider>(
                               builder: (context, playbackState, child) {
-                                final isShuffleActive =
-                                    playbackState.isShuffleActive;
+                                final isShuffleActive = playbackState.isShuffleActive;
                                 return Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     const Text(
                                       'Up Next',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                                     ),
                                     if (isShuffleActive) ...[
                                       const SizedBox(width: 8),
-                                      const AppIcon(
-                                        Symbols.shuffle_rounded,
-                                        fill: 1,
-                                        size: 20,
-                                        color: Colors.white70,
-                                      ),
+                                      const AppIcon(Symbols.shuffle_rounded, fill: 1, size: 20, color: Colors.white70),
                                     ],
                                   ],
                                 );
@@ -1412,23 +1257,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              _nextEpisode!.grandparentTitle ??
-                                  _nextEpisode!.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                              ),
+                              _nextEpisode!.grandparentTitle ?? _nextEpisode!.title,
+                              style: const TextStyle(color: Colors.white, fontSize: 18),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
-                            if (_nextEpisode!.parentIndex != null &&
-                                _nextEpisode!.index != null)
+                            if (_nextEpisode!.parentIndex != null && _nextEpisode!.index != null)
                               Text(
                                 'S${_nextEpisode!.parentIndex} · E${_nextEpisode!.index} · ${_nextEpisode!.title}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 16,
-                                ),
+                                style: const TextStyle(color: Colors.white70, fontSize: 16),
                                 textAlign: TextAlign.center,
                               ),
                             const SizedBox(height: 32),
@@ -1444,10 +1281,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: Colors.white,
                                     side: const BorderSide(color: Colors.white),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 16,
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                                   ),
                                   child: Text(t.dialog.cancel),
                                 ),
@@ -1457,10 +1291,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                                   style: FilledButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     foregroundColor: Colors.black,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 16,
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                                   ),
                                   child: Text(t.dialog.playNow),
                                 ),
@@ -1481,14 +1312,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
                     child: Center(
                       child: Container(
                         padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 3,
-                        ),
+                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
+                        child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                       ),
                     ),
                   );

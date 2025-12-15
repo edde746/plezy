@@ -24,10 +24,7 @@ class SafStorageService {
     if (!isAvailable) return null;
     try {
       // Pick directory with persistent write permission
-      final doc = await _safUtil.pickDirectory(
-        writePermission: true,
-        persistablePermission: true,
-      );
+      final doc = await _safUtil.pickDirectory(writePermission: true, persistablePermission: true);
       return doc?.uri;
     } catch (e) {
       debugPrint('SAF pickDirectory error: $e');
@@ -39,11 +36,7 @@ class SafStorageService {
   Future<bool> hasPersistedPermission(String contentUri) async {
     if (!isAvailable) return false;
     try {
-      return await _safUtil.hasPersistedPermission(
-        contentUri,
-        checkRead: true,
-        checkWrite: true,
-      );
+      return await _safUtil.hasPersistedPermission(contentUri, checkRead: true, checkWrite: true);
     } catch (e) {
       debugPrint('SAF hasPersistedPermission error: $e');
       return false;
@@ -51,10 +44,7 @@ class SafStorageService {
   }
 
   /// Get document file info for a URI
-  Future<SafDocumentFile?> getDocumentFile(
-    String contentUri, {
-    bool isDir = true,
-  }) async {
+  Future<SafDocumentFile?> getDocumentFile(String contentUri, {bool isDir = true}) async {
     if (!isAvailable) return null;
     try {
       return await _safUtil.documentFileFromUri(contentUri, isDir);
@@ -125,10 +115,7 @@ class SafStorageService {
 
   /// Create nested directories in a SAF directory
   /// Returns the URI of the deepest directory
-  Future<String?> createNestedDirectories(
-    String parentUri,
-    List<String> pathComponents,
-  ) async {
+  Future<String?> createNestedDirectories(String parentUri, List<String> pathComponents) async {
     if (!isAvailable) return null;
     try {
       final result = await _safUtil.mkdirp(parentUri, pathComponents);
@@ -159,17 +146,8 @@ class SafStorageService {
       // Use pasteLocalFile for native-side copy (no method channel streaming)
       // This is much more efficient for large files and avoids hangs
       final result = await _safStream
-          .pasteLocalFile(
-            sourceFilePath,
-            targetDirectoryUri,
-            fileName,
-            mimeType,
-            overwrite: true,
-          )
-          .timeout(
-            const Duration(minutes: 30),
-            onTimeout: () => throw TimeoutException('SAF copy timed out'),
-          );
+          .pasteLocalFile(sourceFilePath, targetDirectoryUri, fileName, mimeType, overwrite: true)
+          .timeout(const Duration(minutes: 30), onTimeout: () => throw TimeoutException('SAF copy timed out'));
 
       debugPrint('SAF copyFileToSaf: successfully copied to ${result.uri}');
       return result.uri.toString();
@@ -184,20 +162,10 @@ class SafStorageService {
 
   /// Write bytes directly to a SAF file
   /// Returns the SAF URI of the created file, or null on failure
-  Future<String?> writeFileBytes(
-    String directoryUri,
-    String fileName,
-    String mimeType,
-    Uint8List bytes,
-  ) async {
+  Future<String?> writeFileBytes(String directoryUri, String fileName, String mimeType, Uint8List bytes) async {
     if (!isAvailable) return null;
     try {
-      final result = await _safStream.writeFileBytes(
-        directoryUri,
-        fileName,
-        mimeType,
-        bytes,
-      );
+      final result = await _safStream.writeFileBytes(directoryUri, fileName, mimeType, bytes);
       return result.uri.toString();
     } catch (e) {
       debugPrint('SAF writeFileBytes error: $e');

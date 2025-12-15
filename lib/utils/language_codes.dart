@@ -9,9 +9,7 @@ class LanguageCodes {
   static Future<void> initialize() async {
     if (_codes != null) return;
 
-    final jsonString = await rootBundle.loadString(
-      'lib/data/iso_639_codes.json',
-    );
+    final jsonString = await rootBundle.loadString('lib/data/iso_639_codes.json');
     _codes = json.decode(jsonString) as Map<String, dynamic>;
   }
 
@@ -20,9 +18,7 @@ class LanguageCodes {
   /// Returns a list of codes to check against track languages
   static List<String> getVariations(String languageCode) {
     if (_codes == null) {
-      throw StateError(
-        'LanguageCodes not initialized. Call initialize() first.',
-      );
+      throw StateError('LanguageCodes not initialized. Call initialize() first.');
     }
 
     final normalized = languageCode.toLowerCase().trim();
@@ -55,8 +51,7 @@ class LanguageCodes {
         final code6392 = entryMap['639-2'] as String?;
         final code6392B = entryMap['639-2/B'] as String?;
 
-        if (code6392?.toLowerCase() == normalized ||
-            code6392B?.toLowerCase() == normalized) {
+        if (code6392?.toLowerCase() == normalized || code6392B?.toLowerCase() == normalized) {
           // Add all variations from this entry
           if (entryMap.containsKey('639-1')) {
             variations.add((entryMap['639-1'] as String).toLowerCase());
@@ -93,8 +88,7 @@ class LanguageCodes {
       final code6392 = entryMap['639-2'] as String?;
       final code6392B = entryMap['639-2/B'] as String?;
 
-      if (code6392?.toLowerCase() == normalized ||
-          code6392B?.toLowerCase() == normalized) {
+      if (code6392?.toLowerCase() == normalized || code6392B?.toLowerCase() == normalized) {
         return entryMap['name'] as String?;
       }
     }

@@ -24,11 +24,7 @@ class ChapterMarkerPainter extends CustomPainter {
       final position = (startMs / duration.inMilliseconds) * size.width;
 
       // Draw short vertical line for chapter marker (centered on slider track)
-      canvas.drawLine(
-        Offset(position, size.height * 0.45),
-        Offset(position, size.height * 0.55),
-        paint,
-      );
+      canvas.drawLine(Offset(position, size.height * 0.45), Offset(position, size.height * 0.55), paint);
     }
   }
 

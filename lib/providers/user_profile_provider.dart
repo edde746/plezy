@@ -25,9 +25,7 @@ class UserProfileProvider extends ChangeNotifier {
   String? get error => _error;
   bool get hasMultipleUsers {
     final result = _home?.hasMultipleUsers ?? false;
-    appLogger.d(
-      'hasMultipleUsers: _home=${_home != null}, users count=${_home?.users.length ?? 0}, result=$result',
-    );
+    appLogger.d('hasMultipleUsers: _home=${_home != null}, users count=${_home?.users.length ?? 0}, result=$result');
     return result;
   }
 
@@ -40,9 +38,7 @@ class UserProfileProvider extends ChangeNotifier {
 
   /// Set a callback to be called when profile switching requires data invalidation
   /// The callback receives the list of servers with the new profile's access tokens
-  void setDataInvalidationCallback(
-    Future<void> Function(List<PlexServer>)? callback,
-  ) {
+  void setDataInvalidationCallback(Future<void> Function(List<PlexServer>)? callback) {
     _onDataInvalidationRequested = callback;
   }
 
@@ -50,9 +46,7 @@ class UserProfileProvider extends ChangeNotifier {
   Future<void> _invalidateAllData(List<PlexServer> servers) async {
     if (_onDataInvalidationRequested != null) {
       await _onDataInvalidationRequested!(servers);
-      appLogger.d(
-        'Data invalidation triggered for profile switch with ${servers.length} servers',
-      );
+      appLogger.d('Data invalidation triggered for profile switch with ${servers.length} servers');
     }
   }
 
@@ -71,16 +65,11 @@ class UserProfileProvider extends ChangeNotifier {
 
       // If no cached home data or it's expired, try to load from API
       if (_home == null) {
-        appLogger.d(
-          'UserProfileProvider: No cached home data, attempting to load from API',
-        );
+        appLogger.d('UserProfileProvider: No cached home data, attempting to load from API');
         try {
           await loadHomeUsers();
         } catch (e) {
-          appLogger.w(
-            'UserProfileProvider: Failed to load home users during initialization',
-            error: e,
-          );
+          appLogger.w('UserProfileProvider: Failed to load home users during initialization', error: e);
           // Don't set error here as it's not critical for app startup
         }
       }
@@ -90,20 +79,14 @@ class UserProfileProvider extends ChangeNotifier {
       try {
         await refreshProfileSettings();
       } catch (e) {
-        appLogger.w(
-          'UserProfileProvider: Failed to fetch profile settings during initialization',
-          error: e,
-        );
+        appLogger.w('UserProfileProvider: Failed to fetch profile settings during initialization', error: e);
         // Don't set error here, cached profile (if any) was already loaded
       }
 
       _isInitialized = true;
       appLogger.d('UserProfileProvider: Initialization complete');
     } catch (e) {
-      appLogger.e(
-        'UserProfileProvider: Critical initialization failure',
-        error: e,
-      );
+      appLogger.e('UserProfileProvider: Critical initialization failure', error: e);
       _setError('Failed to initialize profile services');
       // Ensure services are null on failure
       _authService = null;
@@ -148,9 +131,7 @@ class UserProfileProvider extends ChangeNotifier {
     try {
       final currentToken = _storageService!.getPlexToken();
       if (currentToken == null) {
-        appLogger.w(
-          'refreshProfileSettings: No Plex token available, cannot fetch profile',
-        );
+        appLogger.w('refreshProfileSettings: No Plex token available, cannot fetch profile');
         return;
       }
 
@@ -171,9 +152,7 @@ class UserProfileProvider extends ChangeNotifier {
 
     // Auto-initialize services if not ready
     if (_authService == null || _storageService == null) {
-      appLogger.d(
-        'loadHomeUsers: Services not initialized, initializing services...',
-      );
+      appLogger.d('loadHomeUsers: Services not initialized, initializing services...');
       _authService = await PlexAuthService.create();
       _storageService = await StorageService.getInstance();
       await _loadCachedData();
@@ -188,9 +167,7 @@ class UserProfileProvider extends ChangeNotifier {
 
     // Use cached data if available and not forcing refresh
     if (!forceRefresh && _home != null) {
-      appLogger.d(
-        'loadHomeUsers: Using cached data, users count: ${_home!.users.length}',
-      );
+      appLogger.d('loadHomeUsers: Using cached data, users count: ${_home!.users.length}');
       return;
     }
 
@@ -208,12 +185,8 @@ class UserProfileProvider extends ChangeNotifier {
       final home = await _authService!.getHomeUsers(currentToken);
       _home = home;
 
-      appLogger.i(
-        'loadHomeUsers: Success! Home users count: ${home.users.length}',
-      );
-      appLogger.d(
-        'loadHomeUsers: Users: ${home.users.map((u) => u.displayName).join(', ')}',
-      );
+      appLogger.i('loadHomeUsers: Success! Home users count: ${home.users.length}');
+      appLogger.d('loadHomeUsers: Users: ${home.users.map((u) => u.displayName).join(', ')}');
 
       // Cache the home data
       await _storageService!.saveHomeUsersCache(home.toJson());
@@ -223,17 +196,13 @@ class UserProfileProvider extends ChangeNotifier {
         final currentUserUUID = _storageService!.getCurrentUserUUID();
         if (currentUserUUID != null) {
           _currentUser = home.getUserByUUID(currentUserUUID);
-          appLogger.d(
-            'loadHomeUsers: Set current user from UUID: ${_currentUser?.displayName}',
-          );
+          appLogger.d('loadHomeUsers: Set current user from UUID: ${_currentUser?.displayName}');
         } else {
           // Default to admin user if no current user set
           _currentUser = home.adminUser;
           if (_currentUser != null) {
             await _storageService!.saveCurrentUserUUID(_currentUser!.uuid);
-            appLogger.d(
-              'loadHomeUsers: Set current user to admin: ${_currentUser?.displayName}',
-            );
+            appLogger.d('loadHomeUsers: Set current user to admin: ${_currentUser?.displayName}');
           }
         }
       }
@@ -289,11 +258,7 @@ class UserProfileProvider extends ChangeNotifier {
       // Check if user requires PIN
       String? pin;
       if (user.requiresPassword && context != null && context.mounted) {
-        pin = await showPinEntryDialog(
-          context,
-          user.displayName,
-          errorMessage: errorMessage,
-        );
+        pin = await showPinEntryDialog(context, user.displayName, errorMessage: errorMessage);
 
         // User cancelled the PIN dialog
         if (pin == null) {
@@ -302,19 +267,13 @@ class UserProfileProvider extends ChangeNotifier {
         }
       }
 
-      final switchResponse = await _authService!.switchToUser(
-        user.uuid,
-        currentToken,
-        pin: pin,
-      );
+      final switchResponse = await _authService!.switchToUser(user.uuid, currentToken, pin: pin);
 
       // switchResponse.authToken is the new user's Plex.tv token
       // Fetch servers with this token to get the proper server access tokens
       appLogger.d('Got new user Plex.tv token, fetching servers...');
 
-      final servers = await _authService!.fetchServers(
-        switchResponse.authToken,
-      );
+      final servers = await _authService!.fetchServers(switchResponse.authToken);
       if (servers.isEmpty) {
         throw Exception('No servers available for this user');
       }
@@ -335,10 +294,8 @@ class UserProfileProvider extends ChangeNotifier {
       appLogger.d(
         'Updated profile settings for user: ${user.displayName}',
         error: {
-          'defaultAudioLanguage':
-              _profileSettings?.defaultAudioLanguage ?? 'not set',
-          'defaultSubtitleLanguage':
-              _profileSettings?.defaultSubtitleLanguage ?? 'not set',
+          'defaultAudioLanguage': _profileSettings?.defaultAudioLanguage ?? 'not set',
+          'defaultSubtitleLanguage': _profileSettings?.defaultSubtitleLanguage ?? 'not set',
         },
       );
 
@@ -348,9 +305,7 @@ class UserProfileProvider extends ChangeNotifier {
       // The callback will handle server reconnection using the servers list
       await _invalidateAllData(servers);
 
-      appLogger.d(
-        'Profile switch complete, all servers reconnected with new tokens',
-      );
+      appLogger.d('Profile switch complete, all servers reconnected with new tokens');
 
       appLogger.i('Successfully switched to user: ${user.displayName}');
       return true;
@@ -462,9 +417,7 @@ class UserProfileProvider extends ChangeNotifier {
       await _loadCachedData();
 
       // Load from API since we cleared the cache
-      appLogger.d(
-        'UserProfileProvider: Loading fresh home users for new server',
-      );
+      appLogger.d('UserProfileProvider: Loading fresh home users for new server');
 
       // Store context reference before async operations to avoid build context warnings
       final contextForSwitch = context;
@@ -485,42 +438,27 @@ class UserProfileProvider extends ChangeNotifier {
           final success = await switchToUser(userToSwitchTo, contextForSwitch);
 
           if (success) {
-            appLogger.d(
-              'UserProfileProvider: Successfully switched to admin user for new server',
-            );
+            appLogger.d('UserProfileProvider: Successfully switched to admin user for new server');
           } else {
-            appLogger.w(
-              'UserProfileProvider: Failed to complete profile switch for new server',
-            );
+            appLogger.w('UserProfileProvider: Failed to complete profile switch for new server');
           }
         } else if (_currentUser != null && contextForSwitch == null) {
-          appLogger.w(
-            'UserProfileProvider: Cannot perform complete profile switch - no context provided',
-          );
+          appLogger.w('UserProfileProvider: Cannot perform complete profile switch - no context provided');
           // Still try to fetch profile settings even without full switch
           try {
             await refreshProfileSettings();
           } catch (e) {
-            appLogger.w(
-              'UserProfileProvider: Failed to refresh profile settings for new server',
-              error: e,
-            );
+            appLogger.w('UserProfileProvider: Failed to refresh profile settings for new server', error: e);
           }
         }
       } catch (e) {
-        appLogger.w(
-          'UserProfileProvider: Failed to load home users for new server',
-          error: e,
-        );
+        appLogger.w('UserProfileProvider: Failed to load home users for new server', error: e);
         // Don't set error as it's not critical
       }
 
       appLogger.d('UserProfileProvider: Refresh for new server complete');
     } catch (e) {
-      appLogger.e(
-        'UserProfileProvider: Failed to refresh for new server',
-        error: e,
-      );
+      appLogger.e('UserProfileProvider: Failed to refresh for new server', error: e);
       _setError('Failed to refresh for new server');
     } finally {
       _setLoading(false);

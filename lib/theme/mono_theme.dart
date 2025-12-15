@@ -20,9 +20,7 @@ ThemeData monoTheme({required bool dark}) {
         );
 
   final buttonStyle = ButtonStyle(
-    padding: const WidgetStatePropertyAll(
-      EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-    ),
+    padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
     elevation: const WidgetStatePropertyAll(0),
     backgroundColor: WidgetStatePropertyAll(c.text),
     foregroundColor: WidgetStatePropertyAll(dark ? c.bg : Colors.white),
@@ -70,20 +68,12 @@ ThemeData monoTheme({required bool dark}) {
       scrolledUnderElevation: 0,
       centerTitle: false,
       foregroundColor: c.text,
-      titleTextStyle: TextStyle(
-        color: c.text,
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.2,
-      ),
+      titleTextStyle: TextStyle(color: c.text, fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.2),
     ),
     textTheme: Typography.englishLike2021
         .apply(bodyColor: c.text, displayColor: c.text)
         .copyWith(
-          displayLarge: const TextStyle(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-          ),
+          displayLarge: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.5),
           titleMedium: const TextStyle(fontWeight: FontWeight.w600),
           bodyMedium: TextStyle(color: c.text),
           bodySmall: TextStyle(color: c.textMuted),
@@ -127,9 +117,7 @@ ThemeData monoTheme({required bool dark}) {
       backgroundColor: c.bg,
       elevation: 0,
       indicatorColor: Colors.transparent,
-      labelTextStyle: WidgetStatePropertyAll(
-        TextStyle(color: c.textMuted, fontSize: 11),
-      ),
+      labelTextStyle: WidgetStatePropertyAll(TextStyle(color: c.textMuted, fontSize: 11)),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         final active = states.contains(WidgetState.selected);
         return IconThemeData(opacity: active ? 1 : .6, size: 22, color: c.text);

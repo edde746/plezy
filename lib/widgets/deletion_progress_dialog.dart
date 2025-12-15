@@ -18,11 +18,7 @@ class DeletionProgressDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Circular progress indicator
-            const SizedBox(
-              width: 48,
-              height: 48,
-              child: CircularProgressIndicator(),
-            ),
+            const SizedBox(width: 48, height: 48, child: CircularProgressIndicator()),
 
             const SizedBox(height: 24),
 
@@ -54,10 +50,7 @@ class DeletionProgressDialog extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Percentage text
-            Text(
-              '${progress.progressPercentInt}%',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text('${progress.progressPercentInt}%', style: Theme.of(context).textTheme.bodySmall),
 
             // Optional: Current operation
             if (progress.currentOperation != null) ...[
@@ -65,12 +58,8 @@ class DeletionProgressDialog extends StatelessWidget {
               Text(
                 progress.currentOperation!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.color
-                          ?.withValues(alpha: 0.7),
-                    ),
+                  color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                ),
                 textAlign: TextAlign.center,
               ),
             ],

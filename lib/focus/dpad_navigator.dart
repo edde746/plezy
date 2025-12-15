@@ -29,10 +29,7 @@ final _backKeys = {
   LogicalKeyboardKey.gameButtonB,
 };
 
-final _contextMenuKeys = {
-  LogicalKeyboardKey.contextMenu,
-  LogicalKeyboardKey.gameButtonX,
-};
+final _contextMenuKeys = {LogicalKeyboardKey.contextMenu, LogicalKeyboardKey.gameButtonX};
 
 /// Extension methods for checking D-pad related keys.
 extension DpadKeyExtension on LogicalKeyboardKey {

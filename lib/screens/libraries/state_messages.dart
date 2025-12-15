@@ -63,9 +63,7 @@ class StateMessageWidget extends StatelessWidget {
                 icon,
                 fill: 1,
                 size: iconSize,
-                color:
-                    iconColor ??
-                    theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                color: iconColor ?? theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
               const SizedBox(height: 16),
             ],
@@ -73,9 +71,7 @@ class StateMessageWidget extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleLarge?.copyWith(
-                color:
-                    textColor ??
-                    theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                color: textColor ?? theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             if (subtitle != null) ...[
@@ -83,11 +79,7 @@ class StateMessageWidget extends StatelessWidget {
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color:
-                      subtitleColor ??
-                      theme.colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: subtitleColor ?? theme.colorScheme.onSurfaceVariant),
               ),
             ],
             if (onAction != null && actionLabel != null) ...[
@@ -163,13 +155,7 @@ class ErrorStateWidget extends StatelessWidget {
   /// Optional label for the retry button
   final String? retryLabel;
 
-  const ErrorStateWidget({
-    super.key,
-    required this.message,
-    this.icon,
-    this.onRetry,
-    this.retryLabel,
-  });
+  const ErrorStateWidget({super.key, required this.message, this.icon, this.onRetry, this.retryLabel});
 
   @override
   Widget build(BuildContext context) {

@@ -23,9 +23,7 @@ abstract class BaseSharedPreferencesService {
   /// - Singleton instance management
   /// - SharedPreferences initialization
   /// - Calling onInit() hook for subclass-specific setup
-  static Future<T> initializeInstance<T extends BaseSharedPreferencesService>(
-    T Function() constructor,
-  ) async {
+  static Future<T> initializeInstance<T extends BaseSharedPreferencesService>(T Function() constructor) async {
     if (_instances[T] == null) {
       final instance = constructor();
       _instances[T] = instance;

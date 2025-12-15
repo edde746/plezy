@@ -65,9 +65,7 @@ class DataAggregationService {
     });
 
     // Apply limit if specified
-    final result = limit != null && limit < allOnDeck.length
-        ? allOnDeck.sublist(0, limit)
-        : allOnDeck;
+    final result = limit != null && limit < allOnDeck.length ? allOnDeck.sublist(0, limit) : allOnDeck;
 
     appLogger.i('Fetched ${result.length} on deck items from all servers');
 
@@ -76,9 +74,7 @@ class DataAggregationService {
 
   /// Fetch libraries from all servers and cache them for hub fetching
   /// This allows libraries to be fetched in parallel with other operations
-  Future<Map<String, List<PlexLibrary>>> getLibrariesFromAllServersGrouped({
-    bool forceRefresh = false,
-  }) async {
+  Future<Map<String, List<PlexLibrary>>> getLibrariesFromAllServersGrouped({bool forceRefresh = false}) async {
     // Return cached libraries if still valid and not forcing refresh
     if (!forceRefresh && _isLibrariesCacheValid) {
       appLogger.d('Using cached libraries data');
@@ -96,13 +92,8 @@ class DataAggregationService {
     _cachedLibrariesByServer = librariesByServer;
     _librariesCacheTime = DateTime.now();
 
-    final totalLibraries = librariesByServer.values.fold<int>(
-      0,
-      (sum, libs) => sum + libs.length,
-    );
-    appLogger.d(
-      'Fetched $totalLibraries libraries from ${librariesByServer.length} servers',
-    );
+    final totalLibraries = librariesByServer.values.fold<int>(0, (sum, libs) => sum + libs.length);
+    appLogger.d('Fetched $totalLibraries libraries from ${librariesByServer.length} servers');
 
     return librariesByServer;
   }
@@ -121,8 +112,7 @@ class DataAggregationService {
     }
 
     // Use pre-fetched libraries or fetch them if not provided
-    final libraries =
-        librariesByServer ?? await getLibrariesFromAllServersGrouped();
+    final libraries = librariesByServer ?? await getLibrariesFromAllServersGrouped();
 
     appLogger.d('Fetching hubs from ${clients.length} servers');
 
@@ -150,8 +140,7 @@ class DataAggregationService {
             return false;
           }
           // Check app-level hidden libraries
-          if (hiddenLibraryKeys != null &&
-              hiddenLibraryKeys.contains(library.globalKey)) {
+          if (hiddenLibraryKeys != null && hiddenLibraryKeys.contains(library.globalKey)) {
             return false;
           }
           return true;
@@ -162,14 +151,10 @@ class DataAggregationService {
           try {
             // Hubs are now tagged with server info at the source
             final hubs = await client.getLibraryHubs(library.key);
-            appLogger.d(
-              'Fetched ${hubs.length} hubs for ${library.title} on $serverId',
-            );
+            appLogger.d('Fetched ${hubs.length} hubs for ${library.title} on $serverId');
             return hubs;
           } catch (e) {
-            appLogger.w(
-              'Failed to fetch hubs for library ${library.title}: $e',
-            );
+            appLogger.w('Failed to fetch hubs for library ${library.title}: $e');
             return <PlexHub>[];
           }
         });
@@ -184,11 +169,7 @@ class DataAggregationService {
 
         return serverHubs;
       } catch (e, stackTrace) {
-        appLogger.e(
-          'Failed to fetch hubs from server $serverId',
-          error: e,
-          stackTrace: stackTrace,
-        );
+        appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
         _serverManager.updateServerStatus(serverId, false);
         return <PlexHub>[];
       }
@@ -202,9 +183,7 @@ class DataAggregationService {
     }
 
     // Apply limit if specified
-    final result = limit != null && limit < allHubs.length
-        ? allHubs.sublist(0, limit)
-        : allHubs;
+    final result = limit != null && limit < allHubs.length ? allHubs.sublist(0, limit) : allHubs;
 
     appLogger.i('Fetched ${result.length} hubs from all servers');
 
@@ -213,10 +192,7 @@ class DataAggregationService {
 
   /// Search across all online servers
   /// Results are automatically tagged with server info by PlexClient
-  Future<List<PlexMetadata>> searchAcrossServers(
-    String query, {
-    int? limit,
-  }) async {
+  Future<List<PlexMetadata>> searchAcrossServers(String query, {int? limit}) async {
     if (query.trim().isEmpty) {
       return [];
     }
@@ -229,9 +205,7 @@ class DataAggregationService {
     );
 
     // Apply limit if specified
-    final result = limit != null && limit < allResults.length
-        ? allResults.sublist(0, limit)
-        : allResults;
+    final result = limit != null && limit < allResults.length ? allResults.sublist(0, limit) : allResults;
 
     appLogger.i('Found ${result.length} search results across all servers');
 
@@ -251,20 +225,14 @@ class DataAggregationService {
       // Libraries are automatically tagged with server info by PlexClient
       return await client.getLibraries();
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Failed to fetch libraries for server $serverId',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to fetch libraries for server $serverId', error: e, stackTrace: stackTrace);
       _serverManager.updateServerStatus(serverId, false);
       return [];
     }
   }
 
   /// Group libraries by server
-  Map<String, List<PlexLibrary>> groupLibrariesByServer(
-    List<PlexLibrary> libraries,
-  ) {
+  Map<String, List<PlexLibrary>> groupLibrariesByServer(List<PlexLibrary> libraries) {
     final grouped = <String, List<PlexLibrary>>{};
 
     for (final library in libraries) {
@@ -289,12 +257,7 @@ class DataAggregationService {
   /// [operation] is the async function to run per server, returning `List<T>`
   Future<List<T>> _perServer<T>({
     required String operationName,
-    required Future<List<T>> Function(
-      String serverId,
-      PlexClient client,
-      PlexServer? server,
-    )
-    operation,
+    required Future<List<T>> Function(String serverId, PlexClient client, PlexServer? server) operation,
   }) async {
     final clients = _serverManager.onlineClients;
 
@@ -308,9 +271,7 @@ class DataAggregationService {
     final allResults = <T>[];
 
     // Execute operation on all servers in parallel
-    final Iterable<Future<List<T>>> futures = clients.entries.map((
-      entry,
-    ) async {
+    final Iterable<Future<List<T>>> futures = clients.entries.map((entry) async {
       final serverId = entry.key;
       final client = entry.value;
       final server = _serverManager.getServer(serverId);
@@ -323,15 +284,9 @@ class DataAggregationService {
         );
         return result;
       } catch (e, stackTrace) {
-        appLogger.e(
-          'Failed $operationName from server $serverId',
-          error: e,
-          stackTrace: stackTrace,
-        );
+        appLogger.e('Failed $operationName from server $serverId', error: e, stackTrace: stackTrace);
         _serverManager.updateServerStatus(serverId, false);
-        appLogger.d(
-          '$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms',
-        );
+        appLogger.d('$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms');
         return <T>[];
       }
     });
@@ -356,12 +311,7 @@ class DataAggregationService {
   /// [operation] is the async function to run per server, returning `List<T>`
   Future<Map<String, List<T>>> _perServerGrouped<T>({
     required String operationName,
-    required Future<List<T>> Function(
-      String serverId,
-      PlexClient client,
-      PlexServer? server,
-    )
-    operation,
+    required Future<List<T>> Function(String serverId, PlexClient client, PlexServer? server) operation,
   }) async {
     final clients = _serverManager.onlineClients;
 
@@ -386,15 +336,9 @@ class DataAggregationService {
         );
         return MapEntry(serverId, result);
       } catch (e, stackTrace) {
-        appLogger.e(
-          'Failed $operationName from server $serverId',
-          error: e,
-          stackTrace: stackTrace,
-        );
+        appLogger.e('Failed $operationName from server $serverId', error: e, stackTrace: stackTrace);
         _serverManager.updateServerStatus(serverId, false);
-        appLogger.d(
-          '$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms',
-        );
+        appLogger.d('$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms');
         return MapEntry(serverId, <T>[]);
       }
     });

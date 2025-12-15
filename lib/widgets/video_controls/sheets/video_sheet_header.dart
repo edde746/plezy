@@ -14,14 +14,7 @@ class VideoSheetHeader extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback? onClose;
 
-  const VideoSheetHeader({
-    super.key,
-    required this.title,
-    this.icon,
-    this.iconColor,
-    this.onBack,
-    this.onClose,
-  });
+  const VideoSheetHeader({super.key, required this.title, this.icon, this.iconColor, this.onBack, this.onClose});
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +24,7 @@ class VideoSheetHeader extends StatelessWidget {
       iconColor: iconColor ?? Colors.white,
       onBack: onBack,
       onClose: onClose,
-      titleStyle: const TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
+      titleStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
       showBorder: false,
     );
   }

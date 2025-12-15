@@ -21,8 +21,7 @@ class FocusTheme {
 
   /// Get the animation duration from MonoTokens.
   static Duration getAnimationDuration(BuildContext context) {
-    return Theme.of(context).extension<MonoTokens>()?.fast ??
-        const Duration(milliseconds: 150);
+    return Theme.of(context).extension<MonoTokens>()?.fast ?? const Duration(milliseconds: 150);
   }
 
   /// Build the focus border decoration.
@@ -35,24 +34,16 @@ class FocusTheme {
 
     return BoxDecoration(
       borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(
-        color: isFocused ? focusColor : Colors.transparent,
-        width: focusBorderWidth,
-      ),
+      border: Border.all(color: isFocused ? focusColor : Colors.transparent, width: focusBorderWidth),
     );
   }
 
   /// Build focus decoration with background color instead of border.
   /// Useful for video controls where it should match the native hover style.
-  static BoxDecoration focusBackgroundDecoration({
-    required bool isFocused,
-    double borderRadius = defaultBorderRadius,
-  }) {
+  static BoxDecoration focusBackgroundDecoration({required bool isFocused, double borderRadius = defaultBorderRadius}) {
     return BoxDecoration(
       borderRadius: BorderRadius.circular(borderRadius),
-      color: isFocused
-          ? Colors.white.withValues(alpha: 0.2)
-          : Colors.transparent,
+      color: isFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
     );
   }
 }

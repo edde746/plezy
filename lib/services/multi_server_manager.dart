@@ -35,12 +35,10 @@ class MultiServerManager {
   List<String> get serverIds => _servers.keys.toList();
 
   /// Get all online server IDs
-  List<String> get onlineServerIds =>
-      _serverStatus.entries.where((e) => e.value).map((e) => e.key).toList();
+  List<String> get onlineServerIds => _serverStatus.entries.where((e) => e.value).map((e) => e.key).toList();
 
   /// Get all offline server IDs
-  List<String> get offlineServerIds =>
-      _serverStatus.entries.where((e) => !e.value).map((e) => e.key).toList();
+  List<String> get offlineServerIds => _serverStatus.entries.where((e) => !e.value).map((e) => e.key).toList();
 
   /// Get client for specific server
   PlexClient? getClient(String serverId) => _clients[serverId];
@@ -70,10 +68,7 @@ class MultiServerManager {
   ///
   /// Handles finding working connection, loading cached endpoint,
   /// creating config, and building client with failover support.
-  Future<PlexClient> _createClientForServer({
-    required PlexServer server,
-    required String clientIdentifier,
-  }) async {
+  Future<PlexClient> _createClientForServer({required PlexServer server, required String clientIdentifier}) async {
     final serverId = server.clientIdentifier;
 
     // Find best working connection
@@ -94,9 +89,7 @@ class MultiServerManager {
     final cachedEndpoint = storage.getServerEndpoint(serverId);
 
     // Create PlexClient with failover support
-    final prioritizedEndpoints = server.prioritizedEndpointUrls(
-      preferredFirst: cachedEndpoint ?? baseUrl,
-    );
+    final prioritizedEndpoints = server.prioritizedEndpointUrls(preferredFirst: cachedEndpoint ?? baseUrl);
     final config = await PlexConfig.create(
       baseUrl: baseUrl,
       token: server.accessToken,
@@ -110,9 +103,7 @@ class MultiServerManager {
       prioritizedEndpoints: prioritizedEndpoints,
       onEndpointChanged: (newUrl) async {
         await storage.saveServerEndpoint(serverId, newUrl);
-        appLogger.i(
-          'Updated endpoint for ${server.name} after failover: $newUrl',
-        );
+        appLogger.i('Updated endpoint for ${server.name} after failover: $newUrl');
       },
     );
 
@@ -139,8 +130,7 @@ class MultiServerManager {
     appLogger.i('Connecting to ${servers.length} servers...');
 
     // Use provided client ID or generate a unique one for this app instance
-    final effectiveClientId =
-        clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final effectiveClientId = clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
 
     // Create connection tasks for all servers
     final connectionFutures = servers.map((server) async {
@@ -149,10 +139,7 @@ class MultiServerManager {
       try {
         appLogger.d('Attempting connection to server: ${server.name}');
 
-        final client = await _createClientForServer(
-          server: server,
-          clientIdentifier: effectiveClientId,
-        );
+        final client = await _createClientForServer(server: server, clientIdentifier: effectiveClientId);
 
         // Store the client and server info
         _clients[serverId] = client;
@@ -164,11 +151,7 @@ class MultiServerManager {
 
         return serverId;
       } catch (e, stackTrace) {
-        appLogger.e(
-          'Failed to connect to ${server.name}',
-          error: e,
-          stackTrace: stackTrace,
-        );
+        appLogger.e('Failed to connect to ${server.name}', error: e, stackTrace: stackTrace);
 
         // Mark as offline
         _servers[serverId] = server;
@@ -198,9 +181,7 @@ class MultiServerManager {
     // Notify listeners of status change
     _statusController.add(Map.from(_serverStatus));
 
-    appLogger.i(
-      'Connected to $successCount/${servers.length} servers successfully',
-    );
+    appLogger.i('Connected to $successCount/${servers.length} servers successfully');
 
     // Start network monitoring if we have any connected servers
     if (successCount > 0) {
@@ -213,16 +194,12 @@ class MultiServerManager {
   /// Add a single server connection
   Future<bool> addServer(PlexServer server, {String? clientIdentifier}) async {
     final serverId = server.clientIdentifier;
-    final effectiveClientId =
-        clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final effectiveClientId = clientIdentifier ?? DateTime.now().millisecondsSinceEpoch.toString();
 
     try {
       appLogger.d('Adding server: ${server.name}');
 
-      final client = await _createClientForServer(
-        server: server,
-        clientIdentifier: effectiveClientId,
-      );
+      final client = await _createClientForServer(server: server, clientIdentifier: effectiveClientId);
 
       // Store
       _clients[serverId] = client;
@@ -235,11 +212,7 @@ class MultiServerManager {
       appLogger.i('Successfully added server: ${server.name}');
       return true;
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Failed to add server ${server.name}',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Failed to add server ${server.name}', error: e, stackTrace: stackTrace);
 
       _servers[serverId] = server;
       _serverStatus[serverId] = false;
@@ -299,14 +272,10 @@ class MultiServerManager {
     final connectivity = Connectivity();
     _connectivitySubscription = connectivity.onConnectivityChanged.listen(
       (results) {
-        final status = results.isNotEmpty
-            ? results.first
-            : ConnectivityResult.none;
+        final status = results.isNotEmpty ? results.first : ConnectivityResult.none;
 
         if (status == ConnectivityResult.none) {
-          appLogger.w(
-            'Connectivity lost, pausing optimization until network returns',
-          );
+          appLogger.w('Connectivity lost, pausing optimization until network returns');
           return;
         }
 
@@ -323,11 +292,7 @@ class MultiServerManager {
         _reoptimizeAllServers(reason: 'connectivity:${status.name}');
       },
       onError: (error, stackTrace) {
-        appLogger.w(
-          'Connectivity listener error',
-          error: error,
-          stackTrace: stackTrace,
-        );
+        appLogger.w('Connectivity listener error', error: error, stackTrace: stackTrace);
       },
     );
   }
@@ -352,48 +317,32 @@ class MultiServerManager {
 
       // Skip if optimization already running for this server
       if (_activeOptimizations.containsKey(serverId)) {
-        appLogger.d(
-          'Optimization already running for ${server.name}, skipping',
-          error: {'reason': reason},
-        );
+        appLogger.d('Optimization already running for ${server.name}, skipping', error: {'reason': reason});
         continue;
       }
 
       // Run optimization
-      _activeOptimizations[serverId] =
-          _reoptimizeServer(
-            serverId: serverId,
-            server: server,
-            reason: reason,
-          ).whenComplete(() {
+      _activeOptimizations[serverId] = _reoptimizeServer(serverId: serverId, server: server, reason: reason)
+          .whenComplete(() {
             _activeOptimizations.remove(serverId);
           });
     }
   }
 
   /// Re-optimize connection for a specific server
-  Future<void> _reoptimizeServer({
-    required String serverId,
-    required PlexServer server,
-    required String reason,
-  }) async {
+  Future<void> _reoptimizeServer({required String serverId, required PlexServer server, required String reason}) async {
     final storage = await StorageService.getInstance();
     final client = _clients[serverId];
 
     try {
-      appLogger.d(
-        'Starting connection optimization for ${server.name}',
-        error: {'reason': reason},
-      );
+      appLogger.d('Starting connection optimization for ${server.name}', error: {'reason': reason});
 
       await for (final connection in server.findBestWorkingConnection()) {
         final newUrl = connection.uri;
 
         // Check if this is actually a better connection than current
         if (client != null && client.config.baseUrl == newUrl) {
-          appLogger.d(
-            'Already using optimal endpoint for ${server.name}: $newUrl',
-          );
+          appLogger.d('Already using optimal endpoint for ${server.name}: $newUrl');
           continue;
         }
 
@@ -402,17 +351,10 @@ class MultiServerManager {
 
         // If client has endpoint failover, it will automatically switch
         // Otherwise, we might need to recreate the client (but failover should handle it)
-        appLogger.i(
-          'Updated optimal endpoint for ${server.name}: $newUrl',
-          error: {'type': connection.displayType},
-        );
+        appLogger.i('Updated optimal endpoint for ${server.name}: $newUrl', error: {'type': connection.displayType});
       }
     } catch (e, stackTrace) {
-      appLogger.w(
-        'Connection optimization failed for ${server.name}',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.w('Connection optimization failed for ${server.name}', error: e, stackTrace: stackTrace);
     }
   }
 

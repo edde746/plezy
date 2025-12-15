@@ -27,12 +27,7 @@ class Video extends StatefulWidget {
   /// Background color shown behind the video.
   final Color backgroundColor;
 
-  const Video({
-    super.key,
-    required this.player,
-    this.controls,
-    this.backgroundColor = Colors.black,
-  });
+  const Video({super.key, required this.player, this.controls, this.backgroundColor = Colors.black});
 
   @override
   State<Video> createState() => _VideoState();
@@ -82,12 +77,7 @@ class _VideoState extends State<Video> {
     final size = renderBox.size;
     final dpr = MediaQuery.of(context).devicePixelRatio;
 
-    final newRect = Rect.fromLTWH(
-      position.dx,
-      position.dy,
-      size.width,
-      size.height,
-    );
+    final newRect = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
 
     // Only update if the rect has changed significantly
     if (_lastRect != null &&

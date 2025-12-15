@@ -14,24 +14,15 @@ class PlaceholderContainer extends StatelessWidget {
   /// Optional border radius
   final BorderRadius? borderRadius;
 
-  const PlaceholderContainer({
-    super.key,
-    this.child,
-    this.color,
-    this.borderRadius,
-  });
+  const PlaceholderContainer({super.key, this.child, this.color, this.borderRadius});
 
   @override
   Widget build(BuildContext context) {
     final container = Container(
-      color: borderRadius != null
-          ? null
-          : (color ?? Theme.of(context).colorScheme.surfaceContainerHighest),
+      color: borderRadius != null ? null : (color ?? Theme.of(context).colorScheme.surfaceContainerHighest),
       decoration: borderRadius != null
           ? BoxDecoration(
-              color:
-                  color ??
-                  Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: color ?? Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: borderRadius,
             )
           : null,

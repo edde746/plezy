@@ -42,12 +42,7 @@ class PlayQueueLauncher {
   final String? serverId;
   final String? serverName;
 
-  PlayQueueLauncher({
-    required this.context,
-    required this.client,
-    this.serverId,
-    this.serverName,
-  });
+  PlayQueueLauncher({required this.context, required this.client, this.serverId, this.serverName});
 
   /// Launch playback from a collection or playlist.
   Future<PlayQueueResult> launchFromCollectionOrPlaylist({
@@ -59,9 +54,7 @@ class PlayQueueLauncher {
     final isPlaylist = item is PlexPlaylist;
 
     if (!isCollection && !isPlaylist) {
-      return PlayQueueError(
-        Exception('Item must be either a collection or playlist'),
-      );
+      return PlayQueueError(Exception('Item must be either a collection or playlist'));
     }
 
     return _executeWithLoading(
@@ -76,21 +69,14 @@ class PlayQueueLauncher {
 
         if (isCollection) {
           // Get machine identifier (fetch if not cached in config)
-          final machineId =
-              client.config.machineIdentifier ??
-              await client.getMachineIdentifier();
+          final machineId = client.config.machineIdentifier ?? await client.getMachineIdentifier();
 
           if (machineId == null) {
             throw Exception('Could not get server machine identifier');
           }
 
-          final collectionUri =
-              'server://$machineId/com.plexapp.plugins.library/library/collections/${item.ratingKey}';
-          playQueue = await client.createPlayQueue(
-            uri: collectionUri,
-            type: 'video',
-            shuffle: shuffle ? 1 : 0,
-          );
+          final collectionUri = 'server://$machineId/com.plexapp.plugins.library/library/collections/${item.ratingKey}';
+          playQueue = await client.createPlayQueue(uri: collectionUri, type: 'video', shuffle: shuffle ? 1 : 0);
         } else {
           // For playlists, use playlistID parameter
           playQueue = await client.createPlayQueue(
@@ -101,12 +87,9 @@ class PlayQueueLauncher {
         }
 
         // If the queue is empty, try fetching it again with getPlayQueue
-        if (playQueue != null &&
-            (playQueue.items == null || playQueue.items!.isEmpty)) {
+        if (playQueue != null && (playQueue.items == null || playQueue.items!.isEmpty)) {
           final fetchedQueue = await client.getPlayQueue(playQueue.playQueueID);
-          if (fetchedQueue != null &&
-              fetchedQueue.items != null &&
-              fetchedQueue.items!.isNotEmpty) {
+          if (fetchedQueue != null && fetchedQueue.items != null && fetchedQueue.items!.isNotEmpty) {
             playQueue = fetchedQueue;
           }
         }
@@ -155,16 +138,11 @@ class PlayQueueLauncher {
   }
 
   /// Launch shuffled playback for a show or season.
-  Future<PlayQueueResult> launchShuffledShow({
-    required PlexMetadata metadata,
-    bool showLoadingIndicator = true,
-  }) async {
+  Future<PlayQueueResult> launchShuffledShow({required PlexMetadata metadata, bool showLoadingIndicator = true}) async {
     final mediaType = metadata.mediaType;
 
     if (mediaType != PlexMediaType.show && mediaType != PlexMediaType.season) {
-      return PlayQueueError(
-        Exception('Shuffle play only works for shows and seasons'),
-      );
+      return PlayQueueError(Exception('Shuffle play only works for shows and seasons'));
     }
 
     return _executeWithLoading(
@@ -183,10 +161,7 @@ class PlayQueueLauncher {
           showRatingKey = metadata.parentRatingKey!;
         }
 
-        final playQueue = await client.createShowPlayQueue(
-          showRatingKey: showRatingKey,
-          shuffle: 1,
-        );
+        final playQueue = await client.createShowPlayQueue(showRatingKey: showRatingKey, shuffle: 1);
 
         // Close loading dialog before navigating to the player
         await dismissLoading();
@@ -211,9 +186,7 @@ class PlayQueueLauncher {
     PlexMetadata? selectedItem,
     bool copyServerInfo = false,
   }) async {
-    if (playQueue == null ||
-        playQueue.items == null ||
-        playQueue.items!.isEmpty) {
+    if (playQueue == null || playQueue.items == null || playQueue.items!.isEmpty) {
       return const PlayQueueEmpty();
     }
 
@@ -222,12 +195,7 @@ class PlayQueueLauncher {
     // Set up playback state
     final playbackState = context.read<PlaybackStateProvider>();
     playbackState.setClient(client);
-    await playbackState.setPlaybackFromPlayQueue(
-      playQueue,
-      ratingKey,
-      serverId: serverId,
-      serverName: serverName,
-    );
+    await playbackState.setPlaybackFromPlayQueue(playQueue, ratingKey, serverId: serverId, serverName: serverName);
 
     if (!context.mounted) return const PlayQueueError('Context not mounted');
 
@@ -236,10 +204,7 @@ class PlayQueueLauncher {
 
     // Copy server info if needed
     if (copyServerInfo && serverId != null) {
-      itemToPlay = itemToPlay.copyWith(
-        serverId: serverId,
-        serverName: serverName,
-      );
+      itemToPlay = itemToPlay.copyWith(serverId: serverId, serverName: serverName);
     }
 
     // Navigate to video player
@@ -252,9 +217,7 @@ class PlayQueueLauncher {
   Future<PlayQueueResult> _executeWithLoading({
     required bool showLoading,
     required String action,
-    required Future<PlayQueueResult> Function(
-      Future<void> Function() dismissLoading,
-    ) execute,
+    required Future<PlayQueueResult> Function(Future<void> Function() dismissLoading) execute,
   }) async {
     BuildContext? loadingDialogContext;
     var loadingVisible = false;
@@ -301,10 +264,7 @@ class PlayQueueLauncher {
       appLogger.e('Failed to $action', error: e);
 
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          t.messages.failedPlayback(action: action, error: e.toString()),
-        );
+        showErrorSnackBar(context, t.messages.failedPlayback(action: action, error: e.toString()));
       }
 
       await dismissLoading();

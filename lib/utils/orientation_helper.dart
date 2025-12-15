@@ -15,10 +15,7 @@ class OrientationHelper {
     final isPhone = PlatformDetector.isPhone(context);
 
     if (isPhone) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-      ]);
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
     } else {
       // For tablets and desktop, allow all orientations
       SystemChrome.setPreferredOrientations([
@@ -35,10 +32,7 @@ class OrientationHelper {
   /// Used by the video player to force landscape orientation during playback.
   static void setLandscapeOrientation() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
   }
 
   /// Restores edge-to-edge system UI mode.

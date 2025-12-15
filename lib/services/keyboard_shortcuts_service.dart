@@ -10,8 +10,7 @@ import '../utils/player_utils.dart';
 class KeyboardShortcutsService {
   static KeyboardShortcutsService? _instance;
   late SettingsService _settingsService;
-  Map<String, String> _shortcuts =
-      {}; // Legacy string shortcuts for backward compatibility
+  Map<String, String> _shortcuts = {}; // Legacy string shortcuts for backward compatibility
   Map<String, HotKey> _hotkeys = {}; // New HotKey objects
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
@@ -35,8 +34,7 @@ class KeyboardShortcutsService {
     _settingsService = await SettingsService.getInstance();
     // Ensure settings service is fully initialized before loading data
     await Future.delayed(Duration.zero); // Allow event loop to complete
-    _shortcuts = _settingsService
-        .getKeyboardShortcuts(); // Keep for legacy compatibility
+    _shortcuts = _settingsService.getKeyboardShortcuts(); // Keep for legacy compatibility
     _hotkeys = await _settingsService.getKeyboardHotkeys(); // Primary method
     _seekTimeSmall = _settingsService.getSeekTimeSmall();
     _seekTimeLarge = _settingsService.getSeekTimeLarge();
@@ -394,7 +392,6 @@ class KeyboardShortcutsService {
     final aModifiers = Set.from(a.modifiers ?? []);
     final bModifiers = Set.from(b.modifiers ?? []);
 
-    return aModifiers.length == bModifiers.length &&
-        aModifiers.every((modifier) => bModifiers.contains(modifier));
+    return aModifiers.length == bModifiers.length && aModifiers.every((modifier) => bModifiers.contains(modifier));
   }
 }

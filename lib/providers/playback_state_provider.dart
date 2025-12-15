@@ -16,11 +16,7 @@ class _IndexLookupResult {
   final bool attemptedLoad;
   final bool loadFailed;
 
-  const _IndexLookupResult({
-    this.index,
-    this.attemptedLoad = false,
-    this.loadFailed = false,
-  });
+  const _IndexLookupResult({this.index, this.attemptedLoad = false, this.loadFailed = false});
 }
 
 /// Manages playback state using Plex's play queue API.
@@ -53,8 +49,7 @@ class PlaybackStateProvider with ChangeNotifier {
   bool get isPlaylistActive => _playbackMode == PlaybackMode.playQueue;
 
   /// Whether any queue-based playback is active
-  bool get isQueueActive =>
-      _playQueueId != null && _playbackMode == PlaybackMode.playQueue;
+  bool get isQueueActive => _playQueueId != null && _playbackMode == PlaybackMode.playQueue;
 
   /// The context key (show/season/playlist ratingKey) for the current session
   String? get shuffleContextKey => _contextKey;
@@ -68,9 +63,7 @@ class PlaybackStateProvider with ChangeNotifier {
   /// Gets the current position in the queue (1-indexed)
   int get currentPosition {
     if (_currentPlayQueueItemID == null || _loadedItems.isEmpty) return 0;
-    final index = _loadedItems.indexWhere(
-      (item) => item.playQueueItemID == _currentPlayQueueItemID,
-    );
+    final index = _loadedItems.indexWhere((item) => item.playQueueItemID == _currentPlayQueueItemID);
     return index != -1 ? index + 1 : 0;
   }
 
@@ -81,8 +74,7 @@ class PlaybackStateProvider with ChangeNotifier {
 
   /// Update the current play queue item when playing a new item
   void setCurrentItem(PlexMetadata metadata) {
-    if (_playbackMode == PlaybackMode.playQueue &&
-        metadata.playQueueItemID != null) {
+    if (_playbackMode == PlaybackMode.playQueue && metadata.playQueueItemID != null) {
       _currentPlayQueueItemID = metadata.playQueueItemID;
       notifyListeners();
     }
@@ -98,10 +90,7 @@ class PlaybackStateProvider with ChangeNotifier {
   }) async {
     _playQueueId = playQueue.playQueueID;
     // Use size or items length as fallback if totalCount is null
-    _playQueueTotalCount =
-        playQueue.playQueueTotalCount ??
-        playQueue.size ??
-        (playQueue.items?.length ?? 0);
+    _playQueueTotalCount = playQueue.playQueueTotalCount ?? playQueue.size ?? (playQueue.items?.length ?? 0);
     _playQueueShuffled = playQueue.playQueueShuffled;
     _currentPlayQueueItemID = playQueue.playQueueSelectedItemID;
 
@@ -119,9 +108,7 @@ class PlaybackStateProvider with ChangeNotifier {
     if (_client == null || _playQueueId == null) return false;
 
     // Check if the target item is already loaded
-    final hasItem = _loadedItems.any(
-      (item) => item.playQueueItemID == targetPlayQueueItemID,
-    );
+    final hasItem = _loadedItems.any((item) => item.playQueueItemID == targetPlayQueueItemID);
 
     if (hasItem) return true;
 
@@ -137,10 +124,7 @@ class PlaybackStateProvider with ChangeNotifier {
         // Items are already tagged with server info by PlexClient
         _loadedItems = response.items!;
         // Use size or items length as fallback if totalCount is null
-        _playQueueTotalCount =
-            response.playQueueTotalCount ??
-            response.size ??
-            response.items!.length;
+        _playQueueTotalCount = response.playQueueTotalCount ?? response.size ?? response.items!.length;
         _playQueueShuffled = response.playQueueShuffled;
         notifyListeners();
         return true;
@@ -153,18 +137,12 @@ class PlaybackStateProvider with ChangeNotifier {
     return false;
   }
 
-  Future<_IndexLookupResult> _getCurrentIndex({
-    bool loadIfMissing = false,
-  }) async {
-    if (_playbackMode != PlaybackMode.playQueue ||
-        _loadedItems.isEmpty ||
-        _currentPlayQueueItemID == null) {
+  Future<_IndexLookupResult> _getCurrentIndex({bool loadIfMissing = false}) async {
+    if (_playbackMode != PlaybackMode.playQueue || _loadedItems.isEmpty || _currentPlayQueueItemID == null) {
       return const _IndexLookupResult();
     }
 
-    var currentIndex = _loadedItems.indexWhere(
-      (item) => item.playQueueItemID == _currentPlayQueueItemID,
-    );
+    var currentIndex = _loadedItems.indexWhere((item) => item.playQueueItemID == _currentPlayQueueItemID);
 
     if (currentIndex != -1) {
       return _IndexLookupResult(index: currentIndex);
@@ -179,9 +157,7 @@ class PlaybackStateProvider with ChangeNotifier {
       return const _IndexLookupResult(attemptedLoad: true, loadFailed: true);
     }
 
-    currentIndex = _loadedItems.indexWhere(
-      (item) => item.playQueueItemID == _currentPlayQueueItemID,
-    );
+    currentIndex = _loadedItems.indexWhere((item) => item.playQueueItemID == _currentPlayQueueItemID);
 
     if (currentIndex == -1) {
       return const _IndexLookupResult(attemptedLoad: true, loadFailed: true);
@@ -193,10 +169,7 @@ class PlaybackStateProvider with ChangeNotifier {
   /// Gets the next item in the playback queue.
   /// Returns null if queue is exhausted or current item is not in queue.
   /// [loopQueue] - If true, restart from beginning when queue is exhausted
-  Future<PlexMetadata?> getNextEpisode(
-    String currentItemKey, {
-    bool loopQueue = false,
-  }) async {
+  Future<PlexMetadata?> getNextEpisode(String currentItemKey, {bool loopQueue = false}) async {
     if (_playbackMode != PlaybackMode.playQueue) {
       // For sequential mode, let the video player handle next episode
       return null;
@@ -224,9 +197,7 @@ class PlaybackStateProvider with ChangeNotifier {
         // Loop back to beginning - load first item
         if (_client != null && _playQueueId != null) {
           final response = await _client!.getPlayQueue(_playQueueId!);
-          if (response != null &&
-              response.items != null &&
-              response.items!.isNotEmpty) {
+          if (response != null && response.items != null && response.items!.isNotEmpty) {
             // Items are already tagged with server info by PlexClient
             _loadedItems = response.items!;
             final firstItem = _loadedItems.first;

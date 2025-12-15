@@ -57,8 +57,7 @@ class HiddenLibrariesProvider extends ChangeNotifier {
   }
 
   /// Check if a specific library is hidden
-  bool isLibraryHidden(String libraryKey) =>
-      _hiddenLibraryKeys.contains(libraryKey);
+  bool isLibraryHidden(String libraryKey) => _hiddenLibraryKeys.contains(libraryKey);
 
   /// Refresh hidden libraries from storage
   /// Useful if storage was modified outside the provider

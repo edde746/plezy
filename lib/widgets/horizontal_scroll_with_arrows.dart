@@ -22,12 +22,10 @@ class HorizontalScrollWithArrows extends StatefulWidget {
   });
 
   @override
-  State<HorizontalScrollWithArrows> createState() =>
-      _HorizontalScrollWithArrowsState();
+  State<HorizontalScrollWithArrows> createState() => _HorizontalScrollWithArrowsState();
 }
 
-class _HorizontalScrollWithArrowsState
-    extends State<HorizontalScrollWithArrows> {
+class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows> {
   late final ScrollController _scrollController;
   late final bool _ownsController;
   bool _isHovering = false;
@@ -65,28 +63,22 @@ class _HorizontalScrollWithArrowsState
 
   void _scrollLeft() {
     final position = _scrollController.position;
-    final targetScroll =
-        (position.pixels - (position.viewportDimension * widget.scrollAmount))
-            .clamp(0.0, position.maxScrollExtent);
-
-    _scrollController.animateTo(
-      targetScroll,
-      duration: tokens(context).slow,
-      curve: Curves.easeInOut,
+    final targetScroll = (position.pixels - (position.viewportDimension * widget.scrollAmount)).clamp(
+      0.0,
+      position.maxScrollExtent,
     );
+
+    _scrollController.animateTo(targetScroll, duration: tokens(context).slow, curve: Curves.easeInOut);
   }
 
   void _scrollRight() {
     final position = _scrollController.position;
-    final targetScroll =
-        (position.pixels + (position.viewportDimension * widget.scrollAmount))
-            .clamp(0.0, position.maxScrollExtent);
-
-    _scrollController.animateTo(
-      targetScroll,
-      duration: tokens(context).slow,
-      curve: Curves.easeInOut,
+    final targetScroll = (position.pixels + (position.viewportDimension * widget.scrollAmount)).clamp(
+      0.0,
+      position.maxScrollExtent,
     );
+
+    _scrollController.animateTo(targetScroll, duration: tokens(context).slow, curve: Curves.easeInOut);
   }
 
   Widget _buildArrowButton({
@@ -177,13 +169,7 @@ class _NavigationArrowState extends State<_NavigationArrow> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.black.withValues(alpha: _isPressed ? 0.9 : 0.7),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 8,
-                spreadRadius: 0,
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, spreadRadius: 0)],
           ),
           child: AppIcon(widget.icon, fill: 1, color: Colors.white, size: 32),
         ),

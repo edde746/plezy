@@ -4,12 +4,7 @@ class PlexSort {
   final String title;
   final String? defaultDirection;
 
-  PlexSort({
-    required this.key,
-    this.descKey,
-    required this.title,
-    this.defaultDirection,
-  });
+  PlexSort({required this.key, this.descKey, required this.title, this.defaultDirection});
 
   factory PlexSort.fromJson(Map<String, dynamic> json) {
     return PlexSort(

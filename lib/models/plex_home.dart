@@ -21,11 +21,7 @@ class PlexHome {
 
   factory PlexHome.fromJson(Map<String, dynamic> json) {
     final List<dynamic> usersJson = json['users'] as List<dynamic>;
-    final users = usersJson
-        .map(
-          (userJson) => PlexHomeUser.fromJson(userJson as Map<String, dynamic>),
-        )
-        .toList();
+    final users = usersJson.map((userJson) => PlexHomeUser.fromJson(userJson as Map<String, dynamic>)).toList();
 
     return PlexHome(
       id: (json['id'] as num?)?.toInt() ?? 0,
@@ -52,11 +48,9 @@ class PlexHome {
 
   PlexHomeUser? get adminUser => users.where((user) => user.admin).firstOrNull;
 
-  List<PlexHomeUser> get managedUsers =>
-      users.where((user) => !user.admin).toList();
+  List<PlexHomeUser> get managedUsers => users.where((user) => !user.admin).toList();
 
-  List<PlexHomeUser> get restrictedUsers =>
-      users.where((user) => user.restricted).toList();
+  List<PlexHomeUser> get restrictedUsers => users.where((user) => user.restricted).toList();
 
   PlexHomeUser? getUserByUUID(String uuid) {
     try {

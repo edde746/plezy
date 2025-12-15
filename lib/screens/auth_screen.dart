@@ -61,10 +61,7 @@ class _AuthScreenState extends State<AuthScreen> {
         await storage.clearCredentials();
         setState(() {
           _isAuthenticating = false;
-          _errorMessage = t.serverSelection.noServersFoundForAccount(
-            username: username,
-            email: email,
-          );
+          _errorMessage = t.serverSelection.noServersFoundForAccount(username: username, email: email);
         });
         return;
       }
@@ -80,8 +77,7 @@ class _AuthScreenState extends State<AuthScreen> {
       // Connect to all servers
       if (!mounted) return;
       final multiServerProvider = context.read<MultiServerProvider>();
-      final connectedCount = await multiServerProvider.serverManager
-          .connectToAllServers(servers);
+      final connectedCount = await multiServerProvider.serverManager.connectToAllServers(servers);
 
       if (connectedCount == 0) {
         setState(() {
@@ -93,8 +89,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       // Get the first connected client for backward compatibility
       if (!mounted) return;
-      final firstClient =
-          multiServerProvider.serverManager.onlineClients.values.first;
+      final firstClient = multiServerProvider.serverManager.onlineClients.values.first;
 
       // Set it as the legacy client
       final plexClientProvider = context.read<PlexClientProvider>();
@@ -102,12 +97,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       // Navigate to main screen
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MainScreen(client: firstClient),
-        ),
-      );
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen(client: firstClient)));
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       setState(() {
@@ -153,10 +143,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
 
       // Poll for authentication with cancellation support
-      final token = await _authService.pollPinUntilClaimed(
-        pinId,
-        shouldCancel: () => _shouldCancelPolling,
-      );
+      final token = await _authService.pollPinUntilClaimed(pinId, shouldCancel: () => _shouldCancelPolling);
 
       // If polling was cancelled, don't show error
       if (_shouldCancelPolling) {
@@ -245,10 +232,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(t.auth.cancel),
-                ),
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.auth.cancel)),
                 ElevatedButton(
                   onPressed: () async {
                     final token = tokenController.text.trim();
@@ -315,16 +299,11 @@ class _AuthScreenState extends State<AuthScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Image.asset(
-                            'assets/plezy.png',
-                            width: 120,
-                            height: 120,
-                          ),
+                          Image.asset('assets/plezy.png', width: 120, height: 120),
                           const SizedBox(height: 24),
                           Text(
                             t.app.title,
-                            style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -346,11 +325,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             // Initial state buttons
                             ElevatedButton(
                               onPressed: _startAuthentication,
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                              ),
+                              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                               child: Text(t.auth.signInWithPlex),
                             ),
                             const SizedBox(height: 12),
@@ -361,11 +336,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 });
                                 _startAuthentication();
                               },
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                              ),
+                              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                               child: Text(t.auth.showQRCode),
                             ),
                             if (kDebugMode) ...[
@@ -373,27 +344,17 @@ class _AuthScreenState extends State<AuthScreen> {
                               OutlinedButton(
                                 onPressed: _handleDebugTap,
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  side: BorderSide(
-                                    color: Theme.of(context).colorScheme.outline
-                                        .withValues(alpha: 0.5),
-                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
                                 ),
-                                child: Text(
-                                  t.auth.debugEnterToken,
-                                  style: TextStyle(fontSize: 12),
-                                ),
+                                child: Text(t.auth.debugEnterToken, style: TextStyle(fontSize: 12)),
                               ),
                             ],
                             if (_errorMessage != null) ...[
                               const SizedBox(height: 16),
                               Text(
                                 _errorMessage!,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
+                                style: TextStyle(color: Theme.of(context).colorScheme.error),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -411,8 +372,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 24),
                     Text(
                       t.app.title,
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 48),
@@ -425,9 +385,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       // add QR button here
                       ElevatedButton(
                         onPressed: _startAuthentication,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
+                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                         child: Text(t.auth.signInWithPlex),
                       ),
                       const SizedBox(height: 12),
@@ -438,9 +396,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           });
                           _startAuthentication();
                         },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                         child: Text(t.auth.showQRCode),
                       ),
                       if (kDebugMode) ...[
@@ -449,25 +405,16 @@ class _AuthScreenState extends State<AuthScreen> {
                           onPressed: _handleDebugTap,
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.outline.withValues(alpha: 0.5),
-                            ),
+                            side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
                           ),
-                          child: Text(
-                            t.auth.debugEnterToken,
-                            style: TextStyle(fontSize: 12),
-                          ),
+                          child: Text(t.auth.debugEnterToken, style: TextStyle(fontSize: 12)),
                         ),
                       ],
                       if (_errorMessage != null) ...[
                         const SizedBox(height: 16),
                         Text(
                           _errorMessage!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                          style: TextStyle(color: Theme.of(context).colorScheme.error),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -486,9 +433,7 @@ class _AuthScreenState extends State<AuthScreen> {
         const SizedBox(height: 24),
         OutlinedButton(
           onPressed: _retryAuthentication,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-          ),
+          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
           child: Text(t.auth.retry),
         ),
       ],

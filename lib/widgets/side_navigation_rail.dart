@@ -126,9 +126,7 @@ class NavigationRailItem extends StatelessWidget {
                   : isSelected
                   ? t.text.withValues(alpha: 0.1) // Just selected
                   : isFocused
-                  ? t.text.withValues(
-                      alpha: 0.12,
-                    ) // Just focused (more visible)
+                  ? t.text.withValues(alpha: 0.12) // Just focused (more visible)
                   : null,
               borderRadius: borderRadius,
             ),
@@ -222,14 +220,10 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   /// Fetch, filter, and order libraries (pure logic, no state changes)
-  Future<List<PlexLibrary>> _resolveLibraries(
-    MultiServerProvider provider,
-    StorageService storage,
-  ) async {
+  Future<List<PlexLibrary>> _resolveLibraries(MultiServerProvider provider, StorageService storage) async {
     if (!provider.hasConnectedServers) return [];
 
-    final libraries =
-        await provider.aggregationService.getLibrariesFromAllServers();
+    final libraries = await provider.aggregationService.getLibrariesFromAllServers();
 
     // Filter out unsupported library types (music)
     var filtered = libraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();
@@ -250,14 +244,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
   /// Build the set of valid focus keys (main nav + current libraries)
   Set<String> _buildValidFocusKeys(List<PlexLibrary> libraries) {
-    return {
-      _kHome,
-      _kLibraries,
-      _kSearch,
-      _kDownloads,
-      _kSettings,
-      ...libraries.map((lib) => lib.globalKey),
-    };
+    return {_kHome, _kLibraries, _kSearch, _kDownloads, _kSettings, ...libraries.map((lib) => lib.globalKey)};
   }
 
   Future<void> _loadLibraries() async {
@@ -330,9 +317,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
 
     // Filter visible libraries
-    final visibleLibraries = _libraries
-        .where((lib) => !hiddenKeys.contains(lib.globalKey))
-        .toList();
+    final visibleLibraries = _libraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
     // Listen to fullscreen changes for macOS
     return ListenableBuilder(
@@ -397,10 +382,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                       ),
                       isFocused: _focusTracker.isFocused(_kDownloads),
                       onTap: () => widget.onDestinationSelected(
-                        NavigationTab.indexFor(
-                          NavigationTabId.downloads,
-                          isOffline: widget.isOfflineMode,
-                        ),
+                        NavigationTab.indexFor(NavigationTabId.downloads, isOffline: widget.isOfflineMode),
                       ),
                       focusNode: _focusTracker.get(_kDownloads),
                     ),
@@ -419,10 +401,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                       ),
                       isFocused: _focusTracker.isFocused(_kSettings),
                       onTap: () => widget.onDestinationSelected(
-                        NavigationTab.indexFor(
-                          NavigationTabId.settings,
-                          isOffline: widget.isOfflineMode,
-                        ),
+                        NavigationTab.indexFor(NavigationTabId.settings, isOffline: widget.isOfflineMode),
                       ),
                       focusNode: _focusTracker.get(_kSettings),
                     ),
@@ -468,8 +447,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   Widget _buildLibrariesSection(List<PlexLibrary> visibleLibraries, dynamic t) {
-    final isLibrariesSelected =
-        widget.selectedIndex == 1 && widget.selectedLibraryKey == null;
+    final isLibrariesSelected = widget.selectedIndex == 1 && widget.selectedLibraryKey == null;
     final isLibrariesFocused = _focusTracker.isFocused(_kLibraries);
 
     return Column(
@@ -498,10 +476,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
               },
               borderRadius: BorderRadius.circular(tokens(context).radiusMd),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: isLibrariesSelected
                       ? t.text.withValues(alpha: 0.1)
@@ -513,9 +488,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                 child: Row(
                   children: [
                     AppIcon(
-                      widget.selectedIndex == 1
-                          ? Symbols.video_library_rounded
-                          : Symbols.video_library_rounded,
+                      widget.selectedIndex == 1 ? Symbols.video_library_rounded : Symbols.video_library_rounded,
                       fill: 1,
                       size: 22,
                       color: widget.selectedIndex == 1 ? t.text : t.textMuted,
@@ -526,19 +499,13 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                         Translations.of(context).navigation.libraries,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: widget.selectedIndex == 1
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          color: widget.selectedIndex == 1
-                              ? t.text
-                              : t.textMuted,
+                          fontWeight: widget.selectedIndex == 1 ? FontWeight.w600 : FontWeight.w400,
+                          color: widget.selectedIndex == 1 ? t.text : t.textMuted,
                         ),
                       ),
                     ),
                     AppIcon(
-                      _librariesExpanded
-                          ? Symbols.expand_less_rounded
-                          : Symbols.expand_more_rounded,
+                      _librariesExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
                       fill: 1,
                       size: 20,
                       color: t.textMuted,
@@ -559,10 +526,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: t.textMuted,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: t.textMuted),
                     ),
                   ),
                 )
@@ -585,10 +549,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     for (final lib in libraries) {
       nameCounts[lib.title] = (nameCounts[lib.title] ?? 0) + 1;
     }
-    return nameCounts.entries
-        .where((e) => e.value > 1)
-        .map((e) => e.key)
-        .toSet();
+    return nameCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
   }
 
   Widget _buildLibraryItems(List<PlexLibrary> visibleLibraries, dynamic t) {
@@ -598,22 +559,14 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: visibleLibraries.map((library) {
-        final showServerName =
-            nonUniqueNames.contains(library.title) &&
-            library.serverName != null;
+        final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
         return _buildLibraryItem(library, t, showServerName: showServerName);
       }).toList(),
     );
   }
 
-  Widget _buildLibraryItem(
-    PlexLibrary library,
-    dynamic t, {
-    bool showServerName = false,
-  }) {
-    final isSelected =
-        widget.selectedIndex == 1 &&
-        widget.selectedLibraryKey == library.globalKey;
+  Widget _buildLibraryItem(PlexLibrary library, dynamic t, {bool showServerName = false}) {
+    final isSelected = widget.selectedIndex == 1 && widget.selectedLibraryKey == library.globalKey;
     final isFocused = _focusTracker.isFocused(library.globalKey);
     final focusNode = _focusTracker.get(library.globalKey);
 
@@ -638,10 +591,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
             if (showServerName)
               Text(
                 library.serverName!,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: t.textMuted.withValues(alpha: 0.4),
-                ),
+                style: TextStyle(fontSize: 9, color: t.textMuted.withValues(alpha: 0.4)),
                 overflow: TextOverflow.ellipsis,
               ),
           ],

@@ -28,11 +28,7 @@ import 'dpad_navigator.dart';
 ///   child: ...
 /// )
 /// ```
-KeyEventResult handleBackKeyNavigation<T>(
-  BuildContext context,
-  KeyEvent event, {
-  T? result,
-}) {
+KeyEventResult handleBackKeyNavigation<T>(BuildContext context, KeyEvent event, {T? result}) {
   if (event is KeyDownEvent && event.logicalKey.isBackKey) {
     Navigator.pop(context, result);
     return KeyEventResult.handled;

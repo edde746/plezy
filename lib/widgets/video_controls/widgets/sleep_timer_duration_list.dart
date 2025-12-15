@@ -14,12 +14,7 @@ class SleepTimerDurationList extends StatelessWidget {
   final SleepTimerService sleepTimer;
   final int? defaultDuration;
 
-  const SleepTimerDurationList({
-    super.key,
-    required this.player,
-    required this.sleepTimer,
-    this.defaultDuration,
-  });
+  const SleepTimerDurationList({super.key, required this.player, required this.sleepTimer, this.defaultDuration});
 
   @override
   Widget build(BuildContext context) {
@@ -40,17 +35,10 @@ class SleepTimerDurationList extends StatelessWidget {
         );
 
         return ListTile(
-          leading: const AppIcon(
-            Symbols.timer_rounded,
-            fill: 1,
-            color: Colors.white70,
-          ),
+          leading: const AppIcon(Symbols.timer_rounded, fill: 1, color: Colors.white70),
           title: Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.normal,
-            ),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.normal),
           ),
           onTap: () {
             sleepTimer.startTimer(Duration(minutes: minutes), () {

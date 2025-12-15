@@ -36,11 +36,7 @@ class MediaControlsManager {
   /// Update media metadata displayed in OS media controls
   ///
   /// This includes title, artist, artwork, and duration.
-  Future<void> updateMetadata({
-    required PlexMetadata metadata,
-    PlexClient? client,
-    Duration? duration,
-  }) async {
+  Future<void> updateMetadata({required PlexMetadata metadata, PlexClient? client, Duration? duration}) async {
     try {
       // Build artwork URL if client is available
       String? artworkUrl;
@@ -79,11 +75,7 @@ class MediaControlsManager {
     required double speed,
     bool force = false,
   }) async {
-    final params = _PlaybackStateParams(
-      isPlaying: isPlaying,
-      position: position,
-      speed: speed,
-    );
+    final params = _PlaybackStateParams(isPlaying: isPlaying, position: position, speed: speed);
 
     if (force) {
       // Bypass throttling for forced updates
@@ -99,9 +91,7 @@ class MediaControlsManager {
     try {
       await OsMediaControls.setPlaybackState(
         MediaPlaybackState(
-          state: params.isPlaying
-              ? PlaybackState.playing
-              : PlaybackState.paused,
+          state: params.isPlaying ? PlaybackState.playing : PlaybackState.paused,
           position: params.position,
           speed: params.speed,
         ),
@@ -118,10 +108,7 @@ class MediaControlsManager {
   /// - Episodes: Enable both if there are adjacent episodes
   /// - Playlist items: Enable based on playlist position
   /// - Movies: Usually disabled
-  Future<void> setControlsEnabled({
-    bool canGoNext = false,
-    bool canGoPrevious = false,
-  }) async {
+  Future<void> setControlsEnabled({bool canGoNext = false, bool canGoPrevious = false}) async {
     // Skip if unchanged (avoid redundant platform calls)
     if (canGoNext == _lastCanGoNext && canGoPrevious == _lastCanGoPrevious) {
       return;
@@ -137,14 +124,9 @@ class MediaControlsManager {
 
       if (controls.isNotEmpty) {
         await OsMediaControls.enableControls(controls);
-        appLogger.d(
-          'Media controls enabled - Previous: $canGoPrevious, Next: $canGoNext',
-        );
+        appLogger.d('Media controls enabled - Previous: $canGoPrevious, Next: $canGoNext');
       } else {
-        await OsMediaControls.disableControls([
-          MediaControl.previous,
-          MediaControl.next,
-        ]);
+        await OsMediaControls.disableControls([MediaControl.previous, MediaControl.next]);
         appLogger.d('Media controls disabled');
       }
     } catch (e) {
@@ -210,9 +192,5 @@ class _PlaybackStateParams {
   final Duration position;
   final double speed;
 
-  const _PlaybackStateParams({
-    required this.isPlaying,
-    required this.position,
-    required this.speed,
-  });
+  const _PlaybackStateParams({required this.isPlaying, required this.position, required this.speed});
 }

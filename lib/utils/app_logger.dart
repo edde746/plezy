@@ -28,13 +28,7 @@ class LogEntry {
   final Object? error;
   final StackTrace? stackTrace;
 
-  LogEntry({
-    required this.timestamp,
-    required this.level,
-    required this.message,
-    this.error,
-    this.stackTrace,
-  });
+  LogEntry({required this.timestamp, required this.level, required this.message, this.error, this.stackTrace});
 
   /// Estimate the memory size of this log entry in bytes
   int get estimatedSize {
@@ -82,11 +76,7 @@ class MemoryLogOutput extends LogOutput {
   void output(OutputEvent event) {
     // Extract relevant information from the log event
     for (var line in event.lines) {
-      final logEntry = LogEntry(
-        timestamp: DateTime.now(),
-        level: event.level,
-        message: _redactSensitiveData(line),
-      );
+      final logEntry = LogEntry(timestamp: DateTime.now(), level: event.level, message: _redactSensitiveData(line));
 
       _logs.add(logEntry);
       _currentSize += logEntry.estimatedSize;
@@ -110,9 +100,7 @@ class MemoryAwareLogPrinter extends LogPrinter {
   List<String> log(LogEvent event) {
     // Store the log with error and stack trace if available
     final message = _redactSensitiveData(event.message.toString());
-    final error = event.error != null
-        ? _redactSensitiveData(event.error.toString())
-        : null;
+    final error = event.error != null ? _redactSensitiveData(event.error.toString()) : null;
 
     final logEntry = LogEntry(
       timestamp: DateTime.now(),
@@ -126,8 +114,7 @@ class MemoryAwareLogPrinter extends LogPrinter {
     MemoryLogOutput._currentSize += logEntry.estimatedSize;
 
     // Maintain buffer size limit (remove oldest entries)
-    while (MemoryLogOutput._currentSize > MemoryLogOutput.maxLogSizeBytes &&
-        MemoryLogOutput._logs.isNotEmpty) {
+    while (MemoryLogOutput._currentSize > MemoryLogOutput.maxLogSizeBytes && MemoryLogOutput._logs.isNotEmpty) {
       final removed = MemoryLogOutput._logs.removeAt(0);
       MemoryLogOutput._currentSize -= removed.estimatedSize;
     }
@@ -181,11 +168,7 @@ void setLoggerLevel(bool debugEnabled) {
 
   // Recreate the logger instance with the new level
   // This ensures it works in release mode where Logger.level might be optimized away
-  appLogger = Logger(
-    printer: MemoryAwareLogPrinter(SimplePrinter()),
-    filter: _productionFilter,
-    level: newLevel,
-  );
+  appLogger = Logger(printer: MemoryAwareLogPrinter(SimplePrinter()), filter: _productionFilter, level: newLevel);
 
   // Also set the static level for consistency
   Logger.level = newLevel;

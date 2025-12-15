@@ -20,12 +20,9 @@ Widget buildAdaptiveMediaSliverBuilder<T>({
   double? mainAxisSpacing,
 }) {
   final effectivePadding = padding ?? GridLayoutConstants.gridPadding;
-  final effectiveAspectRatio =
-      childAspectRatio ?? GridLayoutConstants.posterAspectRatio;
-  final effectiveCrossAxisSpacing =
-      crossAxisSpacing ?? GridLayoutConstants.crossAxisSpacing;
-  final effectiveMainAxisSpacing =
-      mainAxisSpacing ?? GridLayoutConstants.mainAxisSpacing;
+  final effectiveAspectRatio = childAspectRatio ?? GridLayoutConstants.posterAspectRatio;
+  final effectiveCrossAxisSpacing = crossAxisSpacing ?? GridLayoutConstants.crossAxisSpacing;
+  final effectiveMainAxisSpacing = mainAxisSpacing ?? GridLayoutConstants.mainAxisSpacing;
 
   if (viewMode == ViewMode.list) {
     return SliverPadding(
@@ -42,10 +39,7 @@ Widget buildAdaptiveMediaSliverBuilder<T>({
       padding: effectivePadding,
       sliver: SliverGrid(
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-            context,
-            density,
-          ),
+          maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(context, density),
           childAspectRatio: effectiveAspectRatio,
           crossAxisSpacing: effectiveCrossAxisSpacing,
           mainAxisSpacing: effectiveMainAxisSpacing,

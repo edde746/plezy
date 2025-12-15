@@ -37,11 +37,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Maximum sync attempts before giving up on an item
   static const int maxSyncAttempts = 5;
 
-  OfflineWatchSyncService({
-    required AppDatabase database,
-    required MultiServerManager serverManager,
-  }) : _database = database,
-       _serverManager = serverManager;
+  OfflineWatchSyncService({required AppDatabase database, required MultiServerManager serverManager})
+    : _database = database,
+      _serverManager = serverManager;
 
   /// Whether a sync is currently in progress
   bool get isSyncing => _isSyncing;
@@ -57,9 +55,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     _offlineModeListener = () {
       if (!offlineModeProvider.isOffline) {
         // We just came online - trigger bidirectional sync
-        appLogger.i(
-          'Connectivity restored - starting bidirectional watch sync',
-        );
+        appLogger.i('Connectivity restored - starting bidirectional watch sync');
         _performBidirectionalSync();
       }
     };
@@ -163,26 +159,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Queue a manual "mark as watched" action.
   ///
   /// Removes any conflicting actions for the same item.
-  Future<void> queueMarkWatched({
-    required String serverId,
-    required String ratingKey,
-  }) => _queueWatchStatusAction(
-    serverId: serverId,
-    ratingKey: ratingKey,
-    actionType: 'watched',
-  );
+  Future<void> queueMarkWatched({required String serverId, required String ratingKey}) =>
+      _queueWatchStatusAction(serverId: serverId, ratingKey: ratingKey, actionType: 'watched');
 
   /// Queue a manual "mark as unwatched" action.
   ///
   /// Removes any conflicting actions for the same item.
-  Future<void> queueMarkUnwatched({
-    required String serverId,
-    required String ratingKey,
-  }) => _queueWatchStatusAction(
-    serverId: serverId,
-    ratingKey: ratingKey,
-    actionType: 'unwatched',
-  );
+  Future<void> queueMarkUnwatched({required String serverId, required String ratingKey}) =>
+      _queueWatchStatusAction(serverId: serverId, ratingKey: ratingKey, actionType: 'unwatched');
 
   /// Internal helper to queue watch/unwatch actions.
   Future<void> _queueWatchStatusAction({
@@ -190,11 +174,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     required String ratingKey,
     required String actionType,
   }) async {
-    await _database.insertWatchAction(
-      serverId: serverId,
-      ratingKey: ratingKey,
-      actionType: actionType,
-    );
+    await _database.insertWatchAction(serverId: serverId, ratingKey: ratingKey, actionType: actionType);
 
     appLogger.d('Queued offline mark $actionType: $serverId:$ratingKey');
     notifyListeners();
@@ -233,9 +213,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   ///
   /// Returns a map of globalKey -> watch status (true/false/null).
   /// More efficient than calling getLocalWatchStatus multiple times.
-  Future<Map<String, bool?>> getLocalWatchStatusesBatched(
-    Set<String> globalKeys,
-  ) async {
+  Future<Map<String, bool?>> getLocalWatchStatusesBatched(Set<String> globalKeys) async {
     if (globalKeys.isEmpty) return {};
 
     final actions = await _database.getLatestWatchActionsForKeys(globalKeys);
@@ -322,9 +300,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
         // Check if server still exists
         if (_serverManager.getServer(action.serverId) == null) {
-          appLogger.w(
-            'Deleting action ${action.id} - server ${action.serverId} no longer exists',
-          );
+          appLogger.w('Deleting action ${action.id} - server ${action.serverId} no longer exists');
           await _database.deleteWatchAction(action.id);
           continue;
         }
@@ -343,9 +319,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
               await _syncAction(client, action);
               // Success - delete the action from queue
               await _database.deleteWatchAction(action.id);
-              appLogger.d(
-                'Successfully synced action ${action.id}: ${action.actionType} for ${action.ratingKey}',
-              );
+              appLogger.d('Successfully synced action ${action.id}: ${action.actionType} for ${action.ratingKey}');
             } catch (e) {
               appLogger.w('Failed to sync action ${action.id}: $e');
               await _database.updateSyncAttempt(action.id, e.toString());
@@ -354,18 +328,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
         });
 
         // If _withOnlineClient returned null (server offline), mark actions for retry
-        if (_serverManager.getClient(serverId) == null ||
-            !_serverManager.isServerOnline(serverId)) {
+        if (_serverManager.getClient(serverId) == null || !_serverManager.isServerOnline(serverId)) {
           for (final action in actions) {
             // Only update if we haven't already processed it
-            final stillPending = await _database.getLatestWatchAction(
-              '${action.serverId}:${action.ratingKey}',
-            );
+            final stillPending = await _database.getLatestWatchAction('${action.serverId}:${action.ratingKey}');
             if (stillPending != null && stillPending.id == action.id) {
-              await _database.updateSyncAttempt(
-                action.id,
-                'Server not available',
-              );
+              await _database.updateSyncAttempt(action.id, 'Server not available');
             }
           }
         }
@@ -380,10 +348,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   ///
   /// Returns null if no client available or server is offline.
   /// The callback receives the PlexClient and should return the result.
-  Future<T?> _withOnlineClient<T>(
-    String serverId,
-    Future<T> Function(PlexClient client) callback,
-  ) async {
+  Future<T?> _withOnlineClient<T>(String serverId, Future<T> Function(PlexClient client) callback) async {
     final client = _serverManager.getClient(serverId);
     if (client == null) {
       appLogger.d('No client for server $serverId, skipping');
@@ -399,10 +364,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   }
 
   /// Sync a single action to the server.
-  Future<void> _syncAction(
-    PlexClient client,
-    OfflineWatchProgressItem action,
-  ) async {
+  Future<void> _syncAction(PlexClient client, OfflineWatchProgressItem action) async {
     switch (action.actionType) {
       case 'watched':
         await client.markAsWatched(action.ratingKey);
@@ -418,8 +380,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
           await client.updateProgress(
             action.ratingKey,
             time: action.viewOffset!,
-            state:
-                'stopped', // Use 'stopped' since we're syncing after the fact
+            state: 'stopped', // Use 'stopped' since we're syncing after the fact
             duration: action.duration,
           );
         }
@@ -449,9 +410,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
         return;
       }
 
-      appLogger.i(
-        'Syncing watch states from server for ${downloadedItems.length} items',
-      );
+      appLogger.i('Syncing watch states from server for ${downloadedItems.length} items');
 
       // Separate episodes (with season parent) from other items (movies, etc.)
       // Structure: serverId -> seasonRatingKey -> Set<episodeRatingKey>
@@ -468,9 +427,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
               .add(item.ratingKey);
         } else {
           // Movies, or episodes without parent (fallback to individual fetch)
-          nonEpisodeItems
-              .putIfAbsent(item.serverId, () => [])
-              .add(item.ratingKey);
+          nonEpisodeItems.putIfAbsent(item.serverId, () => []).add(item.ratingKey);
         }
       }
 
@@ -495,22 +452,16 @@ class OfflineWatchSyncService extends ChangeNotifier {
               // Cache only the episodes we have downloaded
               for (final episode in seasonEpisodes) {
                 if (downloadedEpisodeKeys.contains(episode.ratingKey)) {
-                  await PlexApiCache.instance.put(
-                    serverId,
-                    '/library/metadata/${episode.ratingKey}',
-                    {
-                      'MediaContainer': {
-                        'Metadata': [episode.toJson()],
-                      },
+                  await PlexApiCache.instance.put(serverId, '/library/metadata/${episode.ratingKey}', {
+                    'MediaContainer': {
+                      'Metadata': [episode.toJson()],
                     },
-                  );
+                  });
                   syncedCount++;
                 }
               }
             } catch (e) {
-              appLogger.d(
-                'Failed to sync watch states for season $seasonRatingKey: $e',
-              );
+              appLogger.d('Failed to sync watch states for season $seasonRatingKey: $e');
             }
           }
         });
@@ -526,15 +477,11 @@ class OfflineWatchSyncService extends ChangeNotifier {
             try {
               final metadata = await client.getMetadataWithImages(ratingKey);
               if (metadata != null) {
-                await PlexApiCache.instance.put(
-                  serverId,
-                  '/library/metadata/$ratingKey',
-                  {
-                    'MediaContainer': {
-                      'Metadata': [metadata.toJson()],
-                    },
+                await PlexApiCache.instance.put(serverId, '/library/metadata/$ratingKey', {
+                  'MediaContainer': {
+                    'Metadata': [metadata.toJson()],
                   },
-                );
+                });
                 syncedCount++;
               }
             } catch (e) {
@@ -545,9 +492,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
       }
 
       final movieCount = nonEpisodeItems.values.fold(0, (a, b) => a + b.length);
-      appLogger.i(
-        'Synced watch states: $seasonCount seasons, $movieCount other items ($syncedCount total)',
-      );
+      appLogger.i('Synced watch states: $seasonCount seasons, $movieCount other items ($syncedCount total)');
 
       // Notify download provider to refresh metadata from updated cache
       if (syncedCount > 0) {

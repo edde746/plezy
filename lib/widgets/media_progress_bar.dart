@@ -27,11 +27,8 @@ class MediaProgressBar extends StatelessWidget {
 
     return LinearProgressIndicator(
       value: progress.clamp(0.0, 1.0),
-      backgroundColor: backgroundColor ??
-          Theme.of(context).colorScheme.surfaceContainerHighest,
-      valueColor: AlwaysStoppedAnimation<Color>(
-        valueColor ?? Theme.of(context).colorScheme.primary,
-      ),
+      backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surfaceContainerHighest,
+      valueColor: AlwaysStoppedAnimation<Color>(valueColor ?? Theme.of(context).colorScheme.primary),
       minHeight: minHeight ?? 4,
     );
   }

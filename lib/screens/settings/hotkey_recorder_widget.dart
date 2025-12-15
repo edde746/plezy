@@ -44,17 +44,12 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
             children: [
               Text(
                 'Current shortcut:',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   border: Border.all(color: Theme.of(context).dividerColor),
                   borderRadius: BorderRadius.circular(6),
@@ -73,21 +68,14 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
                     ),
                     if (_recordedHotKey != null)
                       IconButton(
-                        icon: const AppIcon(
-                          Symbols.backspace_rounded,
-                          fill: 1,
-                          size: 18,
-                        ),
+                        icon: const AppIcon(Symbols.backspace_rounded, fill: 1, size: 18),
                         onPressed: () {
                           setState(() {
                             _recordedHotKey = null;
                           });
                         },
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 24,
-                          minHeight: 24,
-                        ),
+                        constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
                         tooltip: t.hotkeys.clearShortcut,
                       ),
                   ],
@@ -96,11 +84,9 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
               const SizedBox(height: 8),
               Text(
                 'Press any key combination to set a new shortcut',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -110,9 +96,7 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
       actions: [
         TextButton(onPressed: widget.onCancel, child: Text(t.common.cancel)),
         TextButton(
-          onPressed: _recordedHotKey != null
-              ? () => widget.onHotKeyRecorded(_recordedHotKey!)
-              : null,
+          onPressed: _recordedHotKey != null ? () => widget.onHotKeyRecorded(_recordedHotKey!) : null,
           child: Text(t.common.save),
         ),
       ],

@@ -43,10 +43,7 @@ class FocusBuilders {
           duration: duration,
           curve: Curves.easeOutCubic,
           padding: padding,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
+          decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(borderRadius)),
           child: child,
         ),
       ),
@@ -87,31 +84,19 @@ class FocusBuilders {
       child: AnimatedContainer(
         duration: duration,
         curve: Curves.easeOutCubic,
-        decoration: FocusTheme.focusDecoration(
-          context,
-          isFocused: showFocus,
-          borderRadius: borderRadius,
-        ),
+        decoration: FocusTheme.focusDecoration(context, isFocused: showFocus, borderRadius: borderRadius),
         child: child,
       ),
     );
 
     // Wrap in GestureDetector if tap/long press handlers provided
     final gestureWidget = (onTap != null || onLongPress != null)
-        ? GestureDetector(
-            onTap: onTap,
-            onLongPress: onLongPress,
-            child: focusedWidget,
-          )
+        ? GestureDetector(onTap: onTap, onLongPress: onLongPress, child: focusedWidget)
         : focusedWidget;
 
     // Wrap in Focus if focus node and key event handler provided
     if (focusNode != null && onKeyEvent != null) {
-      return Focus(
-        focusNode: focusNode,
-        onKeyEvent: onKeyEvent,
-        child: gestureWidget,
-      );
+      return Focus(focusNode: focusNode, onKeyEvent: onKeyEvent, child: gestureWidget);
     }
 
     return gestureWidget;

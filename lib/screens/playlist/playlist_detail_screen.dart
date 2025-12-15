@@ -24,8 +24,7 @@ class PlaylistDetailScreen extends StatefulWidget {
   State<PlaylistDetailScreen> createState() => _PlaylistDetailScreenState();
 }
 
-class _PlaylistDetailScreenState
-    extends BaseMediaListDetailScreen<PlaylistDetailScreen>
+class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetailScreen>
     with StandardItemLoader<PlaylistDetailScreen> {
   @override
   dynamic get mediaItem => widget.playlist;
@@ -66,14 +65,10 @@ class _PlaylistDetailScreenState
 
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(t.playlists.deleted)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.deleted)));
           Navigator.pop(context); // Return to playlists screen
         } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(t.playlists.errorDeleting)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorDeleting)));
         }
       }
     }
@@ -94,9 +89,7 @@ class _PlaylistDetailScreenState
     if (movedItem.playlistItemID == null) {
       appLogger.e('Cannot reorder: item missing playlistItemID');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
       }
       return;
     }
@@ -112,18 +105,14 @@ class _PlaylistDetailScreenState
       if (afterItem.playlistItemID == null) {
         appLogger.e('Cannot reorder: after item missing playlistItemID');
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
         }
         return;
       }
       afterPlaylistItemId = afterItem.playlistItemID!;
     }
 
-    appLogger.d(
-      'Reordering item from $oldIndex to $newIndex (after ID: $afterPlaylistItemId)',
-    );
+    appLogger.d('Reordering item from $oldIndex to $newIndex (after ID: $afterPlaylistItemId)');
 
     // Optimistically update UI
     setState(() {
@@ -147,9 +136,7 @@ class _PlaylistDetailScreenState
           items.insert(oldIndex, item);
         });
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
       }
     }
   }
@@ -161,16 +148,12 @@ class _PlaylistDetailScreenState
     if (item.playlistItemID == null) {
       appLogger.e('Cannot remove: item missing playlistItemID');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.playlists.errorRemoving)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorRemoving)));
       }
       return;
     }
 
-    appLogger.d(
-      'Removing item ${item.title} (playlistItemID: ${item.playlistItemID}) from playlist',
-    );
+    appLogger.d('Removing item ${item.title} (playlistItemID: ${item.playlistItemID}) from playlist');
 
     // Optimistically update UI
     setState(() {
@@ -185,9 +168,7 @@ class _PlaylistDetailScreenState
 
     if (mounted) {
       if (success) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.playlists.itemRemoved)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.itemRemoved)));
       } else {
         // Revert on failure
         appLogger.e('Failed to remove playlist item, reverting UI');
@@ -195,9 +176,7 @@ class _PlaylistDetailScreenState
           items.insert(index, item);
         });
 
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(t.playlists.errorRemoving)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorRemoving)));
       }
     }
   }
@@ -233,20 +212,11 @@ class _PlaylistDetailScreenState
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppIcon(
-                  Symbols.auto_awesome_rounded,
-                  fill: 1,
-                  size: 12,
-                  color: Colors.blue[300],
-                ),
+                AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Colors.blue[300]),
                 const SizedBox(width: 4),
                 Text(
                   t.playlists.smartPlaylist,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.blue[300],
-                    fontWeight: FontWeight.normal,
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.blue[300], fontWeight: FontWeight.normal),
                 ),
               ],
             ),

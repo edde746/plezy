@@ -26,9 +26,7 @@ class PlexMediaVersion {
   factory PlexMediaVersion.fromJson(Map<String, dynamic> json) {
     // Get the first Part key for playback
     final parts = json['Part'] as List<dynamic>?;
-    final partKey = parts != null && parts.isNotEmpty
-        ? parts[0]['key'] as String? ?? ''
-        : '';
+    final partKey = parts != null && parts.isNotEmpty ? parts[0]['key'] as String? ?? '' : '';
 
     return PlexMediaVersion(
       id: json['id'] as int? ?? 0,

@@ -18,8 +18,7 @@ class DownloadProgress {
   final int totalBytes;
   final double speed; // bytes per second
   final String? errorMessage;
-  final String?
-  currentFile; // What's being downloaded (video, subtitles, artwork)
+  final String? currentFile; // What's being downloaded (video, subtitles, artwork)
 
   // Thumbnail path (populated after artwork download completes)
   final String? thumbPath;
@@ -92,8 +91,7 @@ class DeletionProgress {
     this.currentOperation,
   });
 
-  double get progressPercent =>
-      totalItems > 0 ? (currentItem / totalItems) : 0.0;
+  double get progressPercent => totalItems > 0 ? (currentItem / totalItems) : 0.0;
 
   int get progressPercentInt => (progressPercent * 100).round();
 

@@ -232,25 +232,16 @@ class PlexOptimizedImage extends StatelessWidget {
           fit: fit,
           filterQuality: filterQuality,
           alignment: alignment,
-          errorBuilder: (context, error, stackTrace) =>
-              _buildErrorWidget(context, error),
+          errorBuilder: (context, error, stackTrace) => _buildErrorWidget(context, error),
         );
       }
     }
 
-    double resolvedDimension(
-      double? explicit,
-      double constraintMax,
-      double fallback,
-    ) {
+    double resolvedDimension(double? explicit, double constraintMax, double fallback) {
       // Pick the explicit size when it's a finite positive number, otherwise
       // fall back to the constraint or a sensible default so we don't end up
       // with NaN/Infinity when rounding to ints for caching.
-      final candidate =
-          explicit ??
-          (constraintMax.isFinite && constraintMax > 0
-              ? constraintMax
-              : fallback);
+      final candidate = explicit ?? (constraintMax.isFinite && constraintMax > 0 ? constraintMax : fallback);
       if (candidate.isNaN || candidate.isInfinite || candidate <= 0) {
         return fallback;
       }
@@ -267,16 +258,8 @@ class PlexOptimizedImage extends StatelessWidget {
         final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
 
         // Calculate effective constraints with safe fallbacks
-        final effectiveWidth = resolvedDimension(
-          width,
-          constraints.maxWidth,
-          300.0,
-        );
-        final effectiveHeight = resolvedDimension(
-          height,
-          constraints.maxHeight,
-          450.0,
-        );
+        final effectiveWidth = resolvedDimension(width, constraints.maxWidth, 300.0);
+        final effectiveHeight = resolvedDimension(height, constraints.maxHeight, 450.0);
 
         // Get optimized image URL
         final imageUrl = PlexImageHelper.getOptimizedImageUrl(
@@ -285,8 +268,7 @@ class PlexOptimizedImage extends StatelessWidget {
           maxWidth: effectiveWidth,
           maxHeight: effectiveHeight,
           devicePixelRatio: devicePixelRatio,
-          enableTranscoding:
-              enableTranscoding && PlexImageHelper.shouldTranscode(imagePath),
+          enableTranscoding: enableTranscoding && PlexImageHelper.shouldTranscode(imagePath),
           imageType: imageType,
         );
 
@@ -298,17 +280,12 @@ class PlexOptimizedImage extends StatelessWidget {
         final scaledWidth = effectiveWidth * devicePixelRatio;
         final scaledHeight = effectiveHeight * devicePixelRatio;
         final (memWidth, memHeight) = PlexImageHelper.getMemCacheDimensions(
-          displayWidth: scaledWidth.isFinite && scaledWidth > 0
-              ? scaledWidth.round()
-              : 0,
-          displayHeight: scaledHeight.isFinite && scaledHeight > 0
-              ? scaledHeight.round()
-              : 0,
+          displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
+          displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
         );
 
         // Generate cache key if not provided
-        final effectiveCacheKey =
-            cacheKey ?? _generateCacheKey(imageUrl, memWidth, memHeight);
+        final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl, memWidth, memHeight);
 
         return CachedNetworkImage(
           imageUrl: imageUrl,
@@ -321,12 +298,8 @@ class PlexOptimizedImage extends StatelessWidget {
           memCacheWidth: memWidth,
           memCacheHeight: memHeight,
           cacheKey: effectiveCacheKey,
-          placeholder: placeholder != null
-              ? placeholder!
-              : (context, url) => _buildPlaceholder(context),
-          errorWidget: errorWidget != null
-              ? errorWidget!
-              : (context, url, error) => _buildErrorWidget(context, error),
+          placeholder: placeholder != null ? placeholder! : (context, url) => _buildPlaceholder(context),
+          errorWidget: errorWidget != null ? errorWidget! : (context, url, error) => _buildErrorWidget(context, error),
           httpHeaders: {'User-Agent': 'Plezy Flutter Client'},
         );
       },
@@ -336,14 +309,7 @@ class PlexOptimizedImage extends StatelessWidget {
   Widget _buildPlaceholder(BuildContext context) {
     return SkeletonLoader(
       child: fallbackIcon != null
-          ? Center(
-              child: AppIcon(
-                fallbackIcon!,
-                fill: 1,
-                size: 40,
-                color: Colors.white54,
-              ),
-            )
+          ? Center(child: AppIcon(fallbackIcon!, fill: 1, size: 40, color: Colors.white54))
           : null,
     );
   }

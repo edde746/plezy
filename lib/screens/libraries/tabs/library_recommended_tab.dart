@@ -25,9 +25,7 @@ class LibraryRecommendedTab extends BaseLibraryTab<PlexHub> {
   State<LibraryRecommendedTab> createState() => _LibraryRecommendedTabState();
 }
 
-class _LibraryRecommendedTabState
-    extends BaseLibraryTabState<PlexHub, LibraryRecommendedTab>
-    with ItemUpdatable {
+class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRecommendedTab> with ItemUpdatable {
   /// GlobalKeys for each hub section to enable vertical navigation
   final List<GlobalKey<HubSectionState>> _hubKeys = [];
 
@@ -38,9 +36,7 @@ class _LibraryRecommendedTabState
   void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
     // Update the item in any hub that contains it
     for (final hub in items) {
-      final itemIndex = hub.items.indexWhere(
-        (item) => item.ratingKey == ratingKey,
-      );
+      final itemIndex = hub.items.indexWhere((item) => item.ratingKey == ratingKey);
       if (itemIndex != -1) {
         hub.items[itemIndex] = updatedMetadata;
       }
@@ -151,8 +147,7 @@ class _LibraryRecommendedTabState
       itemCount: items.length,
       itemBuilder: (context, index) {
         final hub = items[index];
-        final isContinueWatching =
-            hub.hubIdentifier == '_library_continue_watching_';
+        final isContinueWatching = hub.hubIdentifier == '_library_continue_watching_';
 
         return HubSection(
           key: index < _hubKeys.length ? _hubKeys[index] : null,
@@ -160,11 +155,8 @@ class _LibraryRecommendedTabState
           icon: _getHubIcon(hub),
           isInContinueWatching: isContinueWatching,
           onRefresh: updateItem,
-          onRemoveFromContinueWatching: isContinueWatching
-              ? _refreshContinueWatching
-              : null,
-          onVerticalNavigation: (isUp) =>
-              _handleVerticalNavigation(index, isUp),
+          onRemoveFromContinueWatching: isContinueWatching ? _refreshContinueWatching : null,
+          onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
           onBack: widget.onBack,
         );
       },

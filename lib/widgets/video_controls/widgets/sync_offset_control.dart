@@ -51,10 +51,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     final offsetSeconds = offsetMs / 1000.0;
 
     // Apply to player using setProperty
-    await widget.player.setProperty(
-      widget.propertyName,
-      offsetSeconds.toString(),
-    );
+    await widget.player.setProperty(widget.propertyName, offsetSeconds.toString());
 
     // Notify parent and save to settings
     await widget.onOffsetChanged(offsetMs.round());
@@ -87,17 +84,10 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // Current offset display
           Text(
             formatSyncOffset(_currentOffset),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
-            _getDescriptionText(),
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
-          ),
+          Text(_getDescriptionText(), style: const TextStyle(color: Colors.white70, fontSize: 16)),
           const SizedBox(height: 48),
           // Slider
           Row(

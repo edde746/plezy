@@ -14,8 +14,7 @@ class OfflineModeProvider extends ChangeNotifier {
   late bool _hasServerConnection;
   bool _isInitialized = false;
 
-  OfflineModeProvider(this._serverManager)
-      : _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
+  OfflineModeProvider(this._serverManager) : _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
 
   /// Whether the app is currently in offline mode
   /// Offline = no network OR no servers reachable
@@ -30,9 +29,7 @@ class OfflineModeProvider extends ChangeNotifier {
   /// Updates network and server connection flags
   Future<void> _updateConnectionFlags() async {
     final connectivityResult = await Connectivity().checkConnectivity();
-    _hasNetworkConnection = !connectivityResult.contains(
-      ConnectivityResult.none,
-    );
+    _hasNetworkConnection = !connectivityResult.contains(ConnectivityResult.none);
     _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
   }
 
@@ -45,9 +42,7 @@ class OfflineModeProvider extends ChangeNotifier {
     await _updateConnectionFlags();
 
     // Monitor connectivity changes
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
-      results,
-    ) {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
       final wasOffline = isOffline;
       _hasNetworkConnection = !results.contains(ConnectivityResult.none);
 

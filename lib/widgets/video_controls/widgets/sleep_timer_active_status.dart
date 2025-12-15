@@ -11,12 +11,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
   final Duration remainingTime;
   final VoidCallback? onCancel;
 
-  const SleepTimerActiveStatus({
-    super.key,
-    required this.sleepTimer,
-    required this.remainingTime,
-    this.onCancel,
-  });
+  const SleepTimerActiveStatus({super.key, required this.sleepTimer, required this.remainingTime, this.onCancel});
 
   @override
   Widget build(BuildContext context) {
@@ -27,17 +22,11 @@ class SleepTimerActiveStatus extends StatelessWidget {
         children: [
           Text(
             t.videoControls.timerActive,
-            style: const TextStyle(
-              color: Colors.amber,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(color: Colors.amber, fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            t.videoControls.playbackWillPauseIn(
-              duration: formatDurationWithSeconds(remainingTime),
-            ),
+            t.videoControls.playbackWillPauseIn(duration: formatDurationWithSeconds(remainingTime)),
             style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 16),
@@ -46,9 +35,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
             children: [
               OutlinedButton.icon(
                 icon: const AppIcon(Symbols.add_rounded, fill: 1),
-                label: Text(
-                  t.videoControls.addTime(amount: "15", unit: " min"),
-                ),
+                label: Text(t.videoControls.addTime(amount: "15", unit: " min")),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Colors.white54),

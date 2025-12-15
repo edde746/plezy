@@ -82,12 +82,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
 
   // Focus management for sidebar/content switching
-  final FocusScopeNode _sidebarFocusScope = FocusScopeNode(
-    debugLabel: 'Sidebar',
-  );
-  final FocusScopeNode _contentFocusScope = FocusScopeNode(
-    debugLabel: 'Content',
-  );
+  final FocusScopeNode _sidebarFocusScope = FocusScopeNode(debugLabel: 'Sidebar');
+  final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
   bool _isSidebarFocused = false;
 
   @override
@@ -154,21 +150,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     // In offline mode, only show Downloads and Settings
     // In online mode, show all 5 screens
     if (offline) {
-      return [
-        DownloadsScreen(key: _downloadsKey),
-        SettingsScreen(key: _settingsKey),
-      ];
+      return [DownloadsScreen(key: _downloadsKey), SettingsScreen(key: _settingsKey)];
     }
 
     return [
-      DiscoverScreen(
-        key: _discoverKey,
-        onBecameVisible: _onDiscoverBecameVisible,
-      ),
-      LibrariesScreen(
-        key: _librariesKey,
-        onLibraryOrderChanged: _onLibraryOrderChanged,
-      ),
+      DiscoverScreen(key: _discoverKey, onBecameVisible: _onDiscoverBecameVisible),
+      LibrariesScreen(key: _librariesKey, onLibraryOrderChanged: _onLibraryOrderChanged),
       SearchScreen(key: _searchKey),
       DownloadsScreen(key: _downloadsKey),
       SettingsScreen(key: _settingsKey),
@@ -211,8 +198,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
           _lastOnlineTabId = previousTabId;
         }
 
-        _currentIndex =
-            _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
+        _currentIndex = _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
 
         // Track if we auto-switched to Downloads because the previous tab was unavailable.
         _autoSwitchedToDownloads =
@@ -222,14 +208,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
         // Coming back online: restore the last online tab if we forced a switch to Downloads.
         if (_autoSwitchedToDownloads) {
           final restoredTab = _lastOnlineTabId ?? NavigationTabId.discover;
-          final restoredIndex = NavigationTab.indexFor(
-            restoredTab,
-            isOffline: _isOffline,
-          );
+          final restoredIndex = NavigationTab.indexFor(restoredTab, isOffline: _isOffline);
           _currentIndex = restoredIndex >= 0 ? restoredIndex : 0;
         } else {
-          _currentIndex =
-              _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
+          _currentIndex = _normalizeIndexForMode(_currentIndex, wasOffline, _isOffline);
         }
         _autoSwitchedToDownloads = false;
       }
@@ -326,9 +308,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   /// Invalidate all cached data across all screens when profile is switched
   /// Receives the list of servers with new profile tokens for reconnection
   Future<void> _invalidateAllScreens(List<PlexServer> servers) async {
-    appLogger.d(
-      'Invalidating all screen data due to profile switch with ${servers.length} servers',
-    );
+    appLogger.d('Invalidating all screen data due to profile switch with ${servers.length} servers');
 
     // Get all providers
     final multiServerProvider = context.read<MultiServerProvider>();
@@ -341,13 +321,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       final storage = await StorageService.getInstance();
       final clientId = storage.getClientIdentifier();
 
-      final connectedCount = await multiServerProvider.reconnectWithServers(
-        servers,
-        clientIdentifier: clientId,
-      );
-      appLogger.d(
-        'Reconnected to $connectedCount/${servers.length} servers after profile switch',
-      );
+      final connectedCount = await multiServerProvider.reconnectWithServers(servers, clientIdentifier: clientId);
+      appLogger.d('Reconnected to $connectedCount/${servers.length} servers after profile switch');
 
       // Trigger watch state sync now that servers are connected
       if (connectedCount > 0) {
@@ -491,10 +466,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
                       node: _contentFocusScope,
                       // No autofocus - we control focus programmatically to prevent
                       // autofocus from stealing focus back after setState() rebuilds
-                      child: IndexedStack(
-                        index: _currentIndex,
-                        children: _screens,
-                      ),
+                      child: IndexedStack(index: _currentIndex, children: _screens),
                     ),
                   ),
                 ],

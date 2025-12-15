@@ -20,12 +20,7 @@ enum SnackBarType {
 /// [message] The message to display
 /// [type] The type of snackbar (info, success, error)
 /// [duration] Optional duration override
-void showSnackBar(
-  BuildContext context,
-  String message, {
-  SnackBarType type = SnackBarType.info,
-  Duration? duration,
-}) {
+void showSnackBar(BuildContext context, String message, {SnackBarType type = SnackBarType.info, Duration? duration}) {
   if (!context.mounted) return;
 
   final (backgroundColor, defaultDuration) = switch (type) {
@@ -35,11 +30,7 @@ void showSnackBar(
   };
 
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(message),
-      backgroundColor: backgroundColor,
-      duration: duration ?? defaultDuration,
-    ),
+    SnackBar(content: Text(message), backgroundColor: backgroundColor, duration: duration ?? defaultDuration),
   );
 }
 
@@ -48,11 +39,7 @@ void showSnackBar(
 /// [context] The build context
 /// [message] The message to display
 /// [duration] Optional duration, defaults to 3 seconds
-void showAppSnackBar(
-  BuildContext context,
-  String message, {
-  Duration? duration,
-}) {
+void showAppSnackBar(BuildContext context, String message, {Duration? duration}) {
   showSnackBar(context, message, type: SnackBarType.info, duration: duration);
 }
 

@@ -9,8 +9,7 @@ class SideNavigationScope extends InheritedWidget {
   const SideNavigationScope({super.key, required super.child});
 
   static bool isPresent(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<SideNavigationScope>() !=
-        null;
+    return context.dependOnInheritedWidgetOfExactType<SideNavigationScope>() != null;
   }
 
   @override
@@ -61,11 +60,7 @@ class DesktopAppBarHelper {
   ///
   /// [includeGestureDetector] - If true, wraps in GestureDetector to prevent window dragging
   /// [context] - Required to check if side navigation is visible
-  static Widget? buildAdjustedLeading(
-    Widget? leading, {
-    bool includeGestureDetector = false,
-    BuildContext? context,
-  }) {
+  static Widget? buildAdjustedLeading(Widget? leading, {bool includeGestureDetector = false, BuildContext? context}) {
     if (!Platform.isMacOS || leading == null) {
       return leading;
     }
@@ -73,11 +68,7 @@ class DesktopAppBarHelper {
     // Skip left padding when side navigation scope is present in widget tree
     if (context != null && SideNavigationScope.isPresent(context)) {
       if (includeGestureDetector) {
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onPanDown: (_) {},
-          child: leading,
-        );
+        return GestureDetector(behavior: HitTestBehavior.opaque, onPanDown: (_) {}, child: leading);
       }
       return leading;
     }
@@ -86,9 +77,7 @@ class DesktopAppBarHelper {
       listenable: FullscreenStateManager(),
       builder: (context, _) {
         final isFullscreen = FullscreenStateManager().isFullscreen;
-        final leftPadding = isFullscreen
-            ? DesktopWindowPadding.macOSLeftFullscreen
-            : DesktopWindowPadding.macOSLeft;
+        final leftPadding = isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft;
 
         final paddedWidget = Padding(
           padding: EdgeInsets.only(left: leftPadding),
@@ -98,8 +87,7 @@ class DesktopAppBarHelper {
         if (includeGestureDetector) {
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onPanDown:
-                (_) {}, // Consume pan gestures to prevent window dragging
+            onPanDown: (_) {}, // Consume pan gestures to prevent window dragging
             child: paddedWidget,
           );
         }
@@ -124,10 +112,7 @@ class DesktopAppBarHelper {
 
   /// Calculates the leading width for SliverAppBar to account for macOS traffic lights
   /// [context] - Required to check if side navigation is visible
-  static double? calculateLeadingWidth(
-    Widget? leading, {
-    BuildContext? context,
-  }) {
+  static double? calculateLeadingWidth(Widget? leading, {BuildContext? context}) {
     if (!Platform.isMacOS || leading == null) {
       return null;
     }
@@ -138,9 +123,7 @@ class DesktopAppBarHelper {
     }
 
     final isFullscreen = FullscreenStateManager().isFullscreen;
-    final leftPadding = isFullscreen
-        ? DesktopWindowPadding.macOSLeftFullscreen
-        : DesktopWindowPadding.macOSLeft;
+    final leftPadding = isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft;
     return leftPadding + kToolbarHeight;
   }
 
@@ -170,12 +153,7 @@ class DesktopTitleBarPadding extends StatelessWidget {
   final double? leftPadding;
   final double? rightPadding;
 
-  const DesktopTitleBarPadding({
-    super.key,
-    required this.child,
-    this.leftPadding,
-    this.rightPadding,
-  });
+  const DesktopTitleBarPadding({super.key, required this.child, this.leftPadding, this.rightPadding});
 
   @override
   Widget build(BuildContext context) {
@@ -202,10 +180,7 @@ class DesktopTitleBarPadding extends StatelessWidget {
         final isFullscreen = FullscreenStateManager().isFullscreen;
         // In fullscreen, use minimal padding since traffic lights auto-hide
         final left =
-            leftPadding ??
-            (isFullscreen
-                ? DesktopWindowPadding.macOSLeftFullscreen
-                : DesktopWindowPadding.macOSLeft);
+            leftPadding ?? (isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft);
         final right = rightPadding ?? 0.0;
 
         if (left == 0.0 && right == 0.0) {

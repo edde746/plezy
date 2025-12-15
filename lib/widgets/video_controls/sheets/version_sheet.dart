@@ -74,19 +74,8 @@ class _VersionSheetState extends State<VersionSheet> {
 
             return FocusableListTile(
               focusNode: index == 0 ? _initialFocusNode : null,
-              title: Text(
-                version.displayLabel,
-                style: TextStyle(
-                  color: isSelected ? Colors.blue : Colors.white,
-                ),
-              ),
-              trailing: isSelected
-                  ? const AppIcon(
-                      Symbols.check_rounded,
-                      fill: 1,
-                      color: Colors.blue,
-                    )
-                  : null,
+              title: Text(version.displayLabel, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
+              trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
               onTap: () {
                 Navigator.pop(context);
                 widget.onVersionSelected(index);

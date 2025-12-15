@@ -9,9 +9,7 @@ class LogRedactionManager {
   static final Set<String> _urls = <String>{};
   static final Set<String> _customValues = <String>{};
 
-  static final RegExp _ipv4Pattern = RegExp(
-    r'\b(\d{1,3})([.-])(\d{1,3})\2(\d{1,3})\2(\d{1,3})\b',
-  );
+  static final RegExp _ipv4Pattern = RegExp(r'\b(\d{1,3})([.-])(\d{1,3})\2(\d{1,3})\2(\d{1,3})\b');
   static final RegExp _ipv4HostPattern = RegExp(r'^\d{1,3}([.-]\d{1,3}){3}$');
 
   // Combined regex for single-pass redaction (rebuilt on set changes)
@@ -49,9 +47,7 @@ class LogRedactionManager {
       return;
     }
 
-    final strippedSlash = normalized.endsWith('/')
-        ? normalized.substring(0, normalized.length - 1)
-        : normalized;
+    final strippedSlash = normalized.endsWith('/') ? normalized.substring(0, normalized.length - 1) : normalized;
 
     if (strippedSlash.isNotEmpty) {
       _addWithLimit(_urls, strippedSlash, _maxUrls);
@@ -60,8 +56,7 @@ class LogRedactionManager {
 
     // Capture origin and host-level strings as well to cover most cases.
     if (uri != null && uri.host.isNotEmpty) {
-      final origin =
-          '${uri.scheme.isEmpty ? 'https' : uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
+      final origin = '${uri.scheme.isEmpty ? 'https' : uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
       _addWithLimit(_urls, origin, _maxUrls);
       if (origin.endsWith('/')) {
         _addWithLimit(_urls, origin.substring(0, origin.length - 1), _maxUrls);
@@ -167,13 +162,9 @@ class LogRedactionManager {
       return '[REDACTED_URL]';
     }
 
-    final startLength = url.length <= startPreviewLength
-        ? (url.length / 2).ceil()
-        : startPreviewLength;
+    final startLength = url.length <= startPreviewLength ? (url.length / 2).ceil() : startPreviewLength;
     final remainingForEnd = url.length - startLength;
-    final endLength = remainingForEnd <= endPreviewLength
-        ? remainingForEnd
-        : endPreviewLength;
+    final endLength = remainingForEnd <= endPreviewLength ? remainingForEnd : endPreviewLength;
 
     final start = url.substring(0, startLength);
     if (endLength <= 0) {

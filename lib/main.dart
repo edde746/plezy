@@ -125,15 +125,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // Initialize API cache with database
     PlexApiCache.initialize(_appDatabase);
 
-    _downloadManager = DownloadManagerService(
-      database: _appDatabase,
-      storageService: DownloadStorageService.instance,
-    );
+    _downloadManager = DownloadManagerService(database: _appDatabase, storageService: DownloadStorageService.instance);
 
-    _offlineWatchSyncService = OfflineWatchSyncService(
-      database: _appDatabase,
-      serverManager: _serverManager,
-    );
+    _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
   }
 
   @override
@@ -157,10 +151,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Legacy provider for backward compatibility
         ChangeNotifierProvider(create: (context) => PlexClientProvider()),
         // New multi-server providers
-        ChangeNotifierProvider(
-          create: (context) =>
-              MultiServerProvider(_serverManager, _aggregationService),
-        ),
+        ChangeNotifierProvider(create: (context) => MultiServerProvider(_serverManager, _aggregationService)),
         ChangeNotifierProvider(create: (context) => ServerStateProvider()),
         // Offline mode provider - depends on MultiServerProvider
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
@@ -176,10 +167,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
         ),
         // Download provider
-        ChangeNotifierProvider(
-          create: (context) =>
-              DownloadProvider(downloadManager: _downloadManager),
-        ),
+        ChangeNotifierProvider(create: (context) => DownloadProvider(downloadManager: _downloadManager)),
         // Offline watch sync service
         ChangeNotifierProvider<OfflineWatchSyncService>(
           create: (context) {
@@ -191,18 +179,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               downloadProvider.refreshMetadataFromCache();
             };
 
-            _offlineWatchSyncService.startConnectivityMonitoring(
-              offlineModeProvider,
-            );
+            _offlineWatchSyncService.startConnectivityMonitoring(offlineModeProvider);
             return _offlineWatchSyncService;
           },
         ),
         // Offline watch provider - depends on sync service and download provider
-        ChangeNotifierProxyProvider2<
-          OfflineWatchSyncService,
-          DownloadProvider,
-          OfflineWatchProvider
-        >(
+        ChangeNotifierProxyProvider2<OfflineWatchSyncService, DownloadProvider, OfflineWatchProvider>(
           create: (context) => OfflineWatchProvider(
             syncService: _offlineWatchSyncService,
             downloadProvider: context.read<DownloadProvider>(),
@@ -220,14 +202,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Existing providers
         ChangeNotifierProvider(create: (context) => UserProfileProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(
-          create: (context) => SettingsProvider(),
-          lazy: true,
-        ),
-        ChangeNotifierProvider(
-          create: (context) => HiddenLibrariesProvider(),
-          lazy: true,
-        ),
+        ChangeNotifierProvider(create: (context) => SettingsProvider(), lazy: true),
+        ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
       ],
       child: Consumer<ThemeProvider>(
@@ -374,20 +350,14 @@ class _SetupScreenState extends State<SetupScreen> {
     if (servers.isEmpty) {
       // No servers configured - show auth screen
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AuthScreen()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
       }
       return;
     }
 
     // Get multi-server provider
     if (!mounted) return;
-    final multiServerProvider = Provider.of<MultiServerProvider>(
-      context,
-      listen: false,
-    );
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
 
     try {
       appLogger.i('Connecting to ${servers.length} enabled servers...');
@@ -396,22 +366,18 @@ class _SetupScreenState extends State<SetupScreen> {
       final clientId = storage.getClientIdentifier();
 
       // Connect to all servers in parallel
-      final connectedCount = await multiServerProvider.serverManager
-          .connectToAllServers(
-            servers,
-            clientIdentifier: clientId,
-            timeout: const Duration(seconds: 10),
-            onServerConnected: (serverId, client) {
-              // Set first connected client in legacy provider for backward compatibility
-              final legacyProvider = Provider.of<PlexClientProvider>(
-                context,
-                listen: false,
-              );
-              if (legacyProvider.client == null) {
-                legacyProvider.setClient(client);
-              }
-            },
-          );
+      final connectedCount = await multiServerProvider.serverManager.connectToAllServers(
+        servers,
+        clientIdentifier: clientId,
+        timeout: const Duration(seconds: 10),
+        onServerConnected: (serverId, client) {
+          // Set first connected client in legacy provider for backward compatibility
+          final legacyProvider = Provider.of<PlexClientProvider>(context, listen: false);
+          if (legacyProvider.client == null) {
+            legacyProvider.setClient(client);
+          }
+        },
+      );
 
       if (connectedCount > 0) {
         // At least one server connected successfully
@@ -423,15 +389,9 @@ class _SetupScreenState extends State<SetupScreen> {
 
           // Navigate to main screen immediately
           // Get first connected client for backward compatibility
-          final firstClient =
-              multiServerProvider.serverManager.onlineClients.values.first;
+          final firstClient = multiServerProvider.serverManager.onlineClients.values.first;
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MainScreen(client: firstClient),
-            ),
-          );
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen(client: firstClient)));
 
           // Check for updates in background after navigation
           _checkForUpdatesOnStartup();
@@ -445,26 +405,18 @@ class _SetupScreenState extends State<SetupScreen> {
           // User can still access Downloads and Settings
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => const MainScreen(isOfflineMode: true),
-            ),
+            MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
           );
         }
       }
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Error during multi-server connection',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Error during multi-server connection', error: e, stackTrace: stackTrace);
 
       if (mounted) {
         // Navigate to MainScreen in offline mode
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => const MainScreen(isOfflineMode: true),
-          ),
+          MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
         );
       }
     }
@@ -476,11 +428,7 @@ class _SetupScreenState extends State<SetupScreen> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(t.app.loading),
-          ],
+          children: [const CircularProgressIndicator(), const SizedBox(height: 16), Text(t.app.loading)],
         ),
       ),
     );

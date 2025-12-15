@@ -271,8 +271,7 @@ class PlexMetadata with MultiServerFields {
     final itemType = type.toLowerCase();
 
     // For episodes and seasons, prefer grandparent title (show name)
-    if ((itemType == 'episode' || itemType == 'season') &&
-        grandparentTitle != null) {
+    if ((itemType == 'episode' || itemType == 'season') && grandparentTitle != null) {
       return grandparentTitle!;
     }
     // For seasons without grandparent, check if this IS the show (parentTitle might have show name)
@@ -288,8 +287,7 @@ class PlexMetadata with MultiServerFields {
 
     if (itemType == 'episode' || itemType == 'season') {
       // If we showed grandparent/parent as title, show this item's title as subtitle
-      if (grandparentTitle != null ||
-          (itemType == 'season' && parentTitle != null)) {
+      if (grandparentTitle != null || (itemType == 'season' && parentTitle != null)) {
         return title;
       }
     }
@@ -328,8 +326,7 @@ class PlexMetadata with MultiServerFields {
     return viewCount != null && viewCount! > 0;
   }
 
-  factory PlexMetadata.fromJson(Map<String, dynamic> json) =>
-      _$PlexMetadataFromJson(json);
+  factory PlexMetadata.fromJson(Map<String, dynamic> json) => _$PlexMetadataFromJson(json);
 
   Map<String, dynamic> toJson() => _$PlexMetadataToJson(this);
 }

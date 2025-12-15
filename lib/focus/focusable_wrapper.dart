@@ -107,8 +107,7 @@ class FocusableWrapper extends StatefulWidget {
   State<FocusableWrapper> createState() => _FocusableWrapperState();
 }
 
-class _FocusableWrapperState extends State<FocusableWrapper>
-    with SingleTickerProviderStateMixin {
+class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerProviderStateMixin {
   late FocusNode _focusNode;
   bool _ownsNode = false;
   bool _isFocused = false;
@@ -141,18 +140,12 @@ class _FocusableWrapperState extends State<FocusableWrapper>
   }
 
   void _initAnimations() {
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
+    _animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: FocusTheme.focusScale)
-        .animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: FocusTheme.focusScale,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -223,10 +216,7 @@ class _FocusableWrapperState extends State<FocusableWrapper>
 
         // Get item's position relative to viewport
         final itemBox = renderObject as RenderBox;
-        final itemPosition = itemBox.localToGlobal(
-          Offset.zero,
-          ancestor: viewport,
-        );
+        final itemPosition = itemBox.localToGlobal(Offset.zero, ancestor: viewport);
 
         // Check if item is already in the comfortable zone
         final viewportHeight = viewport.size.height;
@@ -237,8 +227,7 @@ class _FocusableWrapperState extends State<FocusableWrapper>
         final comfortZoneTop = viewportHeight * 0.2;
         final comfortZoneBottom = viewportHeight * 0.8;
 
-        if (itemVerticalCenter >= comfortZoneTop &&
-            itemVerticalCenter <= comfortZoneBottom) {
+        if (itemVerticalCenter >= comfortZoneTop && itemVerticalCenter <= comfortZoneBottom) {
           // Item is in comfortable zone, no need to scroll
           return;
         }
@@ -343,15 +332,8 @@ class _FocusableWrapperState extends State<FocusableWrapper>
 
     // Choose decoration based on useBackgroundFocus
     final decoration = widget.useBackgroundFocus
-        ? FocusTheme.focusBackgroundDecoration(
-            isFocused: showFocus,
-            borderRadius: widget.borderRadius,
-          )
-        : FocusTheme.focusDecoration(
-            context,
-            isFocused: showFocus,
-            borderRadius: widget.borderRadius,
-          );
+        ? FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: widget.borderRadius)
+        : FocusTheme.focusDecoration(context, isFocused: showFocus, borderRadius: widget.borderRadius);
 
     Widget result = Focus(
       focusNode: _focusNode,
@@ -377,11 +359,7 @@ class _FocusableWrapperState extends State<FocusableWrapper>
 
     // Add semantics if label provided
     if (widget.semanticLabel != null) {
-      result = Semantics(
-        label: widget.semanticLabel,
-        button: widget.onSelect != null,
-        child: result,
-      );
+      result = Semantics(label: widget.semanticLabel, button: widget.onSelect != null, child: result);
     }
 
     return result;

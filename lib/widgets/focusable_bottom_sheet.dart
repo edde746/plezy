@@ -18,11 +18,7 @@ class FocusableBottomSheet extends StatefulWidget {
   /// If null, no autofocus occurs.
   final FocusNode? initialFocusNode;
 
-  const FocusableBottomSheet({
-    super.key,
-    required this.child,
-    this.initialFocusNode,
-  });
+  const FocusableBottomSheet({super.key, required this.child, this.initialFocusNode});
 
   @override
   State<FocusableBottomSheet> createState() => _FocusableBottomSheetState();

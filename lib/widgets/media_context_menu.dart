@@ -44,8 +44,7 @@ class MediaContextMenu extends StatefulWidget {
   final VoidCallback? onTap;
   final Widget child;
   final bool isInContinueWatching;
-  final String?
-  collectionId; // The collection ID if displaying within a collection
+  final String? collectionId; // The collection ID if displaying within a collection
 
   const MediaContextMenu({
     super.key,
@@ -88,10 +87,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (renderBox != null) {
         final size = renderBox.size;
         final topLeft = renderBox.localToGlobal(Offset.zero);
-        _tapPosition = Offset(
-          topLeft.dx + size.width / 2,
-          topLeft.dy + size.height / 2,
-        );
+        _tapPosition = Offset(topLeft.dx + size.width / 2, topLeft.dy + size.height / 2);
       }
     }
     _showContextMenu(menuContext);
@@ -137,31 +133,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Special actions for collections and playlists
     if (isCollection || isPlaylist) {
       // Play
-      menuActions.add(
-        _MenuAction(
-          value: 'play',
-          icon: Symbols.play_arrow_rounded,
-          label: t.discover.play,
-        ),
-      );
+      menuActions.add(_MenuAction(value: 'play', icon: Symbols.play_arrow_rounded, label: t.discover.play));
 
       // Shuffle
-      menuActions.add(
-        _MenuAction(
-          value: 'shuffle',
-          icon: Symbols.shuffle_rounded,
-          label: t.mediaMenu.shufflePlay,
-        ),
-      );
+      menuActions.add(_MenuAction(value: 'shuffle', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay));
 
       // Delete
-      menuActions.add(
-        _MenuAction(
-          value: 'delete',
-          icon: Symbols.delete_rounded,
-          label: t.common.delete,
-        ),
-      );
+      menuActions.add(_MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete));
 
       // Skip other menu items for collections and playlists
     } else {
@@ -170,11 +148,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Mark as Watched
       if (!metadata!.isWatched || isPartiallyWatched) {
         menuActions.add(
-          _MenuAction(
-            value: 'watch',
-            icon: Symbols.check_circle_outline_rounded,
-            label: t.mediaMenu.markAsWatched,
-          ),
+          _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
         );
       }
 
@@ -212,51 +186,28 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Go to Series (for episodes and seasons)
-      if ((mediaType == PlexMediaType.episode ||
-              mediaType == PlexMediaType.season) &&
+      if ((mediaType == PlexMediaType.episode || mediaType == PlexMediaType.season) &&
           metadata.grandparentTitle != null) {
-        menuActions.add(
-          _MenuAction(
-            value: 'series',
-            icon: Symbols.tv_rounded,
-            label: t.mediaMenu.goToSeries,
-          ),
-        );
+        menuActions.add(_MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries));
       }
 
       // Go to Season (for episodes)
       if (mediaType == PlexMediaType.episode && metadata.parentTitle != null) {
         menuActions.add(
-          _MenuAction(
-            value: 'season',
-            icon: Symbols.playlist_play_rounded,
-            label: t.mediaMenu.goToSeason,
-          ),
+          _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
         );
       }
 
       // Shuffle Play (for shows and seasons)
-      if (mediaType == PlexMediaType.show ||
-          mediaType == PlexMediaType.season) {
+      if (mediaType == PlexMediaType.show || mediaType == PlexMediaType.season) {
         menuActions.add(
-          _MenuAction(
-            value: 'shuffle_play',
-            icon: Symbols.shuffle_rounded,
-            label: t.mediaMenu.shufflePlay,
-          ),
+          _MenuAction(value: 'shuffle_play', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay),
         );
       }
 
       // File Info (for episodes and movies)
-      if (mediaType == PlexMediaType.episode ||
-          mediaType == PlexMediaType.movie) {
-        menuActions.add(
-          _MenuAction(
-            value: 'fileinfo',
-            icon: Symbols.info_rounded,
-            label: t.mediaMenu.fileInfo,
-          ),
-        );
+      if (mediaType == PlexMediaType.episode || mediaType == PlexMediaType.movie) {
+        menuActions.add(_MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo));
       }
 
       // Download options (for episodes, movies, shows, and seasons)
@@ -264,30 +215,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           mediaType == PlexMediaType.movie ||
           mediaType == PlexMediaType.show ||
           mediaType == PlexMediaType.season) {
-        final downloadProvider = Provider.of<DownloadProvider>(
-          context,
-          listen: false,
-        );
+        final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
         final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
         final isDownloaded = downloadProvider.isDownloaded(globalKey);
 
         if (isDownloaded) {
           // Show delete download option
           menuActions.add(
-            _MenuAction(
-              value: 'delete_download',
-              icon: Symbols.delete_rounded,
-              label: t.downloads.deleteDownload,
-            ),
+            _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
           );
         } else {
           // Show download option
           menuActions.add(
-            _MenuAction(
-              value: 'download',
-              icon: Symbols.download_rounded,
-              label: t.downloads.downloadNow,
-            ),
+            _MenuAction(value: 'download', icon: Symbols.download_rounded, label: t.downloads.downloadNow),
           );
         }
       }
@@ -297,13 +237,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           mediaType == PlexMediaType.movie ||
           mediaType == PlexMediaType.show ||
           mediaType == PlexMediaType.season) {
-        menuActions.add(
-          _MenuAction(
-            value: 'add_to',
-            icon: Symbols.add_rounded,
-            label: t.common.addTo,
-          ),
-        );
+        menuActions.add(_MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo));
       }
     } // End of regular menu items else block
 
@@ -325,8 +259,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } else {
       // Show custom focusable popup menu on larger screens
       // Use stored tap position or fallback to widget position
-      final RenderBox? overlay =
-          Overlay.of(context).context.findRenderObject() as RenderBox?;
+      final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
 
       Offset position;
       if (_tapPosition != null) {
@@ -339,11 +272,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       selected = await showDialog<String>(
         context: context,
         barrierColor: Colors.transparent,
-        builder: (dialogContext) => _FocusablePopupMenu(
-          actions: menuActions,
-          position: position,
-          focusFirstItem: openedFromKeyboard,
-        ),
+        builder: (dialogContext) =>
+            _FocusablePopupMenu(actions: menuActions, position: position, focusFirstItem: openedFromKeyboard),
       );
     }
 
@@ -361,20 +291,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           if (isOffline && metadata?.serverId != null) {
             // Offline mode: queue action for later sync
             final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsWatched(
-              serverId: metadata!.serverId!,
-              ratingKey: metadata.ratingKey,
-            );
+            await offlineWatch.markAsWatched(serverId: metadata!.serverId!, ratingKey: metadata.ratingKey);
             if (context.mounted) {
               showAppSnackBar(context, t.messages.markedAsWatchedOffline);
               widget.onRefresh?.call(metadata.ratingKey);
             }
           } else {
-            await _executeAction(
-              context,
-              () => client.markAsWatched(metadata!.ratingKey),
-              t.messages.markedAsWatched,
-            );
+            await _executeAction(context, () => client.markAsWatched(metadata!.ratingKey), t.messages.markedAsWatched);
           }
           break;
 
@@ -382,10 +305,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           if (isOffline && metadata?.serverId != null) {
             // Offline mode: queue action for later sync
             final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsUnwatched(
-              serverId: metadata!.serverId!,
-              ratingKey: metadata.ratingKey,
-            );
+            await offlineWatch.markAsUnwatched(serverId: metadata!.serverId!, ratingKey: metadata.ratingKey);
             if (context.mounted) {
               showAppSnackBar(context, t.messages.markedAsUnwatchedOffline);
               widget.onRefresh?.call(metadata.ratingKey);
@@ -406,10 +326,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           try {
             await client.removeFromOnDeck(metadata!.ratingKey);
             if (context.mounted) {
-              showSuccessSnackBar(
-                context,
-                t.messages.removedFromContinueWatching,
-              );
+              showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
               // Use specific callback if provided, otherwise fallback to onRefresh
               if (widget.onRemoveFromContinueWatching != null) {
                 widget.onRemoveFromContinueWatching!();
@@ -419,10 +336,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             }
           } catch (e) {
             if (context.mounted) {
-              showErrorSnackBar(
-                context,
-                t.messages.errorLoading(error: e.toString()),
-              );
+              showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
             }
           }
           break;
@@ -487,11 +401,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Execute an action with error handling and refresh
-  Future<void> _executeAction(
-    BuildContext context,
-    Future<void> Function() action,
-    String successMessage,
-  ) async {
+  Future<void> _executeAction(BuildContext context, Future<void> Function() action, String successMessage) async {
     try {
       await action();
       if (context.mounted) {
@@ -500,10 +410,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          t.messages.errorLoading(error: e.toString()),
-        );
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
   }
@@ -522,10 +429,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     try {
       final metadata = await client.getMetadataWithImages(ratingKey);
       if (metadata != null && context.mounted) {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => screenBuilder(metadata)),
-        );
+        await Navigator.push(context, MaterialPageRoute(builder: (context) => screenBuilder(metadata)));
         widget.onRefresh?.call(widget.item.ratingKey);
       }
     } catch (e) {
@@ -545,8 +449,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) =>
-              const Center(child: CircularProgressIndicator()),
+          builder: (context) => const Center(child: CircularProgressIndicator()),
         );
       }
 
@@ -565,8 +468,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           context: context,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
-          builder: (context) =>
-              FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
+          builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
         );
       } else if (context.mounted) {
         showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
@@ -578,10 +480,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          t.messages.errorLoadingFileInfo(error: e.toString()),
-        );
+        showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: e.toString()));
       }
     }
   }
@@ -598,10 +497,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       serverName: metadata.serverName,
     );
 
-    await launcher.launchShuffledShow(
-      metadata: metadata,
-      showLoadingIndicator: true,
-    );
+    await launcher.launchShuffledShow(metadata: metadata, showLoadingIndicator: true);
   }
 
   /// Show submenu for Add to... (Playlist or Collection)
@@ -609,16 +505,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final useBottomSheet = Platform.isIOS || Platform.isAndroid;
 
     final submenuActions = [
-      _MenuAction(
-        value: 'playlist',
-        icon: Symbols.playlist_play_rounded,
-        label: t.playlists.playlist,
-      ),
-      _MenuAction(
-        value: 'collection',
-        icon: Symbols.collections_rounded,
-        label: t.collections.collection,
-      ),
+      _MenuAction(value: 'playlist', icon: Symbols.playlist_play_rounded, label: t.playlists.playlist),
+      _MenuAction(value: 'collection', icon: Symbols.collections_rounded, label: t.collections.collection),
     ];
 
     String? selected;
@@ -634,10 +522,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(
-                  t.common.addTo,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                child: Text(t.common.addTo, style: Theme.of(context).textTheme.titleMedium),
               ),
               ...submenuActions.map((action) {
                 return ListTile(
@@ -666,11 +551,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             value: action.value,
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                AppIcon(action.icon, fill: 1, size: 20),
-                const SizedBox(width: 12),
-                Text(action.label),
-              ],
+              children: [AppIcon(action.icon, fill: 1, size: 20), const SizedBox(width: 12), Text(action.label)],
             ),
           );
         }).toList(),
@@ -727,13 +608,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
 
         // Create playlist with the item(s)
-        appLogger.d(
-          'Creating playlist "$playlistName" with URI length: ${itemUri.length}',
-        );
-        final newPlaylist = await client.createPlaylist(
-          title: playlistName,
-          uri: itemUri,
-        );
+        appLogger.d('Creating playlist "$playlistName" with URI length: ${itemUri.length}');
+        final newPlaylist = await client.createPlaylist(title: playlistName, uri: itemUri);
 
         if (!context.mounted) return;
 
@@ -751,10 +627,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       } else {
         // Add to existing playlist
         appLogger.d('Adding to playlist $result with URI: $itemUri');
-        final success = await client.addToPlaylist(
-          playlistId: result,
-          uri: itemUri,
-        );
+        final success = await client.addToPlaylist(playlistId: result, uri: itemUri);
 
         if (!context.mounted) return;
 
@@ -765,24 +638,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             // Trigger refresh of playlists tab
             LibraryRefreshNotifier().notifyPlaylistsChanged();
           } else {
-            appLogger.e(
-              'Failed to add item(s) to playlist $result - API returned false',
-            );
+            appLogger.e('Failed to add item(s) to playlist $result - API returned false');
             showErrorSnackBar(context, t.playlists.errorAdding);
           }
         }
       }
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Error in add to playlist flow',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Error in add to playlist flow', error: e, stackTrace: stackTrace);
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          '${t.playlists.errorLoading}: ${e.toString()}',
-        );
+        showErrorSnackBar(context, '${t.playlists.errorLoading}: ${e.toString()}');
       }
     }
   }
@@ -806,9 +670,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (sectionId == null) {
         try {
           appLogger.d('  - Fetching full metadata for: ${metadata.ratingKey}');
-          final fullMetadata = await client.getMetadataWithImages(
-            metadata.ratingKey,
-          );
+          final fullMetadata = await client.getMetadataWithImages(metadata.ratingKey);
           if (fullMetadata != null) {
             sectionId = fullMetadata.librarySectionID;
             appLogger.d('  - Section ID from full metadata: $sectionId');
@@ -820,9 +682,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       // If still not found, try to extract from the key field
       if (sectionId == null) {
-        final keyMatch = RegExp(
-          r'/library/sections/(\d+)',
-        ).firstMatch(metadata.key);
+        final keyMatch = RegExp(r'/library/sections/(\d+)').firstMatch(metadata.key);
         if (keyMatch != null) {
           sectionId = int.tryParse(keyMatch.group(1)!);
           appLogger.d('  - Extracted from key: $sectionId');
@@ -832,12 +692,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Last resort: try to get it from the item's parent (for episodes/seasons)
       if (sectionId == null && metadata.grandparentRatingKey != null) {
         try {
-          appLogger.d(
-            '  - Trying to get from parent: ${metadata.grandparentRatingKey}',
-          );
-          final parentMeta = await client.getMetadataWithImages(
-            metadata.grandparentRatingKey!,
-          );
+          appLogger.d('  - Trying to get from parent: ${metadata.grandparentRatingKey}');
+          final parentMeta = await client.getMetadataWithImages(metadata.grandparentRatingKey!);
           sectionId = parentMeta?.librarySectionID;
           appLogger.d('  - Parent sectionId: $sectionId');
         } catch (e) {
@@ -849,26 +705,20 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (sectionId == null) {
         if (context.mounted) {
-          showErrorSnackBar(
-            context,
-            'Unable to determine library section for this item',
-          );
+          showErrorSnackBar(context, 'Unable to determine library section for this item');
         }
         return;
       }
 
       // Load collections for this library section
-      final collections = await client.getLibraryCollections(
-        sectionId.toString(),
-      );
+      final collections = await client.getLibraryCollections(sectionId.toString());
 
       if (!context.mounted) return;
 
       // Show dialog to select collection or create new
       final result = await showDialog<String>(
         context: context,
-        builder: (context) =>
-            _CollectionSelectionDialog(collections: collections),
+        builder: (context) => _CollectionSelectionDialog(collections: collections),
       );
 
       if (result == null || !context.mounted) return;
@@ -888,9 +738,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           hintText: t.collections.enterCollectionName,
         );
 
-        if (collectionName == null ||
-            collectionName.isEmpty ||
-            !context.mounted) {
+        if (collectionName == null || collectionName.isEmpty || !context.mounted) {
           return;
         }
 
@@ -912,9 +760,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             break;
         }
 
-        appLogger.d(
-          'Creating collection "$collectionName" with type $collectionType',
-        );
+        appLogger.d('Creating collection "$collectionName" with type $collectionType');
         final newCollectionId = await client.createCollection(
           sectionId: sectionId.toString(),
           title: collectionName,
@@ -926,18 +772,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         if (context.mounted) {
           if (newCollectionId != null) {
-            appLogger.d(
-              'Successfully created collection with ID: $newCollectionId',
-            );
+            appLogger.d('Successfully created collection with ID: $newCollectionId');
 
             // Now add the item to the newly created collection
-            appLogger.d(
-              'Adding item to new collection $newCollectionId with URI: $itemUri',
-            );
-            final addSuccess = await client.addToCollection(
-              collectionId: newCollectionId,
-              uri: itemUri,
-            );
+            appLogger.d('Adding item to new collection $newCollectionId with URI: $itemUri');
+            final addSuccess = await client.addToCollection(collectionId: newCollectionId, uri: itemUri);
 
             if (!context.mounted) return;
 
@@ -948,10 +787,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               LibraryRefreshNotifier().notifyCollectionsChanged();
             } else {
               appLogger.e('Failed to add item to new collection');
-              showErrorSnackBar(
-                context,
-                t.collections.errorAddingToCollection,
-              );
+              showErrorSnackBar(context, t.collections.errorAddingToCollection);
             }
           } else {
             appLogger.e('Failed to create collection - API returned null');
@@ -961,10 +797,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       } else {
         // Add to existing collection
         appLogger.d('Adding to collection $result with URI: $itemUri');
-        final success = await client.addToCollection(
-          collectionId: result,
-          uri: itemUri,
-        );
+        final success = await client.addToCollection(collectionId: result, uri: itemUri);
 
         if (!context.mounted) return;
 
@@ -975,33 +808,21 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             // Trigger refresh of collections tab
             LibraryRefreshNotifier().notifyCollectionsChanged();
           } else {
-            appLogger.e(
-              'Failed to add item(s) to collection $result - API returned false',
-            );
+            appLogger.e('Failed to add item(s) to collection $result - API returned false');
             showErrorSnackBar(context, t.collections.errorAddingToCollection);
           }
         }
       }
     } catch (e, stackTrace) {
-      appLogger.e(
-        'Error in add to collection flow',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLogger.e('Error in add to collection flow', error: e, stackTrace: stackTrace);
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          '${t.collections.errorAddingToCollection}: ${e.toString()}',
-        );
+        showErrorSnackBar(context, '${t.collections.errorAddingToCollection}: ${e.toString()}');
       }
     }
   }
 
   /// Handle remove from collection action
-  Future<void> _handleRemoveFromCollection(
-    BuildContext context,
-    PlexMetadata metadata,
-  ) async {
+  Future<void> _handleRemoveFromCollection(BuildContext context, PlexMetadata metadata) async {
     final client = _getClientForItem();
 
     if (widget.collectionId == null) {
@@ -1019,13 +840,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (!confirmed || !context.mounted) return;
 
     try {
-      appLogger.d(
-        'Removing item ${metadata.ratingKey} from collection ${widget.collectionId}',
-      );
-      final success = await client.removeFromCollection(
-        collectionId: widget.collectionId!,
-        itemId: metadata.ratingKey,
-      );
+      appLogger.d('Removing item ${metadata.ratingKey} from collection ${widget.collectionId}');
+      final success = await client.removeFromCollection(collectionId: widget.collectionId!, itemId: metadata.ratingKey);
 
       if (context.mounted) {
         if (success) {
@@ -1035,79 +851,48 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // Trigger list refresh to remove the item from the view
           widget.onListRefresh?.call();
         } else {
-          showErrorSnackBar(
-            context,
-            t.collections.removeFromCollectionFailed,
-          );
+          showErrorSnackBar(context, t.collections.removeFromCollectionFailed);
         }
       }
     } catch (e) {
       appLogger.e('Failed to remove from collection', error: e);
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          t.collections.removeFromCollectionError(error: e.toString()),
-        );
+        showErrorSnackBar(context, t.collections.removeFromCollectionError(error: e.toString()));
       }
     }
   }
 
   /// Handle play action for collections and playlists
-  Future<void> _handlePlay(
-    BuildContext context,
-    bool isCollection,
-    bool isPlaylist,
-  ) async {
+  Future<void> _handlePlay(BuildContext context, bool isCollection, bool isPlaylist) async {
     await _launchCollectionOrPlaylist(context, shuffle: false);
   }
 
   /// Handle shuffle action for collections and playlists
-  Future<void> _handleShuffle(
-    BuildContext context,
-    bool isCollection,
-    bool isPlaylist,
-  ) async {
+  Future<void> _handleShuffle(BuildContext context, bool isCollection, bool isPlaylist) async {
     await _launchCollectionOrPlaylist(context, shuffle: true);
   }
 
   /// Launch playback for collection or playlist
-  Future<void> _launchCollectionOrPlaylist(
-    BuildContext context, {
-    required bool shuffle,
-  }) async {
+  Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
     final client = _getClientForItem();
     final item = widget.item;
 
     final launcher = PlayQueueLauncher(
       context: context,
       client: client,
-      serverId: item is PlexMetadata
-          ? item.serverId
-          : (item as PlexPlaylist).serverId,
-      serverName: item is PlexMetadata
-          ? item.serverName
-          : (item as PlexPlaylist).serverName,
+      serverId: item is PlexMetadata ? item.serverId : (item as PlexPlaylist).serverId,
+      serverName: item is PlexMetadata ? item.serverName : (item as PlexPlaylist).serverName,
     );
 
-    await launcher.launchFromCollectionOrPlaylist(
-      item: item,
-      shuffle: shuffle,
-      showLoadingIndicator: false,
-    );
+    await launcher.launchFromCollectionOrPlaylist(item: item, shuffle: shuffle, showLoadingIndicator: false);
   }
 
   /// Handle delete action for collections and playlists
-  Future<void> _handleDelete(
-    BuildContext context,
-    bool isCollection,
-    bool isPlaylist,
-  ) async {
+  Future<void> _handleDelete(BuildContext context, bool isCollection, bool isPlaylist) async {
     final client = _getClientForItem();
 
     final itemTitle = widget.item.title;
-    final itemTypeLabel = isCollection
-        ? t.collections.collection
-        : t.playlists.playlist;
+    final itemTypeLabel = isCollection ? t.collections.collection : t.playlists.playlist;
 
     // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
@@ -1134,19 +919,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (context.mounted) {
         if (success) {
-          showSuccessSnackBar(
-            context,
-            isCollection ? t.collections.deleted : t.playlists.deleted,
-          );
+          showSuccessSnackBar(context, isCollection ? t.collections.deleted : t.playlists.deleted);
           // Trigger list refresh
           widget.onListRefresh?.call();
         } else {
-          showErrorSnackBar(
-            context,
-            isCollection
-                ? t.collections.deleteFailed
-                : t.playlists.errorDeleting,
-          );
+          showErrorSnackBar(context, isCollection ? t.collections.deleteFailed : t.playlists.errorDeleting);
         }
       }
     } catch (e) {
@@ -1154,9 +931,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         showErrorSnackBar(
           context,
-          isCollection
-              ? t.collections.deleteFailedWithError(error: e.toString())
-              : t.playlists.errorDeleting,
+          isCollection ? t.collections.deleteFailedWithError(error: e.toString()) : t.playlists.errorDeleting,
         );
       }
     }
@@ -1164,10 +939,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Handle download action
   Future<void> _handleDownload(BuildContext context) async {
-    final downloadProvider = Provider.of<DownloadProvider>(
-      context,
-      listen: false,
-    );
+    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final metadata = widget.item as PlexMetadata;
     final client = _getClientForItem();
 
@@ -1175,9 +947,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final count = await downloadProvider.queueDownload(metadata, client);
       if (context.mounted) {
         // Show appropriate message based on count
-        final message = count > 1
-            ? t.downloads.episodesQueued(count: count)
-            : t.downloads.downloadQueued;
+        final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
         showSuccessSnackBar(context, message);
       }
     } on CellularDownloadBlockedException {
@@ -1187,20 +957,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       appLogger.e('Failed to queue download', error: e);
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          t.messages.errorLoading(error: e.toString()),
-        );
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
   }
 
   /// Handle delete download action
   Future<void> _handleDeleteDownload(BuildContext context) async {
-    final downloadProvider = Provider.of<DownloadProvider>(
-      context,
-      listen: false,
-    );
+    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
     final metadata = widget.item as PlexMetadata;
     final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
 
@@ -1215,11 +979,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     try {
       // Use smart deletion handler (shows progress only if >500ms)
-      await SmartDeletionHandler.deleteWithProgress(
-        context: context,
-        provider: downloadProvider,
-        globalKey: globalKey,
-      );
+      await SmartDeletionHandler.deleteWithProgress(context: context, provider: downloadProvider, globalKey: globalKey);
 
       if (context.mounted) {
         showSuccessSnackBar(context, t.downloads.downloadDeleted);
@@ -1229,10 +989,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       appLogger.e('Failed to delete download', error: e);
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          t.messages.errorLoading(error: e.toString()),
-        );
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
   }
@@ -1283,9 +1040,7 @@ class _PlaylistSelectionDialog extends StatelessWidget {
               title: Text(playlist.title),
               subtitle: playlist.leafCount != null
                   ? Text(
-                      playlist.leafCount == 1
-                          ? t.playlists.oneItem
-                          : t.playlists.itemCount(count: playlist.leafCount!),
+                      playlist.leafCount == 1 ? t.playlists.oneItem : t.playlists.itemCount(count: playlist.leafCount!),
                     )
                   : null,
               onTap: playlist.smart
@@ -1296,12 +1051,7 @@ class _PlaylistSelectionDialog extends StatelessWidget {
           },
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(t.common.cancel),
-        ),
-      ],
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
     );
   }
 }
@@ -1335,20 +1085,13 @@ class _CollectionSelectionDialog extends StatelessWidget {
             return ListTile(
               leading: const AppIcon(Symbols.collections_rounded, fill: 1),
               title: Text(collection.title),
-              subtitle: collection.childCount != null
-                  ? Text('${collection.childCount} items')
-                  : null,
+              subtitle: collection.childCount != null ? Text('${collection.childCount} items') : null,
               onTap: () => Navigator.pop(context, collection.ratingKey),
             );
           },
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(t.common.cancel),
-        ),
-      ],
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
     );
   }
 }
@@ -1359,19 +1102,13 @@ class _FocusableContextMenuSheet extends StatefulWidget {
   final List<_MenuAction> actions;
   final bool focusFirstItem;
 
-  const _FocusableContextMenuSheet({
-    required this.title,
-    required this.actions,
-    this.focusFirstItem = false,
-  });
+  const _FocusableContextMenuSheet({required this.title, required this.actions, this.focusFirstItem = false});
 
   @override
-  State<_FocusableContextMenuSheet> createState() =>
-      _FocusableContextMenuSheetState();
+  State<_FocusableContextMenuSheet> createState() => _FocusableContextMenuSheetState();
 }
 
-class _FocusableContextMenuSheetState
-    extends State<_FocusableContextMenuSheet> {
+class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> {
   late final FocusNode _initialFocusNode;
 
   @override
@@ -1435,11 +1172,7 @@ class _FocusablePopupMenu extends StatefulWidget {
   final Offset position;
   final bool focusFirstItem;
 
-  const _FocusablePopupMenu({
-    required this.actions,
-    required this.position,
-    this.focusFirstItem = false,
-  });
+  const _FocusablePopupMenu({required this.actions, required this.position, this.focusFirstItem = false});
 
   @override
   State<_FocusablePopupMenu> createState() => _FocusablePopupMenuState();
@@ -1502,10 +1235,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
             borderRadius: BorderRadius.circular(tokens(context).radiusSm),
             clipBehavior: Clip.antiAlias,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minWidth: menuWidth,
-                maxWidth: menuWidth,
-              ),
+              constraints: const BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

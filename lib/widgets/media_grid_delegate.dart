@@ -17,11 +17,7 @@ class MediaGridDelegate {
     double horizontalPadding = 16,
   }) {
     final maxCrossAxisExtent = usePaddingAware
-        ? GridSizeCalculator.getMaxCrossAxisExtentWithPadding(
-            context,
-            density,
-            horizontalPadding,
-          )
+        ? GridSizeCalculator.getMaxCrossAxisExtentWithPadding(context, density, horizontalPadding)
         : GridSizeCalculator.getMaxCrossAxisExtent(context, density);
 
     return SliverGridDelegateWithMaxCrossAxisExtent(

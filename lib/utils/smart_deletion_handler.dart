@@ -35,11 +35,7 @@ class SmartDeletionHandler {
   }
 
   /// Show progress dialog and listen to updates
-  static void _showProgressDialog(
-    BuildContext context,
-    DownloadProvider provider,
-    String globalKey,
-  ) {
+  static void _showProgressDialog(BuildContext context, DownloadProvider provider, String globalKey) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -52,11 +48,7 @@ class SmartDeletionHandler {
             return const AlertDialog(
               content: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(width: 20),
-                  Text('Deleting...'),
-                ],
+                children: [CircularProgressIndicator(), SizedBox(width: 20), Text('Deleting...')],
               ),
             );
           }

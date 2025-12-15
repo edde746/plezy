@@ -119,8 +119,7 @@ class PlexFileInfo {
   /// Format audio channels (e.g., "2 channels (stereo)")
   String get audioChannelsFormatted {
     if (audioChannels != null) {
-      String channelText =
-          '$audioChannels channel${audioChannels! > 1 ? 's' : ''}';
+      String channelText = '$audioChannels channel${audioChannels! > 1 ? 's' : ''}';
       if (audioChannelLayout != null) {
         channelText += ' ($audioChannelLayout)';
       }

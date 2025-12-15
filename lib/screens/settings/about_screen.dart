@@ -52,15 +52,12 @@ class _AboutScreenState extends State<AboutScreen> {
                     const SizedBox(height: 16),
                     Text(
                       appName,
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       t.about.versionLabel(version: appVersion),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                     ),
                     const SizedBox(height: 24),
                     Text(
@@ -80,17 +77,9 @@ class _AboutScreenState extends State<AboutScreen> {
                   leading: const AppIcon(Symbols.description_rounded, fill: 1),
                   title: Text(t.about.openSourceLicenses),
                   subtitle: Text(t.about.viewLicensesDescription),
-                  trailing: const AppIcon(
-                    Symbols.chevron_right_rounded,
-                    fill: 1,
-                  ),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LicensesScreen(),
-                      ),
-                    );
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const LicensesScreen()));
                   },
                 ),
               ),

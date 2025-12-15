@@ -22,8 +22,6 @@ class PlayerLinux extends PlayerNative {
   /// limitation.
   @override
   Future<void> setControlsVisible(bool visible) async {
-    await _methodChannel.invokeMethod('setControlsVisible', {
-      'visible': visible,
-    });
+    await _methodChannel.invokeMethod('setControlsVisible', {'visible': visible});
   }
 }

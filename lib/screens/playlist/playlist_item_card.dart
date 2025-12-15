@@ -59,11 +59,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                     index: widget.index,
                     child: const Padding(
                       padding: EdgeInsets.only(right: 12),
-                      child: AppIcon(
-                        Symbols.drag_indicator_rounded,
-                        fill: 1,
-                        color: Colors.grey,
-                      ),
+                      child: AppIcon(Symbols.drag_indicator_rounded, fill: 1, color: Colors.grey),
                     ),
                   ),
 
@@ -81,10 +77,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                       // Title
                       Text(
                         item.displayTitle,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -103,11 +96,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                       if (item.viewOffset != null && item.duration != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
-                          child: MediaProgressBar(
-                            viewOffset: item.viewOffset!,
-                            duration: item.duration!,
-                            minHeight: 3,
-                          ),
+                          child: MediaProgressBar(viewOffset: item.viewOffset!, duration: item.duration!, minHeight: 3),
                         ),
                     ],
                   ),
@@ -117,10 +106,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
 
                 // Duration
                 if (item.duration != null)
-                  Text(
-                    formatDurationTextual(item.duration!),
-                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                  ),
+                  Text(formatDurationTextual(item.duration!), style: TextStyle(fontSize: 13, color: Colors.grey[400])),
 
                 const SizedBox(width: 8),
 
@@ -164,16 +150,8 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
     return Container(
       width: 60,
       height: 90,
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: const AppIcon(
-        Symbols.movie_rounded,
-        fill: 1,
-        color: Colors.grey,
-        size: 24,
-      ),
+      decoration: BoxDecoration(color: Colors.grey[850], borderRadius: BorderRadius.circular(6)),
+      child: const AppIcon(Symbols.movie_rounded, fill: 1, color: Colors.grey, size: 24),
     );
   }
 

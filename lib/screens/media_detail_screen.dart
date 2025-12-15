@@ -36,11 +36,7 @@ class MediaDetailScreen extends StatefulWidget {
   final PlexMetadata metadata;
   final bool isOffline;
 
-  const MediaDetailScreen({
-    super.key,
-    required this.metadata,
-    this.isOffline = false,
-  });
+  const MediaDetailScreen({super.key, required this.metadata, this.isOffline = false});
 
   @override
   State<MediaDetailScreen> createState() => _MediaDetailScreenState();
@@ -87,9 +83,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         style: Theme.of(context).textTheme.displaySmall?.copyWith(
           color: Colors.white,
           fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8),
-          ],
+          shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
         ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
@@ -111,19 +105,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
             CircularProgressIndicator(
               value: 1.0,
               strokeWidth: 2.0,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-              ),
+              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
             ),
           // Progress circle (indeterminate if no progress, determinate otherwise)
           CircularProgressIndicator(
-            value: (progressPercent != null && progressPercent > 0)
-                ? progressPercent
-                : null, // null = indeterminate
+            value: (progressPercent != null && progressPercent > 0) ? progressPercent : null, // null = indeterminate
             strokeWidth: 2.0,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).colorScheme.primary,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
           ),
         ],
       ),
@@ -143,9 +131,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
               // Otherwise, play the first episode of the first season
               if (metadata.isShow) {
                 if (_onDeckEpisode != null) {
-                  appLogger.d(
-                    'Playing on deck episode: ${_onDeckEpisode!.title}',
-                  );
+                  appLogger.d('Playing on deck episode: ${_onDeckEpisode!.title}');
                   await navigateToVideoPlayerWithRefresh(
                     context,
                     metadata: _onDeckEpisode!,
@@ -167,20 +153,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 );
               }
             },
-            icon: AppIcon(
-              _getPlayButtonIcon(metadata),
-              fill: 1,
-              size: 20,
-            ),
-            label: Text(
-              _getPlayButtonLabel(metadata),
-              style: const TextStyle(fontSize: 16),
-            ),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-              ),
-            ),
+            icon: AppIcon(_getPlayButtonIcon(metadata), fill: 1, size: 20),
+            label: Text(_getPlayButtonLabel(metadata), style: const TextStyle(fontSize: 16)),
+            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16)),
           ),
         ),
         const SizedBox(width: 12),
@@ -188,21 +163,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         if (metadata.isShow || metadata.isSeason) ...[
           IconButton.filledTonal(
             onPressed: () async {
-              await _handleShufflePlayWithQueue(
-                context,
-                metadata,
-              );
+              await _handleShufflePlayWithQueue(context, metadata);
             },
-            icon: const AppIcon(
-              Symbols.shuffle_rounded,
-              fill: 1,
-            ),
+            icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
             tooltip: t.tooltips.shufflePlay,
             iconSize: 20,
-            style: IconButton.styleFrom(
-              minimumSize: const Size(48, 48),
-              maximumSize: const Size(48, 48),
-            ),
+            style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
           ),
           const SizedBox(width: 12),
         ],
@@ -210,87 +176,55 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         if (!widget.isOffline)
           Consumer<DownloadProvider>(
             builder: (context, downloadProvider, _) {
-              final globalKey =
-                  '${metadata.serverId}:${metadata.ratingKey}';
-              final progress = downloadProvider.getProgress(
-                globalKey,
-              );
-              final isQueueing = downloadProvider.isQueueing(
-                globalKey,
-              );
+              final globalKey = '${metadata.serverId}:${metadata.ratingKey}';
+              final progress = downloadProvider.getProgress(globalKey);
+              final isQueueing = downloadProvider.isQueueing(globalKey);
 
               // Debug logging
               if (progress != null) {
-                appLogger.d(
-                  'UI rebuilding for $globalKey: status=${progress.status}, progress=${progress.progress}%',
-                );
+                appLogger.d('UI rebuilding for $globalKey: status=${progress.status}, progress=${progress.progress}%');
               }
 
               // State 1: Queueing (building download queue)
               if (isQueueing) {
                 return IconButton.filledTonal(
                   onPressed: null,
-                  icon: const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
-                  ),
+                  icon: const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                   iconSize: 20,
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size(48, 48),
-                    maximumSize: const Size(48, 48),
-                  ),
+                  style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
                 );
               }
 
               // State 2: Queued (waiting to download)
               if (progress?.status == DownloadStatus.queued) {
                 final currentFile = progress?.currentFile;
-                final tooltip =
-                    currentFile != null &&
-                        currentFile.contains('episodes')
+                final tooltip = currentFile != null && currentFile.contains('episodes')
                     ? 'Queued $currentFile'
                     : 'Queued';
 
                 return IconButton.filledTonal(
                   onPressed: null,
                   tooltip: tooltip,
-                  icon: const AppIcon(
-                    Symbols.schedule_rounded,
-                    fill: 1,
-                  ),
+                  icon: const AppIcon(Symbols.schedule_rounded, fill: 1),
                   iconSize: 20,
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size(48, 48),
-                    maximumSize: const Size(48, 48),
-                  ),
+                  style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
                 );
               }
 
               // State 3: Downloading (active download)
-              if (progress?.status ==
-                  DownloadStatus.downloading) {
+              if (progress?.status == DownloadStatus.downloading) {
                 // Show episode count in tooltip for shows/seasons
                 final currentFile = progress?.currentFile;
-                final tooltip =
-                    currentFile != null &&
-                        currentFile.contains('episodes')
+                final tooltip = currentFile != null && currentFile.contains('episodes')
                     ? 'Downloading $currentFile'
                     : 'Downloading...';
 
                 return IconButton.filledTonal(
                   onPressed: null,
                   tooltip: tooltip,
-                  icon: _buildRadialProgress(
-                    progress?.progressPercent,
-                  ),
+                  icon: _buildRadialProgress(progress?.progressPercent),
                   iconSize: 20,
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size(48, 48),
-                    maximumSize: const Size(48, 48),
-                  ),
+                  style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
                 );
               }
 
@@ -298,22 +232,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
               if (progress?.status == DownloadStatus.paused) {
                 return IconButton.filledTonal(
                   onPressed: () async {
-                    final client = _getClientForMetadata(
-                      context,
-                    );
+                    final client = _getClientForMetadata(context);
                     if (client == null) return;
-                    await downloadProvider.resumeDownload(
-                      globalKey,
-                      client,
-                    );
+                    await downloadProvider.resumeDownload(globalKey, client);
                     if (context.mounted) {
                       showAppSnackBar(context, 'Download resumed');
                     }
                   },
-                  icon: const AppIcon(
-                    Symbols.pause_circle_outline_rounded,
-                    fill: 1,
-                  ),
+                  icon: const AppIcon(Symbols.pause_circle_outline_rounded, fill: 1),
                   tooltip: 'Resume download',
                   iconSize: 20,
                   style: IconButton.styleFrom(
@@ -328,40 +254,24 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
               if (progress?.status == DownloadStatus.failed) {
                 return IconButton.filledTonal(
                   onPressed: () async {
-                    final client = _getClientForMetadata(
-                      context,
-                    );
+                    final client = _getClientForMetadata(context);
                     if (client == null) return;
 
                     // Delete failed download and retry
-                    await downloadProvider.deleteDownload(
-                      globalKey,
-                    );
+                    await downloadProvider.deleteDownload(globalKey);
                     try {
-                      await downloadProvider.queueDownload(
-                        metadata,
-                        client,
-                      );
+                      await downloadProvider.queueDownload(metadata, client);
 
                       if (context.mounted) {
-                        showSuccessSnackBar(
-                          context,
-                          t.downloads.downloadQueued,
-                        );
+                        showSuccessSnackBar(context, t.downloads.downloadQueued);
                       }
                     } on CellularDownloadBlockedException {
                       if (context.mounted) {
-                        showErrorSnackBar(
-                          context,
-                          t.settings.cellularDownloadBlocked,
-                        );
+                        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
                       }
                     }
                   },
-                  icon: const AppIcon(
-                    Symbols.error_outline_rounded,
-                    fill: 1,
-                  ),
+                  icon: const AppIcon(Symbols.error_outline_rounded, fill: 1),
                   tooltip: 'Retry download',
                   iconSize: 20,
                   style: IconButton.styleFrom(
@@ -373,8 +283,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
               }
 
               // State 6: Cancelled (can delete or retry)
-              if (progress?.status ==
-                  DownloadStatus.cancelled) {
+              if (progress?.status == DownloadStatus.cancelled) {
                 return IconButton.filledTonal(
                   onPressed: () async {
                     // Show options: Delete or Retry
@@ -382,70 +291,36 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       context: context,
                       builder: (context) => AlertDialog(
                         title: const Text('Cancelled Download'),
-                        content: const Text(
-                          'This download was cancelled. What would you like to do?',
-                        ),
+                        content: const Text('This download was cancelled. What would you like to do?'),
                         actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(
-                              context,
-                              'delete',
-                            ),
-                            child: Text(t.common.delete),
-                          ),
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(context, 'retry'),
-                            child: const Text('Retry'),
-                          ),
+                          TextButton(onPressed: () => Navigator.pop(context, 'delete'), child: Text(t.common.delete)),
+                          TextButton(onPressed: () => Navigator.pop(context, 'retry'), child: const Text('Retry')),
                         ],
                       ),
                     );
 
                     if (action == 'delete' && context.mounted) {
-                      await downloadProvider.deleteDownload(
-                        globalKey,
-                      );
+                      await downloadProvider.deleteDownload(globalKey);
                       if (context.mounted) {
-                        showSuccessSnackBar(
-                          context,
-                          t.downloads.downloadDeleted,
-                        );
+                        showSuccessSnackBar(context, t.downloads.downloadDeleted);
                       }
-                    } else if (action == 'retry' &&
-                        context.mounted) {
-                      final client = _getClientForMetadata(
-                        context,
-                      );
+                    } else if (action == 'retry' && context.mounted) {
+                      final client = _getClientForMetadata(context);
                       if (client == null) return;
-                      await downloadProvider.deleteDownload(
-                        globalKey,
-                      );
+                      await downloadProvider.deleteDownload(globalKey);
                       try {
-                        await downloadProvider.queueDownload(
-                          metadata,
-                          client,
-                        );
+                        await downloadProvider.queueDownload(metadata, client);
                         if (context.mounted) {
-                          showSuccessSnackBar(
-                            context,
-                            t.downloads.downloadQueued,
-                          );
+                          showSuccessSnackBar(context, t.downloads.downloadQueued);
                         }
                       } on CellularDownloadBlockedException {
                         if (context.mounted) {
-                          showErrorSnackBar(
-                            context,
-                            t.settings.cellularDownloadBlocked,
-                          );
+                          showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
                         }
                       }
                     }
                   },
-                  icon: const AppIcon(
-                    Symbols.cancel_rounded,
-                    fill: 1,
-                  ),
+                  icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
                   tooltip: 'Cancelled download',
                   iconSize: 20,
                   style: IconButton.styleFrom(
@@ -465,29 +340,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
                 return IconButton.filledTonal(
                   onPressed: () async {
-                    final client = _getClientForMetadata(
-                      context,
-                    );
+                    final client = _getClientForMetadata(context);
                     if (client == null) return;
 
                     // Queue only the missing episodes
-                    final count = await downloadProvider
-                        .queueMissingEpisodes(metadata, client);
+                    final count = await downloadProvider.queueMissingEpisodes(metadata, client);
 
                     if (context.mounted) {
                       final message = count > 0
-                          ? t.downloads.episodesQueued(
-                              count: count,
-                            )
+                          ? t.downloads.episodesQueued(count: count)
                           : 'All episodes already downloaded';
                       showAppSnackBar(context, message);
                     }
                   },
                   tooltip: tooltip,
-                  icon: const AppIcon(
-                    Symbols.downloading_rounded,
-                    fill: 1,
-                  ),
+                  icon: const AppIcon(Symbols.downloading_rounded, fill: 1),
                   iconSize: 20,
                   style: IconButton.styleFrom(
                     minimumSize: const Size(48, 48),
@@ -506,23 +373,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                       context: context,
                       builder: (context) => AlertDialog(
                         title: Text(t.downloads.deleteDownload),
-                        content: Text(
-                          t.downloads.deleteConfirm(
-                            title: metadata.title,
-                          ),
-                        ),
+                        content: Text(t.downloads.deleteConfirm(title: metadata.title)),
                         actions: [
+                          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
                           TextButton(
-                            onPressed: () =>
-                                Navigator.pop(context, false),
-                            child: Text(t.common.cancel),
-                          ),
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(context, true),
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.red,
-                            ),
+                            onPressed: () => Navigator.pop(context, true),
+                            style: TextButton.styleFrom(foregroundColor: Colors.red),
                             child: Text(t.common.delete),
                           ),
                         ],
@@ -530,21 +386,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                     );
 
                     if (confirmed == true && context.mounted) {
-                      await downloadProvider.deleteDownload(
-                        globalKey,
-                      );
+                      await downloadProvider.deleteDownload(globalKey);
                       if (context.mounted) {
-                        showSuccessSnackBar(
-                          context,
-                          t.downloads.downloadDeleted,
-                        );
+                        showSuccessSnackBar(context, t.downloads.downloadDeleted);
                       }
                     }
                   },
-                  icon: const AppIcon(
-                    Symbols.file_download_done_rounded,
-                    fill: 1,
-                  ),
+                  icon: const AppIcon(Symbols.file_download_done_rounded, fill: 1),
                   tooltip: t.downloads.deleteDownload,
                   iconSize: 20,
                   style: IconButton.styleFrom(
@@ -560,27 +408,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 onPressed: () async {
                   final client = _getClientForMetadata(context);
                   if (client == null) return;
-                  final count = await downloadProvider
-                      .queueDownload(metadata, client);
+                  final count = await downloadProvider.queueDownload(metadata, client);
                   if (context.mounted) {
-                    final message = count > 1
-                        ? t.downloads.episodesQueued(
-                            count: count,
-                          )
-                        : t.downloads.downloadQueued;
+                    final message = count > 1 ? t.downloads.episodesQueued(count: count) : t.downloads.downloadQueued;
                     showSuccessSnackBar(context, message);
                   }
                 },
-                icon: const AppIcon(
-                  Symbols.download_rounded,
-                  fill: 1,
-                ),
+                icon: const AppIcon(Symbols.download_rounded, fill: 1),
                 tooltip: t.downloads.downloadNow,
                 iconSize: 20,
-                style: IconButton.styleFrom(
-                  minimumSize: const Size(48, 48),
-                  maximumSize: const Size(48, 48),
-                ),
+                style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
               );
             },
           ),
@@ -592,25 +429,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
               final isWatched = metadata.isWatched;
               if (widget.isOffline) {
                 // Offline mode: queue action for later sync
-                final offlineWatch = context
-                    .read<OfflineWatchProvider>();
+                final offlineWatch = context.read<OfflineWatchProvider>();
                 if (isWatched) {
-                  await offlineWatch.markAsUnwatched(
-                    serverId: metadata.serverId!,
-                    ratingKey: metadata.ratingKey,
-                  );
+                  await offlineWatch.markAsUnwatched(serverId: metadata.serverId!, ratingKey: metadata.ratingKey);
                 } else {
-                  await offlineWatch.markAsWatched(
-                    serverId: metadata.serverId!,
-                    ratingKey: metadata.ratingKey,
-                  );
+                  await offlineWatch.markAsWatched(serverId: metadata.serverId!, ratingKey: metadata.ratingKey);
                 }
                 if (context.mounted) {
                   showAppSnackBar(
                     context,
-                    isWatched
-                        ? t.messages.markedAsUnwatchedOffline
-                        : t.messages.markedAsWatchedOffline,
+                    isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline,
                   );
                   // Refresh offline OnDeck
                   _loadOfflineOnDeckEpisode();
@@ -621,49 +449,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                 if (client == null) return;
 
                 if (isWatched) {
-                  await client.markAsUnwatched(
-                    metadata.ratingKey,
-                  );
+                  await client.markAsUnwatched(metadata.ratingKey);
                 } else {
-                  await client.markAsWatched(
-                    metadata.ratingKey,
-                  );
+                  await client.markAsWatched(metadata.ratingKey);
                 }
                 if (context.mounted) {
                   _watchStateChanged = true;
-                  showSuccessSnackBar(
-                    context,
-                    isWatched
-                        ? t.messages.markedAsUnwatched
-                        : t.messages.markedAsWatched,
-                  );
+                  showSuccessSnackBar(context, isWatched ? t.messages.markedAsUnwatched : t.messages.markedAsWatched);
                   // Update watch state without full rebuild
                   _updateWatchState();
                 }
               }
             } catch (e) {
               if (context.mounted) {
-                showErrorSnackBar(
-                  context,
-                  t.messages.errorLoading(error: e.toString()),
-                );
+                showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
               }
             }
           },
-          icon: AppIcon(
-            metadata.isWatched
-                ? Symbols.remove_done_rounded
-                : Symbols.check_rounded,
-            fill: 1,
-          ),
-          tooltip: metadata.isWatched
-              ? t.tooltips.markAsUnwatched
-              : t.tooltips.markAsWatched,
+          icon: AppIcon(metadata.isWatched ? Symbols.remove_done_rounded : Symbols.check_rounded, fill: 1),
+          tooltip: metadata.isWatched ? t.tooltips.markAsUnwatched : t.tooltips.markAsWatched,
           iconSize: 20,
-          style: IconButton.styleFrom(
-            minimumSize: const Size(48, 48),
-            maximumSize: const Size(48, 48),
-          ),
+          style: IconButton.styleFrom(minimumSize: const Size(48, 48), maximumSize: const Size(48, 48)),
         ),
       ],
     );
@@ -681,12 +487,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
           ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppIcon(
-                  icon,
-                  fill: 1,
-                  color: Theme.of(context).colorScheme.onSecondaryContainer,
-                  size: 16,
-                ),
+                AppIcon(icon, fill: 1, color: Theme.of(context).colorScheme.onSecondaryContainer, size: 16),
                 const SizedBox(width: 4),
                 Text(
                   text,
@@ -751,9 +552,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       }
 
       // Fetch full metadata with clearLogo and OnDeck episode
-      final result = await client.getMetadataWithImagesAndOnDeck(
-        widget.metadata.ratingKey,
-      );
+      final result = await client.getMetadataWithImagesAndOnDeck(widget.metadata.ratingKey);
       final metadata = result['metadata'] as PlexMetadata?;
       final onDeckEpisode = result['onDeckEpisode'] as PlexMetadata?;
 
@@ -812,16 +611,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       // Use server-specific client for this metadata
       final client = _getClientForMetadata(context);
 
-      final seasons =
-          await client?.getChildren(widget.metadata.ratingKey) ?? [];
+      final seasons = await client?.getChildren(widget.metadata.ratingKey) ?? [];
       // Preserve serverId for each season
       final seasonsWithServerId = seasons
-          .map(
-            (season) => season.copyWith(
-              serverId: widget.metadata.serverId,
-              serverName: widget.metadata.serverName,
-            ),
-          )
+          .map((season) => season.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
           .toList();
       setState(() {
         _seasons = seasonsWithServerId;
@@ -841,9 +634,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     });
 
     final downloadProvider = context.read<DownloadProvider>();
-    final episodes = downloadProvider.getDownloadedEpisodesForShow(
-      widget.metadata.ratingKey,
-    );
+    final episodes = downloadProvider.getDownloadedEpisodesForShow(widget.metadata.ratingKey);
 
     // Group episodes by season
     final Map<int, List<PlexMetadata>> seasonMap = {};
@@ -879,10 +670,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     final watchStateChanged = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => SeasonDetailScreen(
-          season: season,
-          isOffline: widget.isOffline,
-        ),
+        builder: (context) => SeasonDetailScreen(season: season, isOffline: widget.isOffline),
       ),
     );
     if (watchStateChanged == true) {
@@ -897,10 +685,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
     final cardWidth = screenWidth >= 1400
         ? 220.0
         : screenWidth >= 900
-            ? 200.0
-            : screenWidth >= 700
-                ? 190.0
-                : 160.0;
+        ? 200.0
+        : screenWidth >= 700
+        ? 190.0
+        : 160.0;
     final posterHeight = (cardWidth - 16) * 1.5;
     final containerHeight = posterHeight + 66;
 
@@ -948,12 +736,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         // Look up each season's artwork, not the show's
         String? seasonPosterPath;
         if (widget.isOffline && season.serverId != null) {
-          seasonPosterPath = context
-              .read<DownloadProvider>()
-              .getArtworkLocalPath(
-                season.serverId!,
-                season.thumb,
-              );
+          seasonPosterPath = context.read<DownloadProvider>().getArtworkLocalPath(season.serverId!, season.thumb);
         }
         return _SeasonCard(
           season: season,
@@ -973,17 +756,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   /// Load the next unwatched episode for offline mode (offline OnDeck)
   Future<void> _loadOfflineOnDeckEpisode() async {
     final offlineWatchProvider = context.read<OfflineWatchProvider>();
-    final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(
-      widget.metadata.ratingKey,
-    );
+    final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(widget.metadata.ratingKey);
 
     if (nextEpisode != null && mounted) {
       setState(() {
         _onDeckEpisode = nextEpisode;
       });
-      appLogger.d(
-        'Offline OnDeck: S${nextEpisode.parentIndex}E${nextEpisode.index} - ${nextEpisode.title}',
-      );
+      appLogger.d('Offline OnDeck: S${nextEpisode.parentIndex}E${nextEpisode.index} - ${nextEpisode.title}');
     }
   }
 
@@ -998,9 +777,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       final client = _getClientForMetadata(context);
       if (client == null) return;
 
-      final metadata = await client.getMetadataWithImages(
-        widget.metadata.ratingKey,
-      );
+      final metadata = await client.getMetadataWithImages(widget.metadata.ratingKey);
 
       if (metadata != null) {
         // Preserve serverId from original metadata
@@ -1016,10 +793,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
           // Preserve serverId for each season
           updatedSeasons = seasons
               .map(
-                (season) => season.copyWith(
-                  serverId: widget.metadata.serverId,
-                  serverName: widget.metadata.serverName,
-                ),
+                (season) => season.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName),
               )
               .toList();
         }
@@ -1072,15 +846,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       if (widget.isOffline) {
         // In offline mode, get episodes from downloads
         final downloadProvider = context.read<DownloadProvider>();
-        final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(
-          widget.metadata.ratingKey,
-        );
+        final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(widget.metadata.ratingKey);
         // Filter to episodes of this season
-        episodes =
-            allEpisodes
-                .where((ep) => ep.parentIndex == firstSeason.index)
-                .toList()
-              ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+        episodes = allEpisodes.where((ep) => ep.parentIndex == firstSeason.index).toList()
+          ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
       } else {
         final client = _getClientForMetadata(context);
         if (client == null) return;
@@ -1112,20 +881,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        showErrorSnackBar(
-          context,
-          t.messages.errorLoading(error: e.toString()),
-        );
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
   }
 
   /// Handle shuffle play using play queues
   /// Note: Shuffle requires server connectivity (play queue API)
-  Future<void> _handleShufflePlayWithQueue(
-    BuildContext context,
-    PlexMetadata metadata,
-  ) async {
+  Future<void> _handleShufflePlayWithQueue(BuildContext context, PlexMetadata metadata) async {
     // Shuffle requires server connectivity
     if (widget.isOffline) {
       if (context.mounted) {
@@ -1145,8 +908,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) =>
-              const Center(child: CircularProgressIndicator()),
+          builder: (context) => const Center(child: CircularProgressIndicator()),
         );
       }
 
@@ -1166,19 +928,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       }
 
       // Create a shuffled play queue for the show
-      final playQueue = await client.createShowPlayQueue(
-        showRatingKey: showRatingKey,
-        shuffle: 1,
-      );
+      final playQueue = await client.createShowPlayQueue(showRatingKey: showRatingKey, shuffle: 1);
 
       // Close loading indicator
       if (context.mounted) {
         Navigator.pop(context);
       }
 
-      if (playQueue == null ||
-          playQueue.items == null ||
-          playQueue.items!.isEmpty) {
+      if (playQueue == null || playQueue.items == null || playQueue.items!.isEmpty) {
         if (context.mounted) {
           showErrorSnackBar(context, t.messages.noEpisodesFound);
         }
@@ -1214,10 +971,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
       }
 
       if (context.mounted) {
-        showErrorSnackBar(
-          context,
-          t.messages.errorLoading(error: e.toString()),
-        );
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
   }
@@ -1254,152 +1008,122 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
             CustomScrollView(
               controller: _scrollController,
               slivers: [
-            // Hero header with background art
-            SliverToBoxAdapter(
-              child: Stack(
-                children: [
-                  // Background Art (fixed height, no parallax)
-                  SizedBox(
-                    height: headerHeight,
-                    width: double.infinity,
-                    child: metadata.art != null
-                        ? Builder(
-                            builder: (context) {
-                              // Check for offline local file first
-                              if (widget.isOffline &&
-                                  widget.metadata.serverId != null) {
-                                final localPath = context
-                                    .read<DownloadProvider>()
-                                    .getArtworkLocalPath(
+                // Hero header with background art
+                SliverToBoxAdapter(
+                  child: Stack(
+                    children: [
+                      // Background Art (fixed height, no parallax)
+                      SizedBox(
+                        height: headerHeight,
+                        width: double.infinity,
+                        child: metadata.art != null
+                            ? Builder(
+                                builder: (context) {
+                                  // Check for offline local file first
+                                  if (widget.isOffline && widget.metadata.serverId != null) {
+                                    final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
                                       widget.metadata.serverId!,
                                       metadata.art,
                                     );
-                                if (localPath != null &&
-                                    File(localPath).existsSync()) {
-                                  return Image.file(
-                                    File(localPath),
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            const PlaceholderContainer(),
-                                  );
-                                }
-                                // Offline but no local file - show placeholder
-                                return const PlaceholderContainer();
-                              }
+                                    if (localPath != null && File(localPath).existsSync()) {
+                                      return Image.file(
+                                        File(localPath),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
+                                      );
+                                    }
+                                    // Offline but no local file - show placeholder
+                                    return const PlaceholderContainer();
+                                  }
 
-                              // Online - use network image
-                              final client = _getClientForMetadata(context);
-                              final mediaQuery = MediaQuery.of(context);
-                              final imageUrl =
-                                  PlexImageHelper.getOptimizedImageUrl(
+                                  // Online - use network image
+                                  final client = _getClientForMetadata(context);
+                                  final mediaQuery = MediaQuery.of(context);
+                                  final imageUrl = PlexImageHelper.getOptimizedImageUrl(
                                     client: client,
                                     thumbPath: metadata.art,
                                     maxWidth: mediaQuery.size.width,
                                     maxHeight: mediaQuery.size.height * 0.6,
-                                    devicePixelRatio:
-                                        mediaQuery.devicePixelRatio,
+                                    devicePixelRatio: mediaQuery.devicePixelRatio,
                                     imageType: ImageType.art,
                                   );
 
-                              return CachedNetworkImage(
-                                imageUrl: imageUrl,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) =>
-                                    const PlaceholderContainer(),
-                                errorWidget: (context, url, error) =>
-                                    const PlaceholderContainer(),
-                              );
-                            },
-                          )
-                        : const PlaceholderContainer(),
-                  ),
+                                  return CachedNetworkImage(
+                                    imageUrl: imageUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => const PlaceholderContainer(),
+                                    errorWidget: (context, url, error) => const PlaceholderContainer(),
+                                  );
+                                },
+                              )
+                            : const PlaceholderContainer(),
+                      ),
 
-                  // Gradient overlay
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: -1, // Extend 1px past to prevent subpixel gap
-                    child: Builder(
-                      builder: (context) {
-                        final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                        return Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                bgColor.withValues(alpha: 0.9),
-                                bgColor,
-                              ],
-                              stops: const [0.3, 0.8, 1.0],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                      // Gradient overlay
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: -1, // Extend 1px past to prevent subpixel gap
+                        child: Builder(
+                          builder: (context) {
+                            final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                            return Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
+                                  stops: const [0.3, 0.8, 1.0],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
 
-                  // Content at bottom
-                  Positioned(
-                    bottom: 16,
-                    left: 0,
-                    right: 0,
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Clear logo or title
-                            if (metadata.clearLogo != null)
-                              SizedBox(
-                                height: 120,
-                                width: 400,
-                                child: Builder(
-                                  builder: (context) {
-                                    // Check for offline local file first
-                                    if (widget.isOffline &&
-                                        widget.metadata.serverId != null) {
-                                      final localPath = context
-                                          .read<DownloadProvider>()
-                                          .getArtworkLocalPath(
+                      // Content at bottom
+                      Positioned(
+                        bottom: 16,
+                        left: 0,
+                        right: 0,
+                        child: SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Clear logo or title
+                                if (metadata.clearLogo != null)
+                                  SizedBox(
+                                    height: 120,
+                                    width: 400,
+                                    child: Builder(
+                                      builder: (context) {
+                                        // Check for offline local file first
+                                        if (widget.isOffline && widget.metadata.serverId != null) {
+                                          final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
                                             widget.metadata.serverId!,
                                             metadata.clearLogo,
                                           );
-                                      if (localPath != null &&
-                                          File(localPath).existsSync()) {
-                                        return Image.file(
-                                          File(localPath),
-                                          fit: BoxFit.contain,
-                                          alignment: Alignment.centerLeft,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  _buildTitleText(
-                                                    context,
-                                                    metadata.title,
-                                                  ),
-                                        );
-                                      }
-                                      // Offline but no local file - show title text
-                                      return _buildTitleText(
-                                        context,
-                                        metadata.title,
-                                      );
-                                    }
+                                          if (localPath != null && File(localPath).existsSync()) {
+                                            return Image.file(
+                                              File(localPath),
+                                              fit: BoxFit.contain,
+                                              alignment: Alignment.centerLeft,
+                                              errorBuilder: (context, error, stackTrace) =>
+                                                  _buildTitleText(context, metadata.title),
+                                            );
+                                          }
+                                          // Offline but no local file - show title text
+                                          return _buildTitleText(context, metadata.title);
+                                        }
 
-                                    // Online - use network image
-                                    final client = _getClientForMetadata(
-                                      context,
-                                    );
-                                    final dpr = MediaQuery.of(
-                                      context,
-                                    ).devicePixelRatio;
-                                    final logoUrl =
-                                        PlexImageHelper.getOptimizedImageUrl(
+                                        // Online - use network image
+                                        final client = _getClientForMetadata(context);
+                                        final dpr = MediaQuery.of(context).devicePixelRatio;
+                                        final logoUrl = PlexImageHelper.getOptimizedImageUrl(
                                           client: client,
                                           thumbPath: metadata.clearLogo,
                                           maxWidth: 400,
@@ -1408,313 +1132,233 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
                                           imageType: ImageType.logo,
                                         );
 
-                                    return CachedNetworkImage(
-                                      imageUrl: logoUrl,
-                                      filterQuality: FilterQuality.medium,
-                                      fit: BoxFit.contain,
-                                      alignment: Alignment.centerLeft,
-                                      memCacheWidth: (400 * dpr)
-                                          .clamp(200, 800)
-                                          .round(),
-                                      placeholder: (context, url) => Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Text(
-                                          metadata.title,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .displaySmall
-                                              ?.copyWith(
-                                                color: Colors.white.withValues(
-                                                  alpha: 0.3,
-                                                ),
+                                        return CachedNetworkImage(
+                                          imageUrl: logoUrl,
+                                          filterQuality: FilterQuality.medium,
+                                          fit: BoxFit.contain,
+                                          alignment: Alignment.centerLeft,
+                                          memCacheWidth: (400 * dpr).clamp(200, 800).round(),
+                                          placeholder: (context, url) => Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              metadata.title,
+                                              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                                color: Colors.white.withValues(alpha: 0.3),
                                                 fontWeight: FontWeight.bold,
                                                 shadows: [
-                                                  Shadow(
-                                                    color: Colors.black
-                                                        .withValues(alpha: 0.5),
-                                                    blurRadius: 8,
-                                                  ),
+                                                  Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8),
                                                 ],
                                               ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      errorWidget: (context, url, error) {
-                                        return _buildTitleText(
-                                          context,
-                                          metadata.title,
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              )
-                            else
-                              Text(
-                                metadata.title,
-                                style: Theme.of(context).textTheme.displaySmall
-                                    ?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.5,
-                                          ),
-                                          blurRadius: 8,
-                                        ),
-                                      ],
-                                    ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            const SizedBox(height: 12),
-
-                            // Metadata chips
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                if (metadata.year != null)
-                                  _buildMetadataChip('${metadata.year}'),
-                                if (metadata.contentRating != null)
-                                  _buildMetadataChip(
-                                    formatContentRating(metadata.contentRating!),
-                                  ),
-                                if (metadata.duration != null)
-                                  _buildMetadataChip(
-                                    formatDurationTextual(metadata.duration!),
-                                  ),
-                                if (metadata.rating != null)
-                                  _buildMetadataChip(
-                                    '${(metadata.rating! * 10).toStringAsFixed(0)}%',
-                                    icon: Symbols.star_rounded,
-                                  ),
-                                if (metadata.audienceRating != null)
-                                  _buildMetadataChip(
-                                    '${(metadata.audienceRating! * 10).toStringAsFixed(0)}%',
-                                    icon: Symbols.people_rounded,
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            // Action buttons
-                            _buildActionButtons(metadata),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Main content
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Summary
-                    if (metadata.summary != null) ...[
-                      Text(
-                        t.discover.overview,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        metadata.summary!,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyLarge?.copyWith(height: 1.6),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Seasons (for TV shows)
-                    if (isShow) ...[
-                      Text(
-                        t.discover.seasons,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (_isLoadingSeasons)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(32),
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
-                      else if (_seasons.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Center(
-                            child: Text(
-                              t.messages.noSeasonsFound,
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(color: Colors.grey),
-                            ),
-                          ),
-                        )
-                      else if (size.width >= 600)
-                        _buildHorizontalSeasons()
-                      else
-                        _buildVerticalSeasons(),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // Cast
-                    if (metadata.role != null && metadata.role!.isNotEmpty) ...[
-                      Text(
-                        t.discover.cast,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 220,
-                        child: HorizontalScrollWithArrows(
-                          builder: (scrollController) => ListView.separated(
-                            controller: scrollController,
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            itemCount: metadata.role!.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(width: 12),
-                            itemBuilder: (context, index) {
-                              final actor = metadata.role![index];
-                              return SizedBox(
-                                width: 120,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                        tokens(context).radiusSm,
-                                      ),
-                                      child: actor.thumb != null
-                                          ? CachedNetworkImage(
-                                              imageUrl: actor.thumb!,
-                                              width: 120,
-                                              height: 120,
-                                              fit: BoxFit.cover,
-                                              placeholder: (context, url) =>
-                                                  Container(
-                                                    width: 120,
-                                                    height: 120,
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .surfaceContainerHighest,
-                                                    child: const Center(
-                                                      child: AppIcon(
-                                                        Symbols.person_rounded,
-                                                        fill: 1,
-                                                      ),
-                                                    ),
-                                                  ),
-                                              errorWidget:
-                                                  (
-                                                    context,
-                                                    url,
-                                                    error,
-                                                  ) => Container(
-                                                    width: 120,
-                                                    height: 120,
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .surfaceContainerHighest,
-                                                    child: const Center(
-                                                      child: AppIcon(
-                                                        Symbols.person_rounded,
-                                                        fill: 1,
-                                                      ),
-                                                    ),
-                                                  ),
-                                            )
-                                          : Container(
-                                              width: 120,
-                                              height: 120,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .surfaceContainerHighest,
-                                              child: const Center(
-                                                child: AppIcon(
-                                                  Symbols.person_rounded,
-                                                  fill: 1,
-                                                ),
-                                              ),
-                                            ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    SizedBox(
-                                      height: 84,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            actor.tag,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (actor.role != null) ...[
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              actor.role!,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurfaceVariant,
-                                                  ),
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                             ),
-                                          ],
-                                        ],
-                                      ),
+                                          ),
+                                          errorWidget: (context, url, error) {
+                                            return _buildTitleText(context, metadata.title);
+                                          },
+                                        );
+                                      },
                                     ),
+                                  )
+                                else
+                                  Text(
+                                    metadata.title,
+                                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                const SizedBox(height: 12),
+
+                                // Metadata chips
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    if (metadata.year != null) _buildMetadataChip('${metadata.year}'),
+                                    if (metadata.contentRating != null)
+                                      _buildMetadataChip(formatContentRating(metadata.contentRating!)),
+                                    if (metadata.duration != null)
+                                      _buildMetadataChip(formatDurationTextual(metadata.duration!)),
+                                    if (metadata.rating != null)
+                                      _buildMetadataChip(
+                                        '${(metadata.rating! * 10).toStringAsFixed(0)}%',
+                                        icon: Symbols.star_rounded,
+                                      ),
+                                    if (metadata.audienceRating != null)
+                                      _buildMetadataChip(
+                                        '${(metadata.audienceRating! * 10).toStringAsFixed(0)}%',
+                                        icon: Symbols.people_rounded,
+                                      ),
                                   ],
                                 ),
-                              );
-                            },
+                                const SizedBox(height: 16),
+                                // Action buttons
+                                _buildActionButtons(metadata),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
                     ],
-
-                    // Additional info
-                    if (metadata.studio != null) ...[
-                      _buildInfoRow(t.discover.studio, metadata.studio!),
-                      const SizedBox(height: 12),
-                    ],
-                    if (metadata.contentRating != null) ...[
-                      _buildInfoRow(
-                        t.discover.rating,
-                        formatContentRating(metadata.contentRating!),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
-            ),
+
+                // Main content
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Summary
+                        if (metadata.summary != null) ...[
+                          Text(
+                            t.discover.overview,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(metadata.summary!, style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6)),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // Seasons (for TV shows)
+                        if (isShow) ...[
+                          Text(
+                            t.discover.seasons,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_isLoadingSeasons)
+                            const Center(
+                              child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
+                            )
+                          else if (_seasons.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Center(
+                                child: Text(
+                                  t.messages.noSeasonsFound,
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                                ),
+                              ),
+                            )
+                          else if (size.width >= 600)
+                            _buildHorizontalSeasons()
+                          else
+                            _buildVerticalSeasons(),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // Cast
+                        if (metadata.role != null && metadata.role!.isNotEmpty) ...[
+                          Text(
+                            t.discover.cast,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 220,
+                            child: HorizontalScrollWithArrows(
+                              builder: (scrollController) => ListView.separated(
+                                controller: scrollController,
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                itemCount: metadata.role!.length,
+                                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                                itemBuilder: (context, index) {
+                                  final actor = metadata.role![index];
+                                  return SizedBox(
+                                    width: 120,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                                          child: actor.thumb != null
+                                              ? CachedNetworkImage(
+                                                  imageUrl: actor.thumb!,
+                                                  width: 120,
+                                                  height: 120,
+                                                  fit: BoxFit.cover,
+                                                  placeholder: (context, url) => Container(
+                                                    width: 120,
+                                                    height: 120,
+                                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                                    child: const Center(
+                                                      child: AppIcon(Symbols.person_rounded, fill: 1),
+                                                    ),
+                                                  ),
+                                                  errorWidget: (context, url, error) => Container(
+                                                    width: 120,
+                                                    height: 120,
+                                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                                    child: const Center(
+                                                      child: AppIcon(Symbols.person_rounded, fill: 1),
+                                                    ),
+                                                  ),
+                                                )
+                                              : Container(
+                                                  width: 120,
+                                                  height: 120,
+                                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                                  child: const Center(child: AppIcon(Symbols.person_rounded, fill: 1)),
+                                                ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        SizedBox(
+                                          height: 84,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                actor.tag,
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              if (actor.role != null) ...[
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  actor.role!,
+                                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // Additional info
+                        if (metadata.studio != null) ...[
+                          _buildInfoRow(t.discover.studio, metadata.studio!),
+                          const SizedBox(height: 12),
+                        ],
+                        if (metadata.contentRating != null) ...[
+                          _buildInfoRow(t.discover.rating, formatContentRating(metadata.contentRating!)),
+                          const SizedBox(height: 12),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
             // Sticky top bar with fading background
@@ -1771,15 +1415,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
           width: 120,
           child: Text(
             label,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ),
-        Expanded(
-          child: Text(value, style: Theme.of(context).textTheme.bodyLarge),
-        ),
+        Expanded(child: Text(value, style: Theme.of(context).textTheme.bodyLarge)),
       ],
     );
   }
@@ -1794,10 +1433,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
         // Use the same format for both play and resume
         // (icon will indicate the difference)
-        return t.discover.playEpisode(
-          season: seasonNum.toString(),
-          episode: episodeNum.toString(),
-        );
+        return t.discover.playEpisode(season: seasonNum.toString(), episode: episodeNum.toString());
       } else {
         // No on deck episode, will play first episode
         return t.discover.playEpisode(season: '1', episode: '1');
@@ -1875,19 +1511,12 @@ class _SeasonCard extends StatelessWidget {
                             width: 80,
                             height: 120,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                                  width: 80,
-                                  height: 120,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                  child: const AppIcon(
-                                    Symbols.movie_rounded,
-                                    fill: 1,
-                                    size: 32,
-                                  ),
-                                ),
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              width: 80,
+                              height: 120,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+                            ),
                           )
                         : season.thumb != null
                         ? PlexOptimizedImage.poster(
@@ -1899,34 +1528,20 @@ class _SeasonCard extends StatelessWidget {
                             placeholder: (context, url) => Container(
                               width: 80,
                               height: 120,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
                             ),
                             errorWidget: (context, url, error) => Container(
                               width: 80,
                               height: 120,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              child: const AppIcon(
-                                Symbols.movie_rounded,
-                                fill: 1,
-                                size: 32,
-                              ),
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
                             ),
                           )
                         : Container(
                             width: 80,
                             height: 120,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            child: const AppIcon(
-                              Symbols.movie_rounded,
-                              fill: 1,
-                              size: 32,
-                            ),
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
                           ),
                   ),
                   const SizedBox(width: 16),
@@ -1938,23 +1553,18 @@ class _SeasonCard extends StatelessWidget {
                       children: [
                         Text(
                           season.title,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         if (season.leafCount != null)
                           Text(
-                            t.discover.episodeCount(
-                              count: season.leafCount.toString(),
-                            ),
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey),
+                            t.discover.episodeCount(count: season.leafCount.toString()),
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                           ),
                         // Hide watch progress when offline (not tracked)
                         if (!isOffline) ...[
                           const SizedBox(height: 8),
-                          if (season.viewedLeafCount != null &&
-                              season.leafCount != null)
+                          if (season.viewedLeafCount != null && season.leafCount != null)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1963,13 +1573,9 @@ class _SeasonCard extends StatelessWidget {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: LinearProgressIndicator(
-                                      value:
-                                          season.viewedLeafCount! /
-                                          season.leafCount!,
+                                      value: season.viewedLeafCount! / season.leafCount!,
                                       backgroundColor: tokens(context).outline,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Theme.of(context).colorScheme.primary,
-                                      ),
+                                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                                       minHeight: 6,
                                     ),
                                   ),
@@ -1980,8 +1586,7 @@ class _SeasonCard extends StatelessWidget {
                                     watched: season.viewedLeafCount.toString(),
                                     total: season.leafCount.toString(),
                                   ),
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(color: Colors.grey),
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
                                 ),
                               ],
                             ),

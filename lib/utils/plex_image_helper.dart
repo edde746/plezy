@@ -22,10 +22,8 @@ class PlexImageHelper {
 
   /// Rounds dimensions to cache-friendly values to increase cache hit rate
   static (int width, int height) roundDimensions(double width, double height) {
-    final roundedWidth =
-        (width / _widthRoundingFactor).ceil() * _widthRoundingFactor;
-    final roundedHeight =
-        (height / _heightRoundingFactor).ceil() * _heightRoundingFactor;
+    final roundedWidth = (width / _widthRoundingFactor).ceil() * _widthRoundingFactor;
+    final roundedHeight = (height / _heightRoundingFactor).ceil() * _heightRoundingFactor;
 
     return (
       roundedWidth.clamp(_minTranscodedWidth, _maxTranscodedWidth),
@@ -40,12 +38,8 @@ class PlexImageHelper {
     required double devicePixelRatio,
     ImageType imageType = ImageType.poster,
   }) {
-    final targetWidth = maxWidth.isFinite
-        ? maxWidth * devicePixelRatio
-        : 300 * devicePixelRatio;
-    final targetHeight = maxHeight.isFinite
-        ? maxHeight * devicePixelRatio
-        : 450 * devicePixelRatio;
+    final targetWidth = maxWidth.isFinite ? maxWidth * devicePixelRatio : 300 * devicePixelRatio;
+    final targetHeight = maxHeight.isFinite ? maxHeight * devicePixelRatio : 450 * devicePixelRatio;
 
     switch (imageType) {
       case ImageType.art:
@@ -111,9 +105,7 @@ class PlexImageHelper {
       'X-Plex-Token': token,
     };
 
-    final queryString = transcodeParams.entries
-        .map((e) => '${e.key}=${e.value}')
-        .join('&');
+    final queryString = transcodeParams.entries.map((e) => '${e.key}=${e.value}').join('&');
 
     return '$baseUrl/photo/:/transcode?$queryString';
   }
@@ -174,12 +166,10 @@ class PlexImageHelper {
     );
 
     // For art and logos we only constrain width to preserve native aspect.
-    final useWidthOnly =
-        imageType == ImageType.art || imageType == ImageType.logo;
+    final useWidthOnly = imageType == ImageType.art || imageType == ImageType.logo;
 
     // For dimensions close to minimum, use original to avoid unnecessary processing
-    if (width <= _minTranscodedWidth * 1.2 &&
-        height <= _minTranscodedHeight * 1.2) {
+    if (width <= _minTranscodedWidth * 1.2 && height <= _minTranscodedHeight * 1.2) {
       return client.getThumbnailUrl(basePath);
     }
 

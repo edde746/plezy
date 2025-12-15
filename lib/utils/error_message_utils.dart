@@ -12,10 +12,7 @@ String mapDioErrorToMessage(DioException error, {required String context}) {
       return t.errors.connectionFailed;
     default:
       appLogger.e('Error loading $context', error: error);
-      return t.errors.failedToLoad(
-        context: context,
-        error: error.message ?? t.common.unknown,
-      );
+      return t.errors.failedToLoad(context: context, error: error.message ?? t.common.unknown);
   }
 }
 

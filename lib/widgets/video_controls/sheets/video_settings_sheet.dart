@@ -42,31 +42,20 @@ class _SettingsMenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final valueWidget = Text(
       valueText,
-      style: TextStyle(
-        color: isHighlighted ? Colors.amber : Colors.white70,
-        fontSize: 14,
-      ),
+      style: TextStyle(color: isHighlighted ? Colors.amber : Colors.white70, fontSize: 14),
       overflow: allowValueOverflow ? TextOverflow.ellipsis : null,
     );
 
     return FocusableListTile(
       focusNode: focusNode,
-      leading: AppIcon(
-        icon,
-        fill: 1,
-        color: isHighlighted ? Colors.amber : Colors.white70,
-      ),
+      leading: AppIcon(icon, fill: 1, color: isHighlighted ? Colors.amber : Colors.white70),
       title: Text(title, style: const TextStyle(color: Colors.white)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (allowValueOverflow) Flexible(child: valueWidget) else valueWidget,
           const SizedBox(width: 8),
-          const AppIcon(
-            Symbols.chevron_right_rounded,
-            fill: 1,
-            color: Colors.white70,
-          ),
+          const AppIcon(Symbols.chevron_right_rounded, fill: 1, color: Colors.white70),
         ],
       ),
       onTap: onTap,
@@ -99,11 +88,8 @@ class VideoSettingsSheet extends StatefulWidget {
       context: context,
       onOpen: onOpen,
       onClose: onClose,
-      builder: (context) => VideoSettingsSheet(
-        player: player,
-        audioSyncOffset: audioSyncOffset,
-        subtitleSyncOffset: subtitleSyncOffset,
-      ),
+      builder: (context) =>
+          VideoSettingsSheet(player: player, audioSyncOffset: audioSyncOffset, subtitleSyncOffset: subtitleSyncOffset),
     );
   }
 
@@ -237,9 +223,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           builder: (context, _) {
             final isActive = sleepTimer.isActive;
             return _SettingsMenuItem(
-              icon: isActive
-                  ? Symbols.bedtime_rounded
-                  : Symbols.bedtime_rounded,
+              icon: isActive ? Symbols.bedtime_rounded : Symbols.bedtime_rounded,
               title: 'Sleep Timer',
               valueText: _formatSleepTimer(sleepTimer),
               isHighlighted: isActive,
@@ -269,17 +253,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         // HDR Toggle (iOS, macOS, and Windows)
         if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
           ListTile(
-            leading: AppIcon(
-              Symbols.hdr_strong_rounded,
-              fill: 1,
-              color: _enableHDR ? Colors.amber : Colors.white70,
-            ),
+            leading: AppIcon(Symbols.hdr_strong_rounded, fill: 1, color: _enableHDR ? Colors.amber : Colors.white70),
             title: const Text('HDR', style: TextStyle(color: Colors.white)),
-            trailing: Switch(
-              value: _enableHDR,
-              onChanged: (_) => _toggleHDR(),
-              activeThumbColor: Colors.amber,
-            ),
+            trailing: Switch(value: _enableHDR, onChanged: (_) => _toggleHDR(), activeThumbColor: Colors.amber),
             onTap: _toggleHDR,
           ),
 
@@ -289,8 +265,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             stream: widget.player.streams.audioDevice,
             initialData: widget.player.state.audioDevice,
             builder: (context, snapshot) {
-              final currentDevice =
-                  snapshot.data ?? widget.player.state.audioDevice;
+              final currentDevice = snapshot.data ?? widget.player.state.audioDevice;
               final deviceLabel = currentDevice.description.isEmpty
                   ? currentDevice.name
                   : '${currentDevice.name} · ${currentDevice.description}';
@@ -321,24 +296,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           itemBuilder: (context, index) {
             final speed = speeds[index];
             final isSelected = (currentRate - speed).abs() < 0.01;
-            final label = speed == 1.0
-                ? 'Normal'
-                : '${speed.toStringAsFixed(2)}x';
+            final label = speed == 1.0 ? 'Normal' : '${speed.toStringAsFixed(2)}x';
 
             return ListTile(
-              title: Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? Colors.blue : Colors.white,
-                ),
-              ),
-              trailing: isSelected
-                  ? const AppIcon(
-                      Symbols.check_rounded,
-                      fill: 1,
-                      color: Colors.blue,
-                    )
-                  : null,
+              title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
+              trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
               onTap: () {
                 widget.player.setRate(speed);
                 Navigator.pop(context); // Close sheet after selection
@@ -353,11 +315,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget _buildSleepView() {
     final sleepTimer = SleepTimerService();
 
-    return SleepTimerContent(
-      player: widget.player,
-      sleepTimer: sleepTimer,
-      onCancel: () => Navigator.pop(context),
-    );
+    return SleepTimerContent(player: widget.player, sleepTimer: sleepTimer, onCancel: () => Navigator.pop(context));
   }
 
   Widget _buildAudioSyncView() {
@@ -403,32 +361,18 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           stream: widget.player.streams.audioDevice,
           initialData: widget.player.state.audioDevice,
           builder: (context, selectedSnapshot) {
-            final currentDevice =
-                selectedSnapshot.data ?? widget.player.state.audioDevice;
+            final currentDevice = selectedSnapshot.data ?? widget.player.state.audioDevice;
 
             return ListView.builder(
               itemCount: devices.length,
               itemBuilder: (context, index) {
                 final device = devices[index];
                 final isSelected = device.name == currentDevice.name;
-                final label = device.description.isEmpty
-                    ? device.name
-                    : device.description;
+                final label = device.description.isEmpty ? device.name : device.description;
 
                 return ListTile(
-                  title: Text(
-                    label,
-                    style: TextStyle(
-                      color: isSelected ? Colors.blue : Colors.white,
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? const AppIcon(
-                          Symbols.check_rounded,
-                          fill: 1,
-                          color: Colors.blue,
-                        )
-                      : null,
+                  title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
+                  trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
                   onTap: () {
                     widget.player.setAudioDevice(device);
                     Navigator.pop(context); // Close sheet after selection
@@ -447,9 +391,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final sleepTimer = SleepTimerService();
     final isIconActive =
         _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive ||
-            _audioSyncOffset != 0 ||
-            _subtitleSyncOffset != 0);
+        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0);
 
     return FocusableBottomSheet(
       initialFocusNode: _initialFocusNode,

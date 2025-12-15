@@ -10,11 +10,7 @@ class MergedLicenseEntry {
   final List<LicenseEntry> licenseEntries;
   final Set<String> allPackageNames;
 
-  MergedLicenseEntry({
-    required this.packageName,
-    required this.licenseEntries,
-    required this.allPackageNames,
-  });
+  MergedLicenseEntry({required this.packageName, required this.licenseEntries, required this.allPackageNames});
 }
 
 class LicensesScreen extends StatefulWidget {
@@ -72,11 +68,7 @@ class _LicensesScreenState extends State<LicensesScreen> {
     if (_isLoading) {
       return FocusedScrollScaffold(
         title: Text(t.screens.licenses),
-        slivers: const [
-          SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ],
+        slivers: const [SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
       );
     }
 
@@ -95,21 +87,12 @@ class _LicensesScreenState extends State<LicensesScreen> {
                 child: ListTile(
                   title: Text(
                     packageName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   subtitle: mergedLicense.licenseEntries.length > 1
-                      ? Text(
-                          t.licenses.licensesCount(
-                            count: mergedLicense.licenseEntries.length,
-                          ),
-                        )
+                      ? Text(t.licenses.licensesCount(count: mergedLicense.licenseEntries.length))
                       : null,
-                  trailing: const AppIcon(
-                    Symbols.chevron_right_rounded,
-                    fill: 1,
-                  ),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () => _showLicenseDetail(mergedLicense),
                 ),
               );
@@ -123,10 +106,7 @@ class _LicensesScreenState extends State<LicensesScreen> {
   void _showLicenseDetail(MergedLicenseEntry mergedLicense) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            _LicenseDetailScreen(mergedLicense: mergedLicense),
-      ),
+      MaterialPageRoute(builder: (context) => _LicenseDetailScreen(mergedLicense: mergedLicense)),
     );
   }
 }
@@ -158,20 +138,15 @@ class _LicenseDetailScreen extends StatelessWidget {
                       children: [
                         Text(
                           t.licenses.relatedPackages,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          mergedLicense.allPackageNames.join(', '),
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
+                        Text(mergedLicense.allPackageNames.join(', '), style: Theme.of(context).textTheme.bodyMedium),
                       ],
                     ),
                   ),
                 ),
-              if (mergedLicense.allPackageNames.length > 1)
-                const SizedBox(height: 16),
+              if (mergedLicense.allPackageNames.length > 1) const SizedBox(height: 16),
 
               // License cards
               ...licenseEntries.asMap().entries.map((entry) {
@@ -188,11 +163,8 @@ class _LicenseDetailScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isMultipleLicenses
-                                  ? t.licenses.licenseNumber(number: index + 1)
-                                  : t.licenses.license,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                              isMultipleLicenses ? t.licenses.licenseNumber(number: index + 1) : t.licenses.license,
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 16),
                             ...license.paragraphs.map((paragraph) {
@@ -200,12 +172,7 @@ class _LicenseDetailScreen extends StatelessWidget {
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: SelectableText(
                                   paragraph.text,
-                                  style: TextStyle(
-                                    fontFamily: paragraph.indent > 0
-                                        ? 'monospace'
-                                        : null,
-                                    fontSize: 14,
-                                  ),
+                                  style: TextStyle(fontFamily: paragraph.indent > 0 ? 'monospace' : null, fontSize: 14),
                                 ),
                               );
                             }),
@@ -213,8 +180,7 @@ class _LicenseDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (index < licenseEntries.length - 1)
-                      const SizedBox(height: 16),
+                    if (index < licenseEntries.length - 1) const SizedBox(height: 16),
                   ],
                 );
               }),

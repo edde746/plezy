@@ -49,11 +49,7 @@ class PlayQueueResponse {
     this.items,
   });
 
-  factory PlayQueueResponse.fromJson(
-    Map<String, dynamic> json, {
-    String? serverId,
-    String? serverName,
-  }) {
+  factory PlayQueueResponse.fromJson(Map<String, dynamic> json, {String? serverId, String? serverName}) {
     // The API returns data wrapped in MediaContainer
     final container = json['MediaContainer'] as Map<String, dynamic>? ?? json;
     final response = _$PlayQueueResponseFromJson(container);
@@ -61,16 +57,13 @@ class PlayQueueResponse {
     // Tag all items with server info
     if (response.items != null && (serverId != null || serverName != null)) {
       final taggedItems = response.items!
-          .map(
-            (item) => item.copyWith(serverId: serverId, serverName: serverName),
-          )
+          .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
           .toList();
       return PlayQueueResponse(
         playQueueID: response.playQueueID,
         playQueueSelectedItemID: response.playQueueSelectedItemID,
         playQueueSelectedItemOffset: response.playQueueSelectedItemOffset,
-        playQueueSelectedMetadataItemID:
-            response.playQueueSelectedMetadataItemID,
+        playQueueSelectedMetadataItemID: response.playQueueSelectedMetadataItemID,
         playQueueShuffled: response.playQueueShuffled,
         playQueueSourceURI: response.playQueueSourceURI,
         playQueueTotalCount: response.playQueueTotalCount,
@@ -87,9 +80,7 @@ class PlayQueueResponse {
   PlexMetadata? get selectedItem {
     if (items == null || playQueueSelectedItemID == null) return null;
     try {
-      return items!.firstWhere(
-        (item) => item.playQueueItemID == playQueueSelectedItemID,
-      );
+      return items!.firstWhere((item) => item.playQueueItemID == playQueueSelectedItemID);
     } catch (e) {
       return null;
     }
@@ -98,8 +89,6 @@ class PlayQueueResponse {
   /// Get the index of the selected item in the current window
   int? get selectedItemIndex {
     if (items == null || playQueueSelectedItemID == null) return null;
-    return items!.indexWhere(
-      (item) => item.playQueueItemID == playQueueSelectedItemID,
-    );
+    return items!.indexWhere((item) => item.playQueueItemID == playQueueSelectedItemID);
   }
 }

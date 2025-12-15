@@ -30,11 +30,7 @@ class VideoFilterManager {
   /// Debounced video filter update with leading edge execution
   late final Debounce _debouncedUpdateVideoFilter;
 
-  VideoFilterManager({
-    required this.player,
-    required this.availableVersions,
-    required this.selectedMediaIndex,
-  }) {
+  VideoFilterManager({required this.player, required this.availableVersions, required this.selectedMediaIndex}) {
     _debouncedUpdateVideoFilter = debounce(
       updateVideoFilter,
       const Duration(milliseconds: 50),
@@ -88,13 +84,8 @@ class VideoFilterManager {
         // Fill/stretch mode - override aspect ratio to match player (stretches video)
         if (_playerSize != null) {
           final playerAspect = _playerSize!.width / _playerSize!.height;
-          await player.setProperty(
-            'video-aspect-override',
-            playerAspect.toString(),
-          );
-          appLogger.d(
-            'Stretch mode: aspect-override=$playerAspect (player: $_playerSize)',
-          );
+          await player.setProperty('video-aspect-override', playerAspect.toString());
+          appLogger.d('Stretch mode: aspect-override=$playerAspect (player: $_playerSize)');
         }
       }
     } catch (e) {

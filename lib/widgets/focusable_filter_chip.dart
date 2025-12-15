@@ -41,8 +41,7 @@ class FocusableFilterChip extends StatefulWidget {
   State<FocusableFilterChip> createState() => _FocusableFilterChipState();
 }
 
-class _FocusableFilterChipState extends State<FocusableFilterChip>
-    with FocusableChipStateMixin<FocusableFilterChip> {
+class _FocusableFilterChipState extends State<FocusableFilterChip> with FocusableChipStateMixin<FocusableFilterChip> {
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
 
@@ -87,12 +86,8 @@ class _FocusableFilterChipState extends State<FocusableFilterChip>
     final showFocus = isFocused && InputModeTracker.isKeyboardMode(context);
 
     // Use primary color when focused, surface color when not
-    final backgroundColor = showFocus
-        ? colorScheme.primary
-        : colorScheme.surfaceContainerHighest;
-    final foregroundColor = showFocus
-        ? colorScheme.onPrimary
-        : colorScheme.onSurfaceVariant;
+    final backgroundColor = showFocus ? colorScheme.primary : colorScheme.surfaceContainerHighest;
+    final foregroundColor = showFocus ? colorScheme.onPrimary : colorScheme.onSurfaceVariant;
 
     return FocusBuilders.buildFocusableChip(
       context: context,
@@ -107,12 +102,7 @@ class _FocusableFilterChipState extends State<FocusableFilterChip>
         children: [
           AppIcon(icon, fill: 1, size: 16, color: foregroundColor),
           const SizedBox(width: 6),
-          Text(
-            widget.label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(color: foregroundColor),
-          ),
+          Text(widget.label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: foregroundColor)),
         ],
       ),
     );

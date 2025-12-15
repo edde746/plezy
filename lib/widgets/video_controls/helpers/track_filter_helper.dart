@@ -10,10 +10,7 @@ class TrackFilterHelper {
   }
 
   /// Extract and filter tracks from Tracks object
-  static List<T> extractAndFilterTracks<T>(
-    Tracks? tracks,
-    List<T> Function(Tracks?) extractor,
-  ) {
+  static List<T> extractAndFilterTracks<T>(Tracks? tracks, List<T> Function(Tracks?) extractor) {
     return filterTracks<T>(extractor(tracks));
   }
 

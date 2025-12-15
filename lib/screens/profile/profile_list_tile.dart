@@ -29,9 +29,7 @@ class ProfileListTile extends StatelessWidget {
     return ListTile(
       leading: UserAvatarWidget(user: user, size: 40, showIndicators: false),
       title: Text(user.displayName),
-      subtitle: _hasUserAttributes()
-          ? Row(children: _buildUserAttributes(theme))
-          : null,
+      subtitle: _hasUserAttributes() ? Row(children: _buildUserAttributes(theme)) : null,
       trailing: isCurrentUser
           ? Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -49,9 +47,7 @@ class ProfileListTile extends StatelessWidget {
                 ),
               ),
             )
-          : (showTrailingIcon
-                ? const AppIcon(Symbols.chevron_right_rounded, fill: 1)
-                : null),
+          : (showTrailingIcon ? const AppIcon(Symbols.chevron_right_rounded, fill: 1) : null),
       onTap: isCurrentUser ? null : onTap,
       enabled: !isCurrentUser,
     );
@@ -81,13 +77,7 @@ class ProfileListTile extends StatelessWidget {
       if (i > 0) {
         attributes.addAll([
           const SizedBox(width: 8),
-          Text(
-            '•',
-            style: TextStyle(
-              fontSize: 12,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
+          Text('•', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
           const SizedBox(width: 8),
         ]);
       }
@@ -97,11 +87,7 @@ class ProfileListTile extends StatelessWidget {
       attributes.add(
         Text(
           _getAttributeLabel(attribute),
-          style: TextStyle(
-            fontSize: 12,
-            color: _getAttributeColor(attribute, theme),
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(fontSize: 12, color: _getAttributeColor(attribute, theme), fontWeight: FontWeight.w500),
         ),
       );
     }

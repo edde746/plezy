@@ -62,24 +62,14 @@ class DesktopAppBarSections {
       }
     }
 
-    return DesktopAppBarHelper.buildAdjustedLeading(
-      effectiveLeading,
-      includeGestureDetector: true,
-      context: context,
-    );
+    return DesktopAppBarHelper.buildAdjustedLeading(effectiveLeading, includeGestureDetector: true, context: context);
   }
 
   /// Builds the title section with proper padding.
-  static Widget? buildTitleSection({
-    required Widget? title,
-    required Widget? leading,
-  }) {
+  static Widget? buildTitleSection({required Widget? title, required Widget? leading}) {
     if (title == null) return null;
 
-    return DesktopTitleBarPadding(
-      leftPadding: leading != null ? 0 : null,
-      child: title,
-    );
+    return DesktopTitleBarPadding(leftPadding: leading != null ? 0 : null, child: title);
   }
 
   /// Builds the actions section with proper padding.
@@ -88,10 +78,7 @@ class DesktopAppBarSections {
   }
 
   /// Calculates the leading width for the app bar.
-  static double? calculateLeadingWidthForSection({
-    required Widget? leading,
-    required BuildContext context,
-  }) {
+  static double? calculateLeadingWidthForSection({required Widget? leading, required BuildContext context}) {
     return DesktopAppBarHelper.calculateLeadingWidth(leading, context: context);
   }
 
@@ -146,18 +133,11 @@ class DesktopSliverAppBar extends StatelessWidget {
     );
 
     return SliverAppBar(
-      title: DesktopAppBarSections.buildTitleSection(
-        title: title,
-        leading: effectiveLeading,
-      ),
+      title: DesktopAppBarSections.buildTitleSection(title: title, leading: effectiveLeading),
       actions: DesktopAppBarSections.buildActionsSection(actions),
       leading: effectiveLeading,
-      leadingWidth: DesktopAppBarSections.calculateLeadingWidthForSection(
-        leading: effectiveLeading,
-        context: context,
-      ),
-      automaticallyImplyLeading:
-          false, // Always false since we handle it manually
+      leadingWidth: DesktopAppBarSections.calculateLeadingWidthForSection(leading: effectiveLeading, context: context),
+      automaticallyImplyLeading: false, // Always false since we handle it manually
       elevation: elevation,
       backgroundColor: backgroundColor,
       surfaceTintColor: surfaceTintColor,
@@ -166,9 +146,7 @@ class DesktopSliverAppBar extends StatelessWidget {
       floating: floating,
       pinned: pinned,
       expandedHeight: expandedHeight,
-      flexibleSpace: DesktopAppBarSections.buildFlexibleSpaceSection(
-        flexibleSpace,
-      ),
+      flexibleSpace: DesktopAppBarSections.buildFlexibleSpaceSection(flexibleSpace),
       bottom: bottom,
     );
   }
@@ -204,10 +182,7 @@ class DesktopTopBar extends StatelessWidget {
           final canPop = parentRoute?.canPop ?? false;
 
           if (canPop) {
-            effectiveLeading = AppBarBackButton(
-              style: BackButtonStyle.plain,
-              onPressed: onBackPressed,
-            );
+            effectiveLeading = AppBarBackButton(style: BackButtonStyle.plain, onPressed: onBackPressed);
           }
         }
 

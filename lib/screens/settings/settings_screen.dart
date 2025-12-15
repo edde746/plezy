@@ -29,11 +29,7 @@ class _DialogOption<T> {
   final String title;
   final String? subtitle;
 
-  const _DialogOption({
-    required this.value,
-    required this.title,
-    this.subtitle,
-  });
+  const _DialogOption({required this.value, required this.title, this.subtitle});
 }
 
 class SettingsScreen extends StatefulWidget {
@@ -46,8 +42,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late settings.SettingsService _settingsService;
   KeyboardShortcutsService? _keyboardService;
-  late final bool _keyboardShortcutsSupported =
-      KeyboardShortcutsService.isPlatformSupported();
+  late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
   bool _isLoading = true;
 
   bool _enableDebugLogging = false;
@@ -91,8 +86,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _autoSkipCredits = _settingsService.getAutoSkipCredits();
       _autoSkipDelay = _settingsService.getAutoSkipDelay();
       _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
-      _videoPlayerNavigationEnabled = _settingsService
-          .getVideoPlayerNavigationEnabled();
+      _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
       _isLoading = false;
     });
   }
@@ -117,16 +111,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
                 _buildDownloadsSection(),
                 const SizedBox(height: 24),
-                if (_keyboardShortcutsSupported) ...[
-                  _buildKeyboardShortcutsSection(),
-                  const SizedBox(height: 24),
-                ],
+                if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection(), const SizedBox(height: 24)],
                 _buildAdvancedSection(),
                 const SizedBox(height: 24),
-                if (UpdateService.isUpdateCheckEnabled) ...[
-                  _buildUpdateSection(),
-                  const SizedBox(height: 24),
-                ],
+                if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection(), const SizedBox(height: 24)],
                 _buildAboutSection(),
                 const SizedBox(height: 24),
               ]),
@@ -146,9 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               t.settings.appearance,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           Consumer<ThemeProvider>(
@@ -165,9 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const AppIcon(Symbols.language_rounded, fill: 1),
             title: Text(t.settings.language),
-            subtitle: Text(
-              _getLanguageDisplayName(LocaleSettings.currentLocale),
-            ),
+            subtitle: Text(_getLanguageDisplayName(LocaleSettings.currentLocale)),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showLanguageDialog(),
           ),
@@ -188,9 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 leading: const AppIcon(Symbols.view_list_rounded, fill: 1),
                 title: Text(t.settings.viewMode),
                 subtitle: Text(
-                  settingsProvider.viewMode == settings.ViewMode.grid
-                      ? t.settings.gridView
-                      : t.settings.listView,
+                  settingsProvider.viewMode == settings.ViewMode.grid ? t.settings.gridView : t.settings.listView,
                 ),
                 trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showViewModeDialog(),
@@ -213,10 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
-                secondary: const AppIcon(
-                  Symbols.featured_play_list_rounded,
-                  fill: 1,
-                ),
+                secondary: const AppIcon(Symbols.featured_play_list_rounded, fill: 1),
                 title: Text(t.settings.showHeroSection),
                 subtitle: Text(t.settings.showHeroSectionDescription),
                 value: settingsProvider.showHeroSection,
@@ -240,9 +219,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               t.settings.videoPlayback,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           SwitchListTile(
@@ -260,9 +237,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const AppIcon(Symbols.memory_rounded, fill: 1),
             title: Text(t.settings.bufferSize),
-            subtitle: Text(
-              t.settings.bufferSizeMB(size: _bufferSize.toString()),
-            ),
+            subtitle: Text(t.settings.bufferSizeMB(size: _bufferSize.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showBufferSizeDialog(),
           ),
@@ -272,38 +247,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(t.settings.subtitleStylingDescription),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SubtitleStylingScreen(),
-                ),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const SubtitleStylingScreen()));
             },
           ),
           ListTile(
             leading: const AppIcon(Symbols.replay_10_rounded, fill: 1),
             title: Text(t.settings.smallSkipDuration),
-            subtitle: Text(
-              t.settings.secondsUnit(seconds: _seekTimeSmall.toString()),
-            ),
+            subtitle: Text(t.settings.secondsUnit(seconds: _seekTimeSmall.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showSeekTimeSmallDialog(),
           ),
           ListTile(
             leading: const AppIcon(Symbols.replay_30_rounded, fill: 1),
             title: Text(t.settings.largeSkipDuration),
-            subtitle: Text(
-              t.settings.secondsUnit(seconds: _seekTimeLarge.toString()),
-            ),
+            subtitle: Text(t.settings.secondsUnit(seconds: _seekTimeLarge.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showSeekTimeLargeDialog(),
           ),
           ListTile(
             leading: const AppIcon(Symbols.bedtime_rounded, fill: 1),
             title: Text(t.settings.defaultSleepTimer),
-            subtitle: Text(
-              t.settings.minutesUnit(minutes: _sleepTimerDuration.toString()),
-            ),
+            subtitle: Text(t.settings.minutesUnit(minutes: _sleepTimerDuration.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showSleepTimerDurationDialog(),
           ),
@@ -357,11 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const AppIcon(Symbols.timer_rounded, fill: 1),
             title: Text(t.settings.autoSkipDelay),
-            subtitle: Text(
-              t.settings.autoSkipDelayDescription(
-                seconds: _autoSkipDelay.toString(),
-              ),
-            ),
+            subtitle: Text(t.settings.autoSkipDelayDescription(seconds: _autoSkipDelay.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showAutoSkipDelayDialog(),
           ),
@@ -382,9 +342,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               t.settings.downloads,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           // Download location picker - not available on iOS
@@ -396,20 +354,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 return ListTile(
                   leading: const AppIcon(Symbols.folder_rounded, fill: 1),
-                  title: Text(
-                    isCustom
-                        ? t.settings.downloadLocationCustom
-                        : t.settings.downloadLocationDefault,
-                  ),
-                  subtitle: Text(
-                    currentPath,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: const AppIcon(
-                    Symbols.chevron_right_rounded,
-                    fill: 1,
-                  ),
+                  title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
+                  subtitle: Text(currentPath, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () => _showDownloadLocationDialog(),
                 );
               },
@@ -463,10 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
               child: Text(t.settings.resetToDefault),
             ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(t.common.cancel),
-          ),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
           FilledButton(
             onPressed: () async {
               Navigator.pop(dialogContext);
@@ -493,9 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       } else {
         // Use file_picker on desktop
-        final result = await FilePicker.platform.getDirectoryPath(
-          dialogTitle: t.settings.selectFolder,
-        );
+        final result = await FilePicker.platform.getDirectoryPath(dialogTitle: t.settings.selectFolder);
         selectedPath = result;
       }
 
@@ -503,8 +445,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // Validate the path is writable (for non-SAF paths)
         if (pathType == 'file') {
           final dir = Directory(selectedPath);
-          final isWritable = await DownloadStorageService.instance
-              .isDirectoryWritable(dir);
+          final isWritable = await DownloadStorageService.instance.isDirectoryWritable(dir);
           if (!isWritable) {
             if (mounted) {
               showErrorSnackBar(context, t.settings.downloadLocationInvalid);
@@ -514,10 +455,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
 
         // Save the setting
-        await _settingsService.setCustomDownloadPath(
-          selectedPath,
-          type: pathType,
-        );
+        await _settingsService.setCustomDownloadPath(selectedPath, type: pathType);
         await DownloadStorageService.instance.refreshCustomPath();
 
         if (mounted) {
@@ -553,9 +491,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               t.settings.keyboardShortcuts,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
@@ -591,9 +527,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               t.settings.advanced,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           SwitchListTile(
@@ -614,10 +548,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(t.settings.viewLogsDescription),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LogsScreen()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const LogsScreen()));
             },
           ),
           ListTile(
@@ -650,37 +581,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               t.settings.updates,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           ListTile(
             leading: AppIcon(
-              hasUpdate
-                  ? Symbols.system_update_rounded
-                  : Symbols.check_circle_rounded,
+              hasUpdate ? Symbols.system_update_rounded : Symbols.check_circle_rounded,
               fill: 1,
               color: hasUpdate ? Colors.orange : null,
             ),
-            title: Text(
-              hasUpdate
-                  ? t.settings.updateAvailable
-                  : t.settings.checkForUpdates,
-            ),
+            title: Text(hasUpdate ? t.settings.updateAvailable : t.settings.checkForUpdates),
             subtitle: hasUpdate
-                ? Text(
-                    t.update.versionAvailable(
-                      version: _updateInfo!['latestVersion'],
-                    ),
-                  )
+                ? Text(t.update.versionAvailable(version: _updateInfo!['latestVersion']))
                 : Text(t.update.checkFailed),
             trailing: _isCheckingForUpdate
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                 : const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: _isCheckingForUpdate
                 ? null
@@ -705,10 +620,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         subtitle: Text(t.settings.aboutDescription),
         trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AboutScreen()),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutScreen()));
         },
       ),
     );
@@ -765,12 +677,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.cancel),
-            ),
-          ],
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
         );
       },
     );
@@ -789,9 +696,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: options.map((size) {
               return ListTile(
                 leading: AppIcon(
-                  _bufferSize == size
-                      ? Symbols.radio_button_checked_rounded
-                      : Symbols.radio_button_unchecked_rounded,
+                  _bufferSize == size ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
                   fill: 1,
                 ),
                 title: Text('${size}MB'),
@@ -805,12 +710,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             }).toList(),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.cancel),
-            ),
-          ],
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
         );
       },
     );
@@ -852,11 +752,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (parsed == null) {
                       errorText = t.settings.validationErrorEnterNumber;
                     } else if (parsed < min || parsed > max) {
-                      errorText = t.settings.validationErrorDuration(
-                        min: min,
-                        max: max,
-                        unit: labelText.toLowerCase(),
-                      );
+                      errorText = t.settings.validationErrorDuration(min: min, max: max, unit: labelText.toLowerCase());
                     } else {
                       errorText = null;
                     }
@@ -864,10 +760,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: Text(t.common.cancel),
-                ),
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
                 TextButton(
                   onPressed: () async {
                     final parsed = int.tryParse(controller.text);
@@ -959,10 +852,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            _KeyboardShortcutsScreen(keyboardService: _keyboardService!),
-      ),
+      MaterialPageRoute(builder: (context) => _KeyboardShortcutsScreen(keyboardService: _keyboardService!)),
     );
   }
 
@@ -974,10 +864,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: Text(t.settings.clearCache),
           content: Text(t.settings.clearCacheDescription),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.cancel),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -985,9 +872,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await _settingsService.clearCache();
                 if (mounted) {
                   navigator.pop();
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(t.settings.clearCacheSuccess)),
-                  );
+                  messenger.showSnackBar(SnackBar(content: Text(t.settings.clearCacheSuccess)));
                 }
               },
               child: Text(t.common.clear),
@@ -1006,10 +891,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: Text(t.settings.resetSettings),
           content: Text(t.settings.resetSettingsDescription),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.cancel),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1018,9 +900,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await _keyboardService?.resetToDefaults();
                 if (mounted) {
                   navigator.pop();
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(t.settings.resetSettingsSuccess)),
-                  );
+                  messenger.showSnackBar(SnackBar(content: Text(t.settings.resetSettingsSuccess)));
                   // Reload settings
                   _loadSettings();
                 }
@@ -1063,19 +943,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               return ListTile(
                 title: Text(_getLanguageDisplayName(locale)),
                 leading: AppIcon(
-                  isSelected
-                      ? Symbols.radio_button_checked_rounded
-                      : Symbols.radio_button_unchecked_rounded,
+                  isSelected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
                   fill: 1,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
+                  color: isSelected ? Theme.of(context).colorScheme.primary : null,
                 ),
-                tileColor: isSelected
-                    ? Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer.withValues(alpha: 0.3)
-                    : null,
+                tileColor: isSelected ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3) : null,
                 onTap: () async {
                   // Save the locale to settings
                   await _settingsService.setAppLocale(locale);
@@ -1096,12 +968,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             }).toList(),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.cancel),
-            ),
-          ],
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
         );
       },
     );
@@ -1155,25 +1022,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                t.update.versionAvailable(
-                  version: _updateInfo!['latestVersion'],
-                ),
+                t.update.versionAvailable(version: _updateInfo!['latestVersion']),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(
-                t.update.currentVersion(
-                  version: _updateInfo!['currentVersion'],
-                ),
+                t.update.currentVersion(version: _updateInfo!['currentVersion']),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(t.common.close),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.close)),
             FilledButton(
               onPressed: () async {
                 final url = Uri.parse(_updateInfo!['releaseUrl']);
@@ -1217,8 +1077,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fill: 1,
                     ),
                     title: Text(option.title),
-                    subtitle:
-                        option.subtitle != null ? Text(option.subtitle!) : null,
+                    subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
                     onTap: () async {
                       await onSelect(option.value, settingsProvider);
                       if (context.mounted) Navigator.pop(context);
@@ -1226,12 +1085,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                 }).toList(),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(t.common.cancel),
-                ),
-              ],
+              actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
             );
           },
         );
@@ -1291,8 +1145,7 @@ class _KeyboardShortcutsScreen extends StatefulWidget {
   const _KeyboardShortcutsScreen({required this.keyboardService});
 
   @override
-  State<_KeyboardShortcutsScreen> createState() =>
-      _KeyboardShortcutsScreenState();
+  State<_KeyboardShortcutsScreen> createState() => _KeyboardShortcutsScreenState();
 }
 
 class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
@@ -1332,9 +1185,7 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
                   await widget.keyboardService.resetToDefaults();
                   await _loadHotkeys();
                   if (mounted) {
-                    messenger.showSnackBar(
-                      SnackBar(content: Text(t.settings.shortcutsReset)),
-                    );
+                    messenger.showSnackBar(SnackBar(content: Text(t.settings.shortcutsReset)));
                   }
                 },
                 child: Text(t.common.reset),
@@ -1352,19 +1203,12 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    title: Text(
-                      widget.keyboardService.getActionDisplayName(action),
-                    ),
+                    title: Text(widget.keyboardService.getActionDisplayName(action)),
                     subtitle: Text(action),
                     trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                        ),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -1395,18 +1239,14 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
             final messenger = ScaffoldMessenger.of(context);
 
             // Check for conflicts
-            final existingAction = widget.keyboardService.getActionForHotkey(
-              newHotkey,
-            );
+            final existingAction = widget.keyboardService.getActionForHotkey(newHotkey);
             if (existingAction != null && existingAction != action) {
               navigator.pop();
               messenger.showSnackBar(
                 SnackBar(
                   content: Text(
                     t.settings.shortcutAlreadyAssigned(
-                      action: widget.keyboardService.getActionDisplayName(
-                        existingAction,
-                      ),
+                      action: widget.keyboardService.getActionDisplayName(existingAction),
                     ),
                   ),
                 ),
@@ -1428,11 +1268,7 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
               messenger.showSnackBar(
                 SnackBar(
                   content: Text(
-                    t.settings.shortcutUpdated(
-                      action: widget.keyboardService.getActionDisplayName(
-                        action,
-                      ),
-                    ),
+                    t.settings.shortcutUpdated(action: widget.keyboardService.getActionDisplayName(action)),
                   ),
                 ),
               );

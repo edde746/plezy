@@ -176,9 +176,7 @@ class GamepadService {
       final keyDownEvent = KeyDownEvent(
         physicalKey: _getPhysicalKey(logicalKey),
         logicalKey: logicalKey,
-        timeStamp: Duration(
-          milliseconds: DateTime.now().millisecondsSinceEpoch,
-        ),
+        timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
       );
 
       // Dispatch through the focus system by walking up the focus tree
@@ -198,9 +196,7 @@ class GamepadService {
       final keyUpEvent = KeyUpEvent(
         physicalKey: _getPhysicalKey(logicalKey),
         logicalKey: logicalKey,
-        timeStamp: Duration(
-          milliseconds: DateTime.now().millisecondsSinceEpoch,
-        ),
+        timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
       );
 
       node = focusNode;
@@ -241,10 +237,8 @@ class GamepadService {
   bool _isDpadXAxis(String key) => key == 'dpad - xaxis';
 
   // Face buttons - macOS uses SF Symbol names for PlayStation controllers
-  bool _isButtonA(String key) =>
-      key == 'xmark.circle'; // Cross/X button (bottom)
-  bool _isButtonB(String key) =>
-      key == 'circle.circle'; // Circle/O button (right)
+  bool _isButtonA(String key) => key == 'xmark.circle'; // Cross/X button (bottom)
+  bool _isButtonB(String key) => key == 'circle.circle'; // Circle/O button (right)
   bool _isButtonX(String key) => key == 'square.circle'; // Square button (left)
 
   // Analog sticks
@@ -323,10 +317,8 @@ class GamepadService {
   // via gamepad. Synthetic key events we dispatch below don't go through the
   // platform key pipeline, so Flutter won't automatically flip highlight mode.
   void _setTraditionalFocusHighlight() {
-    if (FocusManager.instance.highlightStrategy !=
-        FocusHighlightStrategy.alwaysTraditional) {
-      FocusManager.instance.highlightStrategy =
-          FocusHighlightStrategy.alwaysTraditional;
+    if (FocusManager.instance.highlightStrategy != FocusHighlightStrategy.alwaysTraditional) {
+      FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
     }
   }
 

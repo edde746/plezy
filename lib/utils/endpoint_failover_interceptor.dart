@@ -67,9 +67,7 @@ class EndpointFailoverInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (_isSwitching ||
-        !_shouldAttemptFailover(err) ||
-        !endpointManager.hasFallback) {
+    if (_isSwitching || !_shouldAttemptFailover(err) || !endpointManager.hasFallback) {
       handler.next(err);
       return;
     }
@@ -77,20 +75,13 @@ class EndpointFailoverInterceptor extends Interceptor {
     final failedEndpoint = endpointManager.current;
     appLogger.w(
       'Endpoint request failed, evaluating failover',
-      error: {
-        'endpoint': failedEndpoint,
-        'type': err.type.name,
-        'statusCode': err.response?.statusCode,
-      },
+      error: {'endpoint': failedEndpoint, 'type': err.type.name, 'statusCode': err.response?.statusCode},
       stackTrace: err.stackTrace,
     );
 
     final nextBaseUrl = endpointManager.moveToNext();
     if (nextBaseUrl == null) {
-      appLogger.w(
-        'Endpoint failure but no fallback endpoints remain',
-        error: {'failedEndpoint': failedEndpoint},
-      );
+      appLogger.w('Endpoint failure but no fallback endpoints remain', error: {'failedEndpoint': failedEndpoint});
       handler.next(err);
       return;
     }
@@ -99,27 +90,16 @@ class EndpointFailoverInterceptor extends Interceptor {
     try {
       appLogger.i(
         'Switching Plex endpoint after request failure',
-        error: {
-          'from': failedEndpoint,
-          'to': nextBaseUrl,
-          'path': err.requestOptions.path,
-        },
+        error: {'from': failedEndpoint, 'to': nextBaseUrl, 'path': err.requestOptions.path},
       );
       await _onEndpointSwitch(nextBaseUrl);
       final response = await _retryRequest(err.requestOptions);
-      appLogger.i(
-        'Endpoint failover retry succeeded',
-        error: {'newEndpoint': nextBaseUrl},
-      );
+      appLogger.i('Endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
       handler.resolve(response);
     } on DioException catch (dioError) {
       appLogger.w(
         'Endpoint failover retry failed',
-        error: {
-          'newEndpoint': nextBaseUrl,
-          'type': dioError.type.name,
-          'statusCode': dioError.response?.statusCode,
-        },
+        error: {'newEndpoint': nextBaseUrl, 'type': dioError.type.name, 'statusCode': dioError.response?.statusCode},
         stackTrace: dioError.stackTrace,
       );
       handler.next(dioError);

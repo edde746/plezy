@@ -21,18 +21,12 @@ class TrackSelectionHelper {
   /// Build a centered empty state widget
   static Widget buildEmptyState<T>() {
     return Center(
-      child: Text(
-        getEmptyMessage<T>(),
-        style: const TextStyle(color: Colors.white70),
-      ),
+      child: Text(getEmptyMessage<T>(), style: const TextStyle(color: Colors.white70)),
     );
   }
 
   /// Check if "Off" is selected for a track
-  static bool isOffSelected<T>(
-    T? selectedTrack,
-    bool Function(T track)? isOffTrack,
-  ) {
+  static bool isOffSelected<T>(T? selectedTrack, bool Function(T track)? isOffTrack) {
     return selectedTrack == null || (isOffTrack?.call(selectedTrack) ?? false);
   }
 
@@ -47,17 +41,8 @@ class TrackSelectionHelper {
   }
 
   /// Build the "Off" list tile for track selection
-  static Widget buildOffTile<T>({
-    required bool isSelected,
-    required VoidCallback onTap,
-    FocusNode? focusNode,
-  }) {
-    return _buildSelectableTile(
-      label: 'Off',
-      isSelected: isSelected,
-      onTap: onTap,
-      focusNode: focusNode,
-    );
+  static Widget buildOffTile<T>({required bool isSelected, required VoidCallback onTap, FocusNode? focusNode}) {
+    return _buildSelectableTile(label: 'Off', isSelected: isSelected, onTap: onTap, focusNode: focusNode);
   }
 
   /// Build a track selection list tile
@@ -67,12 +52,7 @@ class TrackSelectionHelper {
     required VoidCallback onTap,
     FocusNode? focusNode,
   }) {
-    return _buildSelectableTile(
-      label: label,
-      isSelected: isSelected,
-      onTap: onTap,
-      focusNode: focusNode,
-    );
+    return _buildSelectableTile(label: label, isSelected: isSelected, onTap: onTap, focusNode: focusNode);
   }
 
   static Widget _buildSelectableTile({
@@ -83,13 +63,8 @@ class TrackSelectionHelper {
   }) {
     return FocusableListTile(
       focusNode: focusNode,
-      title: Text(
-        label,
-        style: TextStyle(color: isSelected ? Colors.blue : Colors.white),
-      ),
-      trailing: isSelected
-          ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue)
-          : null,
+      title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
+      trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
       onTap: onTap,
     );
   }

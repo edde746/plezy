@@ -11,9 +11,7 @@ import '../utils/app_logger.dart';
 part 'app_database.g.dart';
 
 // Simplified database with API cache for offline support
-@DriftDatabase(
-  tables: [DownloadedMedia, DownloadQueue, ApiCache, OfflineWatchProgress],
-)
+@DriftDatabase(tables: [DownloadedMedia, DownloadQueue, ApiCache, OfflineWatchProgress])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -42,15 +40,11 @@ class AppDatabase extends _$AppDatabase {
 
   /// Get all pending offline watch actions for sync
   Future<List<OfflineWatchProgressItem>> getPendingWatchActions() {
-    return (select(
-      offlineWatchProgress,
-    )..orderBy([(t) => OrderingTerm.asc(t.createdAt)])).get();
+    return (select(offlineWatchProgress)..orderBy([(t) => OrderingTerm.asc(t.createdAt)])).get();
   }
 
   /// Get pending watch actions for a specific server
-  Future<List<OfflineWatchProgressItem>> getPendingWatchActionsForServer(
-    String serverId,
-  ) {
+  Future<List<OfflineWatchProgressItem>> getPendingWatchActionsForServer(String serverId) {
     return (select(offlineWatchProgress)
           ..where((t) => t.serverId.equals(serverId))
           ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
@@ -70,9 +64,7 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// Returns a map of globalKey -> latest action for each key.
   /// Keys with no actions will not be present in the returned map.
-  Future<Map<String, OfflineWatchProgressItem>> getLatestWatchActionsForKeys(
-    Set<String> globalKeys,
-  ) async {
+  Future<Map<String, OfflineWatchProgressItem>> getLatestWatchActionsForKeys(Set<String> globalKeys) async {
     if (globalKeys.isEmpty) return {};
 
     // Query all actions for the given keys
@@ -106,19 +98,13 @@ class AppDatabase extends _$AppDatabase {
     // Check for existing progress entry
     final existing =
         await (select(offlineWatchProgress)
-              ..where(
-                (t) =>
-                    t.globalKey.equals(globalKey) &
-                    t.actionType.equals('progress'),
-              )
+              ..where((t) => t.globalKey.equals(globalKey) & t.actionType.equals('progress'))
               ..limit(1))
             .getSingleOrNull();
 
     if (existing != null) {
       // Update existing progress entry
-      await (update(
-        offlineWatchProgress,
-      )..where((t) => t.id.equals(existing.id))).write(
+      await (update(offlineWatchProgress)..where((t) => t.id.equals(existing.id))).write(
         OfflineWatchProgressCompanion(
           viewOffset: Value(viewOffset),
           duration: Value(duration),
@@ -155,9 +141,7 @@ class AppDatabase extends _$AppDatabase {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     // Remove conflicting actions (opposite action type and progress)
-    await (delete(
-      offlineWatchProgress,
-    )..where((t) => t.globalKey.equals(globalKey))).go();
+    await (delete(offlineWatchProgress)..where((t) => t.globalKey.equals(globalKey))).go();
 
     // Insert the new action
     await into(offlineWatchProgress).insert(
@@ -179,27 +163,20 @@ class AppDatabase extends _$AppDatabase {
 
   /// Update sync attempt count and error message
   Future<void> updateSyncAttempt(int id, String? errorMessage) async {
-    final existing = await (select(
-      offlineWatchProgress,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    final existing = await (select(offlineWatchProgress)..where((t) => t.id.equals(id))).getSingleOrNull();
 
     if (existing != null) {
       await (update(offlineWatchProgress)..where((t) => t.id.equals(id))).write(
-        OfflineWatchProgressCompanion(
-          syncAttempts: Value(existing.syncAttempts + 1),
-          lastError: Value(errorMessage),
-        ),
+        OfflineWatchProgressCompanion(syncAttempts: Value(existing.syncAttempts + 1), lastError: Value(errorMessage)),
       );
     }
   }
 
   /// Get count of pending sync items
   Future<int> getPendingSyncCount() async {
-    final count =
-        await (selectOnly(offlineWatchProgress)
-              ..addColumns([offlineWatchProgress.id.count()]))
-            .map((row) => row.read(offlineWatchProgress.id.count()))
-            .getSingle();
+    final count = await (selectOnly(offlineWatchProgress)..addColumns([offlineWatchProgress.id.count()]))
+        .map((row) => row.read(offlineWatchProgress.id.count()))
+        .getSingle();
     return count ?? 0;
   }
 
@@ -214,9 +191,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Get all downloaded media items (for syncing watch states)
   Future<List<DownloadedMediaItem>> getAllDownloadedMetadata() {
-    return (select(
-      downloadedMedia,
-    )..where((t) => t.status.equals(DownloadStatus.completed.index))).get();
+    return (select(downloadedMedia)..where((t) => t.status.equals(DownloadStatus.completed.index))).get();
   }
 }
 

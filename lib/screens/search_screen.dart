@@ -24,8 +24,7 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen>
-    with Refreshable, FullRefreshable, SearchInputFocusable {
+class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefreshable, SearchInputFocusable {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
   List<PlexMetadata> _searchResults = [];
@@ -37,10 +36,7 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   void initState() {
     super.initState();
-    _searchDebounce = debounce(
-      _performSearch,
-      const Duration(milliseconds: 500),
-    );
+    _searchDebounce = debounce(_performSearch, const Duration(milliseconds: 500));
     _searchController.addListener(_onSearchChanged);
     // Focus the search input when the screen is shown
     FocusUtils.requestFocusAfterBuild(this, _searchFocusNode);
@@ -92,18 +88,14 @@ class _SearchScreenState extends State<SearchScreen>
     });
 
     try {
-      final multiServerProvider = Provider.of<MultiServerProvider>(
-        context,
-        listen: false,
-      );
+      final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
 
       if (!multiServerProvider.hasConnectedServers) {
         throw Exception('No servers available');
       }
 
       // Search across all connected servers
-      final results = await multiServerProvider.aggregationService
-          .searchAcrossServers(query);
+      final results = await multiServerProvider.aggregationService.searchAcrossServers(query);
       if (mounted) {
         setState(() {
           _searchResults = results;
@@ -138,9 +130,7 @@ class _SearchScreenState extends State<SearchScreen>
   // Public method to fully reload all content (for profile switches)
   @override
   void fullRefresh() {
-    appLogger.d(
-      'SearchScreen.fullRefresh() called - clearing search and reloading',
-    );
+    appLogger.d('SearchScreen.fullRefresh() called - clearing search and reloading');
     // Clear search results and search text for new profile
     _searchController.clear();
     setState(() {
@@ -184,13 +174,8 @@ class _SearchScreenState extends State<SearchScreen>
                           )
                         : null,
                     filled: true,
-                    fillColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(100),
-                      borderSide: BorderSide.none,
-                    ),
+                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(100), borderSide: BorderSide.none),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(100),
                       borderSide: BorderSide.none,
@@ -199,18 +184,13 @@ class _SearchScreenState extends State<SearchScreen>
                       borderRadius: BorderRadius.circular(100),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                 ),
               ),
             ),
             if (_isSearching)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              )
+              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
             else if (!_hasSearched)
               SliverFillRemaining(
                 child: StateMessageWidget(
@@ -236,11 +216,7 @@ class _SearchScreenState extends State<SearchScreen>
                     context: context,
                     items: _searchResults,
                     itemBuilder: (context, item, index) {
-                      return MediaCard(
-                        key: Key(item.ratingKey),
-                        item: item,
-                        onRefresh: updateItem,
-                      );
+                      return MediaCard(key: Key(item.ratingKey), item: item, onRefresh: updateItem);
                     },
                     viewMode: settingsProvider.viewMode,
                     density: settingsProvider.libraryDensity,

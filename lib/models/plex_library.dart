@@ -43,8 +43,7 @@ class PlexLibrary with MultiServerFields {
     this.serverName,
   });
 
-  factory PlexLibrary.fromJson(Map<String, dynamic> json) =>
-      _$PlexLibraryFromJson(json);
+  factory PlexLibrary.fromJson(Map<String, dynamic> json) => _$PlexLibraryFromJson(json);
 
   Map<String, dynamic> toJson() => _$PlexLibraryToJson(this);
 

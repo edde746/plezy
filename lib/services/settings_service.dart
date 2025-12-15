@@ -39,8 +39,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySubtitleBorderSize = 'subtitle_border_size';
   static const String _keySubtitleBorderColor = 'subtitle_border_color';
   static const String _keySubtitleBackgroundColor = 'subtitle_background_color';
-  static const String _keySubtitleBackgroundOpacity =
-      'subtitle_background_opacity';
+  static const String _keySubtitleBackgroundOpacity = 'subtitle_background_opacity';
   static const String _keyAppLocale = 'app_locale';
   static const String _keyRememberTrackSelections = 'remember_track_selections';
   static const String _keyAutoSkipIntro = 'auto_skip_intro';
@@ -49,25 +48,19 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyCustomDownloadPath = 'custom_download_path';
   static const String _keyCustomDownloadPathType = 'custom_download_path_type';
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
-  static const String _keyVideoPlayerNavigationEnabled =
-      'video_player_navigation_enabled';
+  static const String _keyVideoPlayerNavigationEnabled = 'video_player_navigation_enabled';
 
   SettingsService._();
 
   static Future<SettingsService> getInstance() async {
-    return BaseSharedPreferencesService.initializeInstance(
-      () => SettingsService._(),
-    );
+    return BaseSharedPreferencesService.initializeInstance(() => SettingsService._());
   }
 
   /// Generic helper to get an enum value from preferences
   T _getEnumValue<T extends Enum>(String key, List<T> values, T defaultValue) {
     final stored = prefs.getString(key);
     if (stored == null) return defaultValue;
-    return values.firstWhere(
-      (v) => v.name == stored,
-      orElse: () => defaultValue,
-    );
+    return values.firstWhere((v) => v.name == stored, orElse: () => defaultValue);
   }
 
   // Theme Mode
@@ -159,8 +152,7 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   bool getUseSeasonPoster() {
-    return prefs.getBool(_keyUseSeasonPoster) ??
-        false; // Default: false (use series poster)
+    return prefs.getBool(_keyUseSeasonPoster) ?? false; // Default: false (use series poster)
   }
 
   // Show Hero Section
@@ -169,8 +161,7 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   bool getShowHeroSection() {
-    return prefs.getBool(_keyShowHeroSection) ??
-        true; // Default: true (show hero section)
+    return prefs.getBool(_keyShowHeroSection) ?? true; // Default: true (show hero section)
   }
 
   // Seek Time Small (in seconds)
@@ -215,8 +206,7 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   int getSubtitleSyncOffset() {
-    return prefs.getInt(_keySubtitleSyncOffset) ??
-        0; // Default: 0ms (no offset)
+    return prefs.getInt(_keySubtitleSyncOffset) ?? 0; // Default: 0ms (no offset)
   }
 
   // Volume (0.0 to 100.0)
@@ -234,8 +224,7 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   bool getRotationLocked() {
-    return prefs.getBool(_keyRotationLocked) ??
-        true; // Default: locked (landscape only)
+    return prefs.getBool(_keyRotationLocked) ?? true; // Default: locked (landscape only)
   }
 
   // Subtitle Styling Settings
@@ -325,22 +314,13 @@ class SettingsService extends BaseSharedPreferencesService {
       'volume_down': HotKey(key: PhysicalKeyboardKey.arrowDown),
       'seek_forward': HotKey(key: PhysicalKeyboardKey.arrowRight),
       'seek_backward': HotKey(key: PhysicalKeyboardKey.arrowLeft),
-      'seek_forward_large': HotKey(
-        key: PhysicalKeyboardKey.arrowRight,
-        modifiers: [HotKeyModifier.shift],
-      ),
-      'seek_backward_large': HotKey(
-        key: PhysicalKeyboardKey.arrowLeft,
-        modifiers: [HotKeyModifier.shift],
-      ),
+      'seek_forward_large': HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.shift]),
+      'seek_backward_large': HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.shift]),
       'fullscreen_toggle': HotKey(key: PhysicalKeyboardKey.keyF),
       'mute_toggle': HotKey(key: PhysicalKeyboardKey.keyM),
       'subtitle_toggle': HotKey(key: PhysicalKeyboardKey.keyS),
       'audio_track_next': HotKey(key: PhysicalKeyboardKey.keyA),
-      'subtitle_track_next': HotKey(
-        key: PhysicalKeyboardKey.keyS,
-        modifiers: [HotKeyModifier.shift],
-      ),
+      'subtitle_track_next': HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
       'chapter_next': HotKey(key: PhysicalKeyboardKey.keyN),
       'chapter_previous': HotKey(key: PhysicalKeyboardKey.keyP),
       'speed_increase': HotKey(key: PhysicalKeyboardKey.equal),
@@ -361,9 +341,7 @@ class SettingsService extends BaseSharedPreferencesService {
     final decoded = _decodeJsonStringToMap(jsonString);
     if (decoded.isEmpty) return getDefaultKeyboardShortcuts();
 
-    final shortcuts = decoded.map(
-      (key, value) => MapEntry(key, value.toString()),
-    );
+    final shortcuts = decoded.map((key, value) => MapEntry(key, value.toString()));
 
     // Merge with defaults to ensure all keys exist
     final defaults = getDefaultKeyboardShortcuts();
@@ -450,8 +428,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getVideoPlayerNavigationEnabled() {
     // Default: enabled on Android TV, disabled elsewhere
-    return prefs.getBool(_keyVideoPlayerNavigationEnabled) ??
-        TvDetectionService.isTVSync();
+    return prefs.getBool(_keyVideoPlayerNavigationEnabled) ?? TvDetectionService.isTVSync();
   }
 
   // Helper methods for HotKey serialization
@@ -465,10 +442,7 @@ class SettingsService extends BaseSharedPreferencesService {
   };
 
   Map<String, dynamic> _serializeHotKey(HotKey hotKey) {
-    return {
-      'key': hotKey.key.toString(),
-      'modifiers': hotKey.modifiers?.map((m) => m.name).toList() ?? [],
-    };
+    return {'key': hotKey.key.toString(), 'modifiers': hotKey.modifiers?.map((m) => m.name).toList() ?? []};
   }
 
   HotKey? _deserializeHotKey(Map<String, dynamic> data) {
@@ -484,10 +458,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
       final key = _findKeyByString(keyString);
       if (key != null) {
-        return HotKey(
-          key: key,
-          modifiers: modifiers.isNotEmpty ? modifiers : null,
-        );
+        return HotKey(key: key, modifiers: modifiers.isNotEmpty ? modifiers : null);
       }
     } catch (e) {
       // Ignore deserialization errors
@@ -700,10 +671,7 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Save media version preference for a series
   /// [seriesRatingKey] is the grandparentRatingKey for TV series, or ratingKey for movies
   /// [mediaIndex] is the index of the selected media version
-  Future<void> setMediaVersionPreference(
-    String seriesRatingKey,
-    int mediaIndex,
-  ) async {
+  Future<void> setMediaVersionPreference(String seriesRatingKey, int mediaIndex) async {
     final preferences = _getMediaVersionPreferences();
     preferences[seriesRatingKey] = mediaIndex;
 
@@ -754,10 +722,7 @@ class SettingsService extends BaseSharedPreferencesService {
     final localeString = prefs.getString(_keyAppLocale);
     if (localeString == null) return AppLocale.en; // Default to English
 
-    return AppLocale.values.firstWhere(
-      (locale) => locale.languageCode == localeString,
-      orElse: () => AppLocale.en,
-    );
+    return AppLocale.values.firstWhere((locale) => locale.languageCode == localeString, orElse: () => AppLocale.en);
   }
 
   // Track Selection Settings
@@ -799,10 +764,7 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   // Custom Download Path
-  Future<void> setCustomDownloadPath(
-    String? path, {
-    String type = 'file',
-  }) async {
+  Future<void> setCustomDownloadPath(String? path, {String type = 'file'}) async {
     if (path == null) {
       await prefs.remove(_keyCustomDownloadPath);
       await prefs.remove(_keyCustomDownloadPathType);
@@ -896,9 +858,7 @@ class SettingsService extends BaseSharedPreferencesService {
       'seekTimeSmall': getSeekTimeSmall(),
       'seekTimeLarge': getSeekTimeLarge(),
       'keyboardShortcuts': getKeyboardShortcuts(),
-      'keyboardHotkeys': hotkeys.map(
-        (key, value) => MapEntry(key, _serializeHotKey(value)),
-      ),
+      'keyboardHotkeys': hotkeys.map((key, value) => MapEntry(key, _serializeHotKey(value))),
       'rememberTrackSelections': getRememberTrackSelections(),
       'autoSkipIntro': getAutoSkipIntro(),
       'autoSkipCredits': getAutoSkipCredits(),

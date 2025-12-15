@@ -47,47 +47,33 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
-        return _buildItemsView(
-          context,
-          settingsProvider.viewMode,
-          settingsProvider.libraryDensity,
-        );
+        return _buildItemsView(context, settingsProvider.viewMode, settingsProvider.libraryDensity);
       },
     );
   }
 
   /// Builds either a list or grid view based on the view mode
-  Widget _buildItemsView(
-    BuildContext context,
-    ViewMode viewMode,
-    LibraryDensity density,
-  ) {
+  Widget _buildItemsView(BuildContext context, ViewMode viewMode, LibraryDensity density) {
     final effectivePadding = padding ?? GridLayoutConstants.gridPadding;
-    final effectiveAspectRatio =
-        childAspectRatio ?? GridLayoutConstants.posterAspectRatio;
+    final effectiveAspectRatio = childAspectRatio ?? GridLayoutConstants.posterAspectRatio;
 
     if (viewMode == ViewMode.list) {
       return ListView.builder(
         padding: effectivePadding,
         itemCount: items.length,
-        itemBuilder: (context, index) =>
-            itemBuilder(context, items[index], index),
+        itemBuilder: (context, index) => itemBuilder(context, items[index], index),
       );
     } else {
       return GridView.builder(
         padding: effectivePadding,
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(
-            context,
-            density,
-          ),
+          maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(context, density),
           childAspectRatio: effectiveAspectRatio,
           crossAxisSpacing: GridLayoutConstants.crossAxisSpacing,
           mainAxisSpacing: GridLayoutConstants.mainAxisSpacing,
         ),
         itemCount: items.length,
-        itemBuilder: (context, index) =>
-            itemBuilder(context, items[index], index),
+        itemBuilder: (context, index) => itemBuilder(context, items[index], index),
       );
     }
   }

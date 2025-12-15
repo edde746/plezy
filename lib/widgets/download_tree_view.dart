@@ -33,16 +33,12 @@ class DownloadTreeNode {
 
   /// Get the number of completed children
   int get completedChildrenCount {
-    return children
-        .where((child) => child.status == DownloadStatus.completed)
-        .length;
+    return children.where((child) => child.status == DownloadStatus.completed).length;
   }
 
   /// Get the number of downloading children
   int get downloadingChildrenCount {
-    return children
-        .where((child) => child.status == DownloadStatus.downloading)
-        .length;
+    return children.where((child) => child.status == DownloadStatus.downloading).length;
   }
 }
 
@@ -145,8 +141,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       final showTitle = firstEpisode?.grandparentTitle ?? 'Unknown Show';
 
       // Group episodes by season
-      final Map<String, List<MapEntry<String, DownloadProgress>>> seasonGroups =
-          {};
+      final Map<String, List<MapEntry<String, DownloadProgress>>> seasonGroups = {};
       for (final episode in episodes) {
         final meta = widget.metadata[episode.key];
         if (meta == null) continue;
@@ -179,9 +174,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           if (meta == null) continue;
 
           final episodeNumber = meta.index;
-          final episodeTitle = episodeNumber != null
-              ? 'Episode $episodeNumber - ${meta.title}'
-              : meta.title;
+          final episodeTitle = episodeNumber != null ? 'Episode $episodeNumber - ${meta.title}' : meta.title;
 
           episodeNodes.add(
             DownloadTreeNode(
@@ -206,15 +199,10 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
         // Calculate aggregate season progress
         final seasonProgress = episodeNodes.isEmpty
             ? 0.0
-            : episodeNodes.map((e) => e.progress).reduce((a, b) => a + b) /
-                  episodeNodes.length;
-        final seasonStatus = _determineAggregateStatus(
-          episodeNodes.map((e) => e.status).toList(),
-        );
+            : episodeNodes.map((e) => e.progress).reduce((a, b) => a + b) / episodeNodes.length;
+        final seasonStatus = _determineAggregateStatus(episodeNodes.map((e) => e.status).toList());
 
-        final displayTitle = seasonNumber != null
-            ? 'Season $seasonNumber'
-            : seasonTitle;
+        final displayTitle = seasonNumber != null ? 'Season $seasonNumber' : seasonTitle;
 
         seasons.add(
           DownloadTreeNode(
@@ -230,21 +218,16 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
       // Sort seasons by season number
       seasons.sort((a, b) {
-        final aSeasonNum =
-            widget.metadata[a.children.first.key]?.parentIndex ?? 0;
-        final bSeasonNum =
-            widget.metadata[b.children.first.key]?.parentIndex ?? 0;
+        final aSeasonNum = widget.metadata[a.children.first.key]?.parentIndex ?? 0;
+        final bSeasonNum = widget.metadata[b.children.first.key]?.parentIndex ?? 0;
         return aSeasonNum.compareTo(bSeasonNum);
       });
 
       // Calculate aggregate show progress
       final showProgress = seasons.isEmpty
           ? 0.0
-          : seasons.map((s) => s.progress).reduce((a, b) => a + b) /
-                seasons.length;
-      final showStatus = _determineAggregateStatus(
-        seasons.map((s) => s.status).toList(),
-      );
+          : seasons.map((s) => s.progress).reduce((a, b) => a + b) / seasons.length;
+      final showStatus = _determineAggregateStatus(seasons.map((s) => s.status).toList());
 
       shows.add(
         DownloadTreeNode(
@@ -351,11 +334,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
   }
 
   /// Build the content for a node
-  Widget _buildNodeContent(
-    DownloadTreeNode node,
-    bool isExpanded,
-    bool canExpand,
-  ) {
+  Widget _buildNodeContent(DownloadTreeNode node, bool isExpanded, bool canExpand) {
     final theme = Theme.of(context);
 
     return Container(
@@ -364,13 +343,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
         children: [
           // Expand/collapse icon
           if (canExpand)
-            AppIcon(
-              isExpanded
-                  ? Symbols.expand_more_rounded
-                  : Symbols.chevron_right_rounded,
-              fill: 1,
-              size: 20,
-            )
+            AppIcon(isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded, fill: 1, size: 20)
           else
             const SizedBox(width: 20),
 
@@ -397,18 +370,16 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
                 if (canExpand) ...[
                   const SizedBox(height: 4),
-                Text(
-                  _getNodeSummary(node),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color:
-                        theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  Text(
+                    _getNodeSummary(node),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
-                ),
-              ],
+                ],
 
                 // Progress bar
-                if (node.status == DownloadStatus.downloading ||
-                    node.status == DownloadStatus.queued) ...[
+                if (node.status == DownloadStatus.downloading || node.status == DownloadStatus.queued) ...[
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
                     value: node.progress,
@@ -419,8 +390,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
                     Text(
                       '${(node.progress * 100).toStringAsFixed(1)}% - ${node.downloadProgress!.speedFormatted}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -484,18 +454,11 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
   /// Build action buttons for nodes
   Widget _buildActions(DownloadTreeNode node) {
-    final isContainer =
-        node.type == DownloadNodeType.show ||
-        node.type == DownloadNodeType.season;
+    final isContainer = node.type == DownloadNodeType.show || node.type == DownloadNodeType.season;
 
-    final actions = isContainer
-        ? _getContainerActions(node)
-        : _getItemActions(node);
+    final actions = isContainer ? _getContainerActions(node) : _getItemActions(node);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: actions,
-    );
+    return Row(mainAxisSize: MainAxisSize.min, children: actions);
   }
 
   /// Get action buttons for individual items (episodes/movies)
@@ -506,52 +469,54 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
     // Pause button for downloading items
     if (status == DownloadStatus.downloading && widget.onPause != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.pause_rounded,
-        tooltip: 'Pause',
-        onPressed: () => widget.onPause!(globalKey),
-      ));
+      actions.add(
+        _buildActionButton(icon: Symbols.pause_rounded, tooltip: 'Pause', onPressed: () => widget.onPause!(globalKey)),
+      );
     }
 
     // Resume button for paused items
     if (status == DownloadStatus.paused && widget.onResume != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.play_arrow_rounded,
-        tooltip: 'Resume',
-        onPressed: () => widget.onResume!(globalKey),
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.play_arrow_rounded,
+          tooltip: 'Resume',
+          onPressed: () => widget.onResume!(globalKey),
+        ),
+      );
     }
 
     // Cancel button for downloading/queued items
-    if ((status == DownloadStatus.downloading ||
-            status == DownloadStatus.queued) &&
-        widget.onCancel != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.close_rounded,
-        tooltip: 'Cancel',
-        onPressed: () => widget.onCancel!(globalKey),
-      ));
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onCancel != null) {
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.close_rounded,
+          tooltip: 'Cancel',
+          onPressed: () => widget.onCancel!(globalKey),
+        ),
+      );
     }
 
     // Retry button for failed items
     if (status == DownloadStatus.failed && widget.onRetry != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.refresh_rounded,
-        tooltip: t.downloads.retryDownload,
-        onPressed: () => widget.onRetry!(globalKey),
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.refresh_rounded,
+          tooltip: t.downloads.retryDownload,
+          onPressed: () => widget.onRetry!(globalKey),
+        ),
+      );
     }
 
     // Delete button for completed/failed/cancelled items
-    if ((status == DownloadStatus.completed ||
-            status == DownloadStatus.failed ||
-            status == DownloadStatus.cancelled) &&
+    if ((status == DownloadStatus.completed || status == DownloadStatus.failed || status == DownloadStatus.cancelled) &&
         widget.onDelete != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.delete_rounded,
-        tooltip: 'Delete',
-        onPressed: () => widget.onDelete!(globalKey),
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.delete_rounded,
+          tooltip: 'Delete',
+          onPressed: () => widget.onDelete!(globalKey),
+        ),
+      );
     }
 
     return actions;
@@ -563,48 +528,40 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
     final actions = <Widget>[];
 
     // Pause all button - show if any children are downloading or queued
-    if ((status == DownloadStatus.downloading ||
-            status == DownloadStatus.queued) &&
-        widget.onPause != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.pause_rounded,
-        tooltip: 'Pause all',
-        onPressed: () => _pauseAllChildren(node),
-      ));
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onPause != null) {
+      actions.add(
+        _buildActionButton(icon: Symbols.pause_rounded, tooltip: 'Pause all', onPressed: () => _pauseAllChildren(node)),
+      );
     }
 
     // Resume all button - show if container is paused
     if (status == DownloadStatus.paused && widget.onResume != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.play_arrow_rounded,
-        tooltip: 'Resume all',
-        onPressed: () => _resumeAllChildren(node),
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.play_arrow_rounded,
+          tooltip: 'Resume all',
+          onPressed: () => _resumeAllChildren(node),
+        ),
+      );
     }
 
     // Delete all button
     if (widget.onDelete != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.delete_sweep_rounded,
-        tooltip: 'Delete all',
-        onPressed: () => _deleteAllChildren(node),
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.delete_sweep_rounded,
+          tooltip: 'Delete all',
+          onPressed: () => _deleteAllChildren(node),
+        ),
+      );
     }
 
     return actions;
   }
 
   /// Build a single action button
-  Widget _buildActionButton({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onPressed,
-  }) {
-    return IconButton(
-      icon: AppIcon(icon, fill: 1, size: 20),
-      onPressed: onPressed,
-      tooltip: tooltip,
-    );
+  Widget _buildActionButton({required IconData icon, required String tooltip, required VoidCallback onPressed}) {
+    return IconButton(icon: AppIcon(icon, fill: 1, size: 20), onPressed: onPressed, tooltip: tooltip);
   }
 
   /// Pause all active (downloading and queued) children of a container node
@@ -629,8 +586,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
     for (final child in node.children) {
       if (child.hasChildren) {
         keys.addAll(_getActiveChildKeys(child));
-      } else if (child.status == DownloadStatus.downloading ||
-          child.status == DownloadStatus.queued) {
+      } else if (child.status == DownloadStatus.downloading || child.status == DownloadStatus.queued) {
         keys.add(child.key);
       }
     }

@@ -66,16 +66,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     with Refreshable, FullRefreshable, FocusableTab, LibraryLoadable, ItemUpdatable, SingleTickerProviderStateMixin {
   @override
   PlexClient get client {
-    final multiServerProvider = Provider.of<MultiServerProvider>(
-      context,
-      listen: false,
-    );
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
     if (!multiServerProvider.hasConnectedServers) {
       throw Exception(t.errors.noClientAvailable);
     }
-    return context.getClientForServer(
-      multiServerProvider.onlineServerIds.first,
-    );
+    return context.getClientForServer(multiServerProvider.onlineServerIds.first);
   }
 
   late TabController _tabController;
@@ -115,16 +110,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _libraryDropdownKey = GlobalKey<PopupMenuButtonState<String>>();
 
   // Focus nodes for tab chips
-  final _recommendedTabChipFocusNode = FocusNode(
-    debugLabel: 'tab_chip_recommended',
-  );
+  final _recommendedTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_recommended');
   final _browseTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_browse');
-  final _collectionsTabChipFocusNode = FocusNode(
-    debugLabel: 'tab_chip_collections',
-  );
-  final _playlistsTabChipFocusNode = FocusNode(
-    debugLabel: 'tab_chip_playlists',
-  );
+  final _collectionsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_collections');
+  final _playlistsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_playlists');
 
   @override
   void initState() {
@@ -164,10 +153,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       // Only save if this was a user-initiated tab change, not a restore
       if (!_isRestoringTab) {
         StorageService.getInstance().then((storage) {
-          storage.saveLibraryTab(
-            _selectedLibraryGlobalKey!,
-            _tabController.index,
-          );
+          storage.saveLibraryTab(_selectedLibraryGlobalKey!, _tabController.index);
         });
 
         // Focus first item in the current tab (only for user-initiated changes)
@@ -254,9 +240,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     if (_tabController.index == tabIndex && mounted) {
       // Use post-frame callback to ensure the widget tree is fully built
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted &&
-            _tabController.index == tabIndex &&
-            !_suppressAutoFocus) {
+        if (mounted && _tabController.index == tabIndex && !_suppressAutoFocus) {
           _focusCurrentTab();
         }
       });
@@ -336,23 +320,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Check if libraries come from multiple servers
   bool get _hasMultipleServers {
-    final uniqueServerIds = _allLibraries
-        .where((lib) => lib.serverId != null)
-        .map((lib) => lib.serverId)
-        .toSet();
+    final uniqueServerIds = _allLibraries.where((lib) => lib.serverId != null).map((lib) => lib.serverId).toSet();
     return uniqueServerIds.length > 1;
   }
 
   Future<void> _loadLibraries() async {
     // Extract context dependencies before async gap
-    final multiServerProvider = Provider.of<MultiServerProvider>(
-      context,
-      listen: false,
-    );
-    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
-      context,
-      listen: false,
-    );
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
 
     setState(() {
       _isLoadingLibraries = true;
@@ -368,34 +343,25 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final storage = await StorageService.getInstance();
 
       // Fetch libraries from all servers
-      final allLibraries = await multiServerProvider.aggregationService
-          .getLibrariesFromAllServers();
+      final allLibraries = await multiServerProvider.aggregationService.getLibrariesFromAllServers();
 
       // Filter out music libraries (type: 'artist') since music playback is not yet supported
       // Only show movie and TV show libraries
-      final filteredLibraries = allLibraries
-          .where((lib) => !ContentTypeHelper.isMusicLibrary(lib))
-          .toList();
+      final filteredLibraries = allLibraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();
 
       // Load saved library order and apply it
       final savedOrder = storage.getLibraryOrder();
-      final orderedLibraries = _applyLibraryOrder(
-        filteredLibraries,
-        savedOrder,
-      );
+      final orderedLibraries = _applyLibraryOrder(filteredLibraries, savedOrder);
 
       _updateState(() {
-        _allLibraries =
-            orderedLibraries; // Store all libraries with ordering applied
+        _allLibraries = orderedLibraries; // Store all libraries with ordering applied
         _isLoadingLibraries = false;
       });
 
       if (allLibraries.isNotEmpty) {
         // Compute visible libraries for initial load
         final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
-        final visibleLibraries = allLibraries
-            .where((lib) => !hiddenKeys.contains(lib.globalKey))
-            .toList();
+        final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
         // Load saved preferences
         final savedLibraryKey = storage.getSelectedLibraryKey();
@@ -404,9 +370,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         String? libraryGlobalKeyToLoad;
         if (savedLibraryKey != null) {
           // Check if saved library exists and is visible
-          final libraryExists = visibleLibraries.any(
-            (lib) => lib.globalKey == savedLibraryKey,
-          );
+          final libraryExists = visibleLibraries.any((lib) => lib.globalKey == savedLibraryKey);
           if (libraryExists) {
             libraryGlobalKeyToLoad = savedLibraryKey;
           }
@@ -418,9 +382,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         }
 
         if (libraryGlobalKeyToLoad != null && mounted) {
-          final savedFilters = storage.getLibraryFilters(
-            sectionId: libraryGlobalKeyToLoad,
-          );
+          final savedFilters = storage.getLibraryFilters(sectionId: libraryGlobalKeyToLoad);
           if (savedFilters.isNotEmpty) {
             _selectedFilters = Map.from(savedFilters);
           }
@@ -435,10 +397,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
   }
 
-  List<PlexLibrary> _applyLibraryOrder(
-    List<PlexLibrary> libraries,
-    List<String>? savedOrder,
-  ) {
+  List<PlexLibrary> _applyLibraryOrder(List<PlexLibrary> libraries, List<String>? savedOrder) {
     if (savedOrder == null || savedOrder.isEmpty) {
       return libraries;
     }
@@ -483,25 +442,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   Future<void> _loadLibraryContent(String libraryGlobalKey) async {
     // Compute visible libraries based on current provider state
-    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
-      context,
-      listen: false,
-    );
+    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
-    final visibleLibraries = _allLibraries
-        .where((lib) => !hiddenKeys.contains(lib.globalKey))
-        .toList();
+    final visibleLibraries = _allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
     // Find the library by key
-    final libraryIndex = visibleLibraries.indexWhere(
-      (lib) => lib.globalKey == libraryGlobalKey,
-    );
+    final libraryIndex = visibleLibraries.indexWhere((lib) => lib.globalKey == libraryGlobalKey);
     if (libraryIndex == -1) return; // Library not found or hidden
 
     final library = visibleLibraries[libraryIndex];
 
-    final isChangingLibrary =
-        !_isInitialLoad && _selectedLibraryGlobalKey != libraryGlobalKey;
+    final isChangingLibrary = !_isInitialLoad && _selectedLibraryGlobalKey != libraryGlobalKey;
 
     // Get the correct client for this library's server
     final client = context.getClientForLibrary(library);
@@ -544,9 +495,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // However, on first load the tab might finish loading before the tab index
     // is restored. Check if the current tab has already loaded and focus if so.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted &&
-          _selectedLibraryGlobalKey == libraryGlobalKey &&
-          _loadedTabs.contains(_tabController.index)) {
+      if (mounted && _selectedLibraryGlobalKey == libraryGlobalKey && _loadedTabs.contains(_tabController.index)) {
         _focusCurrentTab();
       }
     });
@@ -575,12 +524,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final filtersWithSort = _buildFiltersWithSort();
 
       // Load pages sequentially
-      await _loadAllPagesSequentially(
-        library,
-        filtersWithSort,
-        currentRequestId,
-        client,
-      );
+      await _loadAllPagesSequentially(library, filtersWithSort, currentRequestId, client);
     } catch (e) {
       // Ignore cancellation errors
       if (e is DioException && e.type == DioExceptionType.cancel) {
@@ -612,12 +556,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
         // Tag items with server info for multi-server support
         final taggedItems = items
-            .map(
-              (item) => item.copyWith(
-                serverId: library.serverId,
-                serverName: library.serverName,
-              ),
-            )
+            .map((item) => item.copyWith(serverId: library.serverId, serverName: library.serverName))
             .toList();
 
         // Check if request is still valid
@@ -662,10 +601,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (savedSortData != null) {
         final sortKey = savedSortData['key'] as String?;
         if (sortKey != null) {
-          savedSort = sortOptions.firstWhere(
-            (s) => s.key == sortKey,
-            orElse: () => sortOptions.first,
-          );
+          savedSort = sortOptions.firstWhere((s) => s.key == sortKey, orElse: () => sortOptions.first);
           descending = (savedSortData['descending'] as bool?) ?? false;
         } else {
           savedSort = sortOptions.first;
@@ -689,9 +625,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   Map<String, String> _buildFiltersWithSort() {
     final filtersWithSort = Map<String, String>.from(_selectedFilters);
     if (_selectedSort != null) {
-      filtersWithSort['sort'] = _selectedSort!.getSortKey(
-        descending: _isSortDescending,
-      );
+      filtersWithSort['sort'] = _selectedSort!.getSortKey(descending: _isSortDescending);
     }
     return filtersWithSort;
   }
@@ -752,20 +686,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Future<void> _toggleLibraryVisibility(PlexLibrary library) async {
-    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
-      context,
-      listen: false,
-    );
-    final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(
-      library.globalKey,
-    );
+    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
+    final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(library.globalKey);
 
     if (isHidden) {
       await hiddenLibrariesProvider.unhideLibrary(library.globalKey);
     } else {
       // Check if we're hiding the currently selected library
-      final isCurrentlySelected =
-          _selectedLibraryGlobalKey == library.globalKey;
+      final isCurrentlySelected = _selectedLibraryGlobalKey == library.globalKey;
 
       await hiddenLibrariesProvider.hideLibrary(library.globalKey);
 
@@ -773,11 +701,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (isCurrentlySelected) {
         // Compute visible libraries after hiding
         final visibleLibraries = _allLibraries
-            .where(
-              (lib) => !hiddenLibrariesProvider.hiddenLibraryKeys.contains(
-                lib.globalKey,
-              ),
-            )
+            .where((lib) => !hiddenLibrariesProvider.hiddenLibraryKeys.contains(lib.globalKey))
             .toList();
 
         if (visibleLibraries.isNotEmpty) {
@@ -795,9 +719,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         label: t.libraries.scanLibraryFiles,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.scanLibrary,
-        confirmationMessage: t.libraries.scanLibraryConfirm(
-          title: library.title,
-        ),
+        confirmationMessage: t.libraries.scanLibraryConfirm(title: library.title),
       ),
       ContextMenuItem(
         value: 'analyze',
@@ -805,9 +727,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         label: t.libraries.analyze,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.analyzeLibrary,
-        confirmationMessage: t.libraries.analyzeLibraryConfirm(
-          title: library.title,
-        ),
+        confirmationMessage: t.libraries.analyzeLibraryConfirm(title: library.title),
       ),
       ContextMenuItem(
         value: 'refresh',
@@ -815,9 +735,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         label: t.libraries.refreshMetadata,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.refreshMetadata,
-        confirmationMessage: t.libraries.refreshMetadataConfirm(
-          title: library.title,
-        ),
+        confirmationMessage: t.libraries.refreshMetadataConfirm(title: library.title),
         isDestructive: true,
       ),
       ContextMenuItem(
@@ -826,9 +744,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         label: t.libraries.emptyTrash,
         requiresConfirmation: true,
         confirmationTitle: t.libraries.emptyTrash,
-        confirmationMessage: t.libraries.emptyTrashConfirm(
-          title: library.title,
-        ),
+        confirmationMessage: t.libraries.emptyTrashConfirm(title: library.title),
         isDestructive: true,
       ),
     ];
@@ -852,10 +768,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   void _showLibraryManagementSheet() {
-    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(
-      context,
-      listen: false,
-    );
+    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
 
     showModalBottomSheet(
       context: context,
@@ -887,11 +800,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       final client = context.getClientForLibrary(library);
 
       if (mounted) {
-        showAppSnackBar(
-          context,
-          progressMessage,
-          duration: const Duration(seconds: 2),
-        );
+        showAppSnackBar(context, progressMessage, duration: const Duration(seconds: 2));
       }
 
       await action(client);
@@ -913,8 +822,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       action: (client) => client.scanLibrary(library.key),
       progressMessage: t.messages.libraryScanning(title: library.title),
       successMessage: t.messages.libraryScanStarted(title: library.title),
-      failureMessage: (error) =>
-          t.messages.libraryScanFailed(error: error.toString()),
+      failureMessage: (error) => t.messages.libraryScanFailed(error: error.toString()),
     );
   }
 
@@ -924,8 +832,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       action: (client) => client.refreshLibraryMetadata(library.key),
       progressMessage: t.messages.metadataRefreshing(title: library.title),
       successMessage: t.messages.metadataRefreshStarted(title: library.title),
-      failureMessage: (error) =>
-          t.messages.metadataRefreshFailed(error: error.toString()),
+      failureMessage: (error) => t.messages.metadataRefreshFailed(error: error.toString()),
     );
   }
 
@@ -955,23 +862,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     for (final lib in libraries) {
       nameCounts[lib.title] = (nameCounts[lib.title] ?? 0) + 1;
     }
-    return nameCounts.entries
-        .where((e) => e.value > 1)
-        .map((e) => e.key)
-        .toSet();
+    return nameCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
   }
 
   /// Build dropdown menu items with server subtitle for non-unique names
-  List<PopupMenuEntry<String>> _buildGroupedLibraryMenuItems(
-    List<PlexLibrary> visibleLibraries,
-  ) {
+  List<PopupMenuEntry<String>> _buildGroupedLibraryMenuItems(List<PlexLibrary> visibleLibraries) {
     // Find which library names are not unique
     final nonUniqueNames = _getNonUniqueLibraryNames(visibleLibraries);
 
     return visibleLibraries.map((library) {
       final isSelected = library.globalKey == _selectedLibraryGlobalKey;
-      final showServerName =
-          nonUniqueNames.contains(library.title) && library.serverName != null;
+      final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
 
       return PopupMenuItem<String>(
         value: library.globalKey,
@@ -992,12 +893,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   Text(
                     library.title,
                     style: TextStyle(
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected ? Theme.of(context).colorScheme.primary : null,
                     ),
                   ),
                   if (showServerName)
@@ -1005,9 +902,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                       library.serverName!,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                       ),
                     ),
                 ],
@@ -1116,25 +1011,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    selectedLibrary.title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text(selectedLibrary.title, style: Theme.of(context).textTheme.titleMedium),
                   Text(
                     selectedLibrary.serverName!,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
               )
             else
-              Text(
-                selectedLibrary.title,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
+              Text(selectedLibrary.title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(width: 4),
             const AppIcon(Symbols.arrow_drop_down_rounded, fill: 1, size: 24),
           ],
@@ -1150,9 +1037,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
 
     // Compute visible libraries (filtered from all libraries)
-    final visibleLibraries = _allLibraries
-        .where((lib) => !hiddenKeys.contains(lib.globalKey))
-        .toList();
+    final visibleLibraries = _allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
     return Scaffold(
       body: CustomScrollView(
@@ -1180,9 +1065,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             ],
           ),
           if (_isLoadingLibraries)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
+            const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
           else if (_errorMessage != null && visibleLibraries.isEmpty)
             SliverFillRemaining(
               child: ErrorStateWidget(
@@ -1193,21 +1076,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             )
           else if (visibleLibraries.isEmpty)
             SliverFillRemaining(
-              child: EmptyStateWidget(
-                message: t.libraries.noLibrariesFound,
-                icon: Symbols.video_library_rounded,
-              ),
+              child: EmptyStateWidget(message: t.libraries.noLibrariesFound, icon: Symbols.video_library_rounded),
             )
           else ...[
             // Tab selector chips (only on mobile - desktop has them in app bar)
-            if (_selectedLibraryGlobalKey != null &&
-                !PlatformDetector.shouldUseSideNavigation(context))
+            if (_selectedLibraryGlobalKey != null && !PlatformDetector.shouldUseSideNavigation(context))
               SliverToBoxAdapter(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -1234,9 +1110,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   children: [
                     LibraryRecommendedTab(
                       key: _recommendedTabKey,
-                      library: _allLibraries.firstWhere(
-                        (lib) => lib.globalKey == _selectedLibraryGlobalKey,
-                      ),
+                      library: _allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
                       isActive: _tabController.index == 0,
                       suppressAutoFocus: _suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(0),
@@ -1244,9 +1118,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     ),
                     LibraryBrowseTab(
                       key: _browseTabKey,
-                      library: _allLibraries.firstWhere(
-                        (lib) => lib.globalKey == _selectedLibraryGlobalKey,
-                      ),
+                      library: _allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
                       isActive: _tabController.index == 1,
                       suppressAutoFocus: _suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(1),
@@ -1254,9 +1126,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     ),
                     LibraryCollectionsTab(
                       key: _collectionsTabKey,
-                      library: _allLibraries.firstWhere(
-                        (lib) => lib.globalKey == _selectedLibraryGlobalKey,
-                      ),
+                      library: _allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
                       isActive: _tabController.index == 2,
                       suppressAutoFocus: _suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(2),
@@ -1264,9 +1134,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     ),
                     LibraryPlaylistsTab(
                       key: _playlistsTabKey,
-                      library: _allLibraries.firstWhere(
-                        (lib) => lib.globalKey == _selectedLibraryGlobalKey,
-                      ),
+                      library: _allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
                       isActive: _tabController.index == 3,
                       suppressAutoFocus: _suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(3),
@@ -1280,7 +1148,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       ),
     );
   }
-
 }
 
 class _LibraryManagementSheet extends StatefulWidget {
@@ -1301,8 +1168,7 @@ class _LibraryManagementSheet extends StatefulWidget {
   });
 
   @override
-  State<_LibraryManagementSheet> createState() =>
-      _LibraryManagementSheetState();
+  State<_LibraryManagementSheet> createState() => _LibraryManagementSheetState();
 }
 
 class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
@@ -1440,10 +1306,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     widget.onReorder(_tempLibraries);
   }
 
-  Future<void> _showLibraryMenuBottomSheet(
-    BuildContext outerContext,
-    PlexLibrary library,
-  ) async {
+  Future<void> _showLibraryMenuBottomSheet(BuildContext outerContext, PlexLibrary library) async {
     final menuItems = widget.getLibraryMenuItems(library);
     final selected = await showModalBottomSheet<String>(
       context: outerContext,
@@ -1453,13 +1316,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(
-                library.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ),
             ...menuItems.indexed.map(
               (entry) => ListTile(
@@ -1475,32 +1332,20 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
     if (selected != null && mounted) {
       // Find the selected item to check if confirmation is needed
-      final selectedItem = menuItems.firstWhere(
-        (item) => item.value == selected,
-      );
+      final selectedItem = menuItems.firstWhere((item) => item.value == selected);
 
       if (selectedItem.requiresConfirmation) {
         if (!mounted || !context.mounted) return;
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(
-              selectedItem.confirmationTitle ?? t.dialog.confirmAction,
-            ),
-            content: Text(
-              selectedItem.confirmationMessage ??
-                  t.libraries.confirmActionMessage,
-            ),
+            title: Text(selectedItem.confirmationTitle ?? t.dialog.confirmAction),
+            content: Text(selectedItem.confirmationMessage ?? t.libraries.confirmActionMessage),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(t.common.cancel),
-              ),
+              TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                style: selectedItem.isDestructive
-                    ? TextButton.styleFrom(foregroundColor: Colors.red)
-                    : null,
+                style: selectedItem.isDestructive ? TextButton.styleFrom(foregroundColor: Colors.red) : null,
                 child: Text(t.common.confirm),
               ),
             ],
@@ -1520,10 +1365,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     for (final lib in _tempLibraries) {
       nameCounts[lib.title] = (nameCounts[lib.title] ?? 0) + 1;
     }
-    return nameCounts.entries
-        .where((e) => e.value > 1)
-        .map((e) => e.key)
-        .toSet();
+    return nameCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
   }
 
   @override
@@ -1544,9 +1386,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Theme.of(context).dividerColor),
-                ),
+                border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
               ),
               child: Row(
                 children: [
@@ -1555,10 +1395,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                   Expanded(
                     child: Text(
                       t.libraries.manageLibraries,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                   ),
                   IconButton(
@@ -1575,10 +1412,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                 focusNode: _listFocusNode,
                 autofocus: InputModeTracker.isKeyboardMode(context),
                 onKeyEvent: _handleKeyEvent,
-                child: _buildFlatLibraryList(
-                  scrollController,
-                  hiddenLibraryKeys,
-                ),
+                child: _buildFlatLibraryList(scrollController, hiddenLibraryKeys),
               ),
             ),
           ],
@@ -1588,10 +1422,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   }
 
   /// Build flat library list with server subtitle for non-unique names
-  Widget _buildFlatLibraryList(
-    ScrollController scrollController,
-    Set<String> hiddenLibraryKeys,
-  ) {
+  Widget _buildFlatLibraryList(ScrollController scrollController, Set<String> hiddenLibraryKeys) {
     final nonUniqueNames = _getNonUniqueLibraryNames();
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
@@ -1603,9 +1434,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       buildDefaultDragHandles: false,
       itemBuilder: (context, index) {
         final library = _tempLibraries[index];
-        final showServerName =
-            nonUniqueNames.contains(library.title) &&
-            library.serverName != null;
+        final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
         final isFocused = isKeyboardMode && index == _focusedIndex;
         final isMoving = index == _movingIndex;
         return _buildLibraryTile(
@@ -1659,13 +1488,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
               ReorderableDragStartListener(
                 index: index,
                 child: AppIcon(
-                  isMoving
-                      ? Symbols.swap_vert_rounded
-                      : Symbols.drag_indicator_rounded,
+                  isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
                   fill: 1,
-                  color: isMoving
-                      ? colorScheme.primary
-                      : IconTheme.of(context).color?.withValues(alpha: 0.5),
+                  color: isMoving ? colorScheme.primary : IconTheme.of(context).color?.withValues(alpha: 0.5),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1678,9 +1503,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                   library.serverName!,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                   ),
                 )
               : null,
@@ -1689,36 +1512,22 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             children: [
               Container(
                 decoration: isVisibilityButtonFocused
-                    ? BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(20),
-                      )
+                    ? BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(20))
                     : null,
                 child: IconButton(
-                  icon: AppIcon(
-                    isHidden
-                        ? Symbols.visibility_off_rounded
-                        : Symbols.visibility_rounded,
-                    fill: 1,
-                  ),
-                  tooltip: isHidden
-                      ? t.libraries.showLibrary
-                      : t.libraries.hideLibrary,
+                  icon: AppIcon(isHidden ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1),
+                  tooltip: isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,
                   onPressed: () => widget.onToggleVisibility(library),
                 ),
               ),
               Container(
                 decoration: isOptionsButtonFocused
-                    ? BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(20),
-                      )
+                    ? BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(20))
                     : null,
                 child: IconButton(
                   icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
                   tooltip: t.libraries.libraryOptions,
-                  onPressed: () =>
-                      _showLibraryMenuBottomSheet(context, library),
+                  onPressed: () => _showLibraryMenuBottomSheet(context, library),
                 ),
               ),
             ],

@@ -11,14 +11,10 @@ class GridSizeCalculator {
   static const double desktopBreakpoint = ScreenBreakpoints.desktop;
 
   /// Calculates the maximum cross-axis extent for grid items based on screen size and density
-  static double getMaxCrossAxisExtent(
-    BuildContext context,
-    LibraryDensity density,
-  ) {
+  static double getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > desktopBreakpoint;
-    final isTablet =
-        screenWidth > tabletBreakpoint && screenWidth <= desktopBreakpoint;
+    final isTablet = screenWidth > tabletBreakpoint && screenWidth <= desktopBreakpoint;
 
     switch (density) {
       case LibraryDensity.comfortable:

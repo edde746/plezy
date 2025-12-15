@@ -49,8 +49,7 @@ class FocusableTabChip extends StatefulWidget {
   State<FocusableTabChip> createState() => _FocusableTabChipState();
 }
 
-class _FocusableTabChipState extends State<FocusableTabChip>
-    with FocusableChipStateMixin<FocusableTabChip> {
+class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipStateMixin<FocusableTabChip> {
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
 
@@ -105,11 +104,7 @@ class _FocusableTabChipState extends State<FocusableTabChip>
 
     if (widget.isSelected && showFocus) {
       // Selected + focused: dim the primary color slightly
-      backgroundColor = Color.lerp(
-        colorScheme.primary,
-        colorScheme.surface,
-        0.25,
-      )!;
+      backgroundColor = Color.lerp(colorScheme.primary, colorScheme.surface, 0.25)!;
       foregroundColor = colorScheme.onPrimary;
     } else if (widget.isSelected || showFocus) {
       // Selected or focused (but not both): full primary

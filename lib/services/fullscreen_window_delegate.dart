@@ -54,17 +54,11 @@ class FullscreenWindowDelegate extends NSWindowDelegate {
     WindowManipulator.makeTitlebarOpaque();
 
     // Set traffic lights to standard fullscreen positions (null = default)
-    WindowManipulator.overrideStandardWindowButtonPosition(
-      buttonType: NSWindowButtonType.closeButton,
-      offset: null,
-    );
+    WindowManipulator.overrideStandardWindowButtonPosition(buttonType: NSWindowButtonType.closeButton, offset: null);
     WindowManipulator.overrideStandardWindowButtonPosition(
       buttonType: NSWindowButtonType.miniaturizeButton,
       offset: null,
     );
-    WindowManipulator.overrideStandardWindowButtonPosition(
-      buttonType: NSWindowButtonType.zoomButton,
-      offset: null,
-    );
+    WindowManipulator.overrideStandardWindowButtonPosition(buttonType: NSWindowButtonType.zoomButton, offset: null);
   }
 }

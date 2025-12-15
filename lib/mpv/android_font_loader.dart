@@ -25,9 +25,7 @@ class AndroidFontLoader {
         await fontDir.create(recursive: true);
       }
 
-      final fontFile = File(
-        path.join(fontDir.path, 'go-noto-current-regular.ttf'),
-      );
+      final fontFile = File(path.join(fontDir.path, 'go-noto-current-regular.ttf'));
 
       // Load font from assets and write to cache if it doesn't exist
       if (!await fontFile.exists()) {

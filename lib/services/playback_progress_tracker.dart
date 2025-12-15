@@ -43,14 +43,8 @@ class PlaybackProgressTracker {
     this.isOffline = false,
     this.offlineWatchService,
     this.updateInterval = const Duration(seconds: 10),
-  }) : assert(
-         !isOffline || offlineWatchService != null,
-         'offlineWatchService is required when isOffline is true',
-       ),
-       assert(
-         isOffline || client != null,
-         'client is required when isOffline is false',
-       );
+  }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
+       assert(isOffline || client != null, 'client is required when isOffline is false');
 
   /// Start tracking playback progress
   ///
@@ -73,9 +67,7 @@ class PlaybackProgressTracker {
       }
     });
 
-    appLogger.d(
-      'Started progress tracking (interval: ${updateInterval.inSeconds}s, offline: $isOffline)',
-    );
+    appLogger.d('Started progress tracking (interval: ${updateInterval.inSeconds}s, offline: $isOffline)');
   }
 
   /// Stop tracking playback progress
@@ -117,11 +109,7 @@ class PlaybackProgressTracker {
   }
 
   /// Send progress update to Plex server (online mode)
-  Future<void> _sendOnlineProgress(
-    String state,
-    Duration position,
-    Duration duration,
-  ) async {
+  Future<void> _sendOnlineProgress(String state, Duration position, Duration duration) async {
     await client!.updateProgress(
       metadata.ratingKey,
       time: position.inMilliseconds,
@@ -129,16 +117,11 @@ class PlaybackProgressTracker {
       duration: duration.inMilliseconds,
     );
 
-    appLogger.d(
-      'Progress update sent: $state at ${position.inSeconds}s / ${duration.inSeconds}s',
-    );
+    appLogger.d('Progress update sent: $state at ${position.inSeconds}s / ${duration.inSeconds}s');
   }
 
   /// Queue progress update locally (offline mode)
-  Future<void> _sendOfflineProgress(
-    Duration position,
-    Duration duration,
-  ) async {
+  Future<void> _sendOfflineProgress(Duration position, Duration duration) async {
     final serverId = metadata.serverId;
     if (serverId == null) {
       appLogger.w('Cannot queue offline progress: serverId is null');

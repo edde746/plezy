@@ -56,21 +56,18 @@ class AppBarBackButton extends StatefulWidget {
   State<AppBarBackButton> createState() => _AppBarBackButtonState();
 }
 
-class _AppBarBackButtonState extends State<AppBarBackButton>
-    with TickerProviderStateMixin {
+class _AppBarBackButtonState extends State<AppBarBackButton> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _backgroundAnimation;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-    _backgroundAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+    _animationController = AnimationController(duration: const Duration(milliseconds: 150), vsync: this);
+    _backgroundAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
   }
 
   @override
@@ -103,8 +100,7 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
     final Color effectiveColor;
     switch (widget.style) {
       case BackButtonStyle.plain:
-        effectiveColor =
-            widget.color ?? (isDarkTheme ? Colors.white : Colors.black);
+        effectiveColor = widget.color ?? (isDarkTheme ? Colors.white : Colors.black);
         break;
       case BackButtonStyle.circular:
       case BackButtonStyle.video:
@@ -120,9 +116,7 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
         hoverColor = Colors.black.withValues(alpha: 0.5);
         break;
       case BackButtonStyle.plain:
-        hoverColor = (isDarkTheme ? Colors.white : Colors.black).withValues(
-          alpha: 0.2,
-        );
+        hoverColor = (isDarkTheme ? Colors.white : Colors.black).withValues(alpha: 0.2);
         baseColor = Colors.transparent;
         break;
       case BackButtonStyle.video:
@@ -140,26 +134,14 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
         child: AnimatedBuilder(
           animation: _backgroundAnimation,
           builder: (context, child) {
-            final currentColor = Color.lerp(
-              baseColor,
-              hoverColor,
-              _backgroundAnimation.value,
-            );
+            final currentColor = Color.lerp(baseColor, hoverColor, _backgroundAnimation.value);
 
             return Container(
               margin: const EdgeInsets.all(8),
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
-                color: currentColor,
-                shape: BoxShape.circle,
-              ),
-              child: AppIcon(
-                Symbols.arrow_back_rounded,
-                fill: 1,
-                color: effectiveColor,
-                size: 20,
-              ),
+              decoration: BoxDecoration(color: currentColor, shape: BoxShape.circle),
+              child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: effectiveColor, size: 20),
             );
           },
         ),
@@ -167,16 +149,9 @@ class _AppBarBackButtonState extends State<AppBarBackButton>
     );
 
     final button = widget.semanticLabel != null
-        ? Semantics(
-            label: widget.semanticLabel,
-            button: true,
-            excludeSemantics: true,
-            child: buttonWidget,
-          )
+        ? Semantics(label: widget.semanticLabel, button: true, excludeSemantics: true, child: buttonWidget)
         : buttonWidget;
 
-    return widget.style == BackButtonStyle.circular
-        ? SafeArea(child: button)
-        : button;
+    return widget.style == BackButtonStyle.circular ? SafeArea(child: button) : button;
   }
 }

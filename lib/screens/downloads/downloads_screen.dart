@@ -23,8 +23,7 @@ class DownloadsScreen extends StatefulWidget {
   State<DownloadsScreen> createState() => DownloadsScreenState();
 }
 
-class DownloadsScreenState extends State<DownloadsScreen>
-    with SingleTickerProviderStateMixin {
+class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   // Focus nodes for tab chips
@@ -212,10 +211,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                 // Tab selector chips (only on mobile - desktop has them in app bar)
                 if (!PlatformDetector.shouldUseSideNavigation(context))
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     alignment: Alignment.centerLeft,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -240,9 +236,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           // Helper to get client from globalKey (serverId:ratingKey)
                           getClient(String globalKey) {
                             final serverId = globalKey.split(':').first;
-                            return serverProvider.serverManager.getClient(
-                              serverId,
-                            );
+                            return serverProvider.serverManager.getClient(serverId);
                           }
 
                           return DownloadTreeView(
@@ -252,19 +246,13 @@ class DownloadsScreenState extends State<DownloadsScreen>
                             onResume: (globalKey) {
                               final client = getClient(globalKey);
                               if (client != null) {
-                                downloadProvider.resumeDownload(
-                                  globalKey,
-                                  client,
-                                );
+                                downloadProvider.resumeDownload(globalKey, client);
                               }
                             },
                             onRetry: (globalKey) {
                               final client = getClient(globalKey);
                               if (client != null) {
-                                downloadProvider.retryDownload(
-                                  globalKey,
-                                  client,
-                                );
+                                downloadProvider.retryDownload(globalKey, client);
                               }
                             },
                             onCancel: downloadProvider.cancelDownload,
@@ -302,11 +290,7 @@ class _DownloadsGridContent extends StatelessWidget {
   final bool suppressAutoFocus;
   final VoidCallback? onBack;
 
-  const _DownloadsGridContent({
-    required this.type,
-    required this.suppressAutoFocus,
-    this.onBack,
-  });
+  const _DownloadsGridContent({required this.type, required this.suppressAutoFocus, this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -322,10 +306,7 @@ class _DownloadsGridContent extends StatelessWidget {
 
         return GridView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          gridDelegate: MediaGridDelegate.createDelegate(
-            context: context,
-            density: settingsProvider.libraryDensity,
-          ),
+          gridDelegate: MediaGridDelegate.createDelegate(context: context, density: settingsProvider.libraryDensity),
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];

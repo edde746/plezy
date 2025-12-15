@@ -10,9 +10,7 @@ class PlexApiCache {
   static PlexApiCache? _instance;
   static PlexApiCache get instance {
     if (_instance == null) {
-      throw StateError(
-        'PlexApiCache not initialized. Call PlexApiCache.initialize() first.',
-      );
+      throw StateError('PlexApiCache not initialized. Call PlexApiCache.initialize() first.');
     }
     return _instance!;
   }
@@ -37,9 +35,7 @@ class PlexApiCache {
   /// Get cached response for an endpoint
   Future<Map<String, dynamic>?> get(String serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
-    final result = await (_db.select(
-      _db.apiCache,
-    )..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
+    final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
 
     if (result != null) {
       return jsonDecode(result.data) as Map<String, dynamic>;
@@ -48,86 +44,65 @@ class PlexApiCache {
   }
 
   /// Cache a response for an endpoint
-  Future<void> put(
-    String serverId,
-    String endpoint,
-    Map<String, dynamic> data,
-  ) async {
+  Future<void> put(String serverId, String endpoint, Map<String, dynamic> data) async {
     final key = _buildKey(serverId, endpoint);
     await _db
         .into(_db.apiCache)
         .insertOnConflictUpdate(
-          ApiCacheCompanion(
-            cacheKey: Value(key),
-            data: Value(jsonEncode(data)),
-            cachedAt: Value(DateTime.now()),
-          ),
+          ApiCacheCompanion(cacheKey: Value(key), data: Value(jsonEncode(data)), cachedAt: Value(DateTime.now())),
         );
   }
 
   /// Delete all cached data for a server
   Future<void> deleteForServer(String serverId) async {
-    await (_db.delete(
-      _db.apiCache,
-    )..where((t) => t.cacheKey.like('$serverId:%'))).go();
+    await (_db.delete(_db.apiCache)..where((t) => t.cacheKey.like('$serverId:%'))).go();
   }
 
   /// Delete cached data for a specific item (when removing a download)
   Future<void> deleteForItem(String serverId, String ratingKey) async {
     // Delete the metadata endpoint
     final metadataKey = _buildKey(serverId, '/library/metadata/$ratingKey');
-    final childrenKey = _buildKey(
-      serverId,
-      '/library/metadata/$ratingKey/children',
-    );
+    final childrenKey = _buildKey(serverId, '/library/metadata/$ratingKey/children');
 
-    await (_db.delete(_db.apiCache)..where(
-          (t) =>
-              t.cacheKey.equals(metadataKey) | t.cacheKey.equals(childrenKey),
-        ))
-        .go();
+    await (_db.delete(
+      _db.apiCache,
+    )..where((t) => t.cacheKey.equals(metadataKey) | t.cacheKey.equals(childrenKey))).go();
   }
 
   /// Mark an item as pinned for offline access
   Future<void> pinForOffline(String serverId, String ratingKey) async {
     final metadataKey = _buildKey(serverId, '/library/metadata/$ratingKey');
-    await (_db.update(_db.apiCache)
-          ..where((t) => t.cacheKey.equals(metadataKey)))
-        .write(const ApiCacheCompanion(pinned: Value(true)));
+    await (_db.update(
+      _db.apiCache,
+    )..where((t) => t.cacheKey.equals(metadataKey))).write(const ApiCacheCompanion(pinned: Value(true)));
   }
 
   /// Unpin an item
   Future<void> unpinForOffline(String serverId, String ratingKey) async {
     final metadataKey = _buildKey(serverId, '/library/metadata/$ratingKey');
-    await (_db.update(_db.apiCache)
-          ..where((t) => t.cacheKey.equals(metadataKey)))
-        .write(const ApiCacheCompanion(pinned: Value(false)));
+    await (_db.update(
+      _db.apiCache,
+    )..where((t) => t.cacheKey.equals(metadataKey))).write(const ApiCacheCompanion(pinned: Value(false)));
   }
 
   /// Check if an item is pinned for offline
   Future<bool> isPinned(String serverId, String ratingKey) async {
     final metadataKey = _buildKey(serverId, '/library/metadata/$ratingKey');
-    final result = await (_db.select(
-      _db.apiCache,
-    )..where((t) => t.cacheKey.equals(metadataKey))).getSingleOrNull();
+    final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(metadataKey))).getSingleOrNull();
     return result?.pinned ?? false;
   }
 
   /// Get all pinned rating keys for a server
   Future<Set<String>> getPinnedKeys(String serverId) async {
-    final results =
-        await (_db.select(_db.apiCache)..where(
-              (t) => t.cacheKey.like('$serverId:%') & t.pinned.equals(true),
-            ))
-            .get();
+    final results = await (_db.select(
+      _db.apiCache,
+    )..where((t) => t.cacheKey.like('$serverId:%') & t.pinned.equals(true))).get();
 
     final keys = <String>{};
     for (final row in results) {
       // Extract ratingKey from cache key like "serverId:/library/metadata/12345"
       // Rating keys can be alphanumeric, not just numeric
-      final match = RegExp(
-        r'/library/metadata/([^/]+)$',
-      ).firstMatch(row.cacheKey);
+      final match = RegExp(r'/library/metadata/([^/]+)$').firstMatch(row.cacheKey);
       if (match != null) {
         keys.add(match.group(1)!);
       }

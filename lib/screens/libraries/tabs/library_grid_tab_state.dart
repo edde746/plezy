@@ -8,8 +8,7 @@ import 'base_library_tab.dart';
 ///
 /// Handles focus, item counting, and grid wiring so individual tabs only
 /// implement data loading and per-item rendering.
-abstract class LibraryGridTabState<T, W extends BaseLibraryTab<T>>
-    extends BaseLibraryTabState<T, W>
+abstract class LibraryGridTabState<T, W extends BaseLibraryTab<T>> extends BaseLibraryTabState<T, W>
     with LibraryTabFocusMixin {
   /// Build a single grid item.
   Widget buildGridItem(BuildContext context, T item, int index);
@@ -21,8 +20,7 @@ abstract class LibraryGridTabState<T, W extends BaseLibraryTab<T>>
   Widget buildContent(List<T> items) {
     return AdaptiveMediaGrid<T>(
       items: items,
-      itemBuilder: (context, item, index) =>
-          buildGridItem(context, item, index),
+      itemBuilder: (context, item, index) => buildGridItem(context, item, index),
       onRefresh: loadItems,
       firstItemFocusNode: firstItemFocusNode,
       onBack: widget.onBack,

@@ -34,16 +34,12 @@ class PlaybackInitializationService {
     try {
       // Query database for downloaded media with matching serverId and ratingKey
       final query = database!.select(database!.downloadedMedia)
-        ..where(
-          (tbl) =>
-              tbl.serverId.equals(serverId) & tbl.ratingKey.equals(ratingKey),
-        );
+        ..where((tbl) => tbl.serverId.equals(serverId) & tbl.ratingKey.equals(ratingKey));
 
       final downloadedItem = await query.getSingleOrNull();
 
       // Return null if not found or not completed
-      if (downloadedItem == null ||
-          downloadedItem.status != DownloadStatus.completed.index) {
+      if (downloadedItem == null || downloadedItem.status != DownloadStatus.completed.index) {
         return null;
       }
 
@@ -62,9 +58,7 @@ class PlaybackInitializationService {
       if (!storageService.isSafUri(storedPath)) {
         final file = File(readablePath);
         if (!await file.exists()) {
-          appLogger.w(
-            'Offline video file not found: $readablePath (stored as: $storedPath)',
-          );
+          appLogger.w('Offline video file not found: $readablePath (stored as: $storedPath)');
           return null;
         }
       }
@@ -90,10 +84,7 @@ class PlaybackInitializationService {
       // Check for offline content first if preferOffline is enabled
       String? offlineVideoPath;
       if (preferOffline && database != null) {
-        offlineVideoPath = await getOfflineVideoPath(
-          client.serverId,
-          metadata.ratingKey,
-        );
+        offlineVideoPath = await getOfflineVideoPath(client.serverId, metadata.ratingKey);
       }
 
       // If offline video is available, use it
@@ -103,15 +94,10 @@ class PlaybackInitializationService {
         // For offline playback, we still need to fetch media info for subtitles
         // but use the local file path for video
         try {
-          final playbackData = await client.getVideoPlaybackData(
-            metadata.ratingKey,
-            mediaIndex: selectedMediaIndex,
-          );
+          final playbackData = await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
 
           // Build list of external subtitle tracks
-          final externalSubtitles = _buildExternalSubtitles(
-            playbackData.mediaInfo,
-          );
+          final externalSubtitles = _buildExternalSubtitles(playbackData.mediaInfo);
 
           // Return result with local file path
           return PlaybackInitializationResult(
@@ -123,10 +109,7 @@ class PlaybackInitializationService {
           );
         } catch (e) {
           // If we can't fetch media info (e.g., no network), use offline-only mode
-          appLogger.w(
-            'Failed to fetch media info for offline video, using offline-only mode',
-            error: e,
-          );
+          appLogger.w('Failed to fetch media info for offline video, using offline-only mode', error: e);
           return PlaybackInitializationResult(
             availableVersions: [],
             videoUrl: _formatVideoUrl(offlineVideoPath),
@@ -138,10 +121,7 @@ class PlaybackInitializationService {
       }
 
       // Fall back to network streaming
-      final playbackData = await client.getVideoPlaybackData(
-        metadata.ratingKey,
-        mediaIndex: selectedMediaIndex,
-      );
+      final playbackData = await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
 
       if (!playbackData.hasValidVideoUrl) {
         throw PlaybackException(t.messages.fileInfoNotAvailable);
@@ -174,9 +154,7 @@ class PlaybackInitializationService {
       return externalSubtitles;
     }
 
-    final externalTracks = mediaInfo.subtitleTracks
-        .where((PlexSubtitleTrack track) => track.isExternal)
-        .toList();
+    final externalTracks = mediaInfo.subtitleTracks.where((PlexSubtitleTrack track) => track.isExternal).toList();
 
     if (externalTracks.isNotEmpty) {
       appLogger.d('Found ${externalTracks.length} external subtitle track(s)');
@@ -199,19 +177,13 @@ class PlaybackInitializationService {
         externalSubtitles.add(
           SubtitleTrack.uri(
             url,
-            title:
-                plexTrack.displayTitle ??
-                plexTrack.language ??
-                'Track ${plexTrack.id}',
+            title: plexTrack.displayTitle ?? plexTrack.language ?? 'Track ${plexTrack.id}',
             language: plexTrack.languageCode,
           ),
         );
       } catch (e) {
         // Silent fallback - log error but continue with other subtitles
-        appLogger.w(
-          'Failed to add external subtitle track ${plexTrack.id}',
-          error: e,
-        );
+        appLogger.w('Failed to add external subtitle track ${plexTrack.id}', error: e);
       }
     }
 

@@ -2,8 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 /// Helper function to access MonoTokens from context
-MonoTokens tokens(BuildContext context) =>
-    Theme.of(context).extension<MonoTokens>()!;
+MonoTokens tokens(BuildContext context) => Theme.of(context).extension<MonoTokens>()!;
 
 @immutable
 class MonoTokens extends ThemeExtension<MonoTokens> {
@@ -73,25 +72,13 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
       radiusMd: lerpDouble(radiusMd, other.radiusMd, t)!,
       space: lerpDouble(space, other.space, t)!,
       fast: Duration(
-        milliseconds: lerpDouble(
-          fast.inMilliseconds.toDouble(),
-          other.fast.inMilliseconds.toDouble(),
-          t,
-        )!.round(),
+        milliseconds: lerpDouble(fast.inMilliseconds.toDouble(), other.fast.inMilliseconds.toDouble(), t)!.round(),
       ),
       normal: Duration(
-        milliseconds: lerpDouble(
-          normal.inMilliseconds.toDouble(),
-          other.normal.inMilliseconds.toDouble(),
-          t,
-        )!.round(),
+        milliseconds: lerpDouble(normal.inMilliseconds.toDouble(), other.normal.inMilliseconds.toDouble(), t)!.round(),
       ),
       slow: Duration(
-        milliseconds: lerpDouble(
-          slow.inMilliseconds.toDouble(),
-          other.slow.inMilliseconds.toDouble(),
-          t,
-        )!.round(),
+        milliseconds: lerpDouble(slow.inMilliseconds.toDouble(), other.slow.inMilliseconds.toDouble(), t)!.round(),
       ),
       bg: lerpC(bg, other.bg),
       surface: lerpC(surface, other.surface),

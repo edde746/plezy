@@ -130,10 +130,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     _volumeFocusNode = FocusNode(debugLabel: 'Volume');
 
     // Create focus nodes for track controls (up to 8 buttons)
-    _trackControlFocusNodes = List.generate(
-      8,
-      (i) => FocusNode(debugLabel: 'TrackControl$i'),
-    );
+    _trackControlFocusNodes = List.generate(8, (i) => FocusNode(debugLabel: 'TrackControl$i'));
 
     _buttonFocusNodes = [
       _prevItemFocusNode,
@@ -187,11 +184,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   /// Returns [KeyEventResult.handled] if the key was processed,
   /// [KeyEventResult.ignored] otherwise.
   /// UP always navigates to timeline.
-  KeyEventResult _handleDirectionalNavigation(
-    KeyEvent event, {
-    FocusNode? leftTarget,
-    FocusNode? rightTarget,
-  }) {
+  KeyEventResult _handleDirectionalNavigation(KeyEvent event, {FocusNode? leftTarget, FocusNode? rightTarget}) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
@@ -220,21 +213,11 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   }
 
   /// Handle key events for horizontal button navigation
-  KeyEventResult _handleButtonKeyEvent(
-    FocusNode node,
-    KeyEvent event,
-    int index,
-  ) {
+  KeyEventResult _handleButtonKeyEvent(FocusNode node, KeyEvent event, int index) {
     final leftTarget = index > 0 ? _buttonFocusNodes[index - 1] : null;
-    final rightTarget = index < _buttonFocusNodes.length - 1
-        ? _buttonFocusNodes[index + 1]
-        : _volumeFocusNode;
+    final rightTarget = index < _buttonFocusNodes.length - 1 ? _buttonFocusNodes[index + 1] : _volumeFocusNode;
 
-    return _handleDirectionalNavigation(
-      event,
-      leftTarget: leftTarget,
-      rightTarget: rightTarget,
-    );
+    return _handleDirectionalNavigation(event, leftTarget: leftTarget, rightTarget: rightTarget);
   }
 
   /// Handle key events for volume control navigation
@@ -242,9 +225,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     return _handleDirectionalNavigation(
       event,
       leftTarget: _nextItemFocusNode,
-      rightTarget: _trackControlFocusNodes.isNotEmpty
-          ? _trackControlFocusNodes[0]
-          : null,
+      rightTarget: _trackControlFocusNodes.isNotEmpty ? _trackControlFocusNodes[0] : null,
     );
   }
 
@@ -272,34 +253,22 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     }
 
     // LEFT/RIGHT for smooth scrubbing
-    if (key == LogicalKeyboardKey.arrowLeft ||
-        key == LogicalKeyboardKey.arrowRight) {
+    if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight) {
       if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
 
       // Base step: 0.5% of duration, minimum 500ms
-      final baseStep = Duration(
-        milliseconds: (duration.inMilliseconds * 0.005)
-            .clamp(500, 15000)
-            .toInt(),
-      );
+      final baseStep = Duration(milliseconds: (duration.inMilliseconds * 0.005).clamp(500, 15000).toInt());
 
       // Accelerate on key repeat
       final step = event is KeyRepeatEvent
-          ? Duration(
-              milliseconds: (baseStep.inMilliseconds * 2).clamp(500, 30000),
-            )
+          ? Duration(milliseconds: (baseStep.inMilliseconds * 2).clamp(500, 30000))
           : baseStep;
 
       final isForward = key == LogicalKeyboardKey.arrowRight;
       final newPosition = isForward ? position + step : position - step;
 
       // Clamp to valid range
-      final clampedPosition = Duration(
-        milliseconds: newPosition.inMilliseconds.clamp(
-          0,
-          duration.inMilliseconds,
-        ),
-      );
+      final clampedPosition = Duration(milliseconds: newPosition.inMilliseconds.clamp(0, duration.inMilliseconds));
 
       widget.onSeek(clampedPosition);
       widget.onFocusActivity?.call();
@@ -331,9 +300,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
         // In fullscreen on macOS, use less left padding since traffic lights auto-hide
         // In normal mode on macOS, need more padding to avoid traffic lights
         final leftPadding = Platform.isMacOS
-            ? (isFullscreen
-                  ? DesktopWindowPadding.macOSLeftFullscreen
-                  : DesktopWindowPadding.macOSLeft)
+            ? (isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft)
             : DesktopWindowPadding.macOSLeftFullscreen;
 
         return _buildTopBarContent(context, leftPadding);
@@ -346,9 +313,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       padding: EdgeInsets.only(left: leftPadding, right: 16),
       child: VideoControlsHeader(
         metadata: widget.metadata,
-        style: Platform.isMacOS
-            ? VideoHeaderStyle.singleLine
-            : VideoHeaderStyle.multiLine,
+        style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
       ),
     );
 
@@ -381,9 +346,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 focusNode: _prevItemFocusNode,
                 index: 0,
                 icon: Symbols.skip_previous_rounded,
-                color: widget.onPrevious != null
-                    ? Colors.white
-                    : Colors.white54,
+                color: widget.onPrevious != null ? Colors.white : Colors.white54,
                 onPressed: widget.onPrevious,
                 semanticLabel: t.videoControls.previousButton,
               ),
@@ -396,9 +359,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     : Symbols.fast_rewind_rounded,
                 onPressed: widget.onSeekToPreviousChapter,
                 semanticLabel: widget.chapters.isEmpty
-                    ? t.videoControls.seekBackwardButton(
-                        seconds: widget.seekTimeSmall,
-                      )
+                    ? t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall)
                     : t.videoControls.previousChapterButton,
               ),
               // Play/Pause
@@ -410,9 +371,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   return _buildFocusableButton(
                     focusNode: _playPauseFocusNode,
                     index: 2,
-                    icon: isPlaying
-                        ? Symbols.pause_rounded
-                        : Symbols.play_arrow_rounded,
+                    icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
                     iconSize: 32,
                     onPressed: () {
                       if (isPlaying) {
@@ -421,9 +380,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                         widget.player.play();
                       }
                     },
-                    semanticLabel: isPlaying
-                        ? t.videoControls.pauseButton
-                        : t.videoControls.playButton,
+                    semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
                   );
                 },
               ),
@@ -436,9 +393,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     : Symbols.fast_forward_rounded,
                 onPressed: widget.onSeekToNextChapter,
                 semanticLabel: widget.chapters.isEmpty
-                    ? t.videoControls.seekForwardButton(
-                        seconds: widget.seekTimeSmall,
-                      )
+                    ? t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall)
                     : t.videoControls.nextChapterButton,
               ),
               // Next item

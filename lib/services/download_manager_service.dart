@@ -66,20 +66,14 @@ extension DownloadDatabaseOperations on AppDatabase {
   /// Only returns items that are not paused
   Future<DownloadQueueItem?> getNextQueueItem() async {
     // Join with downloadedMedia to check status and filter out paused items
-    final query = select(downloadQueue).join([
-      innerJoin(
-        downloadedMedia,
-        downloadedMedia.globalKey.equalsExp(downloadQueue.mediaGlobalKey),
-      ),
-    ]);
+    final query = select(
+      downloadQueue,
+    ).join([innerJoin(downloadedMedia, downloadedMedia.globalKey.equalsExp(downloadQueue.mediaGlobalKey))]);
 
     query
       ..where(downloadedMedia.status.equals(DownloadStatus.paused.index).not())
       ..orderBy([
-        OrderingTerm(
-          expression: downloadQueue.priority,
-          mode: OrderingMode.desc,
-        ),
+        OrderingTerm(expression: downloadQueue.priority, mode: OrderingMode.desc),
         OrderingTerm(expression: downloadQueue.addedAt),
       ])
       ..limit(1);
@@ -90,20 +84,14 @@ extension DownloadDatabaseOperations on AppDatabase {
 
   /// Update download status
   Future<void> updateDownloadStatus(String globalKey, int status) async {
-    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey)))
-        .write(DownloadedMediaCompanion(status: Value(status)));
+    await (update(
+      downloadedMedia,
+    )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(status: Value(status)));
   }
 
   /// Update download progress
-  Future<void> updateDownloadProgress(
-    String globalKey,
-    int progress,
-    int downloadedBytes,
-    int totalBytes,
-  ) async {
-    await (update(
-      downloadedMedia,
-    )..where((t) => t.globalKey.equals(globalKey))).write(
+  Future<void> updateDownloadProgress(String globalKey, int progress, int downloadedBytes, int totalBytes) async {
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
       DownloadedMediaCompanion(
         progress: Value(progress),
         downloadedBytes: Value(downloadedBytes),
@@ -114,9 +102,7 @@ extension DownloadDatabaseOperations on AppDatabase {
 
   /// Update video file path
   Future<void> updateVideoFilePath(String globalKey, String filePath) async {
-    await (update(
-      downloadedMedia,
-    )..where((t) => t.globalKey.equals(globalKey))).write(
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
       DownloadedMediaCompanion(
         videoFilePath: Value(filePath),
         downloadedAt: Value(DateTime.now().millisecondsSinceEpoch),
@@ -125,81 +111,54 @@ extension DownloadDatabaseOperations on AppDatabase {
   }
 
   /// Update artwork paths
-  Future<void> updateArtworkPaths({
-    required String globalKey,
-    String? thumbPath,
-  }) async {
-    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey)))
-        .write(DownloadedMediaCompanion(thumbPath: Value(thumbPath)));
+  Future<void> updateArtworkPaths({required String globalKey, String? thumbPath}) async {
+    await (update(
+      downloadedMedia,
+    )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(thumbPath: Value(thumbPath)));
   }
 
   /// Update download error and increment retry count
-  Future<void> updateDownloadError(
-    String globalKey,
-    String errorMessage,
-  ) async {
+  Future<void> updateDownloadError(String globalKey, String errorMessage) async {
     // Get current retry count to increment it
     final existing = await getDownloadedMedia(globalKey);
     final currentCount = existing?.retryCount ?? 0;
 
-    await (update(
-      downloadedMedia,
-    )..where((t) => t.globalKey.equals(globalKey))).write(
-      DownloadedMediaCompanion(
-        errorMessage: Value(errorMessage),
-        retryCount: Value(currentCount + 1),
-      ),
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+      DownloadedMediaCompanion(errorMessage: Value(errorMessage), retryCount: Value(currentCount + 1)),
     );
   }
 
   /// Clear download error and reset retry count (for retry)
   Future<void> clearDownloadError(String globalKey) async {
-    await (update(
-      downloadedMedia,
-    )..where((t) => t.globalKey.equals(globalKey))).write(
-      const DownloadedMediaCompanion(
-        errorMessage: Value(null),
-        retryCount: Value(0),
-      ),
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+      const DownloadedMediaCompanion(errorMessage: Value(null), retryCount: Value(0)),
     );
   }
 
   /// Remove item from queue
   Future<void> removeFromQueue(String mediaGlobalKey) async {
-    await (delete(
-      downloadQueue,
-    )..where((t) => t.mediaGlobalKey.equals(mediaGlobalKey))).go();
+    await (delete(downloadQueue)..where((t) => t.mediaGlobalKey.equals(mediaGlobalKey))).go();
   }
 
   /// Get downloaded media item
   Future<DownloadedMediaItem?> getDownloadedMedia(String globalKey) async {
-    return (select(
-      downloadedMedia,
-    )..where((t) => t.globalKey.equals(globalKey))).getSingleOrNull();
+    return (select(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).getSingleOrNull();
   }
 
   /// Delete a download
   Future<void> deleteDownload(String globalKey) async {
-    await (delete(
-      downloadedMedia,
-    )..where((t) => t.globalKey.equals(globalKey))).go();
-    await (delete(
-      downloadQueue,
-    )..where((t) => t.mediaGlobalKey.equals(globalKey))).go();
+    await (delete(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).go();
+    await (delete(downloadQueue)..where((t) => t.mediaGlobalKey.equals(globalKey))).go();
   }
 
   /// Get all downloaded episodes for a season
   Future<List<DownloadedMediaItem>> getEpisodesBySeason(String seasonKey) {
-    return (select(downloadedMedia)
-          ..where((t) => t.parentRatingKey.equals(seasonKey)))
-        .get();
+    return (select(downloadedMedia)..where((t) => t.parentRatingKey.equals(seasonKey))).get();
   }
 
   /// Get all downloaded episodes for a show
   Future<List<DownloadedMediaItem>> getEpisodesByShow(String showKey) {
-    return (select(downloadedMedia)
-          ..where((t) => t.grandparentRatingKey.equals(showKey)))
-        .get();
+    return (select(downloadedMedia)..where((t) => t.grandparentRatingKey.equals(showKey))).get();
   }
 }
 
@@ -214,10 +173,8 @@ class DownloadManagerService {
   Stream<DownloadProgress> get progressStream => _progressController.stream;
 
   // Stream controller for deletion progress updates
-  final _deletionProgressController =
-      StreamController<DeletionProgress>.broadcast();
-  Stream<DeletionProgress> get deletionProgressStream =>
-      _deletionProgressController.stream;
+  final _deletionProgressController = StreamController<DeletionProgress>.broadcast();
+  Stream<DeletionProgress> get deletionProgressStream => _deletionProgressController.stream;
 
   // Active downloads with cancel tokens
   final Map<String, CancelToken> _activeDownloads = {};
@@ -249,13 +206,10 @@ class DownloadManagerService {
         !connectivity.contains(ConnectivityResult.ethernet);
   }
 
-  DownloadManagerService({
-    required AppDatabase database,
-    required DownloadStorageService storageService,
-    Dio? dio,
-  }) : _database = database,
-       _storageService = storageService,
-       _dio = dio ?? Dio();
+  DownloadManagerService({required AppDatabase database, required DownloadStorageService storageService, Dio? dio})
+    : _database = database,
+      _storageService = storageService,
+      _dio = dio ?? Dio();
 
   /// Delete a file if it exists and log the deletion
   /// Returns true if file was deleted, false otherwise
@@ -281,11 +235,8 @@ class DownloadManagerService {
     // Check if already downloading or completed
     final existing = await _database.getDownloadedMedia(globalKey);
     if (existing != null &&
-        (existing.status == DownloadStatus.downloading.index ||
-            existing.status == DownloadStatus.completed.index)) {
-      appLogger.i(
-        'Download already exists for $globalKey with status ${existing.status}',
-      );
+        (existing.status == DownloadStatus.downloading.index || existing.status == DownloadStatus.completed.index)) {
+      appLogger.i('Download already exists for $globalKey with status ${existing.status}');
       return;
     }
 
@@ -333,9 +284,7 @@ class DownloadManagerService {
       while (true) {
         // Check if we should pause due to cellular
         if (await _shouldBlockDownload()) {
-          appLogger.i(
-            'Pausing downloads - on cellular data with WiFi-only enabled',
-          );
+          appLogger.i('Pausing downloads - on cellular data with WiFi-only enabled');
           break;
         }
 
@@ -356,12 +305,9 @@ class DownloadManagerService {
   /// Setup connectivity listener to auto-resume downloads when WiFi becomes available
   void _setupConnectivityListener() {
     _connectivitySubscription?.cancel();
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
-      results,
-    ) async {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) async {
       // If WiFi becomes available, try to resume queue
-      if (results.contains(ConnectivityResult.wifi) ||
-          results.contains(ConnectivityResult.ethernet)) {
+      if (results.contains(ConnectivityResult.wifi) || results.contains(ConnectivityResult.ethernet)) {
         final hasQueuedItems = await _database.getNextQueueItem() != null;
         if (hasQueuedItems && !_isProcessingQueue && _lastClient != null) {
           appLogger.i('WiFi available - resuming downloads');
@@ -372,11 +318,7 @@ class DownloadManagerService {
   }
 
   /// Start downloading a specific item
-  Future<void> _startDownload(
-    String globalKey,
-    PlexClient client,
-    DownloadQueueItem queueItem,
-  ) async {
+  Future<void> _startDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
     try {
       appLogger.i('Starting download for $globalKey');
 
@@ -390,10 +332,7 @@ class DownloadManagerService {
       final ratingKey = parts[1];
 
       // Get metadata from cache
-      final cachedResponse = await _apiCache.get(
-        serverId,
-        '/library/metadata/$ratingKey',
-      );
+      final cachedResponse = await _apiCache.get(serverId, '/library/metadata/$ratingKey');
       if (cachedResponse == null) {
         throw Exception('Metadata not found in cache for $globalKey');
       }
@@ -403,14 +342,10 @@ class DownloadManagerService {
       if (firstMetadata == null) {
         throw Exception('Invalid cached metadata for $globalKey');
       }
-      final metadata = PlexMetadata.fromJson(
-        firstMetadata,
-      ).copyWith(serverId: serverId);
+      final metadata = PlexMetadata.fromJson(firstMetadata).copyWith(serverId: serverId);
 
       // Get video playback data (includes URL, streams, etc.)
-      final playbackData = await client.getVideoPlaybackData(
-        metadata.ratingKey,
-      );
+      final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
       if (playbackData.videoUrl == null) {
         throw Exception('Could not get video URL');
       }
@@ -426,8 +361,7 @@ class DownloadManagerService {
 
       // For episodes, look up the show's year from cached show metadata
       int? showYear;
-      if (metadataWithServer.type == 'episode' &&
-          metadataWithServer.grandparentRatingKey != null) {
+      if (metadataWithServer.type == 'episode' && metadataWithServer.grandparentRatingKey != null) {
         final showCached = await _apiCache.get(
           serverId,
           '/library/metadata/${metadataWithServer.grandparentRatingKey}',
@@ -452,9 +386,7 @@ class DownloadManagerService {
       if (_storageService.isUsingSaf) {
         // SAF mode: download to temp cache first, then copy to SAF
         final tempFileName = '${globalKey.replaceAll(':', '_')}.$extension';
-        downloadFilePath = await _storageService.getTempDownloadPath(
-          tempFileName,
-        );
+        downloadFilePath = await _storageService.getTempDownloadPath(tempFileName);
 
         // Download to temp path
         await _downloadFile(
@@ -470,22 +402,11 @@ class DownloadManagerService {
         final List<String> pathComponents;
         final String safFileName;
         if (metadataWithServer.type == 'movie') {
-          pathComponents = _storageService.getMovieSafPathComponents(
-            metadataWithServer,
-          );
-          safFileName = _storageService.getMovieSafFileName(
-            metadataWithServer,
-            extension,
-          );
+          pathComponents = _storageService.getMovieSafPathComponents(metadataWithServer);
+          safFileName = _storageService.getMovieSafFileName(metadataWithServer, extension);
         } else if (metadataWithServer.type == 'episode') {
-          pathComponents = _storageService.getEpisodeSafPathComponents(
-            metadataWithServer,
-            showYear: showYear,
-          );
-          safFileName = _storageService.getEpisodeSafFileName(
-            metadataWithServer,
-            extension,
-          );
+          pathComponents = _storageService.getEpisodeSafPathComponents(metadataWithServer, showYear: showYear);
+          safFileName = _storageService.getEpisodeSafFileName(metadataWithServer, extension);
         } else {
           pathComponents = [serverId, metadataWithServer.ratingKey];
           safFileName = 'video.$extension';
@@ -507,10 +428,7 @@ class DownloadManagerService {
       } else {
         // Normal mode: download directly to final path
         if (metadataWithServer.type == 'movie') {
-          downloadFilePath = await _storageService.getMovieVideoPath(
-            metadataWithServer,
-            extension,
-          );
+          downloadFilePath = await _storageService.getMovieVideoPath(metadataWithServer, extension);
         } else if (metadataWithServer.type == 'episode') {
           downloadFilePath = await _storageService.getEpisodeVideoPath(
             metadataWithServer,
@@ -518,11 +436,7 @@ class DownloadManagerService {
             showYear: showYear,
           );
         } else {
-          downloadFilePath = await _storageService.getVideoFilePath(
-            serverId,
-            metadataWithServer.ratingKey,
-            extension,
-          );
+          downloadFilePath = await _storageService.getVideoFilePath(serverId, metadataWithServer.ratingKey, extension);
         }
 
         await _downloadFile(
@@ -544,30 +458,15 @@ class DownloadManagerService {
       // Download artwork if enabled (only episode-specific artwork, not show/season)
       // Use the passed queueItem's settings (not getNextQueueItem which would return the NEXT item)
       if (queueItem.downloadArtwork) {
-        await _downloadArtwork(
-          globalKey,
-          metadataWithServer,
-          client,
-          showYear: showYear,
-        );
+        await _downloadArtwork(globalKey, metadataWithServer, client, showYear: showYear);
 
         // Download chapter thumbnails
-        await _downloadChapterThumbnails(
-          metadataWithServer.serverId!,
-          metadataWithServer.ratingKey,
-          client,
-        );
+        await _downloadChapterThumbnails(metadataWithServer.serverId!, metadataWithServer.ratingKey, client);
       }
 
       // Download subtitles if enabled
       if (queueItem.downloadSubtitles && playbackData.mediaInfo != null) {
-        await _downloadSubtitles(
-          globalKey,
-          metadataWithServer,
-          playbackData.mediaInfo!,
-          client,
-          showYear: showYear,
-        );
+        await _downloadSubtitles(globalKey, metadataWithServer, playbackData.mediaInfo!, client, showYear: showYear);
       }
 
       // Mark as completed
@@ -588,11 +487,7 @@ class DownloadManagerService {
       }
 
       appLogger.e('Download failed for $globalKey', error: e);
-      await _transitionStatus(
-        globalKey,
-        DownloadStatus.failed,
-        errorMessage: e.toString(),
-      );
+      await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: e.toString());
       await _database.updateDownloadError(globalKey, e.toString());
       // Remove from queue to prevent endless retry loop
       await _database.removeFromQueue(globalKey);
@@ -620,19 +515,14 @@ class DownloadManagerService {
         // Calculate speed (update every 500ms)
         final now = DateTime.now();
         if (now.difference(lastUpdate).inMilliseconds >= 500) {
-          final elapsedSeconds = now
-              .difference(lastUpdate)
-              .inSeconds
-              .clamp(1, double.infinity);
+          final elapsedSeconds = now.difference(lastUpdate).inSeconds.clamp(1, double.infinity);
           final bytesPerSecond = (received - lastBytes) / elapsedSeconds;
           lastUpdate = now;
           lastBytes = received;
 
           final progress = total > 0 ? ((received / total) * 100).round() : 0;
 
-          appLogger.d(
-            'Download progress: $progress% ($received/$total bytes) for $globalKey',
-          );
+          appLogger.d('Download progress: $progress% ($received/$total bytes) for $globalKey');
 
           _progressController.add(
             DownloadProgress(
@@ -647,14 +537,9 @@ class DownloadManagerService {
           );
 
           // Update database asynchronously (non-blocking)
-          _database
-              .updateDownloadProgress(globalKey, progress, received, total)
-              .catchError((e) {
-                appLogger.w(
-                  'Failed to update download progress in DB',
-                  error: e,
-                );
-              });
+          _database.updateDownloadProgress(globalKey, progress, received, total).catchError((e) {
+            appLogger.w('Failed to update download progress in DB', error: e);
+          });
         }
       },
     );
@@ -662,21 +547,11 @@ class DownloadManagerService {
 
   /// Download artwork for a media item using hash-based storage
   /// Downloads all artwork types: thumb/poster, clearLogo, and background art
-  Future<void> _downloadArtwork(
-    String globalKey,
-    PlexMetadata metadata,
-    PlexClient client, {
-    int? showYear,
-  }) async {
+  Future<void> _downloadArtwork(String globalKey, PlexMetadata metadata, PlexClient client, {int? showYear}) async {
     if (metadata.serverId == null) return;
 
     try {
-      _emitProgress(
-        globalKey,
-        DownloadStatus.downloading,
-        0,
-        currentFile: 'artwork',
-      );
+      _emitProgress(globalKey, DownloadStatus.downloading, 0, currentFile: 'artwork');
 
       final serverId = metadata.serverId!;
 
@@ -696,10 +571,7 @@ class DownloadManagerService {
       }
 
       // Store thumb reference in database (primary artwork for display)
-      await _database.updateArtworkPaths(
-        globalKey: globalKey,
-        thumbPath: metadata.thumb,
-      );
+      await _database.updateArtworkPaths(globalKey: globalKey, thumbPath: metadata.thumb);
 
       _emitProgressWithArtwork(globalKey, thumbPath: metadata.thumb);
       appLogger.d('Artwork downloaded for $globalKey');
@@ -710,11 +582,7 @@ class DownloadManagerService {
   }
 
   /// Download a single artwork file if it doesn't already exist
-  Future<void> _downloadSingleArtwork(
-    String serverId,
-    String artworkPath,
-    PlexClient client,
-  ) async {
+  Future<void> _downloadSingleArtwork(String serverId, String artworkPath, PlexClient client) async {
     try {
       // Check if already downloaded (deduplication)
       if (await _storageService.artworkExists(serverId, artworkPath)) {
@@ -728,10 +596,7 @@ class DownloadManagerService {
         return;
       }
 
-      final filePath = await _storageService.getArtworkPathFromThumb(
-        serverId,
-        artworkPath,
-      );
+      final filePath = await _storageService.getArtworkPathFromThumb(serverId, artworkPath);
       final file = File(filePath);
 
       // Ensure parent directory exists
@@ -741,21 +606,14 @@ class DownloadManagerService {
       await _dio.download(url, filePath);
       appLogger.i('Downloaded artwork: $artworkPath -> $filePath');
     } catch (e, stack) {
-      appLogger.w(
-        'Failed to download artwork: $artworkPath',
-        error: e,
-        stackTrace: stack,
-      );
+      appLogger.w('Failed to download artwork: $artworkPath', error: e, stackTrace: stack);
       // Don't throw - artwork download failures shouldn't kill the entire download
     }
   }
 
   /// Download all artwork for a metadata item (public method for parent metadata)
   /// Downloads thumb/poster, clearLogo, and background art
-  Future<void> downloadArtworkForMetadata(
-    PlexMetadata metadata,
-    PlexClient client,
-  ) async {
+  Future<void> downloadArtworkForMetadata(PlexMetadata metadata, PlexClient client) async {
     if (metadata.serverId == null) return;
     final serverId = metadata.serverId!;
 
@@ -776,11 +634,7 @@ class DownloadManagerService {
   }
 
   /// Download chapter thumbnail images for a media item
-  Future<void> _downloadChapterThumbnails(
-    String serverId,
-    String ratingKey,
-    PlexClient client,
-  ) async {
+  Future<void> _downloadChapterThumbnails(String serverId, String ratingKey, PlexClient client) async {
     try {
       // Get chapters from the cached API response
       final extras = await client.getPlaybackExtras(ratingKey);
@@ -809,12 +663,7 @@ class DownloadManagerService {
     int? showYear,
   }) async {
     try {
-      _emitProgress(
-        globalKey,
-        DownloadStatus.downloading,
-        0,
-        currentFile: 'subtitles',
-      );
+      _emitProgress(globalKey, DownloadStatus.downloading, 0, currentFile: 'subtitles');
 
       for (final subtitle in mediaInfo.subtitleTracks) {
         // Only download external subtitles
@@ -840,11 +689,7 @@ class DownloadManagerService {
             showYear: showYear,
           );
         } else if (metadata.isMovie) {
-          subtitlePath = await _storageService.getMovieSubtitlePath(
-            metadata,
-            subtitle.id,
-            extension,
-          );
+          subtitlePath = await _storageService.getMovieSubtitlePath(metadata, subtitle.id, extension);
         } else {
           // Fallback to old structure
           subtitlePath = await _storageService.getSubtitlePath(
@@ -902,12 +747,7 @@ class DownloadManagerService {
   /// 2. Emit progress to listeners
   ///
   /// Default progress is 0 for most statuses, 100 for completed.
-  Future<void> _transitionStatus(
-    String globalKey,
-    DownloadStatus status, {
-    int? progress,
-    String? errorMessage,
-  }) async {
+  Future<void> _transitionStatus(String globalKey, DownloadStatus status, {int? progress, String? errorMessage}) async {
     await _database.updateDownloadStatus(globalKey, status.index);
     _emitProgress(
       globalKey,
@@ -1008,12 +848,7 @@ class DownloadManagerService {
 
     // Emit initial progress
     _emitDeletionProgress(
-      DeletionProgress(
-        globalKey: globalKey,
-        itemTitle: metadata.title,
-        currentItem: 0,
-        totalItems: totalItems,
-      ),
+      DeletionProgress(globalKey: globalKey, itemTitle: metadata.title, currentItem: 0, totalItems: totalItems),
     );
 
     // Delete files from storage (with progress updates)
@@ -1042,10 +877,7 @@ class DownloadManagerService {
   }
 
   /// Calculate total items to delete (for progress tracking)
-  Future<int> _getTotalItemsToDelete(
-    PlexMetadata metadata,
-    String serverId,
-  ) async {
+  Future<int> _getTotalItemsToDelete(PlexMetadata metadata, String serverId) async {
     switch (metadata.type.toLowerCase()) {
       case 'episode':
         return 1; // Single episode
@@ -1065,19 +897,14 @@ class DownloadManagerService {
   }
 
   /// Delete media files using metadata to find correct paths
-  Future<void> _deleteMediaFilesWithMetadata(
-    String serverId,
-    String ratingKey,
-  ) async {
+  Future<void> _deleteMediaFilesWithMetadata(String serverId, String ratingKey) async {
     try {
       // Get metadata from API cache
       final metadata = await _getMetadataFromCache(serverId, ratingKey);
 
       if (metadata == null) {
         // Fallback: Try database record
-        final downloadRecord = await _database.getDownloadedMedia(
-          '$serverId:$ratingKey',
-        );
+        final downloadRecord = await _database.getDownloadedMedia('$serverId:$ratingKey');
         if (downloadRecord?.videoFilePath != null) {
           await _deleteByFilePath(downloadRecord!);
           return;
@@ -1109,14 +936,8 @@ class DownloadManagerService {
   }
 
   /// Get metadata from API cache
-  Future<PlexMetadata?> _getMetadataFromCache(
-    String serverId,
-    String ratingKey,
-  ) async {
-    final cachedData = await _apiCache.get(
-      serverId,
-      '/library/metadata/$ratingKey',
-    );
+  Future<PlexMetadata?> _getMetadataFromCache(String serverId, String ratingKey) async {
+    final cachedData = await _apiCache.get(serverId, '/library/metadata/$ratingKey');
     final metadataJson = PlexCacheParser.extractFirstMetadata(cachedData);
     if (metadataJson != null) {
       return PlexMetadata.fromJson(metadataJson).copyWith(serverId: serverId);
@@ -1125,15 +946,9 @@ class DownloadManagerService {
   }
 
   /// Get chapter thumb paths from cached metadata
-  Future<List<String>> _getChapterThumbPaths(
-    String serverId,
-    String ratingKey,
-  ) async {
+  Future<List<String>> _getChapterThumbPaths(String serverId, String ratingKey) async {
     try {
-      final cachedData = await _apiCache.get(
-        serverId,
-        '/library/metadata/$ratingKey',
-      );
+      final cachedData = await _apiCache.get(serverId, '/library/metadata/$ratingKey');
       final chapters = PlexCacheParser.extractChapters(cachedData);
       if (chapters == null) return [];
 
@@ -1149,11 +964,7 @@ class DownloadManagerService {
   }
 
   /// Check if a chapter thumbnail is used by any other downloaded items
-  Future<bool> _isChapterThumbnailInUse(
-    String serverId,
-    String thumbPath,
-    String excludeRatingKey,
-  ) async {
+  Future<bool> _isChapterThumbnailInUse(String serverId, String thumbPath, String excludeRatingKey) async {
     try {
       // Get all downloaded items
       final allItems = await _database.select(_database.downloadedMedia).get();
@@ -1166,10 +977,7 @@ class DownloadManagerService {
         }
 
         // Get chapter thumb paths for this item
-        final itemChapterPaths = await _getChapterThumbPaths(
-          serverId,
-          item.ratingKey,
-        );
+        final itemChapterPaths = await _getChapterThumbPaths(serverId, item.ratingKey);
 
         // Check if this item has the same thumb path
         if (itemChapterPaths.contains(thumbPath)) {
@@ -1179,20 +987,14 @@ class DownloadManagerService {
 
       return false; // Thumbnail is not in use
     } catch (e) {
-      appLogger.w(
-        'Error checking chapter thumbnail usage: $thumbPath',
-        error: e,
-      );
+      appLogger.w('Error checking chapter thumbnail usage: $thumbPath', error: e);
       // On error, assume in use to be safe (don't delete)
       return true;
     }
   }
 
   /// Delete chapter thumbnails for a media item (with reference counting)
-  Future<void> _deleteChapterThumbnails(
-    String serverId,
-    String ratingKey,
-  ) async {
+  Future<void> _deleteChapterThumbnails(String serverId, String ratingKey) async {
     try {
       final thumbPaths = await _getChapterThumbPaths(serverId, ratingKey);
 
@@ -1207,11 +1009,7 @@ class DownloadManagerService {
       for (final thumbPath in thumbPaths) {
         try {
           // Check if this thumbnail is used by other items
-          final inUse = await _isChapterThumbnailInUse(
-            serverId,
-            thumbPath,
-            ratingKey,
-          );
+          final inUse = await _isChapterThumbnailInUse(serverId, thumbPath, ratingKey);
 
           if (inUse) {
             appLogger.d('Preserving chapter thumbnail (in use): $thumbPath');
@@ -1220,45 +1018,27 @@ class DownloadManagerService {
           }
 
           // Get artwork file path and delete
-          final artworkPath = await _storageService.getArtworkPathFromThumb(
-            serverId,
-            thumbPath,
-          );
-          if (await _deleteFileIfExists(
-            File(artworkPath),
-            'chapter thumbnail',
-          )) {
+          final artworkPath = await _storageService.getArtworkPathFromThumb(serverId, thumbPath);
+          if (await _deleteFileIfExists(File(artworkPath), 'chapter thumbnail')) {
             deletedCount++;
           }
         } catch (e) {
-          appLogger.w(
-            'Failed to delete chapter thumbnail: $thumbPath',
-            error: e,
-          );
+          appLogger.w('Failed to delete chapter thumbnail: $thumbPath', error: e);
           // Continue with other chapters even if one fails
         }
       }
 
       if (deletedCount > 0 || preservedCount > 0) {
-        appLogger.i(
-          'Deleted $deletedCount of ${thumbPaths.length} chapter thumbnails ($preservedCount preserved)',
-        );
+        appLogger.i('Deleted $deletedCount of ${thumbPaths.length} chapter thumbnails ($preservedCount preserved)');
       }
     } catch (e, stack) {
-      appLogger.w(
-        'Error deleting chapter thumbnails for $ratingKey',
-        error: e,
-        stackTrace: stack,
-      );
+      appLogger.w('Error deleting chapter thumbnails for $ratingKey', error: e, stackTrace: stack);
       // Don't throw - chapter deletion shouldn't block main deletion
     }
   }
 
   /// Delete episode files
-  Future<void> _deleteEpisodeFiles(
-    PlexMetadata episode,
-    String serverId,
-  ) async {
+  Future<void> _deleteEpisodeFiles(PlexMetadata episode, String serverId) async {
     try {
       final parentMetadata = episode.grandparentRatingKey != null
           ? await _getMetadataFromCache(serverId, episode.grandparentRatingKey!)
@@ -1266,34 +1046,19 @@ class DownloadManagerService {
       final showYear = parentMetadata?.year;
 
       // Delete video file
-      final videoPathTemplate = await _storageService.getEpisodeVideoPath(
-        episode,
-        'tmp',
-        showYear: showYear,
-      );
-      final videoPathWithoutExt = videoPathTemplate.substring(
-        0,
-        videoPathTemplate.lastIndexOf('.'),
-      );
-      final actualVideoFile = await _findFileWithAnyExtension(
-        videoPathWithoutExt,
-      );
+      final videoPathTemplate = await _storageService.getEpisodeVideoPath(episode, 'tmp', showYear: showYear);
+      final videoPathWithoutExt = videoPathTemplate.substring(0, videoPathTemplate.lastIndexOf('.'));
+      final actualVideoFile = await _findFileWithAnyExtension(videoPathWithoutExt);
       if (actualVideoFile != null) {
         await _deleteFileIfExists(actualVideoFile, 'episode video');
       }
 
       // Delete thumbnail
-      final thumbPath = await _storageService.getEpisodeThumbnailPath(
-        episode,
-        showYear: showYear,
-      );
+      final thumbPath = await _storageService.getEpisodeThumbnailPath(episode, showYear: showYear);
       await _deleteFileIfExists(File(thumbPath), 'episode thumbnail');
 
       // Delete subtitles directory
-      final subsDir = await _storageService.getEpisodeSubtitlesDirectory(
-        episode,
-        showYear: showYear,
-      );
+      final subsDir = await _storageService.getEpisodeSubtitlesDirectory(episode, showYear: showYear);
       if (await subsDir.exists()) {
         await subsDir.delete(recursive: true);
         appLogger.i('Deleted episode subtitles: ${subsDir.path}');
@@ -1318,12 +1083,9 @@ class DownloadManagerService {
       final showYear = parentMetadata?.year;
 
       // Get all episodes in this season
-      final episodesInSeason =
-          await _database.getEpisodesBySeason(season.ratingKey);
+      final episodesInSeason = await _database.getEpisodesBySeason(season.ratingKey);
 
-      appLogger.d(
-        'Deleting ${episodesInSeason.length} episodes in season ${season.ratingKey}',
-      );
+      appLogger.d('Deleting ${episodesInSeason.length} episodes in season ${season.ratingKey}');
       await _deleteEpisodesInCollection(
         episodes: episodesInSeason,
         serverId: serverId,
@@ -1331,10 +1093,7 @@ class DownloadManagerService {
         parentTitle: season.title,
       );
 
-      final seasonDir = await _storageService.getSeasonDirectory(
-        season,
-        showYear: showYear,
-      );
+      final seasonDir = await _storageService.getSeasonDirectory(season, showYear: showYear);
       if (await seasonDir.exists()) {
         await seasonDir.delete(recursive: true);
         appLogger.i('Deleted season directory: ${seasonDir.path}');
@@ -1365,8 +1124,7 @@ class DownloadManagerService {
           itemTitle: parentTitle,
           currentItem: i + 1,
           totalItems: episodes.length,
-          currentOperation:
-              'Deleting episode ${i + 1} of ${episodes.length}',
+          currentOperation: 'Deleting episode ${i + 1} of ${episodes.length}',
         ),
       );
 
@@ -1390,9 +1148,7 @@ class DownloadManagerService {
       // Get all episodes in this show
       final episodesInShow = await _database.getEpisodesByShow(show.ratingKey);
 
-      appLogger.d(
-        'Deleting ${episodesInShow.length} episodes in show ${show.ratingKey}',
-      );
+      appLogger.d('Deleting ${episodesInShow.length} episodes in show ${show.ratingKey}');
       await _deleteEpisodesInCollection(
         episodes: episodesInShow,
         serverId: serverId,
@@ -1427,14 +1183,8 @@ class DownloadManagerService {
   }
 
   /// Clean up empty directories after deleting episode
-  Future<void> _cleanupEmptyDirectories(
-    PlexMetadata episode,
-    int? showYear,
-  ) async {
-    final seasonDir = await _storageService.getSeasonDirectory(
-      episode,
-      showYear: showYear,
-    );
+  Future<void> _cleanupEmptyDirectories(PlexMetadata episode, int? showYear) async {
+    final seasonDir = await _storageService.getSeasonDirectory(episode, showYear: showYear);
 
     if (await seasonDir.exists()) {
       final contents = await seasonDir.list().toList();
@@ -1459,20 +1209,12 @@ class DownloadManagerService {
   }
 
   /// Clean up show directory if empty
-  Future<void> _cleanupShowDirectory(
-    PlexMetadata metadata,
-    int? showYear,
-  ) async {
-    final showDir = await _storageService.getShowDirectory(
-      metadata,
-      showYear: showYear,
-    );
+  Future<void> _cleanupShowDirectory(PlexMetadata metadata, int? showYear) async {
+    final showDir = await _storageService.getShowDirectory(metadata, showYear: showYear);
 
     if (await showDir.exists()) {
       final contents = await showDir.list().toList();
-      final hasSeasons = contents.any(
-        (e) => e is Directory && e.path.contains('Season '),
-      );
+      final hasSeasons = contents.any((e) => e is Directory && e.path.contains('Season '));
 
       if (!hasSeasons) {
         if (!await _isShowArtworkInUse(metadata, showYear)) {
@@ -1484,35 +1226,26 @@ class DownloadManagerService {
   }
 
   /// Check if season artwork is in use
-  Future<bool> _isSeasonArtworkInUse(
-    PlexMetadata episode,
-    int? showYear,
-  ) async {
+  Future<bool> _isSeasonArtworkInUse(PlexMetadata episode, int? showYear) async {
     final seasonKey = episode.parentRatingKey;
     if (seasonKey == null) return false;
 
     final otherEpisodes = await _database.getEpisodesBySeason(seasonKey);
 
     // Check if any episodes besides this one
-    return otherEpisodes.any(
-      (e) => e.globalKey != '${episode.serverId}:${episode.ratingKey}',
-    );
+    return otherEpisodes.any((e) => e.globalKey != '${episode.serverId}:${episode.ratingKey}');
   }
 
   /// Check if show artwork is in use
   Future<bool> _isShowArtworkInUse(PlexMetadata metadata, int? showYear) async {
-    final showKey =
-        metadata.grandparentRatingKey ??
-        metadata.parentRatingKey ??
-        metadata.ratingKey;
+    final showKey = metadata.grandparentRatingKey ?? metadata.parentRatingKey ?? metadata.ratingKey;
 
     final allItems = await _database.select(_database.downloadedMedia).get();
 
     // Check if any items belong to this show besides this one
     return allItems.any(
       (item) =>
-          (item.grandparentRatingKey == showKey ||
-              item.parentRatingKey == showKey) &&
+          (item.grandparentRatingKey == showKey || item.parentRatingKey == showKey) &&
           item.globalKey != '${metadata.serverId}:${metadata.ratingKey}',
     );
   }
@@ -1527,10 +1260,7 @@ class DownloadManagerService {
     try {
       final files = await dir
           .list()
-          .where(
-            (e) =>
-                e is File && path.basenameWithoutExtension(e.path) == baseName,
-          )
+          .where((e) => e is File && path.basenameWithoutExtension(e.path) == baseName)
           .toList();
 
       return files.isNotEmpty ? files.first as File : null;
@@ -1544,11 +1274,8 @@ class DownloadManagerService {
   Future<void> _deleteByFilePath(DownloadedMediaItem record) async {
     try {
       if (record.videoFilePath != null) {
-        final videoPath = await _storageService.toAbsolutePath(
-          record.videoFilePath!,
-        );
-        final videoDeleted =
-            await _deleteFileIfExists(File(videoPath), 'video file');
+        final videoPath = await _storageService.toAbsolutePath(record.videoFilePath!);
+        final videoDeleted = await _deleteFileIfExists(File(videoPath), 'video file');
 
         // Delete subtitle directory if video was deleted
         if (videoDeleted) {
@@ -1562,9 +1289,7 @@ class DownloadManagerService {
       }
 
       if (record.thumbPath != null) {
-        final thumbPath = await _storageService.toAbsolutePath(
-          record.thumbPath!,
-        );
+        final thumbPath = await _storageService.toAbsolutePath(record.thumbPath!);
         await _deleteFileIfExists(File(thumbPath), 'thumbnail');
       }
     } catch (e, stack) {
@@ -1573,12 +1298,8 @@ class DownloadManagerService {
   }
 
   /// Get all downloads with a specific status
-  Stream<List<DownloadedMediaItem>> watchDownloadsByStatus(
-    DownloadStatus status,
-  ) {
-    return (_database.select(
-      _database.downloadedMedia,
-    )..where((t) => t.status.equals(status.index))).watch();
+  Stream<List<DownloadedMediaItem>> watchDownloadsByStatus(DownloadStatus status) {
+    return (_database.select(_database.downloadedMedia)..where((t) => t.status.equals(status.index))).watch();
   }
 
   /// Get all downloaded media items (for loading persisted data)
@@ -1600,20 +1321,12 @@ class DownloadManagerService {
     }
 
     // Cache to API cache for offline use
-    await _cacheMetadataForOffline(
-      metadata.serverId!,
-      metadata.ratingKey,
-      metadata,
-    );
+    await _cacheMetadataForOffline(metadata.serverId!, metadata.ratingKey, metadata);
   }
 
   /// Cache metadata in the API response format for offline access
   /// This simulates what PlexClient would receive from the server
-  Future<void> _cacheMetadataForOffline(
-    String serverId,
-    String ratingKey,
-    PlexMetadata metadata,
-  ) async {
+  Future<void> _cacheMetadataForOffline(String serverId, String ratingKey, PlexMetadata metadata) async {
     final endpoint = '/library/metadata/$ratingKey';
 
     // Build a response structure that matches the Plex API format
@@ -1628,11 +1341,7 @@ class DownloadManagerService {
   }
 
   /// Cache children (seasons or episodes) in the API response format
-  Future<void> cacheChildrenForOffline(
-    String serverId,
-    String parentRatingKey,
-    List<PlexMetadata> children,
-  ) async {
+  Future<void> cacheChildrenForOffline(String serverId, String parentRatingKey, List<PlexMetadata> children) async {
     final endpoint = '/library/metadata/$parentRatingKey/children';
 
     // Build a response structure that matches the Plex API format

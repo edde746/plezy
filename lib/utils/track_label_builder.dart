@@ -33,12 +33,7 @@ class TrackLabelBuilder {
   /// Build a label for a subtitle track.
   ///
   /// Combines title, language, and codec (with friendly codec names).
-  static String buildSubtitleLabel({
-    String? title,
-    String? language,
-    String? codec,
-    required int index,
-  }) {
+  static String buildSubtitleLabel({String? title, String? language, String? codec, required int index}) {
     final parts = <String>[];
     if (title != null && title.isNotEmpty) {
       parts.add(title);

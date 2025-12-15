@@ -77,12 +77,8 @@ class SleepTimerService extends ChangeNotifier {
   void extendTimer(Duration additionalTime) {
     if (_endTime != null) {
       _endTime = _endTime!.add(additionalTime);
-      _duration = _duration != null
-          ? _duration! + additionalTime
-          : additionalTime;
-      appLogger.d(
-        'Sleep timer extended by ${additionalTime.inMinutes} minutes',
-      );
+      _duration = _duration != null ? _duration! + additionalTime : additionalTime;
+      appLogger.d('Sleep timer extended by ${additionalTime.inMinutes} minutes');
       notifyListeners();
     }
   }

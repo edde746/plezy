@@ -58,9 +58,7 @@ class MultiServerProvider extends ChangeNotifier {
       appLogger.d('MultiServerProvider: Token updated for server $serverId');
       notifyListeners();
     } else {
-      appLogger.w(
-        'MultiServerProvider: Cannot update token - server $serverId not found',
-      );
+      appLogger.w('MultiServerProvider: Cannot update token - server $serverId not found');
     }
   }
 
@@ -74,26 +72,16 @@ class MultiServerProvider extends ChangeNotifier {
 
   /// Reconnect all servers after a profile switch
   /// Clears existing connections and connects to all provided servers
-  Future<int> reconnectWithServers(
-    List<PlexServer> servers, {
-    String? clientIdentifier,
-  }) async {
+  Future<int> reconnectWithServers(List<PlexServer> servers, {String? clientIdentifier}) async {
     // Clear existing connections first
     _serverManager.disconnectAll();
     _aggregationService.clearCache(); // Clear cached data when servers change
-    appLogger.d(
-      'MultiServerProvider: Cleared connections, reconnecting to ${servers.length} servers',
-    );
+    appLogger.d('MultiServerProvider: Cleared connections, reconnecting to ${servers.length} servers');
 
     // Connect with new server tokens
-    final connectedCount = await _serverManager.connectToAllServers(
-      servers,
-      clientIdentifier: clientIdentifier,
-    );
+    final connectedCount = await _serverManager.connectToAllServers(servers, clientIdentifier: clientIdentifier);
 
-    appLogger.i(
-      'MultiServerProvider: Reconnected to $connectedCount/${servers.length} servers after profile switch',
-    );
+    appLogger.i('MultiServerProvider: Reconnected to $connectedCount/${servers.length} servers after profile switch');
     notifyListeners();
     return connectedCount;
   }

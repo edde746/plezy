@@ -8,9 +8,7 @@ void seekWithClamping(Player player, Duration offset) {
   final newPosition = currentPosition + offset;
 
   // Clamp between 0 and video duration
-  final clampedPosition = newPosition.isNegative
-      ? Duration.zero
-      : (newPosition > duration ? duration : newPosition);
+  final clampedPosition = newPosition.isNegative ? Duration.zero : (newPosition > duration ? duration : newPosition);
 
   player.seek(clampedPosition);
 }

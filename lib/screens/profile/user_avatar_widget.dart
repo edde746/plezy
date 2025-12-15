@@ -26,16 +26,8 @@ class UserAvatarWidget extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        shape: BoxShape.circle,
-      ),
-      child: AppIcon(
-        Symbols.person_rounded,
-        fill: 1,
-        size: size * 0.6,
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
+      decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, shape: BoxShape.circle),
+      child: AppIcon(Symbols.person_rounded, fill: 1, size: size * 0.6, color: theme.colorScheme.onSurfaceVariant),
     );
   }
 
@@ -55,8 +47,7 @@ class UserAvatarWidget extends StatelessWidget {
     double sizeRatio = 0.3,
   }) {
     final badgeSize = size * sizeRatio;
-    final iconSize =
-        size * (sizeRatio * 0.67); // Approximately 2/3 of badge size
+    final iconSize = size * (sizeRatio * 0.67); // Approximately 2/3 of badge size
 
     return Positioned(
       top: position == 'topRight' ? 0 : null,
@@ -68,10 +59,7 @@ class UserAvatarWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Theme.of(context).colorScheme.surface,
-            width: 1,
-          ),
+          border: Border.all(color: Theme.of(context).colorScheme.surface, width: 1),
         ),
         child: AppIcon(icon, fill: 1, size: iconSize, color: iconColor),
       ),
@@ -91,16 +79,10 @@ class UserAvatarWidget extends StatelessWidget {
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-      ),
+      decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(tokens(context).radiusSm)),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: textColor, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -147,12 +129,7 @@ class UserAvatarWidget extends StatelessWidget {
 
     return [
       const SizedBox(height: 4),
-      Wrap(
-        spacing: 4,
-        runSpacing: 2,
-        alignment: WrapAlignment.center,
-        children: labels,
-      ),
+      Wrap(spacing: 4, runSpacing: 2, alignment: WrapAlignment.center, children: labels),
     ];
   }
 
@@ -222,10 +199,7 @@ class UserAvatarWidget extends StatelessWidget {
         onTap: onTap,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildAvatar(context, theme),
-            ..._buildTextLabels(context, theme),
-          ],
+          children: [_buildAvatar(context, theme), ..._buildTextLabels(context, theme)],
         ),
       );
     } else {
@@ -237,7 +211,5 @@ class UserAvatarWidget extends StatelessWidget {
 
 // Extension to add warning color to ColorScheme if not available
 extension ColorSchemeExtension on ColorScheme {
-  Color? get warning => brightness == Brightness.light
-      ? Colors.orange.shade600
-      : Colors.orange.shade400;
+  Color? get warning => brightness == Brightness.light ? Colors.orange.shade600 : Colors.orange.shade400;
 }

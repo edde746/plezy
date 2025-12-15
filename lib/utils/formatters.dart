@@ -152,8 +152,7 @@ DurationLocale _getDurationLocale() {
   // The duration package supports many languages, but we'll focus on the ones
   // that our app supports: en, de, it, nl, sv, zh
   try {
-    return DurationLocale.fromLanguageCode(languageCode) ??
-        const EnglishDurationLocale();
+    return DurationLocale.fromLanguageCode(languageCode) ?? const EnglishDurationLocale();
   } catch (e) {
     // Fallback to English if language code is not supported
     return const EnglishDurationLocale();

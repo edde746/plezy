@@ -9,11 +9,7 @@ class FileInfoBottomSheet extends StatefulWidget {
   final PlexFileInfo fileInfo;
   final String title;
 
-  const FileInfoBottomSheet({
-    super.key,
-    required this.fileInfo,
-    required this.title,
-  });
+  const FileInfoBottomSheet({super.key, required this.fileInfo, required this.title});
 
   @override
   State<FileInfoBottomSheet> createState() => _FileInfoBottomSheetState();
@@ -25,9 +21,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
   @override
   void initState() {
     super.initState();
-    _initialFocusNode = FocusNode(
-      debugLabel: 'FileInfoBottomSheetInitialFocus',
-    );
+    _initialFocusNode = FocusNode(debugLabel: 'FileInfoBottomSheetInitialFocus');
   }
 
   @override
@@ -43,10 +37,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.grey[900],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(16),
-          ),
+          borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
         ),
         child: SafeArea(
           child: SizedBox(
@@ -70,11 +61,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                       if (widget.title.isNotEmpty) ...[
                         Text(
                           widget.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(height: 20),
                       ],
@@ -82,97 +69,42 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                       // Video Section
                       _buildSectionHeader(t.fileInfo.video),
                       const SizedBox(height: 8),
-                      _buildInfoRow(
-                        t.fileInfo.codec,
-                        widget.fileInfo.videoCodec ?? t.common.unknown,
-                      ),
-                      _buildInfoRow(
-                        t.fileInfo.resolution,
-                        widget.fileInfo.resolutionFormatted,
-                      ),
-                      _buildInfoRow(
-                        t.fileInfo.bitrate,
-                        widget.fileInfo.bitrateFormatted,
-                      ),
-                      _buildInfoRow(
-                        t.fileInfo.frameRate,
-                        widget.fileInfo.frameRateFormatted,
-                      ),
-                      _buildInfoRow(
-                        t.fileInfo.aspectRatio,
-                        widget.fileInfo.aspectRatioFormatted,
-                      ),
+                      _buildInfoRow(t.fileInfo.codec, widget.fileInfo.videoCodec ?? t.common.unknown),
+                      _buildInfoRow(t.fileInfo.resolution, widget.fileInfo.resolutionFormatted),
+                      _buildInfoRow(t.fileInfo.bitrate, widget.fileInfo.bitrateFormatted),
+                      _buildInfoRow(t.fileInfo.frameRate, widget.fileInfo.frameRateFormatted),
+                      _buildInfoRow(t.fileInfo.aspectRatio, widget.fileInfo.aspectRatioFormatted),
                       if (widget.fileInfo.videoProfile != null)
-                        _buildInfoRow(
-                          t.fileInfo.profile,
-                          widget.fileInfo.videoProfile!,
-                        ),
+                        _buildInfoRow(t.fileInfo.profile, widget.fileInfo.videoProfile!),
                       if (widget.fileInfo.bitDepth != null)
-                        _buildInfoRow(
-                          t.fileInfo.bitDepth,
-                          '${widget.fileInfo.bitDepth} bit',
-                        ),
+                        _buildInfoRow(t.fileInfo.bitDepth, '${widget.fileInfo.bitDepth} bit'),
                       if (widget.fileInfo.colorSpace != null)
-                        _buildInfoRow(
-                          t.fileInfo.colorSpace,
-                          widget.fileInfo.colorSpace!,
-                        ),
+                        _buildInfoRow(t.fileInfo.colorSpace, widget.fileInfo.colorSpace!),
                       if (widget.fileInfo.colorRange != null)
-                        _buildInfoRow(
-                          t.fileInfo.colorRange,
-                          widget.fileInfo.colorRange!,
-                        ),
+                        _buildInfoRow(t.fileInfo.colorRange, widget.fileInfo.colorRange!),
                       if (widget.fileInfo.colorPrimaries != null)
-                        _buildInfoRow(
-                          t.fileInfo.colorPrimaries,
-                          widget.fileInfo.colorPrimaries!,
-                        ),
+                        _buildInfoRow(t.fileInfo.colorPrimaries, widget.fileInfo.colorPrimaries!),
                       if (widget.fileInfo.chromaSubsampling != null)
-                        _buildInfoRow(
-                          t.fileInfo.chromaSubsampling,
-                          widget.fileInfo.chromaSubsampling!,
-                        ),
+                        _buildInfoRow(t.fileInfo.chromaSubsampling, widget.fileInfo.chromaSubsampling!),
                       const SizedBox(height: 20),
 
                       // Audio Section
                       _buildSectionHeader(t.fileInfo.audio),
                       const SizedBox(height: 8),
-                      _buildInfoRow(
-                        t.fileInfo.codec,
-                        widget.fileInfo.audioCodec ?? t.common.unknown,
-                      ),
-                      _buildInfoRow(
-                        t.fileInfo.channels,
-                        widget.fileInfo.audioChannelsFormatted,
-                      ),
+                      _buildInfoRow(t.fileInfo.codec, widget.fileInfo.audioCodec ?? t.common.unknown),
+                      _buildInfoRow(t.fileInfo.channels, widget.fileInfo.audioChannelsFormatted),
                       if (widget.fileInfo.audioProfile != null)
-                        _buildInfoRow(
-                          t.fileInfo.profile,
-                          widget.fileInfo.audioProfile!,
-                        ),
+                        _buildInfoRow(t.fileInfo.profile, widget.fileInfo.audioProfile!),
                       const SizedBox(height: 20),
 
                       // File Section
                       _buildSectionHeader(t.fileInfo.file),
                       const SizedBox(height: 8),
                       if (widget.fileInfo.filePath != null)
-                        _buildInfoRow(
-                          t.fileInfo.path,
-                          widget.fileInfo.filePath!,
-                          isMonospace: true,
-                        ),
-                      _buildInfoRow(
-                        t.fileInfo.size,
-                        widget.fileInfo.fileSizeFormatted,
-                      ),
-                      _buildInfoRow(
-                        t.fileInfo.container,
-                        widget.fileInfo.container ?? t.common.unknown,
-                      ),
-                      _buildInfoRow(
-                        t.fileInfo.duration,
-                        widget.fileInfo.durationFormatted,
-                      ),
+                        _buildInfoRow(t.fileInfo.path, widget.fileInfo.filePath!, isMonospace: true),
+                      _buildInfoRow(t.fileInfo.size, widget.fileInfo.fileSizeFormatted),
+                      _buildInfoRow(t.fileInfo.container, widget.fileInfo.container ?? t.common.unknown),
+                      _buildInfoRow(t.fileInfo.duration, widget.fileInfo.durationFormatted),
                       const SizedBox(height: 20),
 
                       // Advanced Section
@@ -180,15 +112,11 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                       const SizedBox(height: 8),
                       _buildInfoRow(
                         t.fileInfo.optimizedForStreaming,
-                        widget.fileInfo.optimizedForStreaming == true
-                            ? t.common.yes
-                            : t.common.no,
+                        widget.fileInfo.optimizedForStreaming == true ? t.common.yes : t.common.no,
                       ),
                       _buildInfoRow(
                         t.fileInfo.has64bitOffsets,
-                        widget.fileInfo.has64bitOffsets == true
-                            ? t.common.yes
-                            : t.common.no,
+                        widget.fileInfo.has64bitOffsets == true ? t.common.yes : t.common.no,
                       ),
                     ],
                   ),
@@ -204,11 +132,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
+      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
     );
   }
 
@@ -220,19 +144,12 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
         children: [
           SizedBox(
             width: 140,
-            child: Text(
-              label,
-              style: TextStyle(color: Colors.grey[400], fontSize: 14),
-            ),
+            child: Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 14)),
           ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontFamily: isMonospace ? 'monospace' : null,
-              ),
+              style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: isMonospace ? 'monospace' : null),
             ),
           ),
         ],

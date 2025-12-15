@@ -25,10 +25,8 @@ class DownloadQueue extends Table {
   TextColumn get mediaGlobalKey => text().unique()();
   IntColumn get priority => integer().withDefault(const Constant(0))();
   IntColumn get addedAt => integer()();
-  BoolColumn get downloadSubtitles =>
-      boolean().withDefault(const Constant(true))();
-  BoolColumn get downloadArtwork =>
-      boolean().withDefault(const Constant(true))();
+  BoolColumn get downloadSubtitles => boolean().withDefault(const Constant(true))();
+  BoolColumn get downloadArtwork => boolean().withDefault(const Constant(true))();
 }
 
 @DataClassName('DownloadedMediaItem')
@@ -80,8 +78,7 @@ class OfflineWatchProgress extends Table {
 
   /// Whether this item should be marked as watched (for progress sync)
   /// Auto-set to true when viewOffset >= 90% of duration
-  BoolColumn get shouldMarkWatched =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get shouldMarkWatched => boolean().withDefault(const Constant(false))();
 
   /// Timestamp when this action was recorded (milliseconds since epoch)
   IntColumn get createdAt => integer()();

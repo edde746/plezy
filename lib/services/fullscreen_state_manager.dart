@@ -4,8 +4,7 @@ import 'package:window_manager/window_manager.dart';
 
 /// Global manager for tracking fullscreen state across the app
 class FullscreenStateManager extends ChangeNotifier with WindowListener {
-  static final FullscreenStateManager _instance =
-      FullscreenStateManager._internal();
+  static final FullscreenStateManager _instance = FullscreenStateManager._internal();
 
   factory FullscreenStateManager() => _instance;
 

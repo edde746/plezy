@@ -11,8 +11,10 @@ import 'video_player_navigation.dart';
 enum MediaNavigationResult {
   /// Navigation completed successfully
   navigated,
+
   /// Navigation completed, parent list should be refreshed (e.g., collection deleted)
   listRefreshNeeded,
+
   /// Item type not supported (e.g., music content)
   unsupported,
 }
@@ -43,12 +45,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
 }) async {
   // Handle playlists
   if (item is PlexPlaylist) {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PlaylistDetailScreen(playlist: item),
-      ),
-    );
+    await Navigator.push(context, MaterialPageRoute(builder: (context) => PlaylistDetailScreen(playlist: item)));
     return MediaNavigationResult.navigated;
   }
 
@@ -58,9 +55,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
     case PlexMediaType.collection:
       final result = await Navigator.push<bool>(
         context,
-        MaterialPageRoute(
-          builder: (context) => CollectionDetailScreen(collection: metadata),
-        ),
+        MaterialPageRoute(builder: (context) => CollectionDetailScreen(collection: metadata)),
       );
       // If collection was deleted, signal that list refresh is needed
       if (result == true) {
@@ -76,23 +71,14 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
     case PlexMediaType.episode:
       // For episodes, start playback directly
-      final result = await navigateToVideoPlayer(
-        context,
-        metadata: metadata,
-        isOffline: isOffline,
-      );
+      final result = await navigateToVideoPlayer(context, metadata: metadata, isOffline: isOffline);
       if (result == true) {
         onRefresh?.call(metadata.ratingKey);
       }
       return MediaNavigationResult.navigated;
 
     case PlexMediaType.season:
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SeasonDetailScreen(season: metadata),
-        ),
-      );
+      await Navigator.push(context, MaterialPageRoute(builder: (context) => SeasonDetailScreen(season: metadata)));
       onRefresh?.call(metadata.ratingKey);
       return MediaNavigationResult.navigated;
 
@@ -101,10 +87,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => MediaDetailScreen(
-            metadata: metadata,
-            isOffline: isOffline,
-          ),
+          builder: (context) => MediaDetailScreen(metadata: metadata, isOffline: isOffline),
         ),
       );
       if (result == true) {

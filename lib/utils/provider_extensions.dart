@@ -12,23 +12,17 @@ import '../providers/user_profile_provider.dart';
 import 'app_logger.dart';
 
 extension ProviderExtensions on BuildContext {
-  PlexClientProvider get plexClient =>
-      Provider.of<PlexClientProvider>(this, listen: false);
+  PlexClientProvider get plexClient => Provider.of<PlexClientProvider>(this, listen: false);
 
-  UserProfileProvider get userProfile =>
-      Provider.of<UserProfileProvider>(this, listen: false);
+  UserProfileProvider get userProfile => Provider.of<UserProfileProvider>(this, listen: false);
 
-  PlexClientProvider watchPlexClient() =>
-      Provider.of<PlexClientProvider>(this, listen: true);
+  PlexClientProvider watchPlexClient() => Provider.of<PlexClientProvider>(this, listen: true);
 
-  UserProfileProvider watchUserProfile() =>
-      Provider.of<UserProfileProvider>(this, listen: true);
+  UserProfileProvider watchUserProfile() => Provider.of<UserProfileProvider>(this, listen: true);
 
-  HiddenLibrariesProvider get hiddenLibraries =>
-      Provider.of<HiddenLibrariesProvider>(this, listen: false);
+  HiddenLibrariesProvider get hiddenLibraries => Provider.of<HiddenLibrariesProvider>(this, listen: false);
 
-  HiddenLibrariesProvider watchHiddenLibraries() =>
-      Provider.of<HiddenLibrariesProvider>(this, listen: true);
+  HiddenLibrariesProvider watchHiddenLibraries() => Provider.of<HiddenLibrariesProvider>(this, listen: true);
 
   // Direct profile settings access (nullable)
   PlexUserProfile? get profileSettings => userProfile.profileSettings;
@@ -36,10 +30,7 @@ extension ProviderExtensions on BuildContext {
   /// Get PlexClient for a specific server ID
   /// Throws an exception if no client is available for the given serverId
   PlexClient getClientForServer(String serverId) {
-    final multiServerProvider = Provider.of<MultiServerProvider>(
-      this,
-      listen: false,
-    );
+    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
 
     final serverClient = multiServerProvider.getClientForServer(serverId);
 
@@ -56,10 +47,7 @@ extension ProviderExtensions on BuildContext {
   PlexClient getClientForLibrary(PlexLibrary library) {
     // If library doesn't have a serverId, fall back to first available server
     if (library.serverId == null) {
-      final multiServerProvider = Provider.of<MultiServerProvider>(
-        this,
-        listen: false,
-      );
+      final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
       if (!multiServerProvider.hasConnectedServers) {
         throw Exception(t.errors.noClientAvailable);
       }
@@ -79,10 +67,7 @@ extension ProviderExtensions on BuildContext {
 
   /// Get PlexClient for metadata, or null if offline mode or no serverId
   /// Use this for screens that support offline mode
-  PlexClient? getClientForMetadataOrNull(
-    PlexMetadata metadata, {
-    bool isOffline = false,
-  }) {
+  PlexClient? getClientForMetadataOrNull(PlexMetadata metadata, {bool isOffline = false}) {
     if (isOffline || metadata.serverId == null) {
       return null;
     }
@@ -92,10 +77,7 @@ extension ProviderExtensions on BuildContext {
   /// Get the first available client from connected servers
   /// Throws an exception if no servers are available
   PlexClient getFirstAvailableClient() {
-    final multiServerProvider = Provider.of<MultiServerProvider>(
-      this,
-      listen: false,
-    );
+    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
     if (!multiServerProvider.hasConnectedServers) {
       throw Exception(t.errors.noClientAvailable);
     }

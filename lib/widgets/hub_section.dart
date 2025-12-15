@@ -73,9 +73,7 @@ class HubSectionState extends State<HubSection> {
     super.didUpdateWidget(oldWidget);
     // Clamp focus index if item count changed
     if (widget.hub.items.length != oldWidget.hub.items.length) {
-      final maxIndex = widget.hub.items.isEmpty
-          ? 0
-          : widget.hub.items.length - 1;
+      final maxIndex = widget.hub.items.isEmpty ? 0 : widget.hub.items.length - 1;
       if (_focusedIndex > maxIndex) {
         _focusedIndex = maxIndex;
       }
@@ -113,10 +111,7 @@ class HubSectionState extends State<HubSection> {
 
   /// Request focus using the stored memory for this hub
   void requestFocusFromMemory() {
-    final index = HubFocusMemory.getForHub(
-      widget.hub.hubKey,
-      widget.hub.items.length,
-    );
+    final index = HubFocusMemory.getForHub(widget.hub.hubKey, widget.hub.items.length);
     requestFocusAt(index);
   }
 
@@ -144,19 +139,11 @@ class HubSectionState extends State<HubSection> {
     if (!_scrollController.hasClients || _itemExtent <= 0) return;
 
     final viewport = _scrollController.position.viewportDimension;
-    final targetCenter =
-        _leadingPadding + (index * _itemExtent) + (_itemExtent / 2);
-    final desiredOffset = (targetCenter - (viewport / 2)).clamp(
-      0.0,
-      _scrollController.position.maxScrollExtent,
-    );
+    final targetCenter = _leadingPadding + (index * _itemExtent) + (_itemExtent / 2);
+    final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, _scrollController.position.maxScrollExtent);
 
     if (animate) {
-      _scrollController.animateTo(
-        desiredOffset,
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-      );
+      _scrollController.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
     } else {
       _scrollController.jumpTo(desiredOffset);
     }
@@ -248,10 +235,7 @@ class HubSectionState extends State<HubSection> {
   }
 
   void _navigateToHubDetail(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => HubDetailScreen(hub: widget.hub)),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => HubDetailScreen(hub: widget.hub)));
   }
 
   @override
@@ -267,9 +251,7 @@ class HubSectionState extends State<HubSection> {
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
           child: ExcludeFocus(
             child: InkWell(
-              onTap: widget.hub.more
-                  ? () => _navigateToHubDetail(context)
-                  : null,
+              onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,
               borderRadius: BorderRadius.circular(tokens(context).radiusSm),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -288,11 +270,7 @@ class HubSectionState extends State<HubSection> {
                     ),
                     if (widget.hub.more) ...[
                       const SizedBox(width: 4),
-                      const AppIcon(
-                        Symbols.chevron_right_rounded,
-                        fill: 1,
-                        size: 20,
-                      ),
+                      const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20),
                     ],
                   ],
                 ),
@@ -335,32 +313,25 @@ class HubSectionState extends State<HubSection> {
                     builder: (scrollController) => ListView.builder(
                       controller: scrollController,
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 5,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                       itemCount: widget.hub.items.length,
                       itemBuilder: (context, index) {
                         final item = widget.hub.items[index];
-                        final isItemFocused =
-                            hasFocus && index == _focusedIndex;
+                        final isItemFocused = hasFocus && index == _focusedIndex;
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 2),
                           child: _LockedHubItemWrapper(
                             isFocused: isItemFocused,
                             onTap: () => _onItemTapped(index),
-                            onLongPress: () => _mediaCardKeys[index]
-                                ?.currentState
-                                ?.showContextMenu(),
+                            onLongPress: () => _mediaCardKeys[index]?.currentState?.showContextMenu(),
                             child: MediaCard(
                               key: _getMediaCardKey(index),
                               item: item,
                               width: cardWidth,
                               height: posterHeight,
                               onRefresh: widget.onRefresh,
-                              onRemoveFromContinueWatching:
-                                  widget.onRemoveFromContinueWatching,
+                              onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
                               forceGridMode: true,
                               isInContinueWatching: widget.isInContinueWatching,
                             ),
@@ -378,9 +349,7 @@ class HubSectionState extends State<HubSection> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               t.messages.noItemsAvailable,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
             ),
           ),
       ],
@@ -404,12 +373,7 @@ class _LockedHubItemWrapper extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
-  const _LockedHubItemWrapper({
-    required this.isFocused,
-    required this.child,
-    this.onTap,
-    this.onLongPress,
-  });
+  const _LockedHubItemWrapper({required this.isFocused, required this.child, this.onTap, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {

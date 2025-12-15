@@ -25,8 +25,7 @@ class LibraryCollectionsTab extends BaseLibraryTab<PlexMetadata> {
   State<LibraryCollectionsTab> createState() => _LibraryCollectionsTabState();
 }
 
-class _LibraryCollectionsTabState
-    extends LibraryGridTabState<PlexMetadata, LibraryCollectionsTab> {
+class _LibraryCollectionsTabState extends LibraryGridTabState<PlexMetadata, LibraryCollectionsTab> {
   @override
   String get focusNodeDebugLabel => 'collections_first_item';
 
@@ -40,8 +39,7 @@ class _LibraryCollectionsTabState
   String get errorContext => t.collections.title;
 
   @override
-  Stream<void>? getRefreshStream() =>
-      LibraryRefreshNotifier().collectionsStream;
+  Stream<void>? getRefreshStream() => LibraryRefreshNotifier().collectionsStream;
 
   @override
   Future<List<PlexMetadata>> loadData() async {

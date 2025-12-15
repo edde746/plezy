@@ -8,8 +8,7 @@ enum LibraryRefreshType { collections, playlists }
 /// Singleton pattern with reinitializable state. The controller is lazily
 /// created and automatically recreated if disposed and later accessed.
 class LibraryRefreshNotifier {
-  static final LibraryRefreshNotifier _instance =
-      LibraryRefreshNotifier._internal();
+  static final LibraryRefreshNotifier _instance = LibraryRefreshNotifier._internal();
 
   factory LibraryRefreshNotifier() => _instance;
 
@@ -30,12 +29,10 @@ class LibraryRefreshNotifier {
   Stream<LibraryRefreshType> get stream => _ensureController.stream;
 
   /// Stream for collections tab (backward compatible)
-  Stream<void> get collectionsStream =>
-      stream.where((t) => t == LibraryRefreshType.collections).map((_) {});
+  Stream<void> get collectionsStream => stream.where((t) => t == LibraryRefreshType.collections).map((_) {});
 
   /// Stream for playlists tab (backward compatible)
-  Stream<void> get playlistsStream =>
-      stream.where((t) => t == LibraryRefreshType.playlists).map((_) {});
+  Stream<void> get playlistsStream => stream.where((t) => t == LibraryRefreshType.playlists).map((_) {});
 
   /// Notify that collections have changed
   void notifyCollectionsChanged() {

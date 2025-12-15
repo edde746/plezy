@@ -42,12 +42,8 @@ class ChapterSheet extends StatefulWidget {
       context: context,
       onOpen: onOpen,
       onClose: onClose,
-      builder: (context) => ChapterSheet(
-        player: player,
-        chapters: chapters,
-        chaptersLoaded: chaptersLoaded,
-        serverId: serverId,
-      ),
+      builder: (context) =>
+          ChapterSheet(player: player, chapters: chapters, chaptersLoaded: chaptersLoaded, serverId: serverId),
     );
   }
 
@@ -113,10 +109,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
             content = const Center(child: CircularProgressIndicator());
           } else if (widget.chapters.isEmpty) {
             content = const Center(
-              child: Text(
-                'No chapters available',
-                style: TextStyle(color: Colors.white70),
-              ),
+              child: Text('No chapters available', style: TextStyle(color: Colors.white70)),
             );
           } else {
             content = ListView.builder(
@@ -126,12 +119,8 @@ class _ChapterSheetState extends State<ChapterSheet> {
                 final isCurrentChapter = currentChapterIndex == index;
 
                 // Get local file path for offline chapter thumbnails
-                final localThumbPath =
-                    widget.serverId != null && chapter.thumb != null
-                    ? DownloadStorageService.instance.getArtworkPathSync(
-                        widget.serverId!,
-                        chapter.thumb!,
-                      )
+                final localThumbPath = widget.serverId != null && chapter.thumb != null
+                    ? DownloadStorageService.instance.getArtworkPathSync(widget.serverId!, chapter.thumb!)
                     : null;
 
                 return FocusableListTile(
@@ -149,12 +138,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                                 height: 34,
                                 fit: BoxFit.cover,
                                 errorWidget: (context, url, error) =>
-                                    const AppIcon(
-                                      Symbols.image_rounded,
-                                      fill: 1,
-                                      color: Colors.white54,
-                                      size: 34,
-                                    ),
+                                    const AppIcon(Symbols.image_rounded, fill: 1, color: Colors.white54, size: 34),
                               ),
                             ),
                             if (isCurrentChapter)
@@ -162,10 +146,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: Colors.blue,
-                                      width: 2,
-                                    ),
+                                    border: Border.all(color: Colors.blue, width: 2),
                                   ),
                                 ),
                               ),
@@ -176,26 +157,18 @@ class _ChapterSheetState extends State<ChapterSheet> {
                     chapter.label,
                     style: TextStyle(
                       color: isCurrentChapter ? Colors.blue : Colors.white,
-                      fontWeight: isCurrentChapter
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                      fontWeight: isCurrentChapter ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   subtitle: Text(
                     formatDurationTimestamp(chapter.startTime),
                     style: TextStyle(
-                      color: isCurrentChapter
-                          ? Colors.blue.withValues(alpha: 0.7)
-                          : Colors.white70,
+                      color: isCurrentChapter ? Colors.blue.withValues(alpha: 0.7) : Colors.white70,
                       fontSize: 12,
                     ),
                   ),
                   trailing: isCurrentChapter
-                      ? const AppIcon(
-                          Symbols.play_circle_rounded,
-                          fill: 1,
-                          color: Colors.blue,
-                        )
+                      ? const AppIcon(Symbols.play_circle_rounded, fill: 1, color: Colors.blue)
                       : null,
                   onTap: () {
                     widget.player.seek(chapter.startTime);
@@ -206,11 +179,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
             );
           }
 
-          return BaseVideoControlSheet(
-            title: 'Chapters',
-            icon: Symbols.video_library_rounded,
-            child: content,
-          );
+          return BaseVideoControlSheet(title: 'Chapters', icon: Symbols.video_library_rounded, child: content);
         },
       ),
     );

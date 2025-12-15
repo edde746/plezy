@@ -52,12 +52,8 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
 
   void _sortFilters() {
     // Separate boolean filters (toggles) from regular filters
-    final booleanFilters = widget.filters
-        .where((f) => f.filterType == 'boolean')
-        .toList();
-    final regularFilters = widget.filters
-        .where((f) => f.filterType != 'boolean')
-        .toList();
+    final booleanFilters = widget.filters.where((f) => f.filterType == 'boolean').toList();
+    final regularFilters = widget.filters.where((f) => f.filterType != 'boolean').toList();
 
     // Combine with boolean filters first
     _sortedFilters = [...booleanFilters, ...regularFilters];
@@ -130,17 +126,12 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                 // Header with back button
                 BottomSheetHeader(
                   title: _currentFilter!.title,
-                  leading: AppBarBackButton(
-                    style: BackButtonStyle.plain,
-                    onPressed: _goBack,
-                  ),
+                  leading: AppBarBackButton(style: BackButtonStyle.plain, onPressed: _goBack),
                 ),
 
                 // Filter options list
                 if (_isLoadingValues)
-                  const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
+                  const Expanded(child: Center(child: CircularProgressIndicator()))
                 else
                   Expanded(
                     child: ListView.builder(
@@ -149,18 +140,14 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                       itemCount: _filterValues.length + 1,
                       itemBuilder: (context, index) {
                         if (index == 0) {
-                          final isSelected = !_tempSelectedFilters.containsKey(
-                            _currentFilter!.filter,
-                          );
+                          final isSelected = !_tempSelectedFilters.containsKey(_currentFilter!.filter);
                           return FocusableListTile(
                             focusNode: _initialFocusNode,
                             title: Text(t.libraries.all),
                             selected: isSelected,
                             onTap: () {
                               setState(() {
-                                _tempSelectedFilters.remove(
-                                  _currentFilter!.filter,
-                                );
+                                _tempSelectedFilters.remove(_currentFilter!.filter);
                               });
                               _applyFilters();
                             },
@@ -168,24 +155,17 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                         }
 
                         final value = _filterValues[index - 1];
-                        final filterValue = _extractFilterValue(
-                          value.key,
-                          _currentFilter!.filter,
-                        );
-                        final isSelected =
-                            _tempSelectedFilters[_currentFilter!.filter] ==
-                            filterValue;
+                        final filterValue = _extractFilterValue(value.key, _currentFilter!.filter);
+                        final isSelected = _tempSelectedFilters[_currentFilter!.filter] == filterValue;
 
                         return FocusableListTile(
                           title: Text(value.title),
                           selected: isSelected,
                           onTap: () {
                             setState(() {
-                              _tempSelectedFilters[_currentFilter!.filter] =
-                                  filterValue;
+                              _tempSelectedFilters[_currentFilter!.filter] = filterValue;
                               // Cache the display name for this filter value
-                              _filterDisplayNames['${_currentFilter!.filter}:$filterValue'] =
-                                  value.title;
+                              _filterDisplayNames['${_currentFilter!.filter}:$filterValue'] = value.title;
                             });
                             _applyFilters();
                           },
@@ -230,8 +210,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                     // Handle boolean filters as switches (unwatched, inProgress, unmatched, hdr, etc.)
                     if (_isBooleanFilter(filter)) {
                       final isActive =
-                          _tempSelectedFilters.containsKey(filter.filter) &&
-                          _tempSelectedFilters[filter.filter] == '1';
+                          _tempSelectedFilters.containsKey(filter.filter) && _tempSelectedFilters[filter.filter] == '1';
                       return FocusableSwitchListTile(
                         focusNode: index == 0 ? _initialFocusNode : null,
                         value: isActive,
@@ -254,9 +233,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                     String? displayValue;
                     if (selectedValue != null) {
                       // Try to get the cached display name, fall back to the value itself
-                      displayValue =
-                          _filterDisplayNames['${filter.filter}:$selectedValue'] ??
-                          selectedValue;
+                      displayValue = _filterDisplayNames['${filter.filter}:$selectedValue'] ?? selectedValue;
                     }
 
                     return FocusableListTile(

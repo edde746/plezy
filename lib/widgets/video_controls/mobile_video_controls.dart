@@ -89,9 +89,7 @@ class MobileVideoControls extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildCircularButton(
-              semanticLabel: t.videoControls.seekBackwardButton(
-                seconds: seekTimeSmall,
-              ),
+              semanticLabel: t.videoControls.seekBackwardButton(seconds: seekTimeSmall),
               icon: getReplayIcon(seekTimeSmall),
               iconSize: 48,
               onPressed: () {
@@ -100,12 +98,8 @@ class MobileVideoControls extends StatelessWidget {
             ),
             const SizedBox(width: 48),
             _buildCircularButton(
-              semanticLabel: isPlaying
-                  ? t.videoControls.pauseButton
-                  : t.videoControls.playButton,
-              icon: isPlaying
-                  ? Symbols.pause_rounded
-                  : Symbols.play_arrow_rounded,
+              semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
+              icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
               iconSize: 72,
               onPressed: () {
                 if (isPlaying) {
@@ -119,9 +113,7 @@ class MobileVideoControls extends StatelessWidget {
             ),
             const SizedBox(width: 48),
             _buildCircularButton(
-              semanticLabel: t.videoControls.seekForwardButton(
-                seconds: seekTimeSmall,
-              ),
+              semanticLabel: t.videoControls.seekForwardButton(seconds: seekTimeSmall),
               icon: getForwardIcon(seekTimeSmall),
               iconSize: 48,
               onPressed: () {
@@ -159,10 +151,7 @@ class MobileVideoControls extends StatelessWidget {
     required VoidCallback onPressed,
   }) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
       child: Semantics(
         label: semanticLabel,
         button: true,

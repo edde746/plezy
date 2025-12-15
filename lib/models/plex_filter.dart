@@ -24,13 +24,7 @@ class PlexFilter {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'filter': filter,
-      'filterType': filterType,
-      'key': key,
-      'title': title,
-      'type': type,
-    };
+    return {'filter': filter, 'filterType': filterType, 'key': key, 'title': title, 'type': type};
   }
 }
 
@@ -42,11 +36,7 @@ class PlexFilterValue {
   PlexFilterValue({required this.key, required this.title, this.type});
 
   factory PlexFilterValue.fromJson(Map<String, dynamic> json) {
-    return PlexFilterValue(
-      key: json['key'] ?? '',
-      title: json['title'] ?? '',
-      type: json['type'],
-    );
+    return PlexFilterValue(key: json['key'] ?? '', title: json['title'] ?? '', type: json['type']);
   }
 
   Map<String, dynamic> toJson() {

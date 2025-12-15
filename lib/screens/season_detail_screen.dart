@@ -26,18 +26,13 @@ class SeasonDetailScreen extends StatefulWidget {
   final PlexMetadata season;
   final bool isOffline;
 
-  const SeasonDetailScreen({
-    super.key,
-    required this.season,
-    this.isOffline = false,
-  });
+  const SeasonDetailScreen({super.key, required this.season, this.isOffline = false});
 
   @override
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
 }
 
-class _SeasonDetailScreenState extends State<SeasonDetailScreen>
-    with ItemUpdatable {
+class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdatable {
   PlexClient? _client;
 
   @override
@@ -96,16 +91,11 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     final downloadProvider = context.read<DownloadProvider>();
 
     // Get all downloaded episodes for the show (grandparentRatingKey)
-    final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(
-      widget.season.parentRatingKey ?? '',
-    );
+    final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(widget.season.parentRatingKey ?? '');
 
     // Filter to only this season's episodes
-    final seasonEpisodes =
-        allEpisodes
-            .where((ep) => ep.parentIndex == widget.season.index)
-            .toList()
-          ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+    final seasonEpisodes = allEpisodes.where((ep) => ep.parentIndex == widget.season.index).toList()
+      ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
 
     setState(() {
       _episodes = seasonEpisodes;
@@ -130,8 +120,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Focus(
-      onKeyEvent: (_, event) =>
-          handleBackKeyNavigation(context, event, result: _watchStateChanged),
+      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event, result: _watchStateChanged),
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
@@ -141,27 +130,18 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
               onBackPressed: () => Navigator.pop(context, _watchStateChanged),
             ),
             if (_isLoadingEpisodes)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              )
+              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
             else if (_episodes.isEmpty)
               SliverFillRemaining(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      AppIcon(
-                        Symbols.movie_rounded,
-                        fill: 1,
-                        size: 64,
-                        color: tokens(context).textMuted,
-                      ),
+                      AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: tokens(context).textMuted),
                       const SizedBox(height: 16),
                       Text(
                         t.messages.noEpisodesFoundGeneral,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: tokens(context).textMuted,
-                        ),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: tokens(context).textMuted),
                       ),
                     ],
                   ),
@@ -175,24 +155,17 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
                   String? localPosterPath;
                   if (widget.isOffline && episode.serverId != null) {
                     final downloadProvider = context.read<DownloadProvider>();
-                    final globalKey =
-                        '${episode.serverId}:${episode.ratingKey}';
+                    final globalKey = '${episode.serverId}:${episode.ratingKey}';
                     // Get the artwork reference and convert to local file path
-                    final artworkRef = downloadProvider.getArtworkPaths(
-                      globalKey,
-                    );
-                    localPosterPath = artworkRef?.getLocalPath(
-                      DownloadStorageService.instance,
-                      episode.serverId!,
-                    );
+                    final artworkRef = downloadProvider.getArtworkPaths(globalKey);
+                    localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, episode.serverId!);
                   }
                   return _EpisodeCard(
                     episode: episode,
                     client: _client,
                     isOffline: widget.isOffline,
                     localPosterPath: localPosterPath,
-                    autofocus:
-                        index == 0 && InputModeTracker.isKeyboardMode(context),
+                    autofocus: index == 0 && InputModeTracker.isKeyboardMode(context),
                     onTap: () async {
                       await navigateToVideoPlayerWithRefresh(
                         context,
@@ -238,10 +211,7 @@ class _EpisodeCard extends StatelessWidget {
         if (episode.duration != null)
           Text(
             formatDurationTimestamp(Duration(milliseconds: episode.duration!)),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: tokens(context).textMuted,
-              fontSize: 12,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
           ),
         // Hide watch status when offline (not tracked)
         if (!isOffline && episode.duration != null && episode.isWatched) ...[
@@ -249,18 +219,12 @@ class _EpisodeCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Text(
               '•',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: tokens(context).textMuted,
-                fontSize: 12,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
             ),
           ),
           Text(
             '${t.discover.watched} ✓',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: tokens(context).textMuted,
-              fontSize: 12,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
           ),
         ],
       ],
@@ -270,14 +234,8 @@ class _EpisodeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Hide progress when offline (not tracked)
-    final hasProgress =
-        !isOffline &&
-        episode.viewOffset != null &&
-        episode.duration != null &&
-        episode.viewOffset! > 0;
-    final progress = hasProgress
-        ? episode.viewOffset! / episode.duration!
-        : 0.0;
+    final hasProgress = !isOffline && episode.viewOffset != null && episode.duration != null && episode.viewOffset! > 0;
+    final progress = hasProgress ? episode.viewOffset! / episode.duration! : 0.0;
 
     return MediaContextMenu(
       item: episode,
@@ -287,14 +245,10 @@ class _EpisodeCard extends StatelessWidget {
         key: Key(episode.ratingKey),
         autofocus: autofocus,
         onTap: onTap,
-        hoverColor: Theme.of(
-          context,
-        ).colorScheme.surface.withValues(alpha: 0.05),
+        hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
         child: Container(
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: tokens(context).outline, width: 0.5),
-            ),
+            border: Border(bottom: BorderSide(color: tokens(context).outline, width: 0.5)),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
@@ -313,14 +267,9 @@ class _EpisodeCard extends StatelessWidget {
                             ? Image.file(
                                 File(localPosterPath!),
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const PlaceholderContainer(
-                                      child: AppIcon(
-                                        Symbols.movie_rounded,
-                                        fill: 1,
-                                        size: 32,
-                                      ),
-                                    ),
+                                errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(
+                                  child: AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+                                ),
                               )
                             : episode.thumb != null
                             ? PlexOptimizedImage.thumb(
@@ -328,24 +277,12 @@ class _EpisodeCard extends StatelessWidget {
                                 imagePath: episode.thumb,
                                 filterQuality: FilterQuality.medium,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) =>
-                                    const PlaceholderContainer(),
-                                errorWidget: (context, url, error) =>
-                                    const PlaceholderContainer(
-                                      child: AppIcon(
-                                        Symbols.movie_rounded,
-                                        fill: 1,
-                                        size: 32,
-                                      ),
-                                    ),
-                              )
-                            : const PlaceholderContainer(
-                                child: AppIcon(
-                                  Symbols.movie_rounded,
-                                  fill: 1,
-                                  size: 32,
+                                placeholder: (context, url) => const PlaceholderContainer(),
+                                errorWidget: (context, url, error) => const PlaceholderContainer(
+                                  child: AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
                                 ),
-                              ),
+                              )
+                            : const PlaceholderContainer(child: AppIcon(Symbols.movie_rounded, fill: 1, size: 32)),
                       ),
                     ),
 
@@ -357,10 +294,7 @@ class _EpisodeCard extends StatelessWidget {
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.2),
-                            ],
+                            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.2)],
                           ),
                         ),
                         child: Center(
@@ -370,12 +304,7 @@ class _EpisodeCard extends StatelessWidget {
                               color: Colors.black.withValues(alpha: 0.6),
                               shape: BoxShape.circle,
                             ),
-                            child: const AppIcon(
-                              Symbols.play_arrow_rounded,
-                              fill: 1,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                            child: const AppIcon(Symbols.play_arrow_rounded, fill: 1, color: Colors.white, size: 20),
                           ),
                         ),
                       ),
@@ -418,14 +347,9 @@ class _EpisodeCard extends StatelessWidget {
 
                         // Only show download status in online mode
                         if (!isOffline && episode.serverId != null) {
-                          final globalKey =
-                              '${episode.serverId}:${episode.ratingKey}';
-                          final progress = downloadProvider.getProgress(
-                            globalKey,
-                          );
-                          final isQueueing = downloadProvider.isQueueing(
-                            globalKey,
-                          );
+                          final globalKey = '${episode.serverId}:${episode.ratingKey}';
+                          final progress = downloadProvider.getProgress(globalKey);
+                          final isQueueing = downloadProvider.isQueueing(globalKey);
 
                           // Helper to get status-specific muted color
                           Color getMutedColor(Color baseColor) {
@@ -441,13 +365,9 @@ class _EpisodeCard extends StatelessWidget {
                             downloadStatusIcon = SizedBox(
                               width: 12,
                               height: 12,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.5,
-                                color: tokens(context).textMuted,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 1.5, color: tokens(context).textMuted),
                             );
-                          } else if (progress?.status ==
-                              DownloadStatus.queued) {
+                          } else if (progress?.status == DownloadStatus.queued) {
                             // Queued state - waiting to download
                             downloadStatusIcon = AppIcon(
                               Symbols.schedule_rounded,
@@ -455,8 +375,7 @@ class _EpisodeCard extends StatelessWidget {
                               size: 12,
                               color: getMutedColor(Colors.orange),
                             );
-                          } else if (progress?.status ==
-                              DownloadStatus.downloading) {
+                          } else if (progress?.status == DownloadStatus.downloading) {
                             // Downloading state - active download with radial progress
                             downloadStatusIcon = SizedBox(
                               width: 14,
@@ -466,27 +385,22 @@ class _EpisodeCard extends StatelessWidget {
                                 children: [
                                   // Background circle
                                   CircularProgressIndicator(
-                                  value: 1.0,
-                                  strokeWidth: 1.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    getMutedColor(
-                                      Colors.blue,
-                                    ).withValues(alpha: 0.3),
+                                    value: 1.0,
+                                    strokeWidth: 1.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      getMutedColor(Colors.blue).withValues(alpha: 0.3),
+                                    ),
                                   ),
-                                ),
                                   // Progress circle
                                   CircularProgressIndicator(
                                     value: progress?.progressPercent,
                                     strokeWidth: 1.5,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      getMutedColor(Colors.blue),
-                                    ),
+                                    valueColor: AlwaysStoppedAnimation<Color>(getMutedColor(Colors.blue)),
                                   ),
                                 ],
                               ),
                             );
-                          } else if (progress?.status ==
-                              DownloadStatus.paused) {
+                          } else if (progress?.status == DownloadStatus.paused) {
                             // Paused state - download paused
                             downloadStatusIcon = AppIcon(
                               Symbols.pause_circle_outline_rounded,
@@ -494,8 +408,7 @@ class _EpisodeCard extends StatelessWidget {
                               size: 12,
                               color: getMutedColor(Colors.amber),
                             );
-                          } else if (progress?.status ==
-                              DownloadStatus.failed) {
+                          } else if (progress?.status == DownloadStatus.failed) {
                             // Failed state - download failed
                             downloadStatusIcon = AppIcon(
                               Symbols.error_outline_rounded,
@@ -503,8 +416,7 @@ class _EpisodeCard extends StatelessWidget {
                               size: 12,
                               color: getMutedColor(Colors.red),
                             );
-                          } else if (progress?.status ==
-                              DownloadStatus.cancelled) {
+                          } else if (progress?.status == DownloadStatus.cancelled) {
                             // Cancelled state - download cancelled
                             downloadStatusIcon = AppIcon(
                               Symbols.cancel_rounded,
@@ -512,8 +424,7 @@ class _EpisodeCard extends StatelessWidget {
                               size: 12,
                               color: getMutedColor(Colors.grey),
                             );
-                          } else if (progress?.status ==
-                              DownloadStatus.completed) {
+                          } else if (progress?.status == DownloadStatus.completed) {
                             // Completed state - download complete
                             downloadStatusIcon = AppIcon(
                               Symbols.file_download_done_rounded,
@@ -530,39 +441,28 @@ class _EpisodeCard extends StatelessWidget {
                             // Episode number badge
                             if (episode.index != null)
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 3,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.primaryContainer,
+                                  color: Theme.of(context).colorScheme.primaryContainer,
                                   borderRadius: BorderRadius.circular(3),
                                 ),
                                 child: Text(
                                   'E${episode.index}',
                                   style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimaryContainer,
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
                             // Download status icon (if present)
-                            if (downloadStatusIcon != null) ...[
-                              const SizedBox(width: 6),
-                              downloadStatusIcon,
-                            ],
+                            if (downloadStatusIcon != null) ...[const SizedBox(width: 6), downloadStatusIcon],
                             const SizedBox(width: 8),
                             // Episode title
                             Expanded(
                               child: Text(
                                 episode.title,
-                                style: Theme.of(context).textTheme.titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -573,15 +473,13 @@ class _EpisodeCard extends StatelessWidget {
                     ),
 
                     // Summary
-                    if (episode.summary != null &&
-                        episode.summary!.isNotEmpty) ...[
+                    if (episode.summary != null && episode.summary!.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Text(
                         episode.summary!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(context).textMuted,
-                          height: 1.3,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),

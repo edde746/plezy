@@ -103,29 +103,10 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
 
   List<PlexSort> _getDefaultSortOptions() {
     return [
-      PlexSort(
-        key: 'titleSort',
-        title: t.hubDetail.title,
-        defaultDirection: 'asc',
-      ),
-      PlexSort(
-        key: 'year',
-        descKey: 'year:desc',
-        title: t.hubDetail.releaseYear,
-        defaultDirection: 'desc',
-      ),
-      PlexSort(
-        key: 'addedAt',
-        descKey: 'addedAt:desc',
-        title: t.hubDetail.dateAdded,
-        defaultDirection: 'desc',
-      ),
-      PlexSort(
-        key: 'rating',
-        descKey: 'rating:desc',
-        title: t.hubDetail.rating,
-        defaultDirection: 'desc',
-      ),
+      PlexSort(key: 'titleSort', title: t.hubDetail.title, defaultDirection: 'asc'),
+      PlexSort(key: 'year', descKey: 'year:desc', title: t.hubDetail.releaseYear, defaultDirection: 'desc'),
+      PlexSort(key: 'addedAt', descKey: 'addedAt:desc', title: t.hubDetail.dateAdded, defaultDirection: 'desc'),
+      PlexSort(key: 'rating', descKey: 'rating:desc', title: t.hubDetail.rating, defaultDirection: 'desc'),
     ];
   }
 
@@ -246,11 +227,7 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
       title: Text(widget.hub.title),
       actions: [
         IconButton(
-          icon: AppIcon(
-            Symbols.swap_vert_rounded,
-            fill: 1,
-            semanticLabel: t.libraries.sort,
-          ),
+          icon: AppIcon(Symbols.swap_vert_rounded, fill: 1, semanticLabel: t.libraries.sort),
           onPressed: _showSortBottomSheet,
         ),
       ],
@@ -264,13 +241,9 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
             ),
           )
         else if (_filteredItems.isEmpty && _isLoading)
-          const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator()),
-          )
+          const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
         else if (_filteredItems.isEmpty)
-          SliverFillRemaining(
-            child: Center(child: Text(t.hubDetail.noItemsFound)),
-          )
+          SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
         else
           MediaGridSliver(
             items: _filteredItems,

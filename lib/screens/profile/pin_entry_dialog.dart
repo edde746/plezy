@@ -15,8 +15,7 @@ class PinEntryDialog extends StatefulWidget {
   State<PinEntryDialog> createState() => _PinEntryDialogState();
 }
 
-class _PinEntryDialogState extends State<PinEntryDialog>
-    with SingleTickerProviderStateMixin {
+class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProviderStateMixin {
   final _pinController = TextEditingController();
   final _focusNode = FocusNode();
   bool _obscureText = true;
@@ -28,22 +27,16 @@ class _PinEntryDialogState extends State<PinEntryDialog>
     super.initState();
 
     // Setup shake animation
-    _shakeController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
+    _shakeController = AnimationController(duration: const Duration(milliseconds: 600), vsync: this);
 
     // Create a shake effect that oscillates
-    _shakeAnimation =
-        TweenSequence<double>([
-          TweenSequenceItem(tween: Tween(begin: 0.0, end: 10.0), weight: 1),
-          TweenSequenceItem(tween: Tween(begin: 10.0, end: -10.0), weight: 1),
-          TweenSequenceItem(tween: Tween(begin: -10.0, end: 10.0), weight: 1),
-          TweenSequenceItem(tween: Tween(begin: 10.0, end: -10.0), weight: 1),
-          TweenSequenceItem(tween: Tween(begin: -10.0, end: 0.0), weight: 1),
-        ]).animate(
-          CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut),
-        );
+    _shakeAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 10.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 10.0, end: -10.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -10.0, end: 10.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: 10.0, end: -10.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -10.0, end: 0.0), weight: 1),
+    ]).animate(CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut));
 
     // Auto-focus the PIN field when dialog opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -80,24 +73,14 @@ class _PinEntryDialogState extends State<PinEntryDialog>
     return AnimatedBuilder(
       animation: _shakeAnimation,
       builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(_shakeAnimation.value, 0),
-          child: child,
-        );
+        return Transform.translate(offset: Offset(_shakeAnimation.value, 0), child: child);
       },
       child: AlertDialog(
         title: Row(
           children: [
-            AppIcon(
-              Symbols.lock_outline_rounded,
-              fill: 1,
-              size: 24,
-              color: theme.colorScheme.primary,
-            ),
+            AppIcon(Symbols.lock_outline_rounded, fill: 1, size: 24, color: theme.colorScheme.primary),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text(widget.userName, overflow: TextOverflow.ellipsis),
-            ),
+            Expanded(child: Text(widget.userName, overflow: TextOverflow.ellipsis)),
           ],
         ),
         content: Column(
@@ -109,10 +92,7 @@ class _PinEntryDialogState extends State<PinEntryDialog>
               focusNode: _focusNode,
               obscureText: _obscureText,
               keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(10),
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
               decoration: InputDecoration(
                 hintText: t.pinEntry.enterPin,
                 border: const OutlineInputBorder(),
@@ -120,9 +100,7 @@ class _PinEntryDialogState extends State<PinEntryDialog>
                 errorMaxLines: 2,
                 suffixIcon: IconButton(
                   icon: AppIcon(
-                    _obscureText
-                        ? Symbols.visibility_off_rounded
-                        : Symbols.visibility_rounded,
+                    _obscureText ? Symbols.visibility_off_rounded : Symbols.visibility_rounded,
                     fill: 1,
                     size: 20,
                   ),
@@ -131,9 +109,7 @@ class _PinEntryDialogState extends State<PinEntryDialog>
                       _obscureText = !_obscureText;
                     });
                   },
-                  tooltip: _obscureText
-                      ? t.pinEntry.showPin
-                      : t.pinEntry.hidePin,
+                  tooltip: _obscureText ? t.pinEntry.showPin : t.pinEntry.hidePin,
                 ),
               ),
               onSubmitted: (_) => _submit(),
@@ -141,10 +117,7 @@ class _PinEntryDialogState extends State<PinEntryDialog>
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(null),
-            child: Text(t.common.cancel),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(null), child: Text(t.common.cancel)),
           FilledButton(onPressed: _submit, child: Text(t.common.submit)),
         ],
       ),
@@ -153,15 +126,10 @@ class _PinEntryDialogState extends State<PinEntryDialog>
 }
 
 /// Shows the PIN entry dialog and returns the entered PIN, or null if cancelled
-Future<String?> showPinEntryDialog(
-  BuildContext context,
-  String userName, {
-  String? errorMessage,
-}) {
+Future<String?> showPinEntryDialog(BuildContext context, String userName, {String? errorMessage}) {
   return showDialog<String>(
     context: context,
     barrierDismissible: false,
-    builder: (context) =>
-        PinEntryDialog(userName: userName, errorMessage: errorMessage),
+    builder: (context) => PinEntryDialog(userName: userName, errorMessage: errorMessage),
   );
 }

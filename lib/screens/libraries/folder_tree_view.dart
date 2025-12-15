@@ -16,12 +16,7 @@ class FolderTreeView extends StatefulWidget {
   final String? serverId; // Server this library belongs to
   final void Function(String)? onRefresh;
 
-  const FolderTreeView({
-    super.key,
-    required this.libraryKey,
-    this.serverId,
-    this.onRefresh,
-  });
+  const FolderTreeView({super.key, required this.libraryKey, this.serverId, this.onRefresh});
 
   @override
   State<FolderTreeView> createState() => _FolderTreeViewState();
@@ -74,10 +69,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
 
       appLogger.e('Failed to load root folders', error: e);
       setState(() {
-        _errorMessage = t.errors.failedToLoad(
-          context: t.libraries.folders,
-          error: e.toString(),
-        );
+        _errorMessage = t.errors.failedToLoad(context: t.libraries.folders, error: e.toString());
         _isLoadingRoot = false;
       });
     }
@@ -113,9 +105,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
         _loadingFolders.remove(folder.key);
       });
 
-      appLogger.d(
-        'Loaded ${children.length} children for folder: ${folder.title}',
-      );
+      appLogger.d('Loaded ${children.length} children for folder: ${folder.title}');
     } catch (e) {
       if (!mounted) return;
 
@@ -125,13 +115,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       });
 
       if (mounted) {
-        showErrorSnackBar(
-          context,
-          t.errors.failedToLoad(
-            context: t.libraries.folders,
-            error: e.toString(),
-          ),
-        );
+        showErrorSnackBar(context, t.errors.failedToLoad(context: t.libraries.folders, error: e.toString()));
       }
     }
   }
@@ -153,16 +137,10 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   bool _isFolder(PlexMetadata item) {
     // Folders typically don't have a specific type or might have special indicators
     // Check for common folder indicators
-    return item.key.contains('/folder') ||
-        item.type.isEmpty ||
-        item.type.toLowerCase() == 'folder';
+    return item.key.contains('/folder') || item.type.isEmpty || item.type.toLowerCase() == 'folder';
   }
 
-  List<Widget> _buildTreeItems(
-    List<PlexMetadata> items,
-    int depth, [
-    String parentPath = '',
-  ]) {
+  List<Widget> _buildTreeItems(List<PlexMetadata> items, int depth, [String parentPath = '']) {
     final List<Widget> widgets = [];
 
     for (int i = 0; i < items.length; i++) {
@@ -214,10 +192,7 @@ class _FolderTreeViewState extends State<FolderTreeView> {
     }
 
     if (_rootFolders.isEmpty) {
-      return EmptyStateWidget(
-        message: t.libraries.noFoldersFound,
-        icon: Symbols.folder_open_rounded,
-      );
+      return EmptyStateWidget(message: t.libraries.noFoldersFound, icon: Symbols.folder_open_rounded);
     }
 
     return RefreshIndicator(

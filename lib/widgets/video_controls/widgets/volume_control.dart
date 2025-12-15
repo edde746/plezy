@@ -97,8 +97,7 @@ class _VolumeControlState extends State<VolumeControl> {
         return KeyEventResult.handled;
       }
       // UP/DOWN exits adjust mode and lets navigation continue
-      if (key == LogicalKeyboardKey.arrowUp ||
-          key == LogicalKeyboardKey.arrowDown) {
+      if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.arrowDown) {
         _exitAdjustMode();
         // Pass through to normal navigation handler
         return widget.onKeyEvent?.call(node, event) ?? KeyEventResult.ignored;
@@ -130,9 +129,7 @@ class _VolumeControlState extends State<VolumeControl> {
         final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
         final muteButton = Semantics(
-          label: isMuted
-              ? t.videoControls.unmuteButton
-              : t.videoControls.muteButton,
+          label: isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton,
           button: true,
           excludeSemantics: true,
           child: IconButton(
@@ -165,9 +162,7 @@ class _VolumeControlState extends State<VolumeControl> {
                 disableScale: true,
                 semanticLabel: _isAdjustMode
                     ? t.videoControls.volumeSlider
-                    : (isMuted
-                          ? t.videoControls.unmuteButton
-                          : t.videoControls.muteButton),
+                    : (isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton),
                 child: muteButton,
               )
             else
@@ -189,9 +184,7 @@ class _VolumeControlState extends State<VolumeControl> {
       child: SliderTheme(
         data: SliderThemeData(
           trackHeight: showAdjustIndicator ? 4 : 3,
-          thumbShape: RoundSliderThumbShape(
-            enabledThumbRadius: showAdjustIndicator ? 8 : 6,
-          ),
+          thumbShape: RoundSliderThumbShape(enabledThumbRadius: showAdjustIndicator ? 8 : 6),
           overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
         ),
         child: Semantics(

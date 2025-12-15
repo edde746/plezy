@@ -65,8 +65,7 @@ class ProfileSwitchScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   itemBuilder: (context, index) {
                     final user = users[index];
-                    final isCurrentUser =
-                        user.uuid == userProvider.currentUser?.uuid;
+                    final isCurrentUser = user.uuid == userProvider.currentUser?.uuid;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -95,10 +94,7 @@ class ProfileSwitchScreen extends StatelessWidget {
     if (success && context.mounted) {
       Navigator.of(context).pop();
     } else if (!success && context.mounted) {
-      showErrorSnackBar(
-        context,
-        t.errors.failedToSwitchProfile(displayName: user.displayName),
-      );
+      showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: user.displayName));
     }
   }
 }

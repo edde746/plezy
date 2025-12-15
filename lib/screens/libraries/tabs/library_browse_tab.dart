@@ -41,8 +41,7 @@ class LibraryBrowseTab extends BaseLibraryTab<PlexMetadata> {
   State<LibraryBrowseTab> createState() => _LibraryBrowseTabState();
 }
 
-class _LibraryBrowseTabState
-    extends BaseLibraryTabState<PlexMetadata, LibraryBrowseTab>
+class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBrowseTab>
     with ItemUpdatable, LibraryTabFocusMixin {
   @override
   PlexClient get client => getClientForLibrary();
@@ -79,9 +78,7 @@ class _LibraryBrowseTabState
   static const int _pageSize = 500;
 
   // Focus nodes for filter chips
-  final FocusNode _groupingChipFocusNode = FocusNode(
-    debugLabel: 'grouping_chip',
-  );
+  final FocusNode _groupingChipFocusNode = FocusNode(debugLabel: 'grouping_chip');
   final FocusNode _filtersChipFocusNode = FocusNode(debugLabel: 'filters_chip');
   final FocusNode _sortChipFocusNode = FocusNode(debugLabel: 'sort_chip');
 
@@ -171,13 +168,9 @@ class _LibraryBrowseTabState
       final sorts = await client.getLibrarySorts(widget.library.key);
 
       // Load saved preferences
-      final savedFilters = storage.getLibraryFilters(
-        sectionId: widget.library.globalKey,
-      );
+      final savedFilters = storage.getLibraryFilters(sectionId: widget.library.globalKey);
       final savedSort = storage.getLibrarySort(widget.library.globalKey);
-      final savedGrouping = storage.getLibraryGrouping(
-        widget.library.globalKey,
-      );
+      final savedGrouping = storage.getLibraryGrouping(widget.library.globalKey);
 
       // Check if request was cancelled
       if (currentRequestId != _requestId) return;
@@ -246,9 +239,7 @@ class _LibraryBrowseTabState
 
       // Add sort
       if (_selectedSort != null) {
-        filterParams['sort'] = _selectedSort!.getSortKey(
-          descending: _isSortDescending,
-        );
+        filterParams['sort'] = _selectedSort!.getSortKey(descending: _isSortDescending);
       }
 
       // Items are automatically tagged with server info by PlexClient
@@ -373,10 +364,7 @@ class _LibraryBrowseTabState
             });
 
             final storage = await StorageService.getInstance();
-            await storage.saveLibraryGrouping(
-              widget.library.globalKey,
-              value,
-            );
+            await storage.saveLibraryGrouping(widget.library.globalKey, value);
 
             if (!sheetContext.mounted || !mounted) return;
 
@@ -388,10 +376,7 @@ class _LibraryBrowseTabState
             itemCount: options.length,
             itemBuilder: (context, index) {
               final grouping = options[index];
-              return RadioListTile<String>(
-                title: Text(_getGroupingLabel(grouping)),
-                value: grouping,
-              );
+              return RadioListTile<String>(title: Text(_getGroupingLabel(grouping)), value: grouping);
             },
           ),
         );
@@ -415,10 +400,7 @@ class _LibraryBrowseTabState
 
           // Save filters to storage
           final storage = await StorageService.getInstance();
-          await storage.saveLibraryFilters(
-            filters,
-            sectionId: widget.library.globalKey,
-          );
+          await storage.saveLibraryFilters(filters, sectionId: widget.library.globalKey);
 
           _loadItems();
         },
@@ -441,11 +423,7 @@ class _LibraryBrowseTabState
           });
 
           StorageService.getInstance().then((storage) {
-            storage.saveLibrarySort(
-              widget.library.globalKey,
-              sort.key,
-              descending: descending,
-            );
+            storage.saveLibrarySort(widget.library.globalKey, sort.key, descending: descending);
           });
 
           _loadItems();
@@ -467,16 +445,9 @@ class _LibraryBrowseTabState
   }
 
   /// Calculate the number of columns in the current grid based on screen width
-  int _getGridColumnCount(
-    BuildContext context,
-    SettingsProvider settingsProvider,
-  ) {
-    final screenWidth =
-        MediaQuery.of(context).size.width - 16; // Subtract padding
-    final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(
-      context,
-      settingsProvider.libraryDensity,
-    );
+  int _getGridColumnCount(BuildContext context, SettingsProvider settingsProvider) {
+    final screenWidth = MediaQuery.of(context).size.width - 16; // Subtract padding
+    final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
     return (screenWidth / maxCrossAxisExtent).floor().clamp(1, 100);
   }
 
@@ -518,16 +489,13 @@ class _LibraryBrowseTabState
                     icon: Symbols.filter_alt_rounded,
                     label: _selectedFilters.isEmpty
                         ? t.libraries.filters
-                        : t.libraries.filtersWithCount(
-                            count: _selectedFilters.length,
-                          ),
+                        : t.libraries.filtersWithCount(count: _selectedFilters.length),
                     onPressed: _showFiltersBottomSheet,
                     onNavigateDown: _navigateToGrid,
                     onNavigateUp: widget.onBack,
                     onBack: widget.onBack,
                   ),
-                if (_filters.isNotEmpty && _selectedGrouping != 'folders')
-                  const SizedBox(width: 8),
+                if (_filters.isNotEmpty && _selectedGrouping != 'folders') const SizedBox(width: 8),
                 // Sort chip
                 if (_sortOptions.isNotEmpty && _selectedGrouping != 'folders')
                   FocusableFilterChip(
@@ -553,11 +521,7 @@ class _LibraryBrowseTabState
   Widget _buildContent() {
     // Show folder tree view when in folders mode
     if (_selectedGrouping == 'folders') {
-      return FolderTreeView(
-        libraryKey: widget.library.key,
-        serverId: widget.library.serverId,
-        onRefresh: updateItem,
-      );
+      return FolderTreeView(libraryKey: widget.library.key, serverId: widget.library.serverId, onRefresh: updateItem);
     }
 
     if (isLoading && items.isEmpty) {
@@ -574,18 +538,12 @@ class _LibraryBrowseTabState
     }
 
     if (items.isEmpty) {
-      return EmptyStateWidget(
-        message: t.libraries.thisLibraryIsEmpty,
-        icon: Symbols.folder_open_rounded,
-      );
+      return EmptyStateWidget(message: t.libraries.thisLibraryIsEmpty, icon: Symbols.folder_open_rounded);
     }
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        if (notification.metrics.pixels >=
-                notification.metrics.maxScrollExtent - 300 &&
-            _hasMoreItems &&
-            !isLoading) {
+        if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 300 && _hasMoreItems && !isLoading) {
           _loadItems(loadMore: true);
         }
         return false;
@@ -599,10 +557,7 @@ class _LibraryBrowseTabState
   }
 
   /// Builds either a list or grid view based on the view mode
-  Widget _buildItemsView(
-    BuildContext context,
-    SettingsProvider settingsProvider,
-  ) {
+  Widget _buildItemsView(BuildContext context, SettingsProvider settingsProvider) {
     final itemCount = items.length + (_hasMoreItems && isLoading ? 1 : 0);
 
     if (settingsProvider.viewMode == ViewMode.list) {
@@ -610,23 +565,16 @@ class _LibraryBrowseTabState
       return ListView.builder(
         padding: const EdgeInsets.all(8),
         itemCount: itemCount,
-        itemBuilder: (context, index) =>
-            _buildMediaCardItem(index, isFirstRow: index == 0),
+        itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: index == 0),
       );
     } else {
       // In grid view, calculate columns and pass to item builder
       final columnCount = _getGridColumnCount(context, settingsProvider);
       return GridView.builder(
         padding: const EdgeInsets.all(8),
-        gridDelegate: MediaGridDelegate.createDelegate(
-          context: context,
-          density: settingsProvider.libraryDensity,
-        ),
+        gridDelegate: MediaGridDelegate.createDelegate(context: context, density: settingsProvider.libraryDensity),
         itemCount: itemCount,
-        itemBuilder: (context, index) => _buildMediaCardItem(
-          index,
-          isFirstRow: _isFirstRow(index, columnCount),
-        ),
+        itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: _isFirstRow(index, columnCount)),
       );
     }
   }

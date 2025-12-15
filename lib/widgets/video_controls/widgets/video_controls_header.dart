@@ -41,11 +41,7 @@ class VideoControlsHeader extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(true),
         ),
         const SizedBox(width: 16),
-        Expanded(
-          child: style == VideoHeaderStyle.singleLine
-              ? _buildSingleLineTitle()
-              : _buildMultiLineTitle(),
-        ),
+        Expanded(child: style == VideoHeaderStyle.singleLine ? _buildSingleLineTitle() : _buildMultiLineTitle()),
         if (trailing != null) trailing!,
       ],
     );
@@ -54,8 +50,7 @@ class VideoControlsHeader extends StatelessWidget {
   Widget _buildSingleLineTitle() {
     // Build single-line title combining series and episode info
     final seriesName = metadata.grandparentTitle ?? metadata.title;
-    final hasEpisodeInfo =
-        metadata.parentIndex != null && metadata.index != null;
+    final hasEpisodeInfo = metadata.parentIndex != null && metadata.index != null;
 
     final titleText = hasEpisodeInfo
         ? '$seriesName · S${metadata.parentIndex} E${metadata.index} · ${metadata.title}'
@@ -63,11 +58,7 @@ class VideoControlsHeader extends StatelessWidget {
 
     return Text(
       titleText,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 15,
-        fontWeight: FontWeight.w500,
-      ),
+      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
@@ -79,11 +70,7 @@ class VideoControlsHeader extends StatelessWidget {
       children: [
         Text(
           metadata.grandparentTitle ?? metadata.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

@@ -79,12 +79,7 @@ class TrackChapterControls extends StatelessWidget {
   });
 
   /// Handle key event for button navigation
-  KeyEventResult _handleButtonKeyEvent(
-    FocusNode node,
-    KeyEvent event,
-    int index,
-    int totalButtons,
-  ) {
+  KeyEventResult _handleButtonKeyEvent(FocusNode node, KeyEvent event, int index, int totalButtons) {
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
@@ -105,9 +100,7 @@ class TrackChapterControls extends StatelessWidget {
 
     // RIGHT arrow - move to next button
     if (key == LogicalKeyboardKey.arrowRight) {
-      if (index < totalButtons - 1 &&
-          focusNodes != null &&
-          focusNodes!.length > index + 1) {
+      if (index < totalButtons - 1 && focusNodes != null && focusNodes!.length > index + 1) {
         focusNodes![index + 1].requestFocus();
         return KeyEventResult.handled;
       }
@@ -135,16 +128,10 @@ class TrackChapterControls extends StatelessWidget {
       tooltip: tooltip,
       semanticLabel: semanticLabel,
       isActive: isActive,
-      focusNode: focusNodes != null && focusNodes!.length > buttonIndex
-          ? focusNodes![buttonIndex]
-          : null,
+      focusNode: focusNodes != null && focusNodes!.length > buttonIndex ? focusNodes![buttonIndex] : null,
       onKeyEvent: focusNodes != null
-          ? (node, event) => _handleButtonKeyEvent(
-              node,
-              event,
-              buttonIndex,
-              _getButtonCount(tracks, isMobile, isDesktop),
-            )
+          ? (node, event) =>
+                _handleButtonKeyEvent(node, event, buttonIndex, _getButtonCount(tracks, isMobile, isDesktop))
           : null,
       onFocusChange: onFocusChange,
       onPressed: onPressed,
@@ -159,8 +146,7 @@ class TrackChapterControls extends StatelessWidget {
       builder: (context, snapshot) {
         final tracks = snapshot.data;
         final isMobile = PlatformDetector.isMobile(context);
-        final isDesktop =
-            Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+        final isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
         // Build list of buttons dynamically to track indices
         final buttons = <Widget>[];
@@ -172,10 +158,7 @@ class TrackChapterControls extends StatelessWidget {
             listenable: SleepTimerService(),
             builder: (context, _) {
               final sleepTimer = SleepTimerService();
-              final isActive =
-                  sleepTimer.isActive ||
-                  audioSyncOffset != 0 ||
-                  subtitleSyncOffset != 0;
+              final isActive = sleepTimer.isActive || audioSyncOffset != 0 || subtitleSyncOffset != 0;
               return _buildTrackButton(
                 buttonIndex: 0,
                 icon: Symbols.tune_rounded,
@@ -320,12 +303,8 @@ class TrackChapterControls extends StatelessWidget {
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: isRotationLocked
-                  ? Symbols.screen_lock_rotation_rounded
-                  : Symbols.screen_rotation_rounded,
-              tooltip: isRotationLocked
-                  ? t.videoControls.unlockRotation
-                  : t.videoControls.lockRotation,
+              icon: isRotationLocked ? Symbols.screen_lock_rotation_rounded : Symbols.screen_rotation_rounded,
+              tooltip: isRotationLocked ? t.videoControls.unlockRotation : t.videoControls.lockRotation,
               semanticLabel: t.videoControls.rotationLockButton,
               tracks: tracks,
               isMobile: isMobile,
@@ -342,12 +321,8 @@ class TrackChapterControls extends StatelessWidget {
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
-              icon: isFullscreen
-                  ? Symbols.fullscreen_exit_rounded
-                  : Symbols.fullscreen_rounded,
-              semanticLabel: isFullscreen
-                  ? t.videoControls.exitFullscreenButton
-                  : t.videoControls.fullscreenButton,
+              icon: isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
+              semanticLabel: isFullscreen ? t.videoControls.exitFullscreenButton : t.videoControls.fullscreenButton,
               tracks: tracks,
               isMobile: isMobile,
               isDesktop: isDesktop,
@@ -357,11 +332,7 @@ class TrackChapterControls extends StatelessWidget {
         }
 
         return IntrinsicHeight(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: buttons,
-          ),
+          child: Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: buttons),
         );
       },
     );

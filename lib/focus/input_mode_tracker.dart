@@ -29,8 +29,7 @@ class InputModeTracker extends StatefulWidget {
 
   /// Get the current input mode.
   static InputMode of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<_InputModeProvider>();
+    final provider = context.dependOnInheritedWidgetOfExactType<_InputModeProvider>();
     return provider?.mode ?? InputMode.pointer;
   }
 
@@ -45,9 +44,7 @@ class InputModeTracker extends StatefulWidget {
 
 class _InputModeTrackerState extends State<InputModeTracker> {
   // Default to keyboard mode on Android TV, pointer mode elsewhere
-  InputMode _mode = TvDetectionService.isTVSync()
-      ? InputMode.keyboard
-      : InputMode.pointer;
+  InputMode _mode = TvDetectionService.isTVSync() ? InputMode.keyboard : InputMode.pointer;
 
   @override
   void initState() {

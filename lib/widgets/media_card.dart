@@ -25,12 +25,10 @@ class MediaCard extends StatefulWidget {
   final double? height;
   final void Function(String ratingKey)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
-  final VoidCallback?
-  onListRefresh; // Callback to refresh the entire parent list
+  final VoidCallback? onListRefresh; // Callback to refresh the entire parent list
   final bool forceGridMode;
   final bool isInContinueWatching;
-  final String?
-  collectionId; // The collection ID if displaying within a collection
+  final String? collectionId; // The collection ID if displaying within a collection
   final bool isOffline; // True for downloaded content without server access
 
   const MediaCard({
@@ -75,20 +73,11 @@ class MediaCardState extends State<MediaCard> {
     String baseLabel;
     switch (item.mediaType) {
       case PlexMediaType.episode:
-        final episodeInfo = item.parentIndex != null && item.index != null
-            ? 'S${item.parentIndex} E${item.index}'
-            : '';
-        baseLabel = t.accessibility.mediaCardEpisode(
-          title: item.displayTitle,
-          episodeInfo: episodeInfo,
-        );
+        final episodeInfo = item.parentIndex != null && item.index != null ? 'S${item.parentIndex} E${item.index}' : '';
+        baseLabel = t.accessibility.mediaCardEpisode(title: item.displayTitle, episodeInfo: episodeInfo);
       case PlexMediaType.season:
-        final seasonInfo =
-            item.parentIndex != null ? 'Season ${item.parentIndex}' : '';
-        baseLabel = t.accessibility.mediaCardSeason(
-          title: item.displayTitle,
-          seasonInfo: seasonInfo,
-        );
+        final seasonInfo = item.parentIndex != null ? 'Season ${item.parentIndex}' : '';
+        baseLabel = t.accessibility.mediaCardSeason(title: item.displayTitle, seasonInfo: seasonInfo);
       case PlexMediaType.movie:
         baseLabel = t.accessibility.mediaCardMovie(title: item.displayTitle);
       default:
@@ -98,12 +87,9 @@ class MediaCardState extends State<MediaCard> {
     // Add watched status
     if (item.isWatched) {
       baseLabel = '$baseLabel, ${t.accessibility.mediaCardWatched}';
-    } else if (item.viewOffset != null &&
-        item.duration != null &&
-        item.viewOffset! > 0) {
+    } else if (item.viewOffset != null && item.duration != null && item.viewOffset! > 0) {
       final percent = ((item.viewOffset! / item.duration!) * 100).round();
-      baseLabel =
-          '$baseLabel, ${t.accessibility.mediaCardPartiallyWatched(percent: percent)}';
+      baseLabel = '$baseLabel, ${t.accessibility.mediaCardPartiallyWatched(percent: percent)}';
     } else {
       baseLabel = '$baseLabel, ${t.accessibility.mediaCardUnwatched}';
     }
@@ -150,18 +136,13 @@ class MediaCardState extends State<MediaCard> {
 
     // Get artwork reference and resolve to local path using hash (includes serverId)
     final artwork = downloadProvider.getArtworkPaths(globalKey);
-    return artwork?.getLocalPath(
-      DownloadStorageService.instance,
-      metadata.serverId!,
-    );
+    return artwork?.getLocalPath(DownloadStorageService.instance, metadata.serverId!);
   }
 
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
-    final viewMode = widget.forceGridMode
-        ? ViewMode.grid
-        : settingsProvider.viewMode;
+    final viewMode = widget.forceGridMode ? ViewMode.grid : settingsProvider.viewMode;
 
     final semanticLabel = _buildSemanticLabel();
     final localPosterPath = _getLocalPosterPath(context);
@@ -242,11 +223,7 @@ class _MediaCardGrid extends StatelessWidget {
               children: [
                 // Poster
                 if (height != null)
-                  SizedBox(
-                    width: double.infinity,
-                    height: height,
-                    child: _buildPosterWithOverlay(context),
-                  )
+                  SizedBox(width: double.infinity, height: height, child: _buildPosterWithOverlay(context))
                 else
                   Expanded(child: _buildPosterWithOverlay(context)),
                 const SizedBox(height: 4),
@@ -256,27 +233,15 @@ class _MediaCardGrid extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
-                      item is PlexPlaylist
-                          ? (item as PlexPlaylist).title
-                          : (item as PlexMetadata).displayTitle,
+                      item is PlexPlaylist ? (item as PlexPlaylist).title : (item as PlexMetadata).displayTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        height: 1.1,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
                     ),
                     if (item is PlexPlaylist)
-                      _MediaCardHelpers.buildPlaylistMeta(
-                        context,
-                        item as PlexPlaylist,
-                      )
+                      _MediaCardHelpers.buildPlaylistMeta(context, item as PlexPlaylist)
                     else if (item is PlexMetadata)
-                      _MediaCardHelpers.buildMetadataSubtitle(
-                        context,
-                        item as PlexMetadata,
-                      ),
+                      _MediaCardHelpers.buildMetadataSubtitle(context, item as PlexMetadata),
                   ],
                 ),
               ],
@@ -292,12 +257,7 @@ class _MediaCardGrid extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: _buildPosterImage(
-            context,
-            item,
-            isOffline: isOffline,
-            localPosterPath: localPosterPath,
-          ),
+          child: _buildPosterImage(context, item, isOffline: isOffline, localPosterPath: localPosterPath),
         ),
         _PosterOverlay(item: item),
       ],
@@ -420,8 +380,7 @@ class _MediaCardList extends StatelessWidget {
       } else {
         // For other media types, show standard metadata
         // Add content rating
-        if (metadata.contentRating != null &&
-            metadata.contentRating!.isNotEmpty) {
+        if (metadata.contentRating != null && metadata.contentRating!.isNotEmpty) {
           final rating = formatContentRating(metadata.contentRating);
           if (rating.isNotEmpty) {
             parts.add(rating);
@@ -502,12 +461,7 @@ class _MediaCardList extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                      child: _buildPosterImage(
-                        context,
-                        item,
-                        isOffline: isOffline,
-                        localPosterPath: localPosterPath,
-                      ),
+                      child: _buildPosterImage(context, item, isOffline: isOffline, localPosterPath: localPosterPath),
                     ),
                     _PosterOverlay(item: item),
                   ],
@@ -525,11 +479,7 @@ class _MediaCardList extends StatelessWidget {
                       item.displayTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: _titleFontSize,
-                        height: 1.2,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
                     ),
                     const SizedBox(height: 4),
                     // Metadata info line (rating, duration, score, studio)
@@ -539,9 +489,7 @@ class _MediaCardList extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(
-                            context,
-                          ).textMuted.withValues(alpha: 0.9),
+                          color: tokens(context).textMuted.withValues(alpha: 0.9),
                           fontSize: _metadataFontSize,
                           fontWeight: FontWeight.w500,
                         ),
@@ -555,9 +503,7 @@ class _MediaCardList extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(
-                            context,
-                          ).textMuted.withValues(alpha: 0.85),
+                          color: tokens(context).textMuted.withValues(alpha: 0.85),
                           fontSize: _subtitleFontSize,
                         ),
                       ),
@@ -570,9 +516,7 @@ class _MediaCardList extends StatelessWidget {
                         maxLines: _summaryMaxLines,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: tokens(
-                            context,
-                          ).textMuted.withValues(alpha: 0.7),
+                          color: tokens(context).textMuted.withValues(alpha: 0.7),
                           fontSize: _summaryFontSize,
                           height: 1.3,
                         ),
@@ -589,12 +533,7 @@ class _MediaCardList extends StatelessWidget {
   }
 }
 
-Widget _buildPosterImage(
-  BuildContext context,
-  dynamic item, {
-  bool isOffline = false,
-  String? localPosterPath,
-}) {
+Widget _buildPosterImage(BuildContext context, dynamic item, {bool isOffline = false, String? localPosterPath}) {
   String? posterUrl;
   IconData fallbackIcon = Symbols.movie_rounded;
 
@@ -625,9 +564,7 @@ Widget _buildPosterImage(
   }
 
   return SkeletonLoader(
-    child: Center(
-      child: AppIcon(fallbackIcon, fill: 1, size: 40, color: Colors.white54),
-    ),
+    child: Center(child: AppIcon(fallbackIcon, fill: 1, size: 40, color: Colors.white54)),
   );
 }
 
@@ -657,21 +594,16 @@ class _MediaCardHelpers {
         t.playlists.itemCount(count: playlist.leafCount!),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: tokens(context).textMuted,
-          fontSize: 11,
-          height: 1.1,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
       );
     }
     return const SizedBox.shrink();
   }
 
   /// Builds metadata subtitle (for collections, episodes, movies, shows)
-  static Widget buildMetadataSubtitle(
-    BuildContext context,
-    PlexMetadata metadata,
-  ) {
+  static Widget buildMetadataSubtitle(BuildContext context, PlexMetadata metadata) {
     // For collections, show item count
     if (metadata.mediaType == PlexMediaType.collection) {
       final count = metadata.childCount ?? metadata.leafCount;
@@ -680,11 +612,9 @@ class _MediaCardHelpers {
           t.playlists.itemCount(count: count),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: tokens(context).textMuted,
-            fontSize: 11,
-            height: 1.1,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
         );
       }
     }
@@ -695,31 +625,25 @@ class _MediaCardHelpers {
         metadata.displaySubtitle!,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: tokens(context).textMuted,
-          fontSize: 11,
-          height: 1.1,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
       );
     } else if (metadata.parentTitle != null) {
       return Text(
         metadata.parentTitle!,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: tokens(context).textMuted,
-          fontSize: 11,
-          height: 1.1,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
       );
     } else if (metadata.year != null) {
       return Text(
         '${metadata.year}',
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: tokens(context).textMuted,
-          fontSize: 11,
-          height: 1.1,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),
       );
     }
 
@@ -727,10 +651,7 @@ class _MediaCardHelpers {
   }
 
   /// Builds watch progress overlay (checkmark for watched, progress bar for in-progress)
-  static Widget buildWatchProgress(
-    BuildContext context,
-    PlexMetadata metadata,
-  ) {
+  static Widget buildWatchProgress(BuildContext context, PlexMetadata metadata) {
     return Stack(
       children: [
         // Watched indicator (checkmark)
@@ -743,39 +664,20 @@ class _MediaCardHelpers {
               decoration: BoxDecoration(
                 color: tokens(context).text,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 4,
-                  ),
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
               ),
-              child: AppIcon(
-                Symbols.check_rounded,
-                fill: 1,
-                color: tokens(context).bg,
-                size: 16,
-              ),
+              child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 16),
             ),
           ),
         // Progress bar for partially watched content (episodes/movies)
-        if (metadata.viewOffset != null &&
-            metadata.duration != null &&
-            metadata.viewOffset! > 0 &&
-            !metadata.isWatched)
+        if (metadata.viewOffset != null && metadata.duration != null && metadata.viewOffset! > 0 && !metadata.isWatched)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(8),
-                bottomRight: Radius.circular(8),
-              ),
-              child: MediaProgressBar(
-                viewOffset: metadata.viewOffset!,
-                duration: metadata.duration!,
-              ),
+              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
+              child: MediaProgressBar(viewOffset: metadata.viewOffset!, duration: metadata.duration!),
             ),
           ),
         // Progress bar for seasons (viewedLeafCount / leafCount)
@@ -790,16 +692,11 @@ class _MediaCardHelpers {
             left: 0,
             right: 0,
             child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(8),
-                bottomRight: Radius.circular(8),
-              ),
+              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
               child: LinearProgressIndicator(
                 value: metadata.viewedLeafCount! / metadata.leafCount!,
                 backgroundColor: tokens(context).outline,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.primary,
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                 minHeight: 4,
               ),
             ),
@@ -820,21 +717,18 @@ class SkeletonLoader extends StatefulWidget {
   State<SkeletonLoader> createState() => _SkeletonLoaderState();
 }
 
-class _SkeletonLoaderState extends State<SkeletonLoader>
-    with SingleTickerProviderStateMixin {
+class _SkeletonLoaderState extends State<SkeletonLoader> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _animation = Tween<double>(begin: 0.3, end: 0.7).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+    _animationController = AnimationController(duration: const Duration(milliseconds: 1500), vsync: this);
+    _animation = Tween<double>(
+      begin: 0.3,
+      end: 0.7,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
     _animationController.repeat(reverse: true);
   }
 
@@ -854,10 +748,8 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
           identifier: "skeleton-loader",
           child: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest
-                  .withValues(alpha: _animation.value),
-              borderRadius: widget.borderRadius ??
-                  BorderRadius.circular(tokens(context).radiusSm),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: _animation.value),
+              borderRadius: widget.borderRadius ?? BorderRadius.circular(tokens(context).radiusSm),
             ),
             child: widget.child,
           ),

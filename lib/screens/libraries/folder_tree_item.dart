@@ -63,12 +63,7 @@ class FolderTreeItem extends StatelessWidget {
     return InkWell(
       onTap: _handleTap,
       child: Container(
-        padding: EdgeInsets.only(
-          left: 16.0 + indentation,
-          right: 16.0,
-          top: 12.0,
-          bottom: 12.0,
-        ),
+        padding: EdgeInsets.only(left: 16.0 + indentation, right: 16.0, top: 12.0, bottom: 12.0),
         child: Row(
           children: [
             // Expand/collapse icon for folders
@@ -76,15 +71,9 @@ class FolderTreeItem extends StatelessWidget {
               SizedBox(
                 width: 24,
                 child: isLoading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : AppIcon(
-                        isExpanded
-                            ? Symbols.keyboard_arrow_down_rounded
-                            : Symbols.keyboard_arrow_right_rounded,
+                        isExpanded ? Symbols.keyboard_arrow_down_rounded : Symbols.keyboard_arrow_right_rounded,
                         fill: 1,
                         size: 20,
                       ),
@@ -101,9 +90,7 @@ class FolderTreeItem extends StatelessWidget {
               size: 20,
               color: isFolder
                   ? Theme.of(context).colorScheme.primary
-                  : Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
 
             const SizedBox(width: 12),
@@ -112,10 +99,7 @@ class FolderTreeItem extends StatelessWidget {
             Expanded(
               child: Text(
                 item.title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isFolder ? FontWeight.w500 : FontWeight.w400,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: isFolder ? FontWeight.w500 : FontWeight.w400),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -125,12 +109,7 @@ class FolderTreeItem extends StatelessWidget {
             if (!isFolder && item.year != null)
               Text(
                 item.year.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
               ),
           ],
         ),

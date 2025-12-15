@@ -10,3 +10,6 @@ analyzer:
 dart_code_linter:
   rules:
     - avoid-unused-parameters
+
+formatter:
+  page_width: 120

@@ -87,8 +87,7 @@ class AudioTrack {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AudioTrack && runtimeType == other.runtimeType && id == other.id;
+      identical(this, other) || other is AudioTrack && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;
@@ -133,13 +132,7 @@ class SubtitleTrack {
 
   /// Create a subtitle track from an external URI.
   factory SubtitleTrack.uri(String uri, {String? title, String? language}) {
-    return SubtitleTrack(
-      id: 'external:$uri',
-      title: title,
-      language: language,
-      isExternal: true,
-      uri: uri,
-    );
+    return SubtitleTrack(id: 'external:$uri', title: title, language: language, isExternal: true, uri: uri);
   }
 
   /// Auto-select track.
@@ -161,10 +154,7 @@ class SubtitleTrack {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SubtitleTrack &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+      identical(this, other) || other is SubtitleTrack && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;
@@ -182,15 +172,11 @@ class Tracks {
 
   /// Creates a copy with the given fields replaced.
   Tracks copyWith({List<AudioTrack>? audio, List<SubtitleTrack>? subtitle}) {
-    return Tracks(
-      audio: audio ?? this.audio,
-      subtitle: subtitle ?? this.subtitle,
-    );
+    return Tracks(audio: audio ?? this.audio, subtitle: subtitle ?? this.subtitle);
   }
 
   @override
-  String toString() =>
-      'Tracks(audio: ${audio.length}, subtitle: ${subtitle.length})';
+  String toString() => 'Tracks(audio: ${audio.length}, subtitle: ${subtitle.length})';
 }
 
 /// Represents the currently selected tracks.
@@ -205,10 +191,7 @@ class TrackSelection {
 
   /// Creates a copy with the given fields replaced.
   TrackSelection copyWith({AudioTrack? audio, SubtitleTrack? subtitle}) {
-    return TrackSelection(
-      audio: audio ?? this.audio,
-      subtitle: subtitle ?? this.subtitle,
-    );
+    return TrackSelection(audio: audio ?? this.audio, subtitle: subtitle ?? this.subtitle);
   }
 
   @override
@@ -233,10 +216,7 @@ class AudioDevice {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AudioDevice &&
-          runtimeType == other.runtimeType &&
-          name == other.name;
+      identical(this, other) || other is AudioDevice && runtimeType == other.runtimeType && name == other.name;
 
   @override
   int get hashCode => name.hashCode;
@@ -253,11 +233,7 @@ class PlayerLog {
   /// The log message text.
   final String text;
 
-  const PlayerLog({
-    required this.level,
-    required this.prefix,
-    required this.text,
-  });
+  const PlayerLog({required this.level, required this.prefix, required this.text});
 
   @override
   String toString() => '[$prefix] ${level.name}: $text';
@@ -282,10 +258,7 @@ class Media {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Media &&
-          runtimeType == other.runtimeType &&
-          uri == other.uri &&
-          start == other.start;
+      other is Media && runtimeType == other.runtimeType && uri == other.uri && start == other.start;
 
   @override
   int get hashCode => uri.hashCode ^ start.hashCode;

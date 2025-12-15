@@ -94,8 +94,7 @@ class PlexPlaylist with MultiServerFields {
   /// Playlists don't track viewed leaf count
   int? get viewedLeafCount => null;
 
-  factory PlexPlaylist.fromJson(Map<String, dynamic> json) =>
-      _$PlexPlaylistFromJson(json);
+  factory PlexPlaylist.fromJson(Map<String, dynamic> json) => _$PlexPlaylistFromJson(json);
 
   Map<String, dynamic> toJson() => _$PlexPlaylistToJson(this);
 

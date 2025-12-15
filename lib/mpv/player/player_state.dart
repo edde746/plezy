@@ -106,6 +106,5 @@ class PlayerState {
   }
 
   @override
-  String toString() =>
-      'PlayerState(playing: $playing, position: $position, duration: $duration)';
+  String toString() => 'PlayerState(playing: $playing, position: $position, duration: $duration)';
 }

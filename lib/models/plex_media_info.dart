@@ -135,20 +135,12 @@ class PlexChapter {
   final String? title;
   final String? thumb;
 
-  PlexChapter({
-    required this.id,
-    this.index,
-    this.startTimeOffset,
-    this.endTimeOffset,
-    this.title,
-    this.thumb,
-  });
+  PlexChapter({required this.id, this.index, this.startTimeOffset, this.endTimeOffset, this.title, this.thumb});
 
   String get label => title ?? 'Chapter ${(index ?? 0) + 1}';
 
   Duration get startTime => Duration(milliseconds: startTimeOffset ?? 0);
-  Duration? get endTime =>
-      endTimeOffset != null ? Duration(milliseconds: endTimeOffset!) : null;
+  Duration? get endTime => endTimeOffset != null ? Duration(milliseconds: endTimeOffset!) : null;
 }
 
 class PlexMarker {
@@ -157,12 +149,7 @@ class PlexMarker {
   final int startTimeOffset;
   final int endTimeOffset;
 
-  PlexMarker({
-    required this.id,
-    required this.type,
-    required this.startTimeOffset,
-    required this.endTimeOffset,
-  });
+  PlexMarker({required this.id, required this.type, required this.startTimeOffset, required this.endTimeOffset});
 
   Duration get startTime => Duration(milliseconds: startTimeOffset);
   Duration get endTime => Duration(milliseconds: endTimeOffset);

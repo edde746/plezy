@@ -18,10 +18,7 @@ class UpdateService {
 
   /// Check if update checking is enabled via build flag
   static bool get isUpdateCheckEnabled {
-    const enabled = bool.fromEnvironment(
-      'ENABLE_UPDATE_CHECK',
-      defaultValue: false,
-    );
+    const enabled = bool.fromEnvironment('ENABLE_UPDATE_CHECK', defaultValue: false);
     return enabled;
   }
 
@@ -65,9 +62,7 @@ class UpdateService {
 
   /// Internal method that performs the actual update check
   /// [respectCooldown] - if true, checks cooldown and updates last check time
-  static Future<Map<String, dynamic>?> _performUpdateCheck({
-    required bool respectCooldown,
-  }) async {
+  static Future<Map<String, dynamic>?> _performUpdateCheck({required bool respectCooldown}) async {
     if (!isUpdateCheckEnabled) {
       return null;
     }
@@ -92,9 +87,7 @@ class UpdateService {
         final latestVersion = data['tag_name'] as String;
 
         // Remove 'v' prefix if present
-        final cleanVersion = latestVersion.startsWith('v')
-            ? latestVersion.substring(1)
-            : latestVersion;
+        final cleanVersion = latestVersion.startsWith('v') ? latestVersion.substring(1) : latestVersion;
 
         final hasUpdate = _isNewerVersion(cleanVersion, currentVersion);
 
@@ -139,9 +132,7 @@ class UpdateService {
 
   /// Check for updates on GitHub (manual check, ignores cooldown)
   /// Returns a map with update info, or null if no update or error
-  static Future<Map<String, dynamic>?> checkForUpdates({
-    bool silent = false,
-  }) async {
+  static Future<Map<String, dynamic>?> checkForUpdates({bool silent = false}) async {
     return _performUpdateCheck(respectCooldown: false);
   }
 
@@ -168,9 +159,7 @@ class UpdateService {
       final currentParts = _parseVersionParts(currentVersion);
 
       // Compare each part
-      final maxLength = newParts.length > currentParts.length
-          ? newParts.length
-          : currentParts.length;
+      final maxLength = newParts.length > currentParts.length ? newParts.length : currentParts.length;
 
       for (int i = 0; i < maxLength; i++) {
         final newPart = i < newParts.length ? newParts[i] : 0;

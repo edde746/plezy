@@ -95,10 +95,7 @@ class VideoTimelineBar extends StatelessWidget {
   }
 
   Widget _buildTimestamp(Duration time) {
-    return Text(
-      formatDurationTimestamp(time),
-      style: const TextStyle(color: Colors.white, fontSize: 14),
-    );
+    return Text(formatDurationTimestamp(time), style: const TextStyle(color: Colors.white, fontSize: 14));
   }
 
   Widget _buildSlider(Duration position, Duration duration) {

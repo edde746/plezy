@@ -25,8 +25,7 @@ class LibraryPlaylistsTab extends BaseLibraryTab<PlexPlaylist> {
   State<LibraryPlaylistsTab> createState() => _LibraryPlaylistsTabState();
 }
 
-class _LibraryPlaylistsTabState
-    extends LibraryGridTabState<PlexPlaylist, LibraryPlaylistsTab> {
+class _LibraryPlaylistsTabState extends LibraryGridTabState<PlexPlaylist, LibraryPlaylistsTab> {
   @override
   String get focusNodeDebugLabel => 'playlists_first_item';
 
@@ -48,10 +47,7 @@ class _LibraryPlaylistsTabState
     final client = getClientForLibrary();
 
     // Playlists are automatically tagged with server info by PlexClient
-    return await client.getLibraryPlaylists(
-      sectionId: widget.library.key,
-      playlistType: 'video',
-    );
+    return await client.getLibraryPlaylists(sectionId: widget.library.key, playlistType: 'video');
   }
 
   @override

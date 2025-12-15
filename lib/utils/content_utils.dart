@@ -28,12 +28,10 @@ class ContentTypeHelper {
   ContentTypeHelper._();
 
   /// Checks if the given type is music content (artist, album, or track)
-  static bool isMusicContent(String type) =>
-      ContentTypes.musicTypes.contains(type.toLowerCase());
+  static bool isMusicContent(String type) => ContentTypes.musicTypes.contains(type.toLowerCase());
 
   /// Checks if the given type is video content (movie, show, episode, or season)
-  static bool isVideoContent(String type) =>
-      ContentTypes.videoTypes.contains(type.toLowerCase());
+  static bool isVideoContent(String type) => ContentTypes.videoTypes.contains(type.toLowerCase());
 
   /// Checks if the given library is a music library
   static bool isMusicLibrary(dynamic lib) {

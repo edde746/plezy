@@ -12,18 +12,9 @@ class PlexRole {
   final String? thumb;
   final int? count;
 
-  PlexRole({
-    this.id,
-    this.filter,
-    required this.tag,
-    this.tagKey,
-    this.role,
-    this.thumb,
-    this.count,
-  });
+  PlexRole({this.id, this.filter, required this.tag, this.tagKey, this.role, this.thumb, this.count});
 
-  factory PlexRole.fromJson(Map<String, dynamic> json) =>
-      _$PlexRoleFromJson(json);
+  factory PlexRole.fromJson(Map<String, dynamic> json) => _$PlexRoleFromJson(json);
 
   Map<String, dynamic> toJson() => _$PlexRoleToJson(this);
 }

@@ -5,13 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../i18n/strings.g.dart';
 
 /// Navigation tab identifiers
-enum NavigationTabId {
-  discover,
-  libraries,
-  search,
-  downloads,
-  settings,
-}
+enum NavigationTabId { discover, libraries, search, downloads, settings }
 
 /// Represents a navigation tab with its configuration
 class NavigationTab {
@@ -20,19 +14,10 @@ class NavigationTab {
   final IconData icon;
   final String Function() getLabel;
 
-  const NavigationTab({
-    required this.id,
-    required this.onlineOnly,
-    required this.icon,
-    required this.getLabel,
-  });
+  const NavigationTab({required this.id, required this.onlineOnly, required this.icon, required this.getLabel});
 
   NavigationDestination toDestination() {
-    return NavigationDestination(
-      icon: AppIcon(icon, fill: 1),
-      selectedIcon: AppIcon(icon, fill: 1),
-      label: getLabel(),
-    );
+    return NavigationDestination(icon: AppIcon(icon, fill: 1), selectedIcon: AppIcon(icon, fill: 1), label: getLabel());
   }
 
   /// Get the index for a tab ID in the visible tabs list
@@ -43,17 +28,11 @@ class NavigationTab {
 
   /// Get tabs filtered by offline mode
   static List<NavigationTab> getVisibleTabs({required bool isOffline}) {
-    return allNavigationTabs
-        .where((tab) => !isOffline || !tab.onlineOnly)
-        .toList();
+    return allNavigationTabs.where((tab) => !isOffline || !tab.onlineOnly).toList();
   }
 
   /// Check if a visual index corresponds to a specific tab ID
-  static bool isTabAtIndex(
-    NavigationTabId id,
-    int index, {
-    required bool isOffline,
-  }) {
+  static bool isTabAtIndex(NavigationTabId id, int index, {required bool isOffline}) {
     return indexFor(id, isOffline: isOffline) == index;
   }
 }
@@ -67,24 +46,14 @@ String _getSettingsLabel() => t.navigation.settings;
 
 /// All navigation tabs in display order
 const allNavigationTabs = [
-  NavigationTab(
-    id: NavigationTabId.discover,
-    onlineOnly: true,
-    icon: Symbols.home_rounded,
-    getLabel: _getHomeLabel,
-  ),
+  NavigationTab(id: NavigationTabId.discover, onlineOnly: true, icon: Symbols.home_rounded, getLabel: _getHomeLabel),
   NavigationTab(
     id: NavigationTabId.libraries,
     onlineOnly: true,
     icon: Symbols.video_library_rounded,
     getLabel: _getLibrariesLabel,
   ),
-  NavigationTab(
-    id: NavigationTabId.search,
-    onlineOnly: true,
-    icon: Symbols.search_rounded,
-    getLabel: _getSearchLabel,
-  ),
+  NavigationTab(id: NavigationTabId.search, onlineOnly: true, icon: Symbols.search_rounded, getLabel: _getSearchLabel),
   NavigationTab(
     id: NavigationTabId.downloads,
     onlineOnly: false,

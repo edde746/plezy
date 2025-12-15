@@ -43,10 +43,7 @@ class _StylingSliderSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [Text(label), Text(formattedValue)],
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(formattedValue)]),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -154,11 +151,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
         .toUpperCase();
   }
 
-  Future<void> _showColorPicker(
-    String title,
-    String currentColor,
-    Function(String) onColorSelected,
-  ) async {
+  Future<void> _showColorPicker(String title, String currentColor, Function(String) onColorSelected) async {
     Color initialColor = _hexToColor(currentColor);
 
     final Color selectedColor = await showColorPickerDialog(
@@ -182,11 +175,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
         ColorPickerType.wheel: true,
         ColorPickerType.custom: false,
       },
-      actionButtons: const ColorPickerActionButtons(
-        okButton: true,
-        closeButton: true,
-        dialogActionButtons: false,
-      ),
+      actionButtons: const ColorPickerActionButtons(okButton: true, closeButton: true, dialogActionButtons: false),
     );
 
     final hexColor = _colorToHex(selectedColor);
@@ -205,12 +194,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
           CustomAppBar(title: Text(t.screens.subtitleStyling), pinned: true),
           SliverPadding(
             padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildStylingCard(),
-                const SizedBox(height: 24),
-              ]),
-            ),
+            sliver: SliverList(delegate: SliverChildListDelegate([_buildStylingCard(), const SizedBox(height: 24)])),
           ),
         ],
       ),
@@ -226,9 +210,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               t.subtitlingStyling.stylingOptions,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           // Font Size Slider
@@ -254,9 +236,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             currentColor: _textColor,
             hexToColor: _hexToColor,
             onTap: () {
-              _showColorPicker(t.subtitlingStyling.textColor, _textColor, (
-                color,
-              ) {
+              _showColorPicker(t.subtitlingStyling.textColor, _textColor, (color) {
                 setState(() {
                   _textColor = color;
                 });
@@ -288,9 +268,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             currentColor: _borderColor,
             hexToColor: _hexToColor,
             onTap: () {
-              _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, (
-                color,
-              ) {
+              _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, (color) {
                 setState(() {
                   _borderColor = color;
                 });
@@ -323,16 +301,12 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             currentColor: _backgroundColor,
             hexToColor: _hexToColor,
             onTap: () {
-              _showColorPicker(
-                t.subtitlingStyling.backgroundColor,
-                _backgroundColor,
-                (color) {
-                  setState(() {
-                    _backgroundColor = color;
-                  });
-                  _settingsService.setSubtitleBackgroundColor(color);
-                },
-              );
+              _showColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, (color) {
+                setState(() {
+                  _backgroundColor = color;
+                });
+                _settingsService.setSubtitleBackgroundColor(color);
+              });
             },
           ),
         ],

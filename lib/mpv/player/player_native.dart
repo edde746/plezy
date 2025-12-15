@@ -43,8 +43,7 @@ class PlayerNative implements Player {
   final _logController = StreamController<PlayerLog>.broadcast();
   final _errorController = StreamController<String>.broadcast();
   final _audioDeviceController = StreamController<AudioDevice>.broadcast();
-  final _audioDevicesController =
-      StreamController<List<AudioDevice>>.broadcast();
+  final _audioDevicesController = StreamController<List<AudioDevice>>.broadcast();
 
   StreamSubscription? _eventSubscription;
   bool _disposed = false;
@@ -271,15 +270,10 @@ class PlayerNative implements Player {
     T? selectedTrack;
 
     if (id != null && id != 'no') {
-      selectedTrack = tracks.firstWhere(
-        (track) => _getTrackId(track) == id,
-        orElse: () => null,
-      );
+      selectedTrack = tracks.firstWhere((track) => _getTrackId(track) == id, orElse: () => null);
     }
 
-    _state = _state.copyWith(
-      track: selectionSetter(_state.track, selectedTrack),
-    );
+    _state = _state.copyWith(track: selectionSetter(_state.track, selectedTrack));
     _trackController.add(_state.track);
   }
 
@@ -308,10 +302,7 @@ class PlayerNative implements Player {
       await _observeProperty('duration', 'double');
       await _observeProperty('pause', 'flag');
       await _observeProperty('paused-for-cache', 'flag');
-      await _observeProperty(
-        'track-list',
-        (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node',
-      );
+      await _observeProperty('track-list', (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node');
       await _observeProperty('eof-reached', 'flag');
       await _observeProperty('volume', 'double');
       await _observeProperty('aid', 'string');
@@ -323,10 +314,7 @@ class PlayerNative implements Player {
   }
 
   Future<void> _observeProperty(String name, String format) async {
-    await _methodChannel.invokeMethod('observeProperty', {
-      'name': name,
-      'format': format,
-    });
+    await _methodChannel.invokeMethod('observeProperty', {'name': name, 'format': format});
   }
 
   /// Configures subtitle fonts for Android libass support.
@@ -411,11 +399,7 @@ class PlayerNative implements Player {
   @override
   Future<void> seek(Duration position) async {
     _checkDisposed();
-    await command([
-      'seek',
-      (position.inMilliseconds / 1000.0).toString(),
-      'absolute',
-    ]);
+    await command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']);
   }
 
   // ============================================
@@ -435,12 +419,7 @@ class PlayerNative implements Player {
   }
 
   @override
-  Future<void> addSubtitleTrack({
-    required String uri,
-    String? title,
-    String? language,
-    bool select = false,
-  }) async {
+  Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
     _checkDisposed();
     final args = ['sub-add', uri, select ? 'select' : 'auto'];
     if (title != null) args.add('title=$title');
@@ -478,19 +457,14 @@ class PlayerNative implements Player {
   Future<void> setProperty(String name, String value) async {
     _checkDisposed();
     await _ensureInitialized();
-    await _methodChannel.invokeMethod('setProperty', {
-      'name': name,
-      'value': value,
-    });
+    await _methodChannel.invokeMethod('setProperty', {'name': name, 'value': value});
   }
 
   @override
   Future<String?> getProperty(String name) async {
     _checkDisposed();
     await _ensureInitialized();
-    return await _methodChannel.invokeMethod<String>('getProperty', {
-      'name': name,
-    });
+    return await _methodChannel.invokeMethod<String>('getProperty', {'name': name});
   }
 
   @override
