@@ -6,6 +6,8 @@ import '../screens/video_player_screen.dart';
 import '../services/settings_service.dart';
 import 'app_logger.dart';
 
+const String kVideoPlayerRouteName = '/video_player';
+
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
 ///
 /// This utility function provides a consistent way to navigate to the video player
@@ -54,7 +56,19 @@ Future<bool?> navigateToVideoPlayer(
     }
   }
 
+  // Prevent stacking an identical video player when already active
+  if (!usePushReplacement &&
+      metadata.ratingKey != null &&
+      VideoPlayerScreenState.activeRatingKey == metadata.ratingKey &&
+      VideoPlayerScreenState.activeMediaIndex == mediaIndex) {
+    appLogger.d(
+      'Video player already active for ${metadata.ratingKey} (mediaIndex=$mediaIndex), skipping duplicate navigation',
+    );
+    return null;
+  }
+
   final route = PageRouteBuilder<bool>(
+    settings: const RouteSettings(name: kVideoPlayerRouteName),
     pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
       metadata: metadata,
       preferredAudioTrack: preferredAudioTrack,

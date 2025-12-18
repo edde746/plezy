@@ -5,6 +5,7 @@ import '../../services/plex_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
+import '../utils/video_player_navigation.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
 import '../navigation/navigation_tabs.dart';
@@ -23,6 +24,8 @@ import 'libraries/libraries_screen.dart';
 import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
+import 'video_player_screen.dart';
+import '../watch_together/watch_together.dart';
 
 /// Provides access to the main screen's focus control.
 class MainScreenFocusScope extends InheritedWidget {
@@ -100,6 +103,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
     _screens = _buildScreens(_isOffline);
 
+    // Set up Watch Together callbacks immediately (must be synchronous to catch early messages)
+    if (!_isOffline) {
+      _setupWatchTogetherCallback();
+    }
+
     // Set up data invalidation callback for profile switching (skip in offline mode)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!_isOffline) {
@@ -116,6 +124,66 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
         _contentFocusScope.requestFocus();
       }
     });
+  }
+
+  /// Set up the Watch Together navigation callback for guests
+  void _setupWatchTogetherCallback() {
+    try {
+      final watchTogether = context.read<WatchTogetherProvider>();
+      watchTogether.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
+        appLogger.d('WatchTogether: Media switch received - navigating to $mediaTitle');
+        await _navigateToWatchTogetherMedia(ratingKey, serverId);
+      };
+      watchTogether.onHostExitedPlayer = () {
+        appLogger.d('WatchTogether: Host exited player - exiting player for guest');
+        // Use rootNavigator to ensure we pop the video player even if nested
+        if (!mounted) return;
+        final navigator = Navigator.of(context, rootNavigator: true);
+        bool isVideoPlayerOnTop = false;
+        navigator.popUntil((route) {
+          if (route.isCurrent) {
+            isVideoPlayerOnTop = route.settings.name == kVideoPlayerRouteName;
+          }
+          return true;
+        });
+        if (isVideoPlayerOnTop && navigator.canPop()) {
+          navigator.pop();
+        }
+      };
+    } catch (e) {
+      appLogger.w('Could not set up Watch Together callback', error: e);
+    }
+  }
+
+  /// Navigate to media when host switches content in Watch Together session
+  Future<void> _navigateToWatchTogetherMedia(String ratingKey, String serverId) async {
+    if (!mounted) return; // Check before any context usage
+
+    try {
+      final multiServer = context.read<MultiServerProvider>();
+      final client = multiServer.getClientForServer(serverId);
+
+      if (client == null) {
+        appLogger.w('WatchTogether: Server $serverId not available');
+        return;
+      }
+
+      // Fetch the metadata for the new media
+      final metadata = await client.getMetadataWithImages(ratingKey);
+
+      if (metadata == null || !mounted) return;
+
+      // Use push to preserve WatchTogetherScreen in navigation stack
+      // VideoPlayerScreen handles its own replacement via onPlayerMediaSwitched
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          settings: const RouteSettings(name: kVideoPlayerRouteName),
+          builder: (_) => VideoPlayerScreen(metadata: metadata),
+        ),
+      );
+    } catch (e) {
+      appLogger.e('WatchTogether: Failed to navigate to media', error: e);
+    }
   }
 
   @override

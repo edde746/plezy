@@ -45,6 +45,8 @@ dependencies:
   saf_util: ^0.11.0
   saf_stream: ^0.12.2
   material_symbols_icons: ^4.2892.0
+  peerdart: ^0.5.6
+  share_plus: ^10.0.0
 
 dev_dependencies:
   flutter_test:
@@ -56,6 +58,9 @@ dev_dependencies:
   slang_build_runner: ^3.31.0
   dart_code_linter: ^3.1.1
   drift_dev: ^2.14.0
+
+dependency_overrides:
+  flutter_webrtc: ^1.2.1
 
 flutter:
   uses-material-design: true

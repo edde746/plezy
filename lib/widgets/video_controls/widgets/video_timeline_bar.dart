@@ -30,6 +30,9 @@ class VideoTimelineBar extends StatelessWidget {
   /// Called when focus changes.
   final ValueChanged<bool>? onFocusChange;
 
+  /// Whether the timeline is enabled for interaction.
+  final bool enabled;
+
   const VideoTimelineBar({
     super.key,
     required this.player,
@@ -41,6 +44,7 @@ class VideoTimelineBar extends StatelessWidget {
     this.focusNode,
     this.onKeyEvent,
     this.onFocusChange,
+    this.enabled = true,
   });
 
   @override
@@ -109,6 +113,7 @@ class VideoTimelineBar extends StatelessWidget {
       focusNode: focusNode,
       onKeyEvent: onKeyEvent,
       onFocusChange: onFocusChange,
+      enabled: enabled,
     );
   }
 }

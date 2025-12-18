@@ -27,9 +27,14 @@ class MobileVideoControls extends StatelessWidget {
   final Widget trackChapterControls;
   final Function(Duration) onSeek;
   final Function(Duration) onSeekEnd;
+  final Function(Duration)? onSeekCompleted;
   final VoidCallback onPlayPause;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
+  final VoidCallback? onBack;
+
+  /// Whether the user can control playback (false in host-only mode for non-host).
+  final bool canControl;
 
   const MobileVideoControls({
     super.key,
@@ -42,8 +47,11 @@ class MobileVideoControls extends StatelessWidget {
     required this.onSeek,
     required this.onSeekEnd,
     required this.onPlayPause,
+    this.onSeekCompleted,
     this.onCancelAutoHide,
     this.onStartAutoHide,
+    this.onBack,
+    this.canControl = true,
   });
 
   @override
@@ -72,6 +80,7 @@ class MobileVideoControls extends StatelessWidget {
           metadata: metadata,
           style: VideoHeaderStyle.multiLine,
           trailing: trackChapterControls,
+          onBack: onBack,
         ),
       ),
     );
@@ -80,6 +89,11 @@ class MobileVideoControls extends StatelessWidget {
   }
 
   Widget _buildPlaybackControls(BuildContext context) {
+    // Hide all playback controls in host-only mode for non-host
+    if (!canControl) {
+      return const SizedBox.shrink();
+    }
+
     return StreamBuilder<bool>(
       stream: player.streams.playing,
       initialData: player.state.playing,
@@ -93,7 +107,8 @@ class MobileVideoControls extends StatelessWidget {
               icon: getReplayIcon(seekTimeSmall),
               iconSize: 48,
               onPressed: () {
-                seekWithClamping(player, Duration(seconds: -seekTimeSmall));
+                final newPosition = seekWithClamping(player, Duration(seconds: -seekTimeSmall));
+                onSeekCompleted?.call(newPosition);
               },
             ),
             const SizedBox(width: 48),
@@ -117,7 +132,8 @@ class MobileVideoControls extends StatelessWidget {
               icon: getForwardIcon(seekTimeSmall),
               iconSize: 48,
               onPressed: () {
-                seekWithClamping(player, Duration(seconds: seekTimeSmall));
+                final newPosition = seekWithClamping(player, Duration(seconds: seekTimeSmall));
+                onSeekCompleted?.call(newPosition);
               },
             ),
           ],
@@ -139,6 +155,7 @@ class MobileVideoControls extends StatelessWidget {
           onSeek: onSeek,
           onSeekEnd: onSeekEnd,
           horizontalLayout: false,
+          enabled: canControl,
         ),
       ),
     );

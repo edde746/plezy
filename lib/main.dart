@@ -23,6 +23,7 @@ import 'providers/playback_state_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
+import 'watch_together/watch_together.dart';
 import 'services/multi_server_manager.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
@@ -205,6 +206,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (context) => SettingsProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
+        ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
@@ -343,6 +345,9 @@ class _SetupScreenState extends State<SetupScreen> {
 
     // Migrate from single-server to multi-server if needed
     await registry.migrateFromSingleServer();
+
+    // Refresh servers from API to get updated connection info (IPs may change)
+    await registry.refreshServersFromApi();
 
     // Load all configured servers
     final servers = await registry.getServers();

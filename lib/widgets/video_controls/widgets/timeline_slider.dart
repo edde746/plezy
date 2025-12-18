@@ -25,6 +25,9 @@ class TimelineSlider extends StatelessWidget {
   /// Called when focus changes.
   final ValueChanged<bool>? onFocusChange;
 
+  /// Whether the slider is enabled for interaction.
+  final bool enabled;
+
   const TimelineSlider({
     super.key,
     required this.position,
@@ -36,6 +39,7 @@ class TimelineSlider extends StatelessWidget {
     this.focusNode,
     this.onKeyEvent,
     this.onFocusChange,
+    this.enabled = true,
   });
 
   @override
@@ -68,22 +72,25 @@ class TimelineSlider extends StatelessWidget {
               ),
             ),
           ),
-        // Slider
-        Semantics(
-          label: t.videoControls.timelineSlider,
-          slider: true,
-          child: Slider(
-            value: duration.inMilliseconds > 0 ? position.inMilliseconds.toDouble() : 0.0,
-            min: 0.0,
-            max: duration.inMilliseconds.toDouble(),
-            onChanged: (value) {
-              onSeek(Duration(milliseconds: value.toInt()));
-            },
-            onChangeEnd: (value) {
-              onSeekEnd(Duration(milliseconds: value.toInt()));
-            },
-            activeColor: Colors.white,
-            inactiveColor: Colors.white.withValues(alpha: 0.3),
+        // Slider - use IgnorePointer to block interaction while preserving visual style
+        IgnorePointer(
+          ignoring: !enabled,
+          child: Semantics(
+            label: t.videoControls.timelineSlider,
+            slider: true,
+            child: Slider(
+              value: duration.inMilliseconds > 0 ? position.inMilliseconds.toDouble() : 0.0,
+              min: 0.0,
+              max: duration.inMilliseconds.toDouble(),
+              onChanged: (value) {
+                onSeek(Duration(milliseconds: value.toInt()));
+              },
+              onChangeEnd: (value) {
+                onSeekEnd(Duration(milliseconds: value.toInt()));
+              },
+              activeColor: Colors.white,
+              inactiveColor: Colors.white.withValues(alpha: 0.3),
+            ),
           ),
         ),
         // Chapter marker indicators
@@ -105,7 +112,7 @@ class TimelineSlider extends StatelessWidget {
     if (focusNode != null) {
       slider = FocusableWrapper(
         focusNode: focusNode,
-        onKeyEvent: onKeyEvent,
+        onKeyEvent: enabled ? onKeyEvent : null,
         onFocusChange: onFocusChange,
         borderRadius: 8,
         autoScroll: false,

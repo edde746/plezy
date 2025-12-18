@@ -226,6 +226,7 @@ class CustomAppBar extends StatelessWidget {
   final double? expandedHeight;
   final Widget? flexibleSpace;
   final PreferredSizeWidget? bottom;
+  final bool automaticallyImplyLeading;
 
   const CustomAppBar({
     super.key,
@@ -242,6 +243,7 @@ class CustomAppBar extends StatelessWidget {
     this.expandedHeight,
     this.flexibleSpace,
     this.bottom,
+    this.automaticallyImplyLeading = true,
   });
 
   @override
@@ -262,7 +264,7 @@ class CustomAppBar extends StatelessWidget {
         bottom: bottom,
       ),
       onBackPressed: onBackPressed,
-      automaticallyImplyLeading: true,
+      automaticallyImplyLeading: automaticallyImplyLeading,
     );
   }
 }

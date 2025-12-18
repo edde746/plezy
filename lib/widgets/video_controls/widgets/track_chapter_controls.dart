@@ -51,6 +51,9 @@ class TrackChapterControls extends StatelessWidget {
   /// Called to navigate left from the first button
   final VoidCallback? onNavigateLeft;
 
+  /// Whether the user can control playback (false in host-only mode for non-host).
+  final bool canControl;
+
   const TrackChapterControls({
     super.key,
     required this.player,
@@ -76,6 +79,7 @@ class TrackChapterControls extends StatelessWidget {
     this.focusNodes,
     this.onFocusChange,
     this.onNavigateLeft,
+    this.canControl = true,
   });
 
   /// Handle key event for button navigation
@@ -175,6 +179,7 @@ class TrackChapterControls extends StatelessWidget {
                     subtitleSyncOffset,
                     onOpen: onCancelAutoHide,
                     onClose: onStartAutoHide,
+                    canControl: canControl,
                   );
                   onLoadSeekTimes?.call();
                 },

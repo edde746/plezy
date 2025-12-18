@@ -4,8 +4,17 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 import 'package:rate_limiter/rate_limiter.dart';
-import 'package:flutter/services.dart' show SystemChrome, DeviceOrientation, LogicalKeyboardKey;
+import 'package:flutter/services.dart'
+    show
+        SystemChrome,
+        DeviceOrientation,
+        LogicalKeyboardKey,
+        PhysicalKeyboardKey,
+        KeyEvent,
+        KeyDownEvent,
+        HardwareKeyboard;
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -30,6 +39,7 @@ import 'icons.dart';
 import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
+import '../../watch_together/watch_together.dart';
 import 'widgets/track_chapter_controls.dart';
 import 'mobile_video_controls.dart';
 import 'desktop_video_controls.dart';
@@ -46,6 +56,9 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onCycleBoxFitMode,
   Function(AudioTrack)? onAudioTrackChanged,
   Function(SubtitleTrack)? onSubtitleTrackChanged,
+  Function(Duration position)? onSeekCompleted,
+  VoidCallback? onBack,
+  bool canControl = true,
 }) {
   return PlexVideoControls(
     player: player,
@@ -58,6 +71,9 @@ Widget plexVideoControlsBuilder(
     onCycleBoxFitMode: onCycleBoxFitMode,
     onAudioTrackChanged: onAudioTrackChanged,
     onSubtitleTrackChanged: onSubtitleTrackChanged,
+    onSeekCompleted: onSeekCompleted,
+    onBack: onBack,
+    canControl: canControl,
   );
 }
 
@@ -73,6 +89,15 @@ class PlexVideoControls extends StatefulWidget {
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
 
+  /// Called when a seek operation completes (for Watch Together sync)
+  final Function(Duration position)? onSeekCompleted;
+
+  /// Called when back button is pressed (for Watch Together session leave confirmation)
+  final VoidCallback? onBack;
+
+  /// Whether the user can control playback (false in host-only mode for non-host).
+  final bool canControl;
+
   const PlexVideoControls({
     super.key,
     required this.player,
@@ -85,6 +110,9 @@ class PlexVideoControls extends StatefulWidget {
     this.onCycleBoxFitMode,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
+    this.onSeekCompleted,
+    this.onBack,
+    this.canControl = true,
   });
 
   @override
@@ -167,6 +195,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusPlayPauseIfKeyboardMode();
     });
+    // Register global key handler for focus-independent shortcuts (desktop only)
+    HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
   }
 
   /// Focus play/pause button if we're in keyboard navigation mode (desktop only)
@@ -241,7 +271,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   void _skipMarker() {
     if (_currentMarker != null) {
-      widget.player.seek(_currentMarker!.endTime);
+      final endTime = _currentMarker!.endTime;
+      widget.player.seek(endTime);
+      widget.onSeekCompleted?.call(endTime);
     }
     _cancelAutoSkipTimer();
   }
@@ -365,6 +397,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
     _resizeDebounceTimer?.cancel();
@@ -676,49 +709,55 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       onCancelAutoHide: () => _hideTimer?.cancel(),
       onStartAutoHide: _startHideTimer,
       serverId: widget.metadata.serverId ?? '',
+      canControl: widget.canControl,
     );
   }
 
-  void _seekToPreviousChapter() {
+  void _seekToPreviousChapter() => _seekToChapter(forward: false);
+
+  void _seekToNextChapter() => _seekToChapter(forward: true);
+
+  void _seekToChapter({required bool forward}) {
     if (_chapters.isEmpty) {
-      // No chapters - seek backward by configured amount
-      seekWithClamping(widget.player, Duration(seconds: -_seekTimeSmall));
+      // No chapters - seek by configured amount
+      final delta = Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall);
+      final duration = widget.player.state.duration;
+      final unclamped = widget.player.state.position + delta;
+      final newPosition = unclamped < Duration.zero ? Duration.zero : (unclamped > duration ? duration : unclamped);
+      seekWithClamping(widget.player, delta);
+      widget.onSeekCompleted?.call(newPosition);
       return;
     }
 
-    final currentPosition = widget.player.state.position.inMilliseconds;
+    final currentPositionMs = widget.player.state.position.inMilliseconds;
 
-    // Find current chapter
-    for (int i = _chapters.length - 1; i >= 0; i--) {
-      final chapterStart = _chapters[i].startTimeOffset ?? 0;
-      if (currentPosition > chapterStart + 3000) {
-        // If more than 3 seconds into chapter, go to start of current chapter
-        widget.player.seek(Duration(milliseconds: chapterStart));
-        return;
+    if (forward) {
+      // Find next chapter
+      for (final chapter in _chapters) {
+        final chapterStart = chapter.startTimeOffset ?? 0;
+        if (chapterStart > currentPositionMs) {
+          _seekToPosition(Duration(milliseconds: chapterStart));
+          return;
+        }
       }
+    } else {
+      // Find previous/current chapter
+      for (int i = _chapters.length - 1; i >= 0; i--) {
+        final chapterStart = _chapters[i].startTimeOffset ?? 0;
+        if (currentPositionMs > chapterStart + 3000) {
+          // If more than 3 seconds into chapter, go to start of current chapter
+          _seekToPosition(Duration(milliseconds: chapterStart));
+          return;
+        }
+      }
+      // If at start of first chapter, go to beginning
+      _seekToPosition(Duration.zero);
     }
-
-    // If at start of first chapter, go to beginning
-    widget.player.seek(Duration.zero);
   }
 
-  void _seekToNextChapter() {
-    if (_chapters.isEmpty) {
-      // No chapters - seek forward by configured amount
-      seekWithClamping(widget.player, Duration(seconds: _seekTimeSmall));
-      return;
-    }
-
-    final currentPosition = widget.player.state.position.inMilliseconds;
-
-    // Find next chapter
-    for (int i = 0; i < _chapters.length; i++) {
-      final chapterStart = _chapters[i].startTimeOffset ?? 0;
-      if (chapterStart > currentPosition) {
-        widget.player.seek(Duration(milliseconds: chapterStart));
-        return;
-      }
-    }
+  void _seekToPosition(Duration position) {
+    widget.player.seek(position);
+    widget.onSeekCompleted?.call(position);
   }
 
   /// Throttled seek for timeline slider - executes immediately then throttles to 200ms
@@ -728,12 +767,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _finalizeSeek(Duration position) {
     _seekThrottle.cancel();
     widget.player.seek(position);
+    widget.onSeekCompleted?.call(position);
   }
 
   /// Handle double-tap skip forward or backward
   void _handleDoubleTapSkip({required bool isForward}) {
+    // Ignore if user cannot control playback
+    if (!widget.canControl) return;
+
+    // Calculate the new position (clamped to valid range)
+    final currentPosition = widget.player.state.position;
+    final duration = widget.player.state.duration;
+    final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
+    final unclamped = currentPosition + delta;
+    final newPosition = unclamped < Duration.zero ? Duration.zero : (unclamped > duration ? duration : unclamped);
+
     // Perform the seek
-    seekWithClamping(widget.player, Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall));
+    seekWithClamping(widget.player, delta);
+
+    // Notify Watch Together
+    widget.onSeekCompleted?.call(newPosition);
 
     // Show visual feedback
     _showSkipFeedback(isForward: isForward);
@@ -838,8 +891,48 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         key == LogicalKeyboardKey.gameButtonA;
   }
 
-  /// Show controls and focus play/pause on keyboard input (desktop only)
-  void _showControlsWithFocus() {
+  /// Determine if the key event should toggle play/pause based on configured hotkeys.
+  bool _isPlayPauseKey(KeyEvent event) {
+    final physicalKey = event.physicalKey;
+
+    // When the shortcuts service is available, respect the configured play/pause hotkey
+    if (_keyboardService != null) {
+      final hotkey = _keyboardService!.hotkeys['play_pause'];
+      if (hotkey == null) return false;
+      return hotkey.key == physicalKey;
+    }
+
+    // Fallback to defaults while the service is loading
+    return physicalKey == PhysicalKeyboardKey.space || physicalKey == PhysicalKeyboardKey.mediaPlayPause;
+  }
+
+  bool _isPlayPauseActivation(KeyEvent event) {
+    return event is KeyDownEvent && _isPlayPauseKey(event);
+  }
+
+  /// Global key event handler for focus-independent shortcuts (desktop only)
+  bool _handleGlobalKeyEvent(KeyEvent event) {
+    if (!mounted) return false;
+
+    // Only handle when video player navigation is disabled (desktop mode without D-pad nav)
+    if (_videoPlayerNavigationEnabled) return false;
+
+    // Skip on mobile (unless TV)
+    final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
+    if (isMobile) return false;
+
+    // Handle play/pause globally - works regardless of focus
+    if (_isPlayPauseActivation(event)) {
+      widget.player.playOrPause();
+      _showControlsWithFocus(requestFocus: false);
+      return true; // Event handled, stop propagation
+    }
+
+    return false; // Let event continue to other handlers
+  }
+
+  /// Show controls and optionally focus play/pause on keyboard input (desktop only)
+  void _showControlsWithFocus({bool requestFocus = true}) {
     if (!_showControls) {
       setState(() {
         _showControls = true;
@@ -853,9 +946,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _startHideTimer();
 
     // Request focus on play/pause button after controls are shown
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _desktopControlsKey.currentState?.requestPlayPauseFocus();
-    });
+    if (requestFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _desktopControlsKey.currentState?.requestPlayPauseFocus();
+      });
+    } else {
+      // When not requesting focus on play/pause, ensure main focus node keeps focus
+      // This prevents focus from being lost when controls become visible
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_focusNode.hasFocus) {
+          _focusNode.requestFocus();
+        }
+      });
+    }
   }
 
   /// Hide controls when navigating up from timeline (keyboard mode)
@@ -893,6 +996,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         }
 
         final key = event.logicalKey;
+        final isPlayPauseKey = _isPlayPauseKey(event);
+
+        // Handle play/pause via focus when navigation is enabled (TV/gamepad)
+        // When navigation is disabled, the global handler (_handleGlobalKeyEvent) handles it
+        if (_videoPlayerNavigationEnabled || isMobile) {
+          if (_isPlayPauseActivation(event)) {
+            widget.player.playOrPause();
+            _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
+            return KeyEventResult.handled;
+          }
+          // Swallow other play/pause events (e.g., key up/repeat) to prevent focus side effects
+          if (isPlayPauseKey) {
+            return KeyEventResult.handled;
+          }
+        }
 
         // Handle Back/Escape: show controls if hidden, navigate back if visible
         if (_isBackKey(key)) {
@@ -929,7 +1047,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         // Pass other events to the keyboard shortcuts service
         if (_keyboardService == null) return KeyEventResult.ignored;
 
-        return _keyboardService!.handleVideoPlayerKeyEvent(
+        final result = _keyboardService!.handleVideoPlayerKeyEvent(
           event,
           widget.player,
           _toggleFullscreen,
@@ -938,8 +1056,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           _nextSubtitleTrack,
           _nextChapter,
           _previousChapter,
-          onBack: () => Navigator.of(context).pop(true),
+          onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
         );
+        return result;
       },
       child: Listener(
         behavior: HitTestBehavior.translucent,
@@ -1000,9 +1119,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                       trackChapterControls: _buildTrackChapterControlsWidget(),
                                       onSeek: _throttledSeek,
                                       onSeekEnd: _finalizeSeek,
+                                      onSeekCompleted: widget.onSeekCompleted,
                                       onPlayPause: () {}, // Not used, handled internally
                                       onCancelAutoHide: () => _hideTimer?.cancel(),
                                       onStartAutoHide: _startHideTimer,
+                                      onBack: widget.onBack,
+                                      canControl: widget.canControl,
                                     ),
                                   )
                                 : Listener(
@@ -1045,6 +1167,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                       onCancelAutoHide: () => _hideTimer?.cancel(),
                                       onStartAutoHide: _startHideTimer,
                                       serverId: widget.metadata.serverId ?? '',
+                                      onBack: widget.onBack,
+                                      canControl: widget.canControl,
                                     ),
                                   ),
                           ),

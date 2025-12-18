@@ -60,6 +60,10 @@ class DesktopVideoControls extends StatefulWidget {
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
   final String serverId;
+  final VoidCallback? onBack;
+
+  /// Whether the user can control playback (false in host-only mode for non-host).
+  final bool canControl;
 
   const DesktopVideoControls({
     super.key,
@@ -94,6 +98,8 @@ class DesktopVideoControls extends StatefulWidget {
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.serverId = '',
+    this.onBack,
+    this.canControl = true,
   });
 
   @override
@@ -252,8 +258,11 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       return KeyEventResult.handled;
     }
 
-    // LEFT/RIGHT for smooth scrubbing
+    // LEFT/RIGHT for smooth scrubbing - only if user can control
     if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight) {
+      // Ignore seeking if user cannot control
+      if (!widget.canControl) return KeyEventResult.handled;
+
       if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
 
       // Base step: 0.5% of duration, minimum 500ms
@@ -314,6 +323,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       child: VideoControlsHeader(
         metadata: widget.metadata,
         style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
+        onBack: widget.onBack,
       ),
     );
 
@@ -336,74 +346,92 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
             focusNode: _timelineFocusNode,
             onKeyEvent: _handleTimelineKeyEvent,
             onFocusChange: _onFocusChange,
+            enabled: widget.canControl,
           ),
           const SizedBox(height: 4),
           // Row 2: Playback controls and options
           Row(
             children: [
               // Previous item
-              _buildFocusableButton(
-                focusNode: _prevItemFocusNode,
-                index: 0,
-                icon: Symbols.skip_previous_rounded,
-                color: widget.onPrevious != null ? Colors.white : Colors.white54,
-                onPressed: widget.onPrevious,
-                semanticLabel: t.videoControls.previousButton,
+              Opacity(
+                opacity: widget.canControl ? 1.0 : 0.5,
+                child: _buildFocusableButton(
+                  focusNode: _prevItemFocusNode,
+                  index: 0,
+                  icon: Symbols.skip_previous_rounded,
+                  color: widget.onPrevious != null && widget.canControl ? Colors.white : Colors.white54,
+                  onPressed: widget.canControl ? widget.onPrevious : null,
+                  semanticLabel: t.videoControls.previousButton,
+                ),
               ),
               // Previous chapter (or skip backward if no chapters)
-              _buildFocusableButton(
-                focusNode: _prevChapterFocusNode,
-                index: 1,
-                icon: widget.chapters.isEmpty
-                    ? widget.getReplayIcon(widget.seekTimeSmall)
-                    : Symbols.fast_rewind_rounded,
-                onPressed: widget.onSeekToPreviousChapter,
-                semanticLabel: widget.chapters.isEmpty
-                    ? t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall)
-                    : t.videoControls.previousChapterButton,
+              Opacity(
+                opacity: widget.canControl ? 1.0 : 0.5,
+                child: _buildFocusableButton(
+                  focusNode: _prevChapterFocusNode,
+                  index: 1,
+                  icon: widget.chapters.isEmpty
+                      ? widget.getReplayIcon(widget.seekTimeSmall)
+                      : Symbols.fast_rewind_rounded,
+                  onPressed: widget.canControl ? widget.onSeekToPreviousChapter : null,
+                  semanticLabel: widget.chapters.isEmpty
+                      ? t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall)
+                      : t.videoControls.previousChapterButton,
+                ),
               ),
               // Play/Pause
-              StreamBuilder<bool>(
-                stream: widget.player.streams.playing,
-                initialData: widget.player.state.playing,
-                builder: (context, snapshot) {
-                  final isPlaying = snapshot.data ?? false;
-                  return _buildFocusableButton(
-                    focusNode: _playPauseFocusNode,
-                    index: 2,
-                    icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
-                    iconSize: 32,
-                    onPressed: () {
-                      if (isPlaying) {
-                        widget.player.pause();
-                      } else {
-                        widget.player.play();
-                      }
-                    },
-                    semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
-                  );
-                },
+              Opacity(
+                opacity: widget.canControl ? 1.0 : 0.5,
+                child: StreamBuilder<bool>(
+                  stream: widget.player.streams.playing,
+                  initialData: widget.player.state.playing,
+                  builder: (context, snapshot) {
+                    final isPlaying = snapshot.data ?? false;
+                    return _buildFocusableButton(
+                      focusNode: _playPauseFocusNode,
+                      index: 2,
+                      icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
+                      iconSize: 32,
+                      onPressed: widget.canControl
+                          ? () {
+                              if (isPlaying) {
+                                widget.player.pause();
+                              } else {
+                                widget.player.play();
+                              }
+                            }
+                          : null,
+                      semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
+                    );
+                  },
+                ),
               ),
               // Next chapter (or skip forward if no chapters)
-              _buildFocusableButton(
-                focusNode: _nextChapterFocusNode,
-                index: 3,
-                icon: widget.chapters.isEmpty
-                    ? widget.getForwardIcon(widget.seekTimeSmall)
-                    : Symbols.fast_forward_rounded,
-                onPressed: widget.onSeekToNextChapter,
-                semanticLabel: widget.chapters.isEmpty
-                    ? t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall)
-                    : t.videoControls.nextChapterButton,
+              Opacity(
+                opacity: widget.canControl ? 1.0 : 0.5,
+                child: _buildFocusableButton(
+                  focusNode: _nextChapterFocusNode,
+                  index: 3,
+                  icon: widget.chapters.isEmpty
+                      ? widget.getForwardIcon(widget.seekTimeSmall)
+                      : Symbols.fast_forward_rounded,
+                  onPressed: widget.canControl ? widget.onSeekToNextChapter : null,
+                  semanticLabel: widget.chapters.isEmpty
+                      ? t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall)
+                      : t.videoControls.nextChapterButton,
+                ),
               ),
               // Next item
-              _buildFocusableButton(
-                focusNode: _nextItemFocusNode,
-                index: 4,
-                icon: Symbols.skip_next_rounded,
-                color: widget.onNext != null ? Colors.white : Colors.white54,
-                onPressed: widget.onNext,
-                semanticLabel: t.videoControls.nextButton,
+              Opacity(
+                opacity: widget.canControl ? 1.0 : 0.5,
+                child: _buildFocusableButton(
+                  focusNode: _nextItemFocusNode,
+                  index: 4,
+                  icon: Symbols.skip_next_rounded,
+                  color: widget.onNext != null && widget.canControl ? Colors.white : Colors.white54,
+                  onPressed: widget.canControl ? widget.onNext : null,
+                  semanticLabel: t.videoControls.nextButton,
+                ),
               ),
               const Spacer(),
               // Volume control
@@ -439,6 +467,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 focusNodes: _trackControlFocusNodes,
                 onFocusChange: _onFocusChange,
                 onNavigateLeft: navigateFromTrackToVolume,
+                canControl: widget.canControl,
               ),
             ],
           ),

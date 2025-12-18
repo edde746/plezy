@@ -24,11 +24,15 @@ class VideoControlsHeader extends StatelessWidget {
   /// Optional trailing widget (e.g., track/chapter controls)
   final Widget? trailing;
 
+  /// Optional callback for back button. If null, defaults to Navigator.pop(true).
+  final VoidCallback? onBack;
+
   const VideoControlsHeader({
     super.key,
     required this.metadata,
     this.style = VideoHeaderStyle.multiLine,
     this.trailing,
+    this.onBack,
   });
 
   @override
@@ -38,7 +42,7 @@ class VideoControlsHeader extends StatelessWidget {
         AppBarBackButton(
           style: BackButtonStyle.video,
           semanticLabel: t.videoControls.backButton,
-          onPressed: () => Navigator.of(context).pop(true),
+          onPressed: onBack ?? () => Navigator.of(context).pop(true),
         ),
         const SizedBox(width: 16),
         Expanded(child: style == VideoHeaderStyle.singleLine ? _buildSingleLineTitle() : _buildMultiLineTitle()),

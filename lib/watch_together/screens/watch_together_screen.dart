@@ -1,0 +1,356 @@
+import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
+
+import '../../utils/app_logger.dart';
+import '../../widgets/focused_scroll_scaffold.dart';
+import '../models/watch_session.dart';
+import '../providers/watch_together_provider.dart';
+import '../widgets/join_session_dialog.dart';
+
+/// Main screen for Watch Together functionality
+///
+/// Allows users to:
+/// - Create a new watch session
+/// - Join an existing session
+/// - View active session info and participants
+/// - Leave/end session
+class WatchTogetherScreen extends StatelessWidget {
+  const WatchTogetherScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<WatchTogetherProvider>(
+      builder: (context, watchTogether, child) {
+        // Non-hosts must use "Leave Session" button - disable back navigation and hide button
+        final canGoBack = watchTogether.isHost || !watchTogether.isInSession;
+        return PopScope(
+          canPop: canGoBack,
+          child: FocusedScrollScaffold(
+            title: const Text('Watch Together'),
+            automaticallyImplyLeading: canGoBack,
+            slivers: watchTogether.isInSession
+                ? _buildActiveSessionSlivers(watchTogether)
+                : [SliverFillRemaining(hasScrollBody: false, child: _NotInSessionView(watchTogether: watchTogether))],
+          ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildActiveSessionSlivers(WatchTogetherProvider watchTogether) {
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.all(16),
+        sliver: SliverToBoxAdapter(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: _ActiveSessionContent(watchTogether: watchTogether),
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
+}
+
+/// View shown when not in a session
+class _NotInSessionView extends StatefulWidget {
+  final WatchTogetherProvider watchTogether;
+
+  const _NotInSessionView({required this.watchTogether});
+
+  @override
+  State<_NotInSessionView> createState() => _NotInSessionViewState();
+}
+
+class _NotInSessionViewState extends State<_NotInSessionView> {
+  bool _isCreating = false;
+  bool _isJoining = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
+              const SizedBox(height: 24),
+              Text('Watch Together', style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text(
+                'Watch content in sync with friends and family',
+                style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _isCreating || _isJoining ? null : _createSession,
+                  icon: _isCreating
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Symbols.add_rounded),
+                  label: Text(_isCreating ? 'Creating...' : 'Create Session'),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _isCreating || _isJoining ? null : _joinSession,
+                  icon: _isJoining
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Symbols.group_add_rounded),
+                  label: Text(_isJoining ? 'Joining...' : 'Join Session'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createSession() async {
+    final controlMode = await _showControlModeDialog();
+    if (controlMode == null || !mounted) return;
+
+    setState(() => _isCreating = true);
+
+    try {
+      await widget.watchTogether.createSession(controlMode: controlMode);
+    } catch (e) {
+      appLogger.e('Failed to create session', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create session: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreating = false);
+      }
+    }
+  }
+
+  Future<ControlMode?> _showControlModeDialog() {
+    return showDialog<ControlMode>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Control Mode'),
+        content: const Text('Who can control playback?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, ControlMode.hostOnly), child: const Text('Host Only')),
+          FilledButton(onPressed: () => Navigator.pop(context, ControlMode.anyone), child: const Text('Anyone')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _joinSession() async {
+    final sessionId = await showJoinSessionDialog(context);
+    if (sessionId == null || !mounted) return;
+
+    setState(() => _isJoining = true);
+
+    try {
+      await widget.watchTogether.joinSession(sessionId);
+    } catch (e) {
+      appLogger.e('Failed to join session', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to join session: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isJoining = false);
+      }
+    }
+  }
+}
+
+/// Content shown when in an active session (without scroll wrapper)
+class _ActiveSessionContent extends StatelessWidget {
+  final WatchTogetherProvider watchTogether;
+
+  const _ActiveSessionContent({required this.watchTogether});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final session = watchTogether.session!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Session Info Card
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      watchTogether.isHost ? Symbols.star_rounded : Symbols.group_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            watchTogether.isHost ? 'Hosting Session' : 'In Session',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          Text(
+                            'Code: ${session.sessionId}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontFamily: 'monospace',
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      session.controlMode == ControlMode.anyone
+                          ? Symbols.groups_rounded
+                          : Symbols.admin_panel_settings_rounded,
+                      size: 20,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      session.controlMode == ControlMode.anyone
+                          ? 'Anyone can control playback'
+                          : 'Host controls playback',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Participants Card
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Symbols.people_rounded, color: theme.colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Text('Participants (${watchTogether.participantCount})', style: theme.textTheme.titleMedium),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...watchTogether.participants.map(
+                  (participant) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
+                          size: 20,
+                          color: participant.isHost ? Colors.amber : theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(participant.displayName, style: theme.textTheme.bodyMedium),
+                        if (participant.isHost) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Host',
+                              style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber.shade700),
+                            ),
+                          ),
+                        ],
+                        if (participant.isBuffering) ...[
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Leave/End Session Button
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _leaveSession(context),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+              side: BorderSide(color: theme.colorScheme.error),
+            ),
+            icon: Icon(watchTogether.isHost ? Symbols.close_rounded : Symbols.logout_rounded),
+            label: Text(watchTogether.isHost ? 'End Session' : 'Leave Session'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _leaveSession(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(watchTogether.isHost ? 'End Session?' : 'Leave Session?'),
+        content: Text(
+          watchTogether.isHost
+              ? 'This will end the session for all participants.'
+              : 'You will be removed from the session.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            child: Text(watchTogether.isHost ? 'End' : 'Leave'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await watchTogether.leaveSession();
+    }
+  }
+}

@@ -95,6 +95,50 @@ class ServerRegistry {
     appLogger.i('Cleared all servers from registry');
   }
 
+  /// Refresh servers from Plex API and update storage
+  /// This updates connection info (IPs, ports) that may have changed
+  Future<void> refreshServersFromApi() async {
+    final token = _storage.getPlexToken();
+    if (token == null || token.isEmpty) {
+      appLogger.d('No Plex token available, skipping server refresh');
+      return;
+    }
+
+    try {
+      appLogger.d('Refreshing servers from Plex API...');
+      final authService = await PlexAuthService.create();
+      final freshServers = await authService.fetchServers(token);
+
+      if (freshServers.isEmpty) {
+        appLogger.w('API returned no servers, keeping existing data');
+        return;
+      }
+
+      // Get existing servers to preserve any local-only data
+      final existingServers = await getServers();
+      final existingIds = existingServers.map((s) => s.clientIdentifier).toSet();
+
+      // Update existing servers with fresh connection info, add new ones
+      final updatedServers = <PlexServer>[];
+      for (final fresh in freshServers) {
+        if (existingIds.contains(fresh.clientIdentifier)) {
+          // Server exists - use fresh data (updated IPs, connections)
+          updatedServers.add(fresh);
+        } else {
+          // New server - add it
+          updatedServers.add(fresh);
+          appLogger.i('Discovered new server: ${fresh.name}');
+        }
+      }
+
+      await saveServers(updatedServers);
+      appLogger.i('Refreshed ${updatedServers.length} servers from API');
+    } catch (e, stackTrace) {
+      appLogger.w('Failed to refresh servers from API, using cached data', error: e, stackTrace: stackTrace);
+      // Don't rethrow - we can continue with cached servers
+    }
+  }
+
   /// Migrate from single server storage to multi-server
   /// This is called during app startup to migrate existing users
   Future<void> migrateFromSingleServer() async {

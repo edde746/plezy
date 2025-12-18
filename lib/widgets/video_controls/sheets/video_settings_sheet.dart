@@ -69,11 +69,15 @@ class VideoSettingsSheet extends StatefulWidget {
   final int audioSyncOffset;
   final int subtitleSyncOffset;
 
+  /// Whether the user can control playback (false hides speed option in host-only mode).
+  final bool canControl;
+
   const VideoSettingsSheet({
     super.key,
     required this.player,
     required this.audioSyncOffset,
     required this.subtitleSyncOffset,
+    this.canControl = true,
   });
 
   static Future<void> show(
@@ -83,13 +87,18 @@ class VideoSettingsSheet extends StatefulWidget {
     int subtitleSyncOffset, {
     VoidCallback? onOpen,
     VoidCallback? onClose,
+    bool canControl = true,
   }) {
     return BaseVideoControlSheet.showSheet(
       context: context,
       onOpen: onOpen,
       onClose: onClose,
-      builder: (context) =>
-          VideoSettingsSheet(player: player, audioSyncOffset: audioSyncOffset, subtitleSyncOffset: subtitleSyncOffset),
+      builder: (context) => VideoSettingsSheet(
+        player: player,
+        audioSyncOffset: audioSyncOffset,
+        subtitleSyncOffset: subtitleSyncOffset,
+        canControl: canControl,
+      ),
     );
   }
 
@@ -201,21 +210,22 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
     return ListView(
       children: [
-        // Playback Speed
-        StreamBuilder<double>(
-          stream: widget.player.streams.rate,
-          initialData: widget.player.state.rate,
-          builder: (context, snapshot) {
-            final currentRate = snapshot.data ?? 1.0;
-            return _SettingsMenuItem(
-              focusNode: _initialFocusNode,
-              icon: Symbols.speed_rounded,
-              title: 'Playback Speed',
-              valueText: _formatSpeed(currentRate),
-              onTap: () => _navigateTo(_SettingsView.speed),
-            );
-          },
-        ),
+        // Playback Speed - only show if user can control playback
+        if (widget.canControl)
+          StreamBuilder<double>(
+            stream: widget.player.streams.rate,
+            initialData: widget.player.state.rate,
+            builder: (context, snapshot) {
+              final currentRate = snapshot.data ?? 1.0;
+              return _SettingsMenuItem(
+                focusNode: _initialFocusNode,
+                icon: Symbols.speed_rounded,
+                title: 'Playback Speed',
+                valueText: _formatSpeed(currentRate),
+                onTap: () => _navigateTo(_SettingsView.speed),
+              );
+            },
+          ),
 
         // Sleep Timer
         ListenableBuilder(

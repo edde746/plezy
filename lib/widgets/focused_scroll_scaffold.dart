@@ -25,12 +25,17 @@ class FocusedScrollScaffold extends StatelessWidget {
   /// Defaults to true.
   final bool pinned;
 
+  /// Whether to automatically add a back button.
+  /// Defaults to true.
+  final bool automaticallyImplyLeading;
+
   const FocusedScrollScaffold({
     super.key,
     required this.title,
     required this.slivers,
     this.actions,
     this.pinned = true,
+    this.automaticallyImplyLeading = true,
   });
 
   @override
@@ -40,7 +45,12 @@ class FocusedScrollScaffold extends StatelessWidget {
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
-            CustomAppBar(title: title, pinned: pinned, actions: actions),
+            CustomAppBar(
+              title: title,
+              pinned: pinned,
+              actions: actions,
+              automaticallyImplyLeading: automaticallyImplyLeading,
+            ),
             ...slivers,
           ],
         ),

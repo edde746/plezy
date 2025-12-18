@@ -30,6 +30,7 @@ import '../utils/layout_constants.dart';
 import '../theme/mono_tokens.dart';
 import 'auth_screen.dart';
 import 'libraries/state_messages.dart';
+import '../watch_together/watch_together.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final VoidCallback? onBecameVisible;
@@ -72,8 +73,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Hero and app bar focus
   late FocusNode _heroFocusNode;
   late FocusNode _refreshButtonFocusNode;
+  late FocusNode _watchTogetherButtonFocusNode;
   late FocusNode _userButtonFocusNode;
   bool _isRefreshFocused = false;
+  bool _isWatchTogetherFocused = false;
   bool _isUserFocused = false;
 
   /// Get the correct PlexClient for an item's server
@@ -155,8 +158,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _indicatorAnimationController = AnimationController(vsync: this, duration: _heroAutoScrollDuration);
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
+    _watchTogetherButtonFocusNode = FocusNode(debugLabel: 'watch_together_button');
     _userButtonFocusNode = FocusNode(debugLabel: 'user_button');
     _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
+    _watchTogetherButtonFocusNode.addListener(_onWatchTogetherFocusChange);
     _userButtonFocusNode.addListener(_onUserFocusChange);
     _loadContent();
     _startAutoScroll();
@@ -166,6 +171,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (mounted) {
       setState(() {
         _isRefreshFocused = _refreshButtonFocusNode.hasFocus;
+      });
+    }
+  }
+
+  void _onWatchTogetherFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isWatchTogetherFocused = _watchTogetherButtonFocusNode.hasFocus;
       });
     }
   }
@@ -242,9 +255,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
-    // RIGHT: Move to user button
+    // RIGHT: Move to watch together button
     if (key.isRightKey) {
-      _userButtonFocusNode.requestFocus();
+      _watchTogetherButtonFocusNode.requestFocus();
       return KeyEventResult.handled;
     }
 
@@ -256,6 +269,46 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     // SELECT: Trigger refresh
     if (key.isSelectKey) {
       _loadContent();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  /// Handle key events for the watch together button in app bar
+  KeyEventResult _handleWatchTogetherKeyEvent(FocusNode node, KeyEvent event) {
+    if (!event.isActionable) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // DOWN: Return to hero
+    if (key.isDownKey) {
+      _heroFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT: Move to refresh button
+    if (key.isLeftKey) {
+      _refreshButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: Move to user button
+    if (key.isRightKey) {
+      _userButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // UP: Block at boundary
+    if (key.isUpKey) {
+      return KeyEventResult.handled;
+    }
+
+    // SELECT: Navigate to Watch Together screen
+    if (key.isSelectKey) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen()));
       return KeyEventResult.handled;
     }
 
@@ -276,9 +329,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
-    // LEFT: Move to refresh button
+    // LEFT: Move to watch together button
     if (key.isLeftKey) {
-      _refreshButtonFocusNode.requestFocus();
+      _watchTogetherButtonFocusNode.requestFocus();
       return KeyEventResult.handled;
     }
 
@@ -306,6 +359,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroFocusNode.dispose();
     _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
     _refreshButtonFocusNode.dispose();
+    _watchTogetherButtonFocusNode.removeListener(_onWatchTogetherFocusChange);
+    _watchTogetherButtonFocusNode.dispose();
     _userButtonFocusNode.removeListener(_onUserFocusChange);
     _userButtonFocusNode.dispose();
     super.dispose();
@@ -747,6 +802,60 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
                     child: IconButton(icon: const AppIcon(Symbols.refresh_rounded, fill: 1), onPressed: _loadContent),
                   ),
+                ),
+                // Watch Together button
+                Consumer<WatchTogetherProvider>(
+                  builder: (context, watchTogether, child) {
+                    return Focus(
+                      focusNode: _watchTogetherButtonFocusNode,
+                      onKeyEvent: _handleWatchTogetherKeyEvent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _isWatchTogetherFocused
+                              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Stack(
+                          children: [
+                            IconButton(
+                              icon: AppIcon(
+                                Symbols.group_rounded,
+                                fill: watchTogether.isInSession ? 1 : 0,
+                                color: watchTogether.isInSession ? Theme.of(context).colorScheme.primary : null,
+                              ),
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
+                              ),
+                              tooltip: 'Watch Together',
+                            ),
+                            // Badge showing participant count when in session
+                            if (watchTogether.isInSession && watchTogether.participantCount > 1)
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${watchTogether.participantCount}',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 Consumer<UserProfileProvider>(
                   builder: (context, userProvider, child) {

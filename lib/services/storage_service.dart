@@ -335,11 +335,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   /// Clear all multi-server data
   Future<void> clearMultiServerData() async {
-    await Future.wait([
-      clearServersList(),
-      clearServerOrder(),
-      _clearKeysWithPrefix(_prefixServerEndpoint),
-    ]);
+    await Future.wait([clearServersList(), clearServerOrder(), _clearKeysWithPrefix(_prefixServerEndpoint)]);
   }
 
   /// Server Order (stored as JSON list of server IDs)

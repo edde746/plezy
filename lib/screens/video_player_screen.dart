@@ -18,6 +18,7 @@ import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
 import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
@@ -37,6 +38,7 @@ import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../i18n/strings.g.dart';
+import '../watch_together/providers/watch_together_provider.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
@@ -61,6 +63,13 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver {
+  // Track the currently active video to guard against duplicate navigation
+  static String? _activeRatingKey;
+  static int? _activeMediaIndex;
+
+  static String? get activeRatingKey => _activeRatingKey;
+  static int? get activeMediaIndex => _activeMediaIndex;
+
   Player? player;
   bool _isPlayerInitialized = false;
   PlexMetadata? _nextEpisode;
@@ -89,6 +98,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   VideoFilterManager? _videoFilterManager;
   final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
+  // Watch Together provider reference (stored early to use in dispose)
+  WatchTogetherProvider? _watchTogetherProvider;
+
   /// Get the correct PlexClient for this metadata's server
   PlexClient _getClientForMetadata(BuildContext context) {
     return context.getClientForServer(widget.metadata.serverId!);
@@ -99,6 +111,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @override
   void initState() {
     super.initState();
+
+    _activeRatingKey = widget.metadata.ratingKey;
+    _activeMediaIndex = widget.selectedMediaIndex;
 
     appLogger.d('VideoPlayerScreen initialized for: ${widget.metadata.title}');
     if (widget.preferredAudioTrack != null) {
@@ -628,6 +643,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             ? Duration(milliseconds: widget.metadata.viewOffset!)
             : null;
         await player!.open(Media(result.videoUrl!, start: resumePosition));
+
+        // Attach player to Watch Together session for sync (if in session)
+        if (mounted && !widget.isOffline) {
+          _attachToWatchTogetherSession();
+          _notifyWatchTogetherMediaChange();
+        }
       }
 
       // Update available versions from the playback data
@@ -719,10 +740,146 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     });
   }
 
+  /// Attach player to Watch Together session for playback sync
+  void _attachToWatchTogetherSession() {
+    try {
+      final watchTogether = context.read<WatchTogetherProvider>();
+      _watchTogetherProvider = watchTogether; // Store reference for use in dispose
+      if (watchTogether.isInSession && player != null) {
+        watchTogether.attachPlayer(player!);
+        appLogger.d('WatchTogether: Player attached for sync');
+
+        // If guest, handle mediaSwitch internally for proper navigation context
+        if (!watchTogether.isHost) {
+          watchTogether.onPlayerMediaSwitched = _handlePlayerMediaSwitch;
+        }
+      }
+    } catch (e) {
+      // Watch together provider not available or not in session - non-critical
+      appLogger.d('Could not attach player to watch together', error: e);
+    }
+  }
+
+  /// Detach player from Watch Together session
+  void _detachFromWatchTogetherSession() {
+    try {
+      final watchTogether = _watchTogetherProvider ?? context.read<WatchTogetherProvider>();
+      if (watchTogether.isInSession) {
+        watchTogether.detachPlayer();
+        appLogger.d('WatchTogether: Player detached');
+      }
+      watchTogether.onPlayerMediaSwitched = null; // Always clear player callback
+    } catch (e) {
+      // Non-critical
+      appLogger.d('Could not detach player from watch together', error: e);
+    }
+  }
+
+  /// Check if episode navigation controls should be enabled
+  /// Returns true if not in Watch Together session, or if user is the host
+  bool _canNavigateEpisodes() {
+    if (_watchTogetherProvider == null) return true;
+    if (!_watchTogetherProvider!.isInSession) return true;
+    return _watchTogetherProvider!.isHost;
+  }
+
+  /// Notify watch together session of current media change (host only)
+  /// If [metadata] is provided, uses that instead of widget.metadata (for episode navigation)
+  void _notifyWatchTogetherMediaChange({PlexMetadata? metadata}) {
+    final targetMetadata = metadata ?? widget.metadata;
+    try {
+      final watchTogether = context.read<WatchTogetherProvider>();
+      if (watchTogether.isHost && watchTogether.isInSession) {
+        watchTogether.setCurrentMedia(
+          ratingKey: targetMetadata.ratingKey!,
+          serverId: targetMetadata.serverId!,
+          mediaTitle: targetMetadata.title!,
+        );
+      }
+    } catch (e) {
+      // Watch together provider not available or not in session - non-critical
+      appLogger.d('Could not notify watch together of media change', error: e);
+    }
+  }
+
+  /// Handle media switch from host (guest only)
+  /// Uses VideoPlayerScreen's context for proper navigation (pushReplacement)
+  Future<void> _handlePlayerMediaSwitch(String ratingKey, String serverId, String title) async {
+    if (!mounted) return;
+
+    appLogger.d('WatchTogether: Guest handling media switch to $title');
+
+    // Fetch metadata for the new episode
+    final multiServer = context.read<MultiServerProvider>();
+    final client = multiServer.getClientForServer(serverId);
+    if (client == null) {
+      appLogger.w('WatchTogether: Server $serverId not found for media switch');
+      return;
+    }
+
+    final metadata = await client.getMetadataWithImages(ratingKey);
+    if (metadata == null || !mounted) {
+      appLogger.w('WatchTogether: Could not fetch metadata for $ratingKey');
+      return;
+    }
+
+    // Detach and dispose current player before switching to avoid sync calls on a disposed instance
+    await disposePlayerForNavigation();
+
+    // Use same navigation as local episode change (pushReplacement from player context)
+    _isReplacingWithVideo = true;
+    navigateToVideoPlayer(context, metadata: metadata, usePushReplacement: true);
+  }
+
+  /// Handle back button press
+  /// For non-host participants in Watch Together, shows leave session confirmation
+  Future<void> _handleBackButton() async {
+    // For non-host participants, show leave session confirmation
+    if (_watchTogetherProvider != null && _watchTogetherProvider!.isInSession && !_watchTogetherProvider!.isHost) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Leave Session?'),
+          content: const Text('You will be removed from the session.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error),
+              child: const Text('Leave'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true && mounted) {
+        await _watchTogetherProvider!.leaveSession();
+        if (mounted) Navigator.of(context).pop(true);
+      }
+      return;
+    }
+
+    // Default behavior for hosts or non-session users
+    Navigator.of(context).pop(true);
+  }
+
   @override
   void dispose() {
     // Unregister app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
+
+    // Notify Watch Together guests that host is exiting the player
+    // Use stored reference since context.read() may fail in dispose
+    // Skip if replacing with another video (episode navigation)
+    if (!_isReplacingWithVideo &&
+        _watchTogetherProvider != null &&
+        _watchTogetherProvider!.isHost &&
+        _watchTogetherProvider!.isInSession) {
+      _watchTogetherProvider!.notifyHostExitedPlayer();
+    }
+
+    // Detach from Watch Together session
+    _detachFromWatchTogetherSession();
 
     // Dispose value notifiers
     _isBuffering.dispose();
@@ -776,6 +933,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     player?.dispose();
+    if (_activeRatingKey == widget.metadata.ratingKey) {
+      _activeRatingKey = null;
+      _activeMediaIndex = null;
+    }
     super.dispose();
   }
 
@@ -839,6 +1000,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _playNext() async {
     if (_nextEpisode == null || _isLoadingNext) return;
 
+    // Notify Watch Together of episode change before navigating
+    _notifyWatchTogetherMediaChange(metadata: _nextEpisode);
+
     setState(() {
       _isLoadingNext = true;
       _showPlayNextDialog = false;
@@ -849,6 +1013,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   Future<void> _playPrevious() async {
     if (_previousEpisode == null) return;
+
+    // Notify Watch Together of episode change before navigating
+    _notifyWatchTogetherMediaChange(metadata: _previousEpisode);
+
     await _navigateToEpisode(_previousEpisode!);
   }
 
@@ -1127,6 +1295,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _isDisposingForNavigation = true;
 
     try {
+      _detachFromWatchTogetherSession();
       _progressTracker?.sendProgress('stopped');
       _progressTracker?.stopTracking();
       await player?.dispose();
@@ -1155,9 +1324,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       canPop: false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
       onPopInvokedWithResult: (didPop, result) {
         // Allow programmatic back navigation from UI controls
-        if (!didPop) {
-          Navigator.of(context).pop(true);
-        }
+        if (!didPop) _handleBackButton();
       },
       child: Scaffold(
         // Use transparent background on macOS when native video layer is active
@@ -1204,19 +1371,45 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       }
                     });
 
+                    // Compute canControl from Watch Together provider
+                    bool canControl = true;
+                    try {
+                      final watchTogether = this.context.read<WatchTogetherProvider>();
+                      if (watchTogether.isInSession) {
+                        canControl = watchTogether.canControl();
+                      }
+                    } catch (e) {
+                      // Watch Together not available, default to can control
+                    }
+
                     return Video(
                       player: player!,
                       controls: (context) => plexVideoControlsBuilder(
                         player!,
                         widget.metadata,
-                        onNext: _nextEpisode != null ? _playNext : null,
-                        onPrevious: _previousEpisode != null ? _playPrevious : null,
+                        onNext: (_nextEpisode != null && _canNavigateEpisodes()) ? _playNext : null,
+                        onPrevious: (_previousEpisode != null && _canNavigateEpisodes()) ? _playPrevious : null,
                         availableVersions: _availableVersions,
                         selectedMediaIndex: widget.selectedMediaIndex,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         onCycleBoxFitMode: _cycleBoxFitMode,
                         onAudioTrackChanged: _onAudioTrackChanged,
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,
+                        onSeekCompleted: (position) {
+                          // Notify Watch Together of seek for sync
+                          // Note: canControl() check is done in sync manager, not here
+                          // This matches play/pause behavior and avoids timing issues
+                          try {
+                            final watchTogether = this.context.read<WatchTogetherProvider>();
+                            if (watchTogether.isInSession) {
+                              watchTogether.onLocalSeek(position);
+                            }
+                          } catch (e) {
+                            // Watch Together not available, ignore
+                          }
+                        },
+                        onBack: _handleBackButton,
+                        canControl: canControl,
                       ),
                     );
                   },

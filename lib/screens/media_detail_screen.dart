@@ -120,42 +120,55 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
 
   /// Build action buttons row (play, shuffle, download, mark watched)
   Widget _buildActionButtons(PlexMetadata metadata) {
+    final playButtonLabel = _getPlayButtonLabel(metadata);
+    final playButtonIcon = AppIcon(_getPlayButtonIcon(metadata), fill: 1, size: 20);
+
+    Future<void> onPlayPressed() async {
+      // For TV shows, play the OnDeck episode if available
+      // Otherwise, play the first episode of the first season
+      if (metadata.isShow) {
+        if (_onDeckEpisode != null) {
+          appLogger.d('Playing on deck episode: ${_onDeckEpisode!.title}');
+          await navigateToVideoPlayerWithRefresh(
+            context,
+            metadata: _onDeckEpisode!,
+            isOffline: widget.isOffline,
+            onRefresh: _loadFullMetadata,
+          );
+        } else {
+          // No on deck episode, fetch first episode of first season
+          await _playFirstEpisode();
+        }
+      } else {
+        appLogger.d('Playing: ${metadata.title}');
+        // For movies or episodes, play directly
+        await navigateToVideoPlayerWithRefresh(
+          context,
+          metadata: metadata,
+          isOffline: widget.isOffline,
+          onRefresh: _loadFullMetadata,
+        );
+      }
+    }
+
     return Row(
       children: [
         SizedBox(
           height: 48,
-          child: FilledButton.icon(
+          child: FilledButton(
             autofocus: InputModeTracker.isKeyboardMode(context),
-            onPressed: () async {
-              // For TV shows, play the OnDeck episode if available
-              // Otherwise, play the first episode of the first season
-              if (metadata.isShow) {
-                if (_onDeckEpisode != null) {
-                  appLogger.d('Playing on deck episode: ${_onDeckEpisode!.title}');
-                  await navigateToVideoPlayerWithRefresh(
-                    context,
-                    metadata: _onDeckEpisode!,
-                    isOffline: widget.isOffline,
-                    onRefresh: _loadFullMetadata,
-                  );
-                } else {
-                  // No on deck episode, fetch first episode of first season
-                  await _playFirstEpisode();
-                }
-              } else {
-                appLogger.d('Playing: ${metadata.title}');
-                // For movies or episodes, play directly
-                await navigateToVideoPlayerWithRefresh(
-                  context,
-                  metadata: metadata,
-                  isOffline: widget.isOffline,
-                  onRefresh: _loadFullMetadata,
-                );
-              }
-            },
-            icon: AppIcon(_getPlayButtonIcon(metadata), fill: 1, size: 20),
-            label: Text(_getPlayButtonLabel(metadata), style: const TextStyle(fontSize: 16)),
+            onPressed: onPlayPressed,
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16)),
+            child: playButtonLabel.isNotEmpty
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      playButtonIcon,
+                      const SizedBox(width: 8),
+                      Text(playButtonLabel, style: const TextStyle(fontSize: 16)),
+                    ],
+                  )
+                : playButtonIcon,
           ),
         ),
         const SizedBox(width: 12),
