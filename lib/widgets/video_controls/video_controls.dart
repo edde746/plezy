@@ -1074,8 +1074,86 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   child: Container(color: Colors.transparent),
                 ),
               ),
+              // Middle area double-tap detector for fullscreen (desktop only)
+              // Only covers the clear video area (20% to 80% vertically)
+              if (!isMobile)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final height = constraints.maxHeight;
+                      final topExclude = height * 0.20; // Top 20%
+                      final bottomExclude = height * 0.20; // Bottom 20%
+
+                      return Stack(
+                        children: [
+                          Positioned(
+                            top: topExclude,
+                            left: 0,
+                            right: 0,
+                            bottom: bottomExclude,
+                            child: GestureDetector(
+                              onTap: _toggleControls,
+                              onDoubleTap: _toggleFullscreen,
+                              behavior: HitTestBehavior.translucent,
+                              child: Container(color: Colors.transparent),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              // Mobile double-tap zones for skip forward/backward
+              if (isMobile)
+                Positioned.fill(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final height = constraints.maxHeight;
+                      final width = constraints.maxWidth;
+                      final topExclude = height * 0.15; // Exclude top 15% (top bar)
+                      final bottomExclude = height * 0.15; // Exclude bottom 15% (seek slider)
+                      final leftZoneWidth = width * 0.35; // Left 35%
+
+                      return Stack(
+                        children: [
+                          // Left zone - skip backward
+                          Positioned(
+                            left: 0,
+                            top: topExclude,
+                            bottom: bottomExclude,
+                            width: leftZoneWidth,
+                            child: GestureDetector(
+                              onTap: _toggleControls,
+                              onDoubleTap: () => _handleDoubleTapSkip(isForward: false),
+                              behavior: HitTestBehavior.translucent,
+                              child: Container(color: Colors.transparent),
+                            ),
+                          ),
+                          // Right zone - skip forward
+                          Positioned(
+                            right: 0,
+                            top: topExclude,
+                            bottom: bottomExclude,
+                            width: leftZoneWidth,
+                            child: GestureDetector(
+                              onTap: _toggleControls,
+                              onDoubleTap: () => _handleDoubleTapSkip(isForward: true),
+                              behavior: HitTestBehavior.translucent,
+                              child: Container(color: Colors.transparent),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
               // Custom controls overlay - use AnimatedOpacity to keep widget tree alive
               // On Linux, use Offstage after fade completes to fully hide
+              // Positioned AFTER double-tap zones so controls receive taps first
               Positioned.fill(
                 child: Offstage(
                   offstage: Platform.isLinux && _controlsFullyHidden,
@@ -1176,83 +1254,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   ),
                 ),
               ),
-              // Middle area double-tap detector for fullscreen (desktop only)
-              // Only covers the clear video area (20% to 80% vertically)
-              if (!isMobile)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final height = constraints.maxHeight;
-                      final topExclude = height * 0.20; // Top 20%
-                      final bottomExclude = height * 0.20; // Bottom 20%
-
-                      return Stack(
-                        children: [
-                          Positioned(
-                            top: topExclude,
-                            left: 0,
-                            right: 0,
-                            bottom: bottomExclude,
-                            child: GestureDetector(
-                              onTap: _toggleControls,
-                              onDoubleTap: _toggleFullscreen,
-                              behavior: HitTestBehavior.translucent,
-                              child: Container(color: Colors.transparent),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              // Mobile double-tap zones for skip forward/backward
-              if (isMobile)
-                Positioned.fill(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final height = constraints.maxHeight;
-                      final width = constraints.maxWidth;
-                      final topExclude = height * 0.15; // Exclude top 15% (top bar)
-                      final bottomExclude = height * 0.15; // Exclude bottom 15% (seek slider)
-                      final leftZoneWidth = width * 0.35; // Left 35%
-
-                      return Stack(
-                        children: [
-                          // Left zone - skip backward
-                          Positioned(
-                            left: 0,
-                            top: topExclude,
-                            bottom: bottomExclude,
-                            width: leftZoneWidth,
-                            child: GestureDetector(
-                              onTap: _toggleControls,
-                              onDoubleTap: () => _handleDoubleTapSkip(isForward: false),
-                              behavior: HitTestBehavior.translucent,
-                              child: Container(color: Colors.transparent),
-                            ),
-                          ),
-                          // Right zone - skip forward
-                          Positioned(
-                            right: 0,
-                            top: topExclude,
-                            bottom: bottomExclude,
-                            width: leftZoneWidth,
-                            child: GestureDetector(
-                              onTap: _toggleControls,
-                              onDoubleTap: () => _handleDoubleTapSkip(isForward: true),
-                              behavior: HitTestBehavior.translucent,
-                              child: Container(color: Colors.transparent),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
               // Visual feedback overlay for double-tap
               if (isMobile && _showDoubleTapFeedback)
                 Positioned.fill(
