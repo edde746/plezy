@@ -27,6 +27,7 @@ import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
+import '../widgets/focusable_media_card.dart';
 import '../widgets/media_card.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
@@ -718,7 +719,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
             final season = _seasons[index];
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: MediaCard(
+              child: FocusableMediaCard(
                 item: season,
                 width: cardWidth,
                 height: posterHeight,
