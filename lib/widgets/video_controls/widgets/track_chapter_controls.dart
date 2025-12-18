@@ -302,8 +302,8 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
-        // Rotation lock button (mobile only)
-        if (isMobile) {
+        // Rotation lock button (mobile only, not on TV since screens don't rotate)
+        if (isMobile && !PlatformDetector.isTV()) {
           final currentIndex = buttonIndex;
           buttons.add(
             _buildTrackButton(
@@ -351,7 +351,7 @@ class TrackChapterControls extends StatelessWidget {
     if (chapters.isNotEmpty) count++;
     if (availableVersions.length > 1 && onSwitchVersion != null) count++;
     if (onCycleBoxFitMode != null) count++;
-    if (isMobile) count++;
+    if (isMobile && !PlatformDetector.isTV()) count++; // Rotation lock (not on TV)
     if (isDesktop) count++;
     return count;
   }
