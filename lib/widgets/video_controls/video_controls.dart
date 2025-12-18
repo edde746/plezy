@@ -4,7 +4,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 import 'package:flutter/services.dart'
     show
@@ -39,7 +38,6 @@ import 'icons.dart';
 import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
-import '../../watch_together/watch_together.dart';
 import 'widgets/track_chapter_controls.dart';
 import 'mobile_video_controls.dart';
 import 'desktop_video_controls.dart';

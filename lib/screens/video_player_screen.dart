@@ -791,9 +791,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final watchTogether = context.read<WatchTogetherProvider>();
       if (watchTogether.isHost && watchTogether.isInSession) {
         watchTogether.setCurrentMedia(
-          ratingKey: targetMetadata.ratingKey!,
+          ratingKey: targetMetadata.ratingKey,
           serverId: targetMetadata.serverId!,
-          mediaTitle: targetMetadata.title!,
+          mediaTitle: targetMetadata.title,
         );
       }
     } catch (e) {
@@ -825,6 +825,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Detach and dispose current player before switching to avoid sync calls on a disposed instance
     await disposePlayerForNavigation();
+    if (!mounted) return;
 
     // Use same navigation as local episode change (pushReplacement from player context)
     _isReplacingWithVideo = true;

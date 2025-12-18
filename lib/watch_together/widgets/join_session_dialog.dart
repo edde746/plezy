@@ -13,7 +13,6 @@ class JoinSessionDialog extends StatefulWidget {
 class _JoinSessionDialogState extends State<JoinSessionDialog> {
   final _formKey = GlobalKey<FormState>();
   final _sessionIdController = TextEditingController();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -93,11 +92,9 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
 
                 // Join button
                 FilledButton.icon(
-                  onPressed: _isLoading ? null : _join,
-                  icon: _isLoading
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Symbols.group_add),
-                  label: Text(_isLoading ? 'Joining...' : 'Join Session'),
+                  onPressed: _join,
+                  icon: const Icon(Symbols.group_add),
+                  label: const Text('Join Session'),
                 ),
               ],
             ),

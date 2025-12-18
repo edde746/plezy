@@ -30,7 +30,6 @@ class WatchTogetherSyncManager {
 
   // Stream subscriptions
   StreamSubscription<bool>? _playingSubscription;
-  StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<bool>? _bufferingSubscription;
   StreamSubscription<double>? _rateSubscription;
   StreamSubscription<SyncMessage>? _messageSubscription;
@@ -156,14 +155,12 @@ class WatchTogetherSyncManager {
     _hasAnnouncedReady = false;
 
     _playingSubscription?.cancel();
-    _positionSubscription?.cancel();
     _bufferingSubscription?.cancel();
     _rateSubscription?.cancel();
     _messageSubscription?.cancel();
     _positionSyncTimer?.cancel();
 
     _playingSubscription = null;
-    _positionSubscription = null;
     _bufferingSubscription = null;
     _rateSubscription = null;
     _messageSubscription = null;
@@ -259,6 +256,15 @@ class WatchTogetherSyncManager {
     return _session.isHost;
   }
 
+  /// Check if a remote control message should be applied based on control mode
+  bool _shouldApplyRemoteControl(SyncMessage message) {
+    if (_session.controlMode == ControlMode.anyone) {
+      return true;
+    }
+    // In hostOnly mode, only apply control messages from the host
+    return message.peerId == _session.hostPeerId;
+  }
+
   /// Broadcast play/pause state
   void _broadcastPlayPause(bool isPlaying) {
     if (!_canControl()) {
@@ -326,21 +332,37 @@ class WatchTogetherSyncManager {
 
     switch (message.type) {
       case SyncMessageType.play:
+        if (!_shouldApplyRemoteControl(message)) {
+          appLogger.d('WatchTogether: Ignoring play from non-host in hostOnly mode');
+          break;
+        }
         await _applyRemotePlay(position: message.position);
         break;
 
       case SyncMessageType.pause:
+        if (!_shouldApplyRemoteControl(message)) {
+          appLogger.d('WatchTogether: Ignoring pause from non-host in hostOnly mode');
+          break;
+        }
         _wasPlayingBeforeBuffering = false; // User intentionally paused, don't auto-resume
         await _applyRemotePause();
         break;
 
       case SyncMessageType.seek:
+        if (!_shouldApplyRemoteControl(message)) {
+          appLogger.d('WatchTogether: Ignoring seek from non-host in hostOnly mode');
+          break;
+        }
         if (message.position != null) {
           await _applyRemoteSeek(message.position!);
         }
         break;
 
       case SyncMessageType.buffering:
+        if (_player == null) {
+          appLogger.d('WatchTogether: Ignoring buffering message, player not attached');
+          break;
+        }
         if (message.peerId != null && message.bufferingState != null) {
           _participantBuffering[message.peerId!] = message.bufferingState!;
 
@@ -367,6 +389,10 @@ class WatchTogetherSyncManager {
         break;
 
       case SyncMessageType.rate:
+        if (!_shouldApplyRemoteControl(message)) {
+          appLogger.d('WatchTogether: Ignoring rate from non-host in hostOnly mode');
+          break;
+        }
         if (message.rate != null) {
           await _applyRemoteRate(message.rate!);
         }

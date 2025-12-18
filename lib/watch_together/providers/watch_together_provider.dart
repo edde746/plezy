@@ -300,15 +300,6 @@ class WatchTogetherProvider with ChangeNotifier {
             );
           }
 
-          // If we're the host and this is a guest joining, send our join info back
-          // so they add us to their participants list
-          if (isHost && message.peerId != _peerService?.myPeerId && !(message.isHost ?? false)) {
-            _peerService?.sendTo(
-              message.peerId!,
-              SyncMessage.join(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: true),
-            );
-          }
-
           notifyListeners();
         }
         break;

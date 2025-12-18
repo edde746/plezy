@@ -58,7 +58,6 @@ Future<bool?> navigateToVideoPlayer(
 
   // Prevent stacking an identical video player when already active
   if (!usePushReplacement &&
-      metadata.ratingKey != null &&
       VideoPlayerScreenState.activeRatingKey == metadata.ratingKey &&
       VideoPlayerScreenState.activeMediaIndex == mediaIndex) {
     appLogger.d(
