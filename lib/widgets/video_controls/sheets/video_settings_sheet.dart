@@ -111,6 +111,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late int _audioSyncOffset;
   late int _subtitleSyncOffset;
   bool _enableHDR = true;
+  bool _showPerformanceOverlay = false;
   late final FocusNode _initialFocusNode;
 
   @override
@@ -119,7 +120,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     _audioSyncOffset = widget.audioSyncOffset;
     _subtitleSyncOffset = widget.subtitleSyncOffset;
     _initialFocusNode = FocusNode(debugLabel: 'VideoSettingsInitialFocus');
-    _loadHDRSetting();
+    _loadSettings();
   }
 
   @override
@@ -128,10 +129,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     super.dispose();
   }
 
-  Future<void> _loadHDRSetting() async {
+  Future<void> _loadSettings() async {
     final settings = await SettingsService.getInstance();
     setState(() {
       _enableHDR = settings.getEnableHDR();
+      _showPerformanceOverlay = settings.getShowPerformanceOverlay();
     });
   }
 
@@ -144,6 +146,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     });
     // Apply to player immediately
     await widget.player.setProperty('hdr-enabled', newValue ? 'yes' : 'no');
+  }
+
+  Future<void> _togglePerformanceOverlay() async {
+    final newValue = !_showPerformanceOverlay;
+    final settings = await SettingsService.getInstance();
+    await settings.setShowPerformanceOverlay(newValue);
+    setState(() {
+      _showPerformanceOverlay = newValue;
+    });
   }
 
   void _navigateTo(_SettingsView view) {
@@ -289,6 +300,22 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               );
             },
           ),
+
+        // Performance Overlay Toggle
+        ListTile(
+          leading: AppIcon(
+            Symbols.analytics_rounded,
+            fill: 1,
+            color: _showPerformanceOverlay ? Colors.amber : Colors.white70,
+          ),
+          title: const Text('Performance Overlay', style: TextStyle(color: Colors.white)),
+          trailing: Switch(
+            value: _showPerformanceOverlay,
+            onChanged: (_) => _togglePerformanceOverlay(),
+            activeThumbColor: Colors.amber,
+          ),
+          onTap: _togglePerformanceOverlay,
+        ),
       ],
     );
   }

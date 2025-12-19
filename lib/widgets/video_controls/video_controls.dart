@@ -39,6 +39,7 @@ import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
 import 'widgets/track_chapter_controls.dart';
+import 'widgets/performance_overlay/performance_overlay.dart';
 import 'mobile_video_controls.dart';
 import 'desktop_video_controls.dart';
 
@@ -166,6 +167,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   double _autoSkipProgress = 0.0;
   // Video player navigation (use arrow keys to navigate controls)
   bool _videoPlayerNavigationEnabled = false;
+  // Performance overlay
+  bool _showPerformanceOverlay = false;
 
   @override
   void initState() {
@@ -355,6 +358,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _autoSkipCredits = settingsService.getAutoSkipCredits();
         _autoSkipDelay = settingsService.getAutoSkipDelay();
         _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
+        _showPerformanceOverlay = settingsService.getShowPerformanceOverlay();
       });
 
       // Apply rotation lock setting
@@ -1294,6 +1298,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   right: 24,
                   bottom: isMobile ? 80 : 115,
                   child: AnimatedOpacity(opacity: 1.0, duration: tokens(context).slow, child: _buildSkipMarkerButton()),
+                ),
+              // Performance overlay (top-left)
+              if (_showPerformanceOverlay)
+                Positioned(
+                  top: isMobile ? 60 : 16,
+                  left: 16,
+                  child: IgnorePointer(
+                    child: PlayerPerformanceOverlay(player: widget.player),
+                  ),
                 ),
             ],
           ),

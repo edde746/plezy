@@ -49,6 +49,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyCustomDownloadPathType = 'custom_download_path_type';
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
   static const String _keyVideoPlayerNavigationEnabled = 'video_player_navigation_enabled';
+  static const String _keyShowPerformanceOverlay = 'show_performance_overlay';
 
   SettingsService._();
 
@@ -429,6 +430,15 @@ class SettingsService extends BaseSharedPreferencesService {
   bool getVideoPlayerNavigationEnabled() {
     // Default: enabled on Android TV, disabled elsewhere
     return prefs.getBool(_keyVideoPlayerNavigationEnabled) ?? TvDetectionService.isTVSync();
+  }
+
+  // Performance Overlay (show debug stats on video player)
+  Future<void> setShowPerformanceOverlay(bool enabled) async {
+    await prefs.setBool(_keyShowPerformanceOverlay, enabled);
+  }
+
+  bool getShowPerformanceOverlay() {
+    return prefs.getBool(_keyShowPerformanceOverlay) ?? false; // Default: disabled
   }
 
   // Helper methods for HotKey serialization
@@ -830,6 +840,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyCustomDownloadPathType),
       prefs.remove(_keyDownloadOnWifiOnly),
       prefs.remove(_keyVideoPlayerNavigationEnabled),
+      prefs.remove(_keyShowPerformanceOverlay),
     ]);
   }
 
