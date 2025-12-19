@@ -4,15 +4,15 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
-/// Utility class for loading font assets on Android for libass subtitle rendering.
+/// Utility class for loading font assets for libass subtitle rendering.
 ///
-/// On Android, libass cannot access system fonts through fontconfig, so we need
-/// to extract font files from Flutter assets to the app's cache directory.
-class AndroidFontLoader {
+/// Extracts font files from Flutter assets to the app's cache directory to ensure
+/// comprehensive Unicode coverage (including CJK characters) for subtitles.
+class SubtitleFontLoader {
   static const String _fontAssetPath = 'assets/go-noto-current-regular.ttf';
   static const String _fontName = 'Go Noto Current-Regular';
 
-  /// Loads the subtitle font from assets to the Android cache directory.
+  /// Loads the subtitle font from assets to the cache directory.
   /// Returns the directory path containing the font file.
   static Future<String?> loadSubtitleFont() async {
     try {

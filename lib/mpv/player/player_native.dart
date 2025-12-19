@@ -4,7 +4,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
-import '../android_font_loader.dart';
+import '../font_loader.dart';
 import '../models.dart';
 import 'player.dart';
 import 'player_state.dart';
@@ -292,10 +292,8 @@ class PlayerNative implements Player {
         throw Exception('Failed to initialize player');
       }
 
-      // Configure subtitle fonts for Android libass support
-      if (Platform.isAndroid) {
-        await _configureAndroidSubtitleFonts();
-      }
+      // Configure subtitle fonts for libass support
+      await _configureSubtitleFonts();
 
       // Subscribe to MPV properties
       await _observeProperty('time-pos', 'double');
@@ -317,17 +315,17 @@ class PlayerNative implements Player {
     await _methodChannel.invokeMethod('observeProperty', {'name': name, 'format': format});
   }
 
-  /// Configures subtitle fonts for Android libass support.
-  /// On Android, libass cannot access system fonts, so we need to provide
-  /// a font file from assets.
-  Future<void> _configureAndroidSubtitleFonts() async {
+  /// Configures subtitle fonts for libass support.
+  /// Provides a comprehensive Unicode font (Go Noto) with CJK coverage to ensure
+  /// proper rendering of non-Latin characters in subtitles.
+  Future<void> _configureSubtitleFonts() async {
     try {
-      final fontDir = await AndroidFontLoader.loadSubtitleFont();
+      final fontDir = await SubtitleFontLoader.loadSubtitleFont();
       if (fontDir != null) {
         // Configure MPV to use the extracted font for libass
         await setProperty('config', 'yes');
         await setProperty('sub-fonts-dir', fontDir);
-        await setProperty('sub-font', AndroidFontLoader.fontName);
+        await setProperty('sub-font', SubtitleFontLoader.fontName);
       }
     } catch (e) {
       // Font configuration is not critical - continue without it
