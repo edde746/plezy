@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../i18n/strings.g.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 import 'session_invite_dialog.dart';
@@ -102,9 +103,9 @@ class _SessionIndicator extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(4)),
-                  child: const Text(
-                    'HOST',
-                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  child: Text(
+                    t.watchTogether.hostBadge,
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -143,9 +144,9 @@ class _SessionMenuSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Watch Together', style: theme.textTheme.titleMedium),
+                      Text(t.watchTogether.title, style: theme.textTheme.titleMedium),
                       Text(
-                        provider.isHost ? 'You are the host' : 'Watching with others',
+                        provider.isHost ? t.watchTogether.youAreHost : t.watchTogether.watchingWithOthers,
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                     ],
@@ -159,7 +160,9 @@ class _SessionMenuSheet extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    provider.controlMode == ControlMode.hostOnly ? 'Host controls' : 'Anyone controls',
+                    provider.controlMode == ControlMode.hostOnly
+                        ? t.watchTogether.hostControls
+                        : t.watchTogether.anyoneControls,
                     style: theme.textTheme.labelSmall,
                   ),
                 ),
@@ -171,7 +174,7 @@ class _SessionMenuSheet extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Participants list
-            Text('Participants', style: theme.textTheme.titleSmall),
+            Text(t.watchTogether.participants, style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
             ...provider.participants.map(
               (p) => ListTile(
@@ -184,7 +187,7 @@ class _SessionMenuSheet extends StatelessWidget {
                   ),
                 ),
                 title: Text(p.displayName),
-                subtitle: p.isHost ? const Text('Host') : null,
+                subtitle: p.isHost ? Text(t.watchTogether.host) : null,
                 trailing: p.isBuffering
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : null,
@@ -201,7 +204,7 @@ class _SessionMenuSheet extends StatelessWidget {
             if (provider.isHost && provider.sessionId != null)
               ListTile(
                 leading: const Icon(Symbols.share),
-                title: const Text('Invite others'),
+                title: Text(t.watchTogether.inviteOthers),
                 onTap: () {
                   Navigator.pop(context);
                   showSessionInviteDialog(
@@ -216,7 +219,7 @@ class _SessionMenuSheet extends StatelessWidget {
             ListTile(
               leading: Icon(Symbols.logout, color: theme.colorScheme.error),
               title: Text(
-                provider.isHost ? 'End session' : 'Leave session',
+                provider.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession,
                 style: TextStyle(color: theme.colorScheme.error),
               ),
               onTap: () {
@@ -235,21 +238,19 @@ class _SessionMenuSheet extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(provider.isHost ? 'End Session?' : 'Leave Session?'),
+        title: Text(provider.isHost ? t.watchTogether.endSessionQuestion : t.watchTogether.leaveSessionQuestion),
         content: Text(
-          provider.isHost
-              ? 'This will end the watch session for all participants.'
-              : 'You will be disconnected from the watch session.',
+          provider.isHost ? t.watchTogether.endSessionConfirmOverlay : t.watchTogether.leaveSessionConfirmOverlay,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
               provider.leaveSession();
               onLeaveSession?.call();
             },
-            child: Text(provider.isHost ? 'End Session' : 'Leave'),
+            child: Text(provider.isHost ? t.watchTogether.endSession : t.watchTogether.leave),
           ),
         ],
       ),
@@ -277,16 +278,16 @@ class SyncingIndicator extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   ),
-                  SizedBox(width: 8),
-                  Text('Syncing...', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  const SizedBox(width: 8),
+                  Text(t.watchTogether.syncing, style: const TextStyle(color: Colors.white, fontSize: 12)),
                 ],
               ),
             ),

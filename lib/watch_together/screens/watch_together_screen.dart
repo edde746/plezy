@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../models/watch_session.dart';
@@ -27,7 +28,7 @@ class WatchTogetherScreen extends StatelessWidget {
         return PopScope(
           canPop: canGoBack,
           child: FocusedScrollScaffold(
-            title: const Text('Watch Together'),
+            title: Text(t.watchTogether.title),
             automaticallyImplyLeading: canGoBack,
             slivers: watchTogether.isInSession
                 ? _buildActiveSessionSlivers(watchTogether)
@@ -83,10 +84,10 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
             children: [
               Icon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
               const SizedBox(height: 24),
-              Text('Watch Together', style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
+              Text(t.watchTogether.title, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
               const SizedBox(height: 8),
               Text(
-                'Watch content in sync with friends and family',
+                t.watchTogether.description,
                 style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
@@ -98,7 +99,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
                   icon: _isCreating
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Symbols.add_rounded),
-                  label: Text(_isCreating ? 'Creating...' : 'Create Session'),
+                  label: Text(_isCreating ? t.watchTogether.creating : t.watchTogether.createSession),
                 ),
               ),
               const SizedBox(height: 16),
@@ -109,7 +110,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
                   icon: _isJoining
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Symbols.group_add_rounded),
-                  label: Text(_isJoining ? 'Joining...' : 'Join Session'),
+                  label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinSession),
                 ),
               ),
             ],
@@ -130,7 +131,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     } catch (e) {
       appLogger.e('Failed to create session', error: e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create session: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${t.watchTogether.failedToCreate}: $e')));
       }
     } finally {
       if (mounted) {
@@ -143,12 +144,18 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     return showDialog<ControlMode>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Control Mode'),
-        content: const Text('Who can control playback?'),
+        title: Text(t.watchTogether.controlMode),
+        content: Text(t.watchTogether.controlModeQuestion),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, ControlMode.hostOnly), child: const Text('Host Only')),
-          FilledButton(onPressed: () => Navigator.pop(context, ControlMode.anyone), child: const Text('Anyone')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ControlMode.hostOnly),
+            child: Text(t.watchTogether.hostOnly),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, ControlMode.anyone),
+            child: Text(t.watchTogether.anyone),
+          ),
         ],
       ),
     );
@@ -165,7 +172,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     } catch (e) {
       appLogger.e('Failed to join session', error: e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to join session: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${t.watchTogether.failedToJoin}: $e')));
       }
     } finally {
       if (mounted) {
@@ -208,11 +215,11 @@ class _ActiveSessionContent extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            watchTogether.isHost ? 'Hosting Session' : 'In Session',
+                            watchTogether.isHost ? t.watchTogether.hostingSession : t.watchTogether.inSession,
                             style: theme.textTheme.titleMedium,
                           ),
                           Text(
-                            'Code: ${session.sessionId}',
+                            '${t.watchTogether.sessionCode}: ${session.sessionId}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontFamily: 'monospace',
                               color: theme.colorScheme.onSurfaceVariant,
@@ -238,8 +245,8 @@ class _ActiveSessionContent extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       session.controlMode == ControlMode.anyone
-                          ? 'Anyone can control playback'
-                          : 'Host controls playback',
+                          ? t.watchTogether.anyoneCanControl
+                          : t.watchTogether.hostControlsPlayback,
                       style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                   ],
@@ -262,7 +269,10 @@ class _ActiveSessionContent extends StatelessWidget {
                   children: [
                     Icon(Symbols.people_rounded, color: theme.colorScheme.primary),
                     const SizedBox(width: 12),
-                    Text('Participants (${watchTogether.participantCount})', style: theme.textTheme.titleMedium),
+                    Text(
+                      '${t.watchTogether.participants} (${watchTogether.participantCount})',
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -287,7 +297,7 @@ class _ActiveSessionContent extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Host',
+                              t.watchTogether.host,
                               style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber.shade700),
                             ),
                           ),
@@ -321,7 +331,7 @@ class _ActiveSessionContent extends StatelessWidget {
               side: BorderSide(color: theme.colorScheme.error),
             ),
             icon: Icon(watchTogether.isHost ? Symbols.close_rounded : Symbols.logout_rounded),
-            label: Text(watchTogether.isHost ? 'End Session' : 'Leave Session'),
+            label: Text(watchTogether.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession),
           ),
         ),
       ],
@@ -332,18 +342,14 @@ class _ActiveSessionContent extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(watchTogether.isHost ? 'End Session?' : 'Leave Session?'),
-        content: Text(
-          watchTogether.isHost
-              ? 'This will end the session for all participants.'
-              : 'You will be removed from the session.',
-        ),
+        title: Text(watchTogether.isHost ? t.watchTogether.endSessionQuestion : t.watchTogether.leaveSessionQuestion),
+        content: Text(watchTogether.isHost ? t.watchTogether.endSessionConfirm : t.watchTogether.leaveSessionConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            child: Text(watchTogether.isHost ? 'End' : 'Leave'),
+            child: Text(watchTogether.isHost ? t.watchTogether.end : t.watchTogether.leave),
           ),
         ],
       ),

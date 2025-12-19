@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../i18n/strings.g.dart';
+
 /// Dialog for joining a watch together session
 class JoinSessionDialog extends StatefulWidget {
   const JoinSessionDialog({super.key});
@@ -40,7 +42,7 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
                   children: [
                     Icon(Symbols.group_add, color: theme.colorScheme.primary),
                     const SizedBox(width: 12),
-                    Expanded(child: Text('Join Watch Session', style: theme.textTheme.titleLarge)),
+                    Expanded(child: Text(t.watchTogether.joinWatchSession, style: theme.textTheme.titleLarge)),
                     IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Symbols.close)),
                   ],
                 ),
@@ -51,13 +53,13 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
                 TextFormField(
                   controller: _sessionIdController,
                   decoration: InputDecoration(
-                    labelText: 'Session Code',
-                    hintText: 'Enter 8-character code',
+                    labelText: t.watchTogether.sessionCode,
+                    hintText: t.watchTogether.enterCodeHint,
                     prefixIcon: const Icon(Symbols.tag),
                     suffixIcon: IconButton(
                       onPressed: _pasteFromClipboard,
                       icon: const Icon(Symbols.content_paste),
-                      tooltip: 'Paste from clipboard',
+                      tooltip: t.watchTogether.pasteFromClipboard,
                     ),
                     border: const OutlineInputBorder(),
                   ),
@@ -69,10 +71,10 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
                   ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter a session code';
+                      return t.watchTogether.pleaseEnterCode;
                     }
                     if (value.length != 8) {
-                      return 'Session code must be 8 characters';
+                      return t.watchTogether.codeMustBe8Chars;
                     }
                     return null;
                   },
@@ -84,7 +86,7 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
 
                 // Instructions
                 Text(
-                  'Enter the session code shared by the host to join their watch session.',
+                  t.watchTogether.joinInstructions,
                   style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
 
@@ -94,7 +96,7 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> {
                 FilledButton.icon(
                   onPressed: _join,
                   icon: const Icon(Symbols.group_add),
-                  label: const Text('Join Session'),
+                  label: Text(t.watchTogether.joinSession),
                 ),
               ],
             ),

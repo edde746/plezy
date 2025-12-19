@@ -4,6 +4,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../i18n/strings.g.dart';
+
 /// Dialog for sharing a watch together session with others
 class SessionInviteDialog extends StatelessWidget {
   final String sessionId;
@@ -33,9 +35,9 @@ class SessionInviteDialog extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Watch Together', style: theme.textTheme.titleLarge),
+                        Text(t.watchTogether.title, style: theme.textTheme.titleLarge),
                         Text(
-                          '$participantCount ${participantCount == 1 ? 'participant' : 'participants'}',
+                          '$participantCount ${participantCount == 1 ? t.watchTogether.participant : t.watchTogether.participantsPlural}',
                           style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ],
@@ -82,7 +84,7 @@ class SessionInviteDialog extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Session Code',
+                            t.watchTogether.sessionCode,
                             style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                           ),
                           const SizedBox(height: 4),
@@ -100,7 +102,7 @@ class SessionInviteDialog extends StatelessWidget {
                     IconButton(
                       onPressed: () => _copyToClipboard(context),
                       icon: const Icon(Symbols.content_copy),
-                      tooltip: 'Copy code',
+                      tooltip: t.watchTogether.copyCode,
                     ),
                   ],
                 ),
@@ -110,7 +112,7 @@ class SessionInviteDialog extends StatelessWidget {
 
               // Instructions
               Text(
-                'Share this code with others to let them join your watch session.',
+                t.watchTogether.shareInstructions,
                 style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
@@ -121,7 +123,7 @@ class SessionInviteDialog extends StatelessWidget {
               FilledButton.icon(
                 onPressed: () => _share(context),
                 icon: const Icon(Symbols.share),
-                label: const Text('Share'),
+                label: Text(t.watchTogether.share),
               ),
             ],
           ),
@@ -132,12 +134,12 @@ class SessionInviteDialog extends StatelessWidget {
 
   void _copyToClipboard(BuildContext context) {
     Clipboard.setData(ClipboardData(text: sessionId));
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Session code copied to clipboard')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.watchTogether.codeCopied)));
   }
 
   void _share(BuildContext context) {
-    final text = 'Join my Watch Together session!\n\nSession Code: $sessionId';
-    Share.share(text, subject: 'Watch Together Invite');
+    final text = t.watchTogether.inviteText(sessionId: sessionId);
+    Share.share(text, subject: t.watchTogether.inviteSubject);
   }
 }
 

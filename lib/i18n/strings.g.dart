@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2614 (435 per locale)
+/// Strings: 2914 (485 per locale)
 ///
-/// Built on 2025-12-19 at 00:18 UTC
+/// Built on 2025-12-19 at 02:20 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -202,6 +202,7 @@ class Translations implements BaseTranslations<AppLocale, Translations> {
   late final _StringsNavigationEn navigation = _StringsNavigationEn._(_root);
   late final _StringsCollectionsEn collections = _StringsCollectionsEn._(_root);
   late final _StringsPlaylistsEn playlists = _StringsPlaylistsEn._(_root);
+  late final _StringsWatchTogetherEn watchTogether = _StringsWatchTogetherEn._(_root);
   late final _StringsDownloadsEn downloads = _StringsDownloadsEn._(_root);
 }
 
@@ -886,6 +887,65 @@ class _StringsPlaylistsEn {
   String get errorRemoving => 'Failed to remove from playlist';
 }
 
+// Path: watchTogether
+class _StringsWatchTogetherEn {
+  _StringsWatchTogetherEn._(this._root);
+
+  final Translations _root; // ignore: unused_field
+
+  // Translations
+  String get title => 'Watch Together';
+  String get description => 'Watch content in sync with friends and family';
+  String get createSession => 'Create Session';
+  String get creating => 'Creating...';
+  String get joinSession => 'Join Session';
+  String get joining => 'Joining...';
+  String get controlMode => 'Control Mode';
+  String get controlModeQuestion => 'Who can control playback?';
+  String get hostOnly => 'Host Only';
+  String get anyone => 'Anyone';
+  String get hostingSession => 'Hosting Session';
+  String get inSession => 'In Session';
+  String get sessionCode => 'Session Code';
+  String get hostControlsPlayback => 'Host controls playback';
+  String get anyoneCanControl => 'Anyone can control playback';
+  String get hostControls => 'Host controls';
+  String get anyoneControls => 'Anyone controls';
+  String get participants => 'Participants';
+  String get host => 'Host';
+  String get hostBadge => 'HOST';
+  String get youAreHost => 'You are the host';
+  String get watchingWithOthers => 'Watching with others';
+  String get endSession => 'End Session';
+  String get leaveSession => 'Leave Session';
+  String get endSessionQuestion => 'End Session?';
+  String get leaveSessionQuestion => 'Leave Session?';
+  String get endSessionConfirm => 'This will end the session for all participants.';
+  String get leaveSessionConfirm => 'You will be removed from the session.';
+  String get endSessionConfirmOverlay => 'This will end the watch session for all participants.';
+  String get leaveSessionConfirmOverlay => 'You will be disconnected from the watch session.';
+  String get end => 'End';
+  String get leave => 'Leave';
+  String get inviteOthers => 'Invite others';
+  String get syncing => 'Syncing...';
+  String get participant => 'participant';
+  String get participantsPlural => 'participants';
+  String get copyCode => 'Copy code';
+  String get shareInstructions => 'Share this code with others to let them join your watch session.';
+  String get codeCopied => 'Session code copied to clipboard';
+  String get share => 'Share';
+  String inviteText({required Object sessionId}) => 'Join my Watch Together session!\n\nSession Code: ${sessionId}';
+  String get inviteSubject => 'Watch Together Invite';
+  String get joinWatchSession => 'Join Watch Session';
+  String get enterCodeHint => 'Enter 8-character code';
+  String get pasteFromClipboard => 'Paste from clipboard';
+  String get pleaseEnterCode => 'Please enter a session code';
+  String get codeMustBe8Chars => 'Session code must be 8 characters';
+  String get joinInstructions => 'Enter the session code shared by the host to join their watch session.';
+  String get failedToCreate => 'Failed to create session';
+  String get failedToJoin => 'Failed to join session';
+}
+
 // Path: downloads
 class _StringsDownloadsEn {
   _StringsDownloadsEn._(this._root);
@@ -1026,6 +1086,8 @@ class _StringsDe implements Translations {
   late final _StringsPlaylistsDe playlists = _StringsPlaylistsDe._(_root);
   @override
   late final _StringsCollectionsDe collections = _StringsCollectionsDe._(_root);
+  @override
+  late final _StringsWatchTogetherDe watchTogether = _StringsWatchTogetherDe._(_root);
 }
 
 // Path: app
@@ -2198,6 +2260,117 @@ class _StringsCollectionsDe implements _StringsCollectionsEn {
   String removeFromCollectionError({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}';
 }
 
+// Path: watchTogether
+class _StringsWatchTogetherDe implements _StringsWatchTogetherEn {
+  _StringsWatchTogetherDe._(this._root);
+
+  @override
+  final _StringsDe _root; // ignore: unused_field
+
+  // Translations
+  @override
+  String get title => 'Gemeinsam Schauen';
+  @override
+  String get description => 'Inhalte synchron mit Freunden und Familie schauen';
+  @override
+  String get createSession => 'Sitzung Erstellen';
+  @override
+  String get creating => 'Erstellen...';
+  @override
+  String get joinSession => 'Sitzung Beitreten';
+  @override
+  String get joining => 'Beitreten...';
+  @override
+  String get controlMode => 'Steuerungsmodus';
+  @override
+  String get controlModeQuestion => 'Wer kann die Wiedergabe steuern?';
+  @override
+  String get hostOnly => 'Nur Host';
+  @override
+  String get anyone => 'Alle';
+  @override
+  String get hostingSession => 'Sitzung Hosten';
+  @override
+  String get inSession => 'In Sitzung';
+  @override
+  String get sessionCode => 'Sitzungscode';
+  @override
+  String get hostControlsPlayback => 'Host steuert die Wiedergabe';
+  @override
+  String get anyoneCanControl => 'Alle können die Wiedergabe steuern';
+  @override
+  String get hostControls => 'Host steuert';
+  @override
+  String get anyoneControls => 'Alle steuern';
+  @override
+  String get participants => 'Teilnehmer';
+  @override
+  String get host => 'Host';
+  @override
+  String get hostBadge => 'HOST';
+  @override
+  String get youAreHost => 'Du bist der Host';
+  @override
+  String get watchingWithOthers => 'Mit anderen schauen';
+  @override
+  String get endSession => 'Sitzung Beenden';
+  @override
+  String get leaveSession => 'Sitzung Verlassen';
+  @override
+  String get endSessionQuestion => 'Sitzung Beenden?';
+  @override
+  String get leaveSessionQuestion => 'Sitzung Verlassen?';
+  @override
+  String get endSessionConfirm => 'Dies beendet die Sitzung für alle Teilnehmer.';
+  @override
+  String get leaveSessionConfirm => 'Du wirst aus der Sitzung entfernt.';
+  @override
+  String get endSessionConfirmOverlay => 'Dies beendet die Schausitzung für alle Teilnehmer.';
+  @override
+  String get leaveSessionConfirmOverlay => 'Du wirst von der Schausitzung getrennt.';
+  @override
+  String get end => 'Beenden';
+  @override
+  String get leave => 'Verlassen';
+  @override
+  String get inviteOthers => 'Andere einladen';
+  @override
+  String get syncing => 'Synchronisieren...';
+  @override
+  String get participant => 'Teilnehmer';
+  @override
+  String get participantsPlural => 'Teilnehmer';
+  @override
+  String get copyCode => 'Code kopieren';
+  @override
+  String get shareInstructions => 'Teile diesen Code mit anderen, damit sie deiner Schausitzung beitreten können.';
+  @override
+  String get codeCopied => 'Sitzungscode in Zwischenablage kopiert';
+  @override
+  String get share => 'Teilen';
+  @override
+  String inviteText({required Object sessionId}) =>
+      'Tritt meiner Gemeinsam Schauen-Sitzung bei!\n\nSitzungscode: ${sessionId}';
+  @override
+  String get inviteSubject => 'Gemeinsam Schauen Einladung';
+  @override
+  String get joinWatchSession => 'Schausitzung Beitreten';
+  @override
+  String get enterCodeHint => '8-stelligen Code eingeben';
+  @override
+  String get pasteFromClipboard => 'Aus Zwischenablage einfügen';
+  @override
+  String get pleaseEnterCode => 'Bitte gib einen Sitzungscode ein';
+  @override
+  String get codeMustBe8Chars => 'Sitzungscode muss 8 Zeichen haben';
+  @override
+  String get joinInstructions => 'Gib den vom Host geteilten Sitzungscode ein, um seiner Schausitzung beizutreten.';
+  @override
+  String get failedToCreate => 'Sitzung konnte nicht erstellt werden';
+  @override
+  String get failedToJoin => 'Sitzung konnte nicht beigetreten werden';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsDe implements _StringsLibrariesTabsEn {
   _StringsLibrariesTabsDe._(this._root);
@@ -2325,6 +2498,8 @@ class _StringsIt implements Translations {
   late final _StringsPlaylistsIt playlists = _StringsPlaylistsIt._(_root);
   @override
   late final _StringsCollectionsIt collections = _StringsCollectionsIt._(_root);
+  @override
+  late final _StringsWatchTogetherIt watchTogether = _StringsWatchTogetherIt._(_root);
 }
 
 // Path: app
@@ -3495,6 +3670,118 @@ class _StringsCollectionsIt implements _StringsCollectionsEn {
   String removeFromCollectionError({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}';
 }
 
+// Path: watchTogether
+class _StringsWatchTogetherIt implements _StringsWatchTogetherEn {
+  _StringsWatchTogetherIt._(this._root);
+
+  @override
+  final _StringsIt _root; // ignore: unused_field
+
+  // Translations
+  @override
+  String get title => 'Guarda Insieme';
+  @override
+  String get description => 'Guarda contenuti in sincronia con amici e familiari';
+  @override
+  String get createSession => 'Crea Sessione';
+  @override
+  String get creating => 'Creazione...';
+  @override
+  String get joinSession => 'Unisciti alla Sessione';
+  @override
+  String get joining => 'Connessione...';
+  @override
+  String get controlMode => 'Modalità di Controllo';
+  @override
+  String get controlModeQuestion => 'Chi può controllare la riproduzione?';
+  @override
+  String get hostOnly => 'Solo Host';
+  @override
+  String get anyone => 'Tutti';
+  @override
+  String get hostingSession => 'Hosting Sessione';
+  @override
+  String get inSession => 'In Sessione';
+  @override
+  String get sessionCode => 'Codice Sessione';
+  @override
+  String get hostControlsPlayback => 'L\'host controlla la riproduzione';
+  @override
+  String get anyoneCanControl => 'Tutti possono controllare la riproduzione';
+  @override
+  String get hostControls => 'Controllo host';
+  @override
+  String get anyoneControls => 'Controllo di tutti';
+  @override
+  String get participants => 'Partecipanti';
+  @override
+  String get host => 'Host';
+  @override
+  String get hostBadge => 'HOST';
+  @override
+  String get youAreHost => 'Sei l\'host';
+  @override
+  String get watchingWithOthers => 'Guardando con altri';
+  @override
+  String get endSession => 'Termina Sessione';
+  @override
+  String get leaveSession => 'Lascia Sessione';
+  @override
+  String get endSessionQuestion => 'Terminare la Sessione?';
+  @override
+  String get leaveSessionQuestion => 'Lasciare la Sessione?';
+  @override
+  String get endSessionConfirm => 'Questo terminerà la sessione per tutti i partecipanti.';
+  @override
+  String get leaveSessionConfirm => 'Sarai rimosso dalla sessione.';
+  @override
+  String get endSessionConfirmOverlay => 'Questo terminerà la sessione di visione per tutti i partecipanti.';
+  @override
+  String get leaveSessionConfirmOverlay => 'Sarai disconnesso dalla sessione di visione.';
+  @override
+  String get end => 'Termina';
+  @override
+  String get leave => 'Lascia';
+  @override
+  String get inviteOthers => 'Invita altri';
+  @override
+  String get syncing => 'Sincronizzazione...';
+  @override
+  String get participant => 'partecipante';
+  @override
+  String get participantsPlural => 'partecipanti';
+  @override
+  String get copyCode => 'Copia codice';
+  @override
+  String get shareInstructions => 'Condividi questo codice con altri per farli unire alla tua sessione di visione.';
+  @override
+  String get codeCopied => 'Codice sessione copiato negli appunti';
+  @override
+  String get share => 'Condividi';
+  @override
+  String inviteText({required Object sessionId}) =>
+      'Unisciti alla mia sessione Guarda Insieme!\n\nCodice Sessione: ${sessionId}';
+  @override
+  String get inviteSubject => 'Invito Guarda Insieme';
+  @override
+  String get joinWatchSession => 'Unisciti alla Sessione di Visione';
+  @override
+  String get enterCodeHint => 'Inserisci codice di 8 caratteri';
+  @override
+  String get pasteFromClipboard => 'Incolla dagli appunti';
+  @override
+  String get pleaseEnterCode => 'Inserisci un codice sessione';
+  @override
+  String get codeMustBe8Chars => 'Il codice sessione deve essere di 8 caratteri';
+  @override
+  String get joinInstructions =>
+      'Inserisci il codice sessione condiviso dall\'host per unirti alla loro sessione di visione.';
+  @override
+  String get failedToCreate => 'Impossibile creare la sessione';
+  @override
+  String get failedToJoin => 'Impossibile unirsi alla sessione';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsIt implements _StringsLibrariesTabsEn {
   _StringsLibrariesTabsIt._(this._root);
@@ -3622,6 +3909,8 @@ class _StringsNl implements Translations {
   late final _StringsPlaylistsNl playlists = _StringsPlaylistsNl._(_root);
   @override
   late final _StringsCollectionsNl collections = _StringsCollectionsNl._(_root);
+  @override
+  late final _StringsWatchTogetherNl watchTogether = _StringsWatchTogetherNl._(_root);
 }
 
 // Path: app
@@ -4793,6 +5082,117 @@ class _StringsCollectionsNl implements _StringsCollectionsEn {
   String removeFromCollectionError({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}';
 }
 
+// Path: watchTogether
+class _StringsWatchTogetherNl implements _StringsWatchTogetherEn {
+  _StringsWatchTogetherNl._(this._root);
+
+  @override
+  final _StringsNl _root; // ignore: unused_field
+
+  // Translations
+  @override
+  String get title => 'Samen Kijken';
+  @override
+  String get description => 'Kijk synchroon met vrienden en familie';
+  @override
+  String get createSession => 'Sessie Maken';
+  @override
+  String get creating => 'Maken...';
+  @override
+  String get joinSession => 'Sessie Deelnemen';
+  @override
+  String get joining => 'Deelnemen...';
+  @override
+  String get controlMode => 'Controlemodus';
+  @override
+  String get controlModeQuestion => 'Wie kan het afspelen bedienen?';
+  @override
+  String get hostOnly => 'Alleen Host';
+  @override
+  String get anyone => 'Iedereen';
+  @override
+  String get hostingSession => 'Sessie Hosten';
+  @override
+  String get inSession => 'In Sessie';
+  @override
+  String get sessionCode => 'Sessiecode';
+  @override
+  String get hostControlsPlayback => 'Host bedient het afspelen';
+  @override
+  String get anyoneCanControl => 'Iedereen kan het afspelen bedienen';
+  @override
+  String get hostControls => 'Host bedient';
+  @override
+  String get anyoneControls => 'Iedereen bedient';
+  @override
+  String get participants => 'Deelnemers';
+  @override
+  String get host => 'Host';
+  @override
+  String get hostBadge => 'HOST';
+  @override
+  String get youAreHost => 'Jij bent de host';
+  @override
+  String get watchingWithOthers => 'Kijken met anderen';
+  @override
+  String get endSession => 'Sessie Beëindigen';
+  @override
+  String get leaveSession => 'Sessie Verlaten';
+  @override
+  String get endSessionQuestion => 'Sessie Beëindigen?';
+  @override
+  String get leaveSessionQuestion => 'Sessie Verlaten?';
+  @override
+  String get endSessionConfirm => 'Dit beëindigt de sessie voor alle deelnemers.';
+  @override
+  String get leaveSessionConfirm => 'Je wordt uit de sessie verwijderd.';
+  @override
+  String get endSessionConfirmOverlay => 'Dit beëindigt de kijksessie voor alle deelnemers.';
+  @override
+  String get leaveSessionConfirmOverlay => 'Je wordt losgekoppeld van de kijksessie.';
+  @override
+  String get end => 'Beëindigen';
+  @override
+  String get leave => 'Verlaten';
+  @override
+  String get inviteOthers => 'Anderen uitnodigen';
+  @override
+  String get syncing => 'Synchroniseren...';
+  @override
+  String get participant => 'deelnemer';
+  @override
+  String get participantsPlural => 'deelnemers';
+  @override
+  String get copyCode => 'Code kopiëren';
+  @override
+  String get shareInstructions => 'Deel deze code met anderen om hen te laten deelnemen aan je kijksessie.';
+  @override
+  String get codeCopied => 'Sessiecode gekopieerd naar klembord';
+  @override
+  String get share => 'Delen';
+  @override
+  String inviteText({required Object sessionId}) => 'Doe mee met mijn Samen Kijken sessie!\n\nSessiecode: ${sessionId}';
+  @override
+  String get inviteSubject => 'Samen Kijken Uitnodiging';
+  @override
+  String get joinWatchSession => 'Kijksessie Deelnemen';
+  @override
+  String get enterCodeHint => 'Voer 8-teken code in';
+  @override
+  String get pasteFromClipboard => 'Plakken van klembord';
+  @override
+  String get pleaseEnterCode => 'Voer een sessiecode in';
+  @override
+  String get codeMustBe8Chars => 'Sessiecode moet 8 tekens zijn';
+  @override
+  String get joinInstructions =>
+      'Voer de sessiecode in die door de host is gedeeld om deel te nemen aan hun kijksessie.';
+  @override
+  String get failedToCreate => 'Sessie maken mislukt';
+  @override
+  String get failedToJoin => 'Sessie deelnemen mislukt';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsNl implements _StringsLibrariesTabsEn {
   _StringsLibrariesTabsNl._(this._root);
@@ -4920,6 +5320,8 @@ class _StringsSv implements Translations {
   late final _StringsPlaylistsSv playlists = _StringsPlaylistsSv._(_root);
   @override
   late final _StringsCollectionsSv collections = _StringsCollectionsSv._(_root);
+  @override
+  late final _StringsWatchTogetherSv watchTogether = _StringsWatchTogetherSv._(_root);
 }
 
 // Path: app
@@ -6092,6 +6494,117 @@ class _StringsCollectionsSv implements _StringsCollectionsEn {
   String removeFromCollectionError({required Object error}) => 'Fel vid borttagning från samling: ${error}';
 }
 
+// Path: watchTogether
+class _StringsWatchTogetherSv implements _StringsWatchTogetherEn {
+  _StringsWatchTogetherSv._(this._root);
+
+  @override
+  final _StringsSv _root; // ignore: unused_field
+
+  // Translations
+  @override
+  String get title => 'Titta Tillsammans';
+  @override
+  String get description => 'Titta på innehåll synkroniserat med vänner och familj';
+  @override
+  String get createSession => 'Skapa Session';
+  @override
+  String get creating => 'Skapar...';
+  @override
+  String get joinSession => 'Gå med i Session';
+  @override
+  String get joining => 'Ansluter...';
+  @override
+  String get controlMode => 'Kontrollläge';
+  @override
+  String get controlModeQuestion => 'Vem kan styra uppspelningen?';
+  @override
+  String get hostOnly => 'Endast Värd';
+  @override
+  String get anyone => 'Alla';
+  @override
+  String get hostingSession => 'Värd för Session';
+  @override
+  String get inSession => 'I Session';
+  @override
+  String get sessionCode => 'Sessionskod';
+  @override
+  String get hostControlsPlayback => 'Värden styr uppspelningen';
+  @override
+  String get anyoneCanControl => 'Alla kan styra uppspelningen';
+  @override
+  String get hostControls => 'Värd styr';
+  @override
+  String get anyoneControls => 'Alla styr';
+  @override
+  String get participants => 'Deltagare';
+  @override
+  String get host => 'Värd';
+  @override
+  String get hostBadge => 'VÄRD';
+  @override
+  String get youAreHost => 'Du är värden';
+  @override
+  String get watchingWithOthers => 'Tittar med andra';
+  @override
+  String get endSession => 'Avsluta Session';
+  @override
+  String get leaveSession => 'Lämna Session';
+  @override
+  String get endSessionQuestion => 'Avsluta Session?';
+  @override
+  String get leaveSessionQuestion => 'Lämna Session?';
+  @override
+  String get endSessionConfirm => 'Detta avslutar sessionen för alla deltagare.';
+  @override
+  String get leaveSessionConfirm => 'Du kommer att tas bort från sessionen.';
+  @override
+  String get endSessionConfirmOverlay => 'Detta avslutar tittarsessionen för alla deltagare.';
+  @override
+  String get leaveSessionConfirmOverlay => 'Du kommer att kopplas bort från tittarsessionen.';
+  @override
+  String get end => 'Avsluta';
+  @override
+  String get leave => 'Lämna';
+  @override
+  String get inviteOthers => 'Bjud in andra';
+  @override
+  String get syncing => 'Synkroniserar...';
+  @override
+  String get participant => 'deltagare';
+  @override
+  String get participantsPlural => 'deltagare';
+  @override
+  String get copyCode => 'Kopiera kod';
+  @override
+  String get shareInstructions => 'Dela denna kod med andra för att låta dem gå med i din tittarsession.';
+  @override
+  String get codeCopied => 'Sessionskod kopierad till urklipp';
+  @override
+  String get share => 'Dela';
+  @override
+  String inviteText({required Object sessionId}) =>
+      'Gå med i min Titta Tillsammans-session!\n\nSessionskod: ${sessionId}';
+  @override
+  String get inviteSubject => 'Titta Tillsammans-inbjudan';
+  @override
+  String get joinWatchSession => 'Gå med i Tittarsession';
+  @override
+  String get enterCodeHint => 'Ange 8-teckens kod';
+  @override
+  String get pasteFromClipboard => 'Klistra in från urklipp';
+  @override
+  String get pleaseEnterCode => 'Vänligen ange en sessionskod';
+  @override
+  String get codeMustBe8Chars => 'Sessionskod måste vara 8 tecken';
+  @override
+  String get joinInstructions => 'Ange sessionskoden som delats av värden för att gå med i deras tittarsession.';
+  @override
+  String get failedToCreate => 'Det gick inte att skapa session';
+  @override
+  String get failedToJoin => 'Det gick inte att gå med i session';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsSv implements _StringsLibrariesTabsEn {
   _StringsLibrariesTabsSv._(this._root);
@@ -6219,6 +6732,8 @@ class _StringsZh implements Translations {
   late final _StringsPlaylistsZh playlists = _StringsPlaylistsZh._(_root);
   @override
   late final _StringsCollectionsZh collections = _StringsCollectionsZh._(_root);
+  @override
+  late final _StringsWatchTogetherZh watchTogether = _StringsWatchTogetherZh._(_root);
 }
 
 // Path: app
@@ -7380,6 +7895,116 @@ class _StringsCollectionsZh implements _StringsCollectionsEn {
   String removeFromCollectionError({required Object error}) => '从合集移除时出错：${error}';
 }
 
+// Path: watchTogether
+class _StringsWatchTogetherZh implements _StringsWatchTogetherEn {
+  _StringsWatchTogetherZh._(this._root);
+
+  @override
+  final _StringsZh _root; // ignore: unused_field
+
+  // Translations
+  @override
+  String get title => '一起看';
+  @override
+  String get description => '与朋友和家人同步观看内容';
+  @override
+  String get createSession => '创建会话';
+  @override
+  String get creating => '创建中...';
+  @override
+  String get joinSession => '加入会话';
+  @override
+  String get joining => '加入中...';
+  @override
+  String get controlMode => '控制模式';
+  @override
+  String get controlModeQuestion => '谁可以控制播放？';
+  @override
+  String get hostOnly => '仅主持人';
+  @override
+  String get anyone => '任何人';
+  @override
+  String get hostingSession => '主持会话';
+  @override
+  String get inSession => '在会话中';
+  @override
+  String get sessionCode => '会话代码';
+  @override
+  String get hostControlsPlayback => '主持人控制播放';
+  @override
+  String get anyoneCanControl => '任何人都可以控制播放';
+  @override
+  String get hostControls => '主持人控制';
+  @override
+  String get anyoneControls => '任何人控制';
+  @override
+  String get participants => '参与者';
+  @override
+  String get host => '主持人';
+  @override
+  String get hostBadge => '主持人';
+  @override
+  String get youAreHost => '你是主持人';
+  @override
+  String get watchingWithOthers => '与他人一起观看';
+  @override
+  String get endSession => '结束会话';
+  @override
+  String get leaveSession => '离开会话';
+  @override
+  String get endSessionQuestion => '结束会话？';
+  @override
+  String get leaveSessionQuestion => '离开会话？';
+  @override
+  String get endSessionConfirm => '这将为所有参与者结束会话。';
+  @override
+  String get leaveSessionConfirm => '你将被移出会话。';
+  @override
+  String get endSessionConfirmOverlay => '这将为所有参与者结束观看会话。';
+  @override
+  String get leaveSessionConfirmOverlay => '你将断开与观看会话的连接。';
+  @override
+  String get end => '结束';
+  @override
+  String get leave => '离开';
+  @override
+  String get inviteOthers => '邀请他人';
+  @override
+  String get syncing => '同步中...';
+  @override
+  String get participant => '参与者';
+  @override
+  String get participantsPlural => '参与者';
+  @override
+  String get copyCode => '复制代码';
+  @override
+  String get shareInstructions => '与他人分享此代码以让他们加入你的观看会话。';
+  @override
+  String get codeCopied => '会话代码已复制到剪贴板';
+  @override
+  String get share => '分享';
+  @override
+  String inviteText({required Object sessionId}) => '加入我的一起看会话！\n\n会话代码：${sessionId}';
+  @override
+  String get inviteSubject => '一起看邀请';
+  @override
+  String get joinWatchSession => '加入观看会话';
+  @override
+  String get enterCodeHint => '输入8位代码';
+  @override
+  String get pasteFromClipboard => '从剪贴板粘贴';
+  @override
+  String get pleaseEnterCode => '请输入会话代码';
+  @override
+  String get codeMustBe8Chars => '会话代码必须是8个字符';
+  @override
+  String get joinInstructions => '输入主持人分享的会话代码以加入他们的观看会话。';
+  @override
+  String get failedToCreate => '创建会话失败';
+  @override
+  String get failedToJoin => '加入会话失败';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsZh implements _StringsLibrariesTabsEn {
   _StringsLibrariesTabsZh._(this._root);
@@ -8267,6 +8892,106 @@ extension on Translations {
         return 'Failed to reorder playlist item';
       case 'playlists.errorRemoving':
         return 'Failed to remove from playlist';
+      case 'watchTogether.title':
+        return 'Watch Together';
+      case 'watchTogether.description':
+        return 'Watch content in sync with friends and family';
+      case 'watchTogether.createSession':
+        return 'Create Session';
+      case 'watchTogether.creating':
+        return 'Creating...';
+      case 'watchTogether.joinSession':
+        return 'Join Session';
+      case 'watchTogether.joining':
+        return 'Joining...';
+      case 'watchTogether.controlMode':
+        return 'Control Mode';
+      case 'watchTogether.controlModeQuestion':
+        return 'Who can control playback?';
+      case 'watchTogether.hostOnly':
+        return 'Host Only';
+      case 'watchTogether.anyone':
+        return 'Anyone';
+      case 'watchTogether.hostingSession':
+        return 'Hosting Session';
+      case 'watchTogether.inSession':
+        return 'In Session';
+      case 'watchTogether.sessionCode':
+        return 'Session Code';
+      case 'watchTogether.hostControlsPlayback':
+        return 'Host controls playback';
+      case 'watchTogether.anyoneCanControl':
+        return 'Anyone can control playback';
+      case 'watchTogether.hostControls':
+        return 'Host controls';
+      case 'watchTogether.anyoneControls':
+        return 'Anyone controls';
+      case 'watchTogether.participants':
+        return 'Participants';
+      case 'watchTogether.host':
+        return 'Host';
+      case 'watchTogether.hostBadge':
+        return 'HOST';
+      case 'watchTogether.youAreHost':
+        return 'You are the host';
+      case 'watchTogether.watchingWithOthers':
+        return 'Watching with others';
+      case 'watchTogether.endSession':
+        return 'End Session';
+      case 'watchTogether.leaveSession':
+        return 'Leave Session';
+      case 'watchTogether.endSessionQuestion':
+        return 'End Session?';
+      case 'watchTogether.leaveSessionQuestion':
+        return 'Leave Session?';
+      case 'watchTogether.endSessionConfirm':
+        return 'This will end the session for all participants.';
+      case 'watchTogether.leaveSessionConfirm':
+        return 'You will be removed from the session.';
+      case 'watchTogether.endSessionConfirmOverlay':
+        return 'This will end the watch session for all participants.';
+      case 'watchTogether.leaveSessionConfirmOverlay':
+        return 'You will be disconnected from the watch session.';
+      case 'watchTogether.end':
+        return 'End';
+      case 'watchTogether.leave':
+        return 'Leave';
+      case 'watchTogether.inviteOthers':
+        return 'Invite others';
+      case 'watchTogether.syncing':
+        return 'Syncing...';
+      case 'watchTogether.participant':
+        return 'participant';
+      case 'watchTogether.participantsPlural':
+        return 'participants';
+      case 'watchTogether.copyCode':
+        return 'Copy code';
+      case 'watchTogether.shareInstructions':
+        return 'Share this code with others to let them join your watch session.';
+      case 'watchTogether.codeCopied':
+        return 'Session code copied to clipboard';
+      case 'watchTogether.share':
+        return 'Share';
+      case 'watchTogether.inviteText':
+        return ({required Object sessionId}) => 'Join my Watch Together session!\n\nSession Code: ${sessionId}';
+      case 'watchTogether.inviteSubject':
+        return 'Watch Together Invite';
+      case 'watchTogether.joinWatchSession':
+        return 'Join Watch Session';
+      case 'watchTogether.enterCodeHint':
+        return 'Enter 8-character code';
+      case 'watchTogether.pasteFromClipboard':
+        return 'Paste from clipboard';
+      case 'watchTogether.pleaseEnterCode':
+        return 'Please enter a session code';
+      case 'watchTogether.codeMustBe8Chars':
+        return 'Session code must be 8 characters';
+      case 'watchTogether.joinInstructions':
+        return 'Enter the session code shared by the host to join their watch session.';
+      case 'watchTogether.failedToCreate':
+        return 'Failed to create session';
+      case 'watchTogether.failedToJoin':
+        return 'Failed to join session';
       case 'downloads.title':
         return 'Downloads';
       case 'downloads.manage':
@@ -9183,6 +9908,107 @@ extension on _StringsDe {
         return 'Entfernen aus Sammlung fehlgeschlagen';
       case 'collections.removeFromCollectionError':
         return ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}';
+      case 'watchTogether.title':
+        return 'Gemeinsam Schauen';
+      case 'watchTogether.description':
+        return 'Inhalte synchron mit Freunden und Familie schauen';
+      case 'watchTogether.createSession':
+        return 'Sitzung Erstellen';
+      case 'watchTogether.creating':
+        return 'Erstellen...';
+      case 'watchTogether.joinSession':
+        return 'Sitzung Beitreten';
+      case 'watchTogether.joining':
+        return 'Beitreten...';
+      case 'watchTogether.controlMode':
+        return 'Steuerungsmodus';
+      case 'watchTogether.controlModeQuestion':
+        return 'Wer kann die Wiedergabe steuern?';
+      case 'watchTogether.hostOnly':
+        return 'Nur Host';
+      case 'watchTogether.anyone':
+        return 'Alle';
+      case 'watchTogether.hostingSession':
+        return 'Sitzung Hosten';
+      case 'watchTogether.inSession':
+        return 'In Sitzung';
+      case 'watchTogether.sessionCode':
+        return 'Sitzungscode';
+      case 'watchTogether.hostControlsPlayback':
+        return 'Host steuert die Wiedergabe';
+      case 'watchTogether.anyoneCanControl':
+        return 'Alle können die Wiedergabe steuern';
+      case 'watchTogether.hostControls':
+        return 'Host steuert';
+      case 'watchTogether.anyoneControls':
+        return 'Alle steuern';
+      case 'watchTogether.participants':
+        return 'Teilnehmer';
+      case 'watchTogether.host':
+        return 'Host';
+      case 'watchTogether.hostBadge':
+        return 'HOST';
+      case 'watchTogether.youAreHost':
+        return 'Du bist der Host';
+      case 'watchTogether.watchingWithOthers':
+        return 'Mit anderen schauen';
+      case 'watchTogether.endSession':
+        return 'Sitzung Beenden';
+      case 'watchTogether.leaveSession':
+        return 'Sitzung Verlassen';
+      case 'watchTogether.endSessionQuestion':
+        return 'Sitzung Beenden?';
+      case 'watchTogether.leaveSessionQuestion':
+        return 'Sitzung Verlassen?';
+      case 'watchTogether.endSessionConfirm':
+        return 'Dies beendet die Sitzung für alle Teilnehmer.';
+      case 'watchTogether.leaveSessionConfirm':
+        return 'Du wirst aus der Sitzung entfernt.';
+      case 'watchTogether.endSessionConfirmOverlay':
+        return 'Dies beendet die Schausitzung für alle Teilnehmer.';
+      case 'watchTogether.leaveSessionConfirmOverlay':
+        return 'Du wirst von der Schausitzung getrennt.';
+      case 'watchTogether.end':
+        return 'Beenden';
+      case 'watchTogether.leave':
+        return 'Verlassen';
+      case 'watchTogether.inviteOthers':
+        return 'Andere einladen';
+      case 'watchTogether.syncing':
+        return 'Synchronisieren...';
+      case 'watchTogether.participant':
+        return 'Teilnehmer';
+      case 'watchTogether.participantsPlural':
+        return 'Teilnehmer';
+      case 'watchTogether.copyCode':
+        return 'Code kopieren';
+      case 'watchTogether.shareInstructions':
+        return 'Teile diesen Code mit anderen, damit sie deiner Schausitzung beitreten können.';
+      case 'watchTogether.codeCopied':
+        return 'Sitzungscode in Zwischenablage kopiert';
+      case 'watchTogether.share':
+        return 'Teilen';
+      case 'watchTogether.inviteText':
+        return ({required Object sessionId}) =>
+            'Tritt meiner Gemeinsam Schauen-Sitzung bei!\n\nSitzungscode: ${sessionId}';
+      case 'watchTogether.inviteSubject':
+        return 'Gemeinsam Schauen Einladung';
+      case 'watchTogether.joinWatchSession':
+        return 'Schausitzung Beitreten';
+      case 'watchTogether.enterCodeHint':
+        return '8-stelligen Code eingeben';
+      case 'watchTogether.pasteFromClipboard':
+        return 'Aus Zwischenablage einfügen';
+      case 'watchTogether.pleaseEnterCode':
+        return 'Bitte gib einen Sitzungscode ein';
+      case 'watchTogether.codeMustBe8Chars':
+        return 'Sitzungscode muss 8 Zeichen haben';
+      case 'watchTogether.joinInstructions':
+        return 'Gib den vom Host geteilten Sitzungscode ein, um seiner Schausitzung beizutreten.';
+      case 'watchTogether.failedToCreate':
+        return 'Sitzung konnte nicht erstellt werden';
+      case 'watchTogether.failedToJoin':
+        return 'Sitzung konnte nicht beigetreten werden';
       default:
         return null;
     }
@@ -10069,6 +10895,107 @@ extension on _StringsIt {
         return 'Impossibile rimuovere dalla raccolta';
       case 'collections.removeFromCollectionError':
         return ({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}';
+      case 'watchTogether.title':
+        return 'Guarda Insieme';
+      case 'watchTogether.description':
+        return 'Guarda contenuti in sincronia con amici e familiari';
+      case 'watchTogether.createSession':
+        return 'Crea Sessione';
+      case 'watchTogether.creating':
+        return 'Creazione...';
+      case 'watchTogether.joinSession':
+        return 'Unisciti alla Sessione';
+      case 'watchTogether.joining':
+        return 'Connessione...';
+      case 'watchTogether.controlMode':
+        return 'Modalità di Controllo';
+      case 'watchTogether.controlModeQuestion':
+        return 'Chi può controllare la riproduzione?';
+      case 'watchTogether.hostOnly':
+        return 'Solo Host';
+      case 'watchTogether.anyone':
+        return 'Tutti';
+      case 'watchTogether.hostingSession':
+        return 'Hosting Sessione';
+      case 'watchTogether.inSession':
+        return 'In Sessione';
+      case 'watchTogether.sessionCode':
+        return 'Codice Sessione';
+      case 'watchTogether.hostControlsPlayback':
+        return 'L\'host controlla la riproduzione';
+      case 'watchTogether.anyoneCanControl':
+        return 'Tutti possono controllare la riproduzione';
+      case 'watchTogether.hostControls':
+        return 'Controllo host';
+      case 'watchTogether.anyoneControls':
+        return 'Controllo di tutti';
+      case 'watchTogether.participants':
+        return 'Partecipanti';
+      case 'watchTogether.host':
+        return 'Host';
+      case 'watchTogether.hostBadge':
+        return 'HOST';
+      case 'watchTogether.youAreHost':
+        return 'Sei l\'host';
+      case 'watchTogether.watchingWithOthers':
+        return 'Guardando con altri';
+      case 'watchTogether.endSession':
+        return 'Termina Sessione';
+      case 'watchTogether.leaveSession':
+        return 'Lascia Sessione';
+      case 'watchTogether.endSessionQuestion':
+        return 'Terminare la Sessione?';
+      case 'watchTogether.leaveSessionQuestion':
+        return 'Lasciare la Sessione?';
+      case 'watchTogether.endSessionConfirm':
+        return 'Questo terminerà la sessione per tutti i partecipanti.';
+      case 'watchTogether.leaveSessionConfirm':
+        return 'Sarai rimosso dalla sessione.';
+      case 'watchTogether.endSessionConfirmOverlay':
+        return 'Questo terminerà la sessione di visione per tutti i partecipanti.';
+      case 'watchTogether.leaveSessionConfirmOverlay':
+        return 'Sarai disconnesso dalla sessione di visione.';
+      case 'watchTogether.end':
+        return 'Termina';
+      case 'watchTogether.leave':
+        return 'Lascia';
+      case 'watchTogether.inviteOthers':
+        return 'Invita altri';
+      case 'watchTogether.syncing':
+        return 'Sincronizzazione...';
+      case 'watchTogether.participant':
+        return 'partecipante';
+      case 'watchTogether.participantsPlural':
+        return 'partecipanti';
+      case 'watchTogether.copyCode':
+        return 'Copia codice';
+      case 'watchTogether.shareInstructions':
+        return 'Condividi questo codice con altri per farli unire alla tua sessione di visione.';
+      case 'watchTogether.codeCopied':
+        return 'Codice sessione copiato negli appunti';
+      case 'watchTogether.share':
+        return 'Condividi';
+      case 'watchTogether.inviteText':
+        return ({required Object sessionId}) =>
+            'Unisciti alla mia sessione Guarda Insieme!\n\nCodice Sessione: ${sessionId}';
+      case 'watchTogether.inviteSubject':
+        return 'Invito Guarda Insieme';
+      case 'watchTogether.joinWatchSession':
+        return 'Unisciti alla Sessione di Visione';
+      case 'watchTogether.enterCodeHint':
+        return 'Inserisci codice di 8 caratteri';
+      case 'watchTogether.pasteFromClipboard':
+        return 'Incolla dagli appunti';
+      case 'watchTogether.pleaseEnterCode':
+        return 'Inserisci un codice sessione';
+      case 'watchTogether.codeMustBe8Chars':
+        return 'Il codice sessione deve essere di 8 caratteri';
+      case 'watchTogether.joinInstructions':
+        return 'Inserisci il codice sessione condiviso dall\'host per unirti alla loro sessione di visione.';
+      case 'watchTogether.failedToCreate':
+        return 'Impossibile creare la sessione';
+      case 'watchTogether.failedToJoin':
+        return 'Impossibile unirsi alla sessione';
       default:
         return null;
     }
@@ -10955,6 +11882,106 @@ extension on _StringsNl {
         return 'Verwijderen uit collectie mislukt';
       case 'collections.removeFromCollectionError':
         return ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}';
+      case 'watchTogether.title':
+        return 'Samen Kijken';
+      case 'watchTogether.description':
+        return 'Kijk synchroon met vrienden en familie';
+      case 'watchTogether.createSession':
+        return 'Sessie Maken';
+      case 'watchTogether.creating':
+        return 'Maken...';
+      case 'watchTogether.joinSession':
+        return 'Sessie Deelnemen';
+      case 'watchTogether.joining':
+        return 'Deelnemen...';
+      case 'watchTogether.controlMode':
+        return 'Controlemodus';
+      case 'watchTogether.controlModeQuestion':
+        return 'Wie kan het afspelen bedienen?';
+      case 'watchTogether.hostOnly':
+        return 'Alleen Host';
+      case 'watchTogether.anyone':
+        return 'Iedereen';
+      case 'watchTogether.hostingSession':
+        return 'Sessie Hosten';
+      case 'watchTogether.inSession':
+        return 'In Sessie';
+      case 'watchTogether.sessionCode':
+        return 'Sessiecode';
+      case 'watchTogether.hostControlsPlayback':
+        return 'Host bedient het afspelen';
+      case 'watchTogether.anyoneCanControl':
+        return 'Iedereen kan het afspelen bedienen';
+      case 'watchTogether.hostControls':
+        return 'Host bedient';
+      case 'watchTogether.anyoneControls':
+        return 'Iedereen bedient';
+      case 'watchTogether.participants':
+        return 'Deelnemers';
+      case 'watchTogether.host':
+        return 'Host';
+      case 'watchTogether.hostBadge':
+        return 'HOST';
+      case 'watchTogether.youAreHost':
+        return 'Jij bent de host';
+      case 'watchTogether.watchingWithOthers':
+        return 'Kijken met anderen';
+      case 'watchTogether.endSession':
+        return 'Sessie Beëindigen';
+      case 'watchTogether.leaveSession':
+        return 'Sessie Verlaten';
+      case 'watchTogether.endSessionQuestion':
+        return 'Sessie Beëindigen?';
+      case 'watchTogether.leaveSessionQuestion':
+        return 'Sessie Verlaten?';
+      case 'watchTogether.endSessionConfirm':
+        return 'Dit beëindigt de sessie voor alle deelnemers.';
+      case 'watchTogether.leaveSessionConfirm':
+        return 'Je wordt uit de sessie verwijderd.';
+      case 'watchTogether.endSessionConfirmOverlay':
+        return 'Dit beëindigt de kijksessie voor alle deelnemers.';
+      case 'watchTogether.leaveSessionConfirmOverlay':
+        return 'Je wordt losgekoppeld van de kijksessie.';
+      case 'watchTogether.end':
+        return 'Beëindigen';
+      case 'watchTogether.leave':
+        return 'Verlaten';
+      case 'watchTogether.inviteOthers':
+        return 'Anderen uitnodigen';
+      case 'watchTogether.syncing':
+        return 'Synchroniseren...';
+      case 'watchTogether.participant':
+        return 'deelnemer';
+      case 'watchTogether.participantsPlural':
+        return 'deelnemers';
+      case 'watchTogether.copyCode':
+        return 'Code kopiëren';
+      case 'watchTogether.shareInstructions':
+        return 'Deel deze code met anderen om hen te laten deelnemen aan je kijksessie.';
+      case 'watchTogether.codeCopied':
+        return 'Sessiecode gekopieerd naar klembord';
+      case 'watchTogether.share':
+        return 'Delen';
+      case 'watchTogether.inviteText':
+        return ({required Object sessionId}) => 'Doe mee met mijn Samen Kijken sessie!\n\nSessiecode: ${sessionId}';
+      case 'watchTogether.inviteSubject':
+        return 'Samen Kijken Uitnodiging';
+      case 'watchTogether.joinWatchSession':
+        return 'Kijksessie Deelnemen';
+      case 'watchTogether.enterCodeHint':
+        return 'Voer 8-teken code in';
+      case 'watchTogether.pasteFromClipboard':
+        return 'Plakken van klembord';
+      case 'watchTogether.pleaseEnterCode':
+        return 'Voer een sessiecode in';
+      case 'watchTogether.codeMustBe8Chars':
+        return 'Sessiecode moet 8 tekens zijn';
+      case 'watchTogether.joinInstructions':
+        return 'Voer de sessiecode in die door de host is gedeeld om deel te nemen aan hun kijksessie.';
+      case 'watchTogether.failedToCreate':
+        return 'Sessie maken mislukt';
+      case 'watchTogether.failedToJoin':
+        return 'Sessie deelnemen mislukt';
       default:
         return null;
     }
@@ -11840,6 +12867,106 @@ extension on _StringsSv {
         return 'Misslyckades med att ta bort från samling';
       case 'collections.removeFromCollectionError':
         return ({required Object error}) => 'Fel vid borttagning från samling: ${error}';
+      case 'watchTogether.title':
+        return 'Titta Tillsammans';
+      case 'watchTogether.description':
+        return 'Titta på innehåll synkroniserat med vänner och familj';
+      case 'watchTogether.createSession':
+        return 'Skapa Session';
+      case 'watchTogether.creating':
+        return 'Skapar...';
+      case 'watchTogether.joinSession':
+        return 'Gå med i Session';
+      case 'watchTogether.joining':
+        return 'Ansluter...';
+      case 'watchTogether.controlMode':
+        return 'Kontrollläge';
+      case 'watchTogether.controlModeQuestion':
+        return 'Vem kan styra uppspelningen?';
+      case 'watchTogether.hostOnly':
+        return 'Endast Värd';
+      case 'watchTogether.anyone':
+        return 'Alla';
+      case 'watchTogether.hostingSession':
+        return 'Värd för Session';
+      case 'watchTogether.inSession':
+        return 'I Session';
+      case 'watchTogether.sessionCode':
+        return 'Sessionskod';
+      case 'watchTogether.hostControlsPlayback':
+        return 'Värden styr uppspelningen';
+      case 'watchTogether.anyoneCanControl':
+        return 'Alla kan styra uppspelningen';
+      case 'watchTogether.hostControls':
+        return 'Värd styr';
+      case 'watchTogether.anyoneControls':
+        return 'Alla styr';
+      case 'watchTogether.participants':
+        return 'Deltagare';
+      case 'watchTogether.host':
+        return 'Värd';
+      case 'watchTogether.hostBadge':
+        return 'VÄRD';
+      case 'watchTogether.youAreHost':
+        return 'Du är värden';
+      case 'watchTogether.watchingWithOthers':
+        return 'Tittar med andra';
+      case 'watchTogether.endSession':
+        return 'Avsluta Session';
+      case 'watchTogether.leaveSession':
+        return 'Lämna Session';
+      case 'watchTogether.endSessionQuestion':
+        return 'Avsluta Session?';
+      case 'watchTogether.leaveSessionQuestion':
+        return 'Lämna Session?';
+      case 'watchTogether.endSessionConfirm':
+        return 'Detta avslutar sessionen för alla deltagare.';
+      case 'watchTogether.leaveSessionConfirm':
+        return 'Du kommer att tas bort från sessionen.';
+      case 'watchTogether.endSessionConfirmOverlay':
+        return 'Detta avslutar tittarsessionen för alla deltagare.';
+      case 'watchTogether.leaveSessionConfirmOverlay':
+        return 'Du kommer att kopplas bort från tittarsessionen.';
+      case 'watchTogether.end':
+        return 'Avsluta';
+      case 'watchTogether.leave':
+        return 'Lämna';
+      case 'watchTogether.inviteOthers':
+        return 'Bjud in andra';
+      case 'watchTogether.syncing':
+        return 'Synkroniserar...';
+      case 'watchTogether.participant':
+        return 'deltagare';
+      case 'watchTogether.participantsPlural':
+        return 'deltagare';
+      case 'watchTogether.copyCode':
+        return 'Kopiera kod';
+      case 'watchTogether.shareInstructions':
+        return 'Dela denna kod med andra för att låta dem gå med i din tittarsession.';
+      case 'watchTogether.codeCopied':
+        return 'Sessionskod kopierad till urklipp';
+      case 'watchTogether.share':
+        return 'Dela';
+      case 'watchTogether.inviteText':
+        return ({required Object sessionId}) => 'Gå med i min Titta Tillsammans-session!\n\nSessionskod: ${sessionId}';
+      case 'watchTogether.inviteSubject':
+        return 'Titta Tillsammans-inbjudan';
+      case 'watchTogether.joinWatchSession':
+        return 'Gå med i Tittarsession';
+      case 'watchTogether.enterCodeHint':
+        return 'Ange 8-teckens kod';
+      case 'watchTogether.pasteFromClipboard':
+        return 'Klistra in från urklipp';
+      case 'watchTogether.pleaseEnterCode':
+        return 'Vänligen ange en sessionskod';
+      case 'watchTogether.codeMustBe8Chars':
+        return 'Sessionskod måste vara 8 tecken';
+      case 'watchTogether.joinInstructions':
+        return 'Ange sessionskoden som delats av värden för att gå med i deras tittarsession.';
+      case 'watchTogether.failedToCreate':
+        return 'Det gick inte att skapa session';
+      case 'watchTogether.failedToJoin':
+        return 'Det gick inte att gå med i session';
       default:
         return null;
     }
@@ -12723,6 +13850,106 @@ extension on _StringsZh {
         return '从合集移除失败';
       case 'collections.removeFromCollectionError':
         return ({required Object error}) => '从合集移除时出错：${error}';
+      case 'watchTogether.title':
+        return '一起看';
+      case 'watchTogether.description':
+        return '与朋友和家人同步观看内容';
+      case 'watchTogether.createSession':
+        return '创建会话';
+      case 'watchTogether.creating':
+        return '创建中...';
+      case 'watchTogether.joinSession':
+        return '加入会话';
+      case 'watchTogether.joining':
+        return '加入中...';
+      case 'watchTogether.controlMode':
+        return '控制模式';
+      case 'watchTogether.controlModeQuestion':
+        return '谁可以控制播放？';
+      case 'watchTogether.hostOnly':
+        return '仅主持人';
+      case 'watchTogether.anyone':
+        return '任何人';
+      case 'watchTogether.hostingSession':
+        return '主持会话';
+      case 'watchTogether.inSession':
+        return '在会话中';
+      case 'watchTogether.sessionCode':
+        return '会话代码';
+      case 'watchTogether.hostControlsPlayback':
+        return '主持人控制播放';
+      case 'watchTogether.anyoneCanControl':
+        return '任何人都可以控制播放';
+      case 'watchTogether.hostControls':
+        return '主持人控制';
+      case 'watchTogether.anyoneControls':
+        return '任何人控制';
+      case 'watchTogether.participants':
+        return '参与者';
+      case 'watchTogether.host':
+        return '主持人';
+      case 'watchTogether.hostBadge':
+        return '主持人';
+      case 'watchTogether.youAreHost':
+        return '你是主持人';
+      case 'watchTogether.watchingWithOthers':
+        return '与他人一起观看';
+      case 'watchTogether.endSession':
+        return '结束会话';
+      case 'watchTogether.leaveSession':
+        return '离开会话';
+      case 'watchTogether.endSessionQuestion':
+        return '结束会话？';
+      case 'watchTogether.leaveSessionQuestion':
+        return '离开会话？';
+      case 'watchTogether.endSessionConfirm':
+        return '这将为所有参与者结束会话。';
+      case 'watchTogether.leaveSessionConfirm':
+        return '你将被移出会话。';
+      case 'watchTogether.endSessionConfirmOverlay':
+        return '这将为所有参与者结束观看会话。';
+      case 'watchTogether.leaveSessionConfirmOverlay':
+        return '你将断开与观看会话的连接。';
+      case 'watchTogether.end':
+        return '结束';
+      case 'watchTogether.leave':
+        return '离开';
+      case 'watchTogether.inviteOthers':
+        return '邀请他人';
+      case 'watchTogether.syncing':
+        return '同步中...';
+      case 'watchTogether.participant':
+        return '参与者';
+      case 'watchTogether.participantsPlural':
+        return '参与者';
+      case 'watchTogether.copyCode':
+        return '复制代码';
+      case 'watchTogether.shareInstructions':
+        return '与他人分享此代码以让他们加入你的观看会话。';
+      case 'watchTogether.codeCopied':
+        return '会话代码已复制到剪贴板';
+      case 'watchTogether.share':
+        return '分享';
+      case 'watchTogether.inviteText':
+        return ({required Object sessionId}) => '加入我的一起看会话！\n\n会话代码：${sessionId}';
+      case 'watchTogether.inviteSubject':
+        return '一起看邀请';
+      case 'watchTogether.joinWatchSession':
+        return '加入观看会话';
+      case 'watchTogether.enterCodeHint':
+        return '输入8位代码';
+      case 'watchTogether.pasteFromClipboard':
+        return '从剪贴板粘贴';
+      case 'watchTogether.pleaseEnterCode':
+        return '请输入会话代码';
+      case 'watchTogether.codeMustBe8Chars':
+        return '会话代码必须是8个字符';
+      case 'watchTogether.joinInstructions':
+        return '输入主持人分享的会话代码以加入他们的观看会话。';
+      case 'watchTogether.failedToCreate':
+        return '创建会话失败';
+      case 'watchTogether.failedToJoin':
+        return '加入会话失败';
       default:
         return null;
     }
