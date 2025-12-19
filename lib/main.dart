@@ -27,6 +27,7 @@ import 'watch_together/watch_together.dart';
 import 'services/multi_server_manager.dart';
 import 'services/offline_watch_sync_service.dart';
 import 'services/data_aggregation_service.dart';
+import 'services/in_app_review_service.dart';
 import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/download_storage_service.dart';
@@ -129,6 +130,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _downloadManager = DownloadManagerService(database: _appDatabase, storageService: DownloadStorageService.instance);
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
+
+    // Start in-app review session tracking
+    InAppReviewService.instance.startSession();
   }
 
   @override
@@ -139,9 +143,19 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // App came back to foreground - trigger sync check
-      _offlineWatchSyncService.onAppResumed();
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App came back to foreground - trigger sync check and start new session
+        _offlineWatchSyncService.onAppResumed();
+        InAppReviewService.instance.startSession();
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        // App went to background or is closing - end session
+        InAppReviewService.instance.endSession();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        // Transitional states - don't trigger session events
+        break;
     }
   }
 

@@ -19,13 +19,13 @@ platform :ios do
   desc "Build release IPA"
   lane :build do
     # Navigate to Flutter project root and build
-    sh("cd #{ENV['PWD']}/.. && flutter build ipa")
+    sh("cd #{ENV['PWD']}/.. && flutter build ipa --dart-define=ENABLE_IN_APP_REVIEW=true")
   end
 
   desc "Build and deploy to TestFlight"
   lane :deploy_testflight do
     # Build the Flutter app
-    sh("cd #{ENV['PWD']}/.. && flutter build ipa")
+    sh("cd #{ENV['PWD']}/.. && flutter build ipa --dart-define=ENABLE_IN_APP_REVIEW=true")
 
     # Upload to TestFlight
     upload_to_testflight(
@@ -36,7 +36,7 @@ platform :ios do
   desc "Build and deploy to App Store"
   lane :deploy_appstore do
     # Build the Flutter app
-    sh("cd #{ENV['PWD']}/.. && flutter build ipa")
+    sh("cd #{ENV['PWD']}/.. && flutter build ipa --dart-define=ENABLE_IN_APP_REVIEW=true")
 
     # Upload to App Store
     upload_to_app_store(

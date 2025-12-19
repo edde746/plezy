@@ -32,13 +32,13 @@ platform :android do
   desc "Build release AAB"
   lane :build do
     # Navigate to Flutter project root and build
-    sh("cd #{ENV['PWD']}/.. && flutter build appbundle")
+    sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true")
   end
 
   desc "Build and deploy to Google Play Store"
   lane :release do
     # Build the Flutter app
-    sh("cd #{ENV['PWD']}/.. && flutter build appbundle")
+    sh("cd #{ENV['PWD']}/.. && flutter build appbundle --dart-define=ENABLE_IN_APP_REVIEW=true")
 
     # Get version code from pubspec.yaml
     pubspec_path = "#{ENV['PWD']}/../pubspec.yaml"
