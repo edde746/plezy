@@ -244,6 +244,7 @@
     "aspectRatioButton": "Beeldverhouding",
     "fullscreenButton": "Volledig scherm activeren",
     "exitFullscreenButton": "Volledig scherm verlaten",
+    "alwaysOnTopButton": "Altijd bovenop",
     "rotationLockButton": "Rotatievergrendeling",
     "timelineSlider": "Videotijdlijn",
     "volumeSlider": "Volumeniveau",

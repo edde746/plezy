@@ -31,9 +31,11 @@ class TrackChapterControls extends StatelessWidget {
   final int subtitleSyncOffset;
   final bool isRotationLocked;
   final bool isFullscreen;
+  final bool isAlwaysOnTop;
   final VoidCallback? onCycleBoxFitMode;
   final VoidCallback? onToggleRotationLock;
   final VoidCallback? onToggleFullscreen;
+  final VoidCallback? onToggleAlwaysOnTop;
   final Function(int)? onSwitchVersion;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
@@ -67,9 +69,11 @@ class TrackChapterControls extends StatelessWidget {
     required this.isRotationLocked,
     required this.isFullscreen,
     required this.serverId,
+    this.isAlwaysOnTop = false,
     this.onCycleBoxFitMode,
     this.onToggleRotationLock,
     this.onToggleFullscreen,
+    this.onToggleAlwaysOnTop,
     this.onSwitchVersion,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
@@ -334,6 +338,24 @@ class TrackChapterControls extends StatelessWidget {
               onPressed: onToggleFullscreen,
             ),
           );
+          buttonIndex++;
+        }
+
+        // Always on top button (desktop only, not TV)
+        if (isDesktop && onToggleAlwaysOnTop != null) {
+          final currentIndex = buttonIndex;
+          buttons.add(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
+              icon: Symbols.layers_rounded,
+              semanticLabel: t.videoControls.alwaysOnTopButton,
+              isActive: isAlwaysOnTop,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
+              onPressed: onToggleAlwaysOnTop,
+            ),
+          );
         }
 
         return IntrinsicHeight(
@@ -352,7 +374,8 @@ class TrackChapterControls extends StatelessWidget {
     if (availableVersions.length > 1 && onSwitchVersion != null) count++;
     if (onCycleBoxFitMode != null) count++;
     if (isMobile && !PlatformDetector.isTV()) count++; // Rotation lock (not on TV)
-    if (isDesktop) count++;
+    if (isDesktop) count++; // Fullscreen
+    if (isDesktop && onToggleAlwaysOnTop != null) count++; // Always on top
     return count;
   }
 

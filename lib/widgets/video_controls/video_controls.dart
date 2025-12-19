@@ -124,6 +124,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
   bool _isFullscreen = false;
+  bool _isAlwaysOnTop = false;
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
   int _seekTimeSmall = 10; // Default, loaded from settings
@@ -188,6 +189,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Add window listener for tracking fullscreen state (for button icon)
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.addListener(this);
+      _initAlwaysOnTopState();
     }
     // Focus play/pause button on first frame if in keyboard mode
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -865,6 +867,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
+  /// Initialize always-on-top state from window manager (desktop only)
+  Future<void> _initAlwaysOnTopState() async {
+    final isOnTop = await windowManager.isAlwaysOnTop();
+    if (mounted && isOnTop != _isAlwaysOnTop) {
+      setState(() {
+        _isAlwaysOnTop = isOnTop;
+      });
+    }
+  }
+
+  /// Toggle always-on-top window mode (desktop only)
+  Future<void> _toggleAlwaysOnTop() async {
+    if (!PlatformDetector.isMobile(context)) {
+      _isAlwaysOnTop = !_isAlwaysOnTop;
+      await windowManager.setAlwaysOnTop(_isAlwaysOnTop);
+      setState(() {});
+    }
+  }
+
   /// Check if a key is a directional key (arrow keys)
   bool _isDirectionalKey(LogicalKeyboardKey key) {
     return key == LogicalKeyboardKey.arrowUp ||
@@ -1230,8 +1251,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                       audioSyncOffset: _audioSyncOffset,
                                       subtitleSyncOffset: _subtitleSyncOffset,
                                       isFullscreen: _isFullscreen,
+                                      isAlwaysOnTop: _isAlwaysOnTop,
                                       onCycleBoxFitMode: widget.onCycleBoxFitMode,
                                       onToggleFullscreen: _toggleFullscreen,
+                                      onToggleAlwaysOnTop: _toggleAlwaysOnTop,
                                       onSwitchVersion: _switchMediaVersion,
                                       onAudioTrackChanged: widget.onAudioTrackChanged,
                                       onSubtitleTrackChanged: widget.onSubtitleTrackChanged,

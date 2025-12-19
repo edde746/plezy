@@ -244,6 +244,7 @@
     "aspectRatioButton": "Seitenverhältnis",
     "fullscreenButton": "Vollbild aktivieren",
     "exitFullscreenButton": "Vollbild verlassen",
+    "alwaysOnTopButton": "Immer im Vordergrund",
     "rotationLockButton": "Dreh­sperre",
     "timelineSlider": "Video-Zeitleiste",
     "volumeSlider": "Lautstärkepegel",

@@ -243,6 +243,7 @@
     "aspectRatioButton": "Aspect ratio",
     "fullscreenButton": "Enter fullscreen",
     "exitFullscreenButton": "Exit fullscreen",
+    "alwaysOnTopButton": "Always on top",
     "rotationLockButton": "Rotation lock",
     "timelineSlider": "Video timeline",
     "volumeSlider": "Volume level",

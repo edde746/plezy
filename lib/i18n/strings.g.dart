@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 6
-/// Strings: 2608 (434 per locale)
+/// Strings: 2614 (435 per locale)
 ///
-/// Built on 2025-12-12 at 16:59 UTC
+/// Built on 2025-12-19 at 00:18 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -551,6 +551,7 @@ class _StringsVideoControlsEn {
   String get aspectRatioButton => 'Aspect ratio';
   String get fullscreenButton => 'Enter fullscreen';
   String get exitFullscreenButton => 'Exit fullscreen';
+  String get alwaysOnTopButton => 'Always on top';
   String get rotationLockButton => 'Rotation lock';
   String get timelineSlider => 'Video timeline';
   String get volumeSlider => 'Volume level';
@@ -1608,6 +1609,8 @@ class _StringsVideoControlsDe implements _StringsVideoControlsEn {
   String get fullscreenButton => 'Vollbild aktivieren';
   @override
   String get exitFullscreenButton => 'Vollbild verlassen';
+  @override
+  String get alwaysOnTopButton => 'Immer im Vordergrund';
   @override
   String get rotationLockButton => 'Dreh­sperre';
   @override
@@ -2906,6 +2909,8 @@ class _StringsVideoControlsIt implements _StringsVideoControlsEn {
   @override
   String get exitFullscreenButton => 'Esci da schermo intero';
   @override
+  String get alwaysOnTopButton => 'Sempre in primo piano';
+  @override
   String get rotationLockButton => 'Blocco rotazione';
   @override
   String get timelineSlider => 'Timeline video';
@@ -4200,6 +4205,8 @@ class _StringsVideoControlsNl implements _StringsVideoControlsEn {
   String get fullscreenButton => 'Volledig scherm activeren';
   @override
   String get exitFullscreenButton => 'Volledig scherm verlaten';
+  @override
+  String get alwaysOnTopButton => 'Altijd bovenop';
   @override
   String get rotationLockButton => 'Rotatievergrendeling';
   @override
@@ -5496,6 +5503,8 @@ class _StringsVideoControlsSv implements _StringsVideoControlsEn {
   @override
   String get exitFullscreenButton => 'Avsluta helskärm';
   @override
+  String get alwaysOnTopButton => 'Alltid överst';
+  @override
   String get rotationLockButton => 'Rotationslås';
   @override
   String get timelineSlider => 'Videotidslinje';
@@ -6315,7 +6324,7 @@ class _StringsScreensZh implements _StringsScreensEn {
   @override
   String get selectServer => '选择服务器';
   @override
-  String get switchProfile => '切换配置文件';
+  String get switchProfile => '切换用户';
   @override
   String get subtitleStyling => '字幕样式';
   @override
@@ -6788,6 +6797,8 @@ class _StringsVideoControlsZh implements _StringsVideoControlsEn {
   @override
   String get exitFullscreenButton => '退出全屏';
   @override
+  String get alwaysOnTopButton => '置顶窗口';
+  @override
   String get rotationLockButton => '旋转锁定';
   @override
   String get timelineSlider => '视频时间轴';
@@ -6940,7 +6951,7 @@ class _StringsDiscoverZh implements _StringsDiscoverEn {
   @override
   String get title => '发现';
   @override
-  String get switchProfile => '切换配置文件';
+  String get switchProfile => '切换用户';
   @override
   String get switchServer => '切换服务器';
   @override
@@ -7850,6 +7861,8 @@ extension on Translations {
         return 'Enter fullscreen';
       case 'videoControls.exitFullscreenButton':
         return 'Exit fullscreen';
+      case 'videoControls.alwaysOnTopButton':
+        return 'Always on top';
       case 'videoControls.rotationLockButton':
         return 'Rotation lock';
       case 'videoControls.timelineSlider':
@@ -8730,6 +8743,8 @@ extension on _StringsDe {
         return 'Vollbild aktivieren';
       case 'videoControls.exitFullscreenButton':
         return 'Vollbild verlassen';
+      case 'videoControls.alwaysOnTopButton':
+        return 'Immer im Vordergrund';
       case 'videoControls.rotationLockButton':
         return 'Dreh­sperre';
       case 'videoControls.timelineSlider':
@@ -9614,6 +9629,8 @@ extension on _StringsIt {
         return 'Attiva schermo intero';
       case 'videoControls.exitFullscreenButton':
         return 'Esci da schermo intero';
+      case 'videoControls.alwaysOnTopButton':
+        return 'Sempre in primo piano';
       case 'videoControls.rotationLockButton':
         return 'Blocco rotazione';
       case 'videoControls.timelineSlider':
@@ -10498,6 +10515,8 @@ extension on _StringsNl {
         return 'Volledig scherm activeren';
       case 'videoControls.exitFullscreenButton':
         return 'Volledig scherm verlaten';
+      case 'videoControls.alwaysOnTopButton':
+        return 'Altijd bovenop';
       case 'videoControls.rotationLockButton':
         return 'Rotatievergrendeling';
       case 'videoControls.timelineSlider':
@@ -11382,6 +11401,8 @@ extension on _StringsSv {
         return 'Aktivera helskärm';
       case 'videoControls.exitFullscreenButton':
         return 'Avsluta helskärm';
+      case 'videoControls.alwaysOnTopButton':
+        return 'Alltid överst';
       case 'videoControls.rotationLockButton':
         return 'Rotationslås';
       case 'videoControls.timelineSlider':
@@ -11893,7 +11914,7 @@ extension on _StringsZh {
       case 'screens.selectServer':
         return '选择服务器';
       case 'screens.switchProfile':
-        return '切换配置文件';
+        return '切换用户';
       case 'screens.subtitleStyling':
         return '字幕样式';
       case 'screens.search':
@@ -12265,6 +12286,8 @@ extension on _StringsZh {
         return '进入全屏';
       case 'videoControls.exitFullscreenButton':
         return '退出全屏';
+      case 'videoControls.alwaysOnTopButton':
+        return '置顶窗口';
       case 'videoControls.rotationLockButton':
         return '旋转锁定';
       case 'videoControls.timelineSlider':
@@ -12368,7 +12391,7 @@ extension on _StringsZh {
       case 'discover.title':
         return '发现';
       case 'discover.switchProfile':
-        return '切换配置文件';
+        return '切换用户';
       case 'discover.switchServer':
         return '切换服务器';
       case 'discover.logout':

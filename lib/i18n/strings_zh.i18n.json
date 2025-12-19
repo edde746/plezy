@@ -244,6 +244,7 @@
     "aspectRatioButton": "宽高比",
     "fullscreenButton": "进入全屏",
     "exitFullscreenButton": "退出全屏",
+    "alwaysOnTopButton": "置顶窗口",
     "rotationLockButton": "旋转锁定",
     "timelineSlider": "视频时间轴",
     "volumeSlider": "音量调节",

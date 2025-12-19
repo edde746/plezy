@@ -244,6 +244,7 @@
     "aspectRatioButton": "Proporzioni",
     "fullscreenButton": "Attiva schermo intero",
     "exitFullscreenButton": "Esci da schermo intero",
+    "alwaysOnTopButton": "Sempre in primo piano",
     "rotationLockButton": "Blocco rotazione",
     "timelineSlider": "Timeline video",
     "volumeSlider": "Livello volume",

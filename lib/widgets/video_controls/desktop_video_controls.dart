@@ -51,8 +51,10 @@ class DesktopVideoControls extends StatefulWidget {
   final int audioSyncOffset;
   final int subtitleSyncOffset;
   final bool isFullscreen;
+  final bool isAlwaysOnTop;
   final VoidCallback? onCycleBoxFitMode;
   final VoidCallback? onToggleFullscreen;
+  final VoidCallback? onToggleAlwaysOnTop;
   final Function(int)? onSwitchVersion;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
@@ -89,8 +91,10 @@ class DesktopVideoControls extends StatefulWidget {
     this.audioSyncOffset = 0,
     this.subtitleSyncOffset = 0,
     this.isFullscreen = false,
+    this.isAlwaysOnTop = false,
     this.onCycleBoxFitMode,
     this.onToggleFullscreen,
+    this.onToggleAlwaysOnTop,
     this.onSwitchVersion,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
@@ -455,9 +459,11 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 subtitleSyncOffset: widget.subtitleSyncOffset,
                 isRotationLocked: false, // Desktop doesn't have rotation lock
                 isFullscreen: widget.isFullscreen,
+                isAlwaysOnTop: widget.isAlwaysOnTop,
                 serverId: widget.serverId,
                 onCycleBoxFitMode: widget.onCycleBoxFitMode,
                 onToggleFullscreen: widget.onToggleFullscreen,
+                onToggleAlwaysOnTop: widget.onToggleAlwaysOnTop,
                 onSwitchVersion: widget.onSwitchVersion,
                 onAudioTrackChanged: widget.onAudioTrackChanged,
                 onSubtitleTrackChanged: widget.onSubtitleTrackChanged,

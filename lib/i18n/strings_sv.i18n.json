@@ -244,6 +244,7 @@
     "aspectRatioButton": "Bildförhållande",
     "fullscreenButton": "Aktivera helskärm",
     "exitFullscreenButton": "Avsluta helskärm",
+    "alwaysOnTopButton": "Alltid överst",
     "rotationLockButton": "Rotationslås",
     "timelineSlider": "Videotidslinje",
     "volumeSlider": "Volymnivå",
