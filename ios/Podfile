@@ -25,6 +25,10 @@ end
 
 require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
 
+# Disable file_picker's media picker on iOS - removes DKImagePickerController dependency
+# This app only uses file_picker for directory selection on desktop
+Pod.const_set(:PICKER_MEDIA, false) unless Pod.const_defined?(:PICKER_MEDIA)
+
 flutter_ios_podfile_setup
 
 target 'Runner' do

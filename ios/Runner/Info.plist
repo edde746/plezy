@@ -39,6 +39,8 @@
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app needs to connect to your Plex Media Server on your local network.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is included by the WebRTC library used for Watch Together, but is not actively used by this app.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>
