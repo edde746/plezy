@@ -286,9 +286,7 @@
     "noItemsAvailable": "Inga objekt tillgängliga",
     "failedToCreatePlayQueue": "Det gick inte att skapa uppspelningskö",
     "failedToCreatePlayQueueNoItems": "Det gick inte att skapa uppspelningskö – inga objekt",
-    "failedPlayback": "Kunde inte ${action}: ${error}",
-    "youAreOffline": "Du är offline",
-    "offlineFeatureUnavailable": "Denna funktion kräver en internetanslutning. Dina nedladdningar och inställningar är fortfarande tillgängliga."
+    "failedPlayback": "Kunde inte ${action}: ${error}"
   },
   "subtitlingStyling": {
     "stylingOptions": "Stilalternativ",
@@ -532,16 +530,8 @@
     "leaveSessionConfirmOverlay": "Du kommer att kopplas bort från tittarsessionen.",
     "end": "Avsluta",
     "leave": "Lämna",
-    "inviteOthers": "Bjud in andra",
     "syncing": "Synkroniserar...",
     "participant": "deltagare",
-    "participantsPlural": "deltagare",
-    "copyCode": "Kopiera kod",
-    "shareInstructions": "Dela denna kod med andra för att låta dem gå med i din tittarsession.",
-    "codeCopied": "Sessionskod kopierad till urklipp",
-    "share": "Dela",
-    "inviteText": "Gå med i min Titta Tillsammans-session!\n\nSessionskod: ${sessionId}",
-    "inviteSubject": "Titta Tillsammans-inbjudan",
     "joinWatchSession": "Gå med i Tittarsession",
     "enterCodeHint": "Ange 8-teckens kod",
     "pasteFromClipboard": "Klistra in från urklipp",

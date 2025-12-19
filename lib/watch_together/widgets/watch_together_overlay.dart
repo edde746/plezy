@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
-import 'session_invite_dialog.dart';
 
 /// Overlay shown on the video player when in a watch together session
 class WatchTogetherOverlay extends StatelessWidget {
@@ -201,21 +200,6 @@ class _SessionMenuSheet extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Actions
-            if (provider.isHost && provider.sessionId != null)
-              ListTile(
-                leading: const Icon(Symbols.share),
-                title: Text(t.watchTogether.inviteOthers),
-                onTap: () {
-                  Navigator.pop(context);
-                  showSessionInviteDialog(
-                    context,
-                    sessionId: provider.sessionId!,
-                    participantCount: provider.participantCount,
-                  );
-                },
-                contentPadding: EdgeInsets.zero,
-              ),
-
             ListTile(
               leading: Icon(Symbols.logout, color: theme.colorScheme.error),
               title: Text(

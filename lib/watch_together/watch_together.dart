@@ -13,6 +13,5 @@ export 'providers/watch_together_provider.dart';
 export 'screens/watch_together_screen.dart';
 
 // Widgets
-export 'widgets/session_invite_dialog.dart';
 export 'widgets/join_session_dialog.dart';
 export 'widgets/watch_together_overlay.dart';

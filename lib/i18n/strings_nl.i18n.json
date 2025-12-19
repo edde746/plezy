@@ -286,9 +286,7 @@
     "noItemsAvailable": "Geen items beschikbaar",
     "failedToCreatePlayQueue": "Kan afspeelwachtrij niet maken",
     "failedToCreatePlayQueueNoItems": "Kan afspeelwachtrij niet maken - geen items",
-    "failedPlayback": "Afspelen van ${action} mislukt: ${error}",
-    "youAreOffline": "Je bent offline",
-    "offlineFeatureUnavailable": "Deze functie vereist een internetverbinding. Je downloads en instellingen zijn nog steeds beschikbaar."
+    "failedPlayback": "Afspelen van ${action} mislukt: ${error}"
   },
   "subtitlingStyling": {
     "stylingOptions": "Opmaak opties",
@@ -532,16 +530,8 @@
     "leaveSessionConfirmOverlay": "Je wordt losgekoppeld van de kijksessie.",
     "end": "Beëindigen",
     "leave": "Verlaten",
-    "inviteOthers": "Anderen uitnodigen",
     "syncing": "Synchroniseren...",
     "participant": "deelnemer",
-    "participantsPlural": "deelnemers",
-    "copyCode": "Code kopiëren",
-    "shareInstructions": "Deel deze code met anderen om hen te laten deelnemen aan je kijksessie.",
-    "codeCopied": "Sessiecode gekopieerd naar klembord",
-    "share": "Delen",
-    "inviteText": "Doe mee met mijn Samen Kijken sessie!\n\nSessiecode: ${sessionId}",
-    "inviteSubject": "Samen Kijken Uitnodiging",
     "joinWatchSession": "Kijksessie Deelnemen",
     "enterCodeHint": "Voer 8-teken code in",
     "pasteFromClipboard": "Plakken van klembord",

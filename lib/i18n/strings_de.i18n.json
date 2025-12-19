@@ -286,9 +286,7 @@
     "noItemsAvailable": "Keine Elemente verfügbar",
     "failedToCreatePlayQueue": "Wiedergabewarteschlange konnte nicht erstellt werden",
     "failedToCreatePlayQueueNoItems": "Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente",
-    "failedPlayback": "Wiedergabe für ${action} fehlgeschlagen: ${error}",
-    "youAreOffline": "Du bist offline",
-    "offlineFeatureUnavailable": "Diese Funktion erfordert eine Internetverbindung. Deine Downloads und Einstellungen sind weiterhin verfügbar."
+    "failedPlayback": "Wiedergabe für ${action} fehlgeschlagen: ${error}"
   },
   "subtitlingStyling": {
     "stylingOptions": "Stiloptionen",
@@ -532,16 +530,8 @@
     "leaveSessionConfirmOverlay": "Du wirst von der Schausitzung getrennt.",
     "end": "Beenden",
     "leave": "Verlassen",
-    "inviteOthers": "Andere einladen",
     "syncing": "Synchronisieren...",
     "participant": "Teilnehmer",
-    "participantsPlural": "Teilnehmer",
-    "copyCode": "Code kopieren",
-    "shareInstructions": "Teile diesen Code mit anderen, damit sie deiner Schausitzung beitreten können.",
-    "codeCopied": "Sitzungscode in Zwischenablage kopiert",
-    "share": "Teilen",
-    "inviteText": "Tritt meiner Gemeinsam Schauen-Sitzung bei!\n\nSitzungscode: ${sessionId}",
-    "inviteSubject": "Gemeinsam Schauen Einladung",
     "joinWatchSession": "Schausitzung Beitreten",
     "enterCodeHint": "8-stelligen Code eingeben",
     "pasteFromClipboard": "Aus Zwischenablage einfügen",

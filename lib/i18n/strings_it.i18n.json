@@ -286,9 +286,7 @@
     "noItemsAvailable": "Nessun elemento disponibile",
     "failedToCreatePlayQueue": "Impossibile creare la coda di riproduzione",
     "failedToCreatePlayQueueNoItems": "Impossibile creare la coda di riproduzione - nessun elemento",
-    "failedPlayback": "Impossibile ${action}: ${error}",
-    "youAreOffline": "Sei offline",
-    "offlineFeatureUnavailable": "Questa funzione richiede una connessione internet. I tuoi download e le impostazioni sono ancora disponibili."
+    "failedPlayback": "Impossibile ${action}: ${error}"
   },
   "subtitlingStyling": {
     "stylingOptions": "Opzioni stile",
@@ -532,16 +530,8 @@
     "leaveSessionConfirmOverlay": "Sarai disconnesso dalla sessione di visione.",
     "end": "Termina",
     "leave": "Lascia",
-    "inviteOthers": "Invita altri",
     "syncing": "Sincronizzazione...",
     "participant": "partecipante",
-    "participantsPlural": "partecipanti",
-    "copyCode": "Copia codice",
-    "shareInstructions": "Condividi questo codice con altri per farli unire alla tua sessione di visione.",
-    "codeCopied": "Codice sessione copiato negli appunti",
-    "share": "Condividi",
-    "inviteText": "Unisciti alla mia sessione Guarda Insieme!\n\nCodice Sessione: ${sessionId}",
-    "inviteSubject": "Invito Guarda Insieme",
     "joinWatchSession": "Unisciti alla Sessione di Visione",
     "enterCodeHint": "Inserisci codice di 8 caratteri",
     "pasteFromClipboard": "Incolla dagli appunti",

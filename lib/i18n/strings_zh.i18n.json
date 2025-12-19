@@ -286,9 +286,7 @@
     "noItemsAvailable": "没有可用的项目",
     "failedToCreatePlayQueue": "创建播放队列失败",
     "failedToCreatePlayQueueNoItems": "创建播放队列失败 - 没有项目",
-    "failedPlayback": "无法${action}: ${error}",
-    "youAreOffline": "您已离线",
-    "offlineFeatureUnavailable": "此功能需要网络连接。您的下载内容和设置仍然可用。"
+    "failedPlayback": "无法${action}: ${error}"
   },
   "subtitlingStyling": {
     "stylingOptions": "样式选项",
@@ -532,16 +530,8 @@
     "leaveSessionConfirmOverlay": "你将断开与观看会话的连接。",
     "end": "结束",
     "leave": "离开",
-    "inviteOthers": "邀请他人",
     "syncing": "同步中...",
     "participant": "参与者",
-    "participantsPlural": "参与者",
-    "copyCode": "复制代码",
-    "shareInstructions": "与他人分享此代码以让他们加入你的观看会话。",
-    "codeCopied": "会话代码已复制到剪贴板",
-    "share": "分享",
-    "inviteText": "加入我的一起看会话！\n\n会话代码：${sessionId}",
-    "inviteSubject": "一起看邀请",
     "joinWatchSession": "加入观看会话",
     "enterCodeHint": "输入8位代码",
     "pasteFromClipboard": "从剪贴板粘贴",

@@ -285,9 +285,7 @@
     "noItemsAvailable": "No items available",
     "failedToCreatePlayQueue": "Failed to create play queue",
     "failedToCreatePlayQueueNoItems": "Failed to create play queue - no items",
-    "failedPlayback": "Failed to ${action}: ${error}",
-    "youAreOffline": "You're Offline",
-    "offlineFeatureUnavailable": "This feature requires an internet connection. Your downloads and settings are still available."
+    "failedPlayback": "Failed to ${action}: ${error}"
   },
   "subtitlingStyling": {
     "stylingOptions": "Styling Options",
@@ -514,16 +512,8 @@
     "leaveSessionConfirmOverlay": "You will be disconnected from the watch session.",
     "end": "End",
     "leave": "Leave",
-    "inviteOthers": "Invite others",
     "syncing": "Syncing...",
     "participant": "participant",
-    "participantsPlural": "participants",
-    "copyCode": "Copy code",
-    "shareInstructions": "Share this code with others to let them join your watch session.",
-    "codeCopied": "Session code copied to clipboard",
-    "share": "Share",
-    "inviteText": "Join my Watch Together session!\n\nSession Code: ${sessionId}",
-    "inviteSubject": "Watch Together Invite",
     "joinWatchSession": "Join Watch Session",
     "enterCodeHint": "Enter 8-character code",
     "pasteFromClipboard": "Paste from clipboard",
