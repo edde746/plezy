@@ -953,6 +953,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
+    // Toggle wakelock based on playback state
+    if (isPlaying) {
+      WakelockPlus.enable();
+    } else {
+      WakelockPlus.disable();
+    }
+
     // Send timeline update when playback state changes
     _progressTracker?.sendProgress(isPlaying ? 'playing' : 'paused');
 
