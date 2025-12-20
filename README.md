@@ -3,13 +3,13 @@
   Plezy
 </h1>
 
-Plezy is a modern Plex media client that provides a seamless streaming experience across desktop and mobile platforms. Built with Flutter, it offers native performance and a clean, intuitive interface for browsing and playing your Plex media library.
+A modern Plex client for desktop and mobile. Built with Flutter for native performance and a clean interface.
 
 <p align="center">
   <img src="assets/screenshots/macos-home.png" alt="Plezy macOS Home Screen" width="800" />
 </p>
 
-*See more screenshots in the [screenshots folder](assets/screenshots/#readme)*
+*More screenshots in the [screenshots folder](assets/screenshots/#readme)*
 
 ## Download
 
@@ -22,63 +22,53 @@ Plezy is a modern Plex media client that provides a seamless streaming experienc
 - [macOS (Universal)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.zip)
 - [Linux (x64)](https://github.com/edde746/plezy/releases/latest/download/plezy-linux.tar.gz)
 
-> Download the latest release from the [Releases page](https://github.com/edde746/plezy/releases)
-
 ## Features
 
-### 🔐 Authentication & Server Management
+### 🔐 Authentication
 - Sign in with Plex
-- Automatic server discovery with smart connection selection
+- Automatic server discovery and smart connection selection
 - Persistent sessions with auto-login
 
 ### 📚 Media Browsing
 - Browse libraries with rich metadata
-- Discover featured content
 - Advanced search across all media
-- Season and episode navigation
+- Collections and playlists
 
-### 🎬 Video Playback
-- Wide codec support including HEVC, AV1, VP9, and more
-- HDR and Dolby Vision support (iOS, macOS & Windows)
-- Advanced subtitle rendering with full ASS/SSA support
-- Audio and subtitle track selection with user profile preferences
-- Playback progress sync and resume functionality
+### 🎬 Playback
+- Wide codec support (HEVC, AV1, VP9, and more)
+- HDR and Dolby Vision (iOS, macOS, Windows)
+- Full ASS/SSA subtitle support
+- Audio and subtitle preferences synced with Plex profile
+- Progress sync and resume
 - Auto-play next episode
 
-## Prerequisites
+### 📥 Downloads
+- Download media for offline viewing
+- Background downloads with queue management
 
-- Flutter SDK 3.8.1 or higher
-- A Plex account
-- Access to a Plex Media Server (local or remote)
+### 👥 Watch Together
+- Synchronized playback with friends
+- Real-time play/pause and seek sync
 
-## Installation
+## Building from Source
 
-1. Clone the repository:
+### Prerequisites
+- Flutter SDK 3.8.1+
+- A Plex account with server access
+
+### Setup
+
 ```bash
 git clone https://github.com/edde746/plezy.git
 cd plezy
-```
-
-2. Install dependencies:
-```bash
 flutter pub get
-```
-
-3. Generate required code:
-```bash
 dart run build_runner build
-```
-
-4. Run the application:
-```bash
 flutter run
 ```
 
-## Development
-
 ### Code Generation
 
-The project uses code generation for JSON serialization. After modifying model classes, run:
+After modifying model classes:
 
 ```bash
 dart run build_runner build --delete-conflicting-outputs
@@ -88,6 +78,4 @@ dart run build_runner build --delete-conflicting-outputs
 
 - Built with [Flutter](https://flutter.dev)
 - Designed for [Plex Media Server](https://www.plex.tv)
-- Playback powered by [mpv](https://mpv.io)
-  - [MPVKit](https://github.com/mpvkit/MPVKit)
-  - [mpv-android](https://github.com/mpv-android/mpv-android)
+- Playback powered by [mpv](https://mpv.io) via [MPVKit](https://github.com/mpvkit/MPVKit) and [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)
