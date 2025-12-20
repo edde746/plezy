@@ -774,272 +774,302 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            DesktopSliverAppBar(
-              title: Text(t.discover.title),
-              floating: true,
-              pinned: true,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              surfaceTintColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              actions: [
-                Focus(
-                  focusNode: _refreshButtonFocusNode,
-                  onKeyEvent: _handleRefreshKeyEvent,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: _isRefreshFocused
-                          ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: IconButton(icon: const AppIcon(Symbols.refresh_rounded, fill: 1), onPressed: _loadContent),
+  Widget _buildOverlaidAppBar() {
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.black.withValues(alpha: 0.7),
+            Colors.black.withValues(alpha: 0.5),
+            Colors.black.withValues(alpha: 0.3),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.3, 0.6, 1.0],
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Text(
+                t.discover.title,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              Focus(
+                focusNode: _refreshButtonFocusNode,
+                onKeyEvent: _handleRefreshKeyEvent,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: IconButton(
+                    icon: const AppIcon(Symbols.refresh_rounded, fill: 1, color: Colors.white),
+                    onPressed: _loadContent,
                   ),
                 ),
-                // Watch Together button
-                Consumer<WatchTogetherProvider>(
-                  builder: (context, watchTogether, child) {
-                    return Focus(
-                      focusNode: _watchTogetherButtonFocusNode,
-                      onKeyEvent: _handleWatchTogetherKeyEvent,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _isWatchTogetherFocused
-                              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Stack(
-                          children: [
-                            IconButton(
-                              icon: AppIcon(
-                                Symbols.group_rounded,
-                                fill: watchTogether.isInSession ? 1 : 0,
-                                color: watchTogether.isInSession ? Theme.of(context).colorScheme.primary : null,
-                              ),
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
-                              ),
-                              tooltip: 'Watch Together',
-                            ),
-                            // Badge showing participant count when in session
-                            if (watchTogether.isInSession && watchTogether.participantCount > 1)
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    '${watchTogether.participantCount}',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
+              ),
+              // Watch Together button
+              Consumer<WatchTogetherProvider>(
+                builder: (context, watchTogether, child) {
+                  return Focus(
+                    focusNode: _watchTogetherButtonFocusNode,
+                    onKeyEvent: _handleWatchTogetherKeyEvent,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _isWatchTogetherFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                    );
-                  },
-                ),
-                Consumer<UserProfileProvider>(
-                  builder: (context, userProvider, child) {
-                    return Focus(
-                      focusNode: _userButtonFocusNode,
-                      onKeyEvent: _handleUserKeyEvent,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: _isUserFocused
-                              ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: PopupMenuButton<String>(
-                          icon: userProvider.currentUser?.thumb != null
-                              ? UserAvatarWidget(user: userProvider.currentUser!, size: 32, showIndicators: false)
-                              : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32),
-                          onSelected: (value) {
-                            if (value == 'switch_profile') {
-                              _handleSwitchProfile(context);
-                            } else if (value == 'logout') {
-                              _handleLogout();
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            // Only show Switch Profile if multiple users available
-                            if (userProvider.hasMultipleUsers)
-                              PopupMenuItem(
-                                value: 'switch_profile',
-                                child: Row(
-                                  children: [
-                                    AppIcon(Symbols.people_rounded, fill: 1),
-                                    SizedBox(width: 8),
-                                    Text(t.discover.switchProfile),
-                                  ],
+                      child: Stack(
+                        children: [
+                          IconButton(
+                            icon: AppIcon(
+                              Symbols.group_rounded,
+                              fill: watchTogether.isInSession ? 1 : 0,
+                              color: watchTogether.isInSession ? Theme.of(context).colorScheme.primary : Colors.white,
+                            ),
+                            onPressed: () =>
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                            tooltip: 'Watch Together',
+                          ),
+                          // Badge showing participant count when in session
+                          if (watchTogether.isInSession && watchTogether.participantCount > 1)
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${watchTogether.participantCount}',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Consumer<UserProfileProvider>(
+                builder: (context, userProvider, child) {
+                  return Focus(
+                    focusNode: _userButtonFocusNode,
+                    onKeyEvent: _handleUserKeyEvent,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: _isUserFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: PopupMenuButton<String>(
+                        icon: userProvider.currentUser?.thumb != null
+                            ? UserAvatarWidget(user: userProvider.currentUser!, size: 32, showIndicators: false)
+                            : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
+                        onSelected: (value) {
+                          if (value == 'switch_profile') {
+                            _handleSwitchProfile(context);
+                          } else if (value == 'logout') {
+                            _handleLogout();
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          // Only show Switch Profile if multiple users available
+                          if (userProvider.hasMultipleUsers)
                             PopupMenuItem(
-                              value: 'logout',
+                              value: 'switch_profile',
                               child: Row(
                                 children: [
-                                  AppIcon(Symbols.logout_rounded, fill: 1),
+                                  AppIcon(Symbols.people_rounded, fill: 1),
                                   SizedBox(width: 8),
-                                  Text(t.discover.logout),
+                                  Text(t.discover.switchProfile),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-            if (_isLoading) const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-            if (_errorMessage != null)
-              SliverFillRemaining(
-                child: ErrorStateWidget(
-                  message: _errorMessage!,
-                  icon: Symbols.error_outline_rounded,
-                  onRetry: _loadContent,
-                ),
-              ),
-            if (!_isLoading && _errorMessage == null) ...[
-              // Hero Section (Continue Watching)
-              Consumer<SettingsProvider>(
-                builder: (context, settingsProvider, child) {
-                  if (_onDeck.isNotEmpty && settingsProvider.showHeroSection) {
-                    return _buildHeroSection();
-                  }
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                },
-              ),
-
-              // On Deck / Continue Watching
-              if (_onDeck.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: HubSection(
-                    key: _continueWatchingHubKey,
-                    hub: PlexHub(
-                      hubKey: 'continue_watching',
-                      title: t.discover.continueWatching,
-                      type: 'mixed',
-                      hubIdentifier: '_continue_watching_',
-                      size: _onDeck.length,
-                      more: false,
-                      items: _onDeck,
-                    ),
-                    icon: Symbols.play_circle_rounded,
-                    onRefresh: updateItem,
-                    onRemoveFromContinueWatching: _refreshContinueWatching,
-                    isInContinueWatching: true,
-                    onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
-                  ),
-                ),
-
-              // Recommendation Hubs (Trending, Top in Genre, etc.)
-              for (int i = 0; i < _hubs.length; i++)
-                SliverToBoxAdapter(
-                  child: HubSection(
-                    key: i < _hubKeys.length ? _hubKeys[i] : null,
-                    hub: _hubs[i],
-                    icon: _getHubIcon(_hubs[i].title),
-                    onRefresh: updateItem,
-                    // Hub index is i + 1 if continue watching exists, otherwise i
-                    onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                  ),
-                ),
-
-              // Show loading skeleton for hubs while they're loading
-              if (_areHubsLoading && _hubs.isEmpty)
-                for (int i = 0; i < 3; i++)
-                  SliverToBoxAdapter(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Hub title skeleton
-                          Container(
-                            width: 200,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Hub items skeleton
-                          SizedBox(
-                            height: 200,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: 5,
-                              itemBuilder: (context, index) {
-                                return Container(
-                                  margin: const EdgeInsets.only(right: 12),
-                                  width: 140,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                                  ),
-                                );
-                              },
+                          PopupMenuItem(
+                            value: 'logout',
+                            child: Row(
+                              children: [
+                                AppIcon(Symbols.logout_rounded, fill: 1),
+                                SizedBox(width: 8),
+                                Text(t.discover.logout),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-
-              if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
-                SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text(t.discover.noContentAvailable),
-                        SizedBox(height: 8),
-                        Text(t.discover.addMediaToLibraries, style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  );
+                },
+              ),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          SafeArea(
+            top: false,
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                // Hero Section (Continue Watching) - at top of screen
+                Consumer<SettingsProvider>(
+                  builder: (context, settingsProvider, child) {
+                    if (_onDeck.isNotEmpty && settingsProvider.showHeroSection) {
+                      return _buildHeroSection();
+                    }
+                    // Add top padding when hero is not shown
+                    return SliverToBoxAdapter(
+                      child: SizedBox(height: kToolbarHeight + MediaQuery.of(context).padding.top + 16),
+                    );
+                  },
+                ),
+                if (_isLoading) const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
+                if (_errorMessage != null)
+                  SliverFillRemaining(
+                    child: ErrorStateWidget(
+                      message: _errorMessage!,
+                      icon: Symbols.error_outline_rounded,
+                      onRetry: _loadContent,
+                    ),
+                  ),
+                if (!_isLoading && _errorMessage == null) ...[
+                  // On Deck / Continue Watching
+                  if (_onDeck.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: HubSection(
+                        key: _continueWatchingHubKey,
+                        hub: PlexHub(
+                          hubKey: 'continue_watching',
+                          title: t.discover.continueWatching,
+                          type: 'mixed',
+                          hubIdentifier: '_continue_watching_',
+                          size: _onDeck.length,
+                          more: false,
+                          items: _onDeck,
+                        ),
+                        icon: Symbols.play_circle_rounded,
+                        onRefresh: updateItem,
+                        onRemoveFromContinueWatching: _refreshContinueWatching,
+                        isInContinueWatching: true,
+                        onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
+                      ),
+                    ),
+
+                  // Recommendation Hubs (Trending, Top in Genre, etc.)
+                  for (int i = 0; i < _hubs.length; i++)
+                    SliverToBoxAdapter(
+                      child: HubSection(
+                        key: i < _hubKeys.length ? _hubKeys[i] : null,
+                        hub: _hubs[i],
+                        icon: _getHubIcon(_hubs[i].title),
+                        onRefresh: updateItem,
+                        // Hub index is i + 1 if continue watching exists, otherwise i
+                        onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
+                      ),
+                    ),
+
+                  // Show loading skeleton for hubs while they're loading
+                  if (_areHubsLoading && _hubs.isEmpty)
+                    for (int i = 0; i < 3; i++)
+                      SliverToBoxAdapter(
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Hub title skeleton
+                              Container(
+                                width: 200,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              // Hub items skeleton
+                              SizedBox(
+                                height: 200,
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: 5,
+                                  itemBuilder: (context, index) {
+                                    return Container(
+                                      margin: const EdgeInsets.only(right: 12),
+                                      width: 140,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                  if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
+                    SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text(t.discover.noContentAvailable),
+                            SizedBox(height: 8),
+                            Text(t.discover.addMediaToLibraries, style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                ],
+              ],
+            ),
+          ),
+          // Overlaid app bar
+          Positioned(top: 0, left: 0, right: 0, child: _buildOverlaidAppBar()),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeroSection() {
+    final statusBarHeight = MediaQuery.of(context).padding.top;
     return SliverToBoxAdapter(
       child: Focus(
         focusNode: _heroFocusNode,
         autofocus: true,
         onKeyEvent: _handleHeroKeyEvent,
         child: SizedBox(
-          height: 500,
+          height: 500 + statusBarHeight,
           child: Stack(
             children: [
               PageView.builder(
@@ -1078,7 +1108,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: AppIcon(
                         _isAutoScrollPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
                         fill: 1,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                         size: 18,
                         semanticLabel: '${_isAutoScrollPaused ? t.discover.play : t.discover.pause} auto-scroll',
                       ),
@@ -1101,6 +1131,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               // Fill width animates based on dot size
                               final maxWidth = dotSize * 3; // 24px for normal, 15px for small
                               final fillWidth = dotSize + ((maxWidth - dotSize) * _indicatorAnimationController.value);
+                              final onSurface = Theme.of(context).colorScheme.onSurface;
                               return AnimatedContainer(
                                 duration: tokens(context).slow,
                                 curve: Curves.easeInOut,
@@ -1108,7 +1139,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 width: maxWidth,
                                 height: dotSize,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.4),
+                                  color: onSurface.withValues(alpha: 0.4),
                                   borderRadius: BorderRadius.circular(dotSize / 2),
                                 ),
                                 child: Align(
@@ -1117,7 +1148,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                     width: fillWidth,
                                     height: dotSize,
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color: onSurface,
                                       borderRadius: BorderRadius.circular(dotSize / 2),
                                     ),
                                   ),
@@ -1134,7 +1165,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             width: dotSize,
                             height: dotSize,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                               borderRadius: BorderRadius.circular(dotSize / 2),
                             ),
                           );
@@ -1172,216 +1203,226 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
           navigateToVideoPlayer(context, metadata: heroItem);
         },
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10)),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Background Image with fade/zoom animation and parallax
-                if (heroItem.art != null || heroItem.grandparentArt != null)
-                  AnimatedBuilder(
-                    animation: _scrollController,
-                    builder: (context, child) {
-                      final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-                      return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Background Image with fade/zoom animation and parallax
+            if (heroItem.art != null || heroItem.grandparentArt != null)
+              AnimatedBuilder(
+                animation: _scrollController,
+                builder: (context, child) {
+                  final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+                  return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
+                },
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: 1.0 + (0.1 * (1 - value)),
+                      child: Opacity(opacity: value, child: child),
+                    );
+                  },
+                  child: Builder(
+                    builder: (context) {
+                      final client = _getClientForItem(heroItem);
+                      final mediaQuery = MediaQuery.of(context);
+                      final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+                        client: client,
+                        thumbPath: heroItem.art ?? heroItem.grandparentArt,
+                        maxWidth: mediaQuery.size.width,
+                        maxHeight: mediaQuery.size.height * 0.7,
+                        devicePixelRatio: mediaQuery.devicePixelRatio,
+                        imageType: ImageType.art,
+                      );
+
+                      return CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                        errorWidget: (context, url, error) =>
+                            Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                      );
                     },
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.easeOut,
-                      builder: (context, value, child) {
-                        return Transform.scale(
-                          scale: 1.0 + (0.1 * (1 - value)),
-                          child: Opacity(opacity: value, child: child),
-                        );
-                      },
-                      child: Builder(
-                        builder: (context) {
-                          final client = _getClientForItem(heroItem);
-                          final mediaQuery = MediaQuery.of(context);
-                          final imageUrl = PlexImageHelper.getOptimizedImageUrl(
-                            client: client,
-                            thumbPath: heroItem.art ?? heroItem.grandparentArt,
-                            maxWidth: mediaQuery.size.width,
-                            maxHeight: mediaQuery.size.height * 0.7,
-                            devicePixelRatio: mediaQuery.devicePixelRatio,
-                            imageType: ImageType.art,
-                          );
+                  ),
+                ),
+              )
+            else
+              Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
 
-                          return CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                            errorWidget: (context, url, error) =>
-                                Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                          );
-                        },
-                      ),
-                    ),
-                  )
-                else
-                  Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-
-                // Gradient Overlay
-                Container(
+            // Gradient Overlay - blends into scaffold background
+            Builder(
+              builder: (context) {
+                final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                return Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.7),
-                        Colors.black.withValues(alpha: 0.9),
-                      ],
-                      stops: const [0.0, 0.5, 1.0],
+                      colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
+                      stops: const [0.5, 0.85, 1.0],
                     ),
                   ),
-                ),
+                );
+              },
+            ),
 
-                // Content with responsive alignment
-                Positioned(
-                  bottom: isLargeScreen ? 80 : 50,
-                  left: 0,
-                  right: isLargeScreen ? 200 : 0,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isLargeScreen ? 40 : 16),
-                    child: Column(
-                      crossAxisAlignment: isLargeScreen ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Show logo or name/title
-                        if (heroItem.clearLogo != null)
-                          SizedBox(
-                            height: 120,
-                            width: 400,
-                            child: Builder(
-                              builder: (context) {
-                                final client = _getClientForItem(heroItem);
-                                final dpr = MediaQuery.of(context).devicePixelRatio;
-                                final logoUrl = PlexImageHelper.getOptimizedImageUrl(
-                                  client: client,
-                                  thumbPath: heroItem.clearLogo,
-                                  maxWidth: 400,
-                                  maxHeight: 120,
-                                  devicePixelRatio: dpr,
-                                  imageType: ImageType.logo,
-                                );
+            // Content with responsive alignment
+            Positioned(
+              bottom: isLargeScreen ? 80 : 50,
+              left: 0,
+              right: isLargeScreen ? 200 : 0,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: isLargeScreen ? 40 : 24),
+                child: Column(
+                  crossAxisAlignment: isLargeScreen ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Show logo or name/title
+                    if (heroItem.clearLogo != null)
+                      SizedBox(
+                        height: 120,
+                        width: 400,
+                        child: Builder(
+                          builder: (context) {
+                            final client = _getClientForItem(heroItem);
+                            final dpr = MediaQuery.of(context).devicePixelRatio;
+                            final logoUrl = PlexImageHelper.getOptimizedImageUrl(
+                              client: client,
+                              thumbPath: heroItem.clearLogo,
+                              maxWidth: 400,
+                              maxHeight: 120,
+                              devicePixelRatio: dpr,
+                              imageType: ImageType.logo,
+                            );
 
-                                return CachedNetworkImage(
-                                  imageUrl: logoUrl,
-                                  filterQuality: FilterQuality.medium,
-                                  fit: BoxFit.contain,
-                                  memCacheWidth: (400 * dpr).clamp(200, 800).round(),
-                                  alignment: isLargeScreen ? Alignment.bottomLeft : Alignment.bottomCenter,
-                                  placeholder: (context, url) => Align(
-                                    alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
-                                    child: Text(
-                                      showName,
-                                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.3),
-                                        fontWeight: FontWeight.bold,
-                                        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
+                            return CachedNetworkImage(
+                              imageUrl: logoUrl,
+                              filterQuality: FilterQuality.medium,
+                              fit: BoxFit.contain,
+                              memCacheWidth: (400 * dpr).clamp(200, 800).round(),
+                              alignment: isLargeScreen ? Alignment.bottomLeft : Alignment.bottomCenter,
+                              placeholder: (context, url) => Align(
+                                alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
+                                child: Text(
+                                  showName,
+                                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+                                    fontWeight: FontWeight.bold,
+                                    shadows: [
+                                      Shadow(
+                                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                                        blurRadius: 8,
                                       ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
-                                    ),
+                                    ],
                                   ),
-                                  errorWidget: (context, url, error) {
-                                    // Fallback to text if logo fails to load
-                                    return Align(
-                                      alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
-                                      child: Text(
-                                        showName,
-                                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                                ),
+                              ),
+                              errorWidget: (context, url, error) {
+                                // Fallback to text if logo fails to load
+                                return Align(
+                                  alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
+                                  child: Text(
+                                    showName,
+                                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontWeight: FontWeight.bold,
+                                      shadows: [
+                                        Shadow(
+                                          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
+                                          blurRadius: 8,
                                         ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
-                                      ),
-                                    );
-                                  },
+                                      ],
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                                  ),
                                 );
                               },
-                            ),
-                          )
-                        else
-                          Text(
-                            showName,
-                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                            );
+                          },
+                        ),
+                      )
+                    else
+                      Text(
+                        showName,
+                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8),
+                          ],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                      ),
+
+                    // Metadata as dot-separated text with content type
+                    if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        [
+                          contentTypeLabel,
+                          if (heroItem.rating != null) '★ ${heroItem.rating!.toStringAsFixed(1)}',
+                          if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
+                          if (heroItem.year != null) heroItem.year.toString(),
+                        ].join(' • '),
+                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                        textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                      ),
+                    ],
+
+                    // On small screens: show button before summary
+                    if (!isLargeScreen) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
+
+                    // Summary with episode info (Apple TV style)
+                    if (heroItem.summary != null) ...[
+                      const SizedBox(height: 12),
+                      RichText(
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(
+                            color: isLargeScreen
+                                ? Colors.white.withValues(alpha: 0.7)
+                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            fontSize: 14,
+                            height: 1.4,
                           ),
-
-                        // Metadata as dot-separated text with content type
-                        if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
-                          const SizedBox(height: 16),
-                          Text(
-                            [
-                              contentTypeLabel,
-                              if (heroItem.rating != null) '★ ${heroItem.rating!.toStringAsFixed(1)}',
-                              if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
-                              if (heroItem.year != null) heroItem.year.toString(),
-                            ].join(' • '),
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                            textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
-                          ),
-                        ],
-
-                        // On small screens: show button before summary
-                        if (!isLargeScreen) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
-
-                        // Summary with episode info (Apple TV style)
-                        if (heroItem.summary != null) ...[
-                          const SizedBox(height: 12),
-                          RichText(
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
-                            text: TextSpan(
-                              style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
-                              children: [
-                                if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
-                                  TextSpan(
-                                    text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                                  ),
-                                TextSpan(
-                                  text: heroItem.summary?.isNotEmpty == true
-                                      ? heroItem.summary!
-                                      : 'No description available',
+                          children: [
+                            if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
+                              TextSpan(
+                                text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isLargeScreen ? Colors.white : Theme.of(context).colorScheme.onSurface,
                                 ),
-                              ],
+                              ),
+                            TextSpan(
+                              text: heroItem.summary?.isNotEmpty == true
+                                  ? heroItem.summary!
+                                  : 'No description available',
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                      ),
+                    ],
 
-                        // On large screens: show button after summary
-                        if (isLargeScreen) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
-                      ],
-                    ),
-                  ),
+                    // On large screens: show button after summary
+                    if (isLargeScreen) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
