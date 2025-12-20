@@ -1225,6 +1225,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                       onCancelAutoHide: () => _hideTimer?.cancel(),
                                       onStartAutoHide: _startHideTimer,
                                       onBack: widget.onBack,
+                                      onNext: widget.onNext,
+                                      onPrevious: widget.onPrevious,
                                       canControl: widget.canControl,
                                     ),
                                   )

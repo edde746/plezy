@@ -32,6 +32,8 @@ class MobileVideoControls extends StatelessWidget {
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
   final VoidCallback? onBack;
+  final VoidCallback? onNext;
+  final VoidCallback? onPrevious;
 
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
@@ -51,6 +53,8 @@ class MobileVideoControls extends StatelessWidget {
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.onBack,
+    this.onNext,
+    this.onPrevious,
     this.canControl = true,
   });
 
@@ -102,6 +106,16 @@ class MobileVideoControls extends StatelessWidget {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Previous episode button (hidden when unavailable)
+            if (onPrevious != null) ...[
+              _buildCircularButton(
+                semanticLabel: t.videoControls.previousButton,
+                icon: Symbols.skip_previous_rounded,
+                iconSize: 48,
+                onPressed: onPrevious!,
+              ),
+              const SizedBox(width: 16),
+            ],
             _buildCircularButton(
               semanticLabel: t.videoControls.seekBackwardButton(seconds: seekTimeSmall),
               icon: getReplayIcon(seekTimeSmall),
@@ -136,6 +150,16 @@ class MobileVideoControls extends StatelessWidget {
                 onSeekCompleted?.call(newPosition);
               },
             ),
+            // Next episode button (hidden when unavailable)
+            if (onNext != null) ...[
+              const SizedBox(width: 16),
+              _buildCircularButton(
+                semanticLabel: t.videoControls.nextButton,
+                icon: Symbols.skip_next_rounded,
+                iconSize: 48,
+                onPressed: onNext!,
+              ),
+            ],
           ],
         );
       },
