@@ -15,6 +15,8 @@ PODS:
   - hotkey_manager_macos (0.0.1):
     - FlutterMacOS
     - HotKey
+  - in_app_review (2.0.0):
+    - FlutterMacOS
   - macos_window_utils (1.0.0):
     - FlutterMacOS
   - os_media_controls (0.0.1):
@@ -75,6 +77,7 @@ DEPENDENCIES:
   - FlutterMacOS (from `Flutter/ephemeral`)
   - gamepads_darwin (from `Flutter/ephemeral/.symlinks/plugins/gamepads_darwin/macos`)
   - hotkey_manager_macos (from `Flutter/ephemeral/.symlinks/plugins/hotkey_manager_macos/macos`)
+  - in_app_review (from `Flutter/ephemeral/.symlinks/plugins/in_app_review/macos`)
   - macos_window_utils (from `Flutter/ephemeral/.symlinks/plugins/macos_window_utils/macos`)
   - os_media_controls (from `Flutter/ephemeral/.symlinks/plugins/os_media_controls/macos`)
   - package_info_plus (from `Flutter/ephemeral/.symlinks/plugins/package_info_plus/macos`)
@@ -109,6 +112,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/gamepads_darwin/macos
   hotkey_manager_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/hotkey_manager_macos/macos
+  in_app_review:
+    :path: Flutter/ephemeral/.symlinks/plugins/in_app_review/macos
   macos_window_utils:
     :path: Flutter/ephemeral/.symlinks/plugins/macos_window_utils/macos
   os_media_controls:
@@ -143,6 +148,7 @@ SPEC CHECKSUMS:
   gamepads_darwin: 643b6a69e20ca678fae83781b7f7fc8f15f5d710
   HotKey: 400beb7caa29054ea8d864c96f5ba7e5b4852277
   hotkey_manager_macos: a4317849af96d2430fa89944d3c58977ca089fbe
+  in_app_review: 66e7680752b632d83f4f0e88b34d52ed303fbff4
   macos_window_utils: 23f54331a0fd51eea9e0ed347253bf48fd379d1d
   os_media_controls: c07c04c4afdf59dda0a3f398457a46823c4ce0ed
   package_info_plus: f0052d280d17aa382b932f399edf32507174e870

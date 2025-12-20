@@ -19,7 +19,8 @@ interface MpvPlayerDelegate {
 
 class MpvPlayerCore(private val activity: Activity) :
     SurfaceHolder.Callback,
-    MPVLib.EventObserver {
+    MPVLib.EventObserver,
+    MPVLib.LogObserver {
 
     companion object {
         private const val TAG = "MpvPlayerCore"
@@ -143,8 +144,9 @@ class MpvPlayerCore(private val activity: Activity) :
             // Initialize MPV
             MPVLib.init()
 
-            // Register event observer
+            // Register event and log observers
             MPVLib.addObserver(this)
+            MPVLib.addLogObserver(this)
 
             isInitialized = true
             Log.d(TAG, "Initialized successfully")
@@ -235,6 +237,28 @@ class MpvPlayerCore(private val activity: Activity) :
         }
     }
 
+    // MPVLib.LogObserver
+
+    override fun logMessage(prefix: String, level: Int, text: String) {
+        val levelStr = when (level) {
+            MPVLib.MPV_LOG_LEVEL_FATAL -> "fatal"
+            MPVLib.MPV_LOG_LEVEL_ERROR -> "error"
+            MPVLib.MPV_LOG_LEVEL_WARN -> "warn"
+            MPVLib.MPV_LOG_LEVEL_INFO -> "info"
+            MPVLib.MPV_LOG_LEVEL_V -> "v"
+            MPVLib.MPV_LOG_LEVEL_DEBUG -> "debug"
+            MPVLib.MPV_LOG_LEVEL_TRACE -> "trace"
+            else -> "info"
+        }
+        activity.runOnUiThread {
+            delegate?.onEvent("log-message", mapOf(
+                "prefix" to prefix,
+                "level" to levelStr,
+                "text" to text
+            ))
+        }
+    }
+
     // Public API
 
     fun setProperty(name: String, value: String) {
@@ -282,6 +306,7 @@ class MpvPlayerCore(private val activity: Activity) :
         Log.d(TAG, "Disposing")
 
         MPVLib.removeObserver(this)
+        MPVLib.removeLogObserver(this)
 
         surfaceView?.holder?.removeCallback(this)
         overlayLayoutListener?.let { listener ->

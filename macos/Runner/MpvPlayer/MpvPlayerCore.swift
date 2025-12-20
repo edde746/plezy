@@ -304,8 +304,16 @@ class MpvPlayerCore: NSObject {
         case MPV_EVENT_LOG_MESSAGE:
             if let msgPtr = event.data?.assumingMemoryBound(to: mpv_event_log_message.self) {
                 let msg = msgPtr.pointee
-                if let prefix = msg.prefix, let level = msg.level, let text = msg.text {
-                    print("[MPV:\(String(cString: prefix))] \(String(cString: level)): \(String(cString: text))", terminator: "")
+                let prefix = msg.prefix.map { String(cString: $0) } ?? ""
+                let level = msg.level.map { String(cString: $0) } ?? ""
+                let text = msg.text.map { String(cString: $0) } ?? ""
+
+                DispatchQueue.main.async {
+                    self.delegate?.onEvent(name: "log-message", data: [
+                        "prefix": prefix,
+                        "level": level,
+                        "text": text
+                    ])
                 }
             }
 

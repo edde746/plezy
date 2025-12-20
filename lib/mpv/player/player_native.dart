@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
+import '../../utils/app_logger.dart';
 import '../font_loader.dart';
 import '../models.dart';
 import 'player.dart';
@@ -68,6 +69,41 @@ class PlayerNative implements Player {
     );
 
     _setupEventListener();
+
+    // Forward MPV logs to app logger
+    _logController.stream.listen(_forwardToAppLogger);
+  }
+
+  void _forwardToAppLogger(PlayerLog log) {
+    final message = '[MPV:${log.prefix}] ${log.text}'.trimRight();
+    switch (log.level) {
+      case PlayerLogLevel.fatal:
+      case PlayerLogLevel.error:
+        appLogger.e(message);
+      case PlayerLogLevel.warn:
+        appLogger.w(message);
+      case PlayerLogLevel.info:
+      case PlayerLogLevel.verbose:
+        appLogger.i(message);
+      case PlayerLogLevel.debug:
+      case PlayerLogLevel.trace:
+        appLogger.d(message);
+      case PlayerLogLevel.none:
+        break;
+    }
+  }
+
+  PlayerLogLevel _parseLogLevel(String level) {
+    return switch (level) {
+      'fatal' => PlayerLogLevel.fatal,
+      'error' => PlayerLogLevel.error,
+      'warn' => PlayerLogLevel.warn,
+      'info' => PlayerLogLevel.info,
+      'v' || 'verbose' => PlayerLogLevel.verbose,
+      'debug' => PlayerLogLevel.debug,
+      'trace' => PlayerLogLevel.trace,
+      _ => PlayerLogLevel.info,
+    };
   }
 
   void _setupEventListener() {
@@ -202,6 +238,14 @@ class PlayerNative implements Player {
         // Reset completed state when new file is loaded
         _state = _state.copyWith(completed: false);
         _completedController.add(false);
+        break;
+
+      case 'log-message':
+        final prefix = data?['prefix'] as String? ?? '';
+        final levelStr = data?['level'] as String? ?? 'info';
+        final text = data?['text'] as String? ?? '';
+        final level = _parseLogLevel(levelStr);
+        _logController.add(PlayerLog(level: level, prefix: prefix, text: text));
         break;
     }
   }

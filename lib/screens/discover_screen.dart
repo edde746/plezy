@@ -14,7 +14,6 @@ import '../providers/multi_server_provider.dart';
 import '../providers/server_state_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../widgets/desktop_app_bar.dart';
 import 'profile/user_avatar_widget.dart';
 import '../widgets/hub_section.dart';
 import 'profile/profile_switch_screen.dart';
