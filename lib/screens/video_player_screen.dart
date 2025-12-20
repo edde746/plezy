@@ -313,6 +313,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await player!.setProperty('sub-delay', offsetSeconds.toString());
       }
 
+      // Apply custom MPV config entries
+      final customMpvConfig = settingsService.getEnabledMpvConfigEntries();
+      for (final entry in customMpvConfig.entries) {
+        try {
+          await player!.setProperty(entry.key, entry.value);
+          appLogger.d('Applied custom MPV property: ${entry.key}=${entry.value}');
+        } catch (e) {
+          appLogger.w('Failed to set MPV property ${entry.key}', error: e);
+        }
+      }
+
       // Apply saved volume
       final savedVolume = settingsService.getVolume();
       player!.setVolume(savedVolume);

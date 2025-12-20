@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:plezy/utils/app_logger.dart';
 import '../i18n/strings.g.dart';
+import '../models/mpv_config_models.dart';
 import 'base_shared_preferences_service.dart';
 import '../utils/platform_detector.dart';
 
@@ -50,6 +51,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
   static const String _keyVideoPlayerNavigationEnabled = 'video_player_navigation_enabled';
   static const String _keyShowPerformanceOverlay = 'show_performance_overlay';
+  static const String _keyMpvConfigEntries = 'mpv_config_entries';
+  static const String _keyMpvConfigPresets = 'mpv_config_presets';
 
   SettingsService._();
 
@@ -805,6 +808,78 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyDownloadOnWifiOnly) ?? false;
   }
 
+  // MPV Config Entries
+
+  /// Get all MPV config entries
+  List<MpvConfigEntry> getMpvConfigEntries() {
+    final jsonString = prefs.getString(_keyMpvConfigEntries);
+    if (jsonString == null) return [];
+
+    try {
+      final List<dynamic> decoded = json.decode(jsonString);
+      return decoded.map((e) => MpvConfigEntry.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Save all MPV config entries
+  Future<void> setMpvConfigEntries(List<MpvConfigEntry> entries) async {
+    final jsonString = json.encode(entries.map((e) => e.toJson()).toList());
+    await prefs.setString(_keyMpvConfigEntries, jsonString);
+  }
+
+  /// Get only enabled MPV config entries (for player initialization)
+  Map<String, String> getEnabledMpvConfigEntries() {
+    final entries = getMpvConfigEntries();
+    return Map.fromEntries(entries.where((e) => e.isEnabled).map((e) => MapEntry(e.key, e.value)));
+  }
+
+  // MPV Presets
+
+  /// Get all saved presets
+  List<MpvPreset> getMpvPresets() {
+    final jsonString = prefs.getString(_keyMpvConfigPresets);
+    if (jsonString == null) return [];
+
+    try {
+      final List<dynamic> decoded = json.decode(jsonString);
+      return decoded.map((e) => MpvPreset.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Save a new preset (overwrites existing with same name)
+  Future<void> saveMpvPreset(String name, List<MpvConfigEntry> entries) async {
+    final presets = getMpvPresets();
+
+    // Remove existing preset with same name
+    presets.removeWhere((p) => p.name == name);
+
+    presets.add(MpvPreset(name: name, entries: entries, createdAt: DateTime.now()));
+
+    final jsonString = json.encode(presets.map((p) => p.toJson()).toList());
+    await prefs.setString(_keyMpvConfigPresets, jsonString);
+  }
+
+  /// Delete a preset by name
+  Future<void> deleteMpvPreset(String name) async {
+    final presets = getMpvPresets();
+    presets.removeWhere((p) => p.name == name);
+
+    final jsonString = json.encode(presets.map((p) => p.toJson()).toList());
+    await prefs.setString(_keyMpvConfigPresets, jsonString);
+  }
+
+  /// Load a preset (replaces current entries)
+  Future<void> loadMpvPreset(String name) async {
+    final presets = getMpvPresets();
+    final preset = presets.firstWhere((p) => p.name == name, orElse: () => throw Exception('Preset not found: $name'));
+
+    await setMpvConfigEntries(preset.entries);
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -841,6 +916,8 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyDownloadOnWifiOnly),
       prefs.remove(_keyVideoPlayerNavigationEnabled),
       prefs.remove(_keyShowPerformanceOverlay),
+      prefs.remove(_keyMpvConfigEntries),
+      prefs.remove(_keyMpvConfigPresets),
     ]);
   }
 

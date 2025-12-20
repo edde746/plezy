@@ -21,6 +21,7 @@ import '../../widgets/desktop_app_bar.dart';
 import 'hotkey_recorder_widget.dart';
 import 'about_screen.dart';
 import 'logs_screen.dart';
+import 'mpv_config_screen.dart';
 import 'subtitle_styling_screen.dart';
 
 /// Helper class for option selection dialog items
@@ -248,6 +249,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const SubtitleStylingScreen()));
+            },
+          ),
+          ListTile(
+            leading: const AppIcon(Symbols.tune_rounded, fill: 1),
+            title: Text(t.mpvConfig.title),
+            subtitle: Text(t.mpvConfig.description),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const MpvConfigScreen()));
             },
           ),
           ListTile(

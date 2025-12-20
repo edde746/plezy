@@ -1306,9 +1306,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                 Positioned(
                   top: isMobile ? 60 : 16,
                   left: 16,
-                  child: IgnorePointer(
-                    child: PlayerPerformanceOverlay(player: widget.player),
-                  ),
+                  child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
                 ),
             ],
           ),

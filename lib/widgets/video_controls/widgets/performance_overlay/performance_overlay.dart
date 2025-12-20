@@ -13,14 +13,10 @@ import 'performance_stats_service.dart';
 class PlayerPerformanceOverlay extends StatefulWidget {
   final Player player;
 
-  const PlayerPerformanceOverlay({
-    super.key,
-    required this.player,
-  });
+  const PlayerPerformanceOverlay({super.key, required this.player});
 
   @override
-  State<PlayerPerformanceOverlay> createState() =>
-      _PlayerPerformanceOverlayState();
+  State<PlayerPerformanceOverlay> createState() => _PlayerPerformanceOverlayState();
 }
 
 class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
@@ -55,12 +51,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 4,
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,17 +69,13 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
                   _metric('FPS', _stats.videoFpsFormatted),
                   _metric('Bitrate', _stats.videoBitrateFormatted),
                   _metric('Decoder', _stats.hwdecFormatted),
-                  if (_stats.aspectName != null &&
-                      _stats.aspectName!.isNotEmpty)
-                    _metric('Aspect', _stats.aspectName!),
-                  if (_stats.rotate != null && _stats.rotate != 0)
-                    _metric('Rotation', _stats.rotateFormatted),
+                  if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty) _metric('Aspect', _stats.aspectName!),
+                  if (_stats.rotate != null && _stats.rotate != 0) _metric('Rotation', _stats.rotateFormatted),
                 ]),
                 const SizedBox(height: 12),
                 _buildSection(Symbols.palette_rounded, 'Color', [
                   _metric('Pixel Fmt', _stats.pixelformat ?? 'N/A'),
-                  if (_stats.hwPixelformat != null &&
-                      _stats.hwPixelformat != _stats.pixelformat)
+                  if (_stats.hwPixelformat != null && _stats.hwPixelformat != _stats.pixelformat)
                     _metric('HW Fmt', _stats.hwPixelformat!),
                   _metric('Matrix', _stats.colormatrix ?? 'N/A'),
                   _metric('Primaries', _stats.primaries ?? 'N/A'),
@@ -97,14 +84,10 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
                 if (_stats.hasHdrMetadata) ...[
                   const SizedBox(height: 12),
                   _buildSection(Symbols.hdr_on_rounded, 'HDR', [
-                    if (_stats.maxLuma != null)
-                      _metric('Max Luma', _stats.maxLumaFormatted),
-                    if (_stats.minLuma != null)
-                      _metric('Min Luma', _stats.minLumaFormatted),
-                    if (_stats.maxCll != null)
-                      _metric('MaxCLL', _stats.maxCllFormatted),
-                    if (_stats.maxFall != null)
-                      _metric('MaxFALL', _stats.maxFallFormatted),
+                    if (_stats.maxLuma != null) _metric('Max Luma', _stats.maxLumaFormatted),
+                    if (_stats.minLuma != null) _metric('Min Luma', _stats.minLumaFormatted),
+                    if (_stats.maxCll != null) _metric('MaxCLL', _stats.maxCllFormatted),
+                    if (_stats.maxFall != null) _metric('MaxFALL', _stats.maxFallFormatted),
                   ]),
                 ],
               ],
@@ -161,11 +144,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
             const SizedBox(width: 4),
             Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -181,13 +160,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '${metric.label}: ',
-            style: const TextStyle(
-              color: Colors.white60,
-              fontSize: 10,
-            ),
-          ),
+          Text('${metric.label}: ', style: const TextStyle(color: Colors.white60, fontSize: 10)),
           Flexible(
             child: Text(
               metric.value,
