@@ -26,6 +26,7 @@ import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
+import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
 import 'auth_screen.dart';
 import 'libraries/state_messages.dart';
@@ -1062,13 +1063,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   Widget _buildHeroSection() {
     final statusBarHeight = MediaQuery.of(context).padding.top;
+    final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
+    final heroHeight = useSideNav
+        ? MediaQuery.of(context).size.height * 0.75
+        : 500 + statusBarHeight;
     return SliverToBoxAdapter(
       child: Focus(
         focusNode: _heroFocusNode,
         autofocus: true,
         onKeyEvent: _handleHeroKeyEvent,
         child: SizedBox(
-          height: 500 + statusBarHeight,
+          height: heroHeight,
           child: Stack(
             children: [
               PageView.builder(
