@@ -533,7 +533,6 @@ class PlexClient {
       final streamType = stream['streamType'] as int?;
 
       if (streamType == PlexStreamType.audio) {
-        // Audio track
         audioTracks.add(
           PlexAudioTrack(
             id: stream['id'] as int,
@@ -544,11 +543,10 @@ class PlexClient {
             title: stream['title'] as String?,
             displayTitle: stream['displayTitle'] as String?,
             channels: stream['channels'] as int?,
-            selected: stream['selected'] == 1,
+            selected: stream['selected'] == 1 || stream['selected'] == true,
           ),
         );
       } else if (streamType == PlexStreamType.subtitle) {
-        // Subtitle track
         subtitleTracks.add(
           PlexSubtitleTrack(
             id: stream['id'] as int,
@@ -558,7 +556,7 @@ class PlexClient {
             languageCode: stream['languageCode'] as String?,
             title: stream['title'] as String?,
             displayTitle: stream['displayTitle'] as String?,
-            selected: stream['selected'] == 1,
+            selected: stream['selected'] == 1 || stream['selected'] == true,
             forced: stream['forced'] == 1,
             key: stream['key'] as String?,
           ),

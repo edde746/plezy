@@ -1044,17 +1044,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (!mounted || player == null) return;
 
     final profileSettings = context.read<UserProfileProvider>().profileSettings;
-
     final trackService = TrackSelectionService(
       player: player!,
       profileSettings: profileSettings,
       metadata: widget.metadata,
+      plexMediaInfo: _currentMediaInfo,
     );
 
     await trackService.selectAndApplyTracks(
       preferredAudioTrack: widget.preferredAudioTrack,
       preferredSubtitleTrack: widget.preferredSubtitleTrack,
       preferredPlaybackRate: widget.preferredPlaybackRate,
+      onAudioTrackChanged: _onAudioTrackChanged,
+      onSubtitleTrackChanged: _onSubtitleTrackChanged,
     );
   }
 
