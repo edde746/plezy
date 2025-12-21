@@ -86,8 +86,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<dynamic>? _mediaControlSubscription;
   StreamSubscription<bool>? _bufferingSubscription;
   StreamSubscription<Tracks>? _trackLoadingSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
+
+  // Auto-play next episode
+  Timer? _autoPlayTimer;
+  int _autoPlayCountdown = 5;
+  bool _completionTriggered = false;
 
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
@@ -377,6 +383,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Listen to buffering state
       _bufferingSubscription = player!.streams.buffering.listen((isBuffering) {
         _isBuffering.value = isBuffering;
+      });
+
+      // Listen to position for completion detection (fallback for unreliable MPV events)
+      _positionSubscription = player!.streams.position.listen((position) {
+        final duration = player!.state.duration;
+        if (duration.inMilliseconds > 0 &&
+            position.inMilliseconds >= duration.inMilliseconds - 1000 &&
+            !_showPlayNextDialog &&
+            !_completionTriggered &&
+            _nextEpisode != null) {
+          _onVideoCompleted(true);
+        }
       });
 
       // Initialize services
@@ -912,6 +930,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _mediaControlSubscription?.cancel();
     _bufferingSubscription?.cancel();
     _trackLoadingSubscription?.cancel();
+    _positionSubscription?.cancel();
+
+    // Cancel auto-play timer
+    _autoPlayTimer?.cancel();
 
     // Clear media controls and dispose manager
     _mediaControlsManager?.clear();
@@ -968,10 +990,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   void _onVideoCompleted(bool completed) {
-    if (completed && _nextEpisode != null && !_showPlayNextDialog) {
+    if (completed && _nextEpisode != null && !_showPlayNextDialog && !_completionTriggered) {
+      _completionTriggered = true;
+
+      // On Linux, show the Flutter layer so the overlay is visible
+      if (Platform.isLinux) {
+        player?.setControlsVisible(true);
+      }
+
       setState(() {
         _showPlayNextDialog = true;
+        _autoPlayCountdown = 5;
       });
+      _startAutoPlayTimer();
     }
   }
 
@@ -1019,6 +1050,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _playNext() async {
     if (_nextEpisode == null || _isLoadingNext) return;
 
+    // Cancel auto-play timer if running
+    _autoPlayTimer?.cancel();
+
     // Notify Watch Together of episode change before navigating
     _notifyWatchTogetherMediaChange(metadata: _nextEpisode);
 
@@ -1037,6 +1071,31 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _notifyWatchTogetherMediaChange(metadata: _previousEpisode);
 
     await _navigateToEpisode(_previousEpisode!);
+  }
+
+  void _startAutoPlayTimer() {
+    _autoPlayTimer?.cancel();
+    _autoPlayTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _autoPlayCountdown--;
+      });
+      if (_autoPlayCountdown <= 0) {
+        timer.cancel();
+        _playNext();
+      }
+    });
+  }
+
+  void _cancelAutoPlay() {
+    _autoPlayTimer?.cancel();
+    _completionTriggered = false; // Reset so it can trigger again if user seeks near end
+    setState(() {
+      _showPlayNextDialog = false;
+    });
   }
 
   /// Apply track selection using the TrackSelectionService
@@ -1436,84 +1495,118 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                   },
                 ),
               ),
-              // Play Next Dialog
+              // Netflix-style auto-play overlay
               if (_showPlayNextDialog && _nextEpisode != null)
-                Positioned.fill(
+                Positioned(
+                  right: 24,
+                  bottom: 100,
                   child: Container(
-                    color: Colors.black.withValues(alpha: 0.8),
-                    child: Center(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 32),
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(16)),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                    width: 320,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            const AppIcon(Symbols.play_circle_rounded, fill: 1, size: 64, color: Colors.white),
-                            const SizedBox(height: 24),
-                            Consumer<PlaybackStateProvider>(
-                              builder: (context, playbackState, child) {
-                                final isShuffleActive = playbackState.isShuffleActive;
-                                return Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text(
-                                      'Up Next',
-                                      style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Consumer<PlaybackStateProvider>(
+                                    builder: (context, playbackState, child) {
+                                      final isShuffleActive = playbackState.isShuffleActive;
+                                      return Row(
+                                        children: [
+                                          Text(
+                                            'Next Episode',
+                                            style: TextStyle(
+                                              color: Colors.white.withValues(alpha: 0.7),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          if (isShuffleActive) ...[
+                                            const SizedBox(width: 4),
+                                            AppIcon(
+                                              Symbols.shuffle_rounded,
+                                              fill: 1,
+                                              size: 12,
+                                              color: Colors.white.withValues(alpha: 0.7),
+                                            ),
+                                          ],
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (_nextEpisode!.parentIndex != null && _nextEpisode!.index != null)
+                                    Text(
+                                      'S${_nextEpisode!.parentIndex} E${_nextEpisode!.index} · ${_nextEpisode!.title}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    )
+                                  else
+                                    Text(
+                                      _nextEpisode!.title,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    if (isShuffleActive) ...[
-                                      const SizedBox(width: 8),
-                                      const AppIcon(Symbols.shuffle_rounded, fill: 1, size: 20, color: Colors.white70),
-                                    ],
-                                  ],
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _nextEpisode!.grandparentTitle ?? _nextEpisode!.title,
-                              style: const TextStyle(color: Colors.white, fontSize: 18),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            if (_nextEpisode!.parentIndex != null && _nextEpisode!.index != null)
-                              Text(
-                                'S${_nextEpisode!.parentIndex} · E${_nextEpisode!.index} · ${_nextEpisode!.title}',
-                                style: const TextStyle(color: Colors.white70, fontSize: 16),
-                                textAlign: TextAlign.center,
+                                ],
                               ),
-                            const SizedBox(height: 32),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _showPlayNextDialog = false;
-                                    });
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    side: const BorderSide(color: Colors.white),
-                                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                                  ),
-                                  child: Text(t.dialog.cancel),
-                                ),
-                                const SizedBox(width: 16),
-                                FilledButton(
-                                  onPressed: _playNext,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black,
-                                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                                  ),
-                                  child: Text(t.dialog.playNow),
-                                ),
-                              ],
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _cancelAutoPlay,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                child: Text(t.dialog.cancel),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: FilledButton(
+                                onPressed: _playNext,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text('$_autoPlayCountdown'),
+                                    const SizedBox(width: 4),
+                                    const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
