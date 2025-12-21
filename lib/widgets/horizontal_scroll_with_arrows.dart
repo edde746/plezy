@@ -61,25 +61,16 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     });
   }
 
-  void _scrollLeft() {
+  void _animateScroll(double direction) {
     final position = _scrollController.position;
-    final targetScroll = (position.pixels - (position.viewportDimension * widget.scrollAmount)).clamp(
-      0.0,
-      position.maxScrollExtent,
-    );
-
+    final delta = direction * position.viewportDimension * widget.scrollAmount;
+    final targetScroll = (position.pixels + delta).clamp(0.0, position.maxScrollExtent);
     _scrollController.animateTo(targetScroll, duration: tokens(context).slow, curve: Curves.easeInOut);
   }
 
-  void _scrollRight() {
-    final position = _scrollController.position;
-    final targetScroll = (position.pixels + (position.viewportDimension * widget.scrollAmount)).clamp(
-      0.0,
-      position.maxScrollExtent,
-    );
+  void _scrollLeft() => _animateScroll(-1);
 
-    _scrollController.animateTo(targetScroll, duration: tokens(context).slow, curve: Curves.easeInOut);
-  }
+  void _scrollRight() => _animateScroll(1);
 
   Widget _buildArrowButton({
     required double position,

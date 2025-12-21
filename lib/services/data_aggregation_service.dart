@@ -247,15 +247,11 @@ class DataAggregationService {
 
   // Private helper methods
 
-  /// Higher-order helper for per-server fan-out operations
+  /// Base helper for per-server fan-out operations
   ///
-  /// Iterates over all online clients, executes the operation for each server,
-  /// handles errors, updates server status, and aggregates results.
-  ///
-  /// Type parameter `T` is the item type returned by the operation
-  /// [operationName] is used for logging (e.g., "fetching libraries")
-  /// [operation] is the async function to run per server, returning `List<T>`
-  Future<List<T>> _perServer<T>({
+  /// Returns raw results as (serverId, result) tuples.
+  /// Used by [_perServer] and [_perServerGrouped] for different aggregation strategies.
+  Future<List<(String serverId, List<T> result)>> _perServerRaw<T>({
     required String operationName,
     required Future<List<T>> Function(String serverId, PlexClient client, PlexServer? server) operation,
   }) async {
@@ -268,61 +264,6 @@ class DataAggregationService {
 
     appLogger.d('$operationName from ${clients.length} servers');
 
-    final allResults = <T>[];
-
-    // Execute operation on all servers in parallel
-    final Iterable<Future<List<T>>> futures = clients.entries.map((entry) async {
-      final serverId = entry.key;
-      final client = entry.value;
-      final server = _serverManager.getServer(serverId);
-      final sw = Stopwatch()..start();
-
-      try {
-        final result = await operation(serverId, client, server);
-        appLogger.d(
-          '$operationName for server $serverId completed in ${sw.elapsedMilliseconds}ms with ${result.length} items',
-        );
-        return result;
-      } catch (e, stackTrace) {
-        appLogger.e('Failed $operationName from server $serverId', error: e, stackTrace: stackTrace);
-        _serverManager.updateServerStatus(serverId, false);
-        appLogger.d('$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms');
-        return <T>[];
-      }
-    });
-
-    final List<List<T>> results = await Future.wait<List<T>>(futures);
-
-    // Flatten results
-    for (final items in results) {
-      allResults.addAll(items);
-    }
-
-    return allResults;
-  }
-
-  /// Higher-order helper for per-server fan-out operations that groups results by server
-  ///
-  /// Similar to [_perServer] but returns a Map with results grouped by serverId
-  /// instead of flattening into a single list.
-  ///
-  /// Type parameter `T` is the item type returned by the operation
-  /// [operationName] is used for logging (e.g., "fetching libraries")
-  /// [operation] is the async function to run per server, returning `List<T>`
-  Future<Map<String, List<T>>> _perServerGrouped<T>({
-    required String operationName,
-    required Future<List<T>> Function(String serverId, PlexClient client, PlexServer? server) operation,
-  }) async {
-    final clients = _serverManager.onlineClients;
-
-    if (clients.isEmpty) {
-      appLogger.w('No online servers available for $operationName');
-      return {};
-    }
-
-    appLogger.d('$operationName from ${clients.length} servers');
-
-    // Execute operation on all servers in parallel
     final futures = clients.entries.map((entry) async {
       final serverId = entry.key;
       final client = entry.value;
@@ -334,17 +275,38 @@ class DataAggregationService {
         appLogger.d(
           '$operationName for server $serverId completed in ${sw.elapsedMilliseconds}ms with ${result.length} items',
         );
-        return MapEntry(serverId, result);
+        return (serverId, result);
       } catch (e, stackTrace) {
         appLogger.e('Failed $operationName from server $serverId', error: e, stackTrace: stackTrace);
         _serverManager.updateServerStatus(serverId, false);
         appLogger.d('$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms');
-        return MapEntry(serverId, <T>[]);
+        return (serverId, <T>[]);
       }
     });
 
-    final results = await Future.wait(futures);
+    return await Future.wait(futures);
+  }
 
-    return Map.fromEntries(results);
+  /// Higher-order helper for per-server fan-out operations
+  ///
+  /// Iterates over all online clients, executes the operation for each server,
+  /// handles errors, updates server status, and flattens results into a single list.
+  Future<List<T>> _perServer<T>({
+    required String operationName,
+    required Future<List<T>> Function(String serverId, PlexClient client, PlexServer? server) operation,
+  }) async {
+    final results = await _perServerRaw(operationName: operationName, operation: operation);
+    return [for (final (_, items) in results) ...items];
+  }
+
+  /// Higher-order helper for per-server fan-out operations that groups results by server
+  ///
+  /// Similar to [_perServer] but returns a Map with results grouped by serverId.
+  Future<Map<String, List<T>>> _perServerGrouped<T>({
+    required String operationName,
+    required Future<List<T>> Function(String serverId, PlexClient client, PlexServer? server) operation,
+  }) async {
+    final results = await _perServerRaw(operationName: operationName, operation: operation);
+    return {for (final (id, items) in results) id: items};
   }
 }

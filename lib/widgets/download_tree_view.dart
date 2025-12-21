@@ -241,19 +241,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       );
     }
 
-    // Sort shows by status and title
-    shows.sort((a, b) {
-      final statusCompare = _compareByStatus(a.status, b.status);
-      if (statusCompare != 0) return statusCompare;
-      return a.title.compareTo(b.title);
-    });
-
-    // Sort movies by status and title
-    movies.sort((a, b) {
-      final statusCompare = _compareByStatus(a.status, b.status);
-      if (statusCompare != 0) return statusCompare;
-      return a.title.compareTo(b.title);
-    });
+    // Sort shows and movies by status and title
+    _sortNodesByStatusAndTitle(shows);
+    _sortNodesByStatusAndTitle(movies);
 
     // Combine movies and shows
     return [...movies, ...shows];
@@ -290,6 +280,15 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       DownloadStatus.cancelled: 5,
     };
     return (statusOrder[a] ?? 99).compareTo(statusOrder[b] ?? 99);
+  }
+
+  /// Sort nodes by status (downloading first) then by title
+  void _sortNodesByStatusAndTitle(List<DownloadTreeNode> nodes) {
+    nodes.sort((a, b) {
+      final statusCompare = _compareByStatus(a.status, b.status);
+      if (statusCompare != 0) return statusCompare;
+      return a.title.compareTo(b.title);
+    });
   }
 
   /// Flatten the tree into a list of visible nodes with their depths

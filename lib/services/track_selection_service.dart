@@ -32,12 +32,7 @@ class TrackSelectionService {
   final PlexMetadata metadata;
   final PlexMediaInfo? plexMediaInfo;
 
-  TrackSelectionService({
-    required this.player,
-    this.profileSettings,
-    required this.metadata,
-    this.plexMediaInfo,
-  });
+  TrackSelectionService({required this.player, this.profileSettings, required this.metadata, this.plexMediaInfo});
 
   /// Build list of preferred languages from a user profile
   List<String> _buildPreferredLanguages(PlexUserProfile profile, {required bool isAudio}) {
@@ -324,7 +319,10 @@ class TrackSelectionService {
   /// Priority 3: Per-media language preference
   /// Priority 4: User profile preferences
   /// Priority 5: Default or first track
-  TrackSelectionResult<AudioTrack>? selectAudioTrack(List<AudioTrack> availableTracks, AudioTrack? preferredAudioTrack) {
+  TrackSelectionResult<AudioTrack>? selectAudioTrack(
+    List<AudioTrack> availableTracks,
+    AudioTrack? preferredAudioTrack,
+  ) {
     if (availableTracks.isEmpty) return null;
 
     AudioTrack? trackToSelect;

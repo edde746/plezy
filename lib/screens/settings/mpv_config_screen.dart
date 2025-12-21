@@ -129,20 +129,27 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
     valueController.dispose();
   }
 
-  Future<void> _showDeleteEntryDialog(int index) async {
+  Future<bool> _showConfirmDeleteDialog({required String title, required String content}) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(t.mpvConfig.deleteProperty),
-        content: Text(t.mpvConfig.confirmDeleteProperty),
+        title: Text(title),
+        content: Text(content),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
           TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.delete)),
         ],
       ),
     );
+    return result == true;
+  }
 
-    if (result == true) {
+  Future<void> _showDeleteEntryDialog(int index) async {
+    final confirmed = await _showConfirmDeleteDialog(
+      title: t.mpvConfig.deleteProperty,
+      content: t.mpvConfig.confirmDeleteProperty,
+    );
+    if (confirmed) {
       _deleteEntry(index);
     }
   }
@@ -201,19 +208,12 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
   }
 
   Future<void> _deletePreset(MpvPreset preset) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.mpvConfig.deletePreset),
-        content: Text(t.mpvConfig.confirmDeletePreset),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.delete)),
-        ],
-      ),
+    final confirmed = await _showConfirmDeleteDialog(
+      title: t.mpvConfig.deletePreset,
+      content: t.mpvConfig.confirmDeletePreset,
     );
 
-    if (result == true) {
+    if (confirmed) {
       await _settingsService.deleteMpvPreset(preset.name);
       setState(() {
         _presets = _settingsService.getMpvPresets();

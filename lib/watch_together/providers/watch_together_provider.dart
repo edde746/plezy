@@ -76,6 +76,14 @@ class WatchTogetherProvider with ChangeNotifier {
     _displayName = name;
   }
 
+  /// Wire up sync manager's state change callback to update provider state
+  void _wireSyncStateChanges() {
+    _syncManager!.onSyncStateChanged = (isSyncing) {
+      _isSyncing = isSyncing;
+      notifyListeners();
+    };
+  }
+
   /// Create a new watch together session as host
   Future<String> createSession({
     required ControlMode controlMode,
@@ -113,10 +121,7 @@ class WatchTogetherProvider with ChangeNotifier {
         displayName: _displayName,
       );
 
-      _syncManager!.onSyncStateChanged = (isSyncing) {
-        _isSyncing = isSyncing;
-        notifyListeners();
-      };
+      _wireSyncStateChanges();
 
       notifyListeners();
       appLogger.d('WatchTogether: Session created: $sessionId');
@@ -164,10 +169,7 @@ class WatchTogetherProvider with ChangeNotifier {
         notifyListeners();
       };
 
-      _syncManager!.onSyncStateChanged = (isSyncing) {
-        _isSyncing = isSyncing;
-        notifyListeners();
-      };
+      _wireSyncStateChanges();
 
       // Add self to participants
       _participants.add(Participant(peerId: _peerService!.myPeerId!, displayName: _displayName, isHost: false));

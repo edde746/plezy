@@ -83,6 +83,31 @@ class WatchTogetherPeerService {
     return const Uuid().v4().substring(0, 8).toUpperCase();
   }
 
+  /// Attach common peer event listeners for disconnected/close/error events
+  void _attachCommonPeerListeners({
+    required Completer completer,
+    required PeerErrorType errorType,
+    required String errorMessage,
+  }) {
+    _peer!.on('disconnected').listen((_) {
+      appLogger.w('WatchTogether: Peer disconnected from server');
+      _handleDisconnectedFromServer();
+    });
+
+    _peer!.on('close').listen((_) {
+      appLogger.d('WatchTogether: Peer closed');
+      _connectionStateController.add(false);
+    });
+
+    _peer!.on('error').listen((error) {
+      appLogger.e('WatchTogether: Peer error', error: error);
+      _errorController.add(PeerError(type: errorType, message: '$errorMessage: $error', originalError: error));
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      }
+    });
+  }
+
   /// Create a new session as host
   ///
   /// Returns the session ID that others can use to join
@@ -115,25 +140,11 @@ class WatchTogetherPeerService {
         _handleNewConnection(dataConn);
       });
 
-      _peer!.on('error').listen((error) {
-        appLogger.e('WatchTogether: Peer error', error: error);
-        _errorController.add(
-          PeerError(type: PeerErrorType.serverError, message: error.toString(), originalError: error),
-        );
-        if (!completer.isCompleted) {
-          completer.completeError(error);
-        }
-      });
-
-      _peer!.on('disconnected').listen((_) {
-        appLogger.w('WatchTogether: Peer disconnected from server');
-        _handleDisconnectedFromServer();
-      });
-
-      _peer!.on('close').listen((_) {
-        appLogger.d('WatchTogether: Peer closed');
-        _connectionStateController.add(false);
-      });
+      _attachCommonPeerListeners(
+        completer: completer,
+        errorType: PeerErrorType.serverError,
+        errorMessage: 'Server error',
+      );
     } catch (e) {
       appLogger.e('WatchTogether: Failed to create peer', error: e);
       if (!completer.isCompleted) {
@@ -178,29 +189,11 @@ class WatchTogetherPeerService {
         _handleNewConnection(conn, isOutgoing: true, completer: completer);
       });
 
-      _peer!.on('error').listen((error) {
-        appLogger.e('WatchTogether: Peer error', error: error);
-        _errorController.add(
-          PeerError(
-            type: PeerErrorType.connectionFailed,
-            message: 'Failed to connect to session: $error',
-            originalError: error,
-          ),
-        );
-        if (!completer.isCompleted) {
-          completer.completeError(error);
-        }
-      });
-
-      _peer!.on('disconnected').listen((_) {
-        appLogger.w('WatchTogether: Peer disconnected from server');
-        _handleDisconnectedFromServer();
-      });
-
-      _peer!.on('close').listen((_) {
-        appLogger.d('WatchTogether: Peer closed');
-        _connectionStateController.add(false);
-      });
+      _attachCommonPeerListeners(
+        completer: completer,
+        errorType: PeerErrorType.connectionFailed,
+        errorMessage: 'Failed to connect to session',
+      );
     } catch (e) {
       appLogger.e('WatchTogether: Failed to create peer for joining', error: e);
       if (!completer.isCompleted) {
