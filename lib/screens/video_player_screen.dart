@@ -185,17 +185,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     switch (state) {
       case AppLifecycleState.inactive:
-        // App is inactive (Control Center, Notification Screen, etc.)
-        // Pause video but keep media controls for quick resume (mobile only)
+        // App is inactive (notification shade, split-screen, etc.)
+        // Don't pause - user may still be watching
+        break;
+      case AppLifecycleState.hidden:
+        // App is being hidden (user is switching away)
+        // Pause video since we don't support background playback (mobile only)
         if (PlatformDetector.isMobile(context)) {
           if (player != null && _isPlayerInitialized) {
             _wasPlayingBeforeInactive = player!.state.playing;
             if (_wasPlayingBeforeInactive) {
               player!.pause();
-              appLogger.d('Video paused due to app becoming inactive (mobile)');
+              appLogger.d('Video paused due to app being hidden (mobile)');
             }
-            // Keep media controls active on mobile for quick resume
-            _updateMediaControlsPlaybackState();
           }
         }
         break;
@@ -235,8 +237,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
         break;
       case AppLifecycleState.detached:
-      case AppLifecycleState.hidden:
-        // No action needed for these states
+        // No action needed for this state
         break;
     }
   }
