@@ -17,7 +17,9 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
+import '../../widgets/tv_number_spinner.dart';
 import 'hotkey_recorder_widget.dart';
 import 'about_screen.dart';
 import 'logs_screen.dart';
@@ -726,8 +728,105 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// Generic numeric input dialog to avoid duplication across settings
+  /// Generic numeric input dialog to avoid duplication across settings.
+  /// On TV, uses a spinner widget with +/- buttons for D-pad navigation.
+  /// On other platforms, uses a TextField with focus management.
   void _showNumericInputDialog({
+    required String title,
+    required String labelText,
+    required String suffixText,
+    required int min,
+    required int max,
+    required int currentValue,
+    required Future<void> Function(int value) onSave,
+  }) {
+    final isTV = PlatformDetector.isTV();
+
+    if (isTV) {
+      _showNumericInputDialogTV(
+        title: title,
+        suffixText: suffixText,
+        min: min,
+        max: max,
+        currentValue: currentValue,
+        onSave: onSave,
+      );
+    } else {
+      _showNumericInputDialogStandard(
+        title: title,
+        labelText: labelText,
+        suffixText: suffixText,
+        min: min,
+        max: max,
+        currentValue: currentValue,
+        onSave: onSave,
+      );
+    }
+  }
+
+  /// TV-specific numeric input dialog with spinner widget.
+  void _showNumericInputDialogTV({
+    required String title,
+    required String suffixText,
+    required int min,
+    required int max,
+    required int currentValue,
+    required Future<void> Function(int value) onSave,
+  }) {
+    int spinnerValue = currentValue;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(title),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TvNumberSpinner(
+                    value: spinnerValue,
+                    min: min,
+                    max: max,
+                    suffix: suffixText,
+                    autofocus: true,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        spinnerValue = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    t.settings.durationHint(min: min, max: max),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
+                TextButton(
+                  onPressed: () async {
+                    await onSave(spinnerValue);
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext);
+                    }
+                  },
+                  child: Text(t.common.save),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Standard numeric input dialog with TextField for non-TV platforms.
+  void _showNumericInputDialogStandard({
     required String title,
     required String labelText,
     required String suffixText,
@@ -738,6 +837,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     final controller = TextEditingController(text: currentValue.toString());
     String? errorText;
+    final saveFocusNode = FocusNode();
 
     showDialog(
       context: context,
@@ -756,6 +856,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   suffixText: suffixText,
                 ),
                 autofocus: true,
+                textInputAction: TextInputAction.done,
+                onEditingComplete: () {
+                  // Move focus to Save button when keyboard checkmark is pressed
+                  saveFocusNode.requestFocus();
+                },
                 onChanged: (value) {
                   final parsed = int.tryParse(value);
                   setDialogState(() {
@@ -772,6 +877,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
                 TextButton(
+                  focusNode: saveFocusNode,
                   onPressed: () async {
                     final parsed = int.tryParse(controller.text);
                     if (parsed != null && parsed >= min && parsed <= max) {
@@ -788,7 +894,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         );
       },
-    );
+    ).then((_) {
+      // Clean up focus node when dialog is dismissed
+      saveFocusNode.dispose();
+    });
   }
 
   void _showSeekTimeSmallDialog() {
