@@ -128,6 +128,10 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   // List of button focus nodes for horizontal navigation
   late final List<FocusNode> _buttonFocusNodes;
 
+  // Progressive seek acceleration state
+  LogicalKeyboardKey? _seekDirection; // Current direction being held
+  int _seekRepeatCount = 0; // Consecutive key repeats for acceleration
+
   @override
   void initState() {
     super.initState();
@@ -186,6 +190,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   void _onFocusChange(bool hasFocus) {
     if (hasFocus) {
       widget.onFocusActivity?.call();
+    } else {
+      // Reset progressive seek state when timeline loses focus
+      _resetSeekState();
     }
   }
 
@@ -239,43 +246,84 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     );
   }
 
+  /// Reset progressive seek state
+  void _resetSeekState() {
+    _seekDirection = null;
+    _seekRepeatCount = 0;
+  }
+
+  /// Calculate seek multiplier based on repeat count (stepped tiers)
+  double _getSeekMultiplier() {
+    if (_seekRepeatCount <= 5) {
+      return 1.5;
+    } else if (_seekRepeatCount <= 15) {
+      return 3.0;
+    } else if (_seekRepeatCount <= 30) {
+      return 6.0;
+    } else {
+      return 10.0;
+    }
+  }
+
   /// Handle key events for timeline navigation
   KeyEventResult _handleTimelineKeyEvent(FocusNode node, KeyEvent event) {
+    final key = event.logicalKey;
+
+    // Handle key release to reset progressive seek state
+    if (event is KeyUpEvent) {
+      if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight) {
+        _resetSeekState();
+      }
+      return KeyEventResult.ignored;
+    }
+
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 
-    final key = event.logicalKey;
     final duration = widget.player.state.duration;
     final position = widget.player.state.position;
 
-    // UP arrow - hide controls
+    // UP arrow - hide controls and reset seek state
     if (key == LogicalKeyboardKey.arrowUp) {
+      _resetSeekState();
       widget.onHideControls?.call();
       return KeyEventResult.handled;
     }
 
-    // DOWN arrow - move focus to play/pause button
+    // DOWN arrow - move focus to play/pause button and reset seek state
     if (key == LogicalKeyboardKey.arrowDown) {
+      _resetSeekState();
       _playPauseFocusNode.requestFocus();
       widget.onFocusActivity?.call();
       return KeyEventResult.handled;
     }
 
-    // LEFT/RIGHT for smooth scrubbing - only if user can control
+    // LEFT/RIGHT for smooth scrubbing with progressive acceleration
     if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight) {
       // Ignore seeking if user cannot control
       if (!widget.canControl) return KeyEventResult.handled;
 
       if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
 
-      // Base step: 0.5% of duration, minimum 500ms
-      final baseStep = Duration(milliseconds: (duration.inMilliseconds * 0.005).clamp(500, 15000).toInt());
+      // Track direction change - reset if direction changes
+      if (_seekDirection != key) {
+        _seekDirection = key;
+        _seekRepeatCount = 0;
+      }
 
-      // Accelerate on key repeat
-      final step = event is KeyRepeatEvent
-          ? Duration(milliseconds: (baseStep.inMilliseconds * 2).clamp(500, 30000))
-          : baseStep;
+      // Increment repeat count on KeyRepeatEvent
+      if (event is KeyRepeatEvent) {
+        _seekRepeatCount++;
+      }
+
+      // Base step: 0.5% of duration, minimum 500ms, maximum 15s
+      final baseStepMs = (duration.inMilliseconds * 0.005).clamp(500, 15000).toInt();
+
+      // Apply progressive multiplier only on repeat events (initial press uses 1x)
+      final effectiveMultiplier = event is KeyRepeatEvent ? _getSeekMultiplier() : 1.0;
+      final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 60000).toInt();
+      final step = Duration(milliseconds: stepMs);
 
       final isForward = key == LogicalKeyboardKey.arrowRight;
       final newPosition = isForward ? position + step : position - step;
