@@ -69,7 +69,18 @@ class MediaCardState extends State<MediaCard> {
   String _buildSemanticLabel() {
     final item = widget.item;
 
-    // Build base label based on type
+    // Playlists don't expose mediaType, so build a simple localized label and exit early
+    if (item is PlexPlaylist) {
+      final count = item.leafCount;
+      final countText = count != null ? ', ${t.playlists.itemCount(count: count)}' : '';
+      return '${item.displayTitle}, ${t.playlists.playlist}$countText';
+    }
+
+    // Build base label based on PlexMetadata media type
+    if (item is! PlexMetadata) {
+      return '$item';
+    }
+
     String baseLabel;
     switch (item.mediaType) {
       case PlexMediaType.episode:
