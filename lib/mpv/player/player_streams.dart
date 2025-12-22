@@ -47,6 +47,9 @@ class PlayerStreams {
   /// Stream of available audio devices.
   final Stream<List<AudioDevice>> audioDevices;
 
+  /// Stream that emits when playback restarts (first frame ready after load/seek).
+  final Stream<void> playbackRestart;
+
   const PlayerStreams({
     required this.playing,
     required this.completed,
@@ -62,5 +65,6 @@ class PlayerStreams {
     required this.error,
     required this.audioDevice,
     required this.audioDevices,
+    required this.playbackRestart,
   });
 }

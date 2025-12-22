@@ -45,6 +45,7 @@ class PlayerNative implements Player {
   final _errorController = StreamController<String>.broadcast();
   final _audioDeviceController = StreamController<AudioDevice>.broadcast();
   final _audioDevicesController = StreamController<List<AudioDevice>>.broadcast();
+  final _playbackRestartController = StreamController<void>.broadcast();
 
   StreamSubscription? _eventSubscription;
   bool _disposed = false;
@@ -66,6 +67,7 @@ class PlayerNative implements Player {
       error: _errorController.stream,
       audioDevice: _audioDeviceController.stream,
       audioDevices: _audioDevicesController.stream,
+      playbackRestart: _playbackRestartController.stream,
     );
 
     _setupEventListener();
@@ -238,6 +240,11 @@ class PlayerNative implements Player {
         // Reset completed state when new file is loaded
         _state = _state.copyWith(completed: false);
         _completedController.add(false);
+        break;
+
+      case 'playback-restart':
+        // Playback started/restarted - first frame is ready
+        _playbackRestartController.add(null);
         break;
 
       case 'log-message':
@@ -590,5 +597,6 @@ class PlayerNative implements Player {
     await _errorController.close();
     await _audioDeviceController.close();
     await _audioDevicesController.close();
+    await _playbackRestartController.close();
   }
 }

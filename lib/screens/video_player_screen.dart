@@ -87,6 +87,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<bool>? _bufferingSubscription;
   StreamSubscription<Tracks>? _trackLoadingSubscription;
   StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<void>? _playbackRestartSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
 
@@ -113,6 +114,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
+  final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false); // Track if first video frame has rendered
+  final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false); // Track if navigating away (for black overlay)
 
   @override
   void initState() {
@@ -384,6 +387,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Listen to buffering state
       _bufferingSubscription = player!.streams.buffering.listen((isBuffering) {
         _isBuffering.value = isBuffering;
+      });
+
+      // Listen to playback restart to detect first frame ready
+      _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) {
+        if (!_hasFirstFrame.value) {
+          _hasFirstFrame.value = true;
+        }
       });
 
       // Listen to position for completion detection (fallback for unreliable MPV events)
@@ -668,6 +678,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Open video through Player
       if (result.videoUrl != null) {
+        // Reset first frame flag for new video
+        _hasFirstFrame.value = false;
+
         // Pass resume position if available
         final resumePosition = widget.metadata.viewOffset != null
             ? Duration(milliseconds: widget.metadata.viewOffset!)
@@ -885,12 +898,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (confirmed == true && mounted) {
         await _watchTogetherProvider!.leaveSession();
-        if (mounted) Navigator.of(context).pop(true);
+        if (mounted) {
+          _isExiting.value = true;
+          Navigator.of(context).pop(true);
+        }
       }
       return;
     }
 
     // Default behavior for hosts or non-session users
+    _isExiting.value = true;
     Navigator.of(context).pop(true);
   }
 
@@ -914,6 +931,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Dispose value notifiers
     _isBuffering.dispose();
+    _hasFirstFrame.dispose();
+    _isExiting.dispose();
 
     // Stop progress tracking and send final state
     _progressTracker?.sendProgress('stopped');
@@ -932,6 +951,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _bufferingSubscription?.cancel();
     _trackLoadingSubscription?.cancel();
     _positionSubscription?.cancel();
+    _playbackRestartSubscription?.cancel();
 
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
@@ -1374,6 +1394,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> disposePlayerForNavigation() async {
     if (_isDisposingForNavigation) return;
     _isDisposingForNavigation = true;
+    _isExiting.value = true; // Show black overlay during transition
 
     try {
       _detachFromWatchTogetherSession();
@@ -1491,6 +1512,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         },
                         onBack: _handleBackButton,
                         canControl: canControl,
+                        hasFirstFrame: _hasFirstFrame,
                       ),
                     );
                   },
@@ -1611,19 +1633,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                     ),
                   ),
                 ),
-              // Buffering indicator
+              // Buffering indicator (also shows during initial load, but not when exiting)
               ValueListenableBuilder<bool>(
                 valueListenable: _isBuffering,
                 builder: (context, isBuffering, child) {
-                  if (!isBuffering) return const SizedBox.shrink();
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: _hasFirstFrame,
+                    builder: (context, hasFrame, child) {
+                      // Don't show spinner when exiting (just black overlay)
+                      // Show spinner when (buffering OR loading) AND NOT exiting
+                      if ((!isBuffering && hasFrame) || _isExiting.value) return const SizedBox.shrink();
+                      return Positioned.fill(
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
+                            child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              // Black overlay during exit (no spinner - just covers transparency)
+              ValueListenableBuilder<bool>(
+                valueListenable: _isExiting,
+                builder: (context, isExiting, child) {
+                  if (!isExiting) return const SizedBox.shrink();
                   return Positioned.fill(
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
-                        child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                      ),
-                    ),
+                    child: Container(color: Colors.black),
                   );
                 },
               ),

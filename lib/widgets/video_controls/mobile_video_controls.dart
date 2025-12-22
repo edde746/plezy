@@ -38,6 +38,9 @@ class MobileVideoControls extends StatelessWidget {
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
 
+  /// Notifier for whether first video frame has rendered (shows loading state when false).
+  final ValueNotifier<bool>? hasFirstFrame;
+
   const MobileVideoControls({
     super.key,
     required this.player,
@@ -56,6 +59,7 @@ class MobileVideoControls extends StatelessWidget {
     this.onNext,
     this.onPrevious,
     this.canControl = true,
+    this.hasFirstFrame,
   });
 
   @override
@@ -98,6 +102,24 @@ class MobileVideoControls extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    // Check if we're still loading first frame
+    final hasFirstFrameNotifier = hasFirstFrame;
+    if (hasFirstFrameNotifier != null) {
+      return ValueListenableBuilder<bool>(
+        valueListenable: hasFirstFrameNotifier,
+        builder: (context, hasFrame, child) {
+          if (!hasFrame) {
+            // Empty space, spinner shown by video_player_screen
+            return const SizedBox.shrink();
+          }
+          return _buildPlaybackControlsContent(context);
+        },
+      );
+    }
+    return _buildPlaybackControlsContent(context);
+  }
+
+  Widget _buildPlaybackControlsContent(BuildContext context) {
     return StreamBuilder<bool>(
       stream: player.streams.playing,
       initialData: player.state.playing,
@@ -167,6 +189,24 @@ class MobileVideoControls extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext context) {
+    // Check if we're still loading first frame
+    final hasFirstFrameNotifier = hasFirstFrame;
+    if (hasFirstFrameNotifier != null) {
+      return ValueListenableBuilder<bool>(
+        valueListenable: hasFirstFrameNotifier,
+        builder: (context, hasFrame, child) {
+          if (!hasFrame) {
+            // Hide timeline while loading
+            return const SizedBox.shrink();
+          }
+          return _buildBottomBarContent(context);
+        },
+      );
+    }
+    return _buildBottomBarContent(context);
+  }
+
+  Widget _buildBottomBarContent(BuildContext context) {
     return _conditionalSafeArea(
       context: context,
       top: false, // Only respect bottom safe area when in portrait

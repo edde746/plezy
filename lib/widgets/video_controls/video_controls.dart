@@ -58,6 +58,7 @@ Widget plexVideoControlsBuilder(
   Function(Duration position)? onSeekCompleted,
   VoidCallback? onBack,
   bool canControl = true,
+  ValueNotifier<bool>? hasFirstFrame,
 }) {
   return PlexVideoControls(
     player: player,
@@ -73,6 +74,7 @@ Widget plexVideoControlsBuilder(
     onSeekCompleted: onSeekCompleted,
     onBack: onBack,
     canControl: canControl,
+    hasFirstFrame: hasFirstFrame,
   );
 }
 
@@ -97,6 +99,9 @@ class PlexVideoControls extends StatefulWidget {
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
 
+  /// Notifier for whether first video frame has rendered (shows loading state when false).
+  final ValueNotifier<bool>? hasFirstFrame;
+
   const PlexVideoControls({
     super.key,
     required this.player,
@@ -112,6 +117,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onSeekCompleted,
     this.onBack,
     this.canControl = true,
+    this.hasFirstFrame,
   });
 
   @override
@@ -200,6 +206,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     });
     // Register global key handler for focus-independent shortcuts (desktop only)
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
+    // Listen for first frame to start auto-hide timer
+    widget.hasFirstFrame?.addListener(_onFirstFrameReady);
+  }
+
+  /// Called when hasFirstFrame changes - start auto-hide timer when first frame is ready
+  void _onFirstFrameReady() {
+    if (widget.hasFirstFrame?.value == true) {
+      _startHideTimer();
+    }
   }
 
   /// Focus play/pause button if we're in keyboard navigation mode (desktop only)
@@ -402,6 +417,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
+    widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
     _resizeDebounceTimer?.cancel();
@@ -487,10 +503,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   void _startHideTimer() {
     _hideTimer?.cancel();
+
+    // Don't auto-hide while loading first frame (user needs to see spinner and back button)
+    final hasFrame = widget.hasFirstFrame?.value ?? true;
+    if (!hasFrame) return;
+
     // Only auto-hide if playing
     if (widget.player.state.playing) {
       _hideTimer = Timer(const Duration(seconds: 3), () {
-        if (mounted && widget.player.state.playing) {
+        // Also check hasFirstFrame in callback (in case it changed)
+        final stillLoading = !(widget.hasFirstFrame?.value ?? true);
+        if (mounted && widget.player.state.playing && !stillLoading) {
           setState(() {
             _showControls = false;
           });
@@ -1193,20 +1216,30 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                         child: GestureDetector(
                           onTap: _toggleControls,
                           behavior: HitTestBehavior.deferToChild,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.7),
-                                  Colors.transparent,
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.7),
-                                ],
-                                stops: const [0.0, 0.2, 0.8, 1.0],
-                              ),
-                            ),
+                          child: ValueListenableBuilder<bool>(
+                            valueListenable: widget.hasFirstFrame ?? ValueNotifier(true),
+                            builder: (context, hasFrame, child) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  // Use solid black when loading, gradient when loaded
+                                  color: hasFrame ? null : Colors.black,
+                                  gradient: hasFrame
+                                      ? LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.black.withValues(alpha: 0.7),
+                                            Colors.transparent,
+                                            Colors.transparent,
+                                            Colors.black.withValues(alpha: 0.7),
+                                          ],
+                                          stops: const [0.0, 0.2, 0.8, 1.0],
+                                        )
+                                      : null,
+                                ),
+                                child: child,
+                              );
+                            },
                             child: isMobile
                                 ? Listener(
                                     behavior: HitTestBehavior.translucent,
@@ -1228,6 +1261,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                       onNext: widget.onNext,
                                       onPrevious: widget.onPrevious,
                                       canControl: widget.canControl,
+                                      hasFirstFrame: widget.hasFirstFrame,
                                     ),
                                   )
                                 : Listener(
@@ -1274,6 +1308,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                       serverId: widget.metadata.serverId ?? '',
                                       onBack: widget.onBack,
                                       canControl: widget.canControl,
+                                      hasFirstFrame: widget.hasFirstFrame,
                                     ),
                                   ),
                           ),

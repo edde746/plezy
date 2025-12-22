@@ -67,6 +67,9 @@ class DesktopVideoControls extends StatefulWidget {
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
 
+  /// Notifier for whether first video frame has rendered (shows loading state when false).
+  final ValueNotifier<bool>? hasFirstFrame;
+
   const DesktopVideoControls({
     super.key,
     required this.player,
@@ -104,6 +107,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.serverId = '',
     this.onBack,
     this.canControl = true,
+    this.hasFirstFrame,
   });
 
   @override
@@ -341,14 +345,24 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Top bar with back button and title
-        _buildTopBar(context),
-        const Spacer(),
-        // Bottom controls
-        _buildBottomControls(context),
-      ],
+    return ValueListenableBuilder<bool>(
+      valueListenable: widget.hasFirstFrame ?? ValueNotifier(true),
+      builder: (context, hasFrame, child) {
+        return Column(
+          children: [
+            // Top bar with back button and title (always visible)
+            _buildTopBar(context),
+            if (!hasFrame)
+              // Loading: empty space, spinner shown by video_player_screen
+              const Expanded(child: SizedBox.shrink())
+            else ...[
+              // Loaded: spacer + bottom controls
+              const Spacer(),
+              _buildBottomControlsContent(context, hasFrame: true),
+            ],
+          ],
+        );
+      },
     );
   }
 
@@ -382,7 +396,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     return DesktopAppBarHelper.wrapWithGestureDetector(topBar, opaque: true);
   }
 
-  Widget _buildBottomControls(BuildContext context) {
+  Widget _buildBottomControlsContent(BuildContext context, {required bool hasFrame}) {
+    final canInteract = widget.canControl && hasFrame;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
@@ -398,7 +413,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
             focusNode: _timelineFocusNode,
             onKeyEvent: _handleTimelineKeyEvent,
             onFocusChange: _onFocusChange,
-            enabled: widget.canControl,
+            enabled: canInteract,
           ),
           const SizedBox(height: 4),
           // Row 2: Playback controls and options
