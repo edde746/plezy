@@ -3,12 +3,10 @@
 
 #include <Windows.h>
 
-#include <chrono>
 #include <cmath>
 #include <map>
 #include <memory>
 #include <optional>
-#include <thread>
 
 namespace mpv {
 
@@ -17,6 +15,7 @@ namespace mpv {
 class MpvCore {
  public:
   static constexpr auto kPositionAndShowDelay = 300;
+  static constexpr UINT_PTR kCompositionRestoreTimerId = 1001;
 
   static MpvCore* GetInstance();
   static void SetInstance(std::unique_ptr<MpvCore> instance);
@@ -57,10 +56,10 @@ class MpvCore {
   HWND container_ = nullptr;
   double device_pixel_ratio_ = 1.0;
   std::map<HWND, RECT> mpv_views_;
-  uint64_t last_thread_time_ = 0;
   WPARAM last_wm_size_wparam_ = SIZE_RESTORED;
   bool was_window_hidden_due_to_minimize_ = false;
   bool visible_ = true;
+  bool composition_enabled_ = false;
 
   static std::unique_ptr<MpvCore> instance_;
   static std::optional<int32_t> proc_id_;

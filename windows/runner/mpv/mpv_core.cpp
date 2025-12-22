@@ -1,19 +1,9 @@
 #include "mpv_core.h"
 
-#include <fstream>
+#include <dwmapi.h>
 
 #include "mpv_container.h"
 #include "utils.h"
-
-static void LogToFile(const char* message) {
-  std::ofstream log("C:\\Users\\admin\\mpv_debug.log", std::ios::app);
-  if (log.is_open()) {
-    log << message << std::endl;
-    log.close();
-  }
-  OutputDebugStringA(message);
-  OutputDebugStringA("\n");
-}
 
 namespace mpv {
 
@@ -40,20 +30,8 @@ MpvCore::~MpvCore() {
 }
 
 void MpvCore::EnsureInitialized() {
-  LogToFile("MpvCore::EnsureInitialized called");
-  char msg[256];
-  snprintf(msg, sizeof(msg), "MpvCore::EnsureInitialized - flutter_window_: %p", flutter_window_);
-  LogToFile(msg);
-
-  // Enable per-pixel transparency on Flutter window.
-  LogToFile("MpvCore::EnsureInitialized - calling SetWindowComposition");
-  SetWindowComposition(flutter_window_, 6, 0);
-
-  LogToFile("MpvCore::EnsureInitialized - getting container");
+  // Get container - composition will be enabled in SetVisible() to batch DwmFlush calls
   container_ = MpvContainer::GetInstance()->Get(flutter_window_);
-
-  snprintf(msg, sizeof(msg), "MpvCore::EnsureInitialized - container: %p", container_);
-  LogToFile(msg);
 }
 
 void MpvCore::CreateMpvView(HWND mpv_hwnd, RECT rect,
@@ -101,23 +79,34 @@ void MpvCore::SetHitTestBehavior(int32_t hittest_behavior) {
     ex_style &= ~(WS_EX_TRANSPARENT | WS_EX_LAYERED);
   }
   ::SetWindowLong(flutter_window_, GWL_EXSTYLE, ex_style);
+
+  // Force Windows to recalculate window frame after extended style changes.
+  // This ensures the render surface dimensions match the new window state.
+  ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
+                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+  // Sync with DWM to ensure render target is updated
+  ::DwmFlush();
 }
 
 void MpvCore::SetVisible(bool visible) {
-  char msg[256];
-  snprintf(msg, sizeof(msg), "MpvCore::SetVisible - visible: %d, container_: %p", visible, container_);
-  LogToFile(msg);
-
   visible_ = visible;
   if (container_) {
     if (visible) {
-      SetWindowComposition(flutter_window_, 6, 0);
+      // Batch all window operations, single DwmFlush at end
+      ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
+                     SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+      if (!composition_enabled_) {
+        SetWindowComposition(flutter_window_, 6, 0);
+        composition_enabled_ = true;
+      }
       ::ShowWindow(container_, SW_SHOWNOACTIVATE);
-      LogToFile("MpvCore::SetVisible - showed container, set composition to 6");
+      ::DwmFlush();  // Single sync with DWM after all operations
     } else {
       SetWindowComposition(flutter_window_, 0, 0);
+      composition_enabled_ = false;
       ::ShowWindow(container_, SW_HIDE);
-      LogToFile("MpvCore::SetVisible - hid container, set composition to 0");
+      ::DwmFlush();  // Sync with DWM after hiding
     }
   }
 }
@@ -135,66 +124,53 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
       break;
     }
     case WM_SIZE: {
-      char msg[256];
-      snprintf(msg, sizeof(msg), "WM_SIZE - wparam: %llu, last: %llu, visible_: %d, was_hidden: %d",
-               (unsigned long long)wparam, (unsigned long long)last_wm_size_wparam_,
-               visible_, was_window_hidden_due_to_minimize_);
-      LogToFile(msg);
-
       // Handle Windows's minimize & maximize animations properly.
       // During these transitions, we hide the container and make Flutter opaque,
-      // then restore after the animation completes.
+      // then restore after the animation completes using a Windows timer.
       if (wparam != SIZE_RESTORED || last_wm_size_wparam_ == SIZE_MINIMIZED ||
           last_wm_size_wparam_ == SIZE_MAXIMIZED ||
           was_window_hidden_due_to_minimize_) {
         was_window_hidden_due_to_minimize_ = false;
         SetWindowComposition(flutter_window_, 0, 0);
+        composition_enabled_ = false;
         ::ShowWindow(container_, SW_HIDE);
-        LogToFile("WM_SIZE - hiding container, starting delay thread");
-        last_thread_time_ =
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch())
-                .count();
-        std::thread(
-            [this](uint64_t time) {
-              std::this_thread::sleep_for(
-                  std::chrono::milliseconds(kPositionAndShowDelay));
+        ::DwmFlush();  // Single sync after hiding
 
-              // Check if this thread is still the latest (another WM_SIZE may have come in)
-              if (time != last_thread_time_) {
-                LogToFile("WM_SIZE thread - superseded by newer thread, skipping");
-                return;
-              }
-
-              char msg2[256];
-              snprintf(msg2, sizeof(msg2), "WM_SIZE thread - after delay, visible_: %d",
-                       visible_);
-              LogToFile(msg2);
-
-              // Update container position to match current Flutter window bounds
-              RECT window_rect;
-              ::GetWindowRect(flutter_window_, &window_rect);
-              snprintf(msg2, sizeof(msg2), "WM_SIZE thread - flutter rect: %ld,%ld,%ld,%ld",
-                       window_rect.left, window_rect.top, window_rect.right, window_rect.bottom);
-              LogToFile(msg2);
-
-              ::SetWindowPos(container_, flutter_window_, window_rect.left,
-                             window_rect.top, window_rect.right - window_rect.left,
-                             window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
-              LogToFile("WM_SIZE thread - updated container position");
-
-              // Always restore transparency if video is visible
-              if (visible_) {
-                SetWindowComposition(flutter_window_, 6, 0);
-                LogToFile("WM_SIZE thread - restored composition to 6");
-                ::ShowWindow(container_, SW_SHOWNOACTIVATE);
-                LogToFile("WM_SIZE thread - showed container");
-              }
-            },
-            last_thread_time_)
-            .detach();
+        // Cancel any pending timer and set a new one.
+        ::KillTimer(flutter_window_, kCompositionRestoreTimerId);
+        ::SetTimer(flutter_window_, kCompositionRestoreTimerId, kPositionAndShowDelay, nullptr);
       }
       last_wm_size_wparam_ = wparam;
+      break;
+    }
+    case WM_TIMER: {
+      if (wparam == kCompositionRestoreTimerId) {
+        ::KillTimer(flutter_window_, kCompositionRestoreTimerId);
+
+        // Update container position to match current Flutter window bounds
+        RECT window_rect;
+        ::GetWindowRect(flutter_window_, &window_rect);
+        ::SetWindowPos(container_, flutter_window_, window_rect.left,
+                       window_rect.top, window_rect.right - window_rect.left,
+                       window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
+
+        // Restore transparency if video is visible
+        if (visible_) {
+          // Batch all operations, single DwmFlush at end
+          ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
+                         SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+          if (!composition_enabled_) {
+            SetWindowComposition(flutter_window_, 6, 0);
+            composition_enabled_ = true;
+          }
+          ::ShowWindow(container_, SW_SHOWNOACTIVATE);
+          ::DwmFlush();  // Single sync after all operations
+
+          // Force a redraw to ensure Flutter's render surface is correctly sized
+          ::RedrawWindow(flutter_window_, nullptr, nullptr,
+                         RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+        }
+      }
       break;
     }
     case WM_MOVE:
@@ -211,7 +187,9 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
         if (window_rect.left < 0 && window_rect.top < 0 &&
             window_rect.right < 0 && window_rect.bottom < 0) {
           SetWindowComposition(flutter_window_, 0, 0);
+          composition_enabled_ = false;
           ::ShowWindow(container_, SW_HIDE);
+          ::DwmFlush();  // Single sync after hiding
           was_window_hidden_due_to_minimize_ = true;
         }
       }
