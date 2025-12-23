@@ -210,10 +210,9 @@ class MediaControlsManager {
   void _updateDiscordPresence({required bool isPlaying, required Duration position, double speed = 1.0}) {
     if (_currentMetadata == null) return;
 
-    final title = _currentMetadata!.title ?? 'Unknown Title';
+    final title = _currentMetadata!.title;
     final artist = _buildArtist(_currentMetadata!);
 
-    int? startTime;
     int? endTime;
 
     if (isPlaying) {
