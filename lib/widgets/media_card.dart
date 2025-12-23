@@ -52,6 +52,39 @@ class MediaCard extends StatefulWidget {
 class MediaCardState extends State<MediaCard> {
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
 
+  // Cache semantic label and local poster path to avoid re-computing them on every build.
+  // This is particularly impactful for large grids of media cards, where unnecessary
+  // build cycles can cause jank from repeated string formatting and provider lookups.
+
+  // The semantic label is derived from widget properties and is safe to compute once.
+  late String _semanticLabel;
+
+  // The local poster path depends on a provider, so it's computed when dependencies change.
+  String? _localPosterPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _semanticLabel = _buildSemanticLabel();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _localPosterPath = _getLocalPosterPath(context);
+  }
+
+  @override
+  void didUpdateWidget(MediaCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.item != oldWidget.item) {
+      _semanticLabel = _buildSemanticLabel();
+    }
+    if (widget.item != oldWidget.item || widget.isOffline != oldWidget.isOffline) {
+      _localPosterPath = _getLocalPosterPath(context);
+    }
+  }
+
   void _showContextMenu() {
     _contextMenuKey.currentState?.showContextMenu(context);
   }
@@ -155,28 +188,25 @@ class MediaCardState extends State<MediaCard> {
     final settingsProvider = context.watch<SettingsProvider>();
     final viewMode = widget.forceGridMode ? ViewMode.grid : settingsProvider.viewMode;
 
-    final semanticLabel = _buildSemanticLabel();
-    final localPosterPath = _getLocalPosterPath(context);
-
     final cardWidget = viewMode == ViewMode.grid
         ? _MediaCardGrid(
             item: widget.item,
             width: widget.width,
             height: widget.height,
-            semanticLabel: semanticLabel,
+            semanticLabel: _semanticLabel,
             onTap: () => _handleTap(context),
             onLongPress: _showContextMenu,
             isOffline: widget.isOffline,
-            localPosterPath: localPosterPath,
+            localPosterPath: _localPosterPath,
           )
         : _MediaCardList(
             item: widget.item,
-            semanticLabel: semanticLabel,
+            semanticLabel: _semanticLabel,
             onTap: () => _handleTap(context),
             onLongPress: _showContextMenu,
             density: settingsProvider.libraryDensity,
             isOffline: widget.isOffline,
-            localPosterPath: localPosterPath,
+            localPosterPath: _localPosterPath,
           );
 
     // Use context menu for both PlexMetadata and PlexPlaylist items
