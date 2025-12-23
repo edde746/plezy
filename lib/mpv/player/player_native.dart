@@ -402,6 +402,12 @@ class PlayerNative implements Player {
     // Show the video layer
     await _methodChannel.invokeMethod('setVisible', {'visible': true});
 
+    // Set HTTP headers for Plex authentication and profile
+    if (media.headers != null && media.headers!.isNotEmpty) {
+      final headerList = media.headers!.entries.map((e) => '${e.key}: ${e.value}').toList();
+      await setProperty('http-header-fields', headerList.join(','));
+    }
+
     // Set start position if provided (must be set before loading file)
     if (media.start != null && media.start!.inSeconds > 0) {
       await setProperty('start', media.start!.inSeconds.toString());
