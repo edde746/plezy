@@ -215,33 +215,21 @@ class MediaControlsManager {
 
     int? endTime;
 
-    if (isPlaying) {
+    if (isPlaying && _currentDuration != null) {
       final now = DateTime.now().millisecondsSinceEpoch;
-      if (_currentDuration != null) {
-         final remaining = (_currentDuration!.inMilliseconds - position.inMilliseconds) ~/ speed;
-         endTime = now + remaining;
-      }
-      // Alternatively, we could show start time, but end time is better for "time remaining"
-      // If we don't have duration, we can show start time of playback?
-      // For now, let's use endTime if we have duration.
+      final remaining = (_currentDuration!.inMilliseconds - position.inMilliseconds) ~/ speed;
+      endTime = now + remaining;
     }
 
     _discordRpc.updatePresence(
       title: title,
       subtitle: artist.isNotEmpty ? artist : null,
-      state: isPlaying ? null : 'Paused', // If paused, show "Paused" in state? Or maybe in small text?
-      // Actually state is usually the second line. details is the first line.
-      // If paused, we can set small image text to "Paused".
-      // Let's refine:
-      // details: Title
-      // state: Artist (Show - S01E01)
-      // smallImage: playing/paused icon? or just keep it simple.
-
-      startTime: isPlaying && endTime == null ? DateTime.now().millisecondsSinceEpoch : null, // Show elapsed if no duration
-      endTime: isPlaying ? endTime : null,
-      largeImageKey: 'plezy', // Assuming we have this asset uploaded to Discord App
+      state: isPlaying ? null : 'Paused',
+      startTime: isPlaying && endTime == null ? DateTime.now().millisecondsSinceEpoch : null,
+      endTime: endTime,
+      largeImageKey: 'plezy',
       largeImageText: 'Plezy',
-      smallImageKey: isPlaying ? 'play' : 'pause', // Assuming these assets exist, or remove if not
+      smallImageKey: isPlaying ? 'play' : 'pause',
       smallImageText: isPlaying ? 'Playing' : 'Paused',
     );
   }

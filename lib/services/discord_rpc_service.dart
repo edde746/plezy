@@ -12,11 +12,17 @@ class DiscordRPCService {
 
   bool _isInitialized = false;
 
-  // TODO: Replace with your actual Discord Application ID
-  static const String _applicationId = "123456789012345678";
+  // Discord Application ID from environment variables
+  // Pass with --dart-define=DISCORD_APP_ID=your_id_here
+  static const String _applicationId = String.fromEnvironment('DISCORD_APP_ID');
 
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized || _applicationId.isEmpty) {
+      if (_applicationId.isEmpty) {
+        appLogger.w('Discord RPC initialized without Application ID. Use --dart-define=DISCORD_APP_ID=...');
+      }
+      return;
+    }
 
     try {
       await FlutterDiscordRPC.initialize(_applicationId);
@@ -52,6 +58,7 @@ class DiscordRPCService {
                   end: endTime,
                 )
               : null,
+          // Note: Image keys refer to assets uploaded to the Discord Developer Portal application
           assets: RPCAssets(
             largeImage: largeImageKey,
             largeText: largeImageText,
