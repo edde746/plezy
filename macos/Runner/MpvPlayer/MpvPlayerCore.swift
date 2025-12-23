@@ -301,6 +301,11 @@ class MpvPlayerCore: NSObject {
         case MPV_EVENT_SHUTDOWN:
             print("[MpvPlayerCore] MPV shutdown event")
 
+        case MPV_EVENT_PLAYBACK_RESTART:
+            DispatchQueue.main.async {
+                self.delegate?.onEvent(name: "playback-restart", data: nil)
+            }
+
         case MPV_EVENT_LOG_MESSAGE:
             if let msgPtr = event.data?.assumingMemoryBound(to: mpv_event_log_message.self) {
                 let msg = msgPtr.pointee
