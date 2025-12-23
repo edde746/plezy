@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 7
-/// Strings: 3505 (500 per locale)
+/// Strings: 3533 (504 per locale)
 ///
-/// Built on 2025-12-21 at 14:43 UTC
+/// Built on 2025-12-23 at 06:54 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -398,6 +398,10 @@ class _StringsSettingsEn {
   String get downloadOnWifiOnlyDescription => 'Prevent downloads when on cellular data';
   String get cellularDownloadBlocked =>
       'Downloads are disabled on cellular data. Connect to WiFi or change the setting.';
+  String get maxVolume => 'Maximum Volume';
+  String get maxVolumeDescription => 'Allow volume boost above 100% for quiet media';
+  String maxVolumePercent({required Object percent}) => '${percent}%';
+  String get maxVolumeHint => 'Enter max volume (100-300)';
 }
 
 // Path: search
@@ -1450,6 +1454,14 @@ class _StringsSettingsDe implements _StringsSettingsEn {
   @override
   String get cellularDownloadBlocked =>
       'Downloads sind über mobile Daten deaktiviert. Verbinde dich mit einem WLAN oder ändere die Einstellung.';
+  @override
+  String get maxVolume => 'Maximale Lautstärke';
+  @override
+  String get maxVolumeDescription => 'Lautstärke über 100% für leise Medien erlauben';
+  @override
+  String maxVolumePercent({required Object percent}) => '${percent}%';
+  @override
+  String get maxVolumeHint => 'Maximale Lautstärke eingeben (100-300)';
 }
 
 // Path: search
@@ -2902,6 +2914,14 @@ class _StringsSettingsIt implements _StringsSettingsEn {
   @override
   String get cellularDownloadBlocked =>
       'I download sono disabilitati sulla rete dati cellulare. Connettiti al WiFi o modifica l\'impostazione.';
+  @override
+  String get maxVolume => 'Volume massimo';
+  @override
+  String get maxVolumeDescription => 'Consenti volume superiore al 100% per contenuti audio bassi';
+  @override
+  String maxVolumePercent({required Object percent}) => '${percent}%';
+  @override
+  String get maxVolumeHint => 'Inserisci volume massimo (100-300)';
 }
 
 // Path: search
@@ -4347,6 +4367,14 @@ class _StringsSettingsKo implements _StringsSettingsEn {
   String get downloadOnWifiOnlyDescription => '셀룰러 데이터 사용 시 다운로드 불가';
   @override
   String get cellularDownloadBlocked => '셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요.';
+  @override
+  String get maxVolume => '최대 볼륨';
+  @override
+  String get maxVolumeDescription => '조용한 미디어를 위해 100% 이상의 볼륨 허용';
+  @override
+  String maxVolumePercent({required Object percent}) => '${percent}%';
+  @override
+  String get maxVolumeHint => '최대 볼륨 입력 (100-300)';
 }
 
 // Path: search
@@ -5795,6 +5823,14 @@ class _StringsSettingsNl implements _StringsSettingsEn {
   @override
   String get cellularDownloadBlocked =>
       'Downloads zijn uitgeschakeld bij mobiele data. Maak verbinding met WiFi of wijzig de instelling.';
+  @override
+  String get maxVolume => 'Maximaal volume';
+  @override
+  String get maxVolumeDescription => 'Volume boven 100% toestaan voor stille media';
+  @override
+  String maxVolumePercent({required Object percent}) => '${percent}%';
+  @override
+  String get maxVolumeHint => 'Voer maximaal volume in (100-300)';
 }
 
 // Path: search
@@ -7246,6 +7282,14 @@ class _StringsSettingsSv implements _StringsSettingsEn {
   @override
   String get cellularDownloadBlocked =>
       'Nedladdningar är inaktiverade på mobildata. Anslut till WiFi eller ändra inställningen.';
+  @override
+  String get maxVolume => 'Maximal volym';
+  @override
+  String get maxVolumeDescription => 'Tillåt volym över 100% för tyst media';
+  @override
+  String maxVolumePercent({required Object percent}) => '${percent}%';
+  @override
+  String get maxVolumeHint => 'Ange maximal volym (100-300)';
 }
 
 // Path: search
@@ -8693,6 +8737,14 @@ class _StringsSettingsZh implements _StringsSettingsEn {
   String get downloadOnWifiOnlyDescription => '使用蜂窝数据时禁止下载';
   @override
   String get cellularDownloadBlocked => '蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。';
+  @override
+  String get maxVolume => '最大音量';
+  @override
+  String get maxVolumeDescription => '允许音量超过 100% 以适应安静的媒体';
+  @override
+  String maxVolumePercent({required Object percent}) => '${percent}%';
+  @override
+  String get maxVolumeHint => '输入最大音量 (100-300)';
 }
 
 // Path: search
@@ -9988,6 +10040,14 @@ extension on Translations {
         return 'Prevent downloads when on cellular data';
       case 'settings.cellularDownloadBlocked':
         return 'Downloads are disabled on cellular data. Connect to WiFi or change the setting.';
+      case 'settings.maxVolume':
+        return 'Maximum Volume';
+      case 'settings.maxVolumeDescription':
+        return 'Allow volume boost above 100% for quiet media';
+      case 'settings.maxVolumePercent':
+        return ({required Object percent}) => '${percent}%';
+      case 'settings.maxVolumeHint':
+        return 'Enter max volume (100-300)';
       case 'search.hint':
         return 'Search movies, shows, music...';
       case 'search.tryDifferentTerm':
@@ -11000,6 +11060,14 @@ extension on _StringsDe {
         return 'Downloads über mobile Daten verhindern';
       case 'settings.cellularDownloadBlocked':
         return 'Downloads sind über mobile Daten deaktiviert. Verbinde dich mit einem WLAN oder ändere die Einstellung.';
+      case 'settings.maxVolume':
+        return 'Maximale Lautstärke';
+      case 'settings.maxVolumeDescription':
+        return 'Lautstärke über 100% für leise Medien erlauben';
+      case 'settings.maxVolumePercent':
+        return ({required Object percent}) => '${percent}%';
+      case 'settings.maxVolumeHint':
+        return 'Maximale Lautstärke eingeben (100-300)';
       case 'search.hint':
         return 'Filme, Serien, Musik suchen...';
       case 'search.tryDifferentTerm':
@@ -12016,6 +12084,14 @@ extension on _StringsIt {
         return 'Impedisci i download quando si utilizza la rete dati cellulare';
       case 'settings.cellularDownloadBlocked':
         return 'I download sono disabilitati sulla rete dati cellulare. Connettiti al WiFi o modifica l\'impostazione.';
+      case 'settings.maxVolume':
+        return 'Volume massimo';
+      case 'settings.maxVolumeDescription':
+        return 'Consenti volume superiore al 100% per contenuti audio bassi';
+      case 'settings.maxVolumePercent':
+        return ({required Object percent}) => '${percent}%';
+      case 'settings.maxVolumeHint':
+        return 'Inserisci volume massimo (100-300)';
       case 'search.hint':
         return 'Cerca film. spettacoli, musica...';
       case 'search.tryDifferentTerm':
@@ -13032,6 +13108,14 @@ extension on _StringsKo {
         return '셀룰러 데이터 사용 시 다운로드 불가';
       case 'settings.cellularDownloadBlocked':
         return '셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요.';
+      case 'settings.maxVolume':
+        return '최대 볼륨';
+      case 'settings.maxVolumeDescription':
+        return '조용한 미디어를 위해 100% 이상의 볼륨 허용';
+      case 'settings.maxVolumePercent':
+        return ({required Object percent}) => '${percent}%';
+      case 'settings.maxVolumeHint':
+        return '최대 볼륨 입력 (100-300)';
       case 'search.hint':
         return '영화, 시리즈, 음악 등을 검색하세요...';
       case 'search.tryDifferentTerm':
@@ -14045,6 +14129,14 @@ extension on _StringsNl {
         return 'Voorkom downloads bij gebruik van mobiele data';
       case 'settings.cellularDownloadBlocked':
         return 'Downloads zijn uitgeschakeld bij mobiele data. Maak verbinding met WiFi of wijzig de instelling.';
+      case 'settings.maxVolume':
+        return 'Maximaal volume';
+      case 'settings.maxVolumeDescription':
+        return 'Volume boven 100% toestaan voor stille media';
+      case 'settings.maxVolumePercent':
+        return ({required Object percent}) => '${percent}%';
+      case 'settings.maxVolumeHint':
+        return 'Voer maximaal volume in (100-300)';
       case 'search.hint':
         return 'Zoek films, series, muziek...';
       case 'search.tryDifferentTerm':
@@ -15061,6 +15153,14 @@ extension on _StringsSv {
         return 'Förhindra nedladdningar vid användning av mobildata';
       case 'settings.cellularDownloadBlocked':
         return 'Nedladdningar är inaktiverade på mobildata. Anslut till WiFi eller ändra inställningen.';
+      case 'settings.maxVolume':
+        return 'Maximal volym';
+      case 'settings.maxVolumeDescription':
+        return 'Tillåt volym över 100% för tyst media';
+      case 'settings.maxVolumePercent':
+        return ({required Object percent}) => '${percent}%';
+      case 'settings.maxVolumeHint':
+        return 'Ange maximal volym (100-300)';
       case 'search.hint':
         return 'Sök filmer, serier, musik...';
       case 'search.tryDifferentTerm':
@@ -16076,6 +16176,14 @@ extension on _StringsZh {
         return '使用蜂窝数据时禁止下载';
       case 'settings.cellularDownloadBlocked':
         return '蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。';
+      case 'settings.maxVolume':
+        return '最大音量';
+      case 'settings.maxVolumeDescription':
+        return '允许音量超过 100% 以适应安静的媒体';
+      case 'settings.maxVolumePercent':
+        return ({required Object percent}) => '${percent}%';
+      case 'settings.maxVolumeHint':
+        return '输入最大音量 (100-300)';
       case 'search.hint':
         return '搜索电影、系列、音乐...';
       case 'search.tryDifferentTerm':

@@ -1064,9 +1064,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Widget _buildHeroSection() {
     final statusBarHeight = MediaQuery.of(context).padding.top;
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
-    final heroHeight = useSideNav
-        ? MediaQuery.of(context).size.height * 0.75
-        : 500 + statusBarHeight;
+    final heroHeight = useSideNav ? MediaQuery.of(context).size.height * 0.75 : 500 + statusBarHeight;
     return SliverToBoxAdapter(
       child: Focus(
         focusNode: _heroFocusNode,

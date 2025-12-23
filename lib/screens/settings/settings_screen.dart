@@ -60,6 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _autoSkipDelay = 5;
   bool _downloadOnWifiOnly = false;
   bool _videoPlayerNavigationEnabled = false;
+  int _maxVolume = 100;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -90,6 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _autoSkipDelay = _settingsService.getAutoSkipDelay();
       _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
       _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
+      _maxVolume = _settingsService.getMaxVolume();
       _isLoading = false;
     });
   }
@@ -282,6 +284,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: Text(t.settings.minutesUnit(minutes: _sleepTimerDuration.toString())),
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showSleepTimerDurationDialog(),
+          ),
+          ListTile(
+            leading: const AppIcon(Symbols.volume_up_rounded, fill: 1),
+            title: Text(t.settings.maxVolume),
+            subtitle: Text(t.settings.maxVolumePercent(percent: _maxVolume.toString())),
+            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            onTap: () => _showMaxVolumeDialog(),
           ),
           SwitchListTile(
             secondary: const AppIcon(Symbols.bookmark_rounded, fill: 1),
@@ -962,6 +971,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onSave: (value) async {
         setState(() => _autoSkipDelay = value);
         await _settingsService.setAutoSkipDelay(value);
+      },
+    );
+  }
+
+  void _showMaxVolumeDialog() {
+    _showNumericInputDialog(
+      title: t.settings.maxVolume,
+      labelText: t.settings.maxVolumeDescription,
+      suffixText: '%',
+      min: 100,
+      max: 300,
+      currentValue: _maxVolume,
+      onSave: (value) async {
+        setState(() => _maxVolume = value);
+        await _settingsService.setMaxVolume(value);
       },
     );
   }

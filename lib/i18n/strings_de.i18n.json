@@ -143,7 +143,11 @@
     "downloadLocationSelectError": "Ordnerauswahl fehlgeschlagen",
     "downloadOnWifiOnly": "Nur über WLAN herunterladen",
     "downloadOnWifiOnlyDescription": "Downloads über mobile Daten verhindern",
-    "cellularDownloadBlocked": "Downloads sind über mobile Daten deaktiviert. Verbinde dich mit einem WLAN oder ändere die Einstellung."
+    "cellularDownloadBlocked": "Downloads sind über mobile Daten deaktiviert. Verbinde dich mit einem WLAN oder ändere die Einstellung.",
+    "maxVolume": "Maximale Lautstärke",
+    "maxVolumeDescription": "Lautstärke über 100% für leise Medien erlauben",
+    "maxVolumePercent": "${percent}%",
+    "maxVolumeHint": "Maximale Lautstärke eingeben (100-300)"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",

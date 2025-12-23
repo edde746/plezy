@@ -52,6 +52,24 @@ class _VolumeControlState extends State<VolumeControl> {
   /// Volume step size for keyboard adjustment.
   static const double _volumeStep = 5.0;
 
+  /// Maximum volume from settings (100-300).
+  int _maxVolume = 100;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMaxVolume();
+  }
+
+  Future<void> _loadMaxVolume() async {
+    final settings = await SettingsService.getInstance();
+    if (mounted) {
+      setState(() {
+        _maxVolume = settings.getMaxVolume();
+      });
+    }
+  }
+
   void _enterAdjustMode() {
     setState(() {
       _isAdjustMode = true;
@@ -66,7 +84,7 @@ class _VolumeControlState extends State<VolumeControl> {
 
   Future<void> _adjustVolume(double delta) async {
     final currentVolume = widget.player.state.volume;
-    final newVolume = (currentVolume + delta).clamp(0.0, 100.0);
+    final newVolume = (currentVolume + delta).clamp(0.0, _maxVolume.toDouble());
     widget.player.setVolume(newVolume);
     final settings = await SettingsService.getInstance();
     await settings.setVolume(newVolume);
@@ -178,33 +196,58 @@ class _VolumeControlState extends State<VolumeControl> {
   Widget _buildVolumeSlider(double volume, bool isKeyboardMode) {
     // Show visual indicator when in adjust mode with keyboard
     final showAdjustIndicator = _isAdjustMode && isKeyboardMode;
+    final maxVolumeDouble = _maxVolume.toDouble();
+
+    // Calculate 100% marker position as fraction of slider width
+    // Only show marker if max volume > 100
+    final showMarker = _maxVolume > 100;
+    final markerPosition = showMarker ? (100.0 / maxVolumeDouble) : 0.0;
 
     return SizedBox(
       width: 100,
-      child: SliderTheme(
-        data: SliderThemeData(
-          trackHeight: showAdjustIndicator ? 4 : 3,
-          thumbShape: RoundSliderThumbShape(enabledThumbRadius: showAdjustIndicator ? 8 : 6),
-          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-        ),
-        child: Semantics(
-          label: t.videoControls.volumeSlider,
-          slider: true,
-          child: Slider(
-            value: volume,
-            min: 0.0,
-            max: 100.0,
-            onChanged: (value) {
-              widget.player.setVolume(value);
-            },
-            onChangeEnd: (value) async {
-              final settings = await SettingsService.getInstance();
-              await settings.setVolume(value);
-            },
-            activeColor: Colors.white,
-            inactiveColor: Colors.white.withValues(alpha: 0.3),
+      child: Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          // 100% marker (only shown if max > 100)
+          if (showMarker)
+            Positioned(
+              left: 100 * markerPosition - 1, // Adjust for marker width
+              child: Container(
+                width: 2,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+            ),
+          // Volume slider
+          SliderTheme(
+            data: SliderThemeData(
+              trackHeight: showAdjustIndicator ? 4 : 3,
+              thumbShape: RoundSliderThumbShape(enabledThumbRadius: showAdjustIndicator ? 8 : 6),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+            ),
+            child: Semantics(
+              label: t.videoControls.volumeSlider,
+              slider: true,
+              child: Slider(
+                value: volume.clamp(0.0, maxVolumeDouble),
+                min: 0.0,
+                max: maxVolumeDouble,
+                onChanged: (value) {
+                  widget.player.setVolume(value);
+                },
+                onChangeEnd: (value) async {
+                  final settings = await SettingsService.getInstance();
+                  await settings.setVolume(value);
+                },
+                activeColor: Colors.white,
+                inactiveColor: Colors.white.withValues(alpha: 0.3),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

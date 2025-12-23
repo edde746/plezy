@@ -143,7 +143,11 @@
     "downloadLocationSelectError": "Impossibile selezionare la cartella",
     "downloadOnWifiOnly": "Scarica solo con WiFi",
     "downloadOnWifiOnlyDescription": "Impedisci i download quando si utilizza la rete dati cellulare",
-    "cellularDownloadBlocked": "I download sono disabilitati sulla rete dati cellulare. Connettiti al WiFi o modifica l'impostazione."
+    "cellularDownloadBlocked": "I download sono disabilitati sulla rete dati cellulare. Connettiti al WiFi o modifica l'impostazione.",
+    "maxVolume": "Volume massimo",
+    "maxVolumeDescription": "Consenti volume superiore al 100% per contenuti audio bassi",
+    "maxVolumePercent": "${percent}%",
+    "maxVolumeHint": "Inserisci volume massimo (100-300)"
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",

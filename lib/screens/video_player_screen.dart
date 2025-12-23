@@ -334,8 +334,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       }
 
-      // Apply saved volume
-      final savedVolume = settingsService.getVolume();
+      // Set max volume limit for volume boost
+      final maxVolume = settingsService.getMaxVolume();
+      await player!.setProperty('volume-max', maxVolume.toString());
+
+      // Apply saved volume (clamped to max volume)
+      final savedVolume = settingsService.getVolume().clamp(0.0, maxVolume.toDouble());
       player!.setVolume(savedVolume);
 
       // Notify that player is ready
@@ -1647,7 +1651,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         child: Center(
                           child: Container(
                             padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              shape: BoxShape.circle,
+                            ),
                             child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                           ),
                         ),
@@ -1661,9 +1668,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                 valueListenable: _isExiting,
                 builder: (context, isExiting, child) {
                   if (!isExiting) return const SizedBox.shrink();
-                  return Positioned.fill(
-                    child: Container(color: Colors.black),
-                  );
+                  return Positioned.fill(child: Container(color: Colors.black));
                 },
               ),
             ],

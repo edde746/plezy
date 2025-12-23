@@ -143,7 +143,11 @@
     "downloadLocationSelectError": "Kunde inte välja mapp",
     "downloadOnWifiOnly": "Ladda ner endast på WiFi",
     "downloadOnWifiOnlyDescription": "Förhindra nedladdningar vid användning av mobildata",
-    "cellularDownloadBlocked": "Nedladdningar är inaktiverade på mobildata. Anslut till WiFi eller ändra inställningen."
+    "cellularDownloadBlocked": "Nedladdningar är inaktiverade på mobildata. Anslut till WiFi eller ändra inställningen.",
+    "maxVolume": "Maximal volym",
+    "maxVolumeDescription": "Tillåt volym över 100% för tyst media",
+    "maxVolumePercent": "${percent}%",
+    "maxVolumeHint": "Ange maximal volym (100-300)"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",

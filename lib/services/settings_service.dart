@@ -53,6 +53,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyShowPerformanceOverlay = 'show_performance_overlay';
   static const String _keyMpvConfigEntries = 'mpv_config_entries';
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
+  static const String _keyMaxVolume = 'max_volume';
 
   SettingsService._();
 
@@ -220,6 +221,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   double getVolume() {
     return prefs.getDouble(_keyVolume) ?? 100.0; // Default: full volume
+  }
+
+  // Max Volume (100-300%, for volume boost)
+  Future<void> setMaxVolume(int percent) async {
+    await prefs.setInt(_keyMaxVolume, percent.clamp(100, 300));
+  }
+
+  int getMaxVolume() {
+    return prefs.getInt(_keyMaxVolume) ?? 100; // Default: 100% (no boost)
   }
 
   // Rotation Lock (mobile only)
@@ -907,6 +917,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyAudioSyncOffset),
       prefs.remove(_keySubtitleSyncOffset),
       prefs.remove(_keyVolume),
+      prefs.remove(_keyMaxVolume),
       prefs.remove(_keySubtitleFontSize),
       prefs.remove(_keySubtitleTextColor),
       prefs.remove(_keySubtitleBorderSize),

@@ -142,7 +142,11 @@
     "downloadLocationSelectError": "Failed to select folder",
     "downloadOnWifiOnly": "Download on WiFi only",
     "downloadOnWifiOnlyDescription": "Prevent downloads when on cellular data",
-    "cellularDownloadBlocked": "Downloads are disabled on cellular data. Connect to WiFi or change the setting."
+    "cellularDownloadBlocked": "Downloads are disabled on cellular data. Connect to WiFi or change the setting.",
+    "maxVolume": "Maximum Volume",
+    "maxVolumeDescription": "Allow volume boost above 100% for quiet media",
+    "maxVolumePercent": "${percent}%",
+    "maxVolumeHint": "Enter max volume (100-300)"
   },
   "search": {
     "hint": "Search movies, shows, music...",

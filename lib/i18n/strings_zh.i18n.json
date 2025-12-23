@@ -143,7 +143,11 @@
     "downloadLocationSelectError": "选择文件夹失败",
     "downloadOnWifiOnly": "仅在 WiFi 时下载",
     "downloadOnWifiOnlyDescription": "使用蜂窝数据时禁止下载",
-    "cellularDownloadBlocked": "蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。"
+    "cellularDownloadBlocked": "蜂窝数据下已禁用下载。请连接 WiFi 或更改设置。",
+    "maxVolume": "最大音量",
+    "maxVolumeDescription": "允许音量超过 100% 以适应安静的媒体",
+    "maxVolumePercent": "${percent}%",
+    "maxVolumeHint": "输入最大音量 (100-300)"
   },
   "search": {
     "hint": "搜索电影、系列、音乐...",

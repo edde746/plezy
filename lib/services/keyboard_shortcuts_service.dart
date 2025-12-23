@@ -14,6 +14,7 @@ class KeyboardShortcutsService {
   Map<String, HotKey> _hotkeys = {}; // New HotKey objects
   int _seekTimeSmall = 10; // Default, loaded from settings
   int _seekTimeLarge = 30; // Default, loaded from settings
+  int _maxVolume = 100; // Default, loaded from settings (100-300%)
 
   KeyboardShortcutsService._();
 
@@ -38,6 +39,7 @@ class KeyboardShortcutsService {
     _hotkeys = await _settingsService.getKeyboardHotkeys(); // Primary method
     _seekTimeSmall = _settingsService.getSeekTimeSmall();
     _seekTimeLarge = _settingsService.getSeekTimeLarge();
+    _maxVolume = _settingsService.getMaxVolume();
   }
 
   Map<String, String> get shortcuts => Map.from(_shortcuts);
@@ -258,12 +260,12 @@ class KeyboardShortcutsService {
         player.playOrPause();
         break;
       case 'volume_up':
-        final newVolume = (player.state.volume + 10).clamp(0.0, 100.0);
+        final newVolume = (player.state.volume + 10).clamp(0.0, _maxVolume.toDouble());
         player.setVolume(newVolume);
         _settingsService.setVolume(newVolume);
         break;
       case 'volume_down':
-        final newVolume = (player.state.volume - 10).clamp(0.0, 100.0);
+        final newVolume = (player.state.volume - 10).clamp(0.0, _maxVolume.toDouble());
         player.setVolume(newVolume);
         _settingsService.setVolume(newVolume);
         break;

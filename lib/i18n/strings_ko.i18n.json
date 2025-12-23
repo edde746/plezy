@@ -143,7 +143,11 @@
     "downloadLocationSelectError": "폴더 선택 실패",
     "downloadOnWifiOnly": "WiFi 연결 시에만 다운로드",
     "downloadOnWifiOnlyDescription": "셀룰러 데이터 사용 시 다운로드 불가",
-    "cellularDownloadBlocked": "셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요."
+    "cellularDownloadBlocked": "셀룰러 데이터에서 다운로드가 차단 되었습니다. WiFi에 연결하거나 설정을 변경하세요.",
+    "maxVolume": "최대 볼륨",
+    "maxVolumeDescription": "조용한 미디어를 위해 100% 이상의 볼륨 허용",
+    "maxVolumePercent": "${percent}%",
+    "maxVolumeHint": "최대 볼륨 입력 (100-300)"
   },
   "search": {
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",

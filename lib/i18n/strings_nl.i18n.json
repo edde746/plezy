@@ -143,7 +143,11 @@
     "downloadLocationSelectError": "Kan map niet selecteren",
     "downloadOnWifiOnly": "Alleen via WiFi downloaden",
     "downloadOnWifiOnlyDescription": "Voorkom downloads bij gebruik van mobiele data",
-    "cellularDownloadBlocked": "Downloads zijn uitgeschakeld bij mobiele data. Maak verbinding met WiFi of wijzig de instelling."
+    "cellularDownloadBlocked": "Downloads zijn uitgeschakeld bij mobiele data. Maak verbinding met WiFi of wijzig de instelling.",
+    "maxVolume": "Maximaal volume",
+    "maxVolumeDescription": "Volume boven 100% toestaan voor stille media",
+    "maxVolumePercent": "${percent}%",
+    "maxVolumeHint": "Voer maximaal volume in (100-300)"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",
