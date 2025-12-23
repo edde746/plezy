@@ -32,6 +32,7 @@ import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/download_storage_service.dart';
 import 'services/plex_api_cache.dart';
+import 'services/discord_rpc_service.dart';
 import 'database/app_database.dart';
 import 'utils/app_logger.dart';
 import 'utils/orientation_helper.dart';
@@ -70,6 +71,11 @@ void main() async {
 
   // Initialize storage service
   futures.add(StorageService.getInstance().then((_) {}));
+
+  // Initialize Discord RPC service
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    futures.add(DiscordRPCService().initialize());
+  }
 
   // Initialize language codes for track selection
   futures.add(LanguageCodes.initialize());
