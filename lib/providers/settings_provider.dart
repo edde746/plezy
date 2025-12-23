@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/settings_service.dart';
+import '../services/discord_rpc_service.dart';
 
 class SettingsProvider extends ChangeNotifier {
   SettingsService? _settingsService;
@@ -7,6 +8,7 @@ class SettingsProvider extends ChangeNotifier {
   ViewMode _viewMode = ViewMode.grid;
   bool _useSeasonPoster = false;
   bool _showHeroSection = true;
+  bool _enableDiscordRpc = true;
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
@@ -27,6 +29,7 @@ class SettingsProvider extends ChangeNotifier {
     _viewMode = _settingsService!.getViewMode();
     _useSeasonPoster = _settingsService!.getUseSeasonPoster();
     _showHeroSection = _settingsService!.getShowHeroSection();
+    _enableDiscordRpc = _settingsService!.getEnableDiscordRpc();
     _isInitialized = true;
     notifyListeners();
   }
@@ -41,6 +44,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get useSeasonPoster => _useSeasonPoster;
 
   bool get showHeroSection => _showHeroSection;
+
+  bool get enableDiscordRpc => _enableDiscordRpc;
 
   Future<void> setLibraryDensity(LibraryDensity density) async {
     if (!_isInitialized) await _initializeSettings();
@@ -74,6 +79,17 @@ class SettingsProvider extends ChangeNotifier {
     if (_showHeroSection != value) {
       _showHeroSection = value;
       await _settingsService!.setShowHeroSection(value);
+      notifyListeners();
+    }
+  }
+
+  Future<void> setEnableDiscordRpc(bool value) async {
+    if (!_isInitialized) await _initializeSettings();
+    if (_enableDiscordRpc != value) {
+      _enableDiscordRpc = value;
+      await _settingsService!.setEnableDiscordRpc(value);
+      // Update RPC service immediately
+      await DiscordRPCService().updateSettings(value);
       notifyListeners();
     }
   }

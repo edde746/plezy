@@ -54,6 +54,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMpvConfigEntries = 'mpv_config_entries';
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
   static const String _keyMaxVolume = 'max_volume';
+  static const String _keyEnableDiscordRpc = 'enable_discord_rpc';
 
   SettingsService._();
 
@@ -230,6 +231,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   int getMaxVolume() {
     return prefs.getInt(_keyMaxVolume) ?? 100; // Default: 100% (no boost)
+  }
+
+  // Discord RPC
+  Future<void> setEnableDiscordRpc(bool enabled) async {
+    await prefs.setBool(_keyEnableDiscordRpc, enabled);
+  }
+
+  bool getEnableDiscordRpc() {
+    return prefs.getBool(_keyEnableDiscordRpc) ?? true; // Default: enabled
   }
 
   // Rotation Lock (mobile only)
@@ -933,6 +943,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyShowPerformanceOverlay),
       prefs.remove(_keyMpvConfigEntries),
       prefs.remove(_keyMpvConfigPresets),
+      prefs.remove(_keyEnableDiscordRpc),
     ]);
   }
 
@@ -966,6 +977,7 @@ class SettingsService extends BaseSharedPreferencesService {
       'autoSkipIntro': getAutoSkipIntro(),
       'autoSkipCredits': getAutoSkipCredits(),
       'autoSkipDelay': getAutoSkipDelay(),
+      'enableDiscordRpc': getEnableDiscordRpc(),
     };
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_discord_rpc/flutter_discord_rpc.dart';
 import '../utils/app_logger.dart';
+import 'settings_service.dart';
 
 class DiscordRPCService {
   static final DiscordRPCService _instance = DiscordRPCService._internal();
@@ -11,14 +12,18 @@ class DiscordRPCService {
   DiscordRPCService._internal();
 
   bool _isInitialized = false;
+  bool _isEnabled = true;
 
   // Discord Application ID from environment variables
   // Pass with --dart-define=DISCORD_APP_ID=your_id_here
   static const String _applicationId = String.fromEnvironment('DISCORD_APP_ID');
 
   Future<void> initialize() async {
-    if (_isInitialized || _applicationId.isEmpty) {
-      if (_applicationId.isEmpty) {
+    final settings = await SettingsService.getInstance();
+    _isEnabled = settings.getEnableDiscordRpc();
+
+    if (!_isEnabled || _isInitialized || _applicationId.isEmpty) {
+      if (_applicationId.isEmpty && _isEnabled) {
         appLogger.w('Discord RPC initialized without Application ID. Use --dart-define=DISCORD_APP_ID=...');
       }
       return;
@@ -34,6 +39,17 @@ class DiscordRPCService {
     }
   }
 
+  Future<void> updateSettings(bool enabled) async {
+    if (_isEnabled == enabled) return;
+    _isEnabled = enabled;
+
+    if (enabled) {
+      await initialize();
+    } else {
+      dispose();
+    }
+  }
+
   void updatePresence({
     required String title,
     String? subtitle,
@@ -45,7 +61,7 @@ class DiscordRPCService {
     String? smallImageKey,
     String? smallImageText,
   }) {
-    if (!_isInitialized) return;
+    if (!_isInitialized || !_isEnabled) return;
 
     try {
       FlutterDiscordRPC.instance.setActivity(

@@ -586,6 +586,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showResetSettingsDialog(),
           ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const AppIcon(Symbols.share_rounded, fill: 1),
+                title: const Text('Discord RPC'),
+                subtitle: const Text('Show playing status on Discord profile'),
+                value: settingsProvider.enableDiscordRpc,
+                onChanged: (value) async {
+                  await settingsProvider.setEnableDiscordRpc(value);
+                },
+              );
+            },
+          ),
         ],
       ),
     );
