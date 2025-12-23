@@ -455,7 +455,10 @@ class SettingsService extends BaseSharedPreferencesService {
   };
 
   Map<String, dynamic> _serializeHotKey(HotKey hotKey) {
-    return {'key': hotKey.key.toString(), 'modifiers': hotKey.modifiers?.map((m) => m.name).toList() ?? []};
+    // Use USB HID code for reliable serialization across debug/release modes
+    final physicalKey = hotKey.key as PhysicalKeyboardKey;
+    final usbHidCode = physicalKey.usbHidUsage.toRadixString(16).padLeft(8, '0');
+    return {'key': usbHidCode, 'modifiers': hotKey.modifiers?.map((m) => m.name).toList() ?? []};
   }
 
   HotKey? _deserializeHotKey(Map<String, dynamic> data) {
@@ -469,7 +472,8 @@ class SettingsService extends BaseSharedPreferencesService {
           .cast<HotKeyModifier>()
           .toList();
 
-      final key = _findKeyByString(keyString);
+      // Try direct USB HID lookup first (new format), fall back to string parsing (backwards compat)
+      final key = _usbHidKeyMap[keyString] ?? _findKeyByString(keyString);
       if (key != null) {
         return HotKey(key: key, modifiers: modifiers.isNotEmpty ? modifiers : null);
       }
