@@ -136,18 +136,8 @@ class MobileVideoControls extends StatelessWidget {
                 iconSize: 48,
                 onPressed: onPrevious!,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 24),
             ],
-            _buildCircularButton(
-              semanticLabel: t.videoControls.seekBackwardButton(seconds: seekTimeSmall),
-              icon: getReplayIcon(seekTimeSmall),
-              iconSize: 48,
-              onPressed: () {
-                final newPosition = seekWithClamping(player, Duration(seconds: -seekTimeSmall));
-                onSeekCompleted?.call(newPosition);
-              },
-            ),
-            const SizedBox(width: 48),
             _buildCircularButton(
               semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
               icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
@@ -162,19 +152,9 @@ class MobileVideoControls extends StatelessWidget {
                 }
               },
             ),
-            const SizedBox(width: 48),
-            _buildCircularButton(
-              semanticLabel: t.videoControls.seekForwardButton(seconds: seekTimeSmall),
-              icon: getForwardIcon(seekTimeSmall),
-              iconSize: 48,
-              onPressed: () {
-                final newPosition = seekWithClamping(player, Duration(seconds: seekTimeSmall));
-                onSeekCompleted?.call(newPosition);
-              },
-            ),
             // Next episode button (hidden when unavailable)
             if (onNext != null) ...[
-              const SizedBox(width: 16),
+              const SizedBox(width: 24),
               _buildCircularButton(
                 semanticLabel: t.videoControls.nextButton,
                 icon: Symbols.skip_next_rounded,

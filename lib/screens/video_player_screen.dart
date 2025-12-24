@@ -665,6 +665,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     try {
       PlaybackInitializationResult result;
+      Map<String, String>? plexHeaders;
 
       if (widget.isOffline) {
         // Offline mode: get video path from downloads without requiring server
@@ -672,6 +673,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       } else {
         // Online mode: use server-specific client
         final client = _getClientForMetadata(context);
+        plexHeaders = client.config.headers;
         final playbackService = PlaybackInitializationService(client: client, database: PlexApiCache.instance.database);
         result = await playbackService.getPlaybackData(
           metadata: widget.metadata,
@@ -689,7 +691,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         final resumePosition = widget.metadata.viewOffset != null
             ? Duration(milliseconds: widget.metadata.viewOffset!)
             : null;
-        await player!.open(Media(result.videoUrl!, start: resumePosition));
+        await player!.open(Media(result.videoUrl!, start: resumePosition, headers: plexHeaders));
 
         // Attach player to Watch Together session for sync (if in session)
         if (mounted && !widget.isOffline) {

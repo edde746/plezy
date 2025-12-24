@@ -152,6 +152,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   double _doubleTapFeedbackOpacity = 0.0;
   bool _lastDoubleTapWasForward = true;
   Timer? _feedbackTimer;
+  int _accumulatedSkipSeconds = 0; // Stacking skip: total skip during active feedback
+  // Custom tap detection state (more reliable than Flutter's onDoubleTap)
+  DateTime? _lastSkipTapTime;
+  bool _lastSkipTapWasForward = true;
+  DateTime? _lastSkipActionTime; // Debounce: prevents double-tap counting as 2 skips
   // Seek throttle
   late final Throttle _seekThrottle;
   // Current marker state
@@ -797,10 +802,69 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     widget.onSeekCompleted?.call(position);
   }
 
+  /// Handle tap in skip zone with custom double-tap detection
+  void _handleTapInSkipZone({required bool isForward}) {
+    final now = DateTime.now();
+
+    // Debounce: ignore taps within 200ms of last skip action
+    // This prevents double-taps from counting as two separate skips
+    if (_lastSkipActionTime != null &&
+        now.difference(_lastSkipActionTime!).inMilliseconds < 200) {
+      return;
+    }
+
+    // Check if this qualifies as a double-tap (within 400ms of last tap, same side)
+    final isDoubleTap =
+        _lastSkipTapTime != null &&
+        now.difference(_lastSkipTapTime!).inMilliseconds < 400 &&
+        _lastSkipTapWasForward == isForward;
+
+    // Skip ONLY on detected double-tap (no single-tap-to-add behavior)
+    if (isDoubleTap) {
+      _lastSkipTapTime = null; // Reset to prevent triple-tap chaining
+
+      if (_showDoubleTapFeedback && _lastDoubleTapWasForward == isForward) {
+        // Stacking skip - add to accumulated
+        _handleStackingSkip(isForward: isForward);
+      } else {
+        // First double-tap - initiate skip
+        _handleDoubleTapSkip(isForward: isForward);
+      }
+    } else {
+      // First tap - record timestamp and wait for possible second tap
+      _lastSkipTapTime = now;
+      _lastSkipTapWasForward = isForward;
+    }
+  }
+
+  /// Handle stacking skip - add to accumulated skip when feedback is active
+  void _handleStackingSkip({required bool isForward}) {
+    if (!widget.canControl) return;
+
+    // Add to accumulated skip
+    _accumulatedSkipSeconds += _seekTimeSmall;
+
+    // Calculate and perform seek
+    final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
+    final newPosition = seekWithClamping(widget.player, delta);
+
+    // Notify Watch Together
+    widget.onSeekCompleted?.call(newPosition);
+
+    // Refresh feedback (extends timer, updates display)
+    _showSkipFeedback(isForward: isForward);
+
+    // Record skip time for debounce
+    _lastSkipActionTime = DateTime.now();
+  }
+
   /// Handle double-tap skip forward or backward
   void _handleDoubleTapSkip({required bool isForward}) {
     // Ignore if user cannot control playback
     if (!widget.canControl) return;
+
+    // Reset accumulated skip for new gesture
+    _accumulatedSkipSeconds = _seekTimeSmall;
 
     // Calculate the new position (clamped to valid range)
     final currentPosition = widget.player.state.position;
@@ -817,6 +881,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     // Show visual feedback
     _showSkipFeedback(isForward: isForward);
+
+    // Record skip time for debounce
+    _lastSkipActionTime = DateTime.now();
   }
 
   /// Show animated visual feedback for skip gesture
@@ -832,8 +899,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Capture duration before timer to avoid context access in callback
     final slowDuration = tokens(context).slow;
 
-    // Fade out after delay
-    _feedbackTimer = Timer(const Duration(milliseconds: 500), () {
+    // Fade out after delay (1200ms gives time to see value and continue tapping)
+    _feedbackTimer = Timer(const Duration(milliseconds: 1200), () {
       if (mounted) {
         setState(() {
           _doubleTapFeedbackOpacity = 0.0;
@@ -843,6 +910,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           if (mounted) {
             setState(() {
               _showDoubleTapFeedback = false;
+              _accumulatedSkipSeconds = 0; // Reset when feedback hides
             });
           }
         });
@@ -858,11 +926,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         margin: const EdgeInsets.symmetric(horizontal: 60),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle),
-        child: AppIcon(
-          _lastDoubleTapWasForward ? getForwardIcon(_seekTimeSmall) : getReplayIcon(_seekTimeSmall),
-          fill: 1,
-          color: Colors.white,
-          size: 48,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(
+              _lastDoubleTapWasForward ? Symbols.fast_forward_rounded : Symbols.fast_rewind_rounded,
+              fill: 1,
+              color: Colors.white,
+              size: 32,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$_accumulatedSkipSeconds${t.settings.secondsShort}',
+              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
       ),
     );
@@ -1168,28 +1246,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
                       return Stack(
                         children: [
-                          // Left zone - skip backward
+                          // Left zone - skip backward (custom double-tap detection)
                           Positioned(
                             left: 0,
                             top: topExclude,
                             bottom: bottomExclude,
                             width: leftZoneWidth,
                             child: GestureDetector(
-                              onTap: _toggleControls,
-                              onDoubleTap: () => _handleDoubleTapSkip(isForward: false),
+                              onTap: () => _handleTapInSkipZone(isForward: false),
                               behavior: HitTestBehavior.translucent,
                               child: Container(color: Colors.transparent),
                             ),
                           ),
-                          // Right zone - skip forward
+                          // Right zone - skip forward (custom double-tap detection)
                           Positioned(
                             right: 0,
                             top: topExclude,
                             bottom: bottomExclude,
                             width: leftZoneWidth,
                             child: GestureDetector(
-                              onTap: _toggleControls,
-                              onDoubleTap: () => _handleDoubleTapSkip(isForward: true),
+                              onTap: () => _handleTapInSkipZone(isForward: true),
                               behavior: HitTestBehavior.translucent,
                               child: Container(color: Colors.transparent),
                             ),
