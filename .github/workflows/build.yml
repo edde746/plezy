@@ -57,27 +57,35 @@ jobs:
           storeFile=upload-keystore.jks
           EOF
 
-      - name: Build APK
-        run: flutter build apk --release --dart-define=ENABLE_UPDATE_CHECK=true
+      - name: Build APKs
+        run: flutter build apk --release --split-per-abi --dart-define=ENABLE_UPDATE_CHECK=true
 
       - name: Clean up keystore
         if: always()
         run: rm -f android/app/upload-keystore.jks android/key.properties
 
-      - name: Rename APK
+      - name: Package APKs
         run: |
-          cp build/app/outputs/flutter-apk/app-release.apk plezy-android.apk
+          tar -czf plezy-android-arm64-v8a.tar.gz -C build/app/outputs/flutter-apk app-arm64-v8a-release.apk --transform 's/app-arm64-v8a-release.apk/plezy.apk/'
+          tar -czf plezy-android-armeabi-v7a.tar.gz -C build/app/outputs/flutter-apk app-armeabi-v7a-release.apk --transform 's/app-armeabi-v7a-release.apk/plezy.apk/'
+          tar -czf plezy-android-x86_64.tar.gz -C build/app/outputs/flutter-apk app-x86_64-release.apk --transform 's/app-x86_64-release.apk/plezy.apk/'
 
-      - name: Attest APK
+      - name: Attest APKs
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: plezy-android.apk
+          subject-path: |
+            plezy-android-arm64-v8a.tar.gz
+            plezy-android-armeabi-v7a.tar.gz
+            plezy-android-x86_64.tar.gz
 
-      - name: Upload APK
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: plezy-android.apk
+          path: |
+            plezy-android-arm64-v8a.tar.gz
+            plezy-android-armeabi-v7a.tar.gz
+            plezy-android-x86_64.tar.gz
 
   build-ios:
     runs-on: macos-26
@@ -404,7 +412,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/android-apk/plezy-android.apk
+            artifacts/android-apk/plezy-android-arm64-v8a.tar.gz
+            artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
+            artifacts/android-apk/plezy-android-x86_64.tar.gz
             artifacts/ios-ipa/plezy-ios.ipa
             artifacts/macos-zip/plezy-macos.zip
             artifacts/windows-portable/plezy-windows-portable.zip
