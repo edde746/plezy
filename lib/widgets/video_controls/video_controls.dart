@@ -157,6 +157,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   DateTime? _lastSkipTapTime;
   bool _lastSkipTapWasForward = true;
   DateTime? _lastSkipActionTime; // Debounce: prevents double-tap counting as 2 skips
+  Timer? _singleTapTimer; // Timer for delayed single-tap action (toggle controls)
   // Seek throttle
   late final Throttle _seekThrottle;
   // Current marker state
@@ -180,6 +181,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _videoPlayerNavigationEnabled = false;
   // Performance overlay
   bool _showPerformanceOverlay = false;
+  // Long-press 2x speed state
+  bool _isLongPressing = false;
+  double? _rateBeforeLongPress;
+  bool _showSpeedIndicator = false;
 
   @override
   void initState() {
@@ -281,6 +286,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _listenToCompleted() {
     _completedSubscription = widget.player.streams.completed.listen((completed) {
       if (completed && mounted) {
+        // Cancel long-press 2x speed if active
+        if (_isLongPressing) {
+          _handleLongPressCancel();
+        }
         // Show controls when video completes (for play next dialog etc.)
         setState(() {
           _showControls = true;
@@ -427,10 +436,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _feedbackTimer?.cancel();
     _resizeDebounceTimer?.cancel();
     _autoSkipTimer?.cancel();
+    _singleTapTimer?.cancel();
     _seekThrottle.cancel();
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _focusNode.dispose();
+    // Restore original rate if long-press was active when disposed
+    if (_isLongPressing && _rateBeforeLongPress != null) {
+      widget.player.setRate(_rateBeforeLongPress!);
+    }
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
     // Remove window listener
@@ -806,6 +820,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _handleTapInSkipZone({required bool isForward}) {
     final now = DateTime.now();
 
+    // Cancel any pending single-tap action
+    _singleTapTimer?.cancel();
+    _singleTapTimer = null;
+
     // Debounce: ignore taps within 200ms of last skip action
     // This prevents double-taps from counting as two separate skips
     if (_lastSkipActionTime != null &&
@@ -813,10 +831,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       return;
     }
 
-    // Check if this qualifies as a double-tap (within 400ms of last tap, same side)
+    // Check if this qualifies as a double-tap (within 250ms of last tap, same side)
     final isDoubleTap =
         _lastSkipTapTime != null &&
-        now.difference(_lastSkipTapTime!).inMilliseconds < 400 &&
+        now.difference(_lastSkipTapTime!).inMilliseconds < 250 &&
         _lastSkipTapWasForward == isForward;
 
     // Skip ONLY on detected double-tap (no single-tap-to-add behavior)
@@ -831,9 +849,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _handleDoubleTapSkip(isForward: isForward);
       }
     } else {
-      // First tap - record timestamp and wait for possible second tap
+      // First tap - record timestamp and start timer for single-tap action
       _lastSkipTapTime = now;
       _lastSkipTapWasForward = isForward;
+
+      // If no second tap within 250ms, treat as single tap to toggle controls
+      _singleTapTimer = Timer(const Duration(milliseconds: 250), () {
+        if (mounted) {
+          _toggleControls();
+        }
+      });
     }
   }
 
@@ -918,6 +943,69 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     });
   }
 
+  /// Handle tap on controls overlay - route to skip zones or toggle controls
+  void _handleControlsOverlayTap(TapUpDetails details, BoxConstraints constraints) {
+    final isMobile = PlatformDetector.isMobile(context);
+    if (!isMobile) {
+      _toggleControls();
+      return;
+    }
+
+    final width = constraints.maxWidth;
+    final height = constraints.maxHeight;
+    final tapX = details.localPosition.dx;
+    final tapY = details.localPosition.dy;
+
+    // Skip zone dimensions (must match the skip zone Positioned widgets)
+    final topExclude = height * 0.15;
+    final bottomExclude = height * 0.15;
+    final leftZoneWidth = width * 0.35;
+
+    // Check if tap is in vertical range for skip zones
+    final inVerticalRange = tapY > topExclude && tapY < (height - bottomExclude);
+
+    if (inVerticalRange) {
+      if (tapX < leftZoneWidth) {
+        // Left skip zone
+        _handleTapInSkipZone(isForward: false);
+        return;
+      } else if (tapX > (width - leftZoneWidth)) {
+        // Right skip zone
+        _handleTapInSkipZone(isForward: true);
+        return;
+      }
+    }
+
+    // Not in skip zone, toggle controls
+    _toggleControls();
+  }
+
+  /// Handle long-press start - activate 2x speed
+  void _handleLongPressStart() {
+    if (!widget.canControl) return; // Respect Watch Together permissions
+
+    setState(() {
+      _isLongPressing = true;
+      _rateBeforeLongPress = widget.player.state.rate;
+      _showSpeedIndicator = true;
+    });
+    widget.player.setRate(2.0);
+  }
+
+  /// Handle long-press end - restore original speed
+  void _handleLongPressEnd() {
+    if (!_isLongPressing) return;
+    widget.player.setRate(_rateBeforeLongPress ?? 1.0);
+    setState(() {
+      _isLongPressing = false;
+      _rateBeforeLongPress = null;
+      _showSpeedIndicator = false;
+    });
+  }
+
+  /// Handle long-press cancel (same as end)
+  void _handleLongPressCancel() => _handleLongPressEnd();
+
   /// Build the visual feedback widget for double-tap skip
   Widget _buildDoubleTapFeedback() {
     return Align(
@@ -941,6 +1029,43 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Build the visual indicator for long-press 2x speed
+  Widget _buildSpeedIndicator() {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppIcon(
+                Symbols.fast_forward_rounded,
+                fill: 1,
+                color: Colors.white,
+                size: 16,
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                '2x',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1193,9 +1318,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           child: Stack(
             children: [
               // Invisible tap detector that always covers the full area
+              // Also handles long-press for 2x speed
               Positioned.fill(
                 child: GestureDetector(
                   onTap: _toggleControls,
+                  onLongPressStart: (_) => _handleLongPressStart(),
+                  onLongPressEnd: (_) => _handleLongPressEnd(),
+                  onLongPressCancel: _handleLongPressCancel,
                   behavior: HitTestBehavior.opaque,
                   child: Container(color: Colors.transparent),
                 ),
@@ -1254,7 +1383,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                             width: leftZoneWidth,
                             child: GestureDetector(
                               onTap: () => _handleTapInSkipZone(isForward: false),
-                              behavior: HitTestBehavior.translucent,
+                              onLongPressStart: (_) => _handleLongPressStart(),
+                              onLongPressEnd: (_) => _handleLongPressEnd(),
+                              onLongPressCancel: _handleLongPressCancel,
+                              behavior: HitTestBehavior.opaque,
                               child: Container(color: Colors.transparent),
                             ),
                           ),
@@ -1266,7 +1398,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                             width: leftZoneWidth,
                             child: GestureDetector(
                               onTap: () => _handleTapInSkipZone(isForward: true),
-                              behavior: HitTestBehavior.translucent,
+                              onLongPressStart: (_) => _handleLongPressStart(),
+                              onLongPressEnd: (_) => _handleLongPressEnd(),
+                              onLongPressCancel: _handleLongPressCancel,
+                              behavior: HitTestBehavior.opaque,
                               child: Container(color: Colors.transparent),
                             ),
                           ),
@@ -1289,105 +1424,112 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                       child: AnimatedOpacity(
                         opacity: _showControls ? 1.0 : 0.0,
                         duration: const Duration(milliseconds: 200),
-                        child: GestureDetector(
-                          onTap: _toggleControls,
-                          behavior: HitTestBehavior.deferToChild,
-                          child: ValueListenableBuilder<bool>(
-                            valueListenable: widget.hasFirstFrame ?? ValueNotifier(true),
-                            builder: (context, hasFrame, child) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  // Use solid black when loading, gradient when loaded
-                                  color: hasFrame ? null : Colors.black,
-                                  gradient: hasFrame
-                                      ? LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Colors.black.withValues(alpha: 0.7),
-                                            Colors.transparent,
-                                            Colors.transparent,
-                                            Colors.black.withValues(alpha: 0.7),
-                                          ],
-                                          stops: const [0.0, 0.2, 0.8, 1.0],
-                                        )
-                                      : null,
-                                ),
-                                child: child,
-                              );
-                            },
-                            child: isMobile
-                                ? Listener(
-                                    behavior: HitTestBehavior.translucent,
-                                    onPointerDown: (_) => _restartHideTimerIfPlaying(),
-                                    child: MobileVideoControls(
-                                      player: widget.player,
-                                      metadata: widget.metadata,
-                                      chapters: _chapters,
-                                      chaptersLoaded: _chaptersLoaded,
-                                      seekTimeSmall: _seekTimeSmall,
-                                      trackChapterControls: _buildTrackChapterControlsWidget(),
-                                      onSeek: _throttledSeek,
-                                      onSeekEnd: _finalizeSeek,
-                                      onSeekCompleted: widget.onSeekCompleted,
-                                      onPlayPause: () {}, // Not used, handled internally
-                                      onCancelAutoHide: () => _hideTimer?.cancel(),
-                                      onStartAutoHide: _startHideTimer,
-                                      onBack: widget.onBack,
-                                      onNext: widget.onNext,
-                                      onPrevious: widget.onPrevious,
-                                      canControl: widget.canControl,
-                                      hasFirstFrame: widget.hasFirstFrame,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return GestureDetector(
+                              onTapUp: (details) => _handleControlsOverlayTap(details, constraints),
+                              onLongPressStart: (_) => _handleLongPressStart(),
+                              onLongPressEnd: (_) => _handleLongPressEnd(),
+                              onLongPressCancel: _handleLongPressCancel,
+                              behavior: HitTestBehavior.deferToChild,
+                              child: ValueListenableBuilder<bool>(
+                                valueListenable: widget.hasFirstFrame ?? ValueNotifier(true),
+                                builder: (context, hasFrame, child) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      // Use solid black when loading, gradient when loaded
+                                      color: hasFrame ? null : Colors.black,
+                                      gradient: hasFrame
+                                          ? LinearGradient(
+                                              begin: Alignment.topCenter,
+                                              end: Alignment.bottomCenter,
+                                              colors: [
+                                                Colors.black.withValues(alpha: 0.7),
+                                                Colors.transparent,
+                                                Colors.transparent,
+                                                Colors.black.withValues(alpha: 0.7),
+                                              ],
+                                              stops: const [0.0, 0.2, 0.8, 1.0],
+                                            )
+                                          : null,
                                     ),
-                                  )
-                                : Listener(
-                                    behavior: HitTestBehavior.translucent,
-                                    onPointerDown: (_) => _restartHideTimerIfPlaying(),
-                                    child: DesktopVideoControls(
-                                      key: _desktopControlsKey,
-                                      player: widget.player,
-                                      metadata: widget.metadata,
-                                      onNext: widget.onNext,
-                                      onPrevious: widget.onPrevious,
-                                      chapters: _chapters,
-                                      chaptersLoaded: _chaptersLoaded,
-                                      seekTimeSmall: _seekTimeSmall,
-                                      onSeekToPreviousChapter: _seekToPreviousChapter,
-                                      onSeekToNextChapter: _seekToNextChapter,
-                                      onSeek: _throttledSeek,
-                                      onSeekEnd: _finalizeSeek,
-                                      getReplayIcon: getReplayIcon,
-                                      getForwardIcon: getForwardIcon,
-                                      onFocusActivity: _restartHideTimerIfPlaying,
-                                      onHideControls: _hideControlsFromKeyboard,
-                                      // Track chapter controls data
-                                      availableVersions: widget.availableVersions,
-                                      selectedMediaIndex: widget.selectedMediaIndex,
-                                      boxFitMode: widget.boxFitMode,
-                                      audioSyncOffset: _audioSyncOffset,
-                                      subtitleSyncOffset: _subtitleSyncOffset,
-                                      isFullscreen: _isFullscreen,
-                                      isAlwaysOnTop: _isAlwaysOnTop,
-                                      onCycleBoxFitMode: widget.onCycleBoxFitMode,
-                                      onToggleFullscreen: _toggleFullscreen,
-                                      onToggleAlwaysOnTop: _toggleAlwaysOnTop,
-                                      onSwitchVersion: _switchMediaVersion,
-                                      onAudioTrackChanged: widget.onAudioTrackChanged,
-                                      onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
-                                      onLoadSeekTimes: () async {
-                                        if (mounted) {
-                                          await _loadSeekTimes();
-                                        }
-                                      },
-                                      onCancelAutoHide: () => _hideTimer?.cancel(),
-                                      onStartAutoHide: _startHideTimer,
-                                      serverId: widget.metadata.serverId ?? '',
-                                      onBack: widget.onBack,
-                                      canControl: widget.canControl,
-                                      hasFirstFrame: widget.hasFirstFrame,
-                                    ),
-                                  ),
-                          ),
+                                    child: child,
+                                  );
+                                },
+                                child: isMobile
+                                    ? Listener(
+                                        behavior: HitTestBehavior.translucent,
+                                        onPointerDown: (_) => _restartHideTimerIfPlaying(),
+                                        child: MobileVideoControls(
+                                          player: widget.player,
+                                          metadata: widget.metadata,
+                                          chapters: _chapters,
+                                          chaptersLoaded: _chaptersLoaded,
+                                          seekTimeSmall: _seekTimeSmall,
+                                          trackChapterControls: _buildTrackChapterControlsWidget(),
+                                          onSeek: _throttledSeek,
+                                          onSeekEnd: _finalizeSeek,
+                                          onSeekCompleted: widget.onSeekCompleted,
+                                          onPlayPause: () {}, // Not used, handled internally
+                                          onCancelAutoHide: () => _hideTimer?.cancel(),
+                                          onStartAutoHide: _startHideTimer,
+                                          onBack: widget.onBack,
+                                          onNext: widget.onNext,
+                                          onPrevious: widget.onPrevious,
+                                          canControl: widget.canControl,
+                                          hasFirstFrame: widget.hasFirstFrame,
+                                        ),
+                                      )
+                                    : Listener(
+                                        behavior: HitTestBehavior.translucent,
+                                        onPointerDown: (_) => _restartHideTimerIfPlaying(),
+                                        child: DesktopVideoControls(
+                                          key: _desktopControlsKey,
+                                          player: widget.player,
+                                          metadata: widget.metadata,
+                                          onNext: widget.onNext,
+                                          onPrevious: widget.onPrevious,
+                                          chapters: _chapters,
+                                          chaptersLoaded: _chaptersLoaded,
+                                          seekTimeSmall: _seekTimeSmall,
+                                          onSeekToPreviousChapter: _seekToPreviousChapter,
+                                          onSeekToNextChapter: _seekToNextChapter,
+                                          onSeek: _throttledSeek,
+                                          onSeekEnd: _finalizeSeek,
+                                          getReplayIcon: getReplayIcon,
+                                          getForwardIcon: getForwardIcon,
+                                          onFocusActivity: _restartHideTimerIfPlaying,
+                                          onHideControls: _hideControlsFromKeyboard,
+                                          // Track chapter controls data
+                                          availableVersions: widget.availableVersions,
+                                          selectedMediaIndex: widget.selectedMediaIndex,
+                                          boxFitMode: widget.boxFitMode,
+                                          audioSyncOffset: _audioSyncOffset,
+                                          subtitleSyncOffset: _subtitleSyncOffset,
+                                          isFullscreen: _isFullscreen,
+                                          isAlwaysOnTop: _isAlwaysOnTop,
+                                          onCycleBoxFitMode: widget.onCycleBoxFitMode,
+                                          onToggleFullscreen: _toggleFullscreen,
+                                          onToggleAlwaysOnTop: _toggleAlwaysOnTop,
+                                          onSwitchVersion: _switchMediaVersion,
+                                          onAudioTrackChanged: widget.onAudioTrackChanged,
+                                          onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
+                                          onLoadSeekTimes: () async {
+                                            if (mounted) {
+                                              await _loadSeekTimes();
+                                            }
+                                          },
+                                          onCancelAutoHide: () => _hideTimer?.cancel(),
+                                          onStartAutoHide: _startHideTimer,
+                                          serverId: widget.metadata.serverId ?? '',
+                                          onBack: widget.onBack,
+                                          canControl: widget.canControl,
+                                          hasFirstFrame: widget.hasFirstFrame,
+                                        ),
+                                      ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -1403,6 +1545,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                       duration: tokens(context).slow,
                       child: _buildDoubleTapFeedback(),
                     ),
+                  ),
+                ),
+              // Speed indicator overlay for long-press 2x
+              if (_showSpeedIndicator)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: _buildSpeedIndicator(),
                   ),
                 ),
               // Skip intro/credits button
