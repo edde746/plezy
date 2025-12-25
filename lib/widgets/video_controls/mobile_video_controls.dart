@@ -126,16 +126,14 @@ class MobileVideoControls extends StatelessWidget {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Previous episode button (hidden when unavailable)
-            if (onPrevious != null) ...[
-              _buildCircularButton(
-                semanticLabel: t.videoControls.previousButton,
-                icon: Symbols.skip_previous_rounded,
-                iconSize: 48,
-                onPressed: onPrevious!,
-              ),
-              const SizedBox(width: 24),
-            ],
+            // Previous episode button (greyed out when unavailable)
+            _buildCircularButton(
+              semanticLabel: t.videoControls.previousButton,
+              icon: Symbols.skip_previous_rounded,
+              iconSize: 48,
+              onPressed: onPrevious,
+            ),
+            const SizedBox(width: 24),
             _buildCircularButton(
               semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
               icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
@@ -150,16 +148,14 @@ class MobileVideoControls extends StatelessWidget {
                 }
               },
             ),
-            // Next episode button (hidden when unavailable)
-            if (onNext != null) ...[
-              const SizedBox(width: 24),
-              _buildCircularButton(
-                semanticLabel: t.videoControls.nextButton,
-                icon: Symbols.skip_next_rounded,
-                iconSize: 48,
-                onPressed: onNext!,
-              ),
-            ],
+            const SizedBox(width: 24),
+            // Next episode button (greyed out when unavailable)
+            _buildCircularButton(
+              semanticLabel: t.videoControls.nextButton,
+              icon: Symbols.skip_next_rounded,
+              iconSize: 48,
+              onPressed: onNext,
+            ),
           ],
         );
       },
@@ -207,8 +203,9 @@ class MobileVideoControls extends StatelessWidget {
     required String semanticLabel,
     required IconData icon,
     required double iconSize,
-    required VoidCallback onPressed,
+    VoidCallback? onPressed,
   }) {
+    final isEnabled = onPressed != null;
     return Container(
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
       child: Semantics(
@@ -216,7 +213,12 @@ class MobileVideoControls extends StatelessWidget {
         button: true,
         excludeSemantics: true,
         child: IconButton(
-          icon: AppIcon(icon, fill: 1, color: Colors.white, size: iconSize),
+          icon: AppIcon(
+            icon,
+            fill: 1,
+            color: isEnabled ? Colors.white : Colors.white.withValues(alpha: 0.3),
+            size: iconSize,
+          ),
           iconSize: iconSize,
           onPressed: onPressed,
         ),
