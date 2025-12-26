@@ -1255,20 +1255,26 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
 
             // Gradient Overlay - blends into scaffold background
-            Builder(
-              builder: (context) {
-                final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                return Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                      stops: const [0.5, 0.85, 1.0],
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: -1, // Extend 1px past to prevent subpixel gap
+              child: Builder(
+                builder: (context) {
+                  final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                  return Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
+                        stops: const [0.5, 0.85, 1.0],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
 
             // Content with responsive alignment
