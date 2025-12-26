@@ -54,6 +54,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMpvConfigEntries = 'mpv_config_entries';
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
   static const String _keyMaxVolume = 'max_volume';
+  static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
 
   SettingsService._();
 
@@ -894,6 +895,15 @@ class SettingsService extends BaseSharedPreferencesService {
     await setMpvConfigEntries(preset.entries);
   }
 
+  // Discord Rich Presence
+  Future<void> setEnableDiscordRPC(bool enabled) async {
+    await prefs.setBool(_keyEnableDiscordRPC, enabled);
+  }
+
+  bool getEnableDiscordRPC() {
+    return prefs.getBool(_keyEnableDiscordRPC) ?? false; // Default disabled
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -933,6 +943,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyShowPerformanceOverlay),
       prefs.remove(_keyMpvConfigEntries),
       prefs.remove(_keyMpvConfigPresets),
+      prefs.remove(_keyEnableDiscordRPC),
     ]);
   }
 

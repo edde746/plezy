@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../services/discord_rpc_service.dart';
 import '../../services/download_storage_service.dart';
 import '../../services/saf_storage_service.dart';
 import '../../providers/settings_provider.dart';
@@ -61,6 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _downloadOnWifiOnly = false;
   bool _videoPlayerNavigationEnabled = false;
   int _maxVolume = 100;
+  bool _enableDiscordRPC = false;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -92,6 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
       _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
       _maxVolume = _settingsService.getMaxVolume();
+      _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
       _isLoading = false;
     });
   }
@@ -292,6 +295,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showMaxVolumeDialog(),
           ),
+          if (DiscordRPCService.isAvailable)
+            SwitchListTile(
+              secondary: const AppIcon(Symbols.chat_rounded, fill: 1),
+              title: Text(t.settings.discordRichPresence),
+              subtitle: Text(t.settings.discordRichPresenceDescription),
+              value: _enableDiscordRPC,
+              onChanged: (value) async {
+                setState(() => _enableDiscordRPC = value);
+                await _settingsService.setEnableDiscordRPC(value);
+                await DiscordRPCService.instance.setEnabled(value);
+              },
+            ),
           SwitchListTile(
             secondary: const AppIcon(Symbols.bookmark_rounded, fill: 1),
             title: Text(t.settings.rememberTrackSelections),

@@ -20,6 +20,7 @@ import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../services/discord_rpc_service.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_initialization_service.dart';
@@ -556,14 +557,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _updateMediaControlsPlaybackState();
     });
 
-    // Listen to position updates for media controls
+    // Listen to position updates for media controls and Discord
     player!.streams.position.listen((position) {
       _mediaControlsManager?.updatePlaybackState(
         isPlaying: player!.state.playing,
         position: position,
         speed: player!.state.rate,
       );
+      DiscordRPCService.instance.updatePosition(position);
     });
+
+    // Start Discord Rich Presence for current media
+    if (client != null) {
+      DiscordRPCService.instance.startPlayback(widget.metadata, client);
+    }
   }
 
   /// Ensure a play queue exists for sequential episode playback
@@ -966,6 +973,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _mediaControlsManager?.clear();
     _mediaControlsManager?.dispose();
 
+    // Clear Discord Rich Presence
+    DiscordRPCService.instance.stopPlayback();
+
     // Disable wakelock when leaving the video player
     WakelockPlus.disable();
     appLogger.d('Wakelock disabled');
@@ -1014,6 +1024,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Update OS media controls playback state
     _updateMediaControlsPlaybackState();
+
+    // Update Discord Rich Presence
+    if (isPlaying) {
+      DiscordRPCService.instance.resumePlayback();
+    } else {
+      DiscordRPCService.instance.pausePlayback();
+    }
   }
 
   void _onVideoCompleted(bool completed) {
@@ -1352,6 +1369,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _navigateToEpisode(PlexMetadata episodeMetadata) async {
     // Set flag to skip orientation restoration in dispose()
     _isReplacingWithVideo = true;
+
+    // Clear Discord Rich Presence before switching episodes
+    DiscordRPCService.instance.stopPlayback();
 
     // If player isn't available, navigate without preserving settings
     if (player == null) {

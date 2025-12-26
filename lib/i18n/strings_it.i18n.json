@@ -147,7 +147,9 @@
     "maxVolume": "Volume massimo",
     "maxVolumeDescription": "Consenti volume superiore al 100% per contenuti audio bassi",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Inserisci volume massimo (100-300)"
+    "maxVolumeHint": "Inserisci volume massimo (100-300)",
+    "discordRichPresence": "Discord Rich Presence",
+    "discordRichPresenceDescription": "Mostra su Discord cosa stai guardando"
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",

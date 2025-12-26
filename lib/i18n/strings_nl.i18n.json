@@ -147,7 +147,9 @@
     "maxVolume": "Maximaal volume",
     "maxVolumeDescription": "Volume boven 100% toestaan voor stille media",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Voer maximaal volume in (100-300)"
+    "maxVolumeHint": "Voer maximaal volume in (100-300)",
+    "discordRichPresence": "Discord Rich Presence",
+    "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",

@@ -147,7 +147,9 @@
     "maxVolume": "최대 볼륨",
     "maxVolumeDescription": "조용한 미디어를 위해 100% 이상의 볼륨 허용",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "최대 볼륨 입력 (100-300)"
+    "maxVolumeHint": "최대 볼륨 입력 (100-300)",
+    "discordRichPresence": "Discord Rich Presence",
+    "discordRichPresenceDescription": "Discord에서 시청 중인 콘텐츠 표시"
   },
   "search": {
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",

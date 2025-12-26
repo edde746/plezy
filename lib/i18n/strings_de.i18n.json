@@ -147,7 +147,9 @@
     "maxVolume": "Maximale Lautstärke",
     "maxVolumeDescription": "Lautstärke über 100% für leise Medien erlauben",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Maximale Lautstärke eingeben (100-300)"
+    "maxVolumeHint": "Maximale Lautstärke eingeben (100-300)",
+    "discordRichPresence": "Discord Rich Presence",
+    "discordRichPresenceDescription": "Zeige auf Discord, was du gerade schaust"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",

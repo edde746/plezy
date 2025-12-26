@@ -146,7 +146,9 @@
     "maxVolume": "Maximum Volume",
     "maxVolumeDescription": "Allow volume boost above 100% for quiet media",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Enter max volume (100-300)"
+    "maxVolumeHint": "Enter max volume (100-300)",
+    "discordRichPresence": "Discord Rich Presence",
+    "discordRichPresenceDescription": "Show what you're watching on Discord"
   },
   "search": {
     "hint": "Search movies, shows, music...",

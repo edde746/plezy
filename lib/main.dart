@@ -11,6 +11,7 @@ import 'services/fullscreen_state_manager.dart';
 import 'services/update_service.dart';
 import 'services/settings_service.dart';
 import 'utils/platform_detector.dart';
+import 'services/discord_rpc_service.dart';
 import 'services/gamepad_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/plex_client_provider.dart';
@@ -90,6 +91,7 @@ void main() async {
   // Initialize gamepad service for desktop platforms
   if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
     GamepadService.instance.start();
+    DiscordRPCService.instance.initialize();
   }
 
   // DTD service is available for MCP tooling connection if needed

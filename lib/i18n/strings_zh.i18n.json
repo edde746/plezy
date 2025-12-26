@@ -147,7 +147,9 @@
     "maxVolume": "最大音量",
     "maxVolumeDescription": "允许音量超过 100% 以适应安静的媒体",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "输入最大音量 (100-300)"
+    "maxVolumeHint": "输入最大音量 (100-300)",
+    "discordRichPresence": "Discord 动态状态",
+    "discordRichPresenceDescription": "在 Discord 上显示您正在观看的内容"
   },
   "search": {
     "hint": "搜索电影、系列、音乐...",

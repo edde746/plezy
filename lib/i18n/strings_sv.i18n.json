@@ -147,7 +147,9 @@
     "maxVolume": "Maximal volym",
     "maxVolumeDescription": "Tillåt volym över 100% för tyst media",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Ange maximal volym (100-300)"
+    "maxVolumeHint": "Ange maximal volym (100-300)",
+    "discordRichPresence": "Discord Rich Presence",
+    "discordRichPresenceDescription": "Visa vad du tittar på i Discord"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
