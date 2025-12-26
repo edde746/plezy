@@ -215,7 +215,7 @@ jobs:
           IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | grep -o '".*"' | tr -d '"')
           echo "Signing with identity: $IDENTITY"
 
-          APP_PATH="build/macos/Build/Products/Release/plezy.app"
+          APP_PATH="build/macos/Build/Products/Release/Plezy.app"
 
           # Sign all frameworks and dylibs first (inside-out signing)
           find "$APP_PATH/Contents/Frameworks" -name "*.framework" -o -name "*.dylib" | while read framework; do
@@ -229,7 +229,7 @@ jobs:
 
       - name: Verify Signature
         run: |
-          APP_PATH="build/macos/Build/Products/Release/plezy.app"
+          APP_PATH="build/macos/Build/Products/Release/Plezy.app"
           echo "Verifying signature..."
           codesign -dvvv "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
@@ -240,7 +240,7 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          APP_PATH="build/macos/Build/Products/Release/plezy.app"
+          APP_PATH="build/macos/Build/Products/Release/Plezy.app"
 
           # Create a temporary ZIP for notarization submission
           echo "Creating ZIP for notarization..."
@@ -265,7 +265,7 @@ jobs:
       - name: Create DMG
         run: |
           mkdir -p dmg-staging
-          cp -R build/macos/Build/Products/Release/plezy.app dmg-staging/
+          cp -R build/macos/Build/Products/Release/Plezy.app dmg-staging/
           ln -s /Applications dmg-staging/Applications
           hdiutil create -format ULMO -srcfolder dmg-staging -volname "Plezy" plezy-macos.dmg
 
