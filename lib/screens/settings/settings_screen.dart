@@ -627,9 +627,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: hasUpdate ? Colors.orange : null,
             ),
             title: Text(hasUpdate ? t.settings.updateAvailable : t.settings.checkForUpdates),
-            subtitle: hasUpdate
-                ? Text(t.update.versionAvailable(version: _updateInfo!['latestVersion']))
-                : Text(t.update.checkFailed),
+            subtitle: hasUpdate ? Text(t.update.versionAvailable(version: _updateInfo!['latestVersion'])) : null,
             trailing: _isCheckingForUpdate
                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                 : const AppIcon(Symbols.chevron_right_rounded, fill: 1),

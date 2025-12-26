@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
 import 'services/macos_titlebar_service.dart';
 import 'services/fullscreen_state_manager.dart';
-import 'services/update_service.dart';
 import 'services/settings_service.dart';
 import 'utils/platform_detector.dart';
 import 'services/discord_rpc_service.dart';
@@ -283,78 +281,6 @@ class _SetupScreenState extends State<SetupScreen> {
     _loadSavedCredentials();
   }
 
-  Future<void> _checkForUpdatesOnStartup() async {
-    // Delay slightly to allow UI to settle
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (!mounted) return;
-
-    try {
-      final updateInfo = await UpdateService.checkForUpdatesOnStartup();
-
-      if (updateInfo != null && updateInfo['hasUpdate'] == true && mounted) {
-        _showUpdateDialog(updateInfo);
-      }
-    } catch (e) {
-      appLogger.e('Error checking for updates', error: e);
-    }
-  }
-
-  void _showUpdateDialog(Map<String, dynamic> updateInfo) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(t.update.available),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                t.update.versionAvailable(version: updateInfo['latestVersion']),
-                style: Theme.of(dialogContext).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                t.update.currentVersion(version: updateInfo['currentVersion']),
-                style: Theme.of(dialogContext).textTheme.bodySmall,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: Text(t.common.later),
-            ),
-            TextButton(
-              onPressed: () async {
-                await UpdateService.skipVersion(updateInfo['latestVersion']);
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-              },
-              child: Text(t.update.skipVersion),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final url = Uri.parse(updateInfo['releaseUrl']);
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url, mode: LaunchMode.externalApplication);
-                }
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-              },
-              child: Text(t.update.viewRelease),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _loadSavedCredentials() async {
     final storage = await StorageService.getInstance();
     final registry = ServerRegistry(storage);
@@ -413,9 +339,6 @@ class _SetupScreenState extends State<SetupScreen> {
           final firstClient = multiServerProvider.serverManager.onlineClients.values.first;
 
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen(client: firstClient)));
-
-          // Check for updates in background after navigation
-          _checkForUpdatesOnStartup();
         }
       } else {
         // All connections failed - navigate to offline mode
