@@ -18,7 +18,7 @@ Set-Location $ProjectRoot
 
 # Define paths
 $BuildDir = "build\windows\x64\runner\Release"
-$PortableZip = Join-Path (Resolve-Path $OutputDir) "plezy-windows-portable.zip"
+$PortableZip = Join-Path (Resolve-Path $OutputDir) "plezy-windows-portable.7z"
 $InstallerExe = Join-Path (Resolve-Path $OutputDir) "plezy-windows-installer.exe"
 $SetupScript = "setup.iss"
 
@@ -30,6 +30,25 @@ if (-not (Test-Path $BuildDir)) {
 
 Write-Host "Found build at: $BuildDir" -ForegroundColor Green
 
+# Check for 7-Zip
+Write-Host "`nChecking for 7-Zip..." -ForegroundColor Cyan
+if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
+    Write-Host "7-Zip not found in PATH. Installing via Chocolatey..." -ForegroundColor Yellow
+
+    if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+        Write-Error "Chocolatey is not installed. Please install it from https://chocolatey.org/install"
+        exit 1
+    }
+
+    choco install 7zip -y
+    refreshenv
+
+    if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
+        Write-Error "Failed to install 7-Zip"
+        exit 1
+    }
+}
+
 # Create Portable Archive
 Write-Host "`nCreating portable archive..." -ForegroundColor Cyan
 Push-Location $BuildDir
@@ -37,7 +56,7 @@ try {
     if (Test-Path $PortableZip) {
         Remove-Item $PortableZip -Force
     }
-    Compress-Archive -Path * -DestinationPath $PortableZip
+    7z a -mx=9 $PortableZip *
     Write-Host "Created: $PortableZip" -ForegroundColor Green
 } finally {
     Pop-Location

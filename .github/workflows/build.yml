@@ -1,4 +1,4 @@
-name: Build Flutter App
+name: Build
 
 on:
   workflow_dispatch:
@@ -262,21 +262,23 @@ jobs:
           echo "Verifying notarization..."
           xcrun stapler validate "$APP_PATH"
 
-      - name: Create ZIP
+      - name: Create DMG
         run: |
-          cd build/macos/Build/Products/Release
-          ditto -c -k --sequesterRsrc --keepParent plezy.app $GITHUB_WORKSPACE/plezy-macos.zip
+          mkdir -p dmg-staging
+          cp -R build/macos/Build/Products/Release/plezy.app dmg-staging/
+          ln -s /Applications dmg-staging/Applications
+          hdiutil create -format ULMO -srcfolder dmg-staging -volname "Plezy" plezy-macos.dmg
 
-      - name: Attest macOS ZIP
+      - name: Attest macOS DMG
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: plezy-macos.zip
+          subject-path: plezy-macos.dmg
 
-      - name: Upload macOS ZIP
+      - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
-          name: macos-zip
-          path: plezy-macos.zip
+          name: macos-dmg
+          path: plezy-macos.dmg
 
   build-windows:
     runs-on: windows-latest
@@ -315,14 +317,14 @@ jobs:
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            plezy-windows-portable.zip
+            plezy-windows-portable.7z
             plezy-windows-installer.exe
 
       - name: Upload Portable Archive
         uses: actions/upload-artifact@v4
         with:
           name: windows-portable
-          path: plezy-windows-portable.zip
+          path: plezy-windows-portable.7z
 
       - name: Upload Installer
         uses: actions/upload-artifact@v4
@@ -388,14 +390,7 @@ jobs:
           path: plezy-linux.tar.gz
 
   create-release:
-    needs:
-      [
-        build-android,
-        build-ios,
-        build-macos,
-        build-windows,
-        build-linux,
-      ]
+    needs: [build-android, build-ios, build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -416,8 +411,8 @@ jobs:
             artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
             artifacts/android-apk/plezy-android-x86_64.tar.gz
             artifacts/ios-ipa/plezy-ios.ipa
-            artifacts/macos-zip/plezy-macos.zip
-            artifacts/windows-portable/plezy-windows-portable.zip
+            artifacts/macos-dmg/plezy-macos.dmg
+            artifacts/windows-portable/plezy-windows-portable.7z
             artifacts/windows-installer/plezy-windows-installer.exe
             artifacts/linux-app/plezy-linux.tar.gz
           draft: true

@@ -1113,22 +1113,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
-  share_plus:
-    dependency: "direct main"
-    description:
-      name: share_plus
-      sha256: fce43200aa03ea87b91ce4c3ac79f0cecd52e2a7a56c7a4185023c271fbfa6da
-      url: "https://pub.dev"
-    source: hosted
-    version: "10.1.4"
-  share_plus_platform_interface:
-    dependency: transitive
-    description:
-      name: share_plus_platform_interface
-      sha256: cc012a23fc2d479854e6c80150696c4a5f5bb62cb89af4de1c505cf78d0a5d0b
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.2"
   shared_preferences:
     dependency: "direct main"
     description:

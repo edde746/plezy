@@ -46,7 +46,6 @@ dependencies:
   saf_stream: ^0.12.2
   material_symbols_icons: ^4.2892.0
   peerdart: ^0.5.6
-  share_plus: ^10.0.0
   in_app_review: ^2.0.11
   dart_discord_presence: ^1.1.0
 
