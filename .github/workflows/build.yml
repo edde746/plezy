@@ -359,13 +359,16 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv keybinder-3.0
-          version: 1.0
+          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv keybinder-3.0 ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          version: 1.1
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv keybinder-3.0
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv keybinder-3.0 ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+
+      - name: Install fpm
+        run: sudo gem install fpm
 
       - name: Install dependencies
         run: flutter pub get
@@ -378,16 +381,32 @@ jobs:
           cd build/linux/x64/release/bundle
           tar -czf $GITHUB_WORKSPACE/plezy-linux.tar.gz *
 
-      - name: Attest Linux tarball
+      - name: Build Linux Packages
+        run: OUTPUT_DIR=$GITHUB_WORKSPACE python3 linux/packaging/build-packages.py
+
+      - name: Attest Linux artifacts
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: plezy-linux.tar.gz
+          subject-path: |
+            plezy-linux.tar.gz
+            plezy-linux.deb
+            plezy-linux.rpm
+            plezy-linux.pkg.tar.zst
 
       - name: Upload Linux App
         uses: actions/upload-artifact@v4
         with:
           name: linux-app
           path: plezy-linux.tar.gz
+
+      - name: Upload Linux Packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            plezy-linux.deb
+            plezy-linux.rpm
+            plezy-linux.pkg.tar.zst
 
   create-release:
     needs: [build-android, build-ios, build-macos, build-windows, build-linux]
@@ -415,6 +434,7 @@ jobs:
             artifacts/windows-portable/plezy-windows-portable.7z
             artifacts/windows-installer/plezy-windows-installer.exe
             artifacts/linux-app/plezy-linux.tar.gz
+            artifacts/linux-packages/*
           draft: true
           prerelease: false
           generate_release_notes: true

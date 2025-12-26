@@ -19,9 +19,9 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 
 ### Desktop
 - [Windows (x64)](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe)
-- [macOS (Universal)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.zip)
-- [Linux (x64)](https://github.com/edde746/plezy/releases/latest/download/plezy-linux.tar.gz)
-- [NixOS/Nix](https://github.com/mio-19/nurpkgs/tree/main/pkgs/plezy) - Community package by [@mio-19](https://github.com/mio-19) via `nur.repos.mio.plezy`
+- [macOS (Universal)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg)
+- [Linux (x64)](https://github.com/edde746/plezy/releases/latest) - .deb, .rpm, .pkg.tar.zst, and portable tar.gz available
+- [NixOS/Nix](https://github.com/mio-19/nurpkgs/tree/main/pkgs/plezy) - Community package by [@mio-19](https://github.com/mio-19)
 
 ## Features
 

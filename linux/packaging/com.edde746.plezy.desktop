@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Plezy
+Comment=A modern Plex client for desktop and mobile
+Exec=/opt/plezy/plezy
+Icon=plezy
+Terminal=false
+Categories=AudioVideo;Video;Player;
+Keywords=plex;media;streaming;video;
+StartupWMClass=plezy
