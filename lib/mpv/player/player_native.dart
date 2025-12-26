@@ -354,6 +354,7 @@ class PlayerNative implements Player {
       await _observeProperty('track-list', (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node');
       await _observeProperty('eof-reached', 'flag');
       await _observeProperty('volume', 'double');
+      await _observeProperty('speed', 'double');
       await _observeProperty('aid', 'string');
       await _observeProperty('sid', 'string');
     } catch (e) {
