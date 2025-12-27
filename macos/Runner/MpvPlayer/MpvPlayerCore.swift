@@ -213,7 +213,7 @@ class MpvPlayerCore: NSObject {
             // Re-insert after background layer but before Flutter control views
             layer.removeFromSuperlayer()
             if let superlayer = window?.contentView?.layer {
-                superlayer.insertSublayer(layer, at: 1)
+                superlayer.insertSublayer(layer, at: 0)
             }
         }
 

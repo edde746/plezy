@@ -13,8 +13,25 @@ class MainFlutterWindow: NSWindow {
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
 
+    // Apply initial window configuration BEFORE frame restoration
+    // This prevents the window from shrinking on launch
+    self.titlebarAppearsTransparent = true
+    self.titleVisibility = .hidden
+    self.styleMask.insert(.fullSizeContentView)
+
+    // Add forwarding toolbar for click-through in titlebar area
+    let toolbar = ForwardingToolbar(flutterViewController: flutterViewController)
+    self.toolbar = toolbar
+
     // Register MPV player plugin for video playback
     MpvPlayerPlugin.register(with: flutterViewController.registrar(forPlugin: "MpvPlayerPlugin"))
+
+    // Register window utils plugin for dynamic titlebar/fullscreen control from Dart
+    WindowUtilsPlugin.register(with: flutterViewController.registrar(forPlugin: "WindowUtilsPlugin"))
+    WindowUtilsPlugin.setWindow(self)
+
+    // Set custom traffic light positions using centralized values from plugin
+    WindowUtilsPlugin.setInitialTrafficLightPositions()
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 

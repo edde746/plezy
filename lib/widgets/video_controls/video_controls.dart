@@ -14,7 +14,7 @@ import 'package:flutter/services.dart'
         KeyEvent,
         KeyDownEvent,
         HardwareKeyboard;
-import 'package:macos_window_utils/macos_window_utils.dart';
+import '../../services/macos_window_service.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../mpv/mpv.dart';
@@ -633,17 +633,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   void _updateTrafficLightVisibility() async {
-    if (Platform.isMacOS) {
-      if (_showControls) {
-        await WindowManipulator.showCloseButton();
-        await WindowManipulator.showMiniaturizeButton();
-        await WindowManipulator.showZoomButton();
-      } else {
-        await WindowManipulator.hideCloseButton();
-        await WindowManipulator.hideMiniaturizeButton();
-        await WindowManipulator.hideZoomButton();
-      }
-    }
+    await MacOSWindowService.setTrafficLightsVisible(_showControls);
   }
 
   Future<void> _loadPlaybackExtras() async {
@@ -1081,9 +1071,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         // Use native macOS fullscreen - titlebar is handled automatically
         // Window listener will update _isFullscreen for UI
         if (isCurrentlyFullscreen) {
-          await WindowManipulator.exitFullscreen();
+          await MacOSWindowService.exitFullscreen();
         } else {
-          await WindowManipulator.enterFullscreen();
+          await MacOSWindowService.enterFullscreen();
         }
       } else {
         // For Windows/Linux, use window_manager
