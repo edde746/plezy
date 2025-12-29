@@ -49,6 +49,7 @@ class MpvPlayerCore: NSObject {
     weak var delegate: MpvPlayerDelegate?
 
     private(set) var isInitialized = false
+    private var isDisposing = false  // Flag to prevent race conditions during disposal
 
     // HDR settings
     private var hdrEnabled = true  // User preference for HDR
@@ -147,7 +148,8 @@ class MpvPlayerCore: NSObject {
         mpv_set_wakeup_callback(
             mpv,
             { ctx in
-                let core = Unmanaged<MpvPlayerCore>.fromOpaque(ctx!).takeUnretainedValue()
+                guard let ctx = ctx else { return }  // Safe guard instead of force unwrap
+                let core = Unmanaged<MpvPlayerCore>.fromOpaque(ctx).takeUnretainedValue()
                 core.readEvents()
             }, UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()))
 
@@ -308,7 +310,7 @@ class MpvPlayerCore: NSObject {
 
     private func readEvents() {
         queue.async { [weak self] in
-            guard let self = self, let mpv = self.mpv else { return }
+            guard let self = self, !self.isDisposing, let mpv = self.mpv else { return }
 
             while true {
                 let event = mpv_wait_event(mpv, 0)
@@ -487,12 +489,16 @@ class MpvPlayerCore: NSObject {
     // MARK: - Cleanup
 
     func dispose() {
+        // Set disposing flag first to prevent race conditions with event callbacks
+        isDisposing = true
+
         NotificationCenter.default.removeObserver(self)
 
         let mpvHandle = mpv
         mpv = nil
 
-        queue.sync {
+        // Use async to avoid blocking the main thread (prevents deadlock)
+        queue.async {
             if let handle = mpvHandle {
                 mpv_set_wakeup_callback(handle, nil, nil)
                 mpv_terminate_destroy(handle)

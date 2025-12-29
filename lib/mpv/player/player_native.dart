@@ -400,8 +400,8 @@ class PlayerNative implements Player {
     _checkDisposed();
     await _ensureInitialized();
 
-    // Show the video layer
-    await _methodChannel.invokeMethod('setVisible', {'visible': true});
+    // Show the video layer (use error-handled method)
+    await setVisible(true);
 
     // Set HTTP headers for Plex authentication and profile
     if (media.headers != null && media.headers!.isNotEmpty) {
