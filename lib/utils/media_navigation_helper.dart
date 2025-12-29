@@ -22,16 +22,20 @@ enum MediaNavigationResult {
 /// Navigates to the appropriate screen based on the item type.
 ///
 /// For episodes, starts playback directly via video player.
+/// For movies, starts playback directly if [playDirectly] is true, otherwise
+/// navigates to media detail screen.
 /// For seasons, navigates to season detail screen.
 /// For playlists, navigates to playlist detail screen.
 /// For collections, navigates to collection detail screen.
-/// For other types (shows, movies), navigates to media detail screen.
+/// For other types (shows), navigates to media detail screen.
 /// For music types (artist, album, track), returns [MediaNavigationResult.unsupported].
 ///
 /// The [onRefresh] callback is invoked with the item's ratingKey after
 /// returning from the detail screen, allowing the caller to refresh state.
 ///
 /// Set [isOffline] to true for downloaded content without server access.
+///
+/// Set [playDirectly] to true to play movies immediately (e.g., from continue watching).
 ///
 /// Returns a [MediaNavigationResult] indicating what action was taken:
 /// - [MediaNavigationResult.navigated]: Navigation completed, item refresh handled
@@ -42,6 +46,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
   dynamic item, {
   void Function(String)? onRefresh,
   bool isOffline = false,
+  bool playDirectly = false,
 }) async {
   // Handle playlists
   if (item is PlexPlaylist) {
@@ -77,11 +82,24 @@ Future<MediaNavigationResult> navigateToMediaItem(
       }
       return MediaNavigationResult.navigated;
 
+    case PlexMediaType.movie:
+      if (playDirectly) {
+        // For movies in continue watching, start playback directly
+        final result = await navigateToVideoPlayer(context, metadata: metadata, isOffline: isOffline);
+        if (result == true) {
+          onRefresh?.call(metadata.ratingKey);
+        }
+        return MediaNavigationResult.navigated;
+      }
+      // Fall through to default case for detail screen
+      continue defaultCase;
+
     case PlexMediaType.season:
       await Navigator.push(context, MaterialPageRoute(builder: (context) => SeasonDetailScreen(season: metadata)));
       onRefresh?.call(metadata.ratingKey);
       return MediaNavigationResult.navigated;
 
+    defaultCase:
     default:
       // For all other types (shows, movies), show detail screen
       final result = await Navigator.push<bool>(

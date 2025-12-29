@@ -119,6 +119,7 @@ class MediaCardState extends State<MediaCard> {
       widget.item,
       onRefresh: widget.onRefresh,
       isOffline: widget.isOffline,
+      playDirectly: widget.isInContinueWatching,
     );
 
     if (!context.mounted) return;

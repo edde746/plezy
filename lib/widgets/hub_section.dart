@@ -231,7 +231,12 @@ class HubSectionState extends State<HubSection> {
   }
 
   Future<void> _navigateToItem(dynamic item) async {
-    await navigateToMediaItem(context, item, onRefresh: widget.onRefresh);
+    await navigateToMediaItem(
+      context,
+      item,
+      onRefresh: widget.onRefresh,
+      playDirectly: widget.isInContinueWatching,
+    );
   }
 
   void _navigateToHubDetail(BuildContext context) {
