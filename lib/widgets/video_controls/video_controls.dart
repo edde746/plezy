@@ -1237,18 +1237,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         final key = event.logicalKey;
         final isPlayPauseKey = _isPlayPauseKey(event);
 
-        // Handle play/pause via focus when navigation is enabled (TV/gamepad)
-        // When navigation is disabled, the global handler (_handleGlobalKeyEvent) handles it
-        if (_videoPlayerNavigationEnabled || isMobile) {
-          if (_isPlayPauseActivation(event)) {
-            widget.player.playOrPause();
-            _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
-            return KeyEventResult.handled;
+        // Always consume play/pause keys to prevent propagation to background routes
+        // On TV/mobile, handle play/pause here; on desktop, the global handler does it
+        if (isPlayPauseKey) {
+          if (_videoPlayerNavigationEnabled || isMobile) {
+            if (_isPlayPauseActivation(event)) {
+              widget.player.playOrPause();
+              _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
+            }
           }
-          // Swallow other play/pause events (e.g., key up/repeat) to prevent focus side effects
-          if (isPlayPauseKey) {
-            return KeyEventResult.handled;
-          }
+          return KeyEventResult.handled;
         }
 
         // Handle Back/Escape: show controls if hidden, navigate back if visible
