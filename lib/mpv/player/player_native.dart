@@ -305,11 +305,21 @@ class PlayerNative implements Player {
   }
 
   void _updateSelectedSubtitleTrack(dynamic trackId) {
-    _updateSelectedTrack<SubtitleTrack>(
-      trackId,
-      _state.tracks.subtitle.cast<SubtitleTrack?>().toList(),
-      (selection, track) => selection.copyWith(subtitle: track),
-    );
+    final id = trackId?.toString();
+    SubtitleTrack? selectedTrack;
+
+    if (id == null || id == 'no') {
+      // Explicitly set SubtitleTrack.off so episode navigation can detect "subtitles off"
+      selectedTrack = SubtitleTrack.off;
+    } else {
+      selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere(
+            (t) => t?.id == id,
+            orElse: () => null,
+          );
+    }
+
+    _state = _state.copyWith(track: _state.track.copyWith(subtitle: selectedTrack));
+    _trackController.add(_state.track);
   }
 
   void _updateSelectedTrack<T>(

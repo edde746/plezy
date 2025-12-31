@@ -41,6 +41,8 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
   List<PlexMetadata> _episodes = [];
   bool _isLoadingEpisodes = false;
   bool _watchStateChanged = false;
+  // Capture keyboard mode once at init to avoid rebuild dependency
+  bool _initialKeyboardMode = false;
 
   /// Get the correct PlexClient for this season's server
   PlexClient? _getClientForSeason(BuildContext context) {
@@ -55,6 +57,8 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
     super.initState();
     // Initialize the client once in initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Capture keyboard mode once to avoid rebuild dependency when mode changes
+      _initialKeyboardMode = InputModeTracker.isKeyboardMode(context);
       _client = _getClientForSeason(context);
       _loadEpisodes();
     });
@@ -165,7 +169,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
                     client: _client,
                     isOffline: widget.isOffline,
                     localPosterPath: localPosterPath,
-                    autofocus: index == 0 && InputModeTracker.isKeyboardMode(context),
+                    autofocus: index == 0 && _initialKeyboardMode,
                     onTap: () async {
                       await navigateToVideoPlayerWithRefresh(
                         context,
