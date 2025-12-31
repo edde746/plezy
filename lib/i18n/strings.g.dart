@@ -6,7 +6,7 @@
 /// Locales: 7
 /// Strings: 3554 (507 per locale)
 ///
-/// Built on 2025-12-31 at 06:48 UTC
+/// Built on 2025-12-31 at 06:54 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -3053,7 +3053,6 @@ class _StringsFileInfoKo implements _StringsFileInfoEn {
 	@override String get resolution => '해상도';
 	@override String get bitrate => '비트레이트';
 	@override String get frameRate => '프레임 속도';
-	@override String get pipButton => '픽처 인 픽처 모드';
 	@override String get aspectRatio => '종횡비';
 	@override String get profile => '프로파일';
 	@override String get bitDepth => '비트 심도';
@@ -3154,6 +3153,7 @@ class _StringsVideoControlsKo implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => '자막';
 	@override String get chaptersButton => '챕터';
 	@override String get versionsButton => '동영상 버전';
+	@override String get pipButton => '픽처 인 픽처 모드';
 	@override String get aspectRatioButton => '화면비율';
 	@override String get fullscreenButton => '전체화면';
 	@override String get exitFullscreenButton => '전체화면 종료';
@@ -7955,7 +7955,6 @@ extension on _StringsKo {
 			case 'fileInfo.resolution': return '해상도';
 			case 'fileInfo.bitrate': return '비트레이트';
 			case 'fileInfo.frameRate': return '프레임 속도';
-			case 'fileInfo.pipButton': return '픽처 인 픽처 모드';
 			case 'fileInfo.aspectRatio': return '종횡비';
 			case 'fileInfo.profile': return '프로파일';
 			case 'fileInfo.bitDepth': return '비트 심도';
@@ -8020,6 +8019,7 @@ extension on _StringsKo {
 			case 'videoControls.subtitlesButton': return '자막';
 			case 'videoControls.chaptersButton': return '챕터';
 			case 'videoControls.versionsButton': return '동영상 버전';
+			case 'videoControls.pipButton': return '픽처 인 픽처 모드';
 			case 'videoControls.aspectRatioButton': return '화면비율';
 			case 'videoControls.fullscreenButton': return '전체화면';
 			case 'videoControls.exitFullscreenButton': return '전체화면 종료';
