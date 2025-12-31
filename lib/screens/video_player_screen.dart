@@ -29,6 +29,7 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import '../services/track_selection_service.dart';
 import '../services/video_filter_manager.dart';
+import '../services/video_pip_manager.dart';
 import '../providers/user_profile_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/orientation_helper.dart';
@@ -104,6 +105,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   MediaControlsManager? _mediaControlsManager;
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
+  VideoPIPManager? _videoPIPManager;
   final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
   // Watch Together provider reference (stored early to use in dispose)
@@ -714,7 +716,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _currentMediaInfo = result.mediaInfo;
         });
 
-        // Initialize video filter manager with player and available versions
+        // Initialize video PIP and filter manager with player and available versions
         if (player != null) {
           _videoFilterManager = VideoFilterManager(
             player: player!,
@@ -723,6 +725,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           );
           // Update video filter once dimensions are available
           _videoFilterManager!.updateVideoFilter();
+
+          // PIP Manager
+          _videoPIPManager = VideoPIPManager(
+            player: player!
+          );
         }
 
         // Add external subtitles to the player
@@ -780,6 +787,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       externalSubtitles: const [],
       isOffline: true,
     );
+  }
+
+  void _togglePIPMode() {
+    setState(() {
+      _videoPIPManager?.togglePIP();
+    });
   }
 
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
@@ -1519,6 +1532,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         onPrevious: (_previousEpisode != null && _canNavigateEpisodes()) ? _playPrevious : null,
                         availableVersions: _availableVersions,
                         selectedMediaIndex: widget.selectedMediaIndex,
+                        onTogglePIPMode: _togglePIPMode,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         onCycleBoxFitMode: _cycleBoxFitMode,
                         onAudioTrackChanged: _onAudioTrackChanged,

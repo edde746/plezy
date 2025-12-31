@@ -32,6 +32,7 @@ class TrackChapterControls extends StatelessWidget {
   final bool isRotationLocked;
   final bool isFullscreen;
   final bool isAlwaysOnTop;
+  final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
   final VoidCallback? onToggleRotationLock;
   final VoidCallback? onToggleFullscreen;
@@ -70,6 +71,7 @@ class TrackChapterControls extends StatelessWidget {
     required this.isFullscreen,
     required this.serverId,
     this.isAlwaysOnTop = false,
+    this.onTogglePIPMode,
     this.onCycleBoxFitMode,
     this.onToggleRotationLock,
     this.onToggleFullscreen,
@@ -288,6 +290,24 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
+        // Picture-in-Picture mode
+        if (onTogglePIPMode != null) {
+          final currentIndex = buttonIndex;
+          buttons.add(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
+              icon: Symbols.picture_in_picture_alt,
+              tooltip: t.videoControls.pipButton,
+              semanticLabel: t.videoControls.pipButton,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
+              onPressed: onTogglePIPMode,
+            ),
+          );
+          buttonIndex++;
+        }
+
         // BoxFit mode button
         if (onCycleBoxFitMode != null) {
           final currentIndex = buttonIndex;
@@ -372,6 +392,7 @@ class TrackChapterControls extends StatelessWidget {
     if (_hasSubtitles(tracks)) count++;
     if (chapters.isNotEmpty) count++;
     if (availableVersions.length > 1 && onSwitchVersion != null) count++;
+    if (onTogglePIPMode != null) count++;
     if (onCycleBoxFitMode != null) count++;
     if (isMobile && !PlatformDetector.isTV()) count++; // Rotation lock (not on TV)
     if (isDesktop) count++; // Fullscreen

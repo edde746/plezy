@@ -15,6 +15,7 @@ import 'package:flutter/services.dart'
         KeyDownEvent,
         HardwareKeyboard;
 import '../../services/macos_window_service.dart';
+import '../../services/pip_service.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../mpv/mpv.dart';
@@ -51,6 +52,7 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onPrevious,
   List<PlexMediaVersion>? availableVersions,
   int? selectedMediaIndex,
+  VoidCallback? onTogglePIPMode,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
   Function(AudioTrack)? onAudioTrackChanged,
@@ -68,6 +70,7 @@ Widget plexVideoControlsBuilder(
     availableVersions: availableVersions ?? [],
     selectedMediaIndex: selectedMediaIndex ?? 0,
     boxFitMode: boxFitMode,
+    onTogglePIPMode: onTogglePIPMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
     onAudioTrackChanged: onAudioTrackChanged,
     onSubtitleTrackChanged: onSubtitleTrackChanged,
@@ -86,6 +89,7 @@ class PlexVideoControls extends StatefulWidget {
   final List<PlexMediaVersion> availableVersions;
   final int selectedMediaIndex;
   final int boxFitMode;
+  final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
@@ -111,6 +115,7 @@ class PlexVideoControls extends StatefulWidget {
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
     this.boxFitMode = 0,
+    this.onTogglePIPMode,
     this.onCycleBoxFitMode,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
@@ -186,6 +191,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
 
+  // PiP support
+  bool _isPipSupported = false;
+
   @override
   void initState() {
     super.initState();
@@ -203,6 +211,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _listenToPosition();
     _listenToPlayingState();
     _listenToCompleted();
+    _checkPipSupport();
     // Add lifecycle observer to reload settings when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
@@ -210,6 +219,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       windowManager.addListener(this);
       _initAlwaysOnTopState();
     }
+
     // Focus play/pause button on first frame if in keyboard mode
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusPlayPauseIfKeyboardMode();
@@ -636,6 +646,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     await MacOSWindowService.setTrafficLightsVisible(_showControls);
   }
 
+  /// Check whether PiP is supported on this device
+  Future<void> _checkPipSupport() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
+    try {
+      final supported = await PipService.isSupported();
+      if (mounted) {
+        setState(() {
+          _isPipSupported = supported;
+        });
+      }
+    } catch (e) {
+      return;
+    }
+  }
+
   Future<void> _loadPlaybackExtras() async {
     try {
       appLogger.d('_loadPlaybackExtras: starting for ${widget.metadata.ratingKey}');
@@ -731,6 +759,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
+      onTogglePIPMode: (_isPipSupported && Platform.isAndroid) ? widget.onTogglePIPMode : null,
       onCycleBoxFitMode: widget.onCycleBoxFitMode,
       onToggleRotationLock: _toggleRotationLock,
       onToggleFullscreen: _toggleFullscreen,
@@ -1498,6 +1527,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                           subtitleSyncOffset: _subtitleSyncOffset,
                                           isFullscreen: _isFullscreen,
                                           isAlwaysOnTop: _isAlwaysOnTop,
+                                          onTogglePIPMode: (_isPipSupported && Platform.isAndroid) ? widget.onTogglePIPMode : null,
                                           onCycleBoxFitMode: widget.onCycleBoxFitMode,
                                           onToggleFullscreen: _toggleFullscreen,
                                           onToggleAlwaysOnTop: _toggleAlwaysOnTop,

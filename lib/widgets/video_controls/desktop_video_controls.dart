@@ -52,6 +52,7 @@ class DesktopVideoControls extends StatefulWidget {
   final int subtitleSyncOffset;
   final bool isFullscreen;
   final bool isAlwaysOnTop;
+  final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
   final VoidCallback? onToggleFullscreen;
   final VoidCallback? onToggleAlwaysOnTop;
@@ -95,6 +96,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.subtitleSyncOffset = 0,
     this.isFullscreen = false,
     this.isAlwaysOnTop = false,
+    this.onTogglePIPMode,
     this.onCycleBoxFitMode,
     this.onToggleFullscreen,
     this.onToggleAlwaysOnTop,
@@ -524,6 +526,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 isFullscreen: widget.isFullscreen,
                 isAlwaysOnTop: widget.isAlwaysOnTop,
                 serverId: widget.serverId,
+                onTogglePIPMode: null, // PIP not supported on desktop
                 onCycleBoxFitMode: widget.onCycleBoxFitMode,
                 onToggleFullscreen: widget.onToggleFullscreen,
                 onToggleAlwaysOnTop: widget.onToggleAlwaysOnTop,
