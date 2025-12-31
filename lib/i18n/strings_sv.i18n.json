@@ -176,6 +176,7 @@
     "resolution": "Upplösning",
     "bitrate": "Bithastighet",
     "frameRate": "Bildfrekvens",
+    "pipButton": "Bild-i-bild läge",
     "aspectRatio": "Bildförhållande",
     "profile": "Profil",
     "bitDepth": "Bitdjup",

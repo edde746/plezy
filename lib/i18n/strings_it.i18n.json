@@ -176,6 +176,7 @@
     "resolution": "Risoluzione",
     "bitrate": "Bitrate",
     "frameRate": "Frame Rate",
+    "pipButton": "Modalità Picture-in-Picture",
     "aspectRatio": "Aspect Ratio",
     "profile": "Profilo",
     "bitDepth": "Profondità colore",

@@ -176,6 +176,7 @@
     "resolution": "해상도",
     "bitrate": "비트레이트",
     "frameRate": "프레임 속도",
+    "pipButton": "픽처 인 픽처 모드",
     "aspectRatio": "종횡비",
     "profile": "프로파일",
     "bitDepth": "비트 심도",
