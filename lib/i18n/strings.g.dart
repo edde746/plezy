@@ -6,7 +6,7 @@
 /// Locales: 7
 /// Strings: 3554 (507 per locale)
 ///
-/// Built on 2025-12-31 at 06:32 UTC
+/// Built on 2025-12-31 at 06:48 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -432,7 +432,6 @@ class _StringsFileInfoEn {
 	String get resolution => 'Resolution';
 	String get bitrate => 'Bitrate';
 	String get frameRate => 'Frame Rate';
-	String get pipButton => 'Picture-in-Picture mode';
 	String get aspectRatio => 'Aspect Ratio';
 	String get profile => 'Profile';
 	String get bitDepth => 'Bit Depth';
@@ -533,6 +532,7 @@ class _StringsVideoControlsEn {
 	String get subtitlesButton => 'Subtitles';
 	String get chaptersButton => 'Chapters';
 	String get versionsButton => 'Video versions';
+	String get pipButton => 'Picture-in-Picture mode';
 	String get aspectRatioButton => 'Aspect ratio';
 	String get fullscreenButton => 'Enter fullscreen';
 	String get exitFullscreenButton => 'Exit fullscreen';
@@ -1305,7 +1305,6 @@ class _StringsFileInfoDe implements _StringsFileInfoEn {
 	@override String get resolution => 'Auflösung';
 	@override String get bitrate => 'Bitrate';
 	@override String get frameRate => 'Bildrate';
-	@override String get pipButton => 'Bild-in-Bild Modus';
 	@override String get aspectRatio => 'Seitenverhältnis';
 	@override String get profile => 'Profil';
 	@override String get bitDepth => 'Farbtiefe';
@@ -1406,6 +1405,7 @@ class _StringsVideoControlsDe implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => 'Untertitel';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversionen';
+	@override String get pipButton => 'Bild-in-Bild Modus';
 	@override String get aspectRatioButton => 'Seitenverhältnis';
 	@override String get fullscreenButton => 'Vollbild aktivieren';
 	@override String get exitFullscreenButton => 'Vollbild verlassen';
@@ -2179,7 +2179,6 @@ class _StringsFileInfoIt implements _StringsFileInfoEn {
 	@override String get resolution => 'Risoluzione';
 	@override String get bitrate => 'Bitrate';
 	@override String get frameRate => 'Frame Rate';
-	@override String get pipButton => 'Modalità Picture-in-Picture';
 	@override String get aspectRatio => 'Aspect Ratio';
 	@override String get profile => 'Profilo';
 	@override String get bitDepth => 'Profondità colore';
@@ -2280,6 +2279,7 @@ class _StringsVideoControlsIt implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => 'Sottotitoli';
 	@override String get chaptersButton => 'Capitoli';
 	@override String get versionsButton => 'Versioni video';
+	@override String get pipButton => 'Modalità Picture-in-Picture';
 	@override String get aspectRatioButton => 'Proporzioni';
 	@override String get fullscreenButton => 'Attiva schermo intero';
 	@override String get exitFullscreenButton => 'Esci da schermo intero';
@@ -3927,7 +3927,6 @@ class _StringsFileInfoNl implements _StringsFileInfoEn {
 	@override String get resolution => 'Resolutie';
 	@override String get bitrate => 'Bitrate';
 	@override String get frameRate => 'Frame rate';
-	@override String get pipButton => 'Beeld-in-beeld modus';
 	@override String get aspectRatio => 'Beeldverhouding';
 	@override String get profile => 'Profiel';
 	@override String get bitDepth => 'Bit diepte';
@@ -4028,6 +4027,7 @@ class _StringsVideoControlsNl implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => 'Ondertitels';
 	@override String get chaptersButton => 'Hoofdstukken';
 	@override String get versionsButton => 'Videoversies';
+	@override String get pipButton => 'Beeld-in-beeld modus';
 	@override String get aspectRatioButton => 'Beeldverhouding';
 	@override String get fullscreenButton => 'Volledig scherm activeren';
 	@override String get exitFullscreenButton => 'Volledig scherm verlaten';
@@ -4801,7 +4801,6 @@ class _StringsFileInfoSv implements _StringsFileInfoEn {
 	@override String get resolution => 'Upplösning';
 	@override String get bitrate => 'Bithastighet';
 	@override String get frameRate => 'Bildfrekvens';
-	@override String get pipButton => 'Bild-i-bild läge';
 	@override String get aspectRatio => 'Bildförhållande';
 	@override String get profile => 'Profil';
 	@override String get bitDepth => 'Bitdjup';
@@ -4902,6 +4901,7 @@ class _StringsVideoControlsSv implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => 'Undertexter';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversioner';
+	@override String get pipButton => 'Bild-i-bild läge';
 	@override String get aspectRatioButton => 'Bildförhållande';
 	@override String get fullscreenButton => 'Aktivera helskärm';
 	@override String get exitFullscreenButton => 'Avsluta helskärm';
@@ -5675,7 +5675,6 @@ class _StringsFileInfoZh implements _StringsFileInfoEn {
 	@override String get resolution => '分辨率';
 	@override String get bitrate => '比特率';
 	@override String get frameRate => '帧率';
-	@override String get pipButton => '画中画模式';
 	@override String get aspectRatio => '宽高比';
 	@override String get profile => '配置文件';
 	@override String get bitDepth => '位深度';
@@ -5776,6 +5775,7 @@ class _StringsVideoControlsZh implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => '字幕';
 	@override String get chaptersButton => '章节';
 	@override String get versionsButton => '视频版本';
+	@override String get pipButton => '画中画模式';
 	@override String get aspectRatioButton => '宽高比';
 	@override String get fullscreenButton => '进入全屏';
 	@override String get exitFullscreenButton => '退出全屏';
@@ -6408,7 +6408,6 @@ extension on Translations {
 			case 'fileInfo.resolution': return 'Resolution';
 			case 'fileInfo.bitrate': return 'Bitrate';
 			case 'fileInfo.frameRate': return 'Frame Rate';
-			case 'fileInfo.pipButton': return 'Picture-in-Picture mode';
 			case 'fileInfo.aspectRatio': return 'Aspect Ratio';
 			case 'fileInfo.profile': return 'Profile';
 			case 'fileInfo.bitDepth': return 'Bit Depth';
@@ -6473,6 +6472,7 @@ extension on Translations {
 			case 'videoControls.subtitlesButton': return 'Subtitles';
 			case 'videoControls.chaptersButton': return 'Chapters';
 			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.pipButton': return 'Picture-in-Picture mode';
 			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
 			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
 			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
@@ -6923,7 +6923,6 @@ extension on _StringsDe {
 			case 'fileInfo.resolution': return 'Auflösung';
 			case 'fileInfo.bitrate': return 'Bitrate';
 			case 'fileInfo.frameRate': return 'Bildrate';
-			case 'fileInfo.pipButton': return 'Bild-in-Bild Modus';
 			case 'fileInfo.aspectRatio': return 'Seitenverhältnis';
 			case 'fileInfo.profile': return 'Profil';
 			case 'fileInfo.bitDepth': return 'Farbtiefe';
@@ -6988,6 +6987,7 @@ extension on _StringsDe {
 			case 'videoControls.subtitlesButton': return 'Untertitel';
 			case 'videoControls.chaptersButton': return 'Kapitel';
 			case 'videoControls.versionsButton': return 'Videoversionen';
+			case 'videoControls.pipButton': return 'Bild-in-Bild Modus';
 			case 'videoControls.aspectRatioButton': return 'Seitenverhältnis';
 			case 'videoControls.fullscreenButton': return 'Vollbild aktivieren';
 			case 'videoControls.exitFullscreenButton': return 'Vollbild verlassen';
@@ -7439,7 +7439,6 @@ extension on _StringsIt {
 			case 'fileInfo.resolution': return 'Risoluzione';
 			case 'fileInfo.bitrate': return 'Bitrate';
 			case 'fileInfo.frameRate': return 'Frame Rate';
-			case 'fileInfo.pipButton': return 'Modalità Picture-in-Picture';
 			case 'fileInfo.aspectRatio': return 'Aspect Ratio';
 			case 'fileInfo.profile': return 'Profilo';
 			case 'fileInfo.bitDepth': return 'Profondità colore';
@@ -7504,6 +7503,7 @@ extension on _StringsIt {
 			case 'videoControls.subtitlesButton': return 'Sottotitoli';
 			case 'videoControls.chaptersButton': return 'Capitoli';
 			case 'videoControls.versionsButton': return 'Versioni video';
+			case 'videoControls.pipButton': return 'Modalità Picture-in-Picture';
 			case 'videoControls.aspectRatioButton': return 'Proporzioni';
 			case 'videoControls.fullscreenButton': return 'Attiva schermo intero';
 			case 'videoControls.exitFullscreenButton': return 'Esci da schermo intero';
@@ -8471,7 +8471,6 @@ extension on _StringsNl {
 			case 'fileInfo.resolution': return 'Resolutie';
 			case 'fileInfo.bitrate': return 'Bitrate';
 			case 'fileInfo.frameRate': return 'Frame rate';
-			case 'fileInfo.pipButton': return 'Beeld-in-beeld modus';
 			case 'fileInfo.aspectRatio': return 'Beeldverhouding';
 			case 'fileInfo.profile': return 'Profiel';
 			case 'fileInfo.bitDepth': return 'Bit diepte';
@@ -8536,6 +8535,7 @@ extension on _StringsNl {
 			case 'videoControls.subtitlesButton': return 'Ondertitels';
 			case 'videoControls.chaptersButton': return 'Hoofdstukken';
 			case 'videoControls.versionsButton': return 'Videoversies';
+			case 'videoControls.pipButton': return 'Beeld-in-beeld modus';
 			case 'videoControls.aspectRatioButton': return 'Beeldverhouding';
 			case 'videoControls.fullscreenButton': return 'Volledig scherm activeren';
 			case 'videoControls.exitFullscreenButton': return 'Volledig scherm verlaten';
@@ -8987,7 +8987,6 @@ extension on _StringsSv {
 			case 'fileInfo.resolution': return 'Upplösning';
 			case 'fileInfo.bitrate': return 'Bithastighet';
 			case 'fileInfo.frameRate': return 'Bildfrekvens';
-			case 'fileInfo.pipButton': return 'Bild-i-bild läge';
 			case 'fileInfo.aspectRatio': return 'Bildförhållande';
 			case 'fileInfo.profile': return 'Profil';
 			case 'fileInfo.bitDepth': return 'Bitdjup';
@@ -9052,6 +9051,7 @@ extension on _StringsSv {
 			case 'videoControls.subtitlesButton': return 'Undertexter';
 			case 'videoControls.chaptersButton': return 'Kapitel';
 			case 'videoControls.versionsButton': return 'Videoversioner';
+			case 'videoControls.pipButton': return 'Bild-i-bild läge';
 			case 'videoControls.aspectRatioButton': return 'Bildförhållande';
 			case 'videoControls.fullscreenButton': return 'Aktivera helskärm';
 			case 'videoControls.exitFullscreenButton': return 'Avsluta helskärm';
@@ -9503,7 +9503,6 @@ extension on _StringsZh {
 			case 'fileInfo.resolution': return '分辨率';
 			case 'fileInfo.bitrate': return '比特率';
 			case 'fileInfo.frameRate': return '帧率';
-			case 'fileInfo.pipButton': return '画中画模式';
 			case 'fileInfo.aspectRatio': return '宽高比';
 			case 'fileInfo.profile': return '配置文件';
 			case 'fileInfo.bitDepth': return '位深度';
@@ -9568,6 +9567,7 @@ extension on _StringsZh {
 			case 'videoControls.subtitlesButton': return '字幕';
 			case 'videoControls.chaptersButton': return '章节';
 			case 'videoControls.versionsButton': return '视频版本';
+			case 'videoControls.pipButton': return '画中画模式';
 			case 'videoControls.aspectRatioButton': return '宽高比';
 			case 'videoControls.fullscreenButton': return '进入全屏';
 			case 'videoControls.exitFullscreenButton': return '退出全屏';
