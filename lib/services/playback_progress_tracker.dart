@@ -6,6 +6,7 @@ import 'plex_client.dart';
 import 'offline_watch_sync_service.dart';
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
+import '../utils/watch_state_notifier.dart';
 
 /// Tracks playback progress and reports it to the Plex server.
 ///
@@ -102,6 +103,15 @@ class PlaybackProgressTracker {
       } else {
         // Send progress to server immediately
         await _sendOnlineProgress(state, position, duration);
+      }
+
+      // Emit watch state event on stop for UI updates across screens
+      if (state == 'stopped' && position.inMilliseconds > 0) {
+        WatchStateNotifier().notifyProgress(
+          metadata: metadata,
+          viewOffset: position.inMilliseconds,
+          duration: duration.inMilliseconds,
+        );
       }
     } catch (e) {
       appLogger.d('Failed to send progress update (non-critical)', error: e);

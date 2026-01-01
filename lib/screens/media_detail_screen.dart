@@ -30,6 +30,8 @@ import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
+import '../mixins/watch_state_aware.dart';
+import '../utils/watch_state_notifier.dart';
 import 'season_detail_screen.dart';
 
 class MediaDetailScreen extends StatefulWidget {
@@ -42,7 +44,7 @@ class MediaDetailScreen extends StatefulWidget {
   State<MediaDetailScreen> createState() => _MediaDetailScreenState();
 }
 
-class _MediaDetailScreenState extends State<MediaDetailScreen> {
+class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAware {
   List<PlexMetadata> _seasons = [];
   bool _isLoadingSeasons = false;
   PlexMetadata? _fullMetadata;
@@ -52,6 +54,67 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> {
   final ScrollController _seasonsScrollController = ScrollController();
   bool _watchStateChanged = false;
   double _scrollOffset = 0;
+
+  // WatchStateAware: watch the show/movie and all season ratingKeys
+  @override
+  Set<String>? get watchedRatingKeys {
+    final keys = <String>{widget.metadata.ratingKey};
+    for (final season in _seasons) {
+      keys.add(season.ratingKey);
+    }
+    return keys;
+  }
+
+  @override
+  void onWatchStateChanged(WatchStateEvent event) {
+    // Lightweight refresh - no loader, preserves scroll position
+    if (!widget.isOffline) {
+      _refreshWatchState();
+    }
+  }
+
+  /// Lightweight refresh for watch state changes - no loader, preserves scroll
+  Future<void> _refreshWatchState() async {
+    final client = _getClientForMetadata(context);
+    if (client == null) return;
+
+    try {
+      // Fetch updated metadata + on-deck without showing loader
+      final result = await client.getMetadataWithImagesAndOnDeck(widget.metadata.ratingKey);
+      final metadata = result['metadata'] as PlexMetadata?;
+      final onDeckEpisode = result['onDeckEpisode'] as PlexMetadata?;
+
+      if (metadata != null && mounted) {
+        setState(() {
+          _fullMetadata = metadata.copyWith(
+            serverId: widget.metadata.serverId,
+            serverName: widget.metadata.serverName,
+          );
+          _onDeckEpisode = onDeckEpisode?.copyWith(
+            serverId: widget.metadata.serverId,
+            serverName: widget.metadata.serverName,
+          );
+        });
+      }
+
+      // Refresh seasons for updated watched counts (also without loader)
+      if (widget.metadata.isShow) {
+        final seasons = await client.getChildren(widget.metadata.ratingKey);
+        if (mounted) {
+          setState(() {
+            _seasons = seasons
+                .map((s) => s.copyWith(
+                      serverId: widget.metadata.serverId,
+                      serverName: widget.metadata.serverName,
+                    ))
+                .toList();
+          });
+        }
+      }
+    } catch (e) {
+      // Silently fail - data will refresh on next navigation
+    }
+  }
 
   @override
   void initState() {

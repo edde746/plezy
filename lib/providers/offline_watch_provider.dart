@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/plex_metadata.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/plex_api_cache.dart';
+import '../utils/watch_state_notifier.dart';
 import 'download_provider.dart';
 
 /// Provider for offline watch status UI state.
@@ -168,17 +169,57 @@ class OfflineWatchProvider extends ChangeNotifier {
 
   /// Mark an item as watched while offline.
   ///
-  /// This queues the action for sync when online.
+  /// This queues the action for sync when online and emits a [WatchStateEvent].
   Future<void> markAsWatched({required String serverId, required String ratingKey}) async {
     await _syncService.queueMarkWatched(serverId: serverId, ratingKey: ratingKey);
+
+    // Emit event for immediate UI update
+    final globalKey = '$serverId:$ratingKey';
+    final metadata = _downloadProvider.getMetadata(globalKey);
+    if (metadata != null) {
+      WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: true);
+    } else {
+      // Fallback: emit minimal event without parent chain
+      WatchStateNotifier().notify(
+        WatchStateEvent(
+          ratingKey: ratingKey,
+          serverId: serverId,
+          changeType: WatchStateChangeType.watched,
+          parentChain: [],
+          mediaType: 'unknown',
+          isNowWatched: true,
+        ),
+      );
+    }
+
     notifyListeners();
   }
 
   /// Mark an item as unwatched while offline.
   ///
-  /// This queues the action for sync when online.
+  /// This queues the action for sync when online and emits a [WatchStateEvent].
   Future<void> markAsUnwatched({required String serverId, required String ratingKey}) async {
     await _syncService.queueMarkUnwatched(serverId: serverId, ratingKey: ratingKey);
+
+    // Emit event for immediate UI update
+    final globalKey = '$serverId:$ratingKey';
+    final metadata = _downloadProvider.getMetadata(globalKey);
+    if (metadata != null) {
+      WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: false);
+    } else {
+      // Fallback: emit minimal event without parent chain
+      WatchStateNotifier().notify(
+        WatchStateEvent(
+          ratingKey: ratingKey,
+          serverId: serverId,
+          changeType: WatchStateChangeType.unwatched,
+          parentChain: [],
+          mediaType: 'unknown',
+          isNowWatched: false,
+        ),
+      );
+    }
+
     notifyListeners();
   }
 

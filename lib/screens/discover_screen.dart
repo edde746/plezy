@@ -22,6 +22,8 @@ import '../providers/settings_provider.dart';
 import '../mixins/refreshable.dart';
 import '../i18n/strings.g.dart';
 import '../mixins/item_updatable.dart';
+import '../mixins/watch_state_aware.dart';
+import '../utils/watch_state_notifier.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
@@ -42,7 +44,7 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen>
-    with Refreshable, FullRefreshable, ItemUpdatable, SingleTickerProviderStateMixin {
+    with Refreshable, FullRefreshable, ItemUpdatable, WatchStateAware, SingleTickerProviderStateMixin {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
 
   @override
@@ -65,6 +67,28 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Timer? _autoScrollTimer;
   late AnimationController _indicatorAnimationController;
   bool _isAutoScrollPaused = false;
+
+  // WatchStateAware: watch on-deck items and their parent shows/seasons
+  @override
+  Set<String>? get watchedRatingKeys {
+    final keys = <String>{};
+    for (final item in _onDeck) {
+      keys.add(item.ratingKey);
+      if (item.parentRatingKey != null) {
+        keys.add(item.parentRatingKey!);
+      }
+      if (item.grandparentRatingKey != null) {
+        keys.add(item.grandparentRatingKey!);
+      }
+    }
+    return keys;
+  }
+
+  @override
+  void onWatchStateChanged(WatchStateEvent event) {
+    // Refresh continue watching when any relevant item changes
+    _refreshContinueWatching();
+  }
 
   // Hub navigation keys
   GlobalKey<HubSectionState>? _continueWatchingHubKey;

@@ -289,7 +289,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       switch (selected) {
         case 'watch':
           if (isOffline && metadata?.serverId != null) {
-            // Offline mode: queue action for later sync
+            // Offline mode: queue action for later sync (emits WatchStateEvent)
             final offlineWatch = context.read<OfflineWatchProvider>();
             await offlineWatch.markAsWatched(serverId: metadata!.serverId!, ratingKey: metadata.ratingKey);
             if (context.mounted) {
@@ -297,13 +297,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               widget.onRefresh?.call(metadata.ratingKey);
             }
           } else {
-            await _executeAction(context, () => client.markAsWatched(metadata!.ratingKey), t.messages.markedAsWatched);
+            // Pass metadata to emit WatchStateEvent for cross-screen updates
+            await _executeAction(
+              context,
+              () => client.markAsWatched(metadata!.ratingKey, metadata: metadata),
+              t.messages.markedAsWatched,
+            );
           }
           break;
 
         case 'unwatch':
           if (isOffline && metadata?.serverId != null) {
-            // Offline mode: queue action for later sync
+            // Offline mode: queue action for later sync (emits WatchStateEvent)
             final offlineWatch = context.read<OfflineWatchProvider>();
             await offlineWatch.markAsUnwatched(serverId: metadata!.serverId!, ratingKey: metadata.ratingKey);
             if (context.mounted) {
@@ -311,9 +316,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               widget.onRefresh?.call(metadata.ratingKey);
             }
           } else {
+            // Pass metadata to emit WatchStateEvent for cross-screen updates
             await _executeAction(
               context,
-              () => client.markAsUnwatched(metadata!.ratingKey),
+              () => client.markAsUnwatched(metadata!.ratingKey, metadata: metadata),
               t.messages.markedAsUnwatched,
             );
           }

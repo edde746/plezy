@@ -20,6 +20,7 @@ import '../utils/app_logger.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/plex_cache_parser.dart';
 import '../utils/plex_url_helper.dart';
+import '../utils/watch_state_notifier.dart';
 import 'plex_api_cache.dart';
 
 /// Constants for Plex stream types
@@ -1123,13 +1124,23 @@ class PlexClient {
   }
 
   /// Mark media as watched
-  Future<void> markAsWatched(String ratingKey) async {
+  ///
+  /// If [metadata] is provided, emits a [WatchStateEvent] for UI updates.
+  Future<void> markAsWatched(String ratingKey, {PlexMetadata? metadata}) async {
     await _dio.get('/:/scrobble', queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'});
+    if (metadata != null) {
+      WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: true);
+    }
   }
 
   /// Mark media as unwatched
-  Future<void> markAsUnwatched(String ratingKey) async {
+  ///
+  /// If [metadata] is provided, emits a [WatchStateEvent] for UI updates.
+  Future<void> markAsUnwatched(String ratingKey, {PlexMetadata? metadata}) async {
     await _dio.get('/:/unscrobble', queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library'});
+    if (metadata != null) {
+      WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: false);
+    }
   }
 
   /// Update playback progress

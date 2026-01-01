@@ -19,6 +19,8 @@ import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
 import '../mixins/item_updatable.dart';
+import '../mixins/watch_state_aware.dart';
+import '../utils/watch_state_notifier.dart';
 import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
 
@@ -32,7 +34,7 @@ class SeasonDetailScreen extends StatefulWidget {
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
 }
 
-class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdatable {
+class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdatable, WatchStateAware {
   PlexClient? _client;
 
   @override
@@ -43,6 +45,18 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
   bool _watchStateChanged = false;
   // Capture keyboard mode once at init to avoid rebuild dependency
   bool _initialKeyboardMode = false;
+
+  // WatchStateAware: watch all episode ratingKeys
+  @override
+  Set<String>? get watchedRatingKeys => _episodes.map((e) => e.ratingKey).toSet();
+
+  @override
+  void onWatchStateChanged(WatchStateEvent event) {
+    // Update the affected episode
+    if (!widget.isOffline && _client != null) {
+      updateItem(event.ratingKey);
+    }
+  }
 
   /// Get the correct PlexClient for this season's server
   PlexClient? _getClientForSeason(BuildContext context) {
