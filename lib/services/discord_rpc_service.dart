@@ -103,9 +103,7 @@ class DiscordRPCService {
     _currentMetadata = metadata;
     _currentClient = client;
     _playbackStartTime = DateTime.now();
-    _mediaDuration = metadata.duration != null
-        ? Duration(milliseconds: metadata.duration!)
-        : null;
+    _mediaDuration = metadata.duration != null ? Duration(milliseconds: metadata.duration!) : null;
     _currentPosition = Duration.zero;
     _cachedThumbnailUrl = null;
 

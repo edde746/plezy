@@ -52,9 +52,7 @@ class MacOSWindowService {
     if (!Platform.isMacOS) return;
 
     if (!_initialized) {
-      await _channel.invokeMethod('initialize', {
-        'enableWindowDelegate': enableWindowDelegate,
-      });
+      await _channel.invokeMethod('initialize', {'enableWindowDelegate': enableWindowDelegate});
       _initialized = true;
     }
 
@@ -80,8 +78,7 @@ class MacOSWindowService {
   // MARK: - Traffic Light Buttons
 
   /// Show or hide all traffic light buttons (close, miniaturize, zoom).
-  static Future<void> setTrafficLightsVisible(bool visible) =>
-      _invoke('setTrafficLightsVisible', {'visible': visible});
+  static Future<void> setTrafficLightsVisible(bool visible) => _invoke('setTrafficLightsVisible', {'visible': visible});
 
   // MARK: - Fullscreen
 

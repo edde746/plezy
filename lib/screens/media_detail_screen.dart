@@ -86,10 +86,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
 
       if (metadata != null && mounted) {
         setState(() {
-          _fullMetadata = metadata.copyWith(
-            serverId: widget.metadata.serverId,
-            serverName: widget.metadata.serverName,
-          );
+          _fullMetadata = metadata.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName);
           _onDeckEpisode = onDeckEpisode?.copyWith(
             serverId: widget.metadata.serverId,
             serverName: widget.metadata.serverName,
@@ -103,10 +100,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         if (mounted) {
           setState(() {
             _seasons = seasons
-                .map((s) => s.copyWith(
-                      serverId: widget.metadata.serverId,
-                      serverName: widget.metadata.serverName,
-                    ))
+                .map((s) => s.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
                 .toList();
           });
         }

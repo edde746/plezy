@@ -816,8 +816,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     // Debounce: ignore taps within 200ms of last skip action
     // This prevents double-taps from counting as two separate skips
-    if (_lastSkipActionTime != null &&
-        now.difference(_lastSkipActionTime!).inMilliseconds < 200) {
+    if (_lastSkipActionTime != null && now.difference(_lastSkipActionTime!).inMilliseconds < 200) {
       return;
     }
 
@@ -1039,20 +1038,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppIcon(
-                Symbols.fast_forward_rounded,
-                fill: 1,
-                color: Colors.white,
-                size: 16,
-              ),
+              AppIcon(Symbols.fast_forward_rounded, fill: 1, color: Colors.white, size: 16),
               const SizedBox(width: 4),
               const Text(
                 '2x',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -1536,12 +1526,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   ),
                 ),
               // Speed indicator overlay for long-press 2x
-              if (_showSpeedIndicator)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: _buildSpeedIndicator(),
-                  ),
-                ),
+              if (_showSpeedIndicator) Positioned.fill(child: IgnorePointer(child: _buildSpeedIndicator())),
               // Skip intro/credits button
               if (_currentMarker != null)
                 Positioned(

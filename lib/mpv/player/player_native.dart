@@ -312,10 +312,7 @@ class PlayerNative implements Player {
       // Explicitly set SubtitleTrack.off so episode navigation can detect "subtitles off"
       selectedTrack = SubtitleTrack.off;
     } else {
-      selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere(
-            (t) => t?.id == id,
-            orElse: () => null,
-          );
+      selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
     }
 
     _state = _state.copyWith(track: _state.track.copyWith(subtitle: selectedTrack));

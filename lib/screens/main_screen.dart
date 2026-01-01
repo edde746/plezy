@@ -171,10 +171,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(t.common.later),
-            ),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.later)),
             TextButton(
               onPressed: () async {
                 await UpdateService.skipVersion(updateInfo['latestVersion']);
