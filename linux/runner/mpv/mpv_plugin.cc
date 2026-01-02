@@ -252,9 +252,7 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
     self->initialized = FALSE;
     self->visible = FALSE;
     gtk_widget_set_visible(GTK_WIDGET(self->gl_area), FALSE);
-    // Restore Flutter view opacity to 1.0 (may have been set to 0 by setControlsVisible)
     if (self->flutter_view != nullptr) {
-      gtk_widget_set_opacity(self->flutter_view, 1.0);
       // Force Flutter view to redraw
       gtk_widget_queue_draw(self->flutter_view);
     }
@@ -370,28 +368,12 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
       response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
     }
   } else if (strcmp(method, "setControlsVisible") == 0) {
-    // Set Flutter view opacity when controls are hidden/shown.
-    // This is a workaround for Flutter's lack of transparency support on Linux.
-    // When controls are hidden, setting opacity to 0 shows only the video
-    // while keeping the widget interactive for mouse events.
-    FlValue* controls_visible_value = fl_value_lookup_string(args, "visible");
-
-    if (controls_visible_value == nullptr ||
-        fl_value_get_type(controls_visible_value) != FL_VALUE_TYPE_BOOL) {
-      response = FL_METHOD_RESPONSE(fl_method_error_response_new(
-          "INVALID_ARGS", "Missing 'visible'", nullptr));
-    } else {
-      gboolean controls_visible = fl_value_get_bool(controls_visible_value);
-
-      // When controls are hidden, set Flutter view opacity to 0.
-      // When controls are visible, set opacity to 1.
-      // Using opacity keeps the widget interactive for mouse events.
-      if (self->flutter_view != nullptr) {
-        gtk_widget_set_opacity(self->flutter_view, controls_visible ? 1.0 : 0.0);
-      }
-
-      response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
-    }
+    // Previously used gtk_widget_set_opacity to hide frozen Flutter content.
+    // With the timing fix in video_controls.dart (using addPostFrameCallback),
+    // Flutter properly renders transparent before this is called, so opacity
+    // manipulation is no longer needed. Removing it eliminates GPU composition
+    // overhead that caused frame drops (issue #205).
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   } else if (strcmp(method, "isInitialized") == 0) {
     gboolean initialized = self->player && self->initialized;
     response = FL_METHOD_RESPONSE(
