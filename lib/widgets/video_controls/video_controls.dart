@@ -2,6 +2,7 @@ import 'dart:async' show StreamSubscription, Timer;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:rate_limiter/rate_limiter.dart';
@@ -579,7 +580,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           setState(() {
             _controlsFullyHidden = true;
           });
-          widget.player.setControlsVisible(false);
+          // Wait for Flutter to paint the frame with Offstage applied
+          // before hiding at GTK level - prevents frozen framebuffer (issue #205)
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_showControls) {
+              widget.player.setControlsVisible(false);
+            }
+          });
         }
       });
     }
