@@ -248,6 +248,7 @@
     "subtitlesButton": "字幕",
     "chaptersButton": "章节",
     "versionsButton": "视频版本",
+    "pipButton": "画中画模式",
     "aspectRatioButton": "宽高比",
     "fullscreenButton": "进入全屏",
     "exitFullscreenButton": "退出全屏",

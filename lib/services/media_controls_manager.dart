@@ -78,7 +78,8 @@ class MediaControlsManager {
     final params = _PlaybackStateParams(isPlaying: isPlaying, position: position, speed: speed);
 
     if (force) {
-      // Bypass throttling for forced updates
+      // Cancel any pending throttled update to prevent stale state from overwriting
+      _throttledUpdate.cancel();
       await _doUpdatePlaybackState(params);
     } else {
       // Use throttled update

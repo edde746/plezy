@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 7
-/// Strings: 3547 (506 per locale)
+/// Strings: 3554 (507 per locale)
 ///
-/// Built on 2025-12-25 at 17:42 UTC
+/// Built on 2025-12-31 at 06:54 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -532,6 +532,7 @@ class _StringsVideoControlsEn {
 	String get subtitlesButton => 'Subtitles';
 	String get chaptersButton => 'Chapters';
 	String get versionsButton => 'Video versions';
+	String get pipButton => 'Picture-in-Picture mode';
 	String get aspectRatioButton => 'Aspect ratio';
 	String get fullscreenButton => 'Enter fullscreen';
 	String get exitFullscreenButton => 'Exit fullscreen';
@@ -1404,6 +1405,7 @@ class _StringsVideoControlsDe implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => 'Untertitel';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversionen';
+	@override String get pipButton => 'Bild-in-Bild Modus';
 	@override String get aspectRatioButton => 'Seitenverhältnis';
 	@override String get fullscreenButton => 'Vollbild aktivieren';
 	@override String get exitFullscreenButton => 'Vollbild verlassen';
@@ -2277,6 +2279,7 @@ class _StringsVideoControlsIt implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => 'Sottotitoli';
 	@override String get chaptersButton => 'Capitoli';
 	@override String get versionsButton => 'Versioni video';
+	@override String get pipButton => 'Modalità Picture-in-Picture';
 	@override String get aspectRatioButton => 'Proporzioni';
 	@override String get fullscreenButton => 'Attiva schermo intero';
 	@override String get exitFullscreenButton => 'Esci da schermo intero';
@@ -3150,6 +3153,7 @@ class _StringsVideoControlsKo implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => '자막';
 	@override String get chaptersButton => '챕터';
 	@override String get versionsButton => '동영상 버전';
+	@override String get pipButton => '픽처 인 픽처 모드';
 	@override String get aspectRatioButton => '화면비율';
 	@override String get fullscreenButton => '전체화면';
 	@override String get exitFullscreenButton => '전체화면 종료';
@@ -4023,6 +4027,7 @@ class _StringsVideoControlsNl implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => 'Ondertitels';
 	@override String get chaptersButton => 'Hoofdstukken';
 	@override String get versionsButton => 'Videoversies';
+	@override String get pipButton => 'Beeld-in-beeld modus';
 	@override String get aspectRatioButton => 'Beeldverhouding';
 	@override String get fullscreenButton => 'Volledig scherm activeren';
 	@override String get exitFullscreenButton => 'Volledig scherm verlaten';
@@ -4896,6 +4901,7 @@ class _StringsVideoControlsSv implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => 'Undertexter';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversioner';
+	@override String get pipButton => 'Bild-i-bild läge';
 	@override String get aspectRatioButton => 'Bildförhållande';
 	@override String get fullscreenButton => 'Aktivera helskärm';
 	@override String get exitFullscreenButton => 'Avsluta helskärm';
@@ -5769,6 +5775,7 @@ class _StringsVideoControlsZh implements _StringsVideoControlsEn {
 	@override String get subtitlesButton => '字幕';
 	@override String get chaptersButton => '章节';
 	@override String get versionsButton => '视频版本';
+	@override String get pipButton => '画中画模式';
 	@override String get aspectRatioButton => '宽高比';
 	@override String get fullscreenButton => '进入全屏';
 	@override String get exitFullscreenButton => '退出全屏';
@@ -6465,6 +6472,7 @@ extension on Translations {
 			case 'videoControls.subtitlesButton': return 'Subtitles';
 			case 'videoControls.chaptersButton': return 'Chapters';
 			case 'videoControls.versionsButton': return 'Video versions';
+			case 'videoControls.pipButton': return 'Picture-in-Picture mode';
 			case 'videoControls.aspectRatioButton': return 'Aspect ratio';
 			case 'videoControls.fullscreenButton': return 'Enter fullscreen';
 			case 'videoControls.exitFullscreenButton': return 'Exit fullscreen';
@@ -6979,6 +6987,7 @@ extension on _StringsDe {
 			case 'videoControls.subtitlesButton': return 'Untertitel';
 			case 'videoControls.chaptersButton': return 'Kapitel';
 			case 'videoControls.versionsButton': return 'Videoversionen';
+			case 'videoControls.pipButton': return 'Bild-in-Bild Modus';
 			case 'videoControls.aspectRatioButton': return 'Seitenverhältnis';
 			case 'videoControls.fullscreenButton': return 'Vollbild aktivieren';
 			case 'videoControls.exitFullscreenButton': return 'Vollbild verlassen';
@@ -7494,6 +7503,7 @@ extension on _StringsIt {
 			case 'videoControls.subtitlesButton': return 'Sottotitoli';
 			case 'videoControls.chaptersButton': return 'Capitoli';
 			case 'videoControls.versionsButton': return 'Versioni video';
+			case 'videoControls.pipButton': return 'Modalità Picture-in-Picture';
 			case 'videoControls.aspectRatioButton': return 'Proporzioni';
 			case 'videoControls.fullscreenButton': return 'Attiva schermo intero';
 			case 'videoControls.exitFullscreenButton': return 'Esci da schermo intero';
@@ -8009,6 +8019,7 @@ extension on _StringsKo {
 			case 'videoControls.subtitlesButton': return '자막';
 			case 'videoControls.chaptersButton': return '챕터';
 			case 'videoControls.versionsButton': return '동영상 버전';
+			case 'videoControls.pipButton': return '픽처 인 픽처 모드';
 			case 'videoControls.aspectRatioButton': return '화면비율';
 			case 'videoControls.fullscreenButton': return '전체화면';
 			case 'videoControls.exitFullscreenButton': return '전체화면 종료';
@@ -8524,6 +8535,7 @@ extension on _StringsNl {
 			case 'videoControls.subtitlesButton': return 'Ondertitels';
 			case 'videoControls.chaptersButton': return 'Hoofdstukken';
 			case 'videoControls.versionsButton': return 'Videoversies';
+			case 'videoControls.pipButton': return 'Beeld-in-beeld modus';
 			case 'videoControls.aspectRatioButton': return 'Beeldverhouding';
 			case 'videoControls.fullscreenButton': return 'Volledig scherm activeren';
 			case 'videoControls.exitFullscreenButton': return 'Volledig scherm verlaten';
@@ -9039,6 +9051,7 @@ extension on _StringsSv {
 			case 'videoControls.subtitlesButton': return 'Undertexter';
 			case 'videoControls.chaptersButton': return 'Kapitel';
 			case 'videoControls.versionsButton': return 'Videoversioner';
+			case 'videoControls.pipButton': return 'Bild-i-bild läge';
 			case 'videoControls.aspectRatioButton': return 'Bildförhållande';
 			case 'videoControls.fullscreenButton': return 'Aktivera helskärm';
 			case 'videoControls.exitFullscreenButton': return 'Avsluta helskärm';
@@ -9554,6 +9567,7 @@ extension on _StringsZh {
 			case 'videoControls.subtitlesButton': return '字幕';
 			case 'videoControls.chaptersButton': return '章节';
 			case 'videoControls.versionsButton': return '视频版本';
+			case 'videoControls.pipButton': return '画中画模式';
 			case 'videoControls.aspectRatioButton': return '宽高比';
 			case 'videoControls.fullscreenButton': return '进入全屏';
 			case 'videoControls.exitFullscreenButton': return '退出全屏';

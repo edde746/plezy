@@ -247,6 +247,7 @@
     "subtitlesButton": "Subtitles",
     "chaptersButton": "Chapters",
     "versionsButton": "Video versions",
+    "pipButton": "Picture-in-Picture mode",
     "aspectRatioButton": "Aspect ratio",
     "fullscreenButton": "Enter fullscreen",
     "exitFullscreenButton": "Exit fullscreen",

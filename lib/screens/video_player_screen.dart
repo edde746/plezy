@@ -29,6 +29,8 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import '../services/track_selection_service.dart';
 import '../services/video_filter_manager.dart';
+import '../services/video_pip_manager.dart';
+import '../services/pip_service.dart';
 import '../providers/user_profile_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/orientation_helper.dart';
@@ -104,6 +106,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   MediaControlsManager? _mediaControlsManager;
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
+  VideoPIPManager? _videoPIPManager;
   final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
   // Watch Together provider reference (stored early to use in dispose)
@@ -714,7 +717,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _currentMediaInfo = result.mediaInfo;
         });
 
-        // Initialize video filter manager with player and available versions
+        // Initialize video PIP and filter manager with player and available versions
         if (player != null) {
           _videoFilterManager = VideoFilterManager(
             player: player!,
@@ -723,6 +726,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           );
           // Update video filter once dimensions are available
           _videoFilterManager!.updateVideoFilter();
+
+          // PIP Manager
+          _videoPIPManager = VideoPIPManager(player: player!);
         }
 
         // Add external subtitles to the player
@@ -780,6 +786,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       externalSubtitles: const [],
       isOffline: true,
     );
+  }
+
+  void _togglePIPMode() {
+    setState(() {
+      _videoPIPManager?.togglePIP();
+    });
   }
 
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
@@ -1519,6 +1531,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         onPrevious: (_previousEpisode != null && _canNavigateEpisodes()) ? _playPrevious : null,
                         availableVersions: _availableVersions,
                         selectedMediaIndex: widget.selectedMediaIndex,
+                        onTogglePIPMode: _togglePIPMode,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         onCycleBoxFitMode: _cycleBoxFitMode,
                         onAudioTrackChanged: _onAudioTrackChanged,
@@ -1544,142 +1557,156 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                   },
                 ),
               ),
-              // Netflix-style auto-play overlay
-              if (_showPlayNextDialog && _nextEpisode != null)
-                Positioned(
-                  right: 24,
-                  bottom: 100,
-                  child: Container(
-                    width: 320,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Consumer<PlaybackStateProvider>(
-                                    builder: (context, playbackState, child) {
-                                      final isShuffleActive = playbackState.isShuffleActive;
-                                      return Row(
-                                        children: [
-                                          Text(
-                                            'Next Episode',
-                                            style: TextStyle(
-                                              color: Colors.white.withValues(alpha: 0.7),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          if (isShuffleActive) ...[
-                                            const SizedBox(width: 4),
-                                            AppIcon(
-                                              Symbols.shuffle_rounded,
-                                              fill: 1,
-                                              size: 12,
-                                              color: Colors.white.withValues(alpha: 0.7),
-                                            ),
-                                          ],
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 4),
-                                  if (_nextEpisode!.parentIndex != null && _nextEpisode!.index != null)
-                                    Text(
-                                      'S${_nextEpisode!.parentIndex} E${_nextEpisode!.index} · ${_nextEpisode!.title}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  else
-                                    Text(
-                                      _nextEpisode!.title,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _cancelAutoPlay,
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                ),
-                                child: Text(t.dialog.cancel),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: FilledButton(
-                                onPressed: _playNext,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+              // Netflix-style auto-play overlay (hidden in PiP mode)
+              ValueListenableBuilder<bool>(
+                valueListenable: PipService().isPipActive,
+                builder: (context, isInPip, child) {
+                  if (isInPip || !_showPlayNextDialog || _nextEpisode == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return Positioned(
+                    right: 24,
+                    bottom: 100,
+                    child: Container(
+                      width: 320,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('$_autoPlayCountdown'),
-                                    const SizedBox(width: 4),
-                                    const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                                    Consumer<PlaybackStateProvider>(
+                                      builder: (context, playbackState, child) {
+                                        final isShuffleActive = playbackState.isShuffleActive;
+                                        return Row(
+                                          children: [
+                                            Text(
+                                              'Next Episode',
+                                              style: TextStyle(
+                                                color: Colors.white.withValues(alpha: 0.7),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            if (isShuffleActive) ...[
+                                              const SizedBox(width: 4),
+                                              AppIcon(
+                                                Symbols.shuffle_rounded,
+                                                fill: 1,
+                                                size: 12,
+                                                color: Colors.white.withValues(alpha: 0.7),
+                                              ),
+                                            ],
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 4),
+                                    if (_nextEpisode!.parentIndex != null && _nextEpisode!.index != null)
+                                      Text(
+                                        'S${_nextEpisode!.parentIndex} E${_nextEpisode!.index} · ${_nextEpisode!.title}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                    else
+                                      Text(
+                                        _nextEpisode!.title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                   ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              // Buffering indicator (also shows during initial load, but not when exiting)
-              ValueListenableBuilder<bool>(
-                valueListenable: _isBuffering,
-                builder: (context, isBuffering, child) {
-                  return ValueListenableBuilder<bool>(
-                    valueListenable: _hasFirstFrame,
-                    builder: (context, hasFrame, child) {
-                      // Don't show spinner when exiting (just black overlay)
-                      // Show spinner when (buffering OR loading) AND NOT exiting
-                      if ((!isBuffering && hasFrame) || _isExiting.value) return const SizedBox.shrink();
-                      return Positioned.fill(
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                            ],
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _cancelAutoPlay,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  child: Text(t.dialog.cancel),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: FilledButton(
+                                  onPressed: _playNext,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text('$_autoPlayCountdown'),
+                                      const SizedBox(width: 4),
+                                      const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // Buffering indicator (also shows during initial load, but not when exiting)
+              // Hidden in PiP mode
+              ValueListenableBuilder<bool>(
+                valueListenable: PipService().isPipActive,
+                builder: (context, isInPip, child) {
+                  if (isInPip) return const SizedBox.shrink();
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: _isBuffering,
+                    builder: (context, isBuffering, child) {
+                      return ValueListenableBuilder<bool>(
+                        valueListenable: _hasFirstFrame,
+                        builder: (context, hasFrame, child) {
+                          // Don't show spinner when exiting (just black overlay)
+                          // Show spinner when (buffering OR loading) AND NOT exiting
+                          if ((!isBuffering && hasFrame) || _isExiting.value) return const SizedBox.shrink();
+                          return Positioned.fill(
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
                   );
