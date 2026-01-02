@@ -29,6 +29,7 @@ import 'services/data_aggregation_service.dart';
 import 'services/in_app_review_service.dart';
 import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
+import 'services/pip_service.dart';
 import 'services/download_storage_service.dart';
 import 'services/plex_api_cache.dart';
 import 'database/app_database.dart';
@@ -59,9 +60,11 @@ void main() async {
     futures.add(windowManager.ensureInitialized());
   }
 
-  // Initialize TV detection for Android
+  // Initialize TV detection and PiP service for Android
   if (Platform.isAndroid) {
     futures.add(TvDetectionService.getInstance().then((_) {}));
+    // Initialize PiP service to listen for PiP state changes
+    PipService();
   }
 
   // Configure macOS window with custom titlebar (depends on window manager)
