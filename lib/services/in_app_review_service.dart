@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,6 +41,8 @@ class InAppReviewService {
     if (!isEnabled) return;
     _sessionStartTime = DateTime.now();
     appLogger.d('In-app review: Session started');
+    // Prompt checks should run while the app is in the foreground.
+    unawaited(maybeRequestReview());
   }
 
   /// End the current session and check if it qualifies
@@ -53,7 +56,6 @@ class InAppReviewService {
     if (sessionDuration >= _minimumSessionDuration) {
       await _incrementQualifyingSessions();
       appLogger.d('In-app review: Qualifying session ended (${sessionDuration.inMinutes} minutes)');
-      await maybeRequestReview();
     } else {
       appLogger.d('In-app review: Session too short (${sessionDuration.inMinutes} minutes)');
     }
