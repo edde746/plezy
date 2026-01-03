@@ -132,6 +132,18 @@ static gboolean on_gl_render(GtkGLArea* area,
   (void)context;
   MpvPlugin* self = MPV_PLUGIN(user_data);
 
+  // Ensure GL context is current before any GL operations.
+  // This is critical during fullscreen transitions and workspace switches
+  // where GTK manages context switching internally (issue #202).
+  gtk_gl_area_make_current(area);
+
+  // Check for GL context errors (can happen during window state changes)
+  GError* error = gtk_gl_area_get_error(area);
+  if (error != nullptr) {
+    g_warning("MPV Plugin: GL context error in render: %s", error->message);
+    return TRUE;
+  }
+
   if (!self->player || !self->player->IsInitialized() || !self->visible) {
     // Clear to transparent when not showing video.
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -183,6 +195,13 @@ static void on_gl_unrealize(GtkGLArea* area, gpointer user_data) {
   MpvPlugin* self = MPV_PLUGIN(user_data);
 
   gtk_gl_area_make_current(area);
+
+  // Check if context is valid before disposing GL resources (issue #202)
+  GError* error = gtk_gl_area_get_error(area);
+  if (error != nullptr) {
+    g_warning("MPV Plugin: GL context error in unrealize: %s", error->message);
+    // Still try to dispose, but player may already be in bad state
+  }
 
   if (self->player) {
     self->player->Dispose();
