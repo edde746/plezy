@@ -174,9 +174,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   StreamSubscription<bool>? _playingSubscription;
   // Completed subscription to show controls when video ends
   StreamSubscription<bool>? _completedSubscription;
-  // Window resize pause state
-  Timer? _resizeDebounceTimer;
-  bool _wasPlayingBeforeResize = false;
   // Auto-skip state
   bool _autoSkipIntro = true;
   bool _autoSkipCredits = true;
@@ -446,7 +443,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
-    _resizeDebounceTimer?.cancel();
     _autoSkipTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
@@ -514,22 +510,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   @override
   void onWindowResize() {
-    // Pause video while resizing to prevent lag
-    if (_resizeDebounceTimer == null && widget.player.state.playing) {
-      _wasPlayingBeforeResize = true;
-      widget.player.pause();
-    }
-
-    // Reset debounce timer - resume when resizing stops
-    _resizeDebounceTimer?.cancel();
-    final slowDuration = tokens(context).slow;
-    _resizeDebounceTimer = Timer(slowDuration, () {
-      if (_wasPlayingBeforeResize && mounted) {
-        widget.player.play();
-      }
-      _wasPlayingBeforeResize = false;
-      _resizeDebounceTimer = null;
-    });
+    // Lag during resize is now handled in native code (glViewport + resize signal handler)
   }
 
   void _startHideTimer() {

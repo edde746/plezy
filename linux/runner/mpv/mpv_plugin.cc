@@ -31,6 +31,7 @@ static gboolean on_gl_render(GtkGLArea* area,
                              gpointer user_data);
 static void on_gl_realize(GtkGLArea* area, gpointer user_data);
 static void on_gl_unrealize(GtkGLArea* area, gpointer user_data);
+static void on_gl_resize(GtkGLArea* area, gint width, gint height, gpointer user_data);
 
 static void mpv_plugin_dispose(GObject* object) {
   MpvPlugin* self = MPV_PLUGIN(object);
@@ -103,6 +104,7 @@ MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar,
   g_signal_connect(gl_area, "render", G_CALLBACK(on_gl_render), self);
   g_signal_connect(gl_area, "realize", G_CALLBACK(on_gl_realize), self);
   g_signal_connect(gl_area, "unrealize", G_CALLBACK(on_gl_unrealize), self);
+  g_signal_connect(gl_area, "resize", G_CALLBACK(on_gl_resize), self);
 
   // Set up auto-render to false - we control when to render.
   gtk_gl_area_set_auto_render(gl_area, FALSE);
@@ -133,15 +135,14 @@ static gboolean on_gl_render(GtkGLArea* area,
   MpvPlugin* self = MPV_PLUGIN(user_data);
 
   // Ensure GL context is current before any GL operations.
-  // This is critical during fullscreen transitions and workspace switches
-  // where GTK manages context switching internally (issue #202).
+  // Critical during fullscreen transitions and workspace switches (issue #202).
   gtk_gl_area_make_current(area);
 
   // Check for GL context errors (can happen during window state changes)
   GError* error = gtk_gl_area_get_error(area);
   if (error != nullptr) {
     g_warning("MPV Plugin: GL context error in render: %s", error->message);
-    return TRUE;
+    return FALSE;  // Signal failure to GTK
   }
 
   if (!self->player || !self->player->IsInitialized() || !self->visible) {
@@ -164,9 +165,40 @@ static gboolean on_gl_render(GtkGLArea* area,
   GLint fbo = 0;
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo);
 
-  // Render the video frame.
+  // Save GL state before MPV render (MPV modifies these and doesn't restore them)
+  // This prevents GL state pollution that corrupts Flutter's rendering.
+  GLint prev_viewport[4];
+  GLint prev_scissor_box[4];
+  GLboolean prev_blend, prev_scissor_test;
+  GLint prev_blend_src, prev_blend_dst;
+
+  glGetIntegerv(GL_VIEWPORT, prev_viewport);
+  glGetIntegerv(GL_SCISSOR_BOX, prev_scissor_box);
+  glGetBooleanv(GL_BLEND, &prev_blend);
+  glGetBooleanv(GL_SCISSOR_TEST, &prev_scissor_test);
+  glGetIntegerv(GL_BLEND_SRC_ALPHA, &prev_blend_src);
+  glGetIntegerv(GL_BLEND_DST_ALPHA, &prev_blend_dst);
+
+  // Set viewport and render the video frame.
+  glViewport(0, 0, width, height);
   self->player->Render(width, height, fbo);
   self->player->ClearRedrawFlag();
+
+  // Restore GL state after MPV render to prevent Flutter corruption.
+  glViewport(prev_viewport[0], prev_viewport[1], prev_viewport[2], prev_viewport[3]);
+  glScissor(prev_scissor_box[0], prev_scissor_box[1], prev_scissor_box[2], prev_scissor_box[3]);
+  if (prev_blend) {
+    glEnable(GL_BLEND);
+  } else {
+    glDisable(GL_BLEND);
+  }
+  if (prev_scissor_test) {
+    glEnable(GL_SCISSOR_TEST);
+  } else {
+    glDisable(GL_SCISSOR_TEST);
+  }
+  glBlendFunc(prev_blend_src, prev_blend_dst);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
   return TRUE;
 }
@@ -200,14 +232,29 @@ static void on_gl_unrealize(GtkGLArea* area, gpointer user_data) {
   GError* error = gtk_gl_area_get_error(area);
   if (error != nullptr) {
     g_warning("MPV Plugin: GL context error in unrealize: %s", error->message);
-    // Still try to dispose, but player may already be in bad state
   }
 
+  // Always try to dispose - Dispose() handles its own safety checks
   if (self->player) {
     self->player->Dispose();
   }
 
   g_message("MPV Plugin: GL area unrealized");
+}
+
+/// GtkGLArea resize callback.
+static void on_gl_resize(GtkGLArea* area,
+                         gint width,
+                         gint height,
+                         gpointer user_data) {
+  MpvPlugin* self = MPV_PLUGIN(user_data);
+  (void)width;
+  (void)height;
+
+  // Force a redraw when size changes to prevent lag during resize.
+  if (self->visible && self->player && self->player->IsInitialized()) {
+    gtk_gl_area_queue_render(area);
+  }
 }
 
 /// Method call handler.
