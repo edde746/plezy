@@ -54,12 +54,16 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
             child: Row(
               children: [
                 // Drag handle (if reorderable)
+                // Wrapped in GestureDetector to consume long-press and prevent context menu
                 if (widget.canReorder)
-                  ReorderableDragStartListener(
-                    index: widget.index,
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 12),
-                      child: AppIcon(Symbols.drag_indicator_rounded, fill: 1, color: Colors.grey),
+                  GestureDetector(
+                    onLongPress: () {},
+                    child: ReorderableDragStartListener(
+                      index: widget.index,
+                      child: const Padding(
+                        padding: EdgeInsets.only(right: 12),
+                        child: AppIcon(Symbols.drag_indicator_rounded, fill: 1, color: Colors.grey),
+                      ),
                     ),
                   ),
 
