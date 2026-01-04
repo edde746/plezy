@@ -344,15 +344,12 @@ class DownloadManagerService {
       }
       final metadata = PlexMetadata.fromJson(firstMetadata).copyWith(serverId: serverId);
 
-      // Get video playback data (includes URL, streams, etc.)
+      // Get video playback data (includes URL, streams, markers, etc.)
+      // This also caches the metadata with chapters/markers for offline use
       final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
       if (playbackData.videoUrl == null) {
         throw Exception('Could not get video URL');
       }
-
-      // Cache playback extras (chapters + markers) for offline use
-      // This fetches and caches in one call
-      await client.getPlaybackExtras(metadata.ratingKey);
 
       // Determine file extension from URL or default to mp4
       final extension = _getExtensionFromUrl(playbackData.videoUrl!) ?? 'mp4';

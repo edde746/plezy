@@ -13,7 +13,15 @@ class PlexVideoPlaybackData {
   /// Available media versions/qualities for this content
   final List<PlexMediaVersion> availableVersions;
 
-  PlexVideoPlaybackData({required this.videoUrl, required this.mediaInfo, required this.availableVersions});
+  /// Markers for intro/credits skip functionality
+  final List<PlexMarker> markers;
+
+  PlexVideoPlaybackData({
+    required this.videoUrl,
+    required this.mediaInfo,
+    required this.availableVersions,
+    this.markers = const [],
+  });
 
   /// Returns true if this playback data has a valid video URL
   bool get hasValidVideoUrl => videoUrl != null && videoUrl!.isNotEmpty;

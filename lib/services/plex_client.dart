@@ -444,7 +444,10 @@ class PlexClient {
 
     // Online: try network first
     try {
-      final response = await _dio.get('/library/metadata/$ratingKey', queryParameters: queryParams);
+      // Always include markers and chapters to ensure cached data is complete
+      // This prevents cache corruption when different methods fetch the same endpoint
+      final mergedParams = {'includeMarkers': 1, 'includeChapters': 1, ...?queryParams};
+      final response = await _dio.get('/library/metadata/$ratingKey', queryParameters: mergedParams);
 
       // Cache at base endpoint
       if (response.data != null) {
@@ -781,36 +784,6 @@ class PlexClient {
     return '${config.baseUrl}/$path'.withPlexToken(config.token);
   }
 
-  /// Get video URL for direct playback
-  /// [mediaIndex] specifies which Media item to use (defaults to 0 - first version)
-  /// Uses cache for offline mode support and network fallback.
-  Future<String?> getVideoUrl(String ratingKey, {int mediaIndex = 0}) async {
-    final data = await _fetchMetadataWithCache(ratingKey);
-    final metadataJson = _getFirstMetadataJsonFromData(data);
-
-    if (metadataJson != null && metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
-      final mediaList = metadataJson['Media'] as List;
-
-      // Ensure the requested index is valid
-      if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
-        mediaIndex = 0;
-      }
-
-      final media = mediaList[mediaIndex];
-      if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
-        final part = media['Part'][0];
-        final partKey = part['key'] as String?;
-
-        if (partKey != null) {
-          // Return direct play URL
-          return '${config.baseUrl}$partKey'.withPlexToken(config.token);
-        }
-      }
-    }
-
-    return null;
-  }
-
   /// Get chapters for a media item
   Future<List<PlexChapter>> getChapters(String ratingKey) async {
     final response = await _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1});
@@ -952,63 +925,8 @@ class PlexClient {
     return PlaybackExtras(chapters: chapters, markers: markers);
   }
 
-  /// Get detailed media info including chapters and tracks
-  /// [mediaIndex] specifies which Media item to use (defaults to 0 - first version)
-  /// Uses cache for offline mode support and network fallback.
-  Future<PlexMediaInfo?> getMediaInfo(String ratingKey, {int mediaIndex = 0}) async {
-    final data = await _fetchMetadataWithCache(ratingKey);
-    final metadataJson = _getFirstMetadataJsonFromData(data);
-
-    if (metadataJson != null && metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
-      final mediaList = metadataJson['Media'] as List;
-
-      // Ensure the requested index is valid
-      if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
-        mediaIndex = 0;
-      }
-
-      final media = mediaList[mediaIndex];
-      if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
-        final part = media['Part'][0];
-        final partKey = part['key'] as String?;
-
-        if (partKey != null) {
-          // Parse streams using helper
-          final streams = _parseStreams(part['Stream'] as List<dynamic>?);
-          // Parse chapters using helper
-          final chapters = _parseChapters(metadataJson);
-
-          return PlexMediaInfo(
-            videoUrl: '${config.baseUrl}$partKey'.withPlexToken(config.token),
-            audioTracks: streams.audio,
-            subtitleTracks: streams.subtitles,
-            chapters: chapters,
-          );
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /// Get all available media versions for a media item
-  /// Returns a list of PlexMediaVersion objects representing different quality/format options
-  /// Uses cache for offline mode support and network fallback.
-  Future<List<PlexMediaVersion>> getMediaVersions(String ratingKey) async {
-    final data = await _fetchMetadataWithCache(ratingKey);
-    final metadataJson = _getFirstMetadataJsonFromData(data);
-
-    if (metadataJson != null && metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
-      final mediaList = metadataJson['Media'] as List;
-      return mediaList.map((media) => PlexMediaVersion.fromJson(media as Map<String, dynamic>)).toList();
-    }
-
-    return [];
-  }
-
-  /// Get consolidated video playback data (URL, media info, and versions) in a single API call
-  /// This method combines the functionality of getVideoUrl(), getMediaInfo(), and getMediaVersions()
-  /// to reduce redundant API calls during video playback initialization.
+  /// Get consolidated video playback data (URL, media info, versions, and markers) in a single API call.
+  /// This is the primary method for playback initialization.
   /// Uses cache for offline mode support and network fallback.
   Future<PlexVideoPlaybackData> getVideoPlaybackData(String ratingKey, {int mediaIndex = 0}) async {
     final data = await _fetchMetadataWithCache(ratingKey);
@@ -1017,45 +935,68 @@ class PlexClient {
     String? videoUrl;
     PlexMediaInfo? mediaInfo;
     List<PlexMediaVersion> availableVersions = [];
+    List<PlexMarker> markers = [];
 
-    if (metadataJson != null && metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
-      final mediaList = metadataJson['Media'] as List;
-
-      // Parse available media versions first
-      availableVersions = mediaList.map((media) => PlexMediaVersion.fromJson(media as Map<String, dynamic>)).toList();
-
-      // Ensure the requested index is valid
-      if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
-        mediaIndex = 0;
+    if (metadataJson != null) {
+      // Parse markers (for auto-skip functionality)
+      if (metadataJson['Marker'] != null) {
+        final markerList = metadataJson['Marker'] as List;
+        for (var marker in markerList) {
+          markers.add(
+            PlexMarker(
+              id: marker['id'] as int,
+              type: marker['type'] as String,
+              startTimeOffset: marker['startTimeOffset'] as int,
+              endTimeOffset: marker['endTimeOffset'] as int,
+            ),
+          );
+        }
       }
 
-      final media = mediaList[mediaIndex];
-      if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
-        final part = media['Part'][0];
-        final partKey = part['key'] as String?;
+      if (metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
+        final mediaList = metadataJson['Media'] as List;
 
-        if (partKey != null) {
-          // Get video URL
-          videoUrl = '${config.baseUrl}$partKey'.withPlexToken(config.token);
+        // Parse available media versions first
+        availableVersions = mediaList.map((media) => PlexMediaVersion.fromJson(media as Map<String, dynamic>)).toList();
 
-          // Parse streams using helper
-          final streams = _parseStreams(part['Stream'] as List<dynamic>?);
-          // Parse chapters using helper
-          final chapters = _parseChapters(metadataJson);
+        // Ensure the requested index is valid
+        if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
+          mediaIndex = 0;
+        }
 
-          // Create media info
-          mediaInfo = PlexMediaInfo(
-            videoUrl: videoUrl,
-            audioTracks: streams.audio,
-            subtitleTracks: streams.subtitles,
-            chapters: chapters,
-            partId: part['id'] as int?,
-          );
+        final media = mediaList[mediaIndex];
+        if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
+          final part = media['Part'][0];
+          final partKey = part['key'] as String?;
+
+          if (partKey != null) {
+            // Get video URL
+            videoUrl = '${config.baseUrl}$partKey'.withPlexToken(config.token);
+
+            // Parse streams using helper
+            final streams = _parseStreams(part['Stream'] as List<dynamic>?);
+            // Parse chapters using helper
+            final chapters = _parseChapters(metadataJson);
+
+            // Create media info
+            mediaInfo = PlexMediaInfo(
+              videoUrl: videoUrl,
+              audioTracks: streams.audio,
+              subtitleTracks: streams.subtitles,
+              chapters: chapters,
+              partId: part['id'] as int?,
+            );
+          }
         }
       }
     }
 
-    return PlexVideoPlaybackData(videoUrl: videoUrl, mediaInfo: mediaInfo, availableVersions: availableVersions);
+    return PlexVideoPlaybackData(
+      videoUrl: videoUrl,
+      mediaInfo: mediaInfo,
+      availableVersions: availableVersions,
+      markers: markers,
+    );
   }
 
   /// Get file information for a media item
