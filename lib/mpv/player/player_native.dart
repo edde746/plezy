@@ -571,11 +571,6 @@ class PlayerNative implements Player {
   }
 
   @override
-  Future<void> setControlsVisible(bool visible) async {
-    // No-op on most platforms. Override on Linux for transparency workaround.
-  }
-
-  @override
   Future<void> updateFrame() async {
     _checkDisposed();
     if (!_initialized) return;

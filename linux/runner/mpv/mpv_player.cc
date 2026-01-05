@@ -135,6 +135,10 @@ bool MpvPlayer::Initialize(GtkGLArea* gl_area) {
 }
 
 void MpvPlayer::Dispose() {
+  // Lock mutex to prevent race with OnMpvWakeup callbacks.
+  // This ensures no new event processing starts during dispose.
+  std::lock_guard<std::mutex> lock(callback_mutex_);
+
   // Guard against multiple dispose calls (double-free protection)
   if (disposed_.exchange(true)) {
     return;  // Already disposed
@@ -282,15 +286,18 @@ void MpvPlayer::RequestRedraw() {
 void MpvPlayer::OnMpvWakeup(void* ctx) {
   auto* player = static_cast<MpvPlayer*>(ctx);
 
-  // Don't schedule if already disposed
+  // Don't schedule if already disposed (atomic check for early exit)
   if (player->disposed_) return;
 
   // Schedule event processing on the main thread.
   g_idle_add(
       [](gpointer data) -> gboolean {
         auto* player = static_cast<MpvPlayer*>(data);
-        // Check disposed again when callback runs
-        if (!player->disposed_) {
+
+        // Check disposed - atomic ensures we see updated value.
+        // Don't lock mutex here - ProcessEvents() calls SendPropertyChange/SendEvent
+        // which lock callback_mutex_, causing deadlock if we hold it here.
+        if (!player->disposed_ && player->mpv_) {
           player->ProcessEvents();
         }
         return G_SOURCE_REMOVE;

@@ -1049,11 +1049,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (completed && _nextEpisode != null && !_showPlayNextDialog && !_completionTriggered) {
       _completionTriggered = true;
 
-      // On Linux, show the Flutter layer so the overlay is visible
-      if (Platform.isLinux) {
-        player?.setControlsVisible(true);
-      }
-
       setState(() {
         _showPlayNextDialog = true;
         _autoPlayCountdown = 5;
