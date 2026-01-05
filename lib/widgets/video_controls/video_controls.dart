@@ -131,7 +131,6 @@ class PlexVideoControls extends StatefulWidget {
 
 class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListener, WidgetsBindingObserver {
   bool _showControls = true;
-  bool _controlsFullyHidden = false; // For Linux: true after fade-out completes
   List<PlexChapter> _chapters = [];
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
@@ -173,9 +172,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   StreamSubscription<bool>? _playingSubscription;
   // Completed subscription to show controls when video ends
   StreamSubscription<bool>? _completedSubscription;
-  // Window resize pause state
-  Timer? _resizeDebounceTimer;
-  bool _wasPlayingBeforeResize = false;
   // Auto-skip state
   bool _autoSkipIntro = true;
   bool _autoSkipCredits = true;
@@ -304,10 +300,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         // Show controls when video completes (for play next dialog etc.)
         setState(() {
           _showControls = true;
-          _controlsFullyHidden = false;
         });
         _hideTimer?.cancel();
-        _showLinuxControls();
       }
     });
   }
@@ -445,7 +439,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _hideTimer?.cancel();
     _feedbackTimer?.cancel();
-    _resizeDebounceTimer?.cancel();
     _autoSkipTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
@@ -513,22 +506,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   @override
   void onWindowResize() {
-    // Pause video while resizing to prevent lag
-    if (_resizeDebounceTimer == null && widget.player.state.playing) {
-      _wasPlayingBeforeResize = true;
-      widget.player.pause();
-    }
-
-    // Reset debounce timer - resume when resizing stops
-    _resizeDebounceTimer?.cancel();
-    final slowDuration = tokens(context).slow;
-    _resizeDebounceTimer = Timer(slowDuration, () {
-      if (_wasPlayingBeforeResize && mounted) {
-        widget.player.play();
-      }
-      _wasPlayingBeforeResize = false;
-      _resizeDebounceTimer = null;
-    });
+    // Lag during resize is now handled in native code (glViewport + resize signal handler)
   }
 
   void _startHideTimer() {
@@ -551,7 +529,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           if (Platform.isMacOS) {
             _updateTrafficLightVisibility();
           }
-          _hideLinuxControlsAfterAnimation();
         }
       });
     }
@@ -564,35 +541,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
-  /// Show controls immediately on Linux
-  void _showLinuxControls() {
-    if (Platform.isLinux) {
-      widget.player.setControlsVisible(true);
-    }
-  }
-
-  /// Hide controls on Linux after animation completes (250ms delay)
-  void _hideLinuxControlsAfterAnimation() {
-    if (Platform.isLinux) {
-      Future.delayed(const Duration(milliseconds: 250), () {
-        if (mounted && !_showControls) {
-          setState(() {
-            _controlsFullyHidden = true;
-          });
-          widget.player.setControlsVisible(false);
-        }
-      });
-    }
-  }
-
   /// Show controls in response to pointer activity (mouse/trackpad movement).
   void _showControlsFromPointerActivity() {
     if (!_showControls) {
       setState(() {
         _showControls = true;
-        _controlsFullyHidden = false;
       });
-      _showLinuxControls();
       // On macOS, keep window controls in sync with the overlay
       if (Platform.isMacOS) {
         _updateTrafficLightVisibility();
@@ -606,17 +560,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _toggleControls() {
     setState(() {
       _showControls = !_showControls;
-      if (_showControls) {
-        _controlsFullyHidden = false;
-        _showLinuxControls();
-      }
     });
     if (_showControls) {
       _startHideTimer();
       // Cancel auto-skip when user manually shows controls
       _cancelAutoSkipTimer();
-    } else {
-      _hideLinuxControlsAfterAnimation();
     }
 
     // On macOS, hide/show traffic lights with controls
@@ -1195,9 +1143,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (!_showControls) {
       setState(() {
         _showControls = true;
-        _controlsFullyHidden = false;
       });
-      _showLinuxControls();
       if (Platform.isMacOS) {
         _updateTrafficLightVisibility();
       }
@@ -1231,7 +1177,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       if (Platform.isMacOS) {
         _updateTrafficLightVisibility();
       }
-      _hideLinuxControlsAfterAnimation();
     }
   }
 
@@ -1330,6 +1275,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               onHover: (_) => _showControlsFromPointerActivity(),
               child: Stack(
                 children: [
+                  // Linux keep-alive: 1px widget that continuously repaints to prevent
+                  // Flutter animations from freezing when GTK's frame clock goes idle
+                  if (Platform.isLinux) const Positioned(top: 0, left: 0, child: _LinuxKeepAlive()),
                   // Invisible tap detector that always covers the full area
                   // Also handles long-press for 2x speed
                   Positioned.fill(
@@ -1423,21 +1371,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                         },
                       ),
                     ),
-                  // Custom controls overlay - use AnimatedOpacity to keep widget tree alive
-                  // On Linux, use Offstage after fade completes to fully hide
+                  // Custom controls overlay
                   // Positioned AFTER double-tap zones so controls receive taps first
                   Positioned.fill(
-                    child: Offstage(
-                      offstage: Platform.isLinux && _controlsFullyHidden,
-                      child: IgnorePointer(
-                        ignoring: !_showControls,
-                        child: FocusScope(
-                          // Prevent focus from entering controls when hidden
-                          canRequestFocus: _showControls,
-                          child: AnimatedOpacity(
-                            opacity: _showControls ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 200),
-                            child: LayoutBuilder(
+                    child: IgnorePointer(
+                      ignoring: !_showControls,
+                      child: FocusScope(
+                        // Prevent focus from entering controls when hidden
+                        canRequestFocus: _showControls,
+                        child: AnimatedOpacity(
+                          opacity: _showControls ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: LayoutBuilder(
                               builder: (context, constraints) {
                                 return GestureDetector(
                                   onTapUp: (details) => _handleControlsOverlayTap(details, constraints),
@@ -1551,7 +1496,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                         ),
                       ),
                     ),
-                  ),
                   // Visual feedback overlay for double-tap
                   if (isMobile && _showDoubleTapFeedback)
                     Positioned.fill(
@@ -1719,5 +1663,50 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
+  }
+}
+
+/// A 1x1 pixel widget that continuously repaints to keep Flutter's frame clock active on Linux.
+/// This prevents animations from freezing when GTK's frame clock goes idle.
+class _LinuxKeepAlive extends StatefulWidget {
+  const _LinuxKeepAlive();
+
+  @override
+  State<_LinuxKeepAlive> createState() => _LinuxKeepAliveState();
+}
+
+class _LinuxKeepAliveState extends State<_LinuxKeepAlive> {
+  Timer? _timer;
+  int _tick = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Repaint every 100ms to keep Flutter's frame scheduler active
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (mounted) {
+        setState(() {
+          _tick++;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Use _tick to force rebuild, render a 1x1 transparent pixel
+    return SizedBox(
+      width: 1,
+      height: 1,
+      child: ColoredBox(
+        color: Color.fromARGB(_tick % 2, 0, 0, 0), // Alternate 0/1 alpha
+      ),
+    );
   }
 }

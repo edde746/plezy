@@ -109,8 +109,9 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_set_hexpand(GTK_WIDGET(self->flutter_view), TRUE);
   gtk_widget_set_vexpand(GTK_WIDGET(self->flutter_view), TRUE);
 
-  // Enable transparency for the Flutter view.
-  gtk_widget_set_app_paintable(GTK_WIDGET(self->flutter_view), TRUE);
+  // Set up RGBA visual for transparency support.
+  // Note: app_paintable is only set on the window (line 73), not on child widgets,
+  // to avoid redundant composition passes.
   setup_rgba_visual(GTK_WIDGET(self->flutter_view));
 
   // Enable transparent background for the Flutter view.
