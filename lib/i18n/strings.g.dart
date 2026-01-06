@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 7
-/// Strings: 3554 (507 per locale)
+/// Strings: 3568 (509 per locale)
 ///
-/// Built on 2025-12-31 at 06:54 UTC
+/// Built on 2026-01-06 at 22:09 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -313,6 +313,8 @@ class _StringsSettingsEn {
 	String get listViewDescription => 'Display items in a list layout';
 	String get useSeasonPosters => 'Use Season Posters';
 	String get showHeroSection => 'Show Hero Section';
+	String get useGlobalHubs => 'Use Plex Home Layout';
+	String get useGlobalHubsDescription => 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.';
 	String get hardwareDecoding => 'Hardware Decoding';
 	String get hardwareDecodingDescription => 'Use hardware acceleration when available';
 	String get bufferSize => 'Buffer Size';
@@ -1186,6 +1188,8 @@ class _StringsSettingsDe implements _StringsSettingsEn {
 	@override String get listViewDescription => 'Elemente in Listenansicht anzeigen';
 	@override String get useSeasonPosters => 'Staffelposter verwenden';
 	@override String get showHeroSection => 'Hero-Bereich anzeigen';
+	@override String get useGlobalHubs => 'Plex-Startseiten-Layout verwenden';
+	@override String get useGlobalHubsDescription => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.';
 	@override String get hardwareDecoding => 'Hardware-Decodierung';
 	@override String get hardwareDecodingDescription => 'Hardwarebeschleunigung verwenden, sofern verfügbar';
 	@override String get bufferSize => 'Puffergröße';
@@ -2060,6 +2064,8 @@ class _StringsSettingsIt implements _StringsSettingsEn {
 	@override String get listViewDescription => 'Visualizza gli elementi in un layout a elenco';
 	@override String get useSeasonPosters => 'Usa poster delle stagioni';
 	@override String get showHeroSection => 'Mostra sezione principale';
+	@override String get useGlobalHubs => 'Usa layout Home di Plex';
+	@override String get useGlobalHubsDescription => 'Mostra gli hub della home page come il client Plex ufficiale. Se disattivato, mostra invece i suggerimenti per libreria.';
 	@override String get hardwareDecoding => 'Decodifica Hardware';
 	@override String get hardwareDecodingDescription => 'Utilizza l\'accelerazione hardware quando disponibile';
 	@override String get bufferSize => 'Dimensione buffer';
@@ -2934,6 +2940,8 @@ class _StringsSettingsKo implements _StringsSettingsEn {
 	@override String get listViewDescription => '항목을 목록 레이아웃으로 표시합니다';
 	@override String get useSeasonPosters => '시즌 포스터 사용';
 	@override String get showHeroSection => '주요 추천 영역 표시';
+	@override String get useGlobalHubs => 'Plex 홈 레이아웃 사용';
+	@override String get useGlobalHubsDescription => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
 	@override String get bufferSize => '버퍼 크기';
@@ -3808,6 +3816,8 @@ class _StringsSettingsNl implements _StringsSettingsEn {
 	@override String get listViewDescription => 'Items weergeven in een lijstindeling';
 	@override String get useSeasonPosters => 'Gebruik seizoenposters';
 	@override String get showHeroSection => 'Toon hoofdsectie';
+	@override String get useGlobalHubs => 'Plex Home-indeling gebruiken';
+	@override String get useGlobalHubsDescription => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.';
 	@override String get hardwareDecoding => 'Hardware decodering';
 	@override String get hardwareDecodingDescription => 'Gebruik hardware versnelling indien beschikbaar';
 	@override String get bufferSize => 'Buffer grootte';
@@ -4682,6 +4692,8 @@ class _StringsSettingsSv implements _StringsSettingsEn {
 	@override String get listViewDescription => 'Visa objekt i listlayout';
 	@override String get useSeasonPosters => 'Använd säsongsaffischer';
 	@override String get showHeroSection => 'Visa hjältesektion';
+	@override String get useGlobalHubs => 'Använd Plex hem-layout';
+	@override String get useGlobalHubsDescription => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.';
 	@override String get hardwareDecoding => 'Hårdvaruavkodning';
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
 	@override String get bufferSize => 'Bufferstorlek';
@@ -5556,6 +5568,8 @@ class _StringsSettingsZh implements _StringsSettingsEn {
 	@override String get listViewDescription => '以列表布局显示项目';
 	@override String get useSeasonPosters => '使用季海报';
 	@override String get showHeroSection => '显示主要精选区';
+	@override String get useGlobalHubs => '使用 Plex 主页布局';
+	@override String get useGlobalHubsDescription => '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。';
 	@override String get hardwareDecoding => '硬件解码';
 	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
 	@override String get bufferSize => '缓冲区大小';
@@ -6325,6 +6339,8 @@ extension on Translations {
 			case 'settings.listViewDescription': return 'Display items in a list layout';
 			case 'settings.useSeasonPosters': return 'Use Season Posters';
 			case 'settings.showHeroSection': return 'Show Hero Section';
+			case 'settings.useGlobalHubs': return 'Use Plex Home Layout';
+			case 'settings.useGlobalHubsDescription': return 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.';
 			case 'settings.hardwareDecoding': return 'Hardware Decoding';
 			case 'settings.hardwareDecodingDescription': return 'Use hardware acceleration when available';
 			case 'settings.bufferSize': return 'Buffer Size';
@@ -6840,6 +6856,8 @@ extension on _StringsDe {
 			case 'settings.listViewDescription': return 'Elemente in Listenansicht anzeigen';
 			case 'settings.useSeasonPosters': return 'Staffelposter verwenden';
 			case 'settings.showHeroSection': return 'Hero-Bereich anzeigen';
+			case 'settings.useGlobalHubs': return 'Plex-Startseiten-Layout verwenden';
+			case 'settings.useGlobalHubsDescription': return 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.';
 			case 'settings.hardwareDecoding': return 'Hardware-Decodierung';
 			case 'settings.hardwareDecodingDescription': return 'Hardwarebeschleunigung verwenden, sofern verfügbar';
 			case 'settings.bufferSize': return 'Puffergröße';
@@ -7356,6 +7374,8 @@ extension on _StringsIt {
 			case 'settings.listViewDescription': return 'Visualizza gli elementi in un layout a elenco';
 			case 'settings.useSeasonPosters': return 'Usa poster delle stagioni';
 			case 'settings.showHeroSection': return 'Mostra sezione principale';
+			case 'settings.useGlobalHubs': return 'Usa layout Home di Plex';
+			case 'settings.useGlobalHubsDescription': return 'Mostra gli hub della home page come il client Plex ufficiale. Se disattivato, mostra invece i suggerimenti per libreria.';
 			case 'settings.hardwareDecoding': return 'Decodifica Hardware';
 			case 'settings.hardwareDecodingDescription': return 'Utilizza l\'accelerazione hardware quando disponibile';
 			case 'settings.bufferSize': return 'Dimensione buffer';
@@ -7872,6 +7892,8 @@ extension on _StringsKo {
 			case 'settings.listViewDescription': return '항목을 목록 레이아웃으로 표시합니다';
 			case 'settings.useSeasonPosters': return '시즌 포스터 사용';
 			case 'settings.showHeroSection': return '주요 추천 영역 표시';
+			case 'settings.useGlobalHubs': return 'Plex 홈 레이아웃 사용';
+			case 'settings.useGlobalHubsDescription': return '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.';
 			case 'settings.hardwareDecoding': return '하드웨어 디코딩';
 			case 'settings.hardwareDecodingDescription': return '가능한 경우 하드웨어 가속을 사용합니다';
 			case 'settings.bufferSize': return '버퍼 크기';
@@ -8388,6 +8410,8 @@ extension on _StringsNl {
 			case 'settings.listViewDescription': return 'Items weergeven in een lijstindeling';
 			case 'settings.useSeasonPosters': return 'Gebruik seizoenposters';
 			case 'settings.showHeroSection': return 'Toon hoofdsectie';
+			case 'settings.useGlobalHubs': return 'Plex Home-indeling gebruiken';
+			case 'settings.useGlobalHubsDescription': return 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.';
 			case 'settings.hardwareDecoding': return 'Hardware decodering';
 			case 'settings.hardwareDecodingDescription': return 'Gebruik hardware versnelling indien beschikbaar';
 			case 'settings.bufferSize': return 'Buffer grootte';
@@ -8904,6 +8928,8 @@ extension on _StringsSv {
 			case 'settings.listViewDescription': return 'Visa objekt i listlayout';
 			case 'settings.useSeasonPosters': return 'Använd säsongsaffischer';
 			case 'settings.showHeroSection': return 'Visa hjältesektion';
+			case 'settings.useGlobalHubs': return 'Använd Plex hem-layout';
+			case 'settings.useGlobalHubsDescription': return 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.';
 			case 'settings.hardwareDecoding': return 'Hårdvaruavkodning';
 			case 'settings.hardwareDecodingDescription': return 'Använd hårdvaruacceleration när tillgängligt';
 			case 'settings.bufferSize': return 'Bufferstorlek';
@@ -9420,6 +9446,8 @@ extension on _StringsZh {
 			case 'settings.listViewDescription': return '以列表布局显示项目';
 			case 'settings.useSeasonPosters': return '使用季海报';
 			case 'settings.showHeroSection': return '显示主要精选区';
+			case 'settings.useGlobalHubs': return '使用 Plex 主页布局';
+			case 'settings.useGlobalHubsDescription': return '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。';
 			case 'settings.hardwareDecoding': return '硬件解码';
 			case 'settings.hardwareDecodingDescription': return '如果可用，使用硬件加速';
 			case 'settings.bufferSize': return '缓冲区大小';

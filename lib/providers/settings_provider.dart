@@ -7,6 +7,7 @@ class SettingsProvider extends ChangeNotifier {
   ViewMode _viewMode = ViewMode.grid;
   bool _useSeasonPoster = false;
   bool _showHeroSection = true;
+  bool _useGlobalHubs = true;
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
@@ -27,6 +28,7 @@ class SettingsProvider extends ChangeNotifier {
     _viewMode = _settingsService!.getViewMode();
     _useSeasonPoster = _settingsService!.getUseSeasonPoster();
     _showHeroSection = _settingsService!.getShowHeroSection();
+    _useGlobalHubs = _settingsService!.getUseGlobalHubs();
     _isInitialized = true;
     notifyListeners();
   }
@@ -41,6 +43,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get useSeasonPoster => _useSeasonPoster;
 
   bool get showHeroSection => _showHeroSection;
+
+  bool get useGlobalHubs => _useGlobalHubs;
 
   Future<void> setLibraryDensity(LibraryDensity density) async {
     if (!_isInitialized) await _initializeSettings();
@@ -74,6 +78,15 @@ class SettingsProvider extends ChangeNotifier {
     if (_showHeroSection != value) {
       _showHeroSection = value;
       await _settingsService!.setShowHeroSection(value);
+      notifyListeners();
+    }
+  }
+
+  Future<void> setUseGlobalHubs(bool value) async {
+    if (!_isInitialized) await _initializeSettings();
+    if (_useGlobalHubs != value) {
+      _useGlobalHubs = value;
+      await _settingsService!.setUseGlobalHubs(value);
       notifyListeners();
     }
   }

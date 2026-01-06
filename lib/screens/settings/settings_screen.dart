@@ -213,6 +213,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const AppIcon(Symbols.home_rounded, fill: 1),
+                title: Text(t.settings.useGlobalHubs),
+                subtitle: Text(t.settings.useGlobalHubsDescription),
+                value: settingsProvider.useGlobalHubs,
+                onChanged: (value) async {
+                  await settingsProvider.setUseGlobalHubs(value);
+                },
+              );
+            },
+          ),
         ],
       ),
     );

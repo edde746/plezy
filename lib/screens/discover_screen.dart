@@ -479,16 +479,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     });
 
     try {
-      appLogger.d('Fetching onDeck and hubs from all Plex servers');
+      appLogger.d('Fetching onDeck and global hubs from all Plex servers');
       final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
 
       if (!multiServerProvider.hasConnectedServers) {
         throw Exception('No servers available');
       }
 
-      // Start OnDeck and libraries fetch in parallel
+      // Get hidden libraries for filtering
+      final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
+
+      // Get settings for hub mode preference
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+
+      // Start OnDeck and hubs fetch in parallel
       final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(limit: 20);
-      final librariesFuture = multiServerProvider.aggregationService.getLibrariesFromAllServersGrouped();
+      final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
+        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+        useGlobalHubs: settingsProvider.useGlobalHubs,
+      );
 
       // Wait for OnDeck to complete and show it immediately
       final onDeck = await onDeckFuture;
@@ -511,32 +520,22 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _heroController.jumpToPage(0);
       }
 
-      // Wait for libraries and then fetch hubs
-      final librariesByServer = await librariesFuture;
+      // Wait for global hubs
+      final allHubs = await hubsFuture;
 
       if (!mounted) return;
 
-      // Get hidden libraries to filter from hubs
-      final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
-
-      // Fetch hubs using the pre-fetched libraries and hidden keys
-      final allHubs = await multiServerProvider.aggregationService.getHubsFromAllServers(
-        librariesByServer: librariesByServer,
-        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
-      );
-
-      // Filter out duplicate hubs that we already fetch separately
+      // Filter out Continue Watching / On Deck hubs (handled separately in hero section)
       final filteredHubs = allHubs.where((hub) {
         final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
         final title = hub.title.toLowerCase();
-        // Skip "Continue Watching" and "On Deck" hubs (we handle these separately)
         return !hubId.contains('ondeck') &&
             !hubId.contains('continue') &&
             !title.contains('continue watching') &&
             !title.contains('on deck');
       }).toList();
 
-      appLogger.d('Received ${onDeck.length} on deck items and ${filteredHubs.length} hubs from all servers');
+      appLogger.d('Received ${onDeck.length} on deck items and ${filteredHubs.length} global hubs from all servers');
       if (!mounted) return;
       setState(() {
         _hubs = filteredHubs;

@@ -84,6 +84,8 @@
     "listViewDescription": "Display items in a list layout",
     "useSeasonPosters": "Use Season Posters",
     "showHeroSection": "Show Hero Section",
+    "useGlobalHubs": "Use Plex Home Layout",
+    "useGlobalHubsDescription": "Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.",
     "hardwareDecoding": "Hardware Decoding",
     "hardwareDecodingDescription": "Use hardware acceleration when available",
     "bufferSize": "Buffer Size",

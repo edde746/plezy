@@ -85,6 +85,8 @@
     "listViewDescription": "Items weergeven in een lijstindeling",
     "useSeasonPosters": "Gebruik seizoenposters",
     "showHeroSection": "Toon hoofdsectie",
+    "useGlobalHubs": "Plex Home-indeling gebruiken",
+    "useGlobalHubsDescription": "Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.",
     "hardwareDecoding": "Hardware decodering",
     "hardwareDecodingDescription": "Gebruik hardware versnelling indien beschikbaar",
     "bufferSize": "Buffer grootte",

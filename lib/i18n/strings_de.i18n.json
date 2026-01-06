@@ -85,6 +85,8 @@
     "listViewDescription": "Elemente in Listenansicht anzeigen",
     "useSeasonPosters": "Staffelposter verwenden",
     "showHeroSection": "Hero-Bereich anzeigen",
+    "useGlobalHubs": "Plex-Startseiten-Layout verwenden",
+    "useGlobalHubsDescription": "Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.",
     "hardwareDecoding": "Hardware-Decodierung",
     "hardwareDecodingDescription": "Hardwarebeschleunigung verwenden, sofern verfügbar",
     "bufferSize": "Puffergröße",

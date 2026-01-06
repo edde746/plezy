@@ -98,11 +98,15 @@ class DataAggregationService {
     return librariesByServer;
   }
 
-  /// Fetch recommendation hubs from all servers using pre-fetched libraries
+  /// Fetch recommendation hubs from all servers
+  /// When useGlobalHubs is true (default), uses the global /hubs endpoint
+  /// to get the true home page hubs like "Recently Added Movies", "Recently Added TV"
+  /// When false, uses per-library hubs from /hubs/sections/{sectionId}
   Future<List<PlexHub>> getHubsFromAllServers({
     int? limit,
-    Map<String, List<PlexLibrary>>? librariesByServer,
     Set<String>? hiddenLibraryKeys,
+    Map<String, List<PlexLibrary>>? librariesByServer,
+    bool useGlobalHubs = true,
   }) async {
     final clients = _serverManager.onlineClients;
 
@@ -111,10 +115,98 @@ class DataAggregationService {
       return [];
     }
 
+    if (useGlobalHubs) {
+      return _fetchGlobalHubs(clients, limit: limit, hiddenLibraryKeys: hiddenLibraryKeys);
+    } else {
+      return _fetchLibraryHubs(
+        clients,
+        limit: limit,
+        hiddenLibraryKeys: hiddenLibraryKeys,
+        librariesByServer: librariesByServer,
+      );
+    }
+  }
+
+  /// Fetch global hubs using /hubs endpoint (matches official Plex client)
+  Future<List<PlexHub>> _fetchGlobalHubs(
+    Map<String, PlexClient> clients, {
+    int? limit,
+    Set<String>? hiddenLibraryKeys,
+  }) async {
+    appLogger.d('Fetching global hubs from ${clients.length} servers');
+
+    final allHubs = <PlexHub>[];
+
+    // Fetch global hubs from all servers in parallel
+    final hubFutures = clients.entries.map((entry) async {
+      final serverId = entry.key;
+      final client = entry.value;
+
+      try {
+        final hubs = await client.getGlobalHubs(limit: limit ?? 10);
+        appLogger.d('Fetched ${hubs.length} global hubs from server $serverId');
+
+        // Filter out items from hidden libraries if specified
+        if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
+          return hubs.map((hub) {
+            final filteredItems = hub.items.where((item) {
+              // Build the global key for the item's library section
+              final librarySectionId = item.librarySectionID;
+              if (librarySectionId == null) return true; // Keep if no section ID
+              final globalKey = '$serverId:$librarySectionId';
+              return !hiddenLibraryKeys.contains(globalKey);
+            }).toList();
+
+            if (filteredItems.isEmpty) return null;
+
+            return PlexHub(
+              hubKey: hub.hubKey,
+              title: hub.title,
+              type: hub.type,
+              hubIdentifier: hub.hubIdentifier,
+              size: filteredItems.length,
+              more: hub.more,
+              items: filteredItems,
+              serverId: hub.serverId,
+              serverName: hub.serverName,
+            );
+          }).whereType<PlexHub>().toList();
+        }
+
+        return hubs;
+      } catch (e, stackTrace) {
+        appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
+        _serverManager.updateServerStatus(serverId, false);
+        return <PlexHub>[];
+      }
+    });
+
+    final results = await Future.wait(hubFutures);
+
+    // Flatten results
+    for (final hubs in results) {
+      allHubs.addAll(hubs);
+    }
+
+    // Apply limit if specified (applied after merging from all servers)
+    final result = limit != null && limit < allHubs.length ? allHubs.sublist(0, limit) : allHubs;
+
+    appLogger.i('Fetched ${result.length} global hubs from all servers');
+
+    return result;
+  }
+
+  /// Fetch per-library hubs using /hubs/sections/{sectionId} endpoint
+  Future<List<PlexHub>> _fetchLibraryHubs(
+    Map<String, PlexClient> clients, {
+    int? limit,
+    Set<String>? hiddenLibraryKeys,
+    Map<String, List<PlexLibrary>>? librariesByServer,
+  }) async {
     // Use pre-fetched libraries or fetch them if not provided
     final libraries = librariesByServer ?? await getLibrariesFromAllServersGrouped();
 
-    appLogger.d('Fetching hubs from ${clients.length} servers');
+    appLogger.d('Fetching per-library hubs from ${clients.length} servers');
 
     final allHubs = <PlexHub>[];
 
@@ -185,7 +277,7 @@ class DataAggregationService {
     // Apply limit if specified
     final result = limit != null && limit < allHubs.length ? allHubs.sublist(0, limit) : allHubs;
 
-    appLogger.i('Fetched ${result.length} hubs from all servers');
+    appLogger.i('Fetched ${result.length} library hubs from all servers');
 
     return result;
   }

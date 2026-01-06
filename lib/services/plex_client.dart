@@ -1249,6 +1249,57 @@ class PlexClient {
     return [];
   }
 
+  /// Get global hubs (home page recommendations)
+  /// Returns actual home page hubs like "Recently Added Movies", "Recently Added TV", etc.
+  /// This matches the official Plex client's home page layout.
+  Future<List<PlexHub>> getGlobalHubs({int limit = 10}) async {
+    try {
+      final response = await _dio.get(
+        '/hubs',
+        queryParameters: {'count': limit, 'includeGuids': 1},
+      );
+
+      final container = _getMediaContainer(response);
+      if (container != null && container['Hub'] != null) {
+        final hubs = <PlexHub>[];
+        for (final hubJson in container['Hub'] as List) {
+          try {
+            final hub = PlexHub.fromJson(hubJson);
+            if (hub.items.isEmpty) continue;
+
+            // Filter to only video content (movies, shows, episodes) and tag with server info
+            final videoItems = hub.items
+                .where((item) => item.isMovie || item.isShow || item.isEpisode)
+                .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
+                .toList();
+
+            if (videoItems.isNotEmpty) {
+              hubs.add(
+                PlexHub(
+                  hubKey: hub.hubKey,
+                  title: hub.title,
+                  type: hub.type,
+                  hubIdentifier: hub.hubIdentifier,
+                  size: hub.size,
+                  more: hub.more,
+                  items: videoItems,
+                  serverId: serverId,
+                  serverName: serverName,
+                ),
+              );
+            }
+          } catch (e) {
+            appLogger.w('Failed to parse global hub', error: e);
+          }
+        }
+        return hubs;
+      }
+    } catch (e) {
+      appLogger.e('Failed to get global hubs: $e');
+    }
+    return [];
+  }
+
   /// Get full content from a hub using its hub key
   /// Returns the complete list of metadata items in the hub
   Future<List<PlexMetadata>> getHubContent(String hubKey) async {

@@ -85,6 +85,8 @@
     "listViewDescription": "항목을 목록 레이아웃으로 표시합니다",
     "useSeasonPosters": "시즌 포스터 사용",
     "showHeroSection": "주요 추천 영역 표시",
+    "useGlobalHubs": "Plex 홈 레이아웃 사용",
+    "useGlobalHubsDescription": "공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.",
     "hardwareDecoding": "하드웨어 디코딩",
     "hardwareDecodingDescription": "가능한 경우 하드웨어 가속을 사용합니다",
     "bufferSize": "버퍼 크기",

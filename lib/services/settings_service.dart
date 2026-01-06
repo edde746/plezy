@@ -30,6 +30,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySeekTimeLarge = 'seek_time_large';
   static const String _keyMediaVersionPreferences = 'media_version_preferences';
   static const String _keyShowHeroSection = 'show_hero_section';
+  static const String _keyUseGlobalHubs = 'use_global_hubs';
   static const String _keySleepTimerDuration = 'sleep_timer_duration';
   static const String _keyAudioSyncOffset = 'audio_sync_offset';
   static const String _keySubtitleSyncOffset = 'subtitle_sync_offset';
@@ -168,6 +169,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getShowHeroSection() {
     return prefs.getBool(_keyShowHeroSection) ?? true; // Default: true (show hero section)
+  }
+
+  // Use Global Hubs (true = global /hubs endpoint, false = per-library hubs)
+  Future<void> setUseGlobalHubs(bool enabled) async {
+    await prefs.setBool(_keyUseGlobalHubs, enabled);
+  }
+
+  bool getUseGlobalHubs() {
+    return prefs.getBool(_keyUseGlobalHubs) ?? true; // Default: true (use global hubs like official Plex)
   }
 
   // Seek Time Small (in seconds)
