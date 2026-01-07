@@ -30,11 +30,18 @@ class PlexHub {
     final metadataList = <PlexMetadata>[];
 
     // Helper function to parse entries from a JSON list
-    void parseEntries(List? entries) {
+    void parseEntries(List? entries, {bool isDirectory = false}) {
       if (entries == null) return;
       for (final item in entries) {
         try {
-          metadataList.add(PlexMetadata.fromJson(item));
+          if (isDirectory && item is Map && !item.containsKey('type')) {
+            // Directory items often represent shows but might miss the type field
+            // Default to 'show' if it looks like a show (has leafCount or childCount)
+            // or 'folder' as a safe default
+            final String type = (item.containsKey('leafCount') || item.containsKey('childCount')) ? 'show' : 'folder';
+            item['type'] = type;
+          }
+          metadataList.add(PlexMetadata.fromJson(item as Map<String, dynamic>));
         } catch (e) {
           // Skip items that fail to parse
         }
@@ -43,7 +50,7 @@ class PlexHub {
 
     // Hubs can contain either Metadata or Directory entries
     parseEntries(json['Metadata'] as List?);
-    parseEntries(json['Directory'] as List?);
+    parseEntries(json['Directory'] as List?, isDirectory: true);
 
     return PlexHub(
       hubKey: json['key'] as String? ?? '',
