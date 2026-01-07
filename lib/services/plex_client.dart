@@ -1216,7 +1216,7 @@ class PlexClient {
               // Filter out non-video content types and tag with server info
               final videoItems = hub.items
                   .where((item) {
-                    return item.isMovie || item.isShow;
+                    return item.isMovie || item.isShow || item.isEpisode;
                   })
                   .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
                   .toList();
