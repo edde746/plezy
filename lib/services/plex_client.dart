@@ -1213,11 +1213,9 @@ class PlexClient {
             final hub = PlexHub.fromJson(hubJson);
             // Only include hubs that have items and are movie/show content
             if (hub.items.isNotEmpty) {
-              // Filter out non-video content types and tag with server info
+              // Filter to only video content (movies, shows, seasons, episodes) and tag with server info
               final videoItems = hub.items
-                  .where((item) {
-                    return item.isMovie || item.isShow;
-                  })
+                  .where((item) => item.isVideoContent)
                   .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
                   .toList();
 
@@ -1267,9 +1265,9 @@ class PlexClient {
             final hub = PlexHub.fromJson(hubJson);
             if (hub.items.isEmpty) continue;
 
-            // Filter to only video content (movies, shows, episodes) and tag with server info
+            // Filter to only video content (movies, shows, seasons, episodes) and tag with server info
             final videoItems = hub.items
-                .where((item) => item.isMovie || item.isShow || item.isEpisode)
+                .where((item) => item.isVideoContent)
                 .map((item) => item.copyWith(serverId: serverId, serverName: serverName))
                 .toList();
 
@@ -1305,9 +1303,9 @@ class PlexClient {
   Future<List<PlexMetadata>> getHubContent(String hubKey) async {
     return _wrapListApiCall<PlexMetadata>(() => _dio.get(hubKey), (response) {
       final allItems = _extractMetadataList(response);
-      // Filter out non-video content types
+      // Filter to only video content (movies, shows, seasons, episodes)
       return allItems.where((item) {
-        return item.isMovie || item.isShow;
+        return item.isVideoContent;
       }).toList();
     }, 'Failed to get hub content');
   }
