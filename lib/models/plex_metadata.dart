@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../services/settings_service.dart' show EpisodePosterMode;
 import 'mixins/multi_server_fields.dart';
 import 'plex_role.dart';
 
@@ -294,25 +295,52 @@ class PlexMetadata with MultiServerFields {
     return null;
   }
 
-  // Helper to get the poster (show poster for episodes/seasons, thumb otherwise)
-  // If useSeasonPoster is true, episodes will use season poster instead of series poster
-  String? posterThumb({bool useSeasonPoster = false}) {
+  /// Returns the appropriate image path based on episode poster mode.
+  /// For episodes:
+  ///   - seriesPoster: grandparentThumb (series poster)
+  ///   - seasonPoster: parentThumb (season poster)
+  ///   - episodeThumbnail: thumb (16:9 episode still)
+  /// For seasons: always returns grandparentThumb (series poster)
+  /// For movies in mixed hub context: returns art (16:9 background)
+  /// For other types: returns thumb
+  String? posterThumb({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
     final itemType = type.toLowerCase();
 
     if (itemType == 'episode') {
-      // If season poster is enabled and available, use it
-      if (useSeasonPoster && parentThumb != null) {
-        return parentThumb!;
-      }
-      // Otherwise fall back to series poster, then item thumb
-      if (grandparentThumb != null) {
-        return grandparentThumb!;
+      switch (mode) {
+        case EpisodePosterMode.episodeThumbnail:
+          return thumb; // 16:9 episode thumbnail
+        case EpisodePosterMode.seasonPoster:
+          return parentThumb ?? grandparentThumb ?? thumb;
+        case EpisodePosterMode.seriesPoster:
+          return grandparentThumb ?? thumb;
       }
     } else if (itemType == 'season' && grandparentThumb != null) {
       // For seasons, always use series poster
       return grandparentThumb!;
     }
+
+    // For movies in mixed hub context with episode thumbnail mode, use art (16:9)
+    if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail && itemType == 'movie') {
+      return art ?? thumb;
+    }
+
     return thumb;
+  }
+
+  /// Returns true if this item should use 16:9 aspect ratio.
+  /// Episodes use 16:9 when in episodeThumbnail mode.
+  /// Movies use 16:9 when in mixed hub context with episodeThumbnail mode.
+  bool usesWideAspectRatio(EpisodePosterMode mode, {bool mixedHubContext = false}) {
+    final itemType = type.toLowerCase();
+    if (itemType == 'episode' && mode == EpisodePosterMode.episodeThumbnail) {
+      return true;
+    }
+    // Movies use 16:9 art in mixed hubs with episode thumbnail mode
+    if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail && itemType == 'movie') {
+      return true;
+    }
+    return false;
   }
 
   // Helper to determine if content is watched

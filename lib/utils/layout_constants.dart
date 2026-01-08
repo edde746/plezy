@@ -59,8 +59,15 @@ class GridLayoutConstants {
   static const double normalTablet = 200;
   static const double normalMobile = 170;
 
-  /// Default aspect ratio for media cards (poster)
+  /// Default aspect ratio for media card grid cells (poster + text)
   static const double posterAspectRatio = 2 / 3.3;
+
+  /// Aspect ratio for episode thumbnail image (16:9)
+  static const double episodeThumbnailAspectRatio = 16 / 9;
+
+  /// Aspect ratio for episode thumbnail grid cells (16:9 image + text area)
+  /// This is wider than posterAspectRatio but accounts for ~60px text below
+  static const double episodeGridCellAspectRatio = 1.4;
 
   /// Grid spacing (edge-to-edge cards)
   static const double crossAxisSpacing = 0;

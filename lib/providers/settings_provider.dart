@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../i18n/strings.g.dart';
 import '../services/settings_service.dart';
 
 class SettingsProvider extends ChangeNotifier {
   SettingsService? _settingsService;
   LibraryDensity _libraryDensity = LibraryDensity.normal;
   ViewMode _viewMode = ViewMode.grid;
-  bool _useSeasonPoster = false;
+  EpisodePosterMode _episodePosterMode = EpisodePosterMode.seriesPoster;
   bool _showHeroSection = true;
   bool _useGlobalHubs = true;
   bool _isInitialized = false;
@@ -26,7 +27,7 @@ class SettingsProvider extends ChangeNotifier {
     _settingsService = await SettingsService.getInstance();
     _libraryDensity = _settingsService!.getLibraryDensity();
     _viewMode = _settingsService!.getViewMode();
-    _useSeasonPoster = _settingsService!.getUseSeasonPoster();
+    _episodePosterMode = _settingsService!.getEpisodePosterMode();
     _showHeroSection = _settingsService!.getShowHeroSection();
     _useGlobalHubs = _settingsService!.getUseGlobalHubs();
     _isInitialized = true;
@@ -40,7 +41,7 @@ class SettingsProvider extends ChangeNotifier {
 
   ViewMode get viewMode => _viewMode;
 
-  bool get useSeasonPoster => _useSeasonPoster;
+  EpisodePosterMode get episodePosterMode => _episodePosterMode;
 
   bool get showHeroSection => _showHeroSection;
 
@@ -64,11 +65,11 @@ class SettingsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> setUseSeasonPoster(bool value) async {
+  Future<void> setEpisodePosterMode(EpisodePosterMode mode) async {
     if (!_isInitialized) await _initializeSettings();
-    if (_useSeasonPoster != value) {
-      _useSeasonPoster = value;
-      await _settingsService!.setUseSeasonPoster(value);
+    if (_episodePosterMode != mode) {
+      _episodePosterMode = mode;
+      await _settingsService!.setEpisodePosterMode(mode);
       notifyListeners();
     }
   }
@@ -99,6 +100,17 @@ class SettingsProvider extends ChangeNotifier {
         return 'Normal';
       case LibraryDensity.comfortable:
         return 'Comfortable';
+    }
+  }
+
+  String get episodePosterModeDisplayName {
+    switch (_episodePosterMode) {
+      case EpisodePosterMode.seriesPoster:
+        return t.settings.seriesPoster;
+      case EpisodePosterMode.seasonPoster:
+        return t.settings.seasonPoster;
+      case EpisodePosterMode.episodeThumbnail:
+        return t.settings.episodeThumbnail;
     }
   }
 }

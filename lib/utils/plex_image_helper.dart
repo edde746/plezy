@@ -139,9 +139,9 @@ class PlexImageHelper {
       return '';
     }
 
-    // For art/backgrounds and clear logos, prefer the original image to avoid
-    // any aspect ratio changes from Plex photo transcoding.
-    if (imageType == ImageType.art || imageType == ImageType.logo) {
+    // For art/backgrounds, clear logos, and episode thumbnails, prefer the
+    // original image to avoid any aspect ratio changes from Plex photo transcoding.
+    if (imageType == ImageType.art || imageType == ImageType.logo || imageType == ImageType.thumb) {
       return client.getThumbnailUrl(basePath);
     }
 

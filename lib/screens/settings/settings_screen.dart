@@ -189,14 +189,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
-              return SwitchListTile(
-                secondary: const AppIcon(Symbols.image_rounded, fill: 1),
-                title: Text(t.settings.useSeasonPosters),
-                subtitle: Text(t.settings.useSeasonPostersDescription),
-                value: settingsProvider.useSeasonPoster,
-                onChanged: (value) async {
-                  await settingsProvider.setUseSeasonPoster(value);
-                },
+              return ListTile(
+                leading: const AppIcon(Symbols.image_rounded, fill: 1),
+                title: Text(t.settings.episodePosterMode),
+                subtitle: Text(settingsProvider.episodePosterModeDisplayName),
+                trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                onTap: () => _showEpisodePosterModeDialog(),
               );
             },
           ),
@@ -1306,6 +1304,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ],
       getCurrentValue: (p) => p.viewMode,
       onSelect: (value, provider) => provider.setViewMode(value),
+    );
+  }
+
+  void _showEpisodePosterModeDialog() {
+    _showOptionSelectionDialog<settings.EpisodePosterMode>(
+      title: t.settings.episodePosterMode,
+      options: [
+        _DialogOption(
+          value: settings.EpisodePosterMode.seriesPoster,
+          title: t.settings.seriesPoster,
+          subtitle: t.settings.seriesPosterDescription,
+        ),
+        _DialogOption(
+          value: settings.EpisodePosterMode.seasonPoster,
+          title: t.settings.seasonPoster,
+          subtitle: t.settings.seasonPosterDescription,
+        ),
+        _DialogOption(
+          value: settings.EpisodePosterMode.episodeThumbnail,
+          title: t.settings.episodeThumbnail,
+          subtitle: t.settings.episodeThumbnailDescription,
+        ),
+      ],
+      getCurrentValue: (p) => p.episodePosterMode,
+      onSelect: (value, provider) => provider.setEpisodePosterMode(value),
     );
   }
 }

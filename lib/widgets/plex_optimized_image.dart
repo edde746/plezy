@@ -241,11 +241,14 @@ class PlexOptimizedImage extends StatelessWidget {
       // Pick the explicit size when it's a finite positive number, otherwise
       // fall back to the constraint or a sensible default so we don't end up
       // with NaN/Infinity when rounding to ints for caching.
-      final candidate = explicit ?? (constraintMax.isFinite && constraintMax > 0 ? constraintMax : fallback);
-      if (candidate.isNaN || candidate.isInfinite || candidate <= 0) {
+      // When explicit is infinite (double.infinity), prefer the constraint over fallback.
+      if (explicit == null || explicit.isNaN || explicit.isInfinite || explicit <= 0) {
+        if (constraintMax.isFinite && constraintMax > 0) {
+          return constraintMax;
+        }
         return fallback;
       }
-      return candidate;
+      return explicit;
     }
 
     // Return empty container if no image path

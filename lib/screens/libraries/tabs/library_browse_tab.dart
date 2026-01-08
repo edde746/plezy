@@ -18,7 +18,7 @@ import '../filters_bottom_sheet.dart';
 import '../sort_bottom_sheet.dart';
 import '../state_messages.dart';
 import '../../../services/storage_service.dart';
-import '../../../services/settings_service.dart' show ViewMode;
+import '../../../services/settings_service.dart' show ViewMode, EpisodePosterMode;
 import '../../../mixins/item_updatable.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_library_tab.dart';
@@ -570,9 +570,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     } else {
       // In grid view, calculate columns and pass to item builder
       final columnCount = _getGridColumnCount(context, settingsProvider);
+      // Use 16:9 aspect ratio when browsing episodes with episode thumbnail mode
+      final useWideRatio = _selectedGrouping == 'episodes' &&
+          settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
       return GridView.builder(
         padding: const EdgeInsets.all(8),
-        gridDelegate: MediaGridDelegate.createDelegate(context: context, density: settingsProvider.libraryDensity),
+        gridDelegate: MediaGridDelegate.createDelegate(
+          context: context,
+          density: settingsProvider.libraryDensity,
+          useWideAspectRatio: useWideRatio,
+        ),
         itemCount: itemCount,
         itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: _isFirstRow(index, columnCount)),
       );

@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 7
-/// Strings: 3568 (509 per locale)
+/// Strings: 3603 (514 per locale)
 ///
-/// Built on 2026-01-06 at 22:09 UTC
+/// Built on 2026-01-08 at 05:05 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -288,7 +288,13 @@ class _StringsSettingsEn {
 	String get appearance => 'Appearance';
 	String get videoPlayback => 'Video Playback';
 	String get advanced => 'Advanced';
-	String get useSeasonPostersDescription => 'Show season poster instead of series poster for episodes';
+	String get episodePosterMode => 'Episode Poster Style';
+	String get seriesPoster => 'Series Poster';
+	String get seriesPosterDescription => 'Show the series poster for all episodes';
+	String get seasonPoster => 'Season Poster';
+	String get seasonPosterDescription => 'Show the season-specific poster for episodes';
+	String get episodeThumbnail => 'Episode Thumbnail';
+	String get episodeThumbnailDescription => 'Show 16:9 episode screenshot thumbnails';
 	String get showHeroSectionDescription => 'Display featured content carousel on home screen';
 	String get secondsLabel => 'Seconds';
 	String get minutesLabel => 'Minutes';
@@ -311,7 +317,6 @@ class _StringsSettingsEn {
 	String get gridViewDescription => 'Display items in a grid layout';
 	String get listView => 'List';
 	String get listViewDescription => 'Display items in a list layout';
-	String get useSeasonPosters => 'Use Season Posters';
 	String get showHeroSection => 'Show Hero Section';
 	String get useGlobalHubs => 'Use Plex Home Layout';
 	String get useGlobalHubsDescription => 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.';
@@ -1163,7 +1168,13 @@ class _StringsSettingsDe implements _StringsSettingsEn {
 	@override String get appearance => 'Darstellung';
 	@override String get videoPlayback => 'Videowiedergabe';
 	@override String get advanced => 'Erweitert';
-	@override String get useSeasonPostersDescription => 'Staffelposter statt Serienposter für Episoden anzeigen';
+	@override String get episodePosterMode => 'Episoden-Poster-Stil';
+	@override String get seriesPoster => 'Serienposter';
+	@override String get seriesPosterDescription => 'Zeige das Serienposter für alle Episoden';
+	@override String get seasonPoster => 'Staffelposter';
+	@override String get seasonPosterDescription => 'Zeige das staffelspezifische Poster für Episoden';
+	@override String get episodeThumbnail => 'Episoden-Miniatur';
+	@override String get episodeThumbnailDescription => 'Zeige 16:9 Episoden-Vorschaubilder';
 	@override String get showHeroSectionDescription => 'Bereich mit empfohlenen Inhalten auf der Startseite anzeigen';
 	@override String get secondsLabel => 'Sekunden';
 	@override String get minutesLabel => 'Minuten';
@@ -1186,7 +1197,6 @@ class _StringsSettingsDe implements _StringsSettingsEn {
 	@override String get gridViewDescription => 'Elemente im Raster anzeigen';
 	@override String get listView => 'Liste';
 	@override String get listViewDescription => 'Elemente in Listenansicht anzeigen';
-	@override String get useSeasonPosters => 'Staffelposter verwenden';
 	@override String get showHeroSection => 'Hero-Bereich anzeigen';
 	@override String get useGlobalHubs => 'Plex-Startseiten-Layout verwenden';
 	@override String get useGlobalHubsDescription => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.';
@@ -2039,7 +2049,13 @@ class _StringsSettingsIt implements _StringsSettingsEn {
 	@override String get appearance => 'Aspetto';
 	@override String get videoPlayback => 'Riproduzione video';
 	@override String get advanced => 'Avanzate';
-	@override String get useSeasonPostersDescription => 'Mostra il poster della stagione invece del poster della serie per gli episodi';
+	@override String get episodePosterMode => 'Stile poster episodio';
+	@override String get seriesPoster => 'Poster della serie';
+	@override String get seriesPosterDescription => 'Mostra il poster della serie per tutti gli episodi';
+	@override String get seasonPoster => 'Poster della stagione';
+	@override String get seasonPosterDescription => 'Mostra il poster specifico della stagione per gli episodi';
+	@override String get episodeThumbnail => 'Miniatura episodio';
+	@override String get episodeThumbnailDescription => 'Mostra miniature 16:9 degli episodi';
 	@override String get showHeroSectionDescription => 'Visualizza il carosello dei contenuti in primo piano sulla schermata iniziale';
 	@override String get secondsLabel => 'Secondi';
 	@override String get minutesLabel => 'Minuti';
@@ -2062,7 +2078,6 @@ class _StringsSettingsIt implements _StringsSettingsEn {
 	@override String get gridViewDescription => 'Visualizza gli elementi in un layout a griglia';
 	@override String get listView => 'Elenco';
 	@override String get listViewDescription => 'Visualizza gli elementi in un layout a elenco';
-	@override String get useSeasonPosters => 'Usa poster delle stagioni';
 	@override String get showHeroSection => 'Mostra sezione principale';
 	@override String get useGlobalHubs => 'Usa layout Home di Plex';
 	@override String get useGlobalHubsDescription => 'Mostra gli hub della home page come il client Plex ufficiale. Se disattivato, mostra invece i suggerimenti per libreria.';
@@ -2915,7 +2930,13 @@ class _StringsSettingsKo implements _StringsSettingsEn {
 	@override String get appearance => '외관';
 	@override String get videoPlayback => '비디오 재생';
 	@override String get advanced => '고급';
-	@override String get useSeasonPostersDescription => '에피소드에 시리즈 포스터 대신 시즌 포스터 표시';
+	@override String get episodePosterMode => '에피소드 포스터 스타일';
+	@override String get seriesPoster => '시리즈 포스터';
+	@override String get seriesPosterDescription => '모든 에피소드에 시리즈 포스터 표시';
+	@override String get seasonPoster => '시즌 포스터';
+	@override String get seasonPosterDescription => '에피소드에 시즌별 포스터 표시';
+	@override String get episodeThumbnail => '에피소드 썸네일';
+	@override String get episodeThumbnailDescription => '16:9 에피소드 스크린샷 썸네일 표시';
 	@override String get showHeroSectionDescription => '홈 화면에 주요 콘텐츠 캐러셀(슬라이드) 표시';
 	@override String get secondsLabel => '초';
 	@override String get minutesLabel => '분';
@@ -2938,7 +2959,6 @@ class _StringsSettingsKo implements _StringsSettingsEn {
 	@override String get gridViewDescription => '항목을 그리드 레이아웃으로 표시합니다';
 	@override String get listView => '목록 보기';
 	@override String get listViewDescription => '항목을 목록 레이아웃으로 표시합니다';
-	@override String get useSeasonPosters => '시즌 포스터 사용';
 	@override String get showHeroSection => '주요 추천 영역 표시';
 	@override String get useGlobalHubs => 'Plex 홈 레이아웃 사용';
 	@override String get useGlobalHubsDescription => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.';
@@ -3791,7 +3811,13 @@ class _StringsSettingsNl implements _StringsSettingsEn {
 	@override String get appearance => 'Uiterlijk';
 	@override String get videoPlayback => 'Video afspelen';
 	@override String get advanced => 'Geavanceerd';
-	@override String get useSeasonPostersDescription => 'Toon seizoenposter in plaats van serieposter voor afleveringen';
+	@override String get episodePosterMode => 'Aflevering poster stijl';
+	@override String get seriesPoster => 'Serie poster';
+	@override String get seriesPosterDescription => 'Toon de serie poster voor alle afleveringen';
+	@override String get seasonPoster => 'Seizoen poster';
+	@override String get seasonPosterDescription => 'Toon de seizoensspecifieke poster voor afleveringen';
+	@override String get episodeThumbnail => 'Aflevering miniatuur';
+	@override String get episodeThumbnailDescription => 'Toon 16:9 aflevering miniaturen';
 	@override String get showHeroSectionDescription => 'Toon uitgelichte inhoud carrousel op startscherm';
 	@override String get secondsLabel => 'Seconden';
 	@override String get minutesLabel => 'Minuten';
@@ -3814,7 +3840,6 @@ class _StringsSettingsNl implements _StringsSettingsEn {
 	@override String get gridViewDescription => 'Items weergeven in een rasterindeling';
 	@override String get listView => 'Lijst';
 	@override String get listViewDescription => 'Items weergeven in een lijstindeling';
-	@override String get useSeasonPosters => 'Gebruik seizoenposters';
 	@override String get showHeroSection => 'Toon hoofdsectie';
 	@override String get useGlobalHubs => 'Plex Home-indeling gebruiken';
 	@override String get useGlobalHubsDescription => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.';
@@ -4667,7 +4692,13 @@ class _StringsSettingsSv implements _StringsSettingsEn {
 	@override String get appearance => 'Utseende';
 	@override String get videoPlayback => 'Videouppspelning';
 	@override String get advanced => 'Avancerat';
-	@override String get useSeasonPostersDescription => 'Visa säsongsaffisch istället för serieaffisch för avsnitt';
+	@override String get episodePosterMode => 'Avsnittsaffisch-stil';
+	@override String get seriesPoster => 'Serieaffisch';
+	@override String get seriesPosterDescription => 'Visa seriens affisch för alla avsnitt';
+	@override String get seasonPoster => 'Säsongsaffisch';
+	@override String get seasonPosterDescription => 'Visa säsongens affisch för avsnitt';
+	@override String get episodeThumbnail => 'Avsnittsminiatyr';
+	@override String get episodeThumbnailDescription => 'Visa 16:9 skärmbild från avsnittet';
 	@override String get showHeroSectionDescription => 'Visa utvalda innehållskarusell på startsidan';
 	@override String get secondsLabel => 'Sekunder';
 	@override String get minutesLabel => 'Minuter';
@@ -4690,7 +4721,6 @@ class _StringsSettingsSv implements _StringsSettingsEn {
 	@override String get gridViewDescription => 'Visa objekt i rutnätslayout';
 	@override String get listView => 'Lista';
 	@override String get listViewDescription => 'Visa objekt i listlayout';
-	@override String get useSeasonPosters => 'Använd säsongsaffischer';
 	@override String get showHeroSection => 'Visa hjältesektion';
 	@override String get useGlobalHubs => 'Använd Plex hem-layout';
 	@override String get useGlobalHubsDescription => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.';
@@ -5543,7 +5573,13 @@ class _StringsSettingsZh implements _StringsSettingsEn {
 	@override String get appearance => '外观';
 	@override String get videoPlayback => '视频播放';
 	@override String get advanced => '高级';
-	@override String get useSeasonPostersDescription => '为剧集显示季海报而非剧集海报';
+	@override String get episodePosterMode => '剧集海报样式';
+	@override String get seriesPoster => '剧集海报';
+	@override String get seriesPosterDescription => '为所有剧集显示剧集海报';
+	@override String get seasonPoster => '季海报';
+	@override String get seasonPosterDescription => '为剧集显示特定季的海报';
+	@override String get episodeThumbnail => '剧集缩略图';
+	@override String get episodeThumbnailDescription => '显示16:9剧集截图缩略图';
 	@override String get showHeroSectionDescription => '在主屏幕上显示精选内容轮播区';
 	@override String get secondsLabel => '秒';
 	@override String get minutesLabel => '分钟';
@@ -5566,7 +5602,6 @@ class _StringsSettingsZh implements _StringsSettingsEn {
 	@override String get gridViewDescription => '以网格布局显示项目';
 	@override String get listView => '列表视图';
 	@override String get listViewDescription => '以列表布局显示项目';
-	@override String get useSeasonPosters => '使用季海报';
 	@override String get showHeroSection => '显示主要精选区';
 	@override String get useGlobalHubs => '使用 Plex 主页布局';
 	@override String get useGlobalHubsDescription => '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。';
@@ -6314,7 +6349,13 @@ extension on Translations {
 			case 'settings.appearance': return 'Appearance';
 			case 'settings.videoPlayback': return 'Video Playback';
 			case 'settings.advanced': return 'Advanced';
-			case 'settings.useSeasonPostersDescription': return 'Show season poster instead of series poster for episodes';
+			case 'settings.episodePosterMode': return 'Episode Poster Style';
+			case 'settings.seriesPoster': return 'Series Poster';
+			case 'settings.seriesPosterDescription': return 'Show the series poster for all episodes';
+			case 'settings.seasonPoster': return 'Season Poster';
+			case 'settings.seasonPosterDescription': return 'Show the season-specific poster for episodes';
+			case 'settings.episodeThumbnail': return 'Episode Thumbnail';
+			case 'settings.episodeThumbnailDescription': return 'Show 16:9 episode screenshot thumbnails';
 			case 'settings.showHeroSectionDescription': return 'Display featured content carousel on home screen';
 			case 'settings.secondsLabel': return 'Seconds';
 			case 'settings.minutesLabel': return 'Minutes';
@@ -6337,7 +6378,6 @@ extension on Translations {
 			case 'settings.gridViewDescription': return 'Display items in a grid layout';
 			case 'settings.listView': return 'List';
 			case 'settings.listViewDescription': return 'Display items in a list layout';
-			case 'settings.useSeasonPosters': return 'Use Season Posters';
 			case 'settings.showHeroSection': return 'Show Hero Section';
 			case 'settings.useGlobalHubs': return 'Use Plex Home Layout';
 			case 'settings.useGlobalHubsDescription': return 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.';
@@ -6831,7 +6871,13 @@ extension on _StringsDe {
 			case 'settings.appearance': return 'Darstellung';
 			case 'settings.videoPlayback': return 'Videowiedergabe';
 			case 'settings.advanced': return 'Erweitert';
-			case 'settings.useSeasonPostersDescription': return 'Staffelposter statt Serienposter für Episoden anzeigen';
+			case 'settings.episodePosterMode': return 'Episoden-Poster-Stil';
+			case 'settings.seriesPoster': return 'Serienposter';
+			case 'settings.seriesPosterDescription': return 'Zeige das Serienposter für alle Episoden';
+			case 'settings.seasonPoster': return 'Staffelposter';
+			case 'settings.seasonPosterDescription': return 'Zeige das staffelspezifische Poster für Episoden';
+			case 'settings.episodeThumbnail': return 'Episoden-Miniatur';
+			case 'settings.episodeThumbnailDescription': return 'Zeige 16:9 Episoden-Vorschaubilder';
 			case 'settings.showHeroSectionDescription': return 'Bereich mit empfohlenen Inhalten auf der Startseite anzeigen';
 			case 'settings.secondsLabel': return 'Sekunden';
 			case 'settings.minutesLabel': return 'Minuten';
@@ -6854,7 +6900,6 @@ extension on _StringsDe {
 			case 'settings.gridViewDescription': return 'Elemente im Raster anzeigen';
 			case 'settings.listView': return 'Liste';
 			case 'settings.listViewDescription': return 'Elemente in Listenansicht anzeigen';
-			case 'settings.useSeasonPosters': return 'Staffelposter verwenden';
 			case 'settings.showHeroSection': return 'Hero-Bereich anzeigen';
 			case 'settings.useGlobalHubs': return 'Plex-Startseiten-Layout verwenden';
 			case 'settings.useGlobalHubsDescription': return 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.';
@@ -7349,7 +7394,13 @@ extension on _StringsIt {
 			case 'settings.appearance': return 'Aspetto';
 			case 'settings.videoPlayback': return 'Riproduzione video';
 			case 'settings.advanced': return 'Avanzate';
-			case 'settings.useSeasonPostersDescription': return 'Mostra il poster della stagione invece del poster della serie per gli episodi';
+			case 'settings.episodePosterMode': return 'Stile poster episodio';
+			case 'settings.seriesPoster': return 'Poster della serie';
+			case 'settings.seriesPosterDescription': return 'Mostra il poster della serie per tutti gli episodi';
+			case 'settings.seasonPoster': return 'Poster della stagione';
+			case 'settings.seasonPosterDescription': return 'Mostra il poster specifico della stagione per gli episodi';
+			case 'settings.episodeThumbnail': return 'Miniatura episodio';
+			case 'settings.episodeThumbnailDescription': return 'Mostra miniature 16:9 degli episodi';
 			case 'settings.showHeroSectionDescription': return 'Visualizza il carosello dei contenuti in primo piano sulla schermata iniziale';
 			case 'settings.secondsLabel': return 'Secondi';
 			case 'settings.minutesLabel': return 'Minuti';
@@ -7372,7 +7423,6 @@ extension on _StringsIt {
 			case 'settings.gridViewDescription': return 'Visualizza gli elementi in un layout a griglia';
 			case 'settings.listView': return 'Elenco';
 			case 'settings.listViewDescription': return 'Visualizza gli elementi in un layout a elenco';
-			case 'settings.useSeasonPosters': return 'Usa poster delle stagioni';
 			case 'settings.showHeroSection': return 'Mostra sezione principale';
 			case 'settings.useGlobalHubs': return 'Usa layout Home di Plex';
 			case 'settings.useGlobalHubsDescription': return 'Mostra gli hub della home page come il client Plex ufficiale. Se disattivato, mostra invece i suggerimenti per libreria.';
@@ -7867,7 +7917,13 @@ extension on _StringsKo {
 			case 'settings.appearance': return '외관';
 			case 'settings.videoPlayback': return '비디오 재생';
 			case 'settings.advanced': return '고급';
-			case 'settings.useSeasonPostersDescription': return '에피소드에 시리즈 포스터 대신 시즌 포스터 표시';
+			case 'settings.episodePosterMode': return '에피소드 포스터 스타일';
+			case 'settings.seriesPoster': return '시리즈 포스터';
+			case 'settings.seriesPosterDescription': return '모든 에피소드에 시리즈 포스터 표시';
+			case 'settings.seasonPoster': return '시즌 포스터';
+			case 'settings.seasonPosterDescription': return '에피소드에 시즌별 포스터 표시';
+			case 'settings.episodeThumbnail': return '에피소드 썸네일';
+			case 'settings.episodeThumbnailDescription': return '16:9 에피소드 스크린샷 썸네일 표시';
 			case 'settings.showHeroSectionDescription': return '홈 화면에 주요 콘텐츠 캐러셀(슬라이드) 표시';
 			case 'settings.secondsLabel': return '초';
 			case 'settings.minutesLabel': return '분';
@@ -7890,7 +7946,6 @@ extension on _StringsKo {
 			case 'settings.gridViewDescription': return '항목을 그리드 레이아웃으로 표시합니다';
 			case 'settings.listView': return '목록 보기';
 			case 'settings.listViewDescription': return '항목을 목록 레이아웃으로 표시합니다';
-			case 'settings.useSeasonPosters': return '시즌 포스터 사용';
 			case 'settings.showHeroSection': return '주요 추천 영역 표시';
 			case 'settings.useGlobalHubs': return 'Plex 홈 레이아웃 사용';
 			case 'settings.useGlobalHubsDescription': return '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.';
@@ -8385,7 +8440,13 @@ extension on _StringsNl {
 			case 'settings.appearance': return 'Uiterlijk';
 			case 'settings.videoPlayback': return 'Video afspelen';
 			case 'settings.advanced': return 'Geavanceerd';
-			case 'settings.useSeasonPostersDescription': return 'Toon seizoenposter in plaats van serieposter voor afleveringen';
+			case 'settings.episodePosterMode': return 'Aflevering poster stijl';
+			case 'settings.seriesPoster': return 'Serie poster';
+			case 'settings.seriesPosterDescription': return 'Toon de serie poster voor alle afleveringen';
+			case 'settings.seasonPoster': return 'Seizoen poster';
+			case 'settings.seasonPosterDescription': return 'Toon de seizoensspecifieke poster voor afleveringen';
+			case 'settings.episodeThumbnail': return 'Aflevering miniatuur';
+			case 'settings.episodeThumbnailDescription': return 'Toon 16:9 aflevering miniaturen';
 			case 'settings.showHeroSectionDescription': return 'Toon uitgelichte inhoud carrousel op startscherm';
 			case 'settings.secondsLabel': return 'Seconden';
 			case 'settings.minutesLabel': return 'Minuten';
@@ -8408,7 +8469,6 @@ extension on _StringsNl {
 			case 'settings.gridViewDescription': return 'Items weergeven in een rasterindeling';
 			case 'settings.listView': return 'Lijst';
 			case 'settings.listViewDescription': return 'Items weergeven in een lijstindeling';
-			case 'settings.useSeasonPosters': return 'Gebruik seizoenposters';
 			case 'settings.showHeroSection': return 'Toon hoofdsectie';
 			case 'settings.useGlobalHubs': return 'Plex Home-indeling gebruiken';
 			case 'settings.useGlobalHubsDescription': return 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.';
@@ -8903,7 +8963,13 @@ extension on _StringsSv {
 			case 'settings.appearance': return 'Utseende';
 			case 'settings.videoPlayback': return 'Videouppspelning';
 			case 'settings.advanced': return 'Avancerat';
-			case 'settings.useSeasonPostersDescription': return 'Visa säsongsaffisch istället för serieaffisch för avsnitt';
+			case 'settings.episodePosterMode': return 'Avsnittsaffisch-stil';
+			case 'settings.seriesPoster': return 'Serieaffisch';
+			case 'settings.seriesPosterDescription': return 'Visa seriens affisch för alla avsnitt';
+			case 'settings.seasonPoster': return 'Säsongsaffisch';
+			case 'settings.seasonPosterDescription': return 'Visa säsongens affisch för avsnitt';
+			case 'settings.episodeThumbnail': return 'Avsnittsminiatyr';
+			case 'settings.episodeThumbnailDescription': return 'Visa 16:9 skärmbild från avsnittet';
 			case 'settings.showHeroSectionDescription': return 'Visa utvalda innehållskarusell på startsidan';
 			case 'settings.secondsLabel': return 'Sekunder';
 			case 'settings.minutesLabel': return 'Minuter';
@@ -8926,7 +8992,6 @@ extension on _StringsSv {
 			case 'settings.gridViewDescription': return 'Visa objekt i rutnätslayout';
 			case 'settings.listView': return 'Lista';
 			case 'settings.listViewDescription': return 'Visa objekt i listlayout';
-			case 'settings.useSeasonPosters': return 'Använd säsongsaffischer';
 			case 'settings.showHeroSection': return 'Visa hjältesektion';
 			case 'settings.useGlobalHubs': return 'Använd Plex hem-layout';
 			case 'settings.useGlobalHubsDescription': return 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.';
@@ -9421,7 +9486,13 @@ extension on _StringsZh {
 			case 'settings.appearance': return '外观';
 			case 'settings.videoPlayback': return '视频播放';
 			case 'settings.advanced': return '高级';
-			case 'settings.useSeasonPostersDescription': return '为剧集显示季海报而非剧集海报';
+			case 'settings.episodePosterMode': return '剧集海报样式';
+			case 'settings.seriesPoster': return '剧集海报';
+			case 'settings.seriesPosterDescription': return '为所有剧集显示剧集海报';
+			case 'settings.seasonPoster': return '季海报';
+			case 'settings.seasonPosterDescription': return '为剧集显示特定季的海报';
+			case 'settings.episodeThumbnail': return '剧集缩略图';
+			case 'settings.episodeThumbnailDescription': return '显示16:9剧集截图缩略图';
 			case 'settings.showHeroSectionDescription': return '在主屏幕上显示精选内容轮播区';
 			case 'settings.secondsLabel': return '秒';
 			case 'settings.minutesLabel': return '分钟';
@@ -9444,7 +9515,6 @@ extension on _StringsZh {
 			case 'settings.gridViewDescription': return '以网格布局显示项目';
 			case 'settings.listView': return '列表视图';
 			case 'settings.listViewDescription': return '以列表布局显示项目';
-			case 'settings.useSeasonPosters': return '使用季海报';
 			case 'settings.showHeroSection': return '显示主要精选区';
 			case 'settings.useGlobalHubs': return '使用 Plex 主页布局';
 			case 'settings.useGlobalHubsDescription': return '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。';

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 import '../focus/dpad_navigator.dart';
+import '../providers/settings_provider.dart';
+import '../services/settings_service.dart' show EpisodePosterMode;
 import '../theme/mono_tokens.dart';
 import '../utils/layout_constants.dart';
 import '../focus/locked_hub_controller.dart';
@@ -286,9 +289,9 @@ class HubSectionState extends State<HubSection> {
             onKeyEvent: _handleKeyEvent,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // Responsive card width based on screen size
+                // Responsive base card width for posters (2:3 aspect ratio)
                 final screenWidth = constraints.maxWidth;
-                final cardWidth = ScreenBreakpoints.isLargeDesktop(screenWidth)
+                final baseCardWidth = ScreenBreakpoints.isLargeDesktop(screenWidth)
                     ? 220.0
                     : ScreenBreakpoints.isDesktop(screenWidth)
                     ? 200.0
@@ -296,15 +299,35 @@ class HubSectionState extends State<HubSection> {
                     ? 190.0
                     : 160.0;
 
-                // Store item extent for scroll calculations
-                _itemExtent = cardWidth + 4; // 4px total horizontal padding
+                // Get episode poster mode setting
+                final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
 
-                // MediaCard has 8px padding on all sides (16px total horizontally)
-                final posterWidth = cardWidth - 16;
-                // 2:3 poster aspect ratio
-                final posterHeight = posterWidth * 1.5;
-                // Container height calculation
+                // Determine hub content type for layout decisions
+                final hasEpisodes = widget.hub.items.any((item) =>
+                    item.usesWideAspectRatio(episodePosterMode));
+                final hasNonEpisodes = widget.hub.items.any((item) =>
+                    !item.usesWideAspectRatio(episodePosterMode));
+
+                // Mixed hub = has both episodes AND non-episodes (like Continue Watching)
+                final isMixedHub = hasEpisodes && hasNonEpisodes;
+
+                // Episode-only = all items are episodes with thumbnails
+                final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
+
+                // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
+                final useWideLayout = episodePosterMode == EpisodePosterMode.episodeThumbnail &&
+                    (isEpisodeOnlyHub || isMixedHub);
+
+                // Card dimensions based on hub type
+                const wideCardMultiplier = 1.5;
+                final cardWidth = useWideLayout ? baseCardWidth * wideCardMultiplier : baseCardWidth;
+                final posterWidth = cardWidth - 16; // 8px padding on each side
+                final posterHeight = useWideLayout
+                    ? posterWidth * (9 / 16)  // 16:9 for wide layout
+                    : posterWidth * 1.5;       // 2:3 for poster layout
+
                 final containerHeight = posterHeight + 66;
+                _itemExtent = cardWidth + 4;
 
                 return SizedBox(
                   height: containerHeight,
@@ -334,6 +357,7 @@ class HubSectionState extends State<HubSection> {
                               onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
                               forceGridMode: true,
                               isInContinueWatching: widget.isInContinueWatching,
+                              mixedHubContext: isMixedHub,
                             ),
                           ),
                         );

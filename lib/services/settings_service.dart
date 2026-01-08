@@ -13,6 +13,8 @@ enum LibraryDensity { compact, normal, comfortable }
 
 enum ViewMode { grid, list }
 
+enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
+
 class SettingsService extends BaseSharedPreferencesService {
   static const String _keyThemeMode = 'theme_mode';
   static const String _keyEnableDebugLogging = 'enable_debug_logging';
@@ -25,7 +27,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyPreferredAudioCodec = 'preferred_audio_codec';
   static const String _keyLibraryDensity = 'library_density';
   static const String _keyViewMode = 'view_mode';
-  static const String _keyUseSeasonPoster = 'use_season_poster';
+  static const String _keyUseSeasonPoster = 'use_season_poster'; // Legacy key for migration
+  static const String _keyEpisodePosterMode = 'episode_poster_mode';
   static const String _keySeekTimeSmall = 'seek_time_small';
   static const String _keySeekTimeLarge = 'seek_time_large';
   static const String _keyMediaVersionPreferences = 'media_version_preferences';
@@ -153,13 +156,23 @@ class SettingsService extends BaseSharedPreferencesService {
     return _getEnumValue(_keyViewMode, ViewMode.values, ViewMode.grid);
   }
 
-  // Use Season Poster
-  Future<void> setUseSeasonPoster(bool enabled) async {
-    await prefs.setBool(_keyUseSeasonPoster, enabled);
+  // Episode Poster Mode
+  Future<void> setEpisodePosterMode(EpisodePosterMode mode) async {
+    await prefs.setString(_keyEpisodePosterMode, mode.name);
   }
 
-  bool getUseSeasonPoster() {
-    return prefs.getBool(_keyUseSeasonPoster) ?? false; // Default: false (use series poster)
+  EpisodePosterMode getEpisodePosterMode() {
+    // Migration: check old boolean key first
+    final legacyValue = prefs.getBool(_keyUseSeasonPoster);
+    if (legacyValue != null) {
+      // Migrate old setting: true = seasonPoster, false = seriesPoster
+      final migratedMode = legacyValue ? EpisodePosterMode.seasonPoster : EpisodePosterMode.seriesPoster;
+      // Clear old key and save new format (fire and forget)
+      prefs.remove(_keyUseSeasonPoster);
+      prefs.setString(_keyEpisodePosterMode, migratedMode.name);
+      return migratedMode;
+    }
+    return _getEnumValue(_keyEpisodePosterMode, EpisodePosterMode.values, EpisodePosterMode.episodeThumbnail);
   }
 
   // Show Hero Section
@@ -928,7 +941,8 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyPreferredAudioCodec),
       prefs.remove(_keyLibraryDensity),
       prefs.remove(_keyViewMode),
-      prefs.remove(_keyUseSeasonPoster),
+      prefs.remove(_keyUseSeasonPoster), // Legacy key
+      prefs.remove(_keyEpisodePosterMode),
       prefs.remove(_keyShowHeroSection),
       prefs.remove(_keySeekTimeSmall),
       prefs.remove(_keySeekTimeLarge),
@@ -978,7 +992,7 @@ class SettingsService extends BaseSharedPreferencesService {
       'preferredAudioCodec': getPreferredAudioCodec(),
       'libraryDensity': getLibraryDensity().name,
       'viewMode': getViewMode().name,
-      'useSeasonPoster': getUseSeasonPoster(),
+      'episodePosterMode': getEpisodePosterMode().name,
       'seekTimeSmall': getSeekTimeSmall(),
       'seekTimeLarge': getSeekTimeLarge(),
       'keyboardShortcuts': getKeyboardShortcuts(),
