@@ -94,6 +94,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "observeProperty" -> handleObserveProperty(call, result)
             "command" -> handleCommand(call, result)
             "setVisible" -> handleSetVisible(call, result)
+            "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
+            "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
             "isInitialized" -> result.success(playerCore?.isInitialized ?: false)
             else -> result.notImplemented()
         }
@@ -199,6 +201,21 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         playerCore?.setVisible(visible)
+        result.success(null)
+    }
+
+    private fun handleSetVideoFrameRate(call: MethodCall, result: MethodChannel.Result) {
+        val fps = call.argument<Double>("fps")?.toFloat() ?: 0f
+        val duration = call.argument<Number>("duration")?.toLong() ?: 0L
+
+        Log.d(TAG, "setVideoFrameRate: fps=$fps, duration=$duration")
+        playerCore?.setVideoFrameRate(fps, duration)
+        result.success(null)
+    }
+
+    private fun handleClearVideoFrameRate(result: MethodChannel.Result) {
+        Log.d(TAG, "clearVideoFrameRate")
+        playerCore?.clearVideoFrameRate()
         result.success(null)
     }
 

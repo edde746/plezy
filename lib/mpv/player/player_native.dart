@@ -581,6 +581,28 @@ class PlayerNative implements Player {
   }
 
   // ============================================
+  // Frame Rate Matching (Android)
+  // ============================================
+
+  @override
+  Future<void> setVideoFrameRate(double fps, int durationMs) async {
+    _checkDisposed();
+    if (!Platform.isAndroid) return;
+    if (!_initialized) return;
+
+    await _methodChannel.invokeMethod('setVideoFrameRate', {'fps': fps, 'duration': durationMs});
+  }
+
+  @override
+  Future<void> clearVideoFrameRate() async {
+    _checkDisposed();
+    if (!Platform.isAndroid) return;
+    if (!_initialized) return;
+
+    await _methodChannel.invokeMethod('clearVideoFrameRate');
+  }
+
+  // ============================================
   // Lifecycle
   // ============================================
 

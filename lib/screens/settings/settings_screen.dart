@@ -63,6 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _videoPlayerNavigationEnabled = false;
   int _maxVolume = 100;
   bool _enableDiscordRPC = false;
+  bool _matchContentFrameRate = false;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -95,6 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
       _maxVolume = _settingsService.getMaxVolume();
       _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
+      _matchContentFrameRate = _settingsService.getMatchContentFrameRate();
       _isLoading = false;
     });
   }
@@ -253,6 +255,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await _settingsService.setEnableHardwareDecoding(value);
             },
           ),
+          if (Platform.isAndroid)
+            SwitchListTile(
+              secondary: const AppIcon(Symbols.display_settings_rounded, fill: 1),
+              title: Text(t.settings.matchContentFrameRate),
+              subtitle: Text(t.settings.matchContentFrameRateDescription),
+              value: _matchContentFrameRate,
+              onChanged: (value) async {
+                setState(() {
+                  _matchContentFrameRate = value;
+                });
+                await _settingsService.setMatchContentFrameRate(value);
+              },
+            ),
           ListTile(
             leading: const AppIcon(Symbols.memory_rounded, fill: 1),
             title: Text(t.settings.bufferSize),

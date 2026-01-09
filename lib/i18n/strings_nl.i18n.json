@@ -156,7 +156,9 @@
     "maxVolumePercent": "${percent}%",
     "maxVolumeHint": "Voer maximaal volume in (100-300)",
     "discordRichPresence": "Discord Rich Presence",
-    "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent"
+    "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent",
+    "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
+    "matchContentFrameRateDescription": "Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",

@@ -155,7 +155,9 @@
     "maxVolumePercent": "${percent}%",
     "maxVolumeHint": "Enter max volume (100-300)",
     "discordRichPresence": "Discord Rich Presence",
-    "discordRichPresenceDescription": "Show what you're watching on Discord"
+    "discordRichPresenceDescription": "Show what you're watching on Discord",
+    "matchContentFrameRate": "Match Content Frame Rate",
+    "matchContentFrameRateDescription": "Adjust display refresh rate to match video content, reducing judder and saving battery"
   },
   "search": {
     "hint": "Search movies, shows, music...",

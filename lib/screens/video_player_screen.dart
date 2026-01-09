@@ -398,9 +398,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       });
 
       // Listen to playback restart to detect first frame ready
-      _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) {
+      _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
+
+          // Apply frame rate matching on Android if enabled
+          if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
+            await _applyFrameRateMatching();
+          }
         }
       });
 
@@ -431,6 +436,44 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _isPlayerInitialized = false;
         });
       }
+    }
+  }
+
+  /// Apply frame rate matching on Android by setting the display refresh rate
+  /// to match the video content's frame rate.
+  Future<void> _applyFrameRateMatching() async {
+    if (player == null || !Platform.isAndroid) return;
+
+    try {
+      final fpsStr = await player!.getProperty('container-fps');
+      final fps = double.tryParse(fpsStr ?? '');
+      if (fps == null || fps <= 0) {
+        appLogger.d('Frame rate matching: No valid fps available ($fpsStr)');
+        return;
+      }
+
+      final durationMs = player!.state.duration.inMilliseconds;
+      await player!.setVideoFrameRate(fps, durationMs);
+
+      // Set MPV video-sync mode for smoother playback when display is synced
+      await player!.setProperty('video-sync', 'display-tempo');
+
+      appLogger.d('Frame rate matching: Set display to ${fps}fps (duration: ${durationMs}ms)');
+    } catch (e) {
+      appLogger.w('Failed to apply frame rate matching', error: e);
+    }
+  }
+
+  /// Clear frame rate matching and restore default display mode
+  Future<void> _clearFrameRateMatching() async {
+    if (player == null || !Platform.isAndroid) return;
+
+    try {
+      await player!.clearVideoFrameRate();
+      await player!.setProperty('video-sync', 'audio');
+      appLogger.d('Frame rate matching: Cleared, restored default display mode');
+    } catch (e) {
+      appLogger.d('Failed to clear frame rate matching', error: e);
     }
   }
 
@@ -988,6 +1031,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Clear Discord Rich Presence
     DiscordRPCService.instance.stopPlayback();
 
+    // Clear frame rate matching before disposing player (Android only)
+    if (Platform.isAndroid && player != null) {
+      player!.clearVideoFrameRate();
+    }
+
     // Disable wakelock when leaving the video player
     WakelockPlus.disable();
     appLogger.d('Wakelock disabled');
@@ -1433,6 +1481,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _detachFromWatchTogetherSession();
       _progressTracker?.sendProgress('stopped');
       _progressTracker?.stopTracking();
+      // Clear frame rate matching before disposing (Android only)
+      await _clearFrameRateMatching();
       await player?.dispose();
     } catch (e) {
       appLogger.d('Error disposing player before navigation', error: e);
