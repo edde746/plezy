@@ -22,10 +22,14 @@
     <!-- Touchscreen not required for TV -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
+    <!-- Android Automotive OS support -->
+    <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
+
     <application
         android:label="Plezy"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:appCategory="video">
         <activity
             android:name=".MainActivity"
             android:exported="true"
