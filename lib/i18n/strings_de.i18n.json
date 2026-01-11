@@ -156,7 +156,9 @@
     "maxVolumePercent": "${percent}%",
     "maxVolumeHint": "Maximale Lautstärke eingeben (100-300)",
     "discordRichPresence": "Discord Rich Presence",
-    "discordRichPresenceDescription": "Zeige auf Discord, was du gerade schaust"
+    "discordRichPresenceDescription": "Zeige auf Discord, was du gerade schaust",
+    "matchContentFrameRate": "Inhalts-Bildrate anpassen",
+    "matchContentFrameRateDescription": "Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku"
   },
   "search": {
     "hint": "Filme, Serien, Musik suchen...",

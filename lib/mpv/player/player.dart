@@ -171,6 +171,28 @@ abstract class Player {
   Future<void> updateFrame();
 
   // ============================================
+  // Frame Rate Matching (Android)
+  // ============================================
+
+  /// Set the video frame rate for display refresh rate matching.
+  ///
+  /// On Android, this hints the system to adjust the display refresh rate
+  /// to match the video content's frame rate, reducing judder and saving
+  /// battery on LTPO displays.
+  ///
+  /// [fps] - The video frame rate (e.g., 23.976, 24, 30, 60).
+  /// [durationMs] - The video duration in milliseconds.
+  ///
+  /// On other platforms, this is a no-op.
+  Future<void> setVideoFrameRate(double fps, int durationMs);
+
+  /// Clear the video frame rate hint and restore default display mode.
+  ///
+  /// Call this when playback ends to restore the normal display refresh rate.
+  /// On other platforms, this is a no-op.
+  Future<void> clearVideoFrameRate();
+
+  // ============================================
   // Lifecycle
   // ============================================
 

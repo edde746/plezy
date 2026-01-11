@@ -156,7 +156,9 @@
     "maxVolumePercent": "${percent}%",
     "maxVolumeHint": "输入最大音量 (100-300)",
     "discordRichPresence": "Discord 动态状态",
-    "discordRichPresenceDescription": "在 Discord 上显示您正在观看的内容"
+    "discordRichPresenceDescription": "在 Discord 上显示您正在观看的内容",
+    "matchContentFrameRate": "匹配内容帧率",
+    "matchContentFrameRateDescription": "调整显示刷新率以匹配视频内容，减少画面抖动并节省电量"
   },
   "search": {
     "hint": "搜索电影、系列、音乐...",

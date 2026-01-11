@@ -59,6 +59,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMpvConfigPresets = 'mpv_config_presets';
   static const String _keyMaxVolume = 'max_volume';
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
+  static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
 
   SettingsService._();
 
@@ -927,6 +928,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyEnableDiscordRPC) ?? false; // Default disabled
   }
 
+  // Match Content Frame Rate (Android only)
+  Future<void> setMatchContentFrameRate(bool enabled) async {
+    await prefs.setBool(_keyMatchContentFrameRate, enabled);
+  }
+
+  bool getMatchContentFrameRate() {
+    return prefs.getBool(_keyMatchContentFrameRate) ?? false; // Default disabled
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -968,6 +978,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyMpvConfigEntries),
       prefs.remove(_keyMpvConfigPresets),
       prefs.remove(_keyEnableDiscordRPC),
+      prefs.remove(_keyMatchContentFrameRate),
     ]);
   }
 

@@ -156,7 +156,9 @@
     "maxVolumePercent": "${percent}%",
     "maxVolumeHint": "Inserisci volume massimo (100-300)",
     "discordRichPresence": "Discord Rich Presence",
-    "discordRichPresenceDescription": "Mostra su Discord cosa stai guardando"
+    "discordRichPresenceDescription": "Mostra su Discord cosa stai guardando",
+    "matchContentFrameRate": "Adatta frequenza fotogrammi",
+    "matchContentFrameRateDescription": "Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria"
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",

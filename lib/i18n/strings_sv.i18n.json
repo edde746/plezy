@@ -156,7 +156,9 @@
     "maxVolumePercent": "${percent}%",
     "maxVolumeHint": "Ange maximal volym (100-300)",
     "discordRichPresence": "Discord Rich Presence",
-    "discordRichPresenceDescription": "Visa vad du tittar på i Discord"
+    "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
+    "matchContentFrameRate": "Matcha innehållets bildfrekvens",
+    "matchContentFrameRateDescription": "Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",

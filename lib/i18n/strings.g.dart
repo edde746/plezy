@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 7
-/// Strings: 3603 (514 per locale)
+/// Strings: 3617 (516 per locale)
 ///
-/// Built on 2026-01-08 at 05:05 UTC
+/// Built on 2026-01-09 at 12:57 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -385,6 +385,8 @@ class _StringsSettingsEn {
 	String get maxVolumeHint => 'Enter max volume (100-300)';
 	String get discordRichPresence => 'Discord Rich Presence';
 	String get discordRichPresenceDescription => 'Show what you\'re watching on Discord';
+	String get matchContentFrameRate => 'Match Content Frame Rate';
+	String get matchContentFrameRateDescription => 'Adjust display refresh rate to match video content, reducing judder and saving battery';
 }
 
 // Path: search
@@ -1265,6 +1267,8 @@ class _StringsSettingsDe implements _StringsSettingsEn {
 	@override String get maxVolumeHint => 'Maximale Lautstärke eingeben (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Zeige auf Discord, was du gerade schaust';
+	@override String get matchContentFrameRate => 'Inhalts-Bildrate anpassen';
+	@override String get matchContentFrameRateDescription => 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku';
 }
 
 // Path: search
@@ -2146,6 +2150,8 @@ class _StringsSettingsIt implements _StringsSettingsEn {
 	@override String get maxVolumeHint => 'Inserisci volume massimo (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Mostra su Discord cosa stai guardando';
+	@override String get matchContentFrameRate => 'Adatta frequenza fotogrammi';
+	@override String get matchContentFrameRateDescription => 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria';
 }
 
 // Path: search
@@ -3027,6 +3033,8 @@ class _StringsSettingsKo implements _StringsSettingsEn {
 	@override String get maxVolumeHint => '최대 볼륨 입력 (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
+	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
+	@override String get matchContentFrameRateDescription => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
 }
 
 // Path: search
@@ -3908,6 +3916,8 @@ class _StringsSettingsNl implements _StringsSettingsEn {
 	@override String get maxVolumeHint => 'Voer maximaal volume in (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Toon op Discord wat je aan het kijken bent';
+	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
+	@override String get matchContentFrameRateDescription => 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij';
 }
 
 // Path: search
@@ -4789,6 +4799,8 @@ class _StringsSettingsSv implements _StringsSettingsEn {
 	@override String get maxVolumeHint => 'Ange maximal volym (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Visa vad du tittar på i Discord';
+	@override String get matchContentFrameRate => 'Matcha innehållets bildfrekvens';
+	@override String get matchContentFrameRateDescription => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri';
 }
 
 // Path: search
@@ -5670,6 +5682,8 @@ class _StringsSettingsZh implements _StringsSettingsEn {
 	@override String get maxVolumeHint => '输入最大音量 (100-300)';
 	@override String get discordRichPresence => 'Discord 动态状态';
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
+	@override String get matchContentFrameRate => '匹配内容帧率';
+	@override String get matchContentFrameRateDescription => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量';
 }
 
 // Path: search
@@ -6446,6 +6460,8 @@ extension on Translations {
 			case 'settings.maxVolumeHint': return 'Enter max volume (100-300)';
 			case 'settings.discordRichPresence': return 'Discord Rich Presence';
 			case 'settings.discordRichPresenceDescription': return 'Show what you\'re watching on Discord';
+			case 'settings.matchContentFrameRate': return 'Match Content Frame Rate';
+			case 'settings.matchContentFrameRateDescription': return 'Adjust display refresh rate to match video content, reducing judder and saving battery';
 			case 'search.hint': return 'Search movies, shows, music...';
 			case 'search.tryDifferentTerm': return 'Try a different search term';
 			case 'search.searchYourMedia': return 'Search your media';
@@ -6968,6 +6984,8 @@ extension on _StringsDe {
 			case 'settings.maxVolumeHint': return 'Maximale Lautstärke eingeben (100-300)';
 			case 'settings.discordRichPresence': return 'Discord Rich Presence';
 			case 'settings.discordRichPresenceDescription': return 'Zeige auf Discord, was du gerade schaust';
+			case 'settings.matchContentFrameRate': return 'Inhalts-Bildrate anpassen';
+			case 'settings.matchContentFrameRateDescription': return 'Bildwiederholfrequenz des Displays an den Videoinhalt anpassen, reduziert Ruckeln und spart Akku';
 			case 'search.hint': return 'Filme, Serien, Musik suchen...';
 			case 'search.tryDifferentTerm': return 'Anderen Suchbegriff versuchen';
 			case 'search.searchYourMedia': return 'In den eigenen Medien suchen';
@@ -7491,6 +7509,8 @@ extension on _StringsIt {
 			case 'settings.maxVolumeHint': return 'Inserisci volume massimo (100-300)';
 			case 'settings.discordRichPresence': return 'Discord Rich Presence';
 			case 'settings.discordRichPresenceDescription': return 'Mostra su Discord cosa stai guardando';
+			case 'settings.matchContentFrameRate': return 'Adatta frequenza fotogrammi';
+			case 'settings.matchContentFrameRateDescription': return 'Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria';
 			case 'search.hint': return 'Cerca film. spettacoli, musica...';
 			case 'search.tryDifferentTerm': return 'Prova altri termini di ricerca';
 			case 'search.searchYourMedia': return 'Cerca nei tuoi media';
@@ -8014,6 +8034,8 @@ extension on _StringsKo {
 			case 'settings.maxVolumeHint': return '최대 볼륨 입력 (100-300)';
 			case 'settings.discordRichPresence': return 'Discord Rich Presence';
 			case 'settings.discordRichPresenceDescription': return 'Discord에서 시청 중인 콘텐츠 표시';
+			case 'settings.matchContentFrameRate': return '콘텐츠 프레임 레이트 맞춤';
+			case 'settings.matchContentFrameRateDescription': return '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
 			case 'search.hint': return '영화, 시리즈, 음악 등을 검색하세요...';
 			case 'search.tryDifferentTerm': return '다른 검색어를 시도해 보세요';
 			case 'search.searchYourMedia': return '미디어 검색';
@@ -8537,6 +8559,8 @@ extension on _StringsNl {
 			case 'settings.maxVolumeHint': return 'Voer maximaal volume in (100-300)';
 			case 'settings.discordRichPresence': return 'Discord Rich Presence';
 			case 'settings.discordRichPresenceDescription': return 'Toon op Discord wat je aan het kijken bent';
+			case 'settings.matchContentFrameRate': return 'Inhoudsframesnelheid afstemmen';
+			case 'settings.matchContentFrameRateDescription': return 'Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij';
 			case 'search.hint': return 'Zoek films, series, muziek...';
 			case 'search.tryDifferentTerm': return 'Probeer een andere zoekterm';
 			case 'search.searchYourMedia': return 'Zoek in je media';
@@ -9060,6 +9084,8 @@ extension on _StringsSv {
 			case 'settings.maxVolumeHint': return 'Ange maximal volym (100-300)';
 			case 'settings.discordRichPresence': return 'Discord Rich Presence';
 			case 'settings.discordRichPresenceDescription': return 'Visa vad du tittar på i Discord';
+			case 'settings.matchContentFrameRate': return 'Matcha innehållets bildfrekvens';
+			case 'settings.matchContentFrameRateDescription': return 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri';
 			case 'search.hint': return 'Sök filmer, serier, musik...';
 			case 'search.tryDifferentTerm': return 'Prova en annan sökterm';
 			case 'search.searchYourMedia': return 'Sök i dina media';
@@ -9583,6 +9609,8 @@ extension on _StringsZh {
 			case 'settings.maxVolumeHint': return '输入最大音量 (100-300)';
 			case 'settings.discordRichPresence': return 'Discord 动态状态';
 			case 'settings.discordRichPresenceDescription': return '在 Discord 上显示您正在观看的内容';
+			case 'settings.matchContentFrameRate': return '匹配内容帧率';
+			case 'settings.matchContentFrameRateDescription': return '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量';
 			case 'search.hint': return '搜索电影、系列、音乐...';
 			case 'search.tryDifferentTerm': return '尝试不同的搜索词';
 			case 'search.searchYourMedia': return '搜索媒体';
