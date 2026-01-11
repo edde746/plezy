@@ -169,10 +169,19 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Focus the first item in the currently active tab
   void _focusCurrentTab() {
+    // Don't focus during tab animations - wait for animation to complete
+    // This prevents race conditions during focus restoration
+    if (_tabController.indexIsChanging) {
+      return;
+    }
+
     // Re-enable auto-focus since user is navigating into tab content
-    setState(() {
-      _suppressAutoFocus = false;
-    });
+    // Only call setState if the value actually changes to avoid unnecessary rebuilds
+    if (_suppressAutoFocus) {
+      setState(() {
+        _suppressAutoFocus = false;
+      });
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -482,13 +491,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     if (savedTabIndex != null && savedTabIndex >= 0 && savedTabIndex < 4) {
       // Set flag to prevent _onTabChanged from triggering focus
       _isRestoringTab = true;
-      _updateState(() {
-        _tabController.index = savedTabIndex;
-      });
-      // Clear flag after the tab change has been processed
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _isRestoringTab = false;
-      });
+      // Use animateTo with zero duration for instant switch without animation race conditions
+      _tabController.animateTo(savedTabIndex, duration: Duration.zero);
+      // Clear flag synchronously - animateTo with zero duration completes immediately
+      _isRestoringTab = false;
     }
 
     // Focus is handled by onDataLoaded callbacks from each tab.
@@ -1107,6 +1113,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 child: TabBarView(
                   key: ValueKey(_selectedLibraryGlobalKey),
                   controller: _tabController,
+                  // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
+                  // See: https://github.com/flutter/flutter/issues/11132
+                  physics: PlatformDetector.isDesktop(context)
+                      ? const NeverScrollableScrollPhysics()
+                      : null,
                   children: [
                     LibraryRecommendedTab(
                       key: _recommendedTabKey,
