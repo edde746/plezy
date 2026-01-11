@@ -460,87 +460,24 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
-    return Column(
-      children: [
-        // Filter bar with chips
-        Container(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          alignment: Alignment.centerLeft,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Grouping chip
-                FocusableFilterChip(
-                  focusNode: _groupingChipFocusNode,
-                  icon: Symbols.category_rounded,
-                  label: _getGroupingLabel(_selectedGrouping),
-                  onPressed: _showGroupingBottomSheet,
-                  onNavigateDown: _navigateToGrid,
-                  onNavigateUp: widget.onBack,
-                  onBack: widget.onBack,
-                ),
-                const SizedBox(width: 8),
-                // Filters chip
-                if (_filters.isNotEmpty && _selectedGrouping != 'folders')
-                  FocusableFilterChip(
-                    focusNode: _filtersChipFocusNode,
-                    icon: Symbols.filter_alt_rounded,
-                    label: _selectedFilters.isEmpty
-                        ? t.libraries.filters
-                        : t.libraries.filtersWithCount(count: _selectedFilters.length),
-                    onPressed: _showFiltersBottomSheet,
-                    onNavigateDown: _navigateToGrid,
-                    onNavigateUp: widget.onBack,
-                    onBack: widget.onBack,
-                  ),
-                if (_filters.isNotEmpty && _selectedGrouping != 'folders') const SizedBox(width: 8),
-                // Sort chip
-                if (_sortOptions.isNotEmpty && _selectedGrouping != 'folders')
-                  FocusableFilterChip(
-                    focusNode: _sortChipFocusNode,
-                    icon: Symbols.sort_rounded,
-                    label: _selectedSort?.title ?? t.libraries.sort,
-                    onPressed: _showSortBottomSheet,
-                    onNavigateDown: _navigateToGrid,
-                    onNavigateUp: widget.onBack,
-                    onBack: widget.onBack,
-                  ),
-              ],
+    // For folders mode, keep the column structure with FolderTreeView
+    if (_selectedGrouping == 'folders') {
+      return Column(
+        children: [
+          _buildChipsBar(),
+          Expanded(
+            child: FolderTreeView(
+              libraryKey: widget.library.key,
+              serverId: widget.library.serverId,
+              onRefresh: updateItem,
             ),
           ),
-        ),
-
-        // Content
-        Expanded(child: _buildContent()),
-      ],
-    );
-  }
-
-  Widget _buildContent() {
-    // Show folder tree view when in folders mode
-    if (_selectedGrouping == 'folders') {
-      return FolderTreeView(libraryKey: widget.library.key, serverId: widget.library.serverId, onRefresh: updateItem);
-    }
-
-    if (isLoading && items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (errorMessage != null && items.isEmpty) {
-      return ErrorStateWidget(
-        message: errorMessage!,
-        icon: Symbols.error_outline_rounded,
-        onRetry: _loadContent,
-        retryLabel: t.common.retry,
+        ],
       );
     }
 
-    if (items.isEmpty) {
-      return EmptyStateWidget(message: t.libraries.thisLibraryIsEmpty, icon: Symbols.folder_open_rounded);
-    }
-
+    // For list/grid modes, use CustomScrollView with slivers
+    // Chips are pinned at the top while content scrolls underneath
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 300 && _hasMoreItems && !isLoading) {
@@ -548,40 +485,133 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         }
         return false;
       },
-      child: Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, child) {
-          return _buildItemsView(context, settingsProvider);
-        },
+      child: CustomScrollView(
+        slivers: [
+          // Pinned chips bar - stays at top while content scrolls underneath
+          SliverPersistentHeader(pinned: true, delegate: _ChipsHeaderDelegate(child: _buildChipsBar())),
+
+          // Content slivers
+          ..._buildContentSlivers(),
+        ],
       ),
     );
   }
 
-  /// Builds either a list or grid view based on the view mode
-  Widget _buildItemsView(BuildContext context, SettingsProvider settingsProvider) {
+  /// Builds the chips bar widget
+  Widget _buildChipsBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Grouping chip
+          FocusableFilterChip(
+            focusNode: _groupingChipFocusNode,
+            icon: Symbols.category_rounded,
+            label: _getGroupingLabel(_selectedGrouping),
+            onPressed: _showGroupingBottomSheet,
+            onNavigateDown: _navigateToGrid,
+            onNavigateUp: widget.onBack,
+            onBack: widget.onBack,
+          ),
+          const SizedBox(width: 8),
+          // Filters chip
+          if (_filters.isNotEmpty && _selectedGrouping != 'folders')
+            FocusableFilterChip(
+              focusNode: _filtersChipFocusNode,
+              icon: Symbols.filter_alt_rounded,
+              label: _selectedFilters.isEmpty
+                  ? t.libraries.filters
+                  : t.libraries.filtersWithCount(count: _selectedFilters.length),
+              onPressed: _showFiltersBottomSheet,
+              onNavigateDown: _navigateToGrid,
+              onNavigateUp: widget.onBack,
+              onBack: widget.onBack,
+            ),
+          if (_filters.isNotEmpty && _selectedGrouping != 'folders') const SizedBox(width: 8),
+          // Sort chip
+          if (_sortOptions.isNotEmpty && _selectedGrouping != 'folders')
+            FocusableFilterChip(
+              focusNode: _sortChipFocusNode,
+              icon: Symbols.sort_rounded,
+              label: _selectedSort?.title ?? t.libraries.sort,
+              onPressed: _showSortBottomSheet,
+              onNavigateDown: _navigateToGrid,
+              onNavigateUp: widget.onBack,
+              onBack: widget.onBack,
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds content as slivers for the CustomScrollView
+  List<Widget> _buildContentSlivers() {
+    if (isLoading && items.isEmpty) {
+      return [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))];
+    }
+
+    if (errorMessage != null && items.isEmpty) {
+      return [
+        SliverFillRemaining(
+          child: ErrorStateWidget(
+            message: errorMessage!,
+            icon: Symbols.error_outline_rounded,
+            onRetry: _loadContent,
+            retryLabel: t.common.retry,
+          ),
+        ),
+      ];
+    }
+
+    if (items.isEmpty) {
+      return [
+        SliverFillRemaining(
+          child: EmptyStateWidget(message: t.libraries.thisLibraryIsEmpty, icon: Symbols.folder_open_rounded),
+        ),
+      ];
+    }
+
+    return [
+      Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, child) {
+          return _buildItemsSliver(context, settingsProvider);
+        },
+      ),
+    ];
+  }
+
+  /// Builds either a sliver list or sliver grid based on the view mode
+  Widget _buildItemsSliver(BuildContext context, SettingsProvider settingsProvider) {
     final itemCount = items.length + (_hasMoreItems && isLoading ? 1 : 0);
 
     if (settingsProvider.viewMode == ViewMode.list) {
       // In list view, only the first item can navigate up to chips
-      return ListView.builder(
+      return SliverPadding(
         padding: const EdgeInsets.all(8),
-        itemCount: itemCount,
-        itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: index == 0),
+        sliver: SliverList.builder(
+          itemCount: itemCount,
+          itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: index == 0),
+        ),
       );
     } else {
       // In grid view, calculate columns and pass to item builder
       final columnCount = _getGridColumnCount(context, settingsProvider);
       // Use 16:9 aspect ratio when browsing episodes with episode thumbnail mode
-      final useWideRatio = _selectedGrouping == 'episodes' &&
-          settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
-      return GridView.builder(
+      final useWideRatio =
+          _selectedGrouping == 'episodes' && settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
+      return SliverPadding(
         padding: const EdgeInsets.all(8),
-        gridDelegate: MediaGridDelegate.createDelegate(
-          context: context,
-          density: settingsProvider.libraryDensity,
-          useWideAspectRatio: useWideRatio,
+        sliver: SliverGrid.builder(
+          gridDelegate: MediaGridDelegate.createDelegate(
+            context: context,
+            density: settingsProvider.libraryDensity,
+            useWideAspectRatio: useWideRatio,
+          ),
+          itemCount: itemCount,
+          itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: _isFirstRow(index, columnCount)),
         ),
-        itemCount: itemCount,
-        itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: _isFirstRow(index, columnCount)),
       );
     }
   }
@@ -602,5 +632,28 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       onNavigateUp: isFirstRow ? _navigateToChips : null,
       onBack: widget.onBack,
     );
+  }
+}
+
+/// Delegate for pinned chips header that stays fixed at the top while content scrolls underneath
+class _ChipsHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  _ChipsHeaderDelegate({required this.child});
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(color: Theme.of(context).scaffoldBackgroundColor, child: child);
+  }
+
+  @override
+  double get maxExtent => 40.0; // Height of chips bar
+
+  @override
+  double get minExtent => 40.0; // Same as max (no shrinking)
+
+  @override
+  bool shouldRebuild(covariant _ChipsHeaderDelegate oldDelegate) {
+    return child != oldDelegate.child;
   }
 }
