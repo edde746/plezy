@@ -33,6 +33,13 @@ class MediaGridSliver extends StatelessWidget {
   /// Only used if usePaddingAwareExtent is true
   final double horizontalPadding;
 
+  /// Whether to use 16:9 aspect ratio for episode thumbnails
+  final bool useWideAspectRatio;
+
+  /// Whether this grid is displaying items from a mixed hub context
+  /// (containing both episodes and non-episodes)
+  final bool mixedHubContext;
+
   const MediaGridSliver({
     super.key,
     required this.items,
@@ -42,6 +49,8 @@ class MediaGridSliver extends StatelessWidget {
     this.padding = const EdgeInsets.fromLTRB(8, 0, 8, 8),
     this.usePaddingAwareExtent = false,
     this.horizontalPadding = 16,
+    this.useWideAspectRatio = false,
+    this.mixedHubContext = false,
   });
 
   @override
@@ -56,6 +65,7 @@ class MediaGridSliver extends StatelessWidget {
               density: settingsProvider.libraryDensity,
               usePaddingAware: usePaddingAwareExtent,
               horizontalPadding: horizontalPadding,
+              useWideAspectRatio: useWideAspectRatio,
             ),
             delegate: SliverChildBuilderDelegate((context, index) {
               final item = items[index];
@@ -65,6 +75,7 @@ class MediaGridSliver extends StatelessWidget {
                 onRefresh: onRefresh,
                 collectionId: collectionId,
                 onListRefresh: onListRefresh,
+                mixedHubContext: mixedHubContext,
               );
             }, childCount: items.length),
           );

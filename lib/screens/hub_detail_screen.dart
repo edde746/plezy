@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_sort.dart';
+import '../providers/settings_provider.dart';
+import '../services/settings_service.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../widgets/media_grid_sliver.dart';
@@ -245,11 +248,35 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
         else if (_filteredItems.isEmpty)
           SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
         else
-          MediaGridSliver(
-            items: _filteredItems,
-            onRefresh: _handleItemRefresh,
-            usePaddingAwareExtent: true,
-            horizontalPadding: 16,
+          Builder(
+            builder: (context) {
+              final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
+
+              // Determine hub content type for layout decisions
+              final hasEpisodes = _filteredItems.any((item) =>
+                  item.usesWideAspectRatio(episodePosterMode));
+              final hasNonEpisodes = _filteredItems.any((item) =>
+                  !item.usesWideAspectRatio(episodePosterMode));
+
+              // Mixed hub = has both episodes AND non-episodes
+              final isMixedHub = hasEpisodes && hasNonEpisodes;
+
+              // Episode-only = all items are episodes with thumbnails
+              final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
+
+              // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
+              final useWideLayout = episodePosterMode == EpisodePosterMode.episodeThumbnail &&
+                  (isEpisodeOnlyHub || isMixedHub);
+
+              return MediaGridSliver(
+                items: _filteredItems,
+                onRefresh: _handleItemRefresh,
+                usePaddingAwareExtent: true,
+                horizontalPadding: 16,
+                useWideAspectRatio: useWideLayout,
+                mixedHubContext: isMixedHub,
+              );
+            },
           ),
       ],
     );
