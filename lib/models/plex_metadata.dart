@@ -300,8 +300,8 @@ class PlexMetadata with MultiServerFields {
   ///   - seriesPoster: grandparentThumb (series poster)
   ///   - seasonPoster: parentThumb (season poster)
   ///   - episodeThumbnail: thumb (16:9 episode still)
-  /// For seasons: always returns grandparentThumb (series poster)
-  /// For movies in mixed hub context: returns art (16:9 background)
+  /// For seasons: returns grandparentThumb (series poster), or art/thumb in mixed hub context
+  /// For movies/shows/seasons in mixed hub context: returns art (16:9 background)
   /// For other types: returns thumb
   String? posterThumb({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
     final itemType = type.toLowerCase();
@@ -315,13 +315,20 @@ class PlexMetadata with MultiServerFields {
         case EpisodePosterMode.seriesPoster:
           return grandparentThumb ?? thumb;
       }
-    } else if (itemType == 'season' && grandparentThumb != null) {
-      // For seasons, always use series poster
-      return grandparentThumb!;
+    } else if (itemType == 'season') {
+      // In mixed hub with episode thumbnail mode, use art/thumb (16:9)
+      if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail) {
+        return art ?? thumb;
+      }
+      // Otherwise use series poster (2:3)
+      if (grandparentThumb != null) {
+        return grandparentThumb!;
+      }
     }
 
-    // For movies in mixed hub context with episode thumbnail mode, use art (16:9)
-    if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail && itemType == 'movie') {
+    // For movies/shows in mixed hub context with episode thumbnail mode, use art (16:9)
+    if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail &&
+        (itemType == 'movie' || itemType == 'show')) {
       return art ?? thumb;
     }
 
@@ -330,14 +337,15 @@ class PlexMetadata with MultiServerFields {
 
   /// Returns true if this item should use 16:9 aspect ratio.
   /// Episodes use 16:9 when in episodeThumbnail mode.
-  /// Movies use 16:9 when in mixed hub context with episodeThumbnail mode.
+  /// Movies, shows, and seasons use 16:9 in mixed hub context with episodeThumbnail mode.
   bool usesWideAspectRatio(EpisodePosterMode mode, {bool mixedHubContext = false}) {
     final itemType = type.toLowerCase();
     if (itemType == 'episode' && mode == EpisodePosterMode.episodeThumbnail) {
       return true;
     }
-    // Movies use 16:9 art in mixed hubs with episode thumbnail mode
-    if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail && itemType == 'movie') {
+    // Movies, shows, and seasons use 16:9 in mixed hubs with episode thumbnail mode
+    if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail &&
+        (itemType == 'movie' || itemType == 'show' || itemType == 'season')) {
       return true;
     }
     return false;
