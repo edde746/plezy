@@ -93,6 +93,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<void>? _playbackRestartSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
+  bool _waitingForExternalSubsTrackSelection = false;
 
   // Auto-play next episode
   Timer? _autoPlayTimer;
@@ -402,6 +403,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
         }
+        if (_waitingForExternalSubsTrackSelection) {
+          _waitingForExternalSubsTrackSelection = false;
+          _applyTrackSelection();
+        }
       });
 
       // Listen to position for completion detection (fallback for unreliable MPV events)
@@ -440,9 +445,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     appLogger.d('Adding ${externalSubtitles.length} external subtitle(s) to player');
 
-    // Wait for media to be ready
-    await _waitForMediaReady();
-
     for (final subtitleTrack in externalSubtitles) {
       if (subtitleTrack.uri == null) continue;
 
@@ -457,21 +459,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       } catch (e) {
         appLogger.w('Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}', error: e);
       }
-    }
-  }
-
-  /// Wait for media to be ready (duration > 0)
-  Future<void> _waitForMediaReady() async {
-    if (player == null) return;
-
-    int attempts = 0;
-    while (player!.state.duration.inMilliseconds == 0 && attempts < 100) {
-      await Future.delayed(const Duration(milliseconds: 100));
-      attempts++;
-    }
-
-    if (attempts >= 100) {
-      appLogger.w('Media ready timeout - proceeding anyway');
     }
   }
 
@@ -701,7 +688,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         final resumePosition = widget.metadata.viewOffset != null
             ? Duration(milliseconds: widget.metadata.viewOffset!)
             : null;
-        await player!.open(Media(result.videoUrl!, start: resumePosition, headers: plexHeaders));
+
+        // If we have external subtitles, open paused to add them before playback starts.
+        // This prevents a race condition on Android where adding subtitle tracks
+        // during active playback can freeze the video decoder (issue #226).
+        final hasExternalSubs = result.externalSubtitles.isNotEmpty;
+        await player!.open(
+          Media(result.videoUrl!, start: resumePosition, headers: plexHeaders),
+          play: !hasExternalSubs,
+        );
 
         // Attach player to Watch Together session for sync (if in session)
         if (mounted && !widget.isOffline) {
@@ -731,25 +726,39 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _videoPIPManager = VideoPIPManager(player: player!);
         }
 
-        // Add external subtitles to the player
+        // Add external subtitles while paused, then start playback
         if (result.externalSubtitles.isNotEmpty) {
-          await _addExternalSubtitles(result.externalSubtitles);
+          _hasFirstFrame.value = false;
+          _waitingForExternalSubsTrackSelection = true;
+
+          try {
+            await _addExternalSubtitles(result.externalSubtitles);
+          } finally {
+            if (player != null && mounted) {
+              await player!.play();
+              final pos = player!.state.position;
+              await player!.seek(pos.inMilliseconds > 0 ? pos : Duration.zero);
+
+              // Fallback if playbackRestart doesn't fire
+              Future.delayed(const Duration(seconds: 3), () {
+                if (_waitingForExternalSubsTrackSelection && mounted) {
+                  _waitingForExternalSubsTrackSelection = false;
+                  _applyTrackSelection();
+                }
+              });
+            }
+          }
+        } else {
+          _trackLoadingSubscription?.cancel();
+          _trackLoadingSubscription = player!.streams.tracks.listen((tracks) {
+            if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
+
+            _trackLoadingSubscription?.cancel();
+            _trackLoadingSubscription = null;
+            _applyTrackSelection();
+          });
         }
       }
-
-      // Set up track loading subscription to apply track selection when tracks are loaded
-      _trackLoadingSubscription?.cancel();
-      _trackLoadingSubscription = player!.streams.tracks.listen((tracks) {
-        // Only process when we have actual tracks loaded
-        if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
-
-        // Cancel subscription after first load to avoid re-applying on every track change
-        _trackLoadingSubscription?.cancel();
-        _trackLoadingSubscription = null;
-
-        // Apply track selection using the service
-        _applyTrackSelection();
-      });
     } on PlaybackException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
@@ -1686,19 +1695,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       return ValueListenableBuilder<bool>(
                         valueListenable: _hasFirstFrame,
                         builder: (context, hasFrame, child) {
-                          // Don't show spinner when exiting (just black overlay)
-                          // Show spinner when (buffering OR loading) AND NOT exiting
                           if ((!isBuffering && hasFrame) || _isExiting.value) return const SizedBox.shrink();
                           return Positioned.fill(
-                            child: Center(
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  shape: BoxShape.circle,
+                            child: Stack(
+                              children: [
+                                if (!hasFrame) Container(color: Colors.black),
+                                Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.5),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                                  ),
                                 ),
-                                child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                              ),
+                              ],
                             ),
                           );
                         },

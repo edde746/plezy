@@ -424,10 +424,14 @@ class PlayerNative implements Player {
       await setProperty('start', 'none');
     }
 
-    await command(['loadfile', media.uri, 'replace']);
+    // Set pause BEFORE loadfile to prevent decoder from starting immediately.
+    // This is important for adding external subtitles before playback begins,
+    // avoiding a race condition that can freeze the video decoder on Android (issue #226).
     if (!play) {
       await setProperty('pause', 'yes');
     }
+
+    await command(['loadfile', media.uri, 'replace']);
   }
 
   @override
