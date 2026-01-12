@@ -37,7 +37,7 @@ class MpvContainer {
   ITaskbarList3* taskbar_ = nullptr;
 
   static constexpr wchar_t kClassName[] = L"MPV_CONTAINER";
-  static constexpr wchar_t kWindowName[] = L"";
+  static constexpr wchar_t kWindowName[] = L"Plezy Video Stream";
 
   static std::unique_ptr<MpvContainer> instance_;
 };
