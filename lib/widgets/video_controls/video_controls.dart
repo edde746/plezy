@@ -1275,9 +1275,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               onHover: (_) => _showControlsFromPointerActivity(),
               child: Stack(
                 children: [
-                  // Linux keep-alive: 1px widget that continuously repaints to prevent
-                  // Flutter animations from freezing when GTK's frame clock goes idle
-                  if (Platform.isLinux) const Positioned(top: 0, left: 0, child: _LinuxKeepAlive()),
+                  // Keep-alive: 1px widget that continuously repaints to prevent
+                  // Flutter animations from freezing when the frame clock goes idle
+                  if (Platform.isLinux || Platform.isWindows) const Positioned(top: 0, left: 0, child: _LinuxKeepAlive()),
                   // Invisible tap detector that always covers the full area
                   // Also handles long-press for 2x speed
                   Positioned.fill(
@@ -1705,7 +1705,7 @@ class _LinuxKeepAliveState extends State<_LinuxKeepAlive> {
       width: 1,
       height: 1,
       child: ColoredBox(
-        color: Color.fromARGB(_tick % 2, 0, 0, 0), // Alternate 0/1 alpha
+        color: Color.fromRGBO(0, 0, 0, _tick % 2 == 0 ? 0.1 : 0.2), // Alternate alpha
       ),
     );
   }
