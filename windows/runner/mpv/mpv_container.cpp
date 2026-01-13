@@ -30,14 +30,12 @@ HWND MpvContainer::Create() {
   ::RegisterClassExW(&window_class);
 
   // Use WS_POPUP for a borderless window without title bar.
+  // Use WS_EX_TOOLWINDOW | WS_EX_NOREDIRECTIONBITMAP to prevent shadow and DWM effects.
   handle_ = ::CreateWindowExW(
-      WS_EX_APPWINDOW,
+      WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_NOREDIRECTIONBITMAP,
       kClassName, kWindowName, WS_POPUP,
       0, 0, 100, 100, nullptr, nullptr,
       GetModuleHandle(nullptr), nullptr);
-
-  // Set the window to be fully opaque. This forces a redirection surface.
-  ::SetLayeredWindowAttributes(handle_, 0, 255, LWA_ALPHA);
 
   // Disable DWM animations on the container.
   auto disable_window_transitions = TRUE;
