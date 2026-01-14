@@ -112,6 +112,16 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
         _startRepeat(_decrement);
         return KeyEventResult.handled;
       }
+    } else if (event is KeyRepeatEvent) {
+      // Handle key repeat events from Android TV D-pad (Issue #196)
+      // Android TV generates KeyRepeatEvent when D-pad buttons are held
+      if (key.isUpKey || key.isRightKey) {
+        _increment();
+        return KeyEventResult.handled;
+      } else if (key.isDownKey || key.isLeftKey) {
+        _decrement();
+        return KeyEventResult.handled;
+      }
     } else if (event is KeyUpEvent) {
       if (key.isUpKey || key.isRightKey || key.isDownKey || key.isLeftKey) {
         _stopRepeat();

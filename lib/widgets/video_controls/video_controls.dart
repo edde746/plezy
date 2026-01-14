@@ -135,6 +135,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
   bool _isFullscreen = false;
+  bool _isFullscreenTransitioning = false; // Prevents rapid fullscreen toggles
   bool _isAlwaysOnTop = false;
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
@@ -1031,26 +1032,42 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   Future<void> _toggleFullscreen() async {
     if (!PlatformDetector.isMobile(context)) {
-      // Query actual window state to determine what action to take
-      // This ensures we always toggle correctly regardless of local state
-      final isCurrentlyFullscreen = await windowManager.isFullScreen();
+      // Prevent rapid toggling which can cause UI distortion (Issue #233)
+      if (_isFullscreenTransitioning) {
+        appLogger.d('Fullscreen toggle blocked - transition in progress');
+        return;
+      }
 
-      if (Platform.isMacOS) {
-        // Use native macOS fullscreen - titlebar is handled automatically
-        // Window listener will update _isFullscreen for UI
-        if (isCurrentlyFullscreen) {
-          await MacOSWindowService.exitFullscreen();
+      _isFullscreenTransitioning = true;
+
+      try {
+        // Query actual window state to determine what action to take
+        // This ensures we always toggle correctly regardless of local state
+        final isCurrentlyFullscreen = await windowManager.isFullScreen();
+
+        if (Platform.isMacOS) {
+          // Use native macOS fullscreen - titlebar is handled automatically
+          // Window listener will update _isFullscreen for UI
+          if (isCurrentlyFullscreen) {
+            await MacOSWindowService.exitFullscreen();
+          } else {
+            await MacOSWindowService.enterFullscreen();
+          }
         } else {
-          await MacOSWindowService.enterFullscreen();
+          // For Windows/Linux, use window_manager
+          // Window listener will update _isFullscreen for UI
+          if (isCurrentlyFullscreen) {
+            await windowManager.setFullScreen(false);
+          } else {
+            await windowManager.setFullScreen(true);
+          }
         }
-      } else {
-        // For Windows/Linux, use window_manager
-        // Window listener will update _isFullscreen for UI
-        if (isCurrentlyFullscreen) {
-          await windowManager.setFullScreen(false);
-        } else {
-          await windowManager.setFullScreen(true);
-        }
+
+        // Wait for the window state to stabilize before allowing another toggle
+        // This prevents rapid toggles that can cause UI distortion
+        await Future.delayed(const Duration(milliseconds: 300));
+      } finally {
+        _isFullscreenTransitioning = false;
       }
     }
   }

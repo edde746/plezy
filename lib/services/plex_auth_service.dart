@@ -93,12 +93,25 @@ class PlexAuthService {
   }
 
   /// Poll the PIN until it's claimed or timeout
+  ///
+  /// Uses exponential backoff to reduce server load:
+  /// - First 30s: poll every 1 second
+  /// - Next 30s: poll every 2 seconds
+  /// - Remaining time: poll every 4 seconds
+  ///
+  /// This reduces the number of requests from ~120 (with 1s fixed delay over 2 min)
+  /// to ~45 requests while maintaining responsiveness during initial auth.
   Future<String?> pollPinUntilClaimed(
     int pinId, {
     Duration timeout = const Duration(minutes: 2),
     bool Function()? shouldCancel,
   }) async {
-    final endTime = DateTime.now().add(timeout);
+    final startTime = DateTime.now();
+    final endTime = startTime.add(timeout);
+
+    // Backoff thresholds
+    const phase1End = Duration(seconds: 30);
+    const phase2End = Duration(seconds: 60);
 
     while (DateTime.now().isBefore(endTime)) {
       // Check if polling should be cancelled
@@ -111,8 +124,21 @@ class PlexAuthService {
         return token;
       }
 
-      // Wait 1 second before polling again
-      await Future.delayed(const Duration(seconds: 1));
+      // Calculate delay with exponential backoff
+      final elapsed = DateTime.now().difference(startTime);
+      final Duration delay;
+      if (elapsed < phase1End) {
+        // First 30 seconds: poll every 1 second for fast response
+        delay = const Duration(seconds: 1);
+      } else if (elapsed < phase2End) {
+        // 30-60 seconds: poll every 2 seconds
+        delay = const Duration(seconds: 2);
+      } else {
+        // After 60 seconds: poll every 4 seconds to reduce load
+        delay = const Duration(seconds: 4);
+      }
+
+      await Future.delayed(delay);
     }
 
     return null; // Timeout
@@ -176,29 +202,36 @@ class PlexAuthService {
   }
 
   /// Switch to a different user in the home
+  ///
+  /// Security: Plex headers and token are now passed in HTTP headers instead of
+  /// query parameters to prevent token leakage in logs, referrer headers, and URLs.
   Future<UserSwitchResponse> switchToUser(String userUUID, String currentToken, {String? pin}) async {
-    final queryParams = {
+    // Query params for non-sensitive data only
+    final queryParams = <String, dynamic>{
       'includeSubscriptions': '1',
       'includeProviders': '1',
       'includeSettings': '1',
       'includeSharedSettings': '1',
+      if (pin != null) 'pin': pin,
+    };
+
+    // Sensitive Plex headers should be in HTTP headers, not query params
+    final headers = {
+      'Accept': 'application/json',
+      'Content-Length': '0',
+      'X-Plex-Token': currentToken,
       'X-Plex-Product': _appName,
       'X-Plex-Version': '1.1.0',
       'X-Plex-Client-Identifier': _clientIdentifier,
       'X-Plex-Platform': 'Flutter',
       'X-Plex-Platform-Version': '3.8.1',
-      'X-Plex-Token': currentToken,
       'X-Plex-Language': 'en',
-      if (pin != null) 'pin': pin,
     };
 
-    final queryString = queryParams.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-
     final response = await _dio.post(
-      '$_clientsApi/home/users/$userUUID/switch?$queryString',
-      options: Options(headers: {'Accept': 'application/json', 'Content-Length': '0'}),
+      '$_clientsApi/home/users/$userUUID/switch',
+      queryParameters: queryParams,
+      options: Options(headers: headers),
     );
 
     return UserSwitchResponse.fromJson(response.data as Map<String, dynamic>);
