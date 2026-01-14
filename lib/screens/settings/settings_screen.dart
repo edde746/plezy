@@ -226,6 +226,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                secondary: const AppIcon(Symbols.dns_rounded, fill: 1),
+                title: Text(t.settings.showServerNameOnHubs),
+                subtitle: Text(t.settings.showServerNameOnHubsDescription),
+                value: settingsProvider.showServerNameOnHubs,
+                onChanged: (value) async {
+                  await settingsProvider.setShowServerNameOnHubs(value);
+                },
+              );
+            },
+          ),
         ],
       ),
     );

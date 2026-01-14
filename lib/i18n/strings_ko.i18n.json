@@ -92,6 +92,8 @@
     "showHeroSection": "주요 추천 영역 표시",
     "useGlobalHubs": "Plex 홈 레이아웃 사용",
     "useGlobalHubsDescription": "공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.",
+    "showServerNameOnHubs": "허브에 서버 이름 표시",
+    "showServerNameOnHubsDescription": "허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.",
     "hardwareDecoding": "하드웨어 디코딩",
     "hardwareDecodingDescription": "가능한 경우 하드웨어 가속을 사용합니다",
     "bufferSize": "버퍼 크기",

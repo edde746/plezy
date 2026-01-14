@@ -92,6 +92,8 @@
     "showHeroSection": "Hero-Bereich anzeigen",
     "useGlobalHubs": "Plex-Startseiten-Layout verwenden",
     "useGlobalHubsDescription": "Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.",
+    "showServerNameOnHubs": "Servername bei Hubs anzeigen",
+    "showServerNameOnHubsDescription": "Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.",
     "hardwareDecoding": "Hardware-Decodierung",
     "hardwareDecodingDescription": "Hardwarebeschleunigung verwenden, sofern verfügbar",
     "bufferSize": "Puffergröße",

@@ -489,8 +489,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Get hidden libraries for filtering
       final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
 
-      // Get settings for hub mode preference
+      // Get settings for hub mode preference (ensure initialized before accessing)
       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      await settingsProvider.ensureInitialized();
 
       // Start OnDeck and hubs fetch in parallel
       final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(limit: 20);
@@ -696,6 +697,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     // Default icon for other hubs
     return Symbols.auto_awesome_rounded;
+  }
+
+  /// Get the set of hub titles that appear more than once (duplicates)
+  Set<String> _getDuplicateHubTitles() {
+    final titleCounts = <String, int>{};
+    for (final hub in _hubs) {
+      titleCounts[hub.title] = (titleCounts[hub.title] ?? 0) + 1;
+    }
+    return titleCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
   }
 
   @override
@@ -949,6 +959,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Get settings for server name display
+    final showServerNameOnHubs = context.watch<SettingsProvider>().showServerNameOnHubs;
+    final duplicateHubTitles = _getDuplicateHubTitles();
+
     return Scaffold(
       body: Stack(
         children: [
@@ -1008,6 +1022,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         key: i < _hubKeys.length ? _hubKeys[i] : null,
                         hub: _hubs[i],
                         icon: _getHubIcon(_hubs[i].title),
+                        showServerName: showServerNameOnHubs || duplicateHubTitles.contains(_hubs[i].title),
                         onRefresh: updateItem,
                         // Hub index is i + 1 if continue watching exists, otherwise i
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),

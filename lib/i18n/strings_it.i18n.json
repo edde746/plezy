@@ -92,6 +92,8 @@
     "showHeroSection": "Mostra sezione principale",
     "useGlobalHubs": "Usa layout Home di Plex",
     "useGlobalHubsDescription": "Mostra gli hub della home page come il client Plex ufficiale. Se disattivato, mostra invece i suggerimenti per libreria.",
+    "showServerNameOnHubs": "Mostra nome server sugli hub",
+    "showServerNameOnHubsDescription": "Mostra sempre il nome del server nei titoli degli hub. Se disattivato, solo per nomi hub duplicati.",
     "hardwareDecoding": "Decodifica Hardware",
     "hardwareDecodingDescription": "Utilizza l'accelerazione hardware quando disponibile",
     "bufferSize": "Dimensione buffer",

@@ -34,6 +34,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMediaVersionPreferences = 'media_version_preferences';
   static const String _keyShowHeroSection = 'show_hero_section';
   static const String _keyUseGlobalHubs = 'use_global_hubs';
+  static const String _keyShowServerNameOnHubs = 'show_server_name_on_hubs';
   static const String _keySleepTimerDuration = 'sleep_timer_duration';
   static const String _keyAudioSyncOffset = 'audio_sync_offset';
   static const String _keySubtitleSyncOffset = 'subtitle_sync_offset';
@@ -192,6 +193,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getUseGlobalHubs() {
     return prefs.getBool(_keyUseGlobalHubs) ?? true; // Default: true (use global hubs like official Plex)
+  }
+
+  // Show Server Name on Hubs (false = only on duplicates, true = always)
+  Future<void> setShowServerNameOnHubs(bool enabled) async {
+    await prefs.setBool(_keyShowServerNameOnHubs, enabled);
+  }
+
+  bool getShowServerNameOnHubs() {
+    return prefs.getBool(_keyShowServerNameOnHubs) ?? false; // Default: false (only show on duplicates)
   }
 
   // Seek Time Small (in seconds)

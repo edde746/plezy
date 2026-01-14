@@ -91,6 +91,8 @@
     "showHeroSection": "Show Hero Section",
     "useGlobalHubs": "Use Plex Home Layout",
     "useGlobalHubsDescription": "Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.",
+    "showServerNameOnHubs": "Show Server Name on Hubs",
+    "showServerNameOnHubsDescription": "Always display the server name in hub titles. When off, only shows for duplicate hub names.",
     "hardwareDecoding": "Hardware Decoding",
     "hardwareDecodingDescription": "Use hardware acceleration when available",
     "bufferSize": "Buffer Size",

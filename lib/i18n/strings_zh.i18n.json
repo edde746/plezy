@@ -92,6 +92,8 @@
     "showHeroSection": "显示主要精选区",
     "useGlobalHubs": "使用 Plex 主页布局",
     "useGlobalHubsDescription": "显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。",
+    "showServerNameOnHubs": "在推荐栏显示服务器名称",
+    "showServerNameOnHubsDescription": "始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。",
     "hardwareDecoding": "硬件解码",
     "hardwareDecodingDescription": "如果可用，使用硬件加速",
     "bufferSize": "缓冲区大小",

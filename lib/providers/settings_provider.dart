@@ -9,6 +9,7 @@ class SettingsProvider extends ChangeNotifier {
   EpisodePosterMode _episodePosterMode = EpisodePosterMode.seriesPoster;
   bool _showHeroSection = true;
   bool _useGlobalHubs = true;
+  bool _showServerNameOnHubs = false;
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
@@ -30,6 +31,7 @@ class SettingsProvider extends ChangeNotifier {
     _episodePosterMode = _settingsService!.getEpisodePosterMode();
     _showHeroSection = _settingsService!.getShowHeroSection();
     _useGlobalHubs = _settingsService!.getUseGlobalHubs();
+    _showServerNameOnHubs = _settingsService!.getShowServerNameOnHubs();
     _isInitialized = true;
     notifyListeners();
   }
@@ -46,6 +48,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get showHeroSection => _showHeroSection;
 
   bool get useGlobalHubs => _useGlobalHubs;
+
+  bool get showServerNameOnHubs => _showServerNameOnHubs;
 
   Future<void> setLibraryDensity(LibraryDensity density) async {
     if (!_isInitialized) await _initializeSettings();
@@ -88,6 +92,15 @@ class SettingsProvider extends ChangeNotifier {
     if (_useGlobalHubs != value) {
       _useGlobalHubs = value;
       await _settingsService!.setUseGlobalHubs(value);
+      notifyListeners();
+    }
+  }
+
+  Future<void> setShowServerNameOnHubs(bool value) async {
+    if (!_isInitialized) await _initializeSettings();
+    if (_showServerNameOnHubs != value) {
+      _showServerNameOnHubs = value;
+      await _settingsService!.setShowServerNameOnHubs(value);
       notifyListeners();
     }
   }

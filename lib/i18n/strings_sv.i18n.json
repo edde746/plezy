@@ -92,6 +92,8 @@
     "showHeroSection": "Visa hjältesektion",
     "useGlobalHubs": "Använd Plex hem-layout",
     "useGlobalHubsDescription": "Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.",
+    "showServerNameOnHubs": "Visa servernamn på hubbar",
+    "showServerNameOnHubsDescription": "Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.",
     "hardwareDecoding": "Hårdvaruavkodning",
     "hardwareDecodingDescription": "Använd hårdvaruacceleration när tillgängligt",
     "bufferSize": "Bufferstorlek",

@@ -30,6 +30,7 @@ class HubSection extends StatefulWidget {
   final void Function(String)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final bool isInContinueWatching;
+  final bool showServerName;
 
   /// Callback for vertical navigation (up/down). Return true if handled.
   final bool Function(bool isUp)? onVerticalNavigation;
@@ -45,6 +46,7 @@ class HubSection extends StatefulWidget {
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.isInContinueWatching = false,
+    this.showServerName = false,
     this.onVerticalNavigation,
     this.onBack,
   });
@@ -263,7 +265,7 @@ class HubSectionState extends State<HubSection> {
                   children: [
                     AppIcon(widget.icon, fill: 1),
                     const SizedBox(width: 8),
-                    Expanded(
+                    Flexible(
                       child: Text(
                         widget.hub.title,
                         style: Theme.of(context).textTheme.titleLarge,
@@ -271,6 +273,22 @@ class HubSectionState extends State<HubSection> {
                         maxLines: 1,
                       ),
                     ),
+                    if (widget.showServerName && widget.hub.serverName != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '•',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.hub.serverName!,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
                     if (widget.hub.more) ...[
                       const SizedBox(width: 4),
                       const AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20),
@@ -303,10 +321,8 @@ class HubSectionState extends State<HubSection> {
                 final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
 
                 // Determine hub content type for layout decisions
-                final hasEpisodes = widget.hub.items.any((item) =>
-                    item.usesWideAspectRatio(episodePosterMode));
-                final hasNonEpisodes = widget.hub.items.any((item) =>
-                    !item.usesWideAspectRatio(episodePosterMode));
+                final hasEpisodes = widget.hub.items.any((item) => item.usesWideAspectRatio(episodePosterMode));
+                final hasNonEpisodes = widget.hub.items.any((item) => !item.usesWideAspectRatio(episodePosterMode));
 
                 // Mixed hub = has both episodes AND non-episodes (like Continue Watching)
                 final isMixedHub = hasEpisodes && hasNonEpisodes;
@@ -315,16 +331,17 @@ class HubSectionState extends State<HubSection> {
                 final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
 
                 // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
-                final useWideLayout = episodePosterMode == EpisodePosterMode.episodeThumbnail &&
-                    (isEpisodeOnlyHub || isMixedHub);
+                final useWideLayout =
+                    episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
                 // Card dimensions based on hub type
                 const wideCardMultiplier = 1.5;
                 final cardWidth = useWideLayout ? baseCardWidth * wideCardMultiplier : baseCardWidth;
                 final posterWidth = cardWidth - 16; // 8px padding on each side
                 final posterHeight = useWideLayout
-                    ? posterWidth * (9 / 16)  // 16:9 for wide layout
-                    : posterWidth * 1.5;       // 2:3 for poster layout
+                    ? posterWidth *
+                          (9 / 16) // 16:9 for wide layout
+                    : posterWidth * 1.5; // 2:3 for poster layout
 
                 final containerHeight = posterHeight + 66;
                 _itemExtent = cardWidth + 4;
