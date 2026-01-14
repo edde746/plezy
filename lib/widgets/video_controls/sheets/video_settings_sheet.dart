@@ -338,9 +338,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return ListTile(
               title: Text(label, style: TextStyle(color: isSelected ? Colors.blue : Colors.white)),
               trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.blue) : null,
-              onTap: () {
+              onTap: () async {
                 widget.player.setRate(speed);
-                Navigator.pop(context); // Close sheet after selection
+                // Save as default playback speed
+                final settings = await SettingsService.getInstance();
+                await settings.setDefaultPlaybackSpeed(speed);
+                if (context.mounted) {
+                  Navigator.pop(context); // Close sheet after selection
+                }
               },
             );
           },

@@ -97,7 +97,6 @@ class EpisodeNavigationService {
         metadata: episode,
         preferredAudioTrack: currentAudioTrack,
         preferredSubtitleTrack: currentSubtitleTrack,
-        preferredPlaybackRate: currentPlaybackRate,
         usePushReplacement: usePushReplacement,
       );
     }

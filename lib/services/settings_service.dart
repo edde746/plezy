@@ -61,6 +61,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMaxVolume = 'max_volume';
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
+  static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
 
   SettingsService._();
 
@@ -947,6 +948,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyMatchContentFrameRate) ?? false; // Default disabled
   }
 
+  // Default Playback Speed (0.5 to 3.0)
+  Future<void> setDefaultPlaybackSpeed(double speed) async {
+    await prefs.setDouble(_keyDefaultPlaybackSpeed, speed.clamp(0.5, 3.0));
+  }
+
+  double getDefaultPlaybackSpeed() {
+    return prefs.getDouble(_keyDefaultPlaybackSpeed) ?? 1.0; // Default: normal speed
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -989,6 +999,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyMpvConfigPresets),
       prefs.remove(_keyEnableDiscordRPC),
       prefs.remove(_keyMatchContentFrameRate),
+      prefs.remove(_keyDefaultPlaybackSpeed),
     ]);
   }
 

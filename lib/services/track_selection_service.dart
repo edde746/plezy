@@ -446,7 +446,7 @@ class TrackSelectionService {
   Future<void> selectAndApplyTracks({
     AudioTrack? preferredAudioTrack,
     SubtitleTrack? preferredSubtitleTrack,
-    double? preferredPlaybackRate,
+    double? defaultPlaybackSpeed,
     Function(AudioTrack)? onAudioTrackChanged,
     Function(SubtitleTrack)? onSubtitleTrackChanged,
   }) async {
@@ -491,9 +491,9 @@ class TrackSelectionService {
       onSubtitleTrackChanged(selectedSubtitleTrack);
     }
 
-    // Set playback rate if preferred rate was provided
-    if (preferredPlaybackRate != null) {
-      player.setRate(preferredPlaybackRate);
+    // Apply default playback speed from settings
+    if (defaultPlaybackSpeed != null && defaultPlaybackSpeed != 1.0) {
+      player.setRate(defaultPlaybackSpeed);
     }
   }
 }

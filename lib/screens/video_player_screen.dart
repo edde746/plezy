@@ -47,7 +47,6 @@ class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
   final AudioTrack? preferredAudioTrack;
   final SubtitleTrack? preferredSubtitleTrack;
-  final double? preferredPlaybackRate;
   final int selectedMediaIndex;
   final bool isOffline;
 
@@ -56,7 +55,6 @@ class VideoPlayerScreen extends StatefulWidget {
     required this.metadata,
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
-    this.preferredPlaybackRate,
     this.selectedMediaIndex = 0,
     this.isOffline = false,
   });
@@ -1216,6 +1214,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (!mounted || player == null) return;
 
     final profileSettings = context.read<UserProfileProvider>().profileSettings;
+    final settingsService = await SettingsService.getInstance();
     final trackService = TrackSelectionService(
       player: player!,
       profileSettings: profileSettings,
@@ -1226,7 +1225,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     await trackService.selectAndApplyTracks(
       preferredAudioTrack: widget.preferredAudioTrack,
       preferredSubtitleTrack: widget.preferredSubtitleTrack,
-      preferredPlaybackRate: widget.preferredPlaybackRate,
+      defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
       onAudioTrackChanged: _onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
     );
@@ -1462,7 +1461,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     final currentAudioTrack = currentPlayer.state.track.audio;
     final currentSubtitleTrack = currentPlayer.state.track.subtitle;
-    final currentRate = currentPlayer.state.rate;
 
     // Pause and stop current playback
     currentPlayer.pause();
@@ -1479,7 +1477,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         metadata: episodeMetadata,
         preferredAudioTrack: currentAudioTrack,
         preferredSubtitleTrack: currentSubtitleTrack,
-        preferredPlaybackRate: currentRate,
         usePushReplacement: true,
       );
     }

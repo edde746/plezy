@@ -19,7 +19,6 @@ const String kVideoPlayerRouteName = '/video_player';
 /// - [metadata]: The Plex metadata for the content to play
 /// - [preferredAudioTrack]: Optional audio track to select on playback start
 /// - [preferredSubtitleTrack]: Optional subtitle track to select on playback start
-/// - [preferredPlaybackRate]: Optional playback speed to set on playback start
 /// - [selectedMediaIndex]: Optional media version index to use; if not provided,
 ///   loads the saved preference for the series/movie. Defaults to 0 if no preference exists.
 /// - [usePushReplacement]: If true, replaces current route instead of pushing;
@@ -33,7 +32,6 @@ Future<bool?> navigateToVideoPlayer(
   required PlexMetadata metadata,
   AudioTrack? preferredAudioTrack,
   SubtitleTrack? preferredSubtitleTrack,
-  double? preferredPlaybackRate,
   int? selectedMediaIndex,
   bool usePushReplacement = false,
   bool isOffline = false,
@@ -72,7 +70,6 @@ Future<bool?> navigateToVideoPlayer(
       metadata: metadata,
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
-      preferredPlaybackRate: preferredPlaybackRate,
       selectedMediaIndex: mediaIndex,
       isOffline: isOffline,
     ),
@@ -108,7 +105,6 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   VoidCallback? onRefresh,
   AudioTrack? preferredAudioTrack,
   SubtitleTrack? preferredSubtitleTrack,
-  double? preferredPlaybackRate,
   int? selectedMediaIndex,
   bool usePushReplacement = false,
 }) async {
@@ -118,7 +114,6 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
     isOffline: isOffline,
     preferredAudioTrack: preferredAudioTrack,
     preferredSubtitleTrack: preferredSubtitleTrack,
-    preferredPlaybackRate: preferredPlaybackRate,
     selectedMediaIndex: selectedMediaIndex,
     usePushReplacement: usePushReplacement,
   );
