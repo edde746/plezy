@@ -487,8 +487,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       },
       child: CustomScrollView(
         slivers: [
-          // Pinned chips bar - stays at top while content scrolls underneath
-          SliverPersistentHeader(pinned: true, delegate: _ChipsHeaderDelegate(child: _buildChipsBar())),
+          // Floating chips bar - hides on scroll down, reappears on scroll up
+          SliverPersistentHeader(floating: true, delegate: _ChipsHeaderDelegate(child: _buildChipsBar())),
 
           // Content slivers
           ..._buildContentSlivers(),
