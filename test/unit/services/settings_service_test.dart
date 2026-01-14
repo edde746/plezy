@@ -122,6 +122,15 @@ void main() {
         final prefs = await SharedPreferences.getInstance();
         expect(prefs.getString('theme_mode'), 'dark');
       });
+
+      test('setThemeMode supports oled mode', () async {
+        SharedPreferences.setMockInitialValues({});
+        final settings = await SettingsService.getInstance();
+
+        await settings.setThemeMode(ThemeMode.oled);
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getString('theme_mode'), 'oled');
+      });
     });
 
     group('Debug logging', () {

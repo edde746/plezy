@@ -31,12 +31,20 @@ class ThemeProvider extends ChangeNotifier {
 
   ThemeData get lightTheme => monoTheme(dark: false);
   ThemeData get darkTheme => monoTheme(dark: true);
+  ThemeData get oledTheme => monoTheme(dark: true, oled: true);
+
+  /// Returns the appropriate theme based on the current mode.
+  /// For OLED mode, returns the OLED dark theme.
+  ThemeData get currentDarkTheme {
+    return _themeMode == settings.ThemeMode.oled ? oledTheme : darkTheme;
+  }
 
   ThemeMode get materialThemeMode {
     switch (_themeMode) {
       case settings.ThemeMode.light:
         return ThemeMode.light;
       case settings.ThemeMode.dark:
+      case settings.ThemeMode.oled:
         return ThemeMode.dark;
       case settings.ThemeMode.system:
         return ThemeMode.system;
@@ -48,11 +56,14 @@ class ThemeProvider extends ChangeNotifier {
       case settings.ThemeMode.light:
         return false;
       case settings.ThemeMode.dark:
+      case settings.ThemeMode.oled:
         return true;
       case settings.ThemeMode.system:
         return _systemBrightness == Brightness.dark;
     }
   }
+
+  bool get isOledMode => _themeMode == settings.ThemeMode.oled;
 
   Future<void> setThemeMode(settings.ThemeMode mode) async {
     if (_themeMode != mode) {
@@ -68,6 +79,8 @@ class ThemeProvider extends ChangeNotifier {
         return 'Light';
       case settings.ThemeMode.dark:
         return 'Dark';
+      case settings.ThemeMode.oled:
+        return 'OLED Black';
       case settings.ThemeMode.system:
         return 'System';
     }
@@ -79,6 +92,8 @@ class ThemeProvider extends ChangeNotifier {
         return Symbols.light_mode_rounded;
       case settings.ThemeMode.dark:
         return Symbols.dark_mode_rounded;
+      case settings.ThemeMode.oled:
+        return Symbols.brightness_high_rounded;
       case settings.ThemeMode.system:
         return Symbols.brightness_auto_rounded;
     }
@@ -93,6 +108,9 @@ class ThemeProvider extends ChangeNotifier {
         setThemeMode(settings.ThemeMode.dark);
         break;
       case settings.ThemeMode.dark:
+        setThemeMode(settings.ThemeMode.oled);
+        break;
+      case settings.ThemeMode.oled:
         setThemeMode(settings.ThemeMode.system);
         break;
     }

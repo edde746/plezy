@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
 import 'mono_tokens.dart';
 
-ThemeData monoTheme({required bool dark}) {
+/// Creates a theme with the specified mode.
+///
+/// [dark] - Whether to use dark mode colors
+/// [oled] - Whether to use pure black for OLED displays (only applies when dark is true)
+ThemeData monoTheme({required bool dark, bool oled = false}) {
   // neutral greys tuned for crisp contrast
+  // OLED mode uses pure black for maximum battery savings on AMOLED displays
   final c = dark
-      ? (
-          bg: const Color(0xFF0E0F12),
-          surface: const Color(0xFF15171C),
-          outline: const Color(0x1FFFFFFF),
-          text: const Color(0xFFEDEDED),
-          textMuted: const Color(0x99EDEDED),
-        )
+      ? (oled
+          ? (
+              bg: const Color(0xFF000000), // Pure black for OLED
+              surface: const Color(0xFF0A0A0A), // Near black surface
+              outline: const Color(0x1FFFFFFF),
+              text: const Color(0xFFEDEDED),
+              textMuted: const Color(0x99EDEDED),
+            )
+          : (
+              bg: const Color(0xFF0E0F12),
+              surface: const Color(0xFF15171C),
+              outline: const Color(0x1FFFFFFF),
+              text: const Color(0xFFEDEDED),
+              textMuted: const Color(0x99EDEDED),
+            ))
       : (
           bg: const Color(0xFFF7F7F8),
           surface: const Color(0xFFFFFFFF),

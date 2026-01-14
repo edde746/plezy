@@ -7,7 +7,7 @@ import '../models/mpv_config_models.dart';
 import 'base_shared_preferences_service.dart';
 import '../utils/platform_detector.dart';
 
-enum ThemeMode { system, light, dark }
+enum ThemeMode { system, light, dark, oled }
 
 enum LibraryDensity { compact, normal, comfortable }
 

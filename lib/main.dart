@@ -252,7 +252,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                 title: t.app.title,
                 debugShowCheckedModeBanner: false,
                 theme: themeProvider.lightTheme,
-                darkTheme: themeProvider.darkTheme,
+                darkTheme: themeProvider.currentDarkTheme,
                 themeMode: themeProvider.materialThemeMode,
                 navigatorObservers: [routeObserver],
                 home: const OrientationAwareSetup(),
