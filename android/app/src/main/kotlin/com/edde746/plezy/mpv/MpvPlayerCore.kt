@@ -5,6 +5,9 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -49,6 +52,79 @@ class MpvPlayerCore(private val activity: Activity) :
     private var currentVideoFps: Float = 0f
     private var displayListener: DisplayManager.DisplayListener? = null
     private val handler = Handler(Looper.getMainLooper())
+
+    // Audio focus
+    private var audioManager: AudioManager? = null
+    private var audioFocusRequest: AudioFocusRequest? = null
+    private var hasAudioFocus: Boolean = false
+    private var wasPlayingBeforeFocusLoss: Boolean = false
+
+    private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Log.d(TAG, "Audio focus gained")
+                hasAudioFocus = true
+                // Resume playback if we were playing before focus loss
+                if (wasPlayingBeforeFocusLoss && isInitialized) {
+                    try {
+                        MPVLib.setPropertyBoolean("pause", false)
+                        wasPlayingBeforeFocusLoss = false
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to resume playback after focus gain", e)
+                    }
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                Log.d(TAG, "Audio focus lost permanently")
+                hasAudioFocus = false
+                // Pause playback on permanent focus loss
+                if (isInitialized) {
+                    try {
+                        val isPaused = MPVLib.getPropertyBoolean("pause")
+                        wasPlayingBeforeFocusLoss = !isPaused
+                        if (!isPaused) {
+                            MPVLib.setPropertyBoolean("pause", true)
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to pause on focus loss", e)
+                    }
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                Log.d(TAG, "Audio focus lost transiently")
+                hasAudioFocus = false
+                // Pause playback, remember to resume
+                if (isInitialized) {
+                    try {
+                        val isPaused = MPVLib.getPropertyBoolean("pause")
+                        wasPlayingBeforeFocusLoss = !isPaused
+                        if (!isPaused) {
+                            MPVLib.setPropertyBoolean("pause", true)
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to pause on transient focus loss", e)
+                    }
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                Log.d(TAG, "Audio focus lost transiently (can duck)")
+                // For video content, we pause instead of ducking
+                // since dialogue is typically important
+                hasAudioFocus = false
+                if (isInitialized) {
+                    try {
+                        val isPaused = MPVLib.getPropertyBoolean("pause")
+                        wasPlayingBeforeFocusLoss = !isPaused
+                        if (!isPaused) {
+                            MPVLib.setPropertyBoolean("pause", true)
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to pause on duck focus loss", e)
+                    }
+                }
+            }
+        }
+    }
 
     private fun ensureFlutterOverlayOnTop() {
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
@@ -102,6 +178,9 @@ class MpvPlayerCore(private val activity: Activity) :
         }
 
         try {
+            // Initialize AudioManager for audio focus handling
+            audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
             // Create SurfaceView for video rendering
             surfaceView = SurfaceView(activity).apply {
                 layoutParams = ViewGroup.LayoutParams(
@@ -182,6 +261,69 @@ class MpvPlayerCore(private val activity: Activity) :
 
         // Audio configuration
         MPVLib.setOptionString("ao", "audiotrack")
+    }
+
+    // Audio Focus
+
+    /**
+     * Request audio focus before starting playback.
+     * This will cause other media apps to pause.
+     * @return true if audio focus was granted
+     */
+    fun requestAudioFocus(): Boolean {
+        val am = audioManager ?: return false
+
+        Log.d(TAG, "Requesting audio focus")
+
+        val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Android 8.0+ uses AudioFocusRequest
+            val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+                        .build()
+                )
+                .setOnAudioFocusChangeListener(audioFocusChangeListener, handler)
+                .setWillPauseWhenDucked(true)
+                .build()
+
+            audioFocusRequest = focusRequest
+            am.requestAudioFocus(focusRequest)
+        } else {
+            // Legacy API for older Android versions
+            @Suppress("DEPRECATION")
+            am.requestAudioFocus(
+                audioFocusChangeListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN
+            )
+        }
+
+        hasAudioFocus = (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+        Log.d(TAG, "Audio focus request result: $result, granted: $hasAudioFocus")
+        return hasAudioFocus
+    }
+
+    /**
+     * Abandon audio focus when playback stops.
+     * This allows other apps to resume their audio.
+     */
+    fun abandonAudioFocus() {
+        val am = audioManager ?: return
+
+        Log.d(TAG, "Abandoning audio focus")
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest?.let { am.abandonAudioFocusRequest(it) }
+            audioFocusRequest = null
+        } else {
+            @Suppress("DEPRECATION")
+            am.abandonAudioFocus(audioFocusChangeListener)
+        }
+
+        hasAudioFocus = false
+        wasPlayingBeforeFocusLoss = false
     }
 
     // SurfaceHolder.Callback
@@ -512,6 +654,10 @@ class MpvPlayerCore(private val activity: Activity) :
 
         // Clean up frame rate listener
         clearVideoFrameRate()
+
+        // Release audio focus
+        abandonAudioFocus()
+        audioManager = null
 
         MPVLib.removeObserver(this)
         MPVLib.removeLogObserver(this)

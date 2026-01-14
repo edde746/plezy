@@ -607,6 +607,29 @@ class PlayerNative implements Player {
   }
 
   // ============================================
+  // Audio Focus (Android)
+  // ============================================
+
+  @override
+  Future<bool> requestAudioFocus() async {
+    _checkDisposed();
+    if (!Platform.isAndroid) return true;
+    if (!_initialized) return false;
+
+    final result = await _methodChannel.invokeMethod<bool>('requestAudioFocus');
+    return result ?? false;
+  }
+
+  @override
+  Future<void> abandonAudioFocus() async {
+    _checkDisposed();
+    if (!Platform.isAndroid) return;
+    if (!_initialized) return;
+
+    await _methodChannel.invokeMethod('abandonAudioFocus');
+  }
+
+  // ============================================
   // Lifecycle
   // ============================================
 

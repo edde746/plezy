@@ -96,6 +96,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "setVisible" -> handleSetVisible(call, result)
             "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
             "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
+            "requestAudioFocus" -> handleRequestAudioFocus(result)
+            "abandonAudioFocus" -> handleAbandonAudioFocus(result)
             "isInitialized" -> result.success(playerCore?.isInitialized ?: false)
             else -> result.notImplemented()
         }
@@ -216,6 +218,18 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun handleClearVideoFrameRate(result: MethodChannel.Result) {
         Log.d(TAG, "clearVideoFrameRate")
         playerCore?.clearVideoFrameRate()
+        result.success(null)
+    }
+
+    private fun handleRequestAudioFocus(result: MethodChannel.Result) {
+        Log.d(TAG, "requestAudioFocus")
+        val granted = playerCore?.requestAudioFocus() ?: false
+        result.success(granted)
+    }
+
+    private fun handleAbandonAudioFocus(result: MethodChannel.Result) {
+        Log.d(TAG, "abandonAudioFocus")
+        playerCore?.abandonAudioFocus()
         result.success(null)
     }
 

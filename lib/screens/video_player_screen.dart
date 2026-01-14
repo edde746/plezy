@@ -727,6 +727,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Reset first frame flag for new video
         _hasFirstFrame.value = false;
 
+        // Request audio focus before starting playback (Android)
+        // This causes other media apps (Spotify, podcasts, etc.) to pause
+        await player!.requestAudioFocus();
+
         // Pass resume position if available
         final resumePosition = widget.metadata.viewOffset != null
             ? Duration(milliseconds: widget.metadata.viewOffset!)
@@ -1040,9 +1044,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Clear Discord Rich Presence
     DiscordRPCService.instance.stopPlayback();
 
-    // Clear frame rate matching before disposing player (Android only)
+    // Clear frame rate matching and abandon audio focus before disposing player (Android only)
     if (Platform.isAndroid && player != null) {
       player!.clearVideoFrameRate();
+      player!.abandonAudioFocus();
     }
 
     // Disable wakelock when leaving the video player

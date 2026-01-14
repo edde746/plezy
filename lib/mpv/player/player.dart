@@ -193,6 +193,27 @@ abstract class Player {
   Future<void> clearVideoFrameRate();
 
   // ============================================
+  // Audio Focus (Android)
+  // ============================================
+
+  /// Request audio focus before starting playback.
+  ///
+  /// On Android, this notifies the system that the app wants to play audio,
+  /// causing other media apps (Spotify, podcasts, etc.) to pause.
+  ///
+  /// Returns true if audio focus was granted.
+  /// On other platforms, this is a no-op and returns true.
+  Future<bool> requestAudioFocus();
+
+  /// Abandon audio focus when playback stops.
+  ///
+  /// On Android, this notifies the system that the app is done playing audio,
+  /// allowing other apps to resume their playback.
+  ///
+  /// On other platforms, this is a no-op.
+  Future<void> abandonAudioFocus();
+
+  // ============================================
   // Lifecycle
   // ============================================
 
