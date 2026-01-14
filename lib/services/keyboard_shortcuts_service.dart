@@ -318,6 +318,12 @@ class KeyboardShortcutsService {
         player.setRate(1.0);
         _settingsService.setDefaultPlaybackSpeed(1.0);
         break;
+      case 'sub_seek_next':
+        player.command(['sub-seek', '1']);
+        break;
+      case 'sub_seek_prev':
+        player.command(['sub-seek', '-1']);
+        break;
     }
   }
 
@@ -358,6 +364,10 @@ class KeyboardShortcutsService {
         return 'Decrease Speed';
       case 'speed_reset':
         return 'Reset Speed';
+      case 'sub_seek_next':
+        return 'Seek to Next Subtitle';
+      case 'sub_seek_prev':
+        return 'Seek to Previous Subtitle';
       default:
         return action;
     }

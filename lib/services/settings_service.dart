@@ -353,6 +353,8 @@ class SettingsService extends BaseSharedPreferencesService {
       'speed_increase': 'Plus',
       'speed_decrease': 'Minus',
       'speed_reset': 'R',
+      'sub_seek_next': 'Ctrl+Right',
+      'sub_seek_prev': 'Ctrl+Left',
     };
   }
 
@@ -376,6 +378,8 @@ class SettingsService extends BaseSharedPreferencesService {
       'speed_increase': HotKey(key: PhysicalKeyboardKey.equal),
       'speed_decrease': HotKey(key: PhysicalKeyboardKey.minus),
       'speed_reset': HotKey(key: PhysicalKeyboardKey.keyR),
+      'sub_seek_next': HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
+      'sub_seek_prev': HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
     };
   }
 
