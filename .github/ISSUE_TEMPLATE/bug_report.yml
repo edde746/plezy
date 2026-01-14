@@ -84,8 +84,15 @@ body:
     attributes:
       label: Logs and Stack Traces
       description: Please paste any relevant logs or stack traces
-      render: shell
-      placeholder: Paste logs here
+      value: |
+        <details>
+        <summary>Logs</summary>
+
+        ```
+        Paste logs here
+        ```
+
+        </details>
 
   - type: textarea
     id: screenshots
