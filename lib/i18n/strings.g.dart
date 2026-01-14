@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 7
-/// Strings: 3631 (518 per locale)
+/// Strings: 3750 (535 per locale)
 ///
-/// Built on 2026-01-14 at 12:24 UTC
+/// Built on 2026-01-14 at 23:28 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -413,6 +413,7 @@ class _StringsHotkeysEn {
 	// Translations
 	String setShortcutFor({required Object actionName}) => 'Set Shortcut for ${actionName}';
 	String get clearShortcut => 'Clear shortcut';
+	late final _StringsHotkeysActionsEn actions = _StringsHotkeysActionsEn._(_root);
 }
 
 // Path: pinEntry
@@ -984,6 +985,32 @@ class _StringsDownloadsEn {
 	String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})';
 }
 
+// Path: hotkeys.actions
+class _StringsHotkeysActionsEn {
+	_StringsHotkeysActionsEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get playPause => 'Play/Pause';
+	String get volumeUp => 'Volume Up';
+	String get volumeDown => 'Volume Down';
+	String seekForward({required Object seconds}) => 'Seek Forward (${seconds}s)';
+	String seekBackward({required Object seconds}) => 'Seek Backward (${seconds}s)';
+	String get fullscreenToggle => 'Toggle Fullscreen';
+	String get muteToggle => 'Toggle Mute';
+	String get subtitleToggle => 'Toggle Subtitles';
+	String get audioTrackNext => 'Next Audio Track';
+	String get subtitleTrackNext => 'Next Subtitle Track';
+	String get chapterNext => 'Next Chapter';
+	String get chapterPrevious => 'Previous Chapter';
+	String get speedIncrease => 'Increase Speed';
+	String get speedDecrease => 'Decrease Speed';
+	String get speedReset => 'Reset Speed';
+	String get subSeekNext => 'Seek to Next Subtitle';
+	String get subSeekPrev => 'Seek to Previous Subtitle';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsEn {
 	_StringsLibrariesTabsEn._(this._root);
@@ -1297,6 +1324,7 @@ class _StringsHotkeysDe implements _StringsHotkeysEn {
 	// Translations
 	@override String setShortcutFor({required Object actionName}) => 'Tastenkürzel festlegen für ${actionName}';
 	@override String get clearShortcut => 'Kürzel löschen';
+	@override late final _StringsHotkeysActionsDe actions = _StringsHotkeysActionsDe._(_root);
 }
 
 // Path: pinEntry
@@ -1869,6 +1897,32 @@ class _StringsWatchTogetherDe implements _StringsWatchTogetherEn {
 	@override String get failedToJoin => 'Sitzung konnte nicht beigetreten werden';
 }
 
+// Path: hotkeys.actions
+class _StringsHotkeysActionsDe implements _StringsHotkeysActionsEn {
+	_StringsHotkeysActionsDe._(this._root);
+
+	@override final _StringsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get playPause => 'Wiedergabe/Pause';
+	@override String get volumeUp => 'Lauter';
+	@override String get volumeDown => 'Leiser';
+	@override String seekForward({required Object seconds}) => 'Vorspulen (${seconds}s)';
+	@override String seekBackward({required Object seconds}) => 'Zurückspulen (${seconds}s)';
+	@override String get fullscreenToggle => 'Vollbild umschalten';
+	@override String get muteToggle => 'Stumm umschalten';
+	@override String get subtitleToggle => 'Untertitel umschalten';
+	@override String get audioTrackNext => 'Nächste Audiospur';
+	@override String get subtitleTrackNext => 'Nächste Untertitelspur';
+	@override String get chapterNext => 'Nächstes Kapitel';
+	@override String get chapterPrevious => 'Vorheriges Kapitel';
+	@override String get speedIncrease => 'Geschwindigkeit erhöhen';
+	@override String get speedDecrease => 'Geschwindigkeit verringern';
+	@override String get speedReset => 'Geschwindigkeit zurücksetzen';
+	@override String get subSeekNext => 'Zum nächsten Untertitel springen';
+	@override String get subSeekPrev => 'Zum vorherigen Untertitel springen';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsDe implements _StringsLibrariesTabsEn {
 	_StringsLibrariesTabsDe._(this._root);
@@ -2182,6 +2236,7 @@ class _StringsHotkeysIt implements _StringsHotkeysEn {
 	// Translations
 	@override String setShortcutFor({required Object actionName}) => 'Imposta scorciatoia per ${actionName}';
 	@override String get clearShortcut => 'Elimina scorciatoia';
+	@override late final _StringsHotkeysActionsIt actions = _StringsHotkeysActionsIt._(_root);
 }
 
 // Path: pinEntry
@@ -2754,6 +2809,32 @@ class _StringsWatchTogetherIt implements _StringsWatchTogetherEn {
 	@override String get failedToJoin => 'Impossibile unirsi alla sessione';
 }
 
+// Path: hotkeys.actions
+class _StringsHotkeysActionsIt implements _StringsHotkeysActionsEn {
+	_StringsHotkeysActionsIt._(this._root);
+
+	@override final _StringsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get playPause => 'Riproduci/Pausa';
+	@override String get volumeUp => 'Alza volume';
+	@override String get volumeDown => 'Abbassa volume';
+	@override String seekForward({required Object seconds}) => 'Avanti (${seconds}s)';
+	@override String seekBackward({required Object seconds}) => 'Indietro (${seconds}s)';
+	@override String get fullscreenToggle => 'Schermo intero';
+	@override String get muteToggle => 'Muto';
+	@override String get subtitleToggle => 'Sottotitoli';
+	@override String get audioTrackNext => 'Traccia audio successiva';
+	@override String get subtitleTrackNext => 'Sottotitoli successivi';
+	@override String get chapterNext => 'Capitolo successivo';
+	@override String get chapterPrevious => 'Capitolo precedente';
+	@override String get speedIncrease => 'Aumenta velocità';
+	@override String get speedDecrease => 'Diminuisci velocità';
+	@override String get speedReset => 'Ripristina velocità';
+	@override String get subSeekNext => 'Vai al sottotitolo successivo';
+	@override String get subSeekPrev => 'Vai al sottotitolo precedente';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsIt implements _StringsLibrariesTabsEn {
 	_StringsLibrariesTabsIt._(this._root);
@@ -3067,6 +3148,7 @@ class _StringsHotkeysKo implements _StringsHotkeysEn {
 	// Translations
 	@override String setShortcutFor({required Object actionName}) => '${actionName}에 대한 단축키 설정';
 	@override String get clearShortcut => '단축키 삭제';
+	@override late final _StringsHotkeysActionsKo actions = _StringsHotkeysActionsKo._(_root);
 }
 
 // Path: pinEntry
@@ -3639,6 +3721,32 @@ class _StringsDownloadsKo implements _StringsDownloadsEn {
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => '${title} 삭제 중... (${current}/${total})';
 }
 
+// Path: hotkeys.actions
+class _StringsHotkeysActionsKo implements _StringsHotkeysActionsEn {
+	_StringsHotkeysActionsKo._(this._root);
+
+	@override final _StringsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get playPause => '재생/일시정지';
+	@override String get volumeUp => '볼륨 높이기';
+	@override String get volumeDown => '볼륨 낮추기';
+	@override String seekForward({required Object seconds}) => '앞으로 이동 (${seconds}초)';
+	@override String seekBackward({required Object seconds}) => '뒤로 이동 (${seconds}초)';
+	@override String get fullscreenToggle => '전체 화면 전환';
+	@override String get muteToggle => '음소거 전환';
+	@override String get subtitleToggle => '자막 전환';
+	@override String get audioTrackNext => '다음 오디오 트랙';
+	@override String get subtitleTrackNext => '다음 자막 트랙';
+	@override String get chapterNext => '다음 챕터';
+	@override String get chapterPrevious => '이전 챕터';
+	@override String get speedIncrease => '속도 높이기';
+	@override String get speedDecrease => '속도 낮추기';
+	@override String get speedReset => '속도 초기화';
+	@override String get subSeekNext => '다음 자막으로 이동';
+	@override String get subSeekPrev => '이전 자막으로 이동';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsKo implements _StringsLibrariesTabsEn {
 	_StringsLibrariesTabsKo._(this._root);
@@ -3952,6 +4060,7 @@ class _StringsHotkeysNl implements _StringsHotkeysEn {
 	// Translations
 	@override String setShortcutFor({required Object actionName}) => 'Stel sneltoets in voor ${actionName}';
 	@override String get clearShortcut => 'Wis sneltoets';
+	@override late final _StringsHotkeysActionsNl actions = _StringsHotkeysActionsNl._(_root);
 }
 
 // Path: pinEntry
@@ -4524,6 +4633,32 @@ class _StringsWatchTogetherNl implements _StringsWatchTogetherEn {
 	@override String get failedToJoin => 'Sessie deelnemen mislukt';
 }
 
+// Path: hotkeys.actions
+class _StringsHotkeysActionsNl implements _StringsHotkeysActionsEn {
+	_StringsHotkeysActionsNl._(this._root);
+
+	@override final _StringsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get playPause => 'Afspelen/Pauzeren';
+	@override String get volumeUp => 'Volume omhoog';
+	@override String get volumeDown => 'Volume omlaag';
+	@override String seekForward({required Object seconds}) => 'Vooruitspoelen (${seconds}s)';
+	@override String seekBackward({required Object seconds}) => 'Terugspoelen (${seconds}s)';
+	@override String get fullscreenToggle => 'Volledig scherm';
+	@override String get muteToggle => 'Dempen';
+	@override String get subtitleToggle => 'Ondertiteling';
+	@override String get audioTrackNext => 'Volgende audiotrack';
+	@override String get subtitleTrackNext => 'Volgende ondertiteltrack';
+	@override String get chapterNext => 'Volgend hoofdstuk';
+	@override String get chapterPrevious => 'Vorig hoofdstuk';
+	@override String get speedIncrease => 'Snelheid verhogen';
+	@override String get speedDecrease => 'Snelheid verlagen';
+	@override String get speedReset => 'Snelheid resetten';
+	@override String get subSeekNext => 'Naar volgende ondertitel';
+	@override String get subSeekPrev => 'Naar vorige ondertitel';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsNl implements _StringsLibrariesTabsEn {
 	_StringsLibrariesTabsNl._(this._root);
@@ -4837,6 +4972,7 @@ class _StringsHotkeysSv implements _StringsHotkeysEn {
 	// Translations
 	@override String setShortcutFor({required Object actionName}) => 'Sätt genväg för ${actionName}';
 	@override String get clearShortcut => 'Rensa genväg';
+	@override late final _StringsHotkeysActionsSv actions = _StringsHotkeysActionsSv._(_root);
 }
 
 // Path: pinEntry
@@ -5409,6 +5545,32 @@ class _StringsWatchTogetherSv implements _StringsWatchTogetherEn {
 	@override String get failedToJoin => 'Det gick inte att gå med i session';
 }
 
+// Path: hotkeys.actions
+class _StringsHotkeysActionsSv implements _StringsHotkeysActionsEn {
+	_StringsHotkeysActionsSv._(this._root);
+
+	@override final _StringsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get playPause => 'Spela/Pausa';
+	@override String get volumeUp => 'Höj volym';
+	@override String get volumeDown => 'Sänk volym';
+	@override String seekForward({required Object seconds}) => 'Spola framåt (${seconds}s)';
+	@override String seekBackward({required Object seconds}) => 'Spola bakåt (${seconds}s)';
+	@override String get fullscreenToggle => 'Växla helskärm';
+	@override String get muteToggle => 'Växla ljud av';
+	@override String get subtitleToggle => 'Växla undertexter';
+	@override String get audioTrackNext => 'Nästa ljudspår';
+	@override String get subtitleTrackNext => 'Nästa undertextspår';
+	@override String get chapterNext => 'Nästa kapitel';
+	@override String get chapterPrevious => 'Föregående kapitel';
+	@override String get speedIncrease => 'Öka hastighet';
+	@override String get speedDecrease => 'Minska hastighet';
+	@override String get speedReset => 'Återställ hastighet';
+	@override String get subSeekNext => 'Hoppa till nästa undertext';
+	@override String get subSeekPrev => 'Hoppa till föregående undertext';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsSv implements _StringsLibrariesTabsEn {
 	_StringsLibrariesTabsSv._(this._root);
@@ -5722,6 +5884,7 @@ class _StringsHotkeysZh implements _StringsHotkeysEn {
 	// Translations
 	@override String setShortcutFor({required Object actionName}) => '为 ${actionName} 设置快捷键';
 	@override String get clearShortcut => '清除快捷键';
+	@override late final _StringsHotkeysActionsZh actions = _StringsHotkeysActionsZh._(_root);
 }
 
 // Path: pinEntry
@@ -6294,6 +6457,32 @@ class _StringsWatchTogetherZh implements _StringsWatchTogetherEn {
 	@override String get failedToJoin => '加入会话失败';
 }
 
+// Path: hotkeys.actions
+class _StringsHotkeysActionsZh implements _StringsHotkeysActionsEn {
+	_StringsHotkeysActionsZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get playPause => '播放/暂停';
+	@override String get volumeUp => '增大音量';
+	@override String get volumeDown => '减小音量';
+	@override String seekForward({required Object seconds}) => '快进 (${seconds}秒)';
+	@override String seekBackward({required Object seconds}) => '快退 (${seconds}秒)';
+	@override String get fullscreenToggle => '切换全屏';
+	@override String get muteToggle => '切换静音';
+	@override String get subtitleToggle => '切换字幕';
+	@override String get audioTrackNext => '下一音轨';
+	@override String get subtitleTrackNext => '下一字幕轨';
+	@override String get chapterNext => '下一章节';
+	@override String get chapterPrevious => '上一章节';
+	@override String get speedIncrease => '加速';
+	@override String get speedDecrease => '减速';
+	@override String get speedReset => '重置速度';
+	@override String get subSeekNext => '跳转到下一字幕';
+	@override String get subSeekPrev => '跳转到上一字幕';
+}
+
 // Path: libraries.tabs
 class _StringsLibrariesTabsZh implements _StringsLibrariesTabsEn {
 	_StringsLibrariesTabsZh._(this._root);
@@ -6484,6 +6673,23 @@ extension on Translations {
 			case 'search.enterTitleActorOrKeyword': return 'Enter a title, actor, or keyword';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Set Shortcut for ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Clear shortcut';
+			case 'hotkeys.actions.playPause': return 'Play/Pause';
+			case 'hotkeys.actions.volumeUp': return 'Volume Up';
+			case 'hotkeys.actions.volumeDown': return 'Volume Down';
+			case 'hotkeys.actions.seekForward': return ({required Object seconds}) => 'Seek Forward (${seconds}s)';
+			case 'hotkeys.actions.seekBackward': return ({required Object seconds}) => 'Seek Backward (${seconds}s)';
+			case 'hotkeys.actions.fullscreenToggle': return 'Toggle Fullscreen';
+			case 'hotkeys.actions.muteToggle': return 'Toggle Mute';
+			case 'hotkeys.actions.subtitleToggle': return 'Toggle Subtitles';
+			case 'hotkeys.actions.audioTrackNext': return 'Next Audio Track';
+			case 'hotkeys.actions.subtitleTrackNext': return 'Next Subtitle Track';
+			case 'hotkeys.actions.chapterNext': return 'Next Chapter';
+			case 'hotkeys.actions.chapterPrevious': return 'Previous Chapter';
+			case 'hotkeys.actions.speedIncrease': return 'Increase Speed';
+			case 'hotkeys.actions.speedDecrease': return 'Decrease Speed';
+			case 'hotkeys.actions.speedReset': return 'Reset Speed';
+			case 'hotkeys.actions.subSeekNext': return 'Seek to Next Subtitle';
+			case 'hotkeys.actions.subSeekPrev': return 'Seek to Previous Subtitle';
 			case 'pinEntry.enterPin': return 'Enter PIN';
 			case 'pinEntry.showPin': return 'Show PIN';
 			case 'pinEntry.hidePin': return 'Hide PIN';
@@ -7010,6 +7216,23 @@ extension on _StringsDe {
 			case 'search.enterTitleActorOrKeyword': return 'Titel, Schauspieler oder Stichwort eingeben';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Tastenkürzel festlegen für ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Kürzel löschen';
+			case 'hotkeys.actions.playPause': return 'Wiedergabe/Pause';
+			case 'hotkeys.actions.volumeUp': return 'Lauter';
+			case 'hotkeys.actions.volumeDown': return 'Leiser';
+			case 'hotkeys.actions.seekForward': return ({required Object seconds}) => 'Vorspulen (${seconds}s)';
+			case 'hotkeys.actions.seekBackward': return ({required Object seconds}) => 'Zurückspulen (${seconds}s)';
+			case 'hotkeys.actions.fullscreenToggle': return 'Vollbild umschalten';
+			case 'hotkeys.actions.muteToggle': return 'Stumm umschalten';
+			case 'hotkeys.actions.subtitleToggle': return 'Untertitel umschalten';
+			case 'hotkeys.actions.audioTrackNext': return 'Nächste Audiospur';
+			case 'hotkeys.actions.subtitleTrackNext': return 'Nächste Untertitelspur';
+			case 'hotkeys.actions.chapterNext': return 'Nächstes Kapitel';
+			case 'hotkeys.actions.chapterPrevious': return 'Vorheriges Kapitel';
+			case 'hotkeys.actions.speedIncrease': return 'Geschwindigkeit erhöhen';
+			case 'hotkeys.actions.speedDecrease': return 'Geschwindigkeit verringern';
+			case 'hotkeys.actions.speedReset': return 'Geschwindigkeit zurücksetzen';
+			case 'hotkeys.actions.subSeekNext': return 'Zum nächsten Untertitel springen';
+			case 'hotkeys.actions.subSeekPrev': return 'Zum vorherigen Untertitel springen';
 			case 'pinEntry.enterPin': return 'PIN eingeben';
 			case 'pinEntry.showPin': return 'PIN anzeigen';
 			case 'pinEntry.hidePin': return 'PIN verbergen';
@@ -7537,6 +7760,23 @@ extension on _StringsIt {
 			case 'search.enterTitleActorOrKeyword': return 'Inserisci un titolo, attore o parola chiave';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Imposta scorciatoia per ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Elimina scorciatoia';
+			case 'hotkeys.actions.playPause': return 'Riproduci/Pausa';
+			case 'hotkeys.actions.volumeUp': return 'Alza volume';
+			case 'hotkeys.actions.volumeDown': return 'Abbassa volume';
+			case 'hotkeys.actions.seekForward': return ({required Object seconds}) => 'Avanti (${seconds}s)';
+			case 'hotkeys.actions.seekBackward': return ({required Object seconds}) => 'Indietro (${seconds}s)';
+			case 'hotkeys.actions.fullscreenToggle': return 'Schermo intero';
+			case 'hotkeys.actions.muteToggle': return 'Muto';
+			case 'hotkeys.actions.subtitleToggle': return 'Sottotitoli';
+			case 'hotkeys.actions.audioTrackNext': return 'Traccia audio successiva';
+			case 'hotkeys.actions.subtitleTrackNext': return 'Sottotitoli successivi';
+			case 'hotkeys.actions.chapterNext': return 'Capitolo successivo';
+			case 'hotkeys.actions.chapterPrevious': return 'Capitolo precedente';
+			case 'hotkeys.actions.speedIncrease': return 'Aumenta velocità';
+			case 'hotkeys.actions.speedDecrease': return 'Diminuisci velocità';
+			case 'hotkeys.actions.speedReset': return 'Ripristina velocità';
+			case 'hotkeys.actions.subSeekNext': return 'Vai al sottotitolo successivo';
+			case 'hotkeys.actions.subSeekPrev': return 'Vai al sottotitolo precedente';
 			case 'pinEntry.enterPin': return 'Inserisci PIN';
 			case 'pinEntry.showPin': return 'Mostra PIN';
 			case 'pinEntry.hidePin': return 'Nascondi PIN';
@@ -8064,6 +8304,23 @@ extension on _StringsKo {
 			case 'search.enterTitleActorOrKeyword': return '제목, 배우 또는 키워드를 입력하세요';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => '${actionName}에 대한 단축키 설정';
 			case 'hotkeys.clearShortcut': return '단축키 삭제';
+			case 'hotkeys.actions.playPause': return '재생/일시정지';
+			case 'hotkeys.actions.volumeUp': return '볼륨 높이기';
+			case 'hotkeys.actions.volumeDown': return '볼륨 낮추기';
+			case 'hotkeys.actions.seekForward': return ({required Object seconds}) => '앞으로 이동 (${seconds}초)';
+			case 'hotkeys.actions.seekBackward': return ({required Object seconds}) => '뒤로 이동 (${seconds}초)';
+			case 'hotkeys.actions.fullscreenToggle': return '전체 화면 전환';
+			case 'hotkeys.actions.muteToggle': return '음소거 전환';
+			case 'hotkeys.actions.subtitleToggle': return '자막 전환';
+			case 'hotkeys.actions.audioTrackNext': return '다음 오디오 트랙';
+			case 'hotkeys.actions.subtitleTrackNext': return '다음 자막 트랙';
+			case 'hotkeys.actions.chapterNext': return '다음 챕터';
+			case 'hotkeys.actions.chapterPrevious': return '이전 챕터';
+			case 'hotkeys.actions.speedIncrease': return '속도 높이기';
+			case 'hotkeys.actions.speedDecrease': return '속도 낮추기';
+			case 'hotkeys.actions.speedReset': return '속도 초기화';
+			case 'hotkeys.actions.subSeekNext': return '다음 자막으로 이동';
+			case 'hotkeys.actions.subSeekPrev': return '이전 자막으로 이동';
 			case 'pinEntry.enterPin': return 'PIN 입력';
 			case 'pinEntry.showPin': return 'PIN 표시';
 			case 'pinEntry.hidePin': return 'PIN 숨기기';
@@ -8591,6 +8848,23 @@ extension on _StringsNl {
 			case 'search.enterTitleActorOrKeyword': return 'Voer een titel, acteur of trefwoord in';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Stel sneltoets in voor ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Wis sneltoets';
+			case 'hotkeys.actions.playPause': return 'Afspelen/Pauzeren';
+			case 'hotkeys.actions.volumeUp': return 'Volume omhoog';
+			case 'hotkeys.actions.volumeDown': return 'Volume omlaag';
+			case 'hotkeys.actions.seekForward': return ({required Object seconds}) => 'Vooruitspoelen (${seconds}s)';
+			case 'hotkeys.actions.seekBackward': return ({required Object seconds}) => 'Terugspoelen (${seconds}s)';
+			case 'hotkeys.actions.fullscreenToggle': return 'Volledig scherm';
+			case 'hotkeys.actions.muteToggle': return 'Dempen';
+			case 'hotkeys.actions.subtitleToggle': return 'Ondertiteling';
+			case 'hotkeys.actions.audioTrackNext': return 'Volgende audiotrack';
+			case 'hotkeys.actions.subtitleTrackNext': return 'Volgende ondertiteltrack';
+			case 'hotkeys.actions.chapterNext': return 'Volgend hoofdstuk';
+			case 'hotkeys.actions.chapterPrevious': return 'Vorig hoofdstuk';
+			case 'hotkeys.actions.speedIncrease': return 'Snelheid verhogen';
+			case 'hotkeys.actions.speedDecrease': return 'Snelheid verlagen';
+			case 'hotkeys.actions.speedReset': return 'Snelheid resetten';
+			case 'hotkeys.actions.subSeekNext': return 'Naar volgende ondertitel';
+			case 'hotkeys.actions.subSeekPrev': return 'Naar vorige ondertitel';
 			case 'pinEntry.enterPin': return 'Voer PIN in';
 			case 'pinEntry.showPin': return 'Toon PIN';
 			case 'pinEntry.hidePin': return 'Verberg PIN';
@@ -9118,6 +9392,23 @@ extension on _StringsSv {
 			case 'search.enterTitleActorOrKeyword': return 'Ange en titel, skådespelare eller nyckelord';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Sätt genväg för ${actionName}';
 			case 'hotkeys.clearShortcut': return 'Rensa genväg';
+			case 'hotkeys.actions.playPause': return 'Spela/Pausa';
+			case 'hotkeys.actions.volumeUp': return 'Höj volym';
+			case 'hotkeys.actions.volumeDown': return 'Sänk volym';
+			case 'hotkeys.actions.seekForward': return ({required Object seconds}) => 'Spola framåt (${seconds}s)';
+			case 'hotkeys.actions.seekBackward': return ({required Object seconds}) => 'Spola bakåt (${seconds}s)';
+			case 'hotkeys.actions.fullscreenToggle': return 'Växla helskärm';
+			case 'hotkeys.actions.muteToggle': return 'Växla ljud av';
+			case 'hotkeys.actions.subtitleToggle': return 'Växla undertexter';
+			case 'hotkeys.actions.audioTrackNext': return 'Nästa ljudspår';
+			case 'hotkeys.actions.subtitleTrackNext': return 'Nästa undertextspår';
+			case 'hotkeys.actions.chapterNext': return 'Nästa kapitel';
+			case 'hotkeys.actions.chapterPrevious': return 'Föregående kapitel';
+			case 'hotkeys.actions.speedIncrease': return 'Öka hastighet';
+			case 'hotkeys.actions.speedDecrease': return 'Minska hastighet';
+			case 'hotkeys.actions.speedReset': return 'Återställ hastighet';
+			case 'hotkeys.actions.subSeekNext': return 'Hoppa till nästa undertext';
+			case 'hotkeys.actions.subSeekPrev': return 'Hoppa till föregående undertext';
 			case 'pinEntry.enterPin': return 'Ange PIN';
 			case 'pinEntry.showPin': return 'Visa PIN';
 			case 'pinEntry.hidePin': return 'Dölj PIN';
@@ -9645,6 +9936,23 @@ extension on _StringsZh {
 			case 'search.enterTitleActorOrKeyword': return '输入标题、演员或关键词';
 			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => '为 ${actionName} 设置快捷键';
 			case 'hotkeys.clearShortcut': return '清除快捷键';
+			case 'hotkeys.actions.playPause': return '播放/暂停';
+			case 'hotkeys.actions.volumeUp': return '增大音量';
+			case 'hotkeys.actions.volumeDown': return '减小音量';
+			case 'hotkeys.actions.seekForward': return ({required Object seconds}) => '快进 (${seconds}秒)';
+			case 'hotkeys.actions.seekBackward': return ({required Object seconds}) => '快退 (${seconds}秒)';
+			case 'hotkeys.actions.fullscreenToggle': return '切换全屏';
+			case 'hotkeys.actions.muteToggle': return '切换静音';
+			case 'hotkeys.actions.subtitleToggle': return '切换字幕';
+			case 'hotkeys.actions.audioTrackNext': return '下一音轨';
+			case 'hotkeys.actions.subtitleTrackNext': return '下一字幕轨';
+			case 'hotkeys.actions.chapterNext': return '下一章节';
+			case 'hotkeys.actions.chapterPrevious': return '上一章节';
+			case 'hotkeys.actions.speedIncrease': return '加速';
+			case 'hotkeys.actions.speedDecrease': return '减速';
+			case 'hotkeys.actions.speedReset': return '重置速度';
+			case 'hotkeys.actions.subSeekNext': return '跳转到下一字幕';
+			case 'hotkeys.actions.subSeekPrev': return '跳转到上一字幕';
 			case 'pinEntry.enterPin': return '输入 PIN';
 			case 'pinEntry.showPin': return '显示 PIN';
 			case 'pinEntry.hidePin': return '隐藏 PIN';

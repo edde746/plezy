@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 import 'settings_service.dart';
 import '../utils/player_utils.dart';
@@ -331,43 +332,43 @@ class KeyboardShortcutsService {
   String getActionDisplayName(String action) {
     switch (action) {
       case 'play_pause':
-        return 'Play/Pause';
+        return t.hotkeys.actions.playPause;
       case 'volume_up':
-        return 'Volume Up';
+        return t.hotkeys.actions.volumeUp;
       case 'volume_down':
-        return 'Volume Down';
+        return t.hotkeys.actions.volumeDown;
       case 'seek_forward':
-        return 'Seek Forward (${_seekTimeSmall}s)';
+        return t.hotkeys.actions.seekForward(seconds: _seekTimeSmall);
       case 'seek_backward':
-        return 'Seek Backward (${_seekTimeSmall}s)';
+        return t.hotkeys.actions.seekBackward(seconds: _seekTimeSmall);
       case 'seek_forward_large':
-        return 'Seek Forward (${_seekTimeLarge}s)';
+        return t.hotkeys.actions.seekForward(seconds: _seekTimeLarge);
       case 'seek_backward_large':
-        return 'Seek Backward (${_seekTimeLarge}s)';
+        return t.hotkeys.actions.seekBackward(seconds: _seekTimeLarge);
       case 'fullscreen_toggle':
-        return 'Toggle Fullscreen';
+        return t.hotkeys.actions.fullscreenToggle;
       case 'mute_toggle':
-        return 'Toggle Mute';
+        return t.hotkeys.actions.muteToggle;
       case 'subtitle_toggle':
-        return 'Toggle Subtitles';
+        return t.hotkeys.actions.subtitleToggle;
       case 'audio_track_next':
-        return 'Next Audio Track';
+        return t.hotkeys.actions.audioTrackNext;
       case 'subtitle_track_next':
-        return 'Next Subtitle Track';
+        return t.hotkeys.actions.subtitleTrackNext;
       case 'chapter_next':
-        return 'Next Chapter';
+        return t.hotkeys.actions.chapterNext;
       case 'chapter_previous':
-        return 'Previous Chapter';
+        return t.hotkeys.actions.chapterPrevious;
       case 'speed_increase':
-        return 'Increase Speed';
+        return t.hotkeys.actions.speedIncrease;
       case 'speed_decrease':
-        return 'Decrease Speed';
+        return t.hotkeys.actions.speedDecrease;
       case 'speed_reset':
-        return 'Reset Speed';
+        return t.hotkeys.actions.speedReset;
       case 'sub_seek_next':
-        return 'Seek to Next Subtitle';
+        return t.hotkeys.actions.subSeekNext;
       case 'sub_seek_prev':
-        return 'Seek to Previous Subtitle';
+        return t.hotkeys.actions.subSeekPrev;
       default:
         return action;
     }

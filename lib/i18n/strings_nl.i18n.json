@@ -170,7 +170,26 @@
   },
   "hotkeys": {
     "setShortcutFor": "Stel sneltoets in voor ${actionName}",
-    "clearShortcut": "Wis sneltoets"
+    "clearShortcut": "Wis sneltoets",
+    "actions": {
+      "playPause": "Afspelen/Pauzeren",
+      "volumeUp": "Volume omhoog",
+      "volumeDown": "Volume omlaag",
+      "seekForward": "Vooruitspoelen (${seconds}s)",
+      "seekBackward": "Terugspoelen (${seconds}s)",
+      "fullscreenToggle": "Volledig scherm",
+      "muteToggle": "Dempen",
+      "subtitleToggle": "Ondertiteling",
+      "audioTrackNext": "Volgende audiotrack",
+      "subtitleTrackNext": "Volgende ondertiteltrack",
+      "chapterNext": "Volgend hoofdstuk",
+      "chapterPrevious": "Vorig hoofdstuk",
+      "speedIncrease": "Snelheid verhogen",
+      "speedDecrease": "Snelheid verlagen",
+      "speedReset": "Snelheid resetten",
+      "subSeekNext": "Naar volgende ondertitel",
+      "subSeekPrev": "Naar vorige ondertitel"
+    }
   },
   "pinEntry": {
     "enterPin": "Voer PIN in",

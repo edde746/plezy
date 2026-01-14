@@ -170,7 +170,26 @@
   },
   "hotkeys": {
     "setShortcutFor": "Tastenkürzel festlegen für ${actionName}",
-    "clearShortcut": "Kürzel löschen"
+    "clearShortcut": "Kürzel löschen",
+    "actions": {
+      "playPause": "Wiedergabe/Pause",
+      "volumeUp": "Lauter",
+      "volumeDown": "Leiser",
+      "seekForward": "Vorspulen (${seconds}s)",
+      "seekBackward": "Zurückspulen (${seconds}s)",
+      "fullscreenToggle": "Vollbild umschalten",
+      "muteToggle": "Stumm umschalten",
+      "subtitleToggle": "Untertitel umschalten",
+      "audioTrackNext": "Nächste Audiospur",
+      "subtitleTrackNext": "Nächste Untertitelspur",
+      "chapterNext": "Nächstes Kapitel",
+      "chapterPrevious": "Vorheriges Kapitel",
+      "speedIncrease": "Geschwindigkeit erhöhen",
+      "speedDecrease": "Geschwindigkeit verringern",
+      "speedReset": "Geschwindigkeit zurücksetzen",
+      "subSeekNext": "Zum nächsten Untertitel springen",
+      "subSeekPrev": "Zum vorherigen Untertitel springen"
+    }
   },
   "pinEntry": {
     "enterPin": "PIN eingeben",

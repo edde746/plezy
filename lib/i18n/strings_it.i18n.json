@@ -170,7 +170,26 @@
   },
   "hotkeys": {
     "setShortcutFor": "Imposta scorciatoia per ${actionName}",
-    "clearShortcut": "Elimina scorciatoia"
+    "clearShortcut": "Elimina scorciatoia",
+    "actions": {
+      "playPause": "Riproduci/Pausa",
+      "volumeUp": "Alza volume",
+      "volumeDown": "Abbassa volume",
+      "seekForward": "Avanti (${seconds}s)",
+      "seekBackward": "Indietro (${seconds}s)",
+      "fullscreenToggle": "Schermo intero",
+      "muteToggle": "Muto",
+      "subtitleToggle": "Sottotitoli",
+      "audioTrackNext": "Traccia audio successiva",
+      "subtitleTrackNext": "Sottotitoli successivi",
+      "chapterNext": "Capitolo successivo",
+      "chapterPrevious": "Capitolo precedente",
+      "speedIncrease": "Aumenta velocità",
+      "speedDecrease": "Diminuisci velocità",
+      "speedReset": "Ripristina velocità",
+      "subSeekNext": "Vai al sottotitolo successivo",
+      "subSeekPrev": "Vai al sottotitolo precedente"
+    }
   },
   "pinEntry": {
     "enterPin": "Inserisci PIN",

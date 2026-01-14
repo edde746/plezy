@@ -170,7 +170,26 @@
   },
   "hotkeys": {
     "setShortcutFor": "Sätt genväg för ${actionName}",
-    "clearShortcut": "Rensa genväg"
+    "clearShortcut": "Rensa genväg",
+    "actions": {
+      "playPause": "Spela/Pausa",
+      "volumeUp": "Höj volym",
+      "volumeDown": "Sänk volym",
+      "seekForward": "Spola framåt (${seconds}s)",
+      "seekBackward": "Spola bakåt (${seconds}s)",
+      "fullscreenToggle": "Växla helskärm",
+      "muteToggle": "Växla ljud av",
+      "subtitleToggle": "Växla undertexter",
+      "audioTrackNext": "Nästa ljudspår",
+      "subtitleTrackNext": "Nästa undertextspår",
+      "chapterNext": "Nästa kapitel",
+      "chapterPrevious": "Föregående kapitel",
+      "speedIncrease": "Öka hastighet",
+      "speedDecrease": "Minska hastighet",
+      "speedReset": "Återställ hastighet",
+      "subSeekNext": "Hoppa till nästa undertext",
+      "subSeekPrev": "Hoppa till föregående undertext"
+    }
   },
   "pinEntry": {
     "enterPin": "Ange PIN",

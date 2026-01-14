@@ -170,7 +170,26 @@
   },
   "hotkeys": {
     "setShortcutFor": "为 ${actionName} 设置快捷键",
-    "clearShortcut": "清除快捷键"
+    "clearShortcut": "清除快捷键",
+    "actions": {
+      "playPause": "播放/暂停",
+      "volumeUp": "增大音量",
+      "volumeDown": "减小音量",
+      "seekForward": "快进 (${seconds}秒)",
+      "seekBackward": "快退 (${seconds}秒)",
+      "fullscreenToggle": "切换全屏",
+      "muteToggle": "切换静音",
+      "subtitleToggle": "切换字幕",
+      "audioTrackNext": "下一音轨",
+      "subtitleTrackNext": "下一字幕轨",
+      "chapterNext": "下一章节",
+      "chapterPrevious": "上一章节",
+      "speedIncrease": "加速",
+      "speedDecrease": "减速",
+      "speedReset": "重置速度",
+      "subSeekNext": "跳转到下一字幕",
+      "subSeekPrev": "跳转到上一字幕"
+    }
   },
   "pinEntry": {
     "enterPin": "输入 PIN",

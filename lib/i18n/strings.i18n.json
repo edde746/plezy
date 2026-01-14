@@ -169,7 +169,26 @@
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",
-    "clearShortcut": "Clear shortcut"
+    "clearShortcut": "Clear shortcut",
+    "actions": {
+      "playPause": "Play/Pause",
+      "volumeUp": "Volume Up",
+      "volumeDown": "Volume Down",
+      "seekForward": "Seek Forward (${seconds}s)",
+      "seekBackward": "Seek Backward (${seconds}s)",
+      "fullscreenToggle": "Toggle Fullscreen",
+      "muteToggle": "Toggle Mute",
+      "subtitleToggle": "Toggle Subtitles",
+      "audioTrackNext": "Next Audio Track",
+      "subtitleTrackNext": "Next Subtitle Track",
+      "chapterNext": "Next Chapter",
+      "chapterPrevious": "Previous Chapter",
+      "speedIncrease": "Increase Speed",
+      "speedDecrease": "Decrease Speed",
+      "speedReset": "Reset Speed",
+      "subSeekNext": "Seek to Next Subtitle",
+      "subSeekPrev": "Seek to Previous Subtitle"
+    }
   },
   "pinEntry": {
     "enterPin": "Enter PIN",

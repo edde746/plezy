@@ -170,7 +170,26 @@
   },
   "hotkeys": {
     "setShortcutFor": "${actionName}에 대한 단축키 설정",
-    "clearShortcut": "단축키 삭제"
+    "clearShortcut": "단축키 삭제",
+    "actions": {
+      "playPause": "재생/일시정지",
+      "volumeUp": "볼륨 높이기",
+      "volumeDown": "볼륨 낮추기",
+      "seekForward": "앞으로 이동 (${seconds}초)",
+      "seekBackward": "뒤로 이동 (${seconds}초)",
+      "fullscreenToggle": "전체 화면 전환",
+      "muteToggle": "음소거 전환",
+      "subtitleToggle": "자막 전환",
+      "audioTrackNext": "다음 오디오 트랙",
+      "subtitleTrackNext": "다음 자막 트랙",
+      "chapterNext": "다음 챕터",
+      "chapterPrevious": "이전 챕터",
+      "speedIncrease": "속도 높이기",
+      "speedDecrease": "속도 낮추기",
+      "speedReset": "속도 초기화",
+      "subSeekNext": "다음 자막으로 이동",
+      "subSeekPrev": "이전 자막으로 이동"
+    }
   },
   "pinEntry": {
     "enterPin": "PIN 입력",
