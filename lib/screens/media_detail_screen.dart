@@ -30,6 +30,7 @@ import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
+import '../widgets/quality_selection_sheet.dart';
 import '../mixins/watch_state_aware.dart';
 import '../utils/watch_state_notifier.dart';
 import 'season_detail_screen.dart';
@@ -208,24 +209,54 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       }
     }
 
+    // Determine which metadata to use for quality selection
+    // For shows: use the OnDeck episode if available
+    // For movies/episodes: use the metadata directly
+    PlexMetadata? qualityMetadata;
+    if (metadata.isShow) {
+      qualityMetadata = _onDeckEpisode;
+    } else if (!metadata.isShow && !metadata.isSeason) {
+      // Movie or episode
+      qualityMetadata = metadata;
+    }
+
+    Future<void> onPlayLongPressed() async {
+      if (qualityMetadata == null) {
+        // No playable metadata for quality selection, fall back to regular play
+        await onPlayPressed();
+        return;
+      }
+      await _showQualitySelectionSheet(qualityMetadata);
+    }
+
     return Row(
       children: [
         SizedBox(
           height: 48,
-          child: FilledButton(
-            autofocus: InputModeTracker.isKeyboardMode(context),
-            onPressed: onPlayPressed,
-            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16)),
-            child: playButtonLabel.isNotEmpty
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      playButtonIcon,
-                      const SizedBox(width: 8),
-                      Text(playButtonLabel, style: const TextStyle(fontSize: 16)),
-                    ],
-                  )
-                : playButtonIcon,
+          child: GestureDetector(
+            onLongPress: qualityMetadata != null && !widget.isOffline
+                ? onPlayLongPressed
+                : null,
+            child: Tooltip(
+              message: qualityMetadata != null && !widget.isOffline
+                  ? t.video.longPressForQuality
+                  : '',
+              child: FilledButton(
+                autofocus: InputModeTracker.isKeyboardMode(context),
+                onPressed: onPlayPressed,
+                style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16)),
+                child: playButtonLabel.isNotEmpty
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          playButtonIcon,
+                          const SizedBox(width: 8),
+                          Text(playButtonLabel, style: const TextStyle(fontSize: 16)),
+                        ],
+                      )
+                    : playButtonIcon,
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -587,6 +618,63 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
       return null;
     }
     return context.getClientForServer(widget.metadata.serverId!);
+  }
+
+  /// Shows the quality selection sheet for choosing video quality before playback.
+  ///
+  /// This is triggered by long-pressing the play button. It fetches available
+  /// video versions and allows the user to select one before starting playback.
+  Future<void> _showQualitySelectionSheet(PlexMetadata metadata) async {
+    final client = _getClientForMetadata(context);
+    if (client == null) {
+      // In offline mode or no client, just play directly
+      await _playWithIndex(metadata, 0);
+      return;
+    }
+
+    try {
+      // Show loading indicator while fetching versions
+      if (!mounted) return;
+
+      // Fetch available video versions
+      final playbackData = await client.getVideoPlaybackData(metadata.ratingKey);
+      final availableVersions = playbackData.availableVersions;
+
+      if (!mounted) return;
+
+      // If only one version, play directly without showing picker
+      if (availableVersions.isEmpty || availableVersions.length == 1) {
+        await _playWithIndex(metadata, 0);
+        return;
+      }
+
+      // Show quality selection sheet
+      await QualitySelectionSheet.show(
+        context: context,
+        availableVersions: availableVersions,
+        selectedIndex: 0,
+        onVersionSelected: (index) async {
+          await _playWithIndex(metadata, index);
+        },
+      );
+    } catch (e) {
+      appLogger.e('Error loading quality options', error: e);
+      // On error, fall back to default playback
+      if (mounted) {
+        await _playWithIndex(metadata, 0);
+      }
+    }
+  }
+
+  /// Plays the media with a specific quality/version index.
+  Future<void> _playWithIndex(PlexMetadata metadata, int mediaIndex) async {
+    await navigateToVideoPlayerWithRefresh(
+      context,
+      metadata: metadata,
+      isOffline: widget.isOffline,
+      selectedMediaIndex: mediaIndex,
+      onRefresh: _loadFullMetadata,
+    );
   }
 
   Future<void> _loadFullMetadata() async {

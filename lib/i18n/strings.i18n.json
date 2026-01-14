@@ -581,5 +581,10 @@
     "downloadDeleted": "Download deleted",
     "deleteConfirm": "Are you sure you want to delete \"${title}\"? This will remove the downloaded file from your device.",
     "deletingWithProgress": "Deleting ${title}... (${current} of ${total})"
+  },
+  "video": {
+    "selectQuality": "Select Quality",
+    "selectQualityDescription": "Choose video quality before playback",
+    "longPressForQuality": "Long press play button to select quality"
   }
 }
