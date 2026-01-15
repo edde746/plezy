@@ -298,7 +298,6 @@ class PlexOptimizedImage extends StatelessWidget {
           filterQuality: filterQuality,
           alignment: alignment,
           fadeInDuration: fadeInDuration,
-          memCacheWidth: memWidth,
           memCacheHeight: memHeight,
           cacheKey: effectiveCacheKey,
           placeholder: placeholder != null ? placeholder! : (context, url) => _buildPlaceholder(context),
