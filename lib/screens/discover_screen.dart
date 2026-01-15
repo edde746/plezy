@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -44,7 +46,7 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen>
-    with Refreshable, FullRefreshable, ItemUpdatable, WatchStateAware, SingleTickerProviderStateMixin {
+    with Refreshable, FullRefreshable, ItemUpdatable, WatchStateAware, SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
 
   @override
@@ -179,6 +181,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _indicatorAnimationController = AnimationController(vsync: this, duration: _heroAutoScrollDuration);
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
@@ -376,6 +379,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _heroController.dispose();
     _scrollController.dispose();
@@ -388,6 +392,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _userButtonFocusNode.removeListener(_onUserFocusChange);
     _userButtonFocusNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh continue watching when app resumes on mobile platforms
+    // Skip on desktop to avoid excessive refreshes from window focus changes
+    if (state == AppLifecycleState.resumed && (Platform.isIOS || Platform.isAndroid)) {
+      appLogger.d('App resumed on mobile - refreshing continue watching');
+      _refreshContinueWatching();
+    }
   }
 
   void _startAutoScroll() {

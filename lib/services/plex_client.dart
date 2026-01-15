@@ -357,7 +357,13 @@ class PlexClient {
   /// Uses cache when offline or as fallback on network error
   /// Note: OnDeck data is not relevant for offline mode
   /// Always fetches with chapters/markers but caches at base endpoint
-  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(String ratingKey) async {
+  ///
+  /// When [forceRefresh] is true, bypasses cache to get fresh OnDeck data.
+  /// Use this when cross-device sync is needed (e.g., after app resume).
+  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(
+    String ratingKey, {
+    bool forceRefresh = false,
+  }) async {
     // Cache key is always the base endpoint (no query params)
     final cacheKey = '/library/metadata/$ratingKey';
 
@@ -398,6 +404,7 @@ class PlexClient {
 
             return {'metadata': metadata, 'onDeckEpisode': onDeckEpisode};
           },
+          forceRefresh: forceRefresh,
         ) ??
         {'metadata': null, 'onDeckEpisode': null};
   }
@@ -470,12 +477,17 @@ class PlexClient {
   /// 3. If network succeeds and cacheResponse is true, cache the response
   /// 4. If network fails, fall back to cached data
   /// 5. If no cached data available, rethrow the network error
+  /// Fetch data with cache fallback for offline mode and network errors.
+  ///
+  /// When [forceRefresh] is true, skips reading from cache (still writes to cache).
+  /// Use this to get fresh data when cross-device sync is needed.
   Future<T?> _fetchWithCacheFallback<T>({
     required String cacheKey,
     required Future<Response> Function() networkCall,
     required T? Function(dynamic cachedData) parseCache,
     required T? Function(Response response) parseResponse,
     bool cacheResponse = true,
+    bool forceRefresh = false,
   }) async {
     if (_offlineMode) {
       final cached = await _cache.get(serverId, cacheKey);
@@ -489,6 +501,7 @@ class PlexClient {
       }
       return parseResponse(response);
     } catch (e) {
+      // On forceRefresh, still try cache as last resort on network error
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
       final cached = await _cache.get(serverId, cacheKey);
       if (cached != null) return parseCache(cached);

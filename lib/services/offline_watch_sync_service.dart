@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 
 import '../database/app_database.dart';
@@ -31,8 +33,15 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Watch threshold - mark as watched when progress exceeds this percentage
   static const double watchedThreshold = 0.90;
 
-  /// Minimum interval between syncs (10 minutes)
-  static const Duration minSyncInterval = Duration(minutes: 10);
+  /// Minimum interval between syncs.
+  /// Mobile: no throttle (always sync on resume for cross-device updates)
+  /// Desktop: 2 minutes (reduced from 10 min to handle tab-switching better)
+  static Duration get minSyncInterval {
+    if (Platform.isIOS || Platform.isAndroid) {
+      return Duration.zero;
+    }
+    return const Duration(minutes: 2);
+  }
 
   /// Maximum sync attempts before giving up on an item
   static const int maxSyncAttempts = 5;
@@ -107,11 +116,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
     }
   }
 
-  /// Called when app becomes active - syncs if interval has passed.
+  /// Called when app becomes active - syncs for cross-device updates.
+  /// On mobile, always syncs immediately (device-switching scenario).
+  /// On desktop, respects the throttle interval.
   void onAppResumed() {
     if (_offlineModeProvider?.isOffline != true) {
-      appLogger.d('App resumed - checking if sync needed');
-      _performBidirectionalSync();
+      final isMobile = Platform.isIOS || Platform.isAndroid;
+      appLogger.d('App resumed - ${isMobile ? "forcing" : "checking"} sync');
+      _performBidirectionalSync(force: isMobile);
     }
   }
 
