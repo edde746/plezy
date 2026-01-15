@@ -1748,21 +1748,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         valueListenable: _hasFirstFrame,
                         builder: (context, hasFrame, child) {
                           if ((!isBuffering && hasFrame) || _isExiting.value) return const SizedBox.shrink();
-                          return Positioned.fill(
-                            child: Stack(
-                              children: [
-                                if (!hasFrame) Container(color: Colors.black),
-                                Center(
-                                  child: Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.5),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                          // Show spinner only - controls overlay provides its own black background during loading
+                          return IgnorePointer(
+                            child: Positioned.fill(
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    shape: BoxShape.circle,
                                   ),
+                                  child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                                 ),
-                              ],
+                              ),
                             ),
                           );
                         },
