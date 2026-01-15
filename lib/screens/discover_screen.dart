@@ -494,7 +494,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       await settingsProvider.ensureInitialized();
 
       // Start OnDeck and hubs fetch in parallel
-      final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(limit: 20);
+      final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(
+        limit: 20,
+        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+      );
       final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
         useGlobalHubs: settingsProvider.useGlobalHubs,
@@ -567,7 +570,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         return;
       }
 
-      final onDeck = await multiServerProvider.aggregationService.getOnDeckFromAllServers(limit: 20);
+      final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+      final onDeck = await multiServerProvider.aggregationService.getOnDeckFromAllServers(
+        limit: 20,
+        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+      );
 
       if (mounted) {
         setState(() {

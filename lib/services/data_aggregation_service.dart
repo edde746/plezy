@@ -48,7 +48,10 @@ class DataAggregationService {
 
   /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency
   /// Items are automatically tagged with server info by PlexClient
-  Future<List<PlexMetadata>> getOnDeckFromAllServers({int? limit}) async {
+  Future<List<PlexMetadata>> getOnDeckFromAllServers({
+    int? limit,
+    Set<String>? hiddenLibraryKeys,
+  }) async {
     final allOnDeck = await _perServer<PlexMetadata>(
       operationName: 'fetching on deck',
       operation: (serverId, client, server) async {
@@ -56,16 +59,27 @@ class DataAggregationService {
       },
     );
 
+    // Filter out items from hidden libraries
+    List<PlexMetadata> filteredOnDeck = allOnDeck;
+    if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
+      filteredOnDeck = allOnDeck.where((item) {
+        final librarySectionId = item.librarySectionID;
+        if (librarySectionId == null) return true; // Keep if no section ID
+        final globalKey = '${item.serverId}:$librarySectionId';
+        return !hiddenLibraryKeys.contains(globalKey);
+      }).toList();
+    }
+
     // Sort by most recently viewed
     // Use lastViewedAt (when item was last viewed), falling back to updatedAt/addedAt if not available
-    allOnDeck.sort((a, b) {
+    filteredOnDeck.sort((a, b) {
       final aTime = a.lastViewedAt ?? a.updatedAt ?? a.addedAt ?? 0;
       final bTime = b.lastViewedAt ?? b.updatedAt ?? b.addedAt ?? 0;
       return bTime.compareTo(aTime); // Descending (most recent first)
     });
 
     // Apply limit if specified
-    final result = limit != null && limit < allOnDeck.length ? allOnDeck.sublist(0, limit) : allOnDeck;
+    final result = limit != null && limit < filteredOnDeck.length ? filteredOnDeck.sublist(0, limit) : filteredOnDeck;
 
     appLogger.i('Fetched ${result.length} on deck items from all servers');
 
