@@ -1115,9 +1115,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   controller: _tabController,
                   // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
                   // See: https://github.com/flutter/flutter/issues/11132
-                  physics: PlatformDetector.isDesktop(context)
-                      ? const NeverScrollableScrollPhysics()
-                      : null,
+                  physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
                   children: [
                     LibraryRecommendedTab(
                       key: _recommendedTabKey,

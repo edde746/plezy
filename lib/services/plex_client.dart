@@ -1252,10 +1252,7 @@ class PlexClient {
   /// This matches the official Plex client's home page layout.
   Future<List<PlexHub>> getGlobalHubs({int limit = 10}) async {
     try {
-      final response = await _dio.get(
-        '/hubs',
-        queryParameters: {'count': limit, 'includeGuids': 1},
-      );
+      final response = await _dio.get('/hubs', queryParameters: {'count': limit, 'includeGuids': 1});
 
       final container = _getMediaContainer(response);
       if (container != null && container['Hub'] != null) {

@@ -1277,7 +1277,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                 children: [
                   // Keep-alive: 1px widget that continuously repaints to prevent
                   // Flutter animations from freezing when the frame clock goes idle
-                  if (Platform.isLinux || Platform.isWindows) const Positioned(top: 0, left: 0, child: _LinuxKeepAlive()),
+                  if (Platform.isLinux || Platform.isWindows)
+                    const Positioned(top: 0, left: 0, child: _LinuxKeepAlive()),
                   // Invisible tap detector that always covers the full area
                   // Also handles long-press for 2x speed
                   Positioned.fill(
@@ -1383,119 +1384,119 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                           opacity: _showControls ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 200),
                           child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                return GestureDetector(
-                                  onTapUp: (details) => _handleControlsOverlayTap(details, constraints),
-                                  onLongPressStart: (_) => _handleLongPressStart(),
-                                  onLongPressEnd: (_) => _handleLongPressEnd(),
-                                  onLongPressCancel: _handleLongPressCancel,
-                                  behavior: HitTestBehavior.deferToChild,
-                                  child: ValueListenableBuilder<bool>(
-                                    valueListenable: widget.hasFirstFrame ?? ValueNotifier(true),
-                                    builder: (context, hasFrame, child) {
-                                      return Container(
-                                        decoration: BoxDecoration(
-                                          // Use solid black when loading, gradient when loaded
-                                          color: hasFrame ? null : Colors.black,
-                                          gradient: hasFrame
-                                              ? LinearGradient(
-                                                  begin: Alignment.topCenter,
-                                                  end: Alignment.bottomCenter,
-                                                  colors: [
-                                                    Colors.black.withValues(alpha: 0.7),
-                                                    Colors.transparent,
-                                                    Colors.transparent,
-                                                    Colors.black.withValues(alpha: 0.7),
-                                                  ],
-                                                  stops: const [0.0, 0.2, 0.8, 1.0],
-                                                )
-                                              : null,
-                                        ),
-                                        child: child,
-                                      );
-                                    },
-                                    child: isMobile
-                                        ? Listener(
-                                            behavior: HitTestBehavior.translucent,
-                                            onPointerDown: (_) => _restartHideTimerIfPlaying(),
-                                            child: MobileVideoControls(
-                                              player: widget.player,
-                                              metadata: widget.metadata,
-                                              chapters: _chapters,
-                                              chaptersLoaded: _chaptersLoaded,
-                                              seekTimeSmall: _seekTimeSmall,
-                                              trackChapterControls: _buildTrackChapterControlsWidget(),
-                                              onSeek: _throttledSeek,
-                                              onSeekEnd: _finalizeSeek,
-                                              onSeekCompleted: widget.onSeekCompleted,
-                                              onPlayPause: () {}, // Not used, handled internally
-                                              onCancelAutoHide: () => _hideTimer?.cancel(),
-                                              onStartAutoHide: _startHideTimer,
-                                              onBack: widget.onBack,
-                                              onNext: widget.onNext,
-                                              onPrevious: widget.onPrevious,
-                                              canControl: widget.canControl,
-                                              hasFirstFrame: widget.hasFirstFrame,
-                                            ),
-                                          )
-                                        : Listener(
-                                            behavior: HitTestBehavior.translucent,
-                                            onPointerDown: (_) => _restartHideTimerIfPlaying(),
-                                            child: DesktopVideoControls(
-                                              key: _desktopControlsKey,
-                                              player: widget.player,
-                                              metadata: widget.metadata,
-                                              onNext: widget.onNext,
-                                              onPrevious: widget.onPrevious,
-                                              chapters: _chapters,
-                                              chaptersLoaded: _chaptersLoaded,
-                                              seekTimeSmall: _seekTimeSmall,
-                                              onSeekToPreviousChapter: _seekToPreviousChapter,
-                                              onSeekToNextChapter: _seekToNextChapter,
-                                              onSeek: _throttledSeek,
-                                              onSeekEnd: _finalizeSeek,
-                                              getReplayIcon: getReplayIcon,
-                                              getForwardIcon: getForwardIcon,
-                                              onFocusActivity: _restartHideTimerIfPlaying,
-                                              onHideControls: _hideControlsFromKeyboard,
-                                              // Track chapter controls data
-                                              availableVersions: widget.availableVersions,
-                                              selectedMediaIndex: widget.selectedMediaIndex,
-                                              boxFitMode: widget.boxFitMode,
-                                              audioSyncOffset: _audioSyncOffset,
-                                              subtitleSyncOffset: _subtitleSyncOffset,
-                                              isFullscreen: _isFullscreen,
-                                              isAlwaysOnTop: _isAlwaysOnTop,
-                                              onTogglePIPMode: (_isPipSupported && Platform.isAndroid)
-                                                  ? widget.onTogglePIPMode
-                                                  : null,
-                                              onCycleBoxFitMode: widget.onCycleBoxFitMode,
-                                              onToggleFullscreen: _toggleFullscreen,
-                                              onToggleAlwaysOnTop: _toggleAlwaysOnTop,
-                                              onSwitchVersion: _switchMediaVersion,
-                                              onAudioTrackChanged: widget.onAudioTrackChanged,
-                                              onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
-                                              onLoadSeekTimes: () async {
-                                                if (mounted) {
-                                                  await _loadSeekTimes();
-                                                }
-                                              },
-                                              onCancelAutoHide: () => _hideTimer?.cancel(),
-                                              onStartAutoHide: _startHideTimer,
-                                              serverId: widget.metadata.serverId ?? '',
-                                              onBack: widget.onBack,
-                                              canControl: widget.canControl,
-                                              hasFirstFrame: widget.hasFirstFrame,
-                                            ),
+                            builder: (context, constraints) {
+                              return GestureDetector(
+                                onTapUp: (details) => _handleControlsOverlayTap(details, constraints),
+                                onLongPressStart: (_) => _handleLongPressStart(),
+                                onLongPressEnd: (_) => _handleLongPressEnd(),
+                                onLongPressCancel: _handleLongPressCancel,
+                                behavior: HitTestBehavior.deferToChild,
+                                child: ValueListenableBuilder<bool>(
+                                  valueListenable: widget.hasFirstFrame ?? ValueNotifier(true),
+                                  builder: (context, hasFrame, child) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        // Use solid black when loading, gradient when loaded
+                                        color: hasFrame ? null : Colors.black,
+                                        gradient: hasFrame
+                                            ? LinearGradient(
+                                                begin: Alignment.topCenter,
+                                                end: Alignment.bottomCenter,
+                                                colors: [
+                                                  Colors.black.withValues(alpha: 0.7),
+                                                  Colors.transparent,
+                                                  Colors.transparent,
+                                                  Colors.black.withValues(alpha: 0.7),
+                                                ],
+                                                stops: const [0.0, 0.2, 0.8, 1.0],
+                                              )
+                                            : null,
+                                      ),
+                                      child: child,
+                                    );
+                                  },
+                                  child: isMobile
+                                      ? Listener(
+                                          behavior: HitTestBehavior.translucent,
+                                          onPointerDown: (_) => _restartHideTimerIfPlaying(),
+                                          child: MobileVideoControls(
+                                            player: widget.player,
+                                            metadata: widget.metadata,
+                                            chapters: _chapters,
+                                            chaptersLoaded: _chaptersLoaded,
+                                            seekTimeSmall: _seekTimeSmall,
+                                            trackChapterControls: _buildTrackChapterControlsWidget(),
+                                            onSeek: _throttledSeek,
+                                            onSeekEnd: _finalizeSeek,
+                                            onSeekCompleted: widget.onSeekCompleted,
+                                            onPlayPause: () {}, // Not used, handled internally
+                                            onCancelAutoHide: () => _hideTimer?.cancel(),
+                                            onStartAutoHide: _startHideTimer,
+                                            onBack: widget.onBack,
+                                            onNext: widget.onNext,
+                                            onPrevious: widget.onPrevious,
+                                            canControl: widget.canControl,
+                                            hasFirstFrame: widget.hasFirstFrame,
                                           ),
-                                  ),
-                                );
-                              },
-                            ),
+                                        )
+                                      : Listener(
+                                          behavior: HitTestBehavior.translucent,
+                                          onPointerDown: (_) => _restartHideTimerIfPlaying(),
+                                          child: DesktopVideoControls(
+                                            key: _desktopControlsKey,
+                                            player: widget.player,
+                                            metadata: widget.metadata,
+                                            onNext: widget.onNext,
+                                            onPrevious: widget.onPrevious,
+                                            chapters: _chapters,
+                                            chaptersLoaded: _chaptersLoaded,
+                                            seekTimeSmall: _seekTimeSmall,
+                                            onSeekToPreviousChapter: _seekToPreviousChapter,
+                                            onSeekToNextChapter: _seekToNextChapter,
+                                            onSeek: _throttledSeek,
+                                            onSeekEnd: _finalizeSeek,
+                                            getReplayIcon: getReplayIcon,
+                                            getForwardIcon: getForwardIcon,
+                                            onFocusActivity: _restartHideTimerIfPlaying,
+                                            onHideControls: _hideControlsFromKeyboard,
+                                            // Track chapter controls data
+                                            availableVersions: widget.availableVersions,
+                                            selectedMediaIndex: widget.selectedMediaIndex,
+                                            boxFitMode: widget.boxFitMode,
+                                            audioSyncOffset: _audioSyncOffset,
+                                            subtitleSyncOffset: _subtitleSyncOffset,
+                                            isFullscreen: _isFullscreen,
+                                            isAlwaysOnTop: _isAlwaysOnTop,
+                                            onTogglePIPMode: (_isPipSupported && Platform.isAndroid)
+                                                ? widget.onTogglePIPMode
+                                                : null,
+                                            onCycleBoxFitMode: widget.onCycleBoxFitMode,
+                                            onToggleFullscreen: _toggleFullscreen,
+                                            onToggleAlwaysOnTop: _toggleAlwaysOnTop,
+                                            onSwitchVersion: _switchMediaVersion,
+                                            onAudioTrackChanged: widget.onAudioTrackChanged,
+                                            onSubtitleTrackChanged: widget.onSubtitleTrackChanged,
+                                            onLoadSeekTimes: () async {
+                                              if (mounted) {
+                                                await _loadSeekTimes();
+                                              }
+                                            },
+                                            onCancelAutoHide: () => _hideTimer?.cancel(),
+                                            onStartAutoHide: _startHideTimer,
+                                            serverId: widget.metadata.serverId ?? '',
+                                            onBack: widget.onBack,
+                                            canControl: widget.canControl,
+                                            hasFirstFrame: widget.hasFirstFrame,
+                                          ),
+                                        ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
                     ),
+                  ),
                   // Visual feedback overlay for double-tap
                   if (isMobile && _showDoubleTapFeedback)
                     Positioned.fill(

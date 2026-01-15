@@ -18,6 +18,7 @@ import '../i18n/strings.g.dart';
 import 'media_context_menu.dart';
 import 'media_progress_bar.dart';
 import 'plex_optimized_image.dart';
+import '../screens/media_detail_screen.dart';
 
 class MediaCard extends StatefulWidget {
   final dynamic item; // Can be PlexMetadata or PlexPlaylist
@@ -224,45 +225,52 @@ class _MediaCardGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool canNavigateToDetail = _MediaCardHelpers.canNavigateToDetailPage(item);
+
     return SizedBox(
       width: width,
       child: Semantics(
         label: semanticLabel,
         button: true,
-        child: InkWell(
-          canRequestFocus: false, // Keyboard handled by FocusableMediaCard
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Poster
-                if (height != null)
-                  SizedBox(width: double.infinity, height: height, child: _buildPosterWithOverlay(context))
-                else
-                  Expanded(child: _buildPosterWithOverlay(context)),
-                const SizedBox(height: 4),
-                // Text content
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      item is PlexPlaylist ? (item as PlexPlaylist).title : (item as PlexMetadata).displayTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Poster - tapping plays the content
+              if (height != null)
+                SizedBox(width: double.infinity, height: height, child: _buildClickablePoster(context, onTap))
+              else
+                Expanded(child: _buildClickablePoster(context, onTap)),
+              const SizedBox(height: 4),
+              // Text content
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Title - for episodes/movies, navigates to detail page; otherwise plays
+                  _HoverableTitle(
+                    title: item is PlexPlaylist ? (item as PlexPlaylist).title : (item as PlexMetadata).displayTitle,
+                    onTap: canNavigateToDetail
+                        ? () => _MediaCardHelpers.navigateToDetailPage(context, item as PlexMetadata)
+                        : onTap,
+                    showHoverEffect: canNavigateToDetail,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
+                  ),
+                  // Subtitle - tapping plays the episode
+                  if (item is PlexPlaylist)
+                    GestureDetector(
+                      onTap: onTap,
+                      child: _MediaCardHelpers.buildPlaylistMeta(context, item as PlexPlaylist),
+                    )
+                  else if (item is PlexMetadata)
+                    GestureDetector(
+                      onTap: onTap,
+                      child: _MediaCardHelpers.buildMetadataSubtitle(context, item as PlexMetadata),
                     ),
-                    if (item is PlexPlaylist)
-                      _MediaCardHelpers.buildPlaylistMeta(context, item as PlexPlaylist)
-                    else if (item is PlexMetadata)
-                      _MediaCardHelpers.buildMetadataSubtitle(context, item as PlexMetadata),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -274,9 +282,35 @@ class _MediaCardGrid extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: _buildPosterImage(context, item, isOffline: isOffline, localPosterPath: localPosterPath, mixedHubContext: mixedHubContext),
+          child: _buildPosterImage(
+            context,
+            item,
+            isOffline: isOffline,
+            localPosterPath: localPosterPath,
+            mixedHubContext: mixedHubContext,
+          ),
         ),
         _PosterOverlay(item: item),
+      ],
+    );
+  }
+
+  Widget _buildClickablePoster(BuildContext context, VoidCallback onTap) {
+    return Stack(
+      children: [
+        // Poster image at the bottom
+        _buildPosterWithOverlay(context),
+        // InkWell on top for hover/tap effect
+        Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              mouseCursor: SystemMouseCursors.click,
+              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -478,51 +512,65 @@ class _MediaCardList extends StatelessWidget {
   Widget build(BuildContext context) {
     final metadataLine = _buildMetadataLine();
     final subtitle = _buildSubtitleText();
+    final bool canNavigateToDetail = _MediaCardHelpers.canNavigateToDetailPage(item);
 
     return Semantics(
       label: semanticLabel,
       button: true,
-      child: InkWell(
-        canRequestFocus: false, // Keyboard handled by FocusableMediaCard
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Poster (responsive size based on density)
-              SizedBox(
-                width: _posterWidth(context),
-                height: _posterHeight(context),
-                child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                      child: _buildPosterImage(context, item, isOffline: isOffline, localPosterPath: localPosterPath),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Poster (responsive size based on density) - tapping plays the content
+            SizedBox(
+              width: _posterWidth(context),
+              height: _posterHeight(context),
+              child: Stack(
+                children: [
+                  // Poster image
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                    child: _buildPosterImage(context, item, isOffline: isOffline, localPosterPath: localPosterPath),
+                  ),
+                  _PosterOverlay(item: item),
+                  // InkWell on top for hover/tap effect
+                  Positioned.fill(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onTap,
+                        mouseCursor: SystemMouseCursors.click,
+                        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                      ),
                     ),
-                    _PosterOverlay(item: item),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              // Metadata
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    // Title
-                    Text(
-                      item.displayTitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
-                    ),
-                    const SizedBox(height: 4),
-                    // Metadata info line (rating, duration, score, studio)
-                    if (metadataLine.isNotEmpty) ...[
-                      Text(
+            ),
+            const SizedBox(width: 12),
+            // Metadata
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Title - for episodes/movies, navigates to detail page; otherwise plays
+                  _HoverableTitle(
+                    title: item.displayTitle,
+                    onTap: canNavigateToDetail
+                        ? () => _MediaCardHelpers.navigateToDetailPage(context, item as PlexMetadata)
+                        : onTap,
+                    showHoverEffect: canNavigateToDetail,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 4),
+                  // Metadata info line (rating, duration, score, studio) - tapping plays
+                  if (metadataLine.isNotEmpty) ...[
+                    GestureDetector(
+                      onTap: onTap,
+                      child: Text(
                         metadataLine,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -532,11 +580,14 @@ class _MediaCardList extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                    ],
-                    // Subtitle (S#E# or year/parent title)
-                    if (subtitle != null) ...[
-                      Text(
+                    ),
+                    const SizedBox(height: 2),
+                  ],
+                  // Subtitle (S#E# or year/parent title) - tapping plays
+                  if (subtitle != null) ...[
+                    GestureDetector(
+                      onTap: onTap,
+                      child: Text(
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -545,11 +596,14 @@ class _MediaCardList extends StatelessWidget {
                           fontSize: _subtitleFontSize,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                    ],
-                    // Summary
-                    if (item.summary != null) ...[
-                      Text(
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  // Summary - tapping plays
+                  if (item.summary != null) ...[
+                    GestureDetector(
+                      onTap: onTap,
+                      child: Text(
                         item.summary!,
                         maxLines: _summaryMaxLines,
                         overflow: TextOverflow.ellipsis,
@@ -559,19 +613,25 @@ class _MediaCardList extends StatelessWidget {
                           height: 1.3,
                         ),
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-Widget _buildPosterImage(BuildContext context, dynamic item, {bool isOffline = false, String? localPosterPath, bool mixedHubContext = false}) {
+Widget _buildPosterImage(
+  BuildContext context,
+  dynamic item, {
+  bool isOffline = false,
+  String? localPosterPath,
+  bool mixedHubContext = false,
+}) {
   String? posterUrl;
   IconData fallbackIcon = Symbols.movie_rounded;
 
@@ -752,6 +812,86 @@ class _MediaCardHelpers {
             ),
           ),
       ],
+    );
+  }
+
+  /// Whether this item's title should navigate to a detail page
+  /// (episodes go to show page, movies go to movie detail page)
+  static bool canNavigateToDetailPage(dynamic item) {
+    if (item is! PlexMetadata) return false;
+    // Episodes navigate to parent show
+    if (item.mediaType == PlexMediaType.episode && item.grandparentRatingKey != null && item.grandparentTitle != null) {
+      return true;
+    }
+    // Movies navigate to movie detail page
+    if (item.mediaType == PlexMediaType.movie) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Navigate to the appropriate detail screen based on item type
+  static void navigateToDetailPage(BuildContext context, PlexMetadata item) {
+    if (item.mediaType == PlexMediaType.episode && item.grandparentRatingKey != null && item.grandparentTitle != null) {
+      // Episode: navigate to parent show
+      final showMetadata = PlexMetadata(
+        ratingKey: item.grandparentRatingKey!,
+        key: '/library/metadata/${item.grandparentRatingKey}',
+        type: 'show',
+        title: item.grandparentTitle!,
+        thumb: item.grandparentThumb,
+        art: item.grandparentArt,
+        serverId: item.serverId,
+        serverName: item.serverName,
+      );
+      Navigator.push(context, MaterialPageRoute(builder: (context) => MediaDetailScreen(metadata: showMetadata)));
+    } else if (item.mediaType == PlexMediaType.movie) {
+      // Movie: navigate to movie detail page
+      Navigator.push(context, MaterialPageRoute(builder: (context) => MediaDetailScreen(metadata: item)));
+    }
+  }
+}
+
+/// Title widget with hover underline effect for clickable show titles
+class _HoverableTitle extends StatefulWidget {
+  final String title;
+  final VoidCallback onTap;
+  final bool showHoverEffect;
+  final TextStyle style;
+  final int maxLines;
+
+  const _HoverableTitle({
+    required this.title,
+    required this.onTap,
+    required this.showHoverEffect,
+    required this.style,
+    this.maxLines = 1,
+  });
+
+  @override
+  State<_HoverableTitle> createState() => _HoverableTitleState();
+}
+
+class _HoverableTitleState extends State<_HoverableTitle> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Text(
+          widget.title,
+          maxLines: widget.maxLines,
+          overflow: TextOverflow.ellipsis,
+          style: widget.style.copyWith(
+            decoration: (widget.showHoverEffect && _isHovered) ? TextDecoration.underline : null,
+          ),
+        ),
+      ),
     );
   }
 }
