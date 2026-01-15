@@ -112,6 +112,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late int _subtitleSyncOffset;
   bool _enableHDR = true;
   bool _showPerformanceOverlay = false;
+  bool _autoPlayNextEpisode = true;
   late final FocusNode _initialFocusNode;
 
   @override
@@ -134,6 +135,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     setState(() {
       _enableHDR = settings.getEnableHDR();
       _showPerformanceOverlay = settings.getShowPerformanceOverlay();
+      _autoPlayNextEpisode = settings.getAutoPlayNextEpisode();
     });
   }
 
@@ -154,6 +156,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     await settings.setShowPerformanceOverlay(newValue);
     setState(() {
       _showPerformanceOverlay = newValue;
+    });
+  }
+
+  Future<void> _toggleAutoPlayNextEpisode() async {
+    final newValue = !_autoPlayNextEpisode;
+    final settings = await SettingsService.getInstance();
+    await settings.setAutoPlayNextEpisode(newValue);
+    setState(() {
+      _autoPlayNextEpisode = newValue;
     });
   }
 
@@ -279,6 +290,22 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             trailing: Switch(value: _enableHDR, onChanged: (_) => _toggleHDR(), activeThumbColor: Colors.amber),
             onTap: _toggleHDR,
           ),
+
+        // Auto-Play Next Episode Toggle
+        ListTile(
+          leading: AppIcon(
+            Symbols.skip_next_rounded,
+            fill: 1,
+            color: _autoPlayNextEpisode ? Colors.amber : Colors.white70,
+          ),
+          title: Text(t.videoControls.autoPlayNext, style: const TextStyle(color: Colors.white)),
+          trailing: Switch(
+            value: _autoPlayNextEpisode,
+            onChanged: (_) => _toggleAutoPlayNextEpisode(),
+            activeThumbColor: Colors.amber,
+          ),
+          onTap: _toggleAutoPlayNextEpisode,
+        ),
 
         // Audio Output Device (Desktop only)
         if (isDesktop)

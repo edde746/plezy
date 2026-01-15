@@ -62,6 +62,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
   static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
+  static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
 
   SettingsService._();
 
@@ -961,6 +962,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getDouble(_keyDefaultPlaybackSpeed) ?? 1.0; // Default: normal speed
   }
 
+  // Auto-Play Next Episode
+  Future<void> setAutoPlayNextEpisode(bool enabled) async {
+    await prefs.setBool(_keyAutoPlayNextEpisode, enabled);
+  }
+
+  bool getAutoPlayNextEpisode() {
+    return prefs.getBool(_keyAutoPlayNextEpisode) ?? true; // Default enabled
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1004,6 +1014,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyEnableDiscordRPC),
       prefs.remove(_keyMatchContentFrameRate),
       prefs.remove(_keyDefaultPlaybackSpeed),
+      prefs.remove(_keyAutoPlayNextEpisode),
     ]);
   }
 

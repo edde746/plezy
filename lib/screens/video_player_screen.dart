@@ -1105,15 +1105,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  void _onVideoCompleted(bool completed) {
+  void _onVideoCompleted(bool completed) async {
     if (completed && _nextEpisode != null && !_showPlayNextDialog && !_completionTriggered) {
       _completionTriggered = true;
 
+      final settings = await SettingsService.getInstance();
+      final autoPlayEnabled = settings.getAutoPlayNextEpisode();
+
       setState(() {
         _showPlayNextDialog = true;
-        _autoPlayCountdown = 5;
+        _autoPlayCountdown = autoPlayEnabled ? 5 : -1;
       });
-      _startAutoPlayTimer();
+
+      if (autoPlayEnabled) {
+        _startAutoPlayTimer();
+      }
     }
   }
 
@@ -1720,9 +1726,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Text('$_autoPlayCountdown'),
-                                      const SizedBox(width: 4),
-                                      const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                                      if (_autoPlayCountdown > 0) ...[
+                                        Text('$_autoPlayCountdown'),
+                                        const SizedBox(width: 4),
+                                        const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                                      ] else
+                                        Text(t.videoControls.playNext),
                                     ],
                                   ),
                                 ),

@@ -263,6 +263,8 @@
     "timerActive": "Timer aktiv",
     "playbackWillPauseIn": "Uppspelningen pausas om ${duration}",
     "sleepTimerCompleted": "Sovtimer slutförd - uppspelning pausad",
+    "autoPlayNext": "Spela nästa automatiskt",
+    "playNext": "Spela nästa",
     "playButton": "Spela",
     "pauseButton": "Pausa",
     "seekBackwardButton": "Spola bakåt ${seconds} sekunder",

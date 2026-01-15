@@ -263,6 +263,8 @@
     "timerActive": "Schlaftimer aktiv",
     "playbackWillPauseIn": "Wiedergabe wird in ${duration} pausiert",
     "sleepTimerCompleted": "Schlaftimer abgelaufen – Wiedergabe pausiert",
+    "autoPlayNext": "Nächstes automatisch abspielen",
+    "playNext": "Nächstes abspielen",
     "playButton": "Wiedergeben",
     "pauseButton": "Pause",
     "seekBackwardButton": "${seconds} Sekunden zurück",

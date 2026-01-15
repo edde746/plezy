@@ -263,6 +263,8 @@
     "timerActive": "Timer actief",
     "playbackWillPauseIn": "Afspelen wordt gepauzeerd over ${duration}",
     "sleepTimerCompleted": "Slaaptimer voltooid - afspelen gepauzeerd",
+    "autoPlayNext": "Automatisch volgende afspelen",
+    "playNext": "Volgende afspelen",
     "playButton": "Afspelen",
     "pauseButton": "Pauzeren",
     "seekBackwardButton": "Terugspoelen ${seconds} seconden",

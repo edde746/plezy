@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 7
-/// Strings: 3750 (535 per locale)
+/// Strings: 3764 (537 per locale)
 ///
-/// Built on 2026-01-14 at 23:28 UTC
+/// Built on 2026-01-15 at 19:06 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -529,6 +529,8 @@ class _StringsVideoControlsEn {
 	String get timerActive => 'Timer Active';
 	String playbackWillPauseIn({required Object duration}) => 'Playback will pause in ${duration}';
 	String get sleepTimerCompleted => 'Sleep timer completed - playback paused';
+	String get autoPlayNext => 'Auto-Play Next';
+	String get playNext => 'Play Next';
 	String get playButton => 'Play';
 	String get pauseButton => 'Pause';
 	String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
@@ -1440,6 +1442,8 @@ class _StringsVideoControlsDe implements _StringsVideoControlsEn {
 	@override String get timerActive => 'Schlaftimer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert';
 	@override String get sleepTimerCompleted => 'Schlaftimer abgelaufen – Wiedergabe pausiert';
+	@override String get autoPlayNext => 'Nächstes automatisch abspielen';
+	@override String get playNext => 'Nächstes abspielen';
 	@override String get playButton => 'Wiedergeben';
 	@override String get pauseButton => 'Pause';
 	@override String seekBackwardButton({required Object seconds}) => '${seconds} Sekunden zurück';
@@ -2352,6 +2356,8 @@ class _StringsVideoControlsIt implements _StringsVideoControlsEn {
 	@override String get timerActive => 'Timer attivo';
 	@override String playbackWillPauseIn({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
 	@override String get sleepTimerCompleted => 'Timer di spegnimento completato - riproduzione in pausa';
+	@override String get autoPlayNext => 'Riproduzione automatica successivo';
+	@override String get playNext => 'Riproduci successivo';
 	@override String get playButton => 'Riproduci';
 	@override String get pauseButton => 'Pausa';
 	@override String seekBackwardButton({required Object seconds}) => 'Riavvolgi di ${seconds} secondi';
@@ -3264,6 +3270,8 @@ class _StringsVideoControlsKo implements _StringsVideoControlsEn {
 	@override String get timerActive => '타이머 활성화됨';
 	@override String playbackWillPauseIn({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다';
 	@override String get sleepTimerCompleted => '수면 타이머 완료됨 - 재생이 일시 중지되었습니다';
+	@override String get autoPlayNext => '다음 자동 재생';
+	@override String get playNext => '다음 재생';
 	@override String get playButton => '재생';
 	@override String get pauseButton => '일시정지';
 	@override String seekBackwardButton({required Object seconds}) => '${seconds} 초 뒤로';
@@ -4176,6 +4184,8 @@ class _StringsVideoControlsNl implements _StringsVideoControlsEn {
 	@override String get timerActive => 'Timer actief';
 	@override String playbackWillPauseIn({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
 	@override String get sleepTimerCompleted => 'Slaaptimer voltooid - afspelen gepauzeerd';
+	@override String get autoPlayNext => 'Automatisch volgende afspelen';
+	@override String get playNext => 'Volgende afspelen';
 	@override String get playButton => 'Afspelen';
 	@override String get pauseButton => 'Pauzeren';
 	@override String seekBackwardButton({required Object seconds}) => 'Terugspoelen ${seconds} seconden';
@@ -5088,6 +5098,8 @@ class _StringsVideoControlsSv implements _StringsVideoControlsEn {
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
 	@override String get sleepTimerCompleted => 'Sovtimer slutförd - uppspelning pausad';
+	@override String get autoPlayNext => 'Spela nästa automatiskt';
+	@override String get playNext => 'Spela nästa';
 	@override String get playButton => 'Spela';
 	@override String get pauseButton => 'Pausa';
 	@override String seekBackwardButton({required Object seconds}) => 'Spola bakåt ${seconds} sekunder';
@@ -6000,6 +6012,8 @@ class _StringsVideoControlsZh implements _StringsVideoControlsEn {
 	@override String get timerActive => '定时器已激活';
 	@override String playbackWillPauseIn({required Object duration}) => '播放将在 ${duration} 后暂停';
 	@override String get sleepTimerCompleted => '睡眠定时器已完成 - 播放已暂停';
+	@override String get autoPlayNext => '自动播放下一集';
+	@override String get playNext => '播放下一集';
 	@override String get playButton => '播放';
 	@override String get pauseButton => '暂停';
 	@override String seekBackwardButton({required Object seconds}) => '后退 ${seconds} 秒';
@@ -6751,6 +6765,8 @@ extension on Translations {
 			case 'videoControls.timerActive': return 'Timer Active';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Playback will pause in ${duration}';
 			case 'videoControls.sleepTimerCompleted': return 'Sleep timer completed - playback paused';
+			case 'videoControls.autoPlayNext': return 'Auto-Play Next';
+			case 'videoControls.playNext': return 'Play Next';
 			case 'videoControls.playButton': return 'Play';
 			case 'videoControls.pauseButton': return 'Pause';
 			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Seek backward ${seconds} seconds';
@@ -7294,6 +7310,8 @@ extension on _StringsDe {
 			case 'videoControls.timerActive': return 'Schlaftimer aktiv';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert';
 			case 'videoControls.sleepTimerCompleted': return 'Schlaftimer abgelaufen – Wiedergabe pausiert';
+			case 'videoControls.autoPlayNext': return 'Nächstes automatisch abspielen';
+			case 'videoControls.playNext': return 'Nächstes abspielen';
 			case 'videoControls.playButton': return 'Wiedergeben';
 			case 'videoControls.pauseButton': return 'Pause';
 			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => '${seconds} Sekunden zurück';
@@ -7838,6 +7856,8 @@ extension on _StringsIt {
 			case 'videoControls.timerActive': return 'Timer attivo';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
 			case 'videoControls.sleepTimerCompleted': return 'Timer di spegnimento completato - riproduzione in pausa';
+			case 'videoControls.autoPlayNext': return 'Riproduzione automatica successivo';
+			case 'videoControls.playNext': return 'Riproduci successivo';
 			case 'videoControls.playButton': return 'Riproduci';
 			case 'videoControls.pauseButton': return 'Pausa';
 			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Riavvolgi di ${seconds} secondi';
@@ -8382,6 +8402,8 @@ extension on _StringsKo {
 			case 'videoControls.timerActive': return '타이머 활성화됨';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다';
 			case 'videoControls.sleepTimerCompleted': return '수면 타이머 완료됨 - 재생이 일시 중지되었습니다';
+			case 'videoControls.autoPlayNext': return '다음 자동 재생';
+			case 'videoControls.playNext': return '다음 재생';
 			case 'videoControls.playButton': return '재생';
 			case 'videoControls.pauseButton': return '일시정지';
 			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => '${seconds} 초 뒤로';
@@ -8926,6 +8948,8 @@ extension on _StringsNl {
 			case 'videoControls.timerActive': return 'Timer actief';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
 			case 'videoControls.sleepTimerCompleted': return 'Slaaptimer voltooid - afspelen gepauzeerd';
+			case 'videoControls.autoPlayNext': return 'Automatisch volgende afspelen';
+			case 'videoControls.playNext': return 'Volgende afspelen';
 			case 'videoControls.playButton': return 'Afspelen';
 			case 'videoControls.pauseButton': return 'Pauzeren';
 			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Terugspoelen ${seconds} seconden';
@@ -9470,6 +9494,8 @@ extension on _StringsSv {
 			case 'videoControls.timerActive': return 'Timer aktiv';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'Uppspelningen pausas om ${duration}';
 			case 'videoControls.sleepTimerCompleted': return 'Sovtimer slutförd - uppspelning pausad';
+			case 'videoControls.autoPlayNext': return 'Spela nästa automatiskt';
+			case 'videoControls.playNext': return 'Spela nästa';
 			case 'videoControls.playButton': return 'Spela';
 			case 'videoControls.pauseButton': return 'Pausa';
 			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Spola bakåt ${seconds} sekunder';
@@ -10014,6 +10040,8 @@ extension on _StringsZh {
 			case 'videoControls.timerActive': return '定时器已激活';
 			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => '播放将在 ${duration} 后暂停';
 			case 'videoControls.sleepTimerCompleted': return '睡眠定时器已完成 - 播放已暂停';
+			case 'videoControls.autoPlayNext': return '自动播放下一集';
+			case 'videoControls.playNext': return '播放下一集';
 			case 'videoControls.playButton': return '播放';
 			case 'videoControls.pauseButton': return '暂停';
 			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => '后退 ${seconds} 秒';

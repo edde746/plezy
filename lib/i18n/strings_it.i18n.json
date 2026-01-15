@@ -263,6 +263,8 @@
     "timerActive": "Timer attivo",
     "playbackWillPauseIn": "La riproduzione si interromperà tra ${duration}",
     "sleepTimerCompleted": "Timer di spegnimento completato - riproduzione in pausa",
+    "autoPlayNext": "Riproduzione automatica successivo",
+    "playNext": "Riproduci successivo",
     "playButton": "Riproduci",
     "pauseButton": "Pausa",
     "seekBackwardButton": "Riavvolgi di ${seconds} secondi",

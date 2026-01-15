@@ -262,6 +262,8 @@
     "timerActive": "Timer Active",
     "playbackWillPauseIn": "Playback will pause in ${duration}",
     "sleepTimerCompleted": "Sleep timer completed - playback paused",
+    "autoPlayNext": "Auto-Play Next",
+    "playNext": "Play Next",
     "playButton": "Play",
     "pauseButton": "Pause",
     "seekBackwardButton": "Seek backward ${seconds} seconds",
