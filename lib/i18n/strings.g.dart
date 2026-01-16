@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 7
-/// Strings: 3764 (537 per locale)
+/// Strings: 3771 (538 per locale)
 ///
-/// Built on 2026-01-15 at 19:06 UTC
+/// Built on 2026-01-16 at 11:07 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -962,6 +962,7 @@ class _StringsWatchTogetherEn {
 	String get joinInstructions => 'Enter the session code shared by the host to join their watch session.';
 	String get failedToCreate => 'Failed to create session';
 	String get failedToJoin => 'Failed to join session';
+	String get sessionCodeCopied => 'Session code copied to clipboard';
 }
 
 // Path: downloads
@@ -1899,6 +1900,7 @@ class _StringsWatchTogetherDe implements _StringsWatchTogetherEn {
 	@override String get joinInstructions => 'Gib den vom Host geteilten Sitzungscode ein, um seiner Schausitzung beizutreten.';
 	@override String get failedToCreate => 'Sitzung konnte nicht erstellt werden';
 	@override String get failedToJoin => 'Sitzung konnte nicht beigetreten werden';
+	@override String get sessionCodeCopied => 'Sitzungscode in Zwischenablage kopiert';
 }
 
 // Path: hotkeys.actions
@@ -2813,6 +2815,7 @@ class _StringsWatchTogetherIt implements _StringsWatchTogetherEn {
 	@override String get joinInstructions => 'Inserisci il codice sessione condiviso dall\'host per unirti alla loro sessione di visione.';
 	@override String get failedToCreate => 'Impossibile creare la sessione';
 	@override String get failedToJoin => 'Impossibile unirsi alla sessione';
+	@override String get sessionCodeCopied => 'Codice sessione copiato negli appunti';
 }
 
 // Path: hotkeys.actions
@@ -3704,6 +3707,7 @@ class _StringsWatchTogetherKo implements _StringsWatchTogetherEn {
 	@override String get joinInstructions => '호스트가 공유한 세션 코드를 입력하여 시청 세션에 참여하세요.';
 	@override String get failedToCreate => '세션 생성 실패';
 	@override String get failedToJoin => '세션 참여 실패';
+	@override String get sessionCodeCopied => '세션 코드가 클립보드에 복사되었습니다';
 }
 
 // Path: downloads
@@ -4641,6 +4645,7 @@ class _StringsWatchTogetherNl implements _StringsWatchTogetherEn {
 	@override String get joinInstructions => 'Voer de sessiecode in die door de host is gedeeld om deel te nemen aan hun kijksessie.';
 	@override String get failedToCreate => 'Sessie maken mislukt';
 	@override String get failedToJoin => 'Sessie deelnemen mislukt';
+	@override String get sessionCodeCopied => 'Sessiecode gekopieerd naar klembord';
 }
 
 // Path: hotkeys.actions
@@ -5555,6 +5560,7 @@ class _StringsWatchTogetherSv implements _StringsWatchTogetherEn {
 	@override String get joinInstructions => 'Ange sessionskoden som delats av värden för att gå med i deras tittarsession.';
 	@override String get failedToCreate => 'Det gick inte att skapa session';
 	@override String get failedToJoin => 'Det gick inte att gå med i session';
+	@override String get sessionCodeCopied => 'Sessionskod kopierad till urklipp';
 }
 
 // Path: hotkeys.actions
@@ -6469,6 +6475,7 @@ class _StringsWatchTogetherZh implements _StringsWatchTogetherEn {
 	@override String get joinInstructions => '输入主持人分享的会话代码以加入他们的观看会话。';
 	@override String get failedToCreate => '创建会话失败';
 	@override String get failedToJoin => '加入会话失败';
+	@override String get sessionCodeCopied => '会话代码已复制到剪贴板';
 }
 
 // Path: hotkeys.actions
@@ -7053,6 +7060,7 @@ extension on Translations {
 			case 'watchTogether.joinInstructions': return 'Enter the session code shared by the host to join their watch session.';
 			case 'watchTogether.failedToCreate': return 'Failed to create session';
 			case 'watchTogether.failedToJoin': return 'Failed to join session';
+			case 'watchTogether.sessionCodeCopied': return 'Session code copied to clipboard';
 			case 'downloads.title': return 'Downloads';
 			case 'downloads.manage': return 'Manage';
 			case 'downloads.tvShows': return 'TV Shows';
@@ -7613,6 +7621,7 @@ extension on _StringsDe {
 			case 'watchTogether.joinInstructions': return 'Gib den vom Host geteilten Sitzungscode ein, um seiner Schausitzung beizutreten.';
 			case 'watchTogether.failedToCreate': return 'Sitzung konnte nicht erstellt werden';
 			case 'watchTogether.failedToJoin': return 'Sitzung konnte nicht beigetreten werden';
+			case 'watchTogether.sessionCodeCopied': return 'Sitzungscode in Zwischenablage kopiert';
 			default: return null;
 		}
 	}
@@ -8159,6 +8168,7 @@ extension on _StringsIt {
 			case 'watchTogether.joinInstructions': return 'Inserisci il codice sessione condiviso dall\'host per unirti alla loro sessione di visione.';
 			case 'watchTogether.failedToCreate': return 'Impossibile creare la sessione';
 			case 'watchTogether.failedToJoin': return 'Impossibile unirsi alla sessione';
+			case 'watchTogether.sessionCodeCopied': return 'Codice sessione copiato negli appunti';
 			default: return null;
 		}
 	}
@@ -8691,6 +8701,7 @@ extension on _StringsKo {
 			case 'watchTogether.joinInstructions': return '호스트가 공유한 세션 코드를 입력하여 시청 세션에 참여하세요.';
 			case 'watchTogether.failedToCreate': return '세션 생성 실패';
 			case 'watchTogether.failedToJoin': return '세션 참여 실패';
+			case 'watchTogether.sessionCodeCopied': return '세션 코드가 클립보드에 복사되었습니다';
 			case 'downloads.title': return '다운로드';
 			case 'downloads.manage': return '관리';
 			case 'downloads.tvShows': return 'TV 프로그램';
@@ -9251,6 +9262,7 @@ extension on _StringsNl {
 			case 'watchTogether.joinInstructions': return 'Voer de sessiecode in die door de host is gedeeld om deel te nemen aan hun kijksessie.';
 			case 'watchTogether.failedToCreate': return 'Sessie maken mislukt';
 			case 'watchTogether.failedToJoin': return 'Sessie deelnemen mislukt';
+			case 'watchTogether.sessionCodeCopied': return 'Sessiecode gekopieerd naar klembord';
 			default: return null;
 		}
 	}
@@ -9797,6 +9809,7 @@ extension on _StringsSv {
 			case 'watchTogether.joinInstructions': return 'Ange sessionskoden som delats av värden för att gå med i deras tittarsession.';
 			case 'watchTogether.failedToCreate': return 'Det gick inte att skapa session';
 			case 'watchTogether.failedToJoin': return 'Det gick inte att gå med i session';
+			case 'watchTogether.sessionCodeCopied': return 'Sessionskod kopierad till urklipp';
 			default: return null;
 		}
 	}
@@ -10343,6 +10356,7 @@ extension on _StringsZh {
 			case 'watchTogether.joinInstructions': return '输入主持人分享的会话代码以加入他们的观看会话。';
 			case 'watchTogether.failedToCreate': return '创建会话失败';
 			case 'watchTogether.failedToJoin': return '加入会话失败';
+			case 'watchTogether.sessionCodeCopied': return '会话代码已复制到剪贴板';
 			default: return null;
 		}
 	}

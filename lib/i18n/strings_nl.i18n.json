@@ -605,6 +605,7 @@
     "codeMustBe8Chars": "Sessiecode moet 8 tekens zijn",
     "joinInstructions": "Voer de sessiecode in die door de host is gedeeld om deel te nemen aan hun kijksessie.",
     "failedToCreate": "Sessie maken mislukt",
-    "failedToJoin": "Sessie deelnemen mislukt"
+    "failedToJoin": "Sessie deelnemen mislukt",
+    "sessionCodeCopied": "Sessiecode gekopieerd naar klembord"
   }
 }

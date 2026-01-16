@@ -605,6 +605,7 @@
     "codeMustBe8Chars": "Il codice sessione deve essere di 8 caratteri",
     "joinInstructions": "Inserisci il codice sessione condiviso dall'host per unirti alla loro sessione di visione.",
     "failedToCreate": "Impossibile creare la sessione",
-    "failedToJoin": "Impossibile unirsi alla sessione"
+    "failedToJoin": "Impossibile unirsi alla sessione",
+    "sessionCodeCopied": "Codice sessione copiato negli appunti"
   }
 }

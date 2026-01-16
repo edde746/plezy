@@ -605,6 +605,7 @@
     "codeMustBe8Chars": "Sitzungscode muss 8 Zeichen haben",
     "joinInstructions": "Gib den vom Host geteilten Sitzungscode ein, um seiner Schausitzung beizutreten.",
     "failedToCreate": "Sitzung konnte nicht erstellt werden",
-    "failedToJoin": "Sitzung konnte nicht beigetreten werden"
+    "failedToJoin": "Sitzung konnte nicht beigetreten werden",
+    "sessionCodeCopied": "Sitzungscode in Zwischenablage kopiert"
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -168,6 +169,46 @@ class _SessionMenuSheet extends StatelessWidget {
               ],
             ),
 
+            // Session code with copy button
+            if (provider.sessionId != null) ...[
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () => _copySessionCode(context, provider.sessionId!),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${t.watchTogether.sessionCode}: ',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        provider.sessionId!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFamily: 'monospace',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Symbols.content_copy_rounded,
+                        size: 16,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 8),
@@ -215,6 +256,13 @@ class _SessionMenuSheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _copySessionCode(BuildContext context, String sessionId) {
+    Clipboard.setData(ClipboardData(text: sessionId));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(t.watchTogether.sessionCodeCopied)),
     );
   }
 

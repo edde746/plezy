@@ -589,7 +589,8 @@
     "codeMustBe8Chars": "세션 코드는 반드시 8자리여야 합니다",
     "joinInstructions": "호스트가 공유한 세션 코드를 입력하여 시청 세션에 참여하세요.",
     "failedToCreate": "세션 생성 실패",
-    "failedToJoin": "세션 참여 실패"
+    "failedToJoin": "세션 참여 실패",
+    "sessionCodeCopied": "세션 코드가 클립보드에 복사되었습니다"
   },
   "downloads": {
     "title": "다운로드",

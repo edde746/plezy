@@ -605,6 +605,7 @@
     "codeMustBe8Chars": "会话代码必须是8个字符",
     "joinInstructions": "输入主持人分享的会话代码以加入他们的观看会话。",
     "failedToCreate": "创建会话失败",
-    "failedToJoin": "加入会话失败"
+    "failedToJoin": "加入会话失败",
+    "sessionCodeCopied": "会话代码已复制到剪贴板"
   }
 }

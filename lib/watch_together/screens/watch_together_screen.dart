@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -218,13 +219,7 @@ class _ActiveSessionContent extends StatelessWidget {
                             watchTogether.isHost ? t.watchTogether.hostingSession : t.watchTogether.inSession,
                             style: theme.textTheme.titleMedium,
                           ),
-                          Text(
-                            '${t.watchTogether.sessionCode}: ${session.sessionId}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontFamily: 'monospace',
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
+                          _SessionCodeRow(sessionId: session.sessionId),
                         ],
                       ),
                     ),
@@ -358,5 +353,50 @@ class _ActiveSessionContent extends StatelessWidget {
     if (confirmed == true) {
       await watchTogether.leaveSession();
     }
+  }
+}
+
+/// Tappable session code row with copy functionality
+class _SessionCodeRow extends StatelessWidget {
+  final String sessionId;
+
+  const _SessionCodeRow({required this.sessionId});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: () => _copySessionCode(context),
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${t.watchTogether.sessionCode}: $sessionId',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontFamily: 'monospace',
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Symbols.content_copy_rounded,
+              size: 14,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _copySessionCode(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: sessionId));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(t.watchTogether.sessionCodeCopied)),
+    );
   }
 }

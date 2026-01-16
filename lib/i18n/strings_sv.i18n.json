@@ -605,6 +605,7 @@
     "codeMustBe8Chars": "Sessionskod måste vara 8 tecken",
     "joinInstructions": "Ange sessionskoden som delats av värden för att gå med i deras tittarsession.",
     "failedToCreate": "Det gick inte att skapa session",
-    "failedToJoin": "Det gick inte att gå med i session"
+    "failedToJoin": "Det gick inte att gå med i session",
+    "sessionCodeCopied": "Sessionskod kopierad till urklipp"
   }
 }

@@ -587,7 +587,8 @@
     "codeMustBe8Chars": "Session code must be 8 characters",
     "joinInstructions": "Enter the session code shared by the host to join their watch session.",
     "failedToCreate": "Failed to create session",
-    "failedToJoin": "Failed to join session"
+    "failedToJoin": "Failed to join session",
+    "sessionCodeCopied": "Session code copied to clipboard"
   },
   "downloads": {
     "title": "Downloads",
