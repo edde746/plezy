@@ -75,7 +75,6 @@ void _absorbZeroOffsetPointerEvent(PointerEvent event) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
 
   if (_enableSentry) {
     final packageInfo = await PackageInfo.fromPlatform();
