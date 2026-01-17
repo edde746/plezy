@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../utils/log_redaction_manager.dart';
 import 'base_shared_preferences_service.dart';
@@ -48,6 +49,10 @@ class StorageService extends BaseSharedPreferencesService {
     _keyHiddenLibraries,
   ];
 
+  late final FlutterSecureStorage _secureStorage;
+  String? _cachedToken;
+  String? _cachedPlexToken;
+
   StorageService._();
 
   static Future<StorageService> getInstance() async {
@@ -56,10 +61,34 @@ class StorageService extends BaseSharedPreferencesService {
 
   @override
   Future<void> onInit() async {
+    _secureStorage = const FlutterSecureStorage();
+
+    // Load tokens into memory cache
+    _cachedToken = await _loadTokenInternal(_keyToken);
+    _cachedPlexToken = await _loadTokenInternal(_keyPlexToken);
+
     // Seed known values so logs can redact immediately on startup.
     LogRedactionManager.registerServerUrl(getServerUrl());
-    LogRedactionManager.registerToken(getToken());
-    LogRedactionManager.registerToken(getPlexToken());
+    if (_cachedToken != null) LogRedactionManager.registerToken(_cachedToken!);
+    if (_cachedPlexToken != null) LogRedactionManager.registerToken(_cachedPlexToken!);
+  }
+
+  // Helper to load and migrate token
+  Future<String?> _loadTokenInternal(String key) async {
+    // 1. Check secure storage first
+    String? token = await _secureStorage.read(key: key);
+
+    // 2. Fallback/Migration: Check SharedPreferences if not in secure storage
+    if (token == null && prefs.containsKey(key)) {
+      token = prefs.getString(key);
+      if (token != null) {
+        // Migrate to secure storage
+        await _secureStorage.write(key: key, value: token);
+        // Remove from insecure storage
+        await prefs.remove(key);
+      }
+    }
+    return token;
   }
 
   // Server URL
@@ -88,12 +117,13 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Server Access Token
   Future<void> saveToken(String token) async {
-    await prefs.setString(_keyToken, token);
+    _cachedToken = token;
+    await _secureStorage.write(key: _keyToken, value: token);
     LogRedactionManager.registerToken(token);
   }
 
   String? getToken() {
-    return prefs.getString(_keyToken);
+    return _cachedToken;
   }
 
   // Alias for server access token for clarity
@@ -107,12 +137,13 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Plex.tv Token (for API access)
   Future<void> savePlexToken(String token) async {
-    await prefs.setString(_keyPlexToken, token);
+    _cachedPlexToken = token;
+    await _secureStorage.write(key: _keyPlexToken, value: token);
     LogRedactionManager.registerToken(token);
   }
 
   String? getPlexToken() {
-    return prefs.getString(_keyPlexToken);
+    return _cachedPlexToken;
   }
 
   // Server Data (full PlexServer object as JSON)
@@ -149,7 +180,15 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Clear all credentials
   Future<void> clearCredentials() async {
+    _cachedToken = null;
+    _cachedPlexToken = null;
+    // Remove from insecure prefs (legacy cleanup mainly)
     await Future.wait([..._credentialKeys.map((k) => prefs.remove(k)), clearMultiServerData()]);
+    // Remove from secure storage
+    await Future.wait([
+      _secureStorage.delete(key: _keyToken),
+      _secureStorage.delete(key: _keyPlexToken),
+    ]);
     LogRedactionManager.clearTrackedValues();
   }
 
