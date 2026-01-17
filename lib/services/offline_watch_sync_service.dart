@@ -480,25 +480,35 @@ class OfflineWatchSyncService extends ChangeNotifier {
       }
 
       // Fetch non-episode items individually (movies, etc.)
+      // Optimized to fetch in parallel batches
       for (final entry in nonEpisodeItems.entries) {
         final serverId = entry.key;
         final ratingKeys = entry.value;
 
         await _withOnlineClient(serverId, (client) async {
-          for (final ratingKey in ratingKeys) {
-            try {
-              final metadata = await client.getMetadataWithImages(ratingKey);
-              if (metadata != null) {
-                await PlexApiCache.instance.put(serverId, '/library/metadata/$ratingKey', {
-                  'MediaContainer': {
-                    'Metadata': [metadata.toJson()],
-                  },
-                });
-                syncedCount++;
-              }
-            } catch (e) {
-              appLogger.d('Failed to sync watch state for $ratingKey: $e');
-            }
+          // Process in chunks of 5 to avoid overwhelming the server
+          const batchSize = 5;
+          for (var i = 0; i < ratingKeys.length; i += batchSize) {
+            final end = (i + batchSize < ratingKeys.length) ? i + batchSize : ratingKeys.length;
+            final batch = ratingKeys.sublist(i, end);
+
+            await Future.wait(
+              batch.map((ratingKey) async {
+                try {
+                  final metadata = await client.getMetadataWithImages(ratingKey);
+                  if (metadata != null) {
+                    await PlexApiCache.instance.put(serverId, '/library/metadata/$ratingKey', {
+                      'MediaContainer': {
+                        'Metadata': [metadata.toJson()],
+                      },
+                    });
+                    syncedCount++;
+                  }
+                } catch (e) {
+                  appLogger.d('Failed to sync watch state for $ratingKey: $e');
+                }
+              }),
+            );
           }
         });
       }
