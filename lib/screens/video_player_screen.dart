@@ -598,6 +598,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       DiscordRPCService.instance.updatePosition(position);
     });
 
+    // Listen to playback rate changes for Discord Rich Presence
+    player!.streams.rate.listen((rate) {
+      DiscordRPCService.instance.updatePlaybackSpeed(rate);
+    });
+
     // Start Discord Rich Presence for current media
     if (client != null) {
       DiscordRPCService.instance.startPlayback(widget.metadata, client);

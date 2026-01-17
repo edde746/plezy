@@ -47,6 +47,7 @@ class DiscordRPCService {
   DateTime? _playbackStartTime;
   Duration? _mediaDuration;
   Duration? _currentPosition;
+  double _playbackSpeed = 1.0;
   Timer? _reconnectTimer;
   DateTime? _lastPresenceUpdate;
   StreamSubscription<void>? _readySubscription;
@@ -106,6 +107,7 @@ class DiscordRPCService {
     _mediaDuration = metadata.duration != null ? Duration(milliseconds: metadata.duration!) : null;
     _currentPosition = Duration.zero;
     _cachedThumbnailUrl = null;
+    _playbackSpeed = 1.0;
 
     if (_isEnabled && _isConnected) {
       // Upload thumbnail in background, don't block playback
@@ -130,6 +132,15 @@ class DiscordRPCService {
           _updatePresence();
         }
       }
+    }
+  }
+
+  /// Update current playback speed (for accurate remaining time calculation)
+  void updatePlaybackSpeed(double speed) {
+    if (_playbackSpeed == speed) return;
+    _playbackSpeed = speed;
+    if (_isEnabled && _isConnected && _playbackStartTime != null) {
+      _updatePresence();
     }
   }
 
@@ -161,6 +172,7 @@ class DiscordRPCService {
     _currentClient = null;
     _playbackStartTime = null;
     _cachedThumbnailUrl = null;
+    _playbackSpeed = 1.0;
 
     if (_isEnabled && _isConnected) {
       await clearPresence();
@@ -357,11 +369,15 @@ class DiscordRPCService {
       final now = DateTime.now();
       final position = _currentPosition ?? Duration.zero;
 
-      // Calculate when playback "started" (now minus current position)
-      final effectiveStart = now.subtract(position);
+      // Calculate remaining time accounting for playback speed
+      final remainingDuration = _mediaDuration! - position;
+      final adjustedRemaining = Duration(microseconds: (remainingDuration.inMicroseconds / _playbackSpeed).round());
 
-      // Calculate when playback will "end" (start + total duration)
-      final effectiveEnd = effectiveStart.add(_mediaDuration!);
+      // Calculate total adjusted duration for progress bar
+      final adjustedTotal = Duration(microseconds: (_mediaDuration!.inMicroseconds / _playbackSpeed).round());
+
+      final effectiveEnd = now.add(adjustedRemaining);
+      final effectiveStart = effectiveEnd.subtract(adjustedTotal);
 
       return DiscordTimestamps.range(effectiveStart, effectiveEnd);
     }
