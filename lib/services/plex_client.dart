@@ -100,6 +100,30 @@ class PlexClient {
       LogInterceptor(requestBody: false, responseBody: false, error: true, requestHeader: false, responseHeader: false),
     );
 
+    // Add Security Interceptor to validate token transmission
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = options.headers['X-Plex-Token'];
+          if (token != null) {
+            // Reconstruct full URL to check destination
+            final fullUrl = options.uri.toString();
+            if (!PlexUrlHelper.isSecureDestination(fullUrl, config.baseUrl)) {
+              appLogger.w('Security Warning: Attempted to send X-Plex-Token to insecure destination: $fullUrl');
+              // Remove the token
+              options.headers.remove('X-Plex-Token');
+
+              // Also check query parameters
+              if (options.queryParameters.containsKey('X-Plex-Token')) {
+                options.queryParameters.remove('X-Plex-Token');
+              }
+            }
+          }
+          return handler.next(options);
+        },
+      ),
+    );
+
     if (_endpointManager != null) {
       _dio.interceptors.add(
         EndpointFailoverInterceptor(
