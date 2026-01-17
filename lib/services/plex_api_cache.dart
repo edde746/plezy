@@ -32,7 +32,7 @@ class PlexApiCache {
   AppDatabase get database => _db;
 
   /// Build cache key from serverId and endpoint
-  static String buildKey(String serverId, String endpoint) {
+  String buildKey(String serverId, String endpoint) {
     return '$serverId:$endpoint';
   }
 
