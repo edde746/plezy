@@ -1738,8 +1738,8 @@ class PlexClient {
         throw Exception('Could not get server machine identifier');
       }
 
-      // Build the URI for the show's episodes
-      final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$showRatingKey/children';
+      // Build the URI for the show itself, allowing deferred loading of episodes
+      final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$showRatingKey';
 
       // Create the play queue with optional starting episode
       return await createPlayQueue(
