@@ -47,15 +47,17 @@ class PlexApiCache {
     return null;
   }
 
-  /// Get cached responses for multiple endpoints
-  Future<Map<String, Map<String, dynamic>>> getBatch(List<String> keys) async {
+  /// Get cached responses for multiple keys
+  Future<Map<String, Map<String, dynamic>>> getBatch(Set<String> keys) async {
+    if (keys.isEmpty) return {};
+
     final results = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.isIn(keys))).get();
 
-    final Map<String, Map<String, dynamic>> resultMap = {};
+    final Map<String, Map<String, dynamic>> map = {};
     for (final row in results) {
-      resultMap[row.cacheKey] = jsonDecode(row.data) as Map<String, dynamic>;
+      map[row.cacheKey] = jsonDecode(row.data) as Map<String, dynamic>;
     }
-    return resultMap;
+    return map;
   }
 
   /// Cache a response for an endpoint
