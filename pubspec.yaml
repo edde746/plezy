@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   intl: ^0.20.2
+  flutter_secure_storage: ^9.0.0
   dio: ^5.9.2
   json_annotation: ^4.9.0
   shared_preferences: ^2.2.2

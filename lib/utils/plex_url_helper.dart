@@ -34,3 +34,49 @@ extension PlexUrlExtension on String {
     return '$baseUrl$this'.withPlexToken(token);
   }
 }
+
+class PlexUrlHelper {
+  /// Verifies if the destination URL is secure for transmitting the X-Plex-Token.
+  ///
+  /// The token should only be sent to:
+  /// 1. Subdomains of plex.tv
+  /// 2. The user's specific server IP (or hostname)
+  /// 3. Loopback addresses (localhost, 127.0.0.1)
+  ///
+  /// [url] The destination URL to check
+  /// [serverBaseUrl] The configured base URL of the Plex server
+  static bool isSecureDestination(String url, String? serverBaseUrl) {
+    try {
+      final uri = Uri.parse(url);
+      final host = uri.host.toLowerCase();
+
+      // 1. Allow plex.tv subdomains
+      if (host == 'plex.tv' || host.endsWith('.plex.tv')) {
+        return true;
+      }
+
+      // 2. Allow loopback/local addresses
+      if (host == 'localhost' || host == '127.0.0.1' || host == '::1') {
+        return true;
+      }
+
+      // 3. Allow plex.direct domains (used for secure connections to servers)
+      if (host.endsWith('.plex.direct')) {
+        return true;
+      }
+
+      // 4. Allow configured server host
+      if (serverBaseUrl != null) {
+        final serverUri = Uri.parse(serverBaseUrl);
+        if (host == serverUri.host.toLowerCase()) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      // If URL parsing fails, assume insecure
+      return false;
+    }
+  }
+}
