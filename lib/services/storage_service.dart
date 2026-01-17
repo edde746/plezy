@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../utils/log_redaction_manager.dart';
@@ -48,7 +49,8 @@ class StorageService extends BaseSharedPreferencesService {
     _keyHiddenLibraries,
   ];
 
-  late final FlutterSecureStorage _secureStorage;
+  late FlutterSecureStorage _secureStorage;
+  static FlutterSecureStorage? _testSecureStorage;
   String? _cachedToken;
   String? _cachedPlexToken;
 
@@ -58,9 +60,12 @@ class StorageService extends BaseSharedPreferencesService {
     return BaseSharedPreferencesService.initializeInstance(() => StorageService._());
   }
 
+  @visibleForTesting
+  static set testSecureStorage(FlutterSecureStorage storage) => _testSecureStorage = storage;
+
   @override
   Future<void> onInit() async {
-    _secureStorage = const FlutterSecureStorage();
+    _secureStorage = _testSecureStorage ?? const FlutterSecureStorage();
 
     // Load tokens into memory cache
     _cachedToken = await _loadTokenInternal(_keyToken);
