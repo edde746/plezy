@@ -132,13 +132,25 @@ String formatDurationTimestamp(Duration duration) {
   }
 }
 
-/// Formats a sync offset in milliseconds with sign indicator (e.g., "+150ms", "-250ms").
-/// This format is used for audio/subtitle synchronization adjustments.
+/// Formats a sync offset in milliseconds with sign indicator (e.g., "+150ms", "-15.1s").
+/// Shows milliseconds for values < 10s, decimal seconds for larger values.
 ///
 /// Used for: audio sync sheet, sync offset controls.
 String formatSyncOffset(double offsetMs) {
-  final sign = offsetMs >= 0 ? '+' : '';
-  return '$sign${offsetMs.round()}ms';
+  final sign = offsetMs >= 0 ? '+' : '-';
+  final absMs = offsetMs.abs().round();
+  final durationLocale = _getDurationLocale();
+
+  if (absMs >= 10000) {
+    // For values >= 10s, show decimal seconds (e.g., "+15.1s")
+    final seconds = (offsetMs.abs() / 1000).toStringAsFixed(1);
+    final unit = durationLocale.second(1, true);
+    return '$sign$seconds$unit';
+  }
+
+  // For values < 10s, show milliseconds (e.g., "+7300ms")
+  final unit = durationLocale.millisecond(1, true);
+  return '$sign$absMs$unit';
 }
 
 /// Gets the duration package locale based on the current app locale.

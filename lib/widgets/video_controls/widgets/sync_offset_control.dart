@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -28,7 +30,17 @@ class SyncOffsetControl extends StatefulWidget {
 }
 
 class _SyncOffsetControlState extends State<SyncOffsetControl> {
+  // Range constants
+  static const double _sliderMin = -5000; // ±5s for slider
+  static const double _sliderMax = 5000;
+  static const double _absoluteMin = -60000; // ±60s absolute limit
+  static const double _absoluteMax = 60000;
+  static const double _tapStep = 100; // 100ms per tap
+  static const double _longPressStep = 1000; // 1s per long-press tick
+  static const int _sliderDivisions = 200; // 50ms steps for ±5s range
+
   late double _currentOffset;
+  Timer? _longPressTimer;
 
   @override
   void initState() {
@@ -44,6 +56,12 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
         _currentOffset = widget.initialOffset.toDouble();
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _longPressTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _applyOffset(double offsetMs) async {
@@ -64,6 +82,49 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     _applyOffset(0);
   }
 
+  void _incrementOffset() {
+    final newOffset = (_currentOffset + _tapStep).clamp(_absoluteMin, _absoluteMax);
+    setState(() {
+      _currentOffset = newOffset;
+    });
+    _applyOffset(newOffset);
+  }
+
+  void _decrementOffset() {
+    final newOffset = (_currentOffset - _tapStep).clamp(_absoluteMin, _absoluteMax);
+    setState(() {
+      _currentOffset = newOffset;
+    });
+    _applyOffset(newOffset);
+  }
+
+  void _startLongPressIncrement() {
+    _longPressTimer?.cancel();
+    _longPressTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      final newOffset = (_currentOffset + _longPressStep).clamp(_absoluteMin, _absoluteMax);
+      setState(() {
+        _currentOffset = newOffset;
+      });
+      _applyOffset(newOffset);
+    });
+  }
+
+  void _startLongPressDecrement() {
+    _longPressTimer?.cancel();
+    _longPressTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      final newOffset = (_currentOffset - _longPressStep).clamp(_absoluteMin, _absoluteMax);
+      setState(() {
+        _currentOffset = newOffset;
+      });
+      _applyOffset(newOffset);
+    });
+  }
+
+  void _stopLongPress() {
+    _longPressTimer?.cancel();
+    _longPressTimer = null;
+  }
+
   String _getDescriptionText() {
     if (_currentOffset > 0) {
       return t.videoControls.playsLater(label: widget.labelText);
@@ -74,8 +135,30 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     }
   }
 
+  Widget _buildStepButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required VoidCallback onLongPressStart,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      onLongPressStart: (_) => onLongPressStart(),
+      onLongPressEnd: (_) => _stopLongPress(),
+      onLongPressCancel: _stopLongPress,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(color: Colors.grey[800], borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, color: Colors.white, size: 28),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Clamp the slider value to its range, but display the actual offset
+    final sliderValue = _currentOffset.clamp(_sliderMin, _sliderMax);
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -89,19 +172,27 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           const SizedBox(height: 8),
           Text(_getDescriptionText(), style: const TextStyle(color: Colors.white70, fontSize: 16)),
           const SizedBox(height: 48),
-          // Slider
+          // Slider with +/- buttons
           Row(
             children: [
+              // Decrement button
+              _buildStepButton(
+                icon: Symbols.remove_rounded,
+                onTap: _decrementOffset,
+                onLongPressStart: _startLongPressDecrement,
+              ),
+              const SizedBox(width: 12),
+              // Slider section
               Text(
-                t.videoControls.minusTime(amount: "2", unit: "s"),
+                t.videoControls.minusTime(amount: "5", unit: "s"),
                 style: const TextStyle(color: Colors.white70),
               ),
               Expanded(
                 child: Slider(
-                  value: _currentOffset,
-                  min: -2000,
-                  max: 2000,
-                  divisions: 80, // 50ms steps
+                  value: sliderValue,
+                  min: _sliderMin,
+                  max: _sliderMax,
+                  divisions: _sliderDivisions,
                   activeColor: Colors.blue,
                   inactiveColor: Colors.white24,
                   onChanged: (value) {
@@ -115,8 +206,15 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                 ),
               ),
               Text(
-                t.videoControls.addTime(amount: "2", unit: "s"),
+                t.videoControls.addTime(amount: "5", unit: "s"),
                 style: const TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(width: 12),
+              // Increment button
+              _buildStepButton(
+                icon: Symbols.add_rounded,
+                onTap: _incrementOffset,
+                onLongPressStart: _startLongPressIncrement,
               ),
             ],
           ),
