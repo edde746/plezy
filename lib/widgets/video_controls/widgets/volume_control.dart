@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
@@ -203,51 +204,61 @@ class _VolumeControlState extends State<VolumeControl> {
     final showMarker = _maxVolume > 100;
     final markerPosition = showMarker ? (100.0 / maxVolumeDouble) : 0.0;
 
-    return SizedBox(
-      width: 100,
-      child: Stack(
-        alignment: Alignment.centerLeft,
-        children: [
-          // 100% marker (only shown if max > 100)
-          if (showMarker)
-            Positioned(
-              left: 100 * markerPosition - 1, // Adjust for marker width
-              child: Container(
-                width: 2,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(1),
+    return Listener(
+      onPointerSignal: (event) {
+        if (event is PointerScrollEvent) {
+          final delta = event.scrollDelta.dy;
+          // Scroll up (negative delta) = increase volume, scroll down = decrease
+          final volumeChange = -delta / 20; // Adjust sensitivity (higher = less sensitive)
+          _adjustVolume(volumeChange);
+        }
+      },
+      child: SizedBox(
+        width: 100,
+        child: Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            // 100% marker (only shown if max > 100)
+            if (showMarker)
+              Positioned(
+                left: 100 * markerPosition - 1, // Adjust for marker width
+                child: Container(
+                  width: 2,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+              ),
+            // Volume slider
+            SliderTheme(
+              data: SliderThemeData(
+                trackHeight: showAdjustIndicator ? 4 : 3,
+                thumbShape: RoundSliderThumbShape(enabledThumbRadius: showAdjustIndicator ? 8 : 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+              ),
+              child: Semantics(
+                label: t.videoControls.volumeSlider,
+                slider: true,
+                child: Slider(
+                  value: volume.clamp(0.0, maxVolumeDouble),
+                  min: 0.0,
+                  max: maxVolumeDouble,
+                  onChanged: (value) {
+                    widget.player.setVolume(value);
+                  },
+                  onChangeEnd: (value) async {
+                    final settings = await SettingsService.getInstance();
+                    await settings.setVolume(value);
+                  },
+                  activeColor: Colors.white,
+                  inactiveColor: Colors.white.withValues(alpha: 0.3),
                 ),
               ),
             ),
-          // Volume slider
-          SliderTheme(
-            data: SliderThemeData(
-              trackHeight: showAdjustIndicator ? 4 : 3,
-              thumbShape: RoundSliderThumbShape(enabledThumbRadius: showAdjustIndicator ? 8 : 6),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-            ),
-            child: Semantics(
-              label: t.videoControls.volumeSlider,
-              slider: true,
-              child: Slider(
-                value: volume.clamp(0.0, maxVolumeDouble),
-                min: 0.0,
-                max: maxVolumeDouble,
-                onChanged: (value) {
-                  widget.player.setVolume(value);
-                },
-                onChangeEnd: (value) async {
-                  final settings = await SettingsService.getInstance();
-                  await settings.setVolume(value);
-                },
-                activeColor: Colors.white,
-                inactiveColor: Colors.white.withValues(alpha: 0.3),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
