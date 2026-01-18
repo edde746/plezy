@@ -776,23 +776,43 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void _showLibraryManagementSheet() {
     final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _LibraryManagementSheet(
-        allLibraries: List.from(_allLibraries),
-        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
-        onReorder: (reorderedLibraries) {
-          setState(() {
-            _allLibraries = reorderedLibraries;
-          });
-          _saveLibraryOrder();
-        },
-        onToggleVisibility: _toggleLibraryVisibility,
-        getLibraryMenuItems: _getLibraryMenuItems,
-        onLibraryMenuAction: _handleLibraryMenuAction,
-      ),
-    );
+    if (PlatformDetector.isTV()) {
+      showDialog(
+        context: context,
+        builder: (context) => _LibraryManagementSheet(
+          isDialog: true,
+          allLibraries: List.from(_allLibraries),
+          hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+          onReorder: (reorderedLibraries) {
+            setState(() {
+              _allLibraries = reorderedLibraries;
+            });
+            _saveLibraryOrder();
+          },
+          onToggleVisibility: _toggleLibraryVisibility,
+          getLibraryMenuItems: _getLibraryMenuItems,
+          onLibraryMenuAction: _handleLibraryMenuAction,
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => _LibraryManagementSheet(
+          allLibraries: List.from(_allLibraries),
+          hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+          onReorder: (reorderedLibraries) {
+            setState(() {
+              _allLibraries = reorderedLibraries;
+            });
+            _saveLibraryOrder();
+          },
+          onToggleVisibility: _toggleLibraryVisibility,
+          getLibraryMenuItems: _getLibraryMenuItems,
+          onLibraryMenuAction: _handleLibraryMenuAction,
+        ),
+      );
+    }
   }
 
   Future<void> _performLibraryAction({
@@ -1162,6 +1182,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 }
 
 class _LibraryManagementSheet extends StatefulWidget {
+  final bool isDialog;
   final List<PlexLibrary> allLibraries;
   final Set<String> hiddenLibraryKeys;
   final Function(List<PlexLibrary>) onReorder;
@@ -1170,6 +1191,7 @@ class _LibraryManagementSheet extends StatefulWidget {
   final void Function(String action, PlexLibrary library) onLibraryMenuAction;
 
   const _LibraryManagementSheet({
+    this.isDialog = false,
     required this.allLibraries,
     required this.hiddenLibraryKeys,
     required this.onReorder,
@@ -1192,6 +1214,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   int? _originalIndex; // Original position before move (for cancel)
   List<PlexLibrary>? _originalOrder; // Original order before move (for cancel)
   final FocusNode _listFocusNode = FocusNode();
+  final Map<int, GlobalKey> _tileKeys = {}; // For dialog mode scroll-into-view
 
   @override
   void initState() {
@@ -1203,6 +1226,22 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   void dispose() {
     _listFocusNode.dispose();
     super.dispose();
+  }
+
+  void _ensureFocusedVisible() {
+    if (!widget.isDialog) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final key = _tileKeys[_focusedIndex];
+      final context = key?.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          alignment: 0.25,
+          duration: const Duration(milliseconds: 200),
+        );
+      }
+    });
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
@@ -1260,6 +1299,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           _focusedIndex--;
           _focusedColumn = 0; // Reset to row when changing rows
         });
+        _ensureFocusedVisible();
         return KeyEventResult.handled;
       }
       if (key.isDownKey && _focusedIndex < _tempLibraries.length - 1) {
@@ -1267,6 +1307,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           _focusedIndex++;
           _focusedColumn = 0; // Reset to row when changing rows
         });
+        _ensureFocusedVisible();
         return KeyEventResult.handled;
       }
       if (key.isLeftKey && _focusedColumn > 0) {
@@ -1312,6 +1353,9 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       }
       final library = _tempLibraries.removeAt(oldIndex);
       _tempLibraries.insert(newIndex, library);
+      if (widget.isDialog) {
+        _tileKeys.clear();
+      }
     });
     // Apply immediately
     widget.onReorder(_tempLibraries);
@@ -1385,6 +1429,35 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
     final hiddenLibraryKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
 
+    if (widget.isDialog) {
+      return Dialog(
+        child: Scaffold(
+          appBar: AppBar(
+            title: Row(
+              children: [
+                const AppIcon(Symbols.edit_rounded, fill: 1),
+                const SizedBox(width: 12),
+                Text(t.libraries.manageLibraries),
+              ],
+            ),
+            automaticallyImplyLeading: false,
+            actions: [
+              IconButton(
+                icon: const AppIcon(Symbols.close_rounded, fill: 1),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          body: Focus(
+            focusNode: _listFocusNode,
+            autofocus: InputModeTracker.isKeyboardMode(context),
+            onKeyEvent: _handleKeyEvent,
+            child: _buildFlatLibraryListDialog(hiddenLibraryKeys),
+          ),
+        ),
+      );
+    }
+
     return DraggableScrollableSheet(
       initialChildSize: 0.7,
       minChildSize: 0.5,
@@ -1432,6 +1505,38 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     );
   }
 
+  /// Build library list for dialog (TV) using ListView with scroll-into-view support
+  Widget _buildFlatLibraryListDialog(Set<String> hiddenLibraryKeys) {
+    final nonUniqueNames = _getNonUniqueLibraryNames();
+    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
+
+    return ReorderableListView.builder(
+      onReorder: _reorderLibraries,
+      itemCount: _tempLibraries.length,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      buildDefaultDragHandles: false,
+      itemBuilder: (context, index) {
+        final library = _tempLibraries[index];
+        final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
+        final isFocused = isKeyboardMode && index == _focusedIndex;
+        final isMoving = index == _movingIndex;
+
+        _tileKeys.putIfAbsent(index, () => GlobalKey());
+
+        return _buildLibraryTile(
+          library,
+          index,
+          hiddenLibraryKeys,
+          showServerName: showServerName,
+          isFocused: isFocused,
+          isMoving: isMoving,
+          focusedColumn: isFocused ? _focusedColumn : null,
+          tileKey: _tileKeys[index],
+        );
+      },
+    );
+  }
+
   /// Build flat library list with server subtitle for non-unique names
   Widget _buildFlatLibraryList(ScrollController scrollController, Set<String> hiddenLibraryKeys) {
     final nonUniqueNames = _getNonUniqueLibraryNames();
@@ -1470,6 +1575,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     bool isFocused = false,
     bool isMoving = false,
     int? focusedColumn,
+    Key? tileKey,
   }) {
     final isHidden = hiddenLibraryKeys.contains(library.globalKey);
     final colorScheme = Theme.of(context).colorScheme;
@@ -1488,7 +1594,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     final isOptionsButtonFocused = isFocused && focusedColumn == 2;
 
     return Opacity(
-      key: ValueKey(library.globalKey),
+      key: tileKey ?? ValueKey(library.globalKey),
       opacity: isHidden ? 0.5 : 1.0,
       child: Container(
         decoration: BoxDecoration(color: tileColor),
