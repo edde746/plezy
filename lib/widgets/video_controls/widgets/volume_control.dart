@@ -211,6 +211,7 @@ class _VolumeControlState extends State<VolumeControl> {
           // Scroll up (negative delta) = increase volume, scroll down = decrease
           final volumeChange = -delta / 20; // Adjust sensitivity (higher = less sensitive)
           _adjustVolume(volumeChange);
+          widget.onFocusActivity?.call();
         }
       },
       child: SizedBox(
