@@ -1433,11 +1433,11 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       return Dialog(
         child: Scaffold(
           appBar: AppBar(
-            title: const Row(
+            title: Row(
               children: [
-                AppIcon(Symbols.edit_rounded, fill: 1),
-                SizedBox(width: 12),
-                Text('Manage Libraries'),
+                const AppIcon(Symbols.edit_rounded, fill: 1),
+                const SizedBox(width: 12),
+                Text(t.libraries.manageLibraries),
               ],
             ),
             automaticallyImplyLeading: false,
