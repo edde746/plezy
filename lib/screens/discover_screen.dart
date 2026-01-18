@@ -28,6 +28,7 @@ import '../mixins/watch_state_aware.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/app_logger.dart';
 import '../utils/provider_extensions.dart';
+import 'main_screen.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
@@ -176,6 +177,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     return false;
+  }
+
+  /// Navigate to the sidebar (called when user presses left at leftmost item)
+  void _navigateToSidebar() {
+    final focusScope = MainScreenFocusScope.of(context);
+    focusScope?.focusSidebar();
   }
 
   @override
@@ -1033,6 +1040,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onRemoveFromContinueWatching: _refreshContinueWatching,
                         isInContinueWatching: true,
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
+                        onNavigateLeft: _navigateToSidebar,
+                        onNavigateUp: () {
+                          _heroFocusNode.requestFocus();
+                          _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+                        },
                       ),
                     ),
 
@@ -1047,6 +1059,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onRefresh: updateItem,
                         // Hub index is i + 1 if continue watching exists, otherwise i
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
+                        onNavigateLeft: _navigateToSidebar,
+                        onNavigateUp: (i == 0 && _onDeck.isEmpty) ? () {
+                          _heroFocusNode.requestFocus();
+                          _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+                        } : null,
                       ),
                     ),
 
