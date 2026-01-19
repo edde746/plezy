@@ -115,6 +115,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _collectionsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_collections');
   final _playlistsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_playlists');
 
+  /// When true, the next library load should force the tab to Recommended (index 0).
+  /// This is set when navigating to a library from the side navigation rail so
+  /// users always land on the Recommended tab regardless of previous tab memory.
+  bool _forceRecommendedTabOnNextLoad = false;
+
   @override
   void initState() {
     super.initState();
@@ -446,6 +451,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// Public method to load a library by key (called from MainScreen side nav)
   @override
   void loadLibraryByKey(String libraryGlobalKey) {
+    // User explicitly selected a library from the side nav – default to Recommended
+    _forceRecommendedTabOnNextLoad = true;
     _loadLibraryContent(libraryGlobalKey);
   }
 
@@ -486,16 +493,32 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final storage = await StorageService.getInstance();
     await storage.saveSelectedLibraryKey(libraryGlobalKey);
 
-    // Restore saved tab index for this library
-    final savedTabIndex = storage.getLibraryTab(libraryGlobalKey);
-    if (savedTabIndex != null && savedTabIndex >= 0 && savedTabIndex < 4) {
+    // Determine which tab should be active
+    int? tabToActivate;
+    if (_forceRecommendedTabOnNextLoad) {
+      // Force Recommended when coming from side nav
+      tabToActivate = 0;
+    } else {
+      // Otherwise restore saved tab for this library
+      final savedTabIndex = storage.getLibraryTab(libraryGlobalKey);
+      if (savedTabIndex != null && savedTabIndex >= 0 && savedTabIndex < 4) {
+        tabToActivate = savedTabIndex;
+      }
+    }
+
+    if (tabToActivate != null) {
       // Set flag to prevent _onTabChanged from triggering focus
       _isRestoringTab = true;
-      // Use animateTo with zero duration for instant switch without animation race conditions
-      _tabController.animateTo(savedTabIndex, duration: Duration.zero);
-      // Clear flag synchronously - animateTo with zero duration completes immediately
+      _tabController.animateTo(tabToActivate, duration: Duration.zero);
       _isRestoringTab = false;
+      // Persist the tab choice if we forced it (keeps behavior consistent next open)
+      if (_forceRecommendedTabOnNextLoad) {
+        await storage.saveLibraryTab(libraryGlobalKey, tabToActivate);
+      }
     }
+
+    // Reset the force flag after applying
+    _forceRecommendedTabOnNextLoad = false;
 
     // Focus is handled by onDataLoaded callbacks from each tab.
     // However, on first load the tab might finish loading before the tab index
