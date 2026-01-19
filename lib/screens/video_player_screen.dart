@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../mpv/mpv.dart';
 
@@ -983,11 +984,32 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (confirmed == true && mounted) {
         await _watchTogetherProvider!.leaveSession();
         if (mounted) {
+          // Exit fullscreen before leaving player (Windows/Linux only)
+          if (Platform.isWindows || Platform.isLinux) {
+            final isFullscreen = await windowManager.isFullScreen();
+            if (isFullscreen) {
+              await windowManager.setFullScreen(false);
+              // Wait for a frame to allow window manager to process the fullscreen exit
+              await Future.delayed(const Duration(milliseconds: 100));
+              if (!mounted) return;
+            }
+          }
           _isExiting.value = true;
           Navigator.of(context).pop(true);
         }
       }
       return;
+    }
+
+    // Exit fullscreen before leaving player (Windows/Linux only)
+    if (Platform.isWindows || Platform.isLinux) {
+      final isFullscreen = await windowManager.isFullScreen();
+      if (isFullscreen) {
+        await windowManager.setFullScreen(false);
+        // Wait for a frame to allow window manager to process the fullscreen exit
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (!mounted) return;
+      }
     }
 
     // Default behavior for hosts or non-session users

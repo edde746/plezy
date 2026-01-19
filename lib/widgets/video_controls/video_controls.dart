@@ -1221,12 +1221,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
             // Handle Back/Escape: show controls if hidden, navigate back if visible
             if (_isBackKey(key)) {
+              // On Windows/Linux with navigation off, ESC first exits fullscreen
+              if (!_videoPlayerNavigationEnabled && _isFullscreen && (Platform.isWindows || Platform.isLinux)) {
+                _toggleFullscreen();
+                return KeyEventResult.handled;
+              }
+
               if (!_showControls) {
                 _showControlsWithFocus();
                 return KeyEventResult.handled;
               }
               // Controls visible - navigate back
-              Navigator.of(context).pop(true);
+              (widget.onBack ?? () => Navigator.of(context).pop(true))();
               return KeyEventResult.handled;
             }
 
