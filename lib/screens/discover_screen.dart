@@ -1132,6 +1132,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         child: SizedBox(
           height: heroHeight,
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
               PageView.builder(
                 controller: _heroController,
@@ -1148,6 +1149,30 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 itemBuilder: (context, index) {
                   return _buildHeroItem(_onDeck[index]);
                 },
+              ),
+              // Bottom gradient that extends past hero bounds to ensure seamless blend
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: -32, // Extend 32px past the hero section bounds
+                height: 80, // Tall enough to cover any gap
+                child: IgnorePointer(
+                  child: Builder(
+                    builder: (context) {
+                      final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [bgColor.withValues(alpha: 0), bgColor],
+                            stops: const [0.0, 0.6],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
               // Page indicators with animated progress and pause/play button
               Positioned(
@@ -1266,47 +1291,50 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         },
         child: Stack(
           fit: StackFit.expand,
+          clipBehavior: Clip.none,
           children: [
             // Background Image with fade/zoom animation and parallax
             if (heroItem.art != null || heroItem.grandparentArt != null)
-              AnimatedBuilder(
-                animation: _scrollController,
-                builder: (context, child) {
-                  final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-                  return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
-                },
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 800),
-                  curve: Curves.easeOut,
-                  builder: (context, value, child) {
-                    return Transform.scale(
-                      scale: 1.0 + (0.1 * (1 - value)),
-                      child: Opacity(opacity: value, child: child),
-                    );
+              ClipRect(
+                child: AnimatedBuilder(
+                  animation: _scrollController,
+                  builder: (context, child) {
+                    final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+                    return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
                   },
-                  child: Builder(
-                    builder: (context) {
-                      final client = _getClientForItem(heroItem);
-                      final mediaQuery = MediaQuery.of(context);
-                      final imageUrl = PlexImageHelper.getOptimizedImageUrl(
-                        client: client,
-                        thumbPath: heroItem.art ?? heroItem.grandparentArt,
-                        maxWidth: mediaQuery.size.width,
-                        maxHeight: mediaQuery.size.height * 0.7,
-                        devicePixelRatio: mediaQuery.devicePixelRatio,
-                        imageType: ImageType.art,
-                      );
-
-                      return CachedNetworkImage(
-                        imageUrl: imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                        errorWidget: (context, url, error) =>
-                            Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeOut,
+                    builder: (context, value, child) {
+                      return Transform.scale(
+                        scale: 1.0 + (0.1 * (1 - value)),
+                        child: Opacity(opacity: value, child: child),
                       );
                     },
+                    child: Builder(
+                      builder: (context) {
+                        final client = _getClientForItem(heroItem);
+                        final mediaQuery = MediaQuery.of(context);
+                        final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+                          client: client,
+                          thumbPath: heroItem.art ?? heroItem.grandparentArt,
+                          maxWidth: mediaQuery.size.width,
+                          maxHeight: mediaQuery.size.height * 0.7,
+                          devicePixelRatio: mediaQuery.devicePixelRatio,
+                          imageType: ImageType.art,
+                        );
+
+                        return CachedNetworkImage(
+                          imageUrl: imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) =>
+                              Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                          errorWidget: (context, url, error) =>
+                              Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                        );
+                      },
+                    ),
                   ),
                 ),
               )
@@ -1318,7 +1346,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               top: 0,
               left: 0,
               right: 0,
-              bottom: -1, // Extend 1px past to prevent subpixel gap
+              bottom: -4, // Extend past stack bounds to ensure coverage
               child: Builder(
                 builder: (context) {
                   final bgColor = Theme.of(context).scaffoldBackgroundColor;
