@@ -41,6 +41,8 @@ import '../utils/language_codes.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
+import '../focus/focusable_wrapper.dart';
+import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 
@@ -105,6 +107,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   int _autoPlayCountdown = 5;
   bool _completionTriggered = false;
 
+  // Play Next dialog focus nodes (for TV D-pad navigation)
+  late final FocusNode _playNextCancelFocusNode;
+  late final FocusNode _playNextConfirmFocusNode;
+
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
 
@@ -133,6 +139,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _activeInstance = this;
     _activeRatingKey = widget.metadata.ratingKey;
     _activeMediaIndex = widget.selectedMediaIndex;
+
+    // Initialize Play Next dialog focus nodes
+    _playNextCancelFocusNode = FocusNode(debugLabel: 'PlayNextCancel');
+    _playNextConfirmFocusNode = FocusNode(debugLabel: 'PlayNextConfirm');
 
     appLogger.d('VideoPlayerScreen initialized for: ${widget.metadata.title}');
     if (widget.preferredAudioTrack != null) {
@@ -1070,6 +1080,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
 
+    // Dispose Play Next dialog focus nodes
+    _playNextCancelFocusNode.dispose();
+    _playNextConfirmFocusNode.dispose();
+
     // Clear media controls and dispose manager
     _mediaControlsManager?.clear();
     _mediaControlsManager?.dispose();
@@ -1173,6 +1187,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (completed && _nextEpisode != null && !_showPlayNextDialog && !_completionTriggered) {
       _completionTriggered = true;
 
+      // Capture keyboard mode before async gap
+      final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
+
       final settings = await SettingsService.getInstance();
       final autoPlayEnabled = settings.getAutoPlayNextEpisode();
 
@@ -1180,6 +1197,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _showPlayNextDialog = true;
         _autoPlayCountdown = autoPlayEnabled ? 5 : -1;
       });
+
+      // Auto-focus Play Next button on TV when dialog appears (only in keyboard/TV mode)
+      if (isKeyboardMode) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _playNextConfirmFocusNode.requestFocus();
+          }
+        });
+      }
 
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
@@ -1678,6 +1704,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         onBack: _handleBackButton,
                         canControl: canControl,
                         hasFirstFrame: _hasFirstFrame,
+                        playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
                       ),
                     );
                   },
@@ -1768,35 +1795,79 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                           Row(
                             children: [
                               Expanded(
-                                child: OutlinedButton(
-                                  onPressed: _cancelAutoPlay,
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                child: FocusableWrapper(
+                                  focusNode: _playNextCancelFocusNode,
+                                  onSelect: _cancelAutoPlay,
+                                  useBackgroundFocus: true,
+                                  autoScroll: false,
+                                  borderRadius: 20,
+                                  onKeyEvent: (node, event) {
+                                    if (event is KeyDownEvent) {
+                                      // RIGHT arrow moves focus to Play Next button
+                                      if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                                        _playNextConfirmFocusNode.requestFocus();
+                                        return KeyEventResult.handled;
+                                      }
+                                      // Trap focus - consume UP/DOWN to prevent escape
+                                      if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                                          event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                        return KeyEventResult.handled;
+                                      }
+                                    }
+                                    return KeyEventResult.ignored;
+                                  },
+                                  child: OutlinedButton(
+                                    onPressed: _cancelAutoPlay,
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: Text(t.dialog.cancel),
                                   ),
-                                  child: Text(t.dialog.cancel),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: FilledButton(
-                                  onPressed: _playNext,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      if (_autoPlayCountdown > 0) ...[
-                                        Text('$_autoPlayCountdown'),
-                                        const SizedBox(width: 4),
-                                        const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
-                                      ] else
-                                        Text(t.videoControls.playNext),
-                                    ],
+                                child: FocusableWrapper(
+                                  focusNode: _playNextConfirmFocusNode,
+                                  onSelect: _playNext,
+                                  useBackgroundFocus: true,
+                                  autoScroll: false,
+                                  borderRadius: 20,
+                                  onKeyEvent: (node, event) {
+                                    if (event is KeyDownEvent) {
+                                      // LEFT arrow moves focus to Cancel button
+                                      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                                        _playNextCancelFocusNode.requestFocus();
+                                        return KeyEventResult.handled;
+                                      }
+                                      // Trap focus - consume UP/DOWN to prevent escape
+                                      if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                                          event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                        return KeyEventResult.handled;
+                                      }
+                                    }
+                                    return KeyEventResult.ignored;
+                                  },
+                                  child: FilledButton(
+                                    onPressed: _playNext,
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        if (_autoPlayCountdown > 0) ...[
+                                          Text('$_autoPlayCountdown'),
+                                          const SizedBox(width: 4),
+                                          const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                                        ] else
+                                          Text(t.videoControls.playNext),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),

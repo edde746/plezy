@@ -181,6 +181,11 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     _playPauseFocusNode.requestFocus();
   }
 
+  /// Request focus on the timeline (called when controls shown via LEFT/RIGHT)
+  void requestTimelineFocus() {
+    _timelineFocusNode.requestFocus();
+  }
+
   /// Get focus node for volume control
   FocusNode get volumeFocusNode => _volumeFocusNode;
 
