@@ -1200,6 +1200,24 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
+  /// Show controls and focus timeline on LEFT/RIGHT input (TV/desktop)
+  void _showControlsWithTimelineFocus() {
+    if (!_showControls) {
+      setState(() {
+        _showControls = true;
+      });
+      if (Platform.isMacOS) {
+        _updateTrafficLightVisibility();
+      }
+    }
+    _startHideTimer();
+
+    // Request focus on timeline after controls are shown
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _desktopControlsKey.currentState?.requestTimelineFocus();
+    });
+  }
+
   /// Hide controls when navigating up from timeline (keyboard mode)
   void _hideControlsFromKeyboard() {
     if (_showControls) {
@@ -1278,12 +1296,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               return KeyEventResult.handled;
             }
 
-            // On desktop, show controls and focus play/pause on directional input
-            // Only handle navigation if video player navigation is enabled
+            // On desktop/TV, show controls on directional input
+            // LEFT/RIGHT focuses timeline for seeking, UP/DOWN focuses play/pause
             if (!isMobile && _isDirectionalKey(key) && _videoPlayerNavigationEnabled) {
-              // If controls are hidden, show them and focus play/pause
               if (!_showControls) {
-                _showControlsWithFocus();
+                final isHorizontal = key == LogicalKeyboardKey.arrowLeft ||
+                    key == LogicalKeyboardKey.arrowRight;
+                if (isHorizontal) {
+                  _showControlsWithTimelineFocus();
+                } else {
+                  _showControlsWithFocus();
+                }
                 return KeyEventResult.handled;
               }
               // If controls are shown, let the event propagate to the focused control
