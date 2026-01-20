@@ -20,6 +20,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../mpv/mpv.dart';
 import '../../focus/dpad_navigator.dart';
+import '../../focus/focusable_wrapper.dart';
 
 import '../../services/plex_client.dart';
 import '../../services/plex_api_cache.dart';
@@ -61,6 +62,7 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onBack,
   bool canControl = true,
   ValueNotifier<bool>? hasFirstFrame,
+  FocusNode? playNextFocusNode,
 }) {
   return PlexVideoControls(
     player: player,
@@ -78,6 +80,7 @@ Widget plexVideoControlsBuilder(
     onBack: onBack,
     canControl: canControl,
     hasFirstFrame: hasFirstFrame,
+    playNextFocusNode: playNextFocusNode,
   );
 }
 
@@ -106,6 +109,9 @@ class PlexVideoControls extends StatefulWidget {
   /// Notifier for whether first video frame has rendered (shows loading state when false).
   final ValueNotifier<bool>? hasFirstFrame;
 
+  /// Optional focus node for Play Next dialog button (for TV navigation from timeline)
+  final FocusNode? playNextFocusNode;
+
   const PlexVideoControls({
     super.key,
     required this.player,
@@ -123,6 +129,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onBack,
     this.canControl = true,
     this.hasFirstFrame,
+    this.playNextFocusNode,
   });
 
   @override
@@ -185,6 +192,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _showPerformanceOverlay = false;
   // Long-press 2x speed state
   bool _isLongPressing = false;
+  // Skip marker button focus node (for TV D-pad navigation)
+  late final FocusNode _skipMarkerFocusNode;
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
 
@@ -196,6 +205,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void initState() {
     super.initState();
     _focusNode = FocusNode();
+    _skipMarkerFocusNode = FocusNode(debugLabel: 'SkipMarkerButton');
     _seekThrottle = throttle(
       (Duration pos) => widget.player.seek(pos),
       const Duration(milliseconds: 200),
@@ -271,6 +281,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           // Start auto-skip timer for new marker
           if (foundMarker != null) {
             _startAutoSkipTimer(foundMarker);
+
+            // Auto-focus skip button on TV when marker appears (only in keyboard/TV mode, if controls hidden)
+            if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context)) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && !_showControls) {
+                  _skipMarkerFocusNode.requestFocus();
+                }
+              });
+            }
           } else {
             _cancelAutoSkipTimer();
           }
@@ -447,6 +466,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _focusNode.dispose();
+    _skipMarkerFocusNode.dispose();
     // Restore original rate if long-press was active when disposed
     if (_isLongPressing && _rateBeforeLongPress != null) {
       widget.player.setRate(_rateBeforeLongPress!);
@@ -1219,7 +1239,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Hide controls when navigating up from timeline (keyboard mode)
+  /// If skip marker button or Play Next dialog is visible, focus it instead of hiding controls
   void _hideControlsFromKeyboard() {
+    // If skip marker button is visible, focus it instead of hiding controls
+    if (_currentMarker != null) {
+      _skipMarkerFocusNode.requestFocus();
+      return;
+    }
+
+    // If Play Next dialog is visible (focus node provided), focus it instead of hiding controls
+    if (widget.playNextFocusNode != null) {
+      widget.playNextFocusNode!.requestFocus();
+      return;
+    }
+
     if (_showControls) {
       setState(() {
         _showControls = false;
@@ -1300,8 +1333,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             // LEFT/RIGHT focuses timeline for seeking, UP/DOWN focuses play/pause
             if (!isMobile && _isDirectionalKey(key) && _videoPlayerNavigationEnabled) {
               if (!_showControls) {
-                final isHorizontal = key == LogicalKeyboardKey.arrowLeft ||
-                    key == LogicalKeyboardKey.arrowRight;
+                final isHorizontal = key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight;
                 if (isHorizontal) {
                   _showControlsWithTimelineFocus();
                 } else {
@@ -1620,65 +1652,84 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         : baseButtonText;
     final IconData buttonIcon = showNextEpisode ? Symbols.skip_next_rounded : Symbols.fast_forward_rounded;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          if (isAutoSkipActive) {
-            _cancelAutoSkipTimer();
-          }
-          // Always perform the skip action when tapped
-          _performAutoSkip();
-        },
-        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-        child: Stack(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    buttonText,
-                    style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(width: 8),
-                  AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
-                ],
-              ),
-            ),
-            // Progress indicator overlay
-            if (isAutoSkipActive && shouldShowAutoSkip)
-              Positioned.fill(
-                child: ClipRRect(
+    return FocusableWrapper(
+      focusNode: _skipMarkerFocusNode,
+      onSelect: () {
+        if (isAutoSkipActive) {
+          _cancelAutoSkipTimer();
+        }
+        _performAutoSkip();
+      },
+      borderRadius: tokens(context).radiusSm,
+      useBackgroundFocus: true,
+      autoScroll: false,
+      onKeyEvent: (node, event) {
+        // DOWN arrow returns focus to play/pause button
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {
+          _desktopControlsKey.currentState?.requestPlayPauseFocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (isAutoSkipActive) {
+              _cancelAutoSkipTimer();
+            }
+            _performAutoSkip();
+          },
+          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+          child: Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: (_autoSkipProgress * 100).round(),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: ((1.0 - _autoSkipProgress) * 100).round(),
-                        child: Container(decoration: const BoxDecoration(color: Colors.transparent)),
-                      ),
-                    ],
-                  ),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      buttonText,
+                      style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 8),
+                    AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
+                  ],
                 ),
               ),
-          ],
+              // Progress indicator overlay
+              if (isAutoSkipActive && shouldShowAutoSkip)
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: (_autoSkipProgress * 100).round(),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: ((1.0 - _autoSkipProgress) * 100).round(),
+                          child: Container(decoration: const BoxDecoration(color: Colors.transparent)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
