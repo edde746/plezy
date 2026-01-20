@@ -247,6 +247,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildVideoPlaybackSection() {
+    final isMobile = PlatformDetector.isMobile(context);
+
     return Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,18 +362,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await _settingsService.setRememberTrackSelections(value);
             },
           ),
-          SwitchListTile(
-            secondary: const AppIcon(Symbols.play_pause_rounded, fill: 1),
-            title: Text(t.settings.clickVideoTogglesPlayback),
-            subtitle: Text(t.settings.clickVideoTogglesPlaybackDescription),
-            value: _clickVideoTogglesPlayback,
-            onChanged: (value) async {
-              setState(() {
-                _clickVideoTogglesPlayback = value;
-              });
-              await _settingsService.setClickVideoTogglesPlayback(value);
-            },
-          ),
+          if (!isMobile)
+            SwitchListTile(
+              secondary: const AppIcon(Symbols.play_pause_rounded, fill: 1),
+              title: Text(t.settings.clickVideoTogglesPlayback),
+              subtitle: Text(t.settings.clickVideoTogglesPlaybackDescription),
+              value: _clickVideoTogglesPlayback,
+              onChanged: (value) async {
+                setState(() {
+                  _clickVideoTogglesPlayback = value;
+                });
+                await _settingsService.setClickVideoTogglesPlayback(value);
+              },
+            ),
           const Divider(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
