@@ -107,6 +107,8 @@
     "minutesUnit": "${minutes} 分钟",
     "rememberTrackSelections": "记住每个剧集/电影的音轨选择",
     "rememberTrackSelectionsDescription": "在播放过程中更改音轨时自动保存音频和字幕语言偏好",
+    "clickVideoTogglesPlayback": "点击视频可切换播放/暂停",
+    "clickVideoTogglesPlaybackDescription": "如果启用此选项，点击视频播放器将播放或暂停视频。否则，点击将显示或隐藏播放控件",
     "videoPlayerControls": "视频播放器控制",
     "keyboardShortcuts": "键盘快捷键",
     "keyboardShortcutsDescription": "自定义键盘快捷键",

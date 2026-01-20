@@ -220,6 +220,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuter';
 	@override String get rememberTrackSelections => 'Kom ihåg spårval per serie/film';
 	@override String get rememberTrackSelectionsDescription => 'Spara automatiskt ljud- och undertextspråkpreferenser när du ändrar spår under uppspelning';
+	@override String get clickVideoTogglesPlayback => 'Klicka på videon för att växla mellan spela upp och pausa.';
+	@override String get clickVideoTogglesPlaybackDescription => 'Om detta är aktiverat kommer ett klick på videospelaren att starta eller pausa videon. Annars visas eller döljs uppspelningskontrollerna när du klickar.';
 	@override String get videoPlayerControls => 'Videospelar-kontroller';
 	@override String get keyboardShortcuts => 'Tangentbordsgenvägar';
 	@override String get keyboardShortcutsDescription => 'Anpassa tangentbordsgenvägar';
@@ -1033,6 +1035,8 @@ extension on TranslationsSv {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuter',
 			'settings.rememberTrackSelections' => 'Kom ihåg spårval per serie/film',
 			'settings.rememberTrackSelectionsDescription' => 'Spara automatiskt ljud- och undertextspråkpreferenser när du ändrar spår under uppspelning',
+			'settings.clickVideoTogglesPlayback' => 'Klicka på videon för att växla mellan spela upp och pausa.',
+			'settings.clickVideoTogglesPlaybackDescription' => 'Om detta är aktiverat kommer ett klick på videospelaren att starta eller pausa videon. Annars visas eller döljs uppspelningskontrollerna när du klickar.',
 			'settings.videoPlayerControls' => 'Videospelar-kontroller',
 			'settings.keyboardShortcuts' => 'Tangentbordsgenvägar',
 			'settings.keyboardShortcutsDescription' => 'Anpassa tangentbordsgenvägar',
@@ -1446,10 +1450,10 @@ extension on TranslationsSv {
 			'watchTogether.inSession' => 'I Session',
 			'watchTogether.sessionCode' => 'Sessionskod',
 			'watchTogether.hostControlsPlayback' => 'Värden styr uppspelningen',
-			'watchTogether.anyoneCanControl' => 'Alla kan styra uppspelningen',
-			'watchTogether.hostControls' => 'Värd styr',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.anyoneCanControl' => 'Alla kan styra uppspelningen',
+			'watchTogether.hostControls' => 'Värd styr',
 			'watchTogether.anyoneControls' => 'Alla styr',
 			'watchTogether.participants' => 'Deltagare',
 			'watchTogether.host' => 'Värd',

@@ -220,6 +220,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} 分钟';
 	@override String get rememberTrackSelections => '记住每个剧集/电影的音轨选择';
 	@override String get rememberTrackSelectionsDescription => '在播放过程中更改音轨时自动保存音频和字幕语言偏好';
+	@override String get clickVideoTogglesPlayback => '点击视频可切换播放/暂停';
+	@override String get clickVideoTogglesPlaybackDescription => '如果启用此选项，点击视频播放器将播放或暂停视频。否则，点击将显示或隐藏播放控件';
 	@override String get videoPlayerControls => '视频播放器控制';
 	@override String get keyboardShortcuts => '键盘快捷键';
 	@override String get keyboardShortcutsDescription => '自定义键盘快捷键';
@@ -1033,6 +1035,8 @@ extension on TranslationsZh {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} 分钟',
 			'settings.rememberTrackSelections' => '记住每个剧集/电影的音轨选择',
 			'settings.rememberTrackSelectionsDescription' => '在播放过程中更改音轨时自动保存音频和字幕语言偏好',
+			'settings.clickVideoTogglesPlayback' => '点击视频可切换播放/暂停',
+			'settings.clickVideoTogglesPlaybackDescription' => '如果启用此选项，点击视频播放器将播放或暂停视频。否则，点击将显示或隐藏播放控件',
 			'settings.videoPlayerControls' => '视频播放器控制',
 			'settings.keyboardShortcuts' => '键盘快捷键',
 			'settings.keyboardShortcutsDescription' => '自定义键盘快捷键',
@@ -1446,10 +1450,10 @@ extension on TranslationsZh {
 			'watchTogether.inSession' => '在会话中',
 			'watchTogether.sessionCode' => '会话代码',
 			'watchTogether.hostControlsPlayback' => '主持人控制播放',
-			'watchTogether.anyoneCanControl' => '任何人都可以控制播放',
-			'watchTogether.hostControls' => '主持人控制',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.anyoneCanControl' => '任何人都可以控制播放',
+			'watchTogether.hostControls' => '主持人控制',
 			'watchTogether.anyoneControls' => '任何人控制',
 			'watchTogether.participants' => '参与者',
 			'watchTogether.host' => '主持人',

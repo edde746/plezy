@@ -219,6 +219,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutes';
 	@override String get rememberTrackSelections => 'Mémoriser les sélections de pistes par émission/film';
 	@override String get rememberTrackSelectionsDescription => 'Enregistrer automatiquement les préférences linguistiques pour l\'audio et les sous-titres lorsque vous changez de piste pendant la lecture';
+	@override String get clickVideoTogglesPlayback => 'Cliquez sur la vidéo pour basculer entre lecture et pause.';
+	@override String get clickVideoTogglesPlaybackDescription => 'Si cette option est activée, cliquer sur le lecteur vidéo lancera ou mettra en pause la vidéo. Sinon, le clic affichera ou masquera les commandes de lecture.';
 	@override String get videoPlayerControls => 'Commandes du lecteur vidéo';
 	@override String get keyboardShortcuts => 'Raccourcis clavier';
 	@override String get keyboardShortcutsDescription => 'Personnaliser les raccourcis clavier';
@@ -1030,6 +1032,8 @@ extension on TranslationsFr {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Mémoriser les sélections de pistes par émission/film',
 			'settings.rememberTrackSelectionsDescription' => 'Enregistrer automatiquement les préférences linguistiques pour l\'audio et les sous-titres lorsque vous changez de piste pendant la lecture',
+			'settings.clickVideoTogglesPlayback' => 'Cliquez sur la vidéo pour basculer entre lecture et pause.',
+			'settings.clickVideoTogglesPlaybackDescription' => 'Si cette option est activée, cliquer sur le lecteur vidéo lancera ou mettra en pause la vidéo. Sinon, le clic affichera ou masquera les commandes de lecture.',
 			'settings.videoPlayerControls' => 'Commandes du lecteur vidéo',
 			'settings.keyboardShortcuts' => 'Raccourcis clavier',
 			'settings.keyboardShortcutsDescription' => 'Personnaliser les raccourcis clavier',
@@ -1444,10 +1448,10 @@ extension on TranslationsFr {
 			'watchTogether.leaveSessionConfirm' => 'Vous allez être déconnecté de la session.',
 			'watchTogether.endSessionConfirmOverlay' => 'Cela mettra fin à la session de visionnage pour tous les participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'Vous serez déconnecté de la session de visionnage.',
-			'watchTogether.end' => 'Terminer',
-			'watchTogether.leave' => 'Fin',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.end' => 'Terminer',
+			'watchTogether.leave' => 'Fin',
 			'watchTogether.syncing' => 'Synchronisation...',
 			'watchTogether.participant' => 'participant',
 			'watchTogether.joinWatchSession' => 'Rejoindre la session de visionnage',

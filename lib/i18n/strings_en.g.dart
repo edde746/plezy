@@ -415,6 +415,12 @@ class TranslationsSettingsEn {
 	/// en: 'Automatically save audio and subtitle language preferences when you change tracks during playback'
 	String get rememberTrackSelectionsDescription => 'Automatically save audio and subtitle language preferences when you change tracks during playback';
 
+	/// en: 'Click on video to toggle play/pause'
+	String get clickVideoTogglesPlayback => 'Click on video to toggle play/pause';
+
+	/// en: 'If enabled, clicking on the video player will play/pause the video. Otherwise, clicking will show/hide the playback controls.'
+	String get clickVideoTogglesPlaybackDescription => 'If enabled, clicking on the video player will play/pause the video. Otherwise, clicking will show/hide the playback controls.';
+
 	/// en: 'Video Player Controls'
 	String get videoPlayerControls => 'Video Player Controls';
 
@@ -2109,6 +2115,8 @@ extension on Translations {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.rememberTrackSelectionsDescription' => 'Automatically save audio and subtitle language preferences when you change tracks during playback',
+			'settings.clickVideoTogglesPlayback' => 'Click on video to toggle play/pause',
+			'settings.clickVideoTogglesPlaybackDescription' => 'If enabled, clicking on the video player will play/pause the video. Otherwise, clicking will show/hide the playback controls.',
 			'settings.videoPlayerControls' => 'Video Player Controls',
 			'settings.keyboardShortcuts' => 'Keyboard Shortcuts',
 			'settings.keyboardShortcutsDescription' => 'Customize keyboard shortcuts',
@@ -2523,10 +2531,10 @@ extension on Translations {
 			'watchTogether.leaveSessionConfirm' => 'You will be removed from the session.',
 			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
-			'watchTogether.end' => 'End',
-			'watchTogether.leave' => 'Leave',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.end' => 'End',
+			'watchTogether.leave' => 'Leave',
 			'watchTogether.syncing' => 'Syncing...',
 			'watchTogether.participant' => 'participant',
 			'watchTogether.joinWatchSession' => 'Join Watch Session',

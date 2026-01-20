@@ -142,6 +142,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   int _audioSyncOffset = 0; // Default, loaded from settings
   int _subtitleSyncOffset = 0; // Default, loaded from settings
   bool _isRotationLocked = true; // Default locked (landscape only)
+  bool _clickVideoTogglesPlayback = false; // Default, loaded from settings
 
   // GlobalKey to access DesktopVideoControls state for focus management
   final GlobalKey<DesktopVideoControlsState> _desktopControlsKey = GlobalKey<DesktopVideoControlsState>();
@@ -393,6 +394,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _autoSkipDelay = settingsService.getAutoSkipDelay();
         _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
         _showPerformanceOverlay = settingsService.getShowPerformanceOverlay();
+        _clickVideoTogglesPlayback = settingsService.getClickVideoTogglesPlayback();
       });
 
       // Apply rotation lock setting
@@ -784,6 +786,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     widget.onSeekCompleted?.call(position);
   }
 
+  /// Handle tap in skip zone for desktop mode
+  void _handleTapInSkipZoneDesktop() {
+    if (widget.canControl && _clickVideoTogglesPlayback) {
+      widget.player.playOrPause();
+    }
+
+    _toggleControls();
+  }
+
   /// Handle tap in skip zone with custom double-tap detection
   void _handleTapInSkipZone({required bool isForward}) {
     final now = DateTime.now();
@@ -913,8 +924,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Handle tap on controls overlay - route to skip zones or toggle controls
   void _handleControlsOverlayTap(TapUpDetails details, BoxConstraints constraints) {
     final isMobile = PlatformDetector.isMobile(context);
+
     if (!isMobile) {
-      _toggleControls();
+      if (widget.canControl && _clickVideoTogglesPlayback) {
+        widget.player.playOrPause();
+      } else {
+        _toggleControls();
+      }
       return;
     }
 
@@ -1319,7 +1335,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                 right: 0,
                                 bottom: bottomExclude,
                                 child: GestureDetector(
-                                  onTap: _toggleControls,
+                                  onTap: _handleTapInSkipZoneDesktop,
                                   onDoubleTap: _toggleFullscreen,
                                   behavior: HitTestBehavior.translucent,
                                   child: Container(color: Colors.transparent),

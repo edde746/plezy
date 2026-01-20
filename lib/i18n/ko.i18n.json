@@ -107,6 +107,8 @@
     "minutesUnit": "${minutes}분",
     "rememberTrackSelections": "에피소드/영화별 트랙 선택 기억",
     "rememberTrackSelectionsDescription": "재생 중 트랙을 변경할 때 오디오 및 자막 언어 설정을 자동으로 저장합니다",
+    "clickVideoTogglesPlayback": "비디오를 클릭하여 재생/일시정지를 전환하세요.",
+    "clickVideoTogglesPlaybackDescription": "이 옵션이 활성화되어 있으면 비디오 플레이어를 클릭할 때 재생 또는 일시정지가 됩니다. 그렇지 않으면 클릭 시 재생 컨트롤이 표시되거나 숨겨집니다.",
     "videoPlayerControls": "비디오 플레이어 컨트롤",
     "keyboardShortcuts": "키보드 단축키",
     "keyboardShortcutsDescription": "사용자 정의 키보드 단축키",
