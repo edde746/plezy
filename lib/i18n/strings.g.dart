@@ -3,10 +3,10 @@
 /// Original: lib/i18n
 /// To regenerate, run: `dart run slang`
 ///
-/// Locales: 7
-/// Strings: 3771 (538 per locale)
+/// Locales: 8
+/// Strings: 4308 (538 per locale)
 ///
-/// Built on 2026-01-16 at 11:07 UTC
+/// Built on 2026-01-20 at 10:49 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -27,6 +27,7 @@ const AppLocale _baseLocale = AppLocale.en;
 enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	en(languageCode: 'en', build: Translations.build),
 	de(languageCode: 'de', build: _StringsDe.build),
+	fr(languageCode: 'fr', build: _StringsFr.build),
 	it(languageCode: 'it', build: _StringsIt.build),
 	ko(languageCode: 'ko', build: _StringsKo.build),
 	nl(languageCode: 'nl', build: _StringsNl.build),
@@ -1955,6 +1956,919 @@ class _StringsLibrariesGroupingsDe implements _StringsLibrariesGroupingsEn {
 	@override String get seasons => 'Staffeln';
 	@override String get episodes => 'Episoden';
 	@override String get folders => 'Ordner';
+}
+
+// Path: <root>
+class _StringsFr implements Translations {
+	/// You can call this constructor and build your own translation instance of this locale.
+	/// Constructing via the enum [AppLocale.build] is preferred.
+	_StringsFr.build({Map<String, Node>? overrides, PluralResolver? cardinalResolver, PluralResolver? ordinalResolver})
+		: assert(overrides == null, 'Set "translation_overrides: true" in order to enable this feature.'),
+		  $meta = TranslationMetadata(
+		    locale: AppLocale.fr,
+		    overrides: overrides ?? {},
+		    cardinalResolver: cardinalResolver,
+		    ordinalResolver: ordinalResolver,
+		  ) {
+		$meta.setFlatMapFunction(_flatMapFunction);
+	}
+
+	/// Metadata for the translations of <fr>.
+	@override final TranslationMetadata<AppLocale, Translations> $meta;
+
+	/// Access flat map
+	@override dynamic operator[](String key) => $meta.getTranslation(key);
+
+	@override late final _StringsFr _root = this; // ignore: unused_field
+
+	// Translations
+	@override late final _StringsAppFr app = _StringsAppFr._(_root);
+	@override late final _StringsAuthFr auth = _StringsAuthFr._(_root);
+	@override late final _StringsCommonFr common = _StringsCommonFr._(_root);
+	@override late final _StringsScreensFr screens = _StringsScreensFr._(_root);
+	@override late final _StringsUpdateFr update = _StringsUpdateFr._(_root);
+	@override late final _StringsSettingsFr settings = _StringsSettingsFr._(_root);
+	@override late final _StringsSearchFr search = _StringsSearchFr._(_root);
+	@override late final _StringsHotkeysFr hotkeys = _StringsHotkeysFr._(_root);
+	@override late final _StringsPinEntryFr pinEntry = _StringsPinEntryFr._(_root);
+	@override late final _StringsFileInfoFr fileInfo = _StringsFileInfoFr._(_root);
+	@override late final _StringsMediaMenuFr mediaMenu = _StringsMediaMenuFr._(_root);
+	@override late final _StringsAccessibilityFr accessibility = _StringsAccessibilityFr._(_root);
+	@override late final _StringsTooltipsFr tooltips = _StringsTooltipsFr._(_root);
+	@override late final _StringsVideoControlsFr videoControls = _StringsVideoControlsFr._(_root);
+	@override late final _StringsUserStatusFr userStatus = _StringsUserStatusFr._(_root);
+	@override late final _StringsMessagesFr messages = _StringsMessagesFr._(_root);
+	@override late final _StringsSubtitlingStylingFr subtitlingStyling = _StringsSubtitlingStylingFr._(_root);
+	@override late final _StringsMpvConfigFr mpvConfig = _StringsMpvConfigFr._(_root);
+	@override late final _StringsDialogFr dialog = _StringsDialogFr._(_root);
+	@override late final _StringsDiscoverFr discover = _StringsDiscoverFr._(_root);
+	@override late final _StringsErrorsFr errors = _StringsErrorsFr._(_root);
+	@override late final _StringsLibrariesFr libraries = _StringsLibrariesFr._(_root);
+	@override late final _StringsAboutFr about = _StringsAboutFr._(_root);
+	@override late final _StringsServerSelectionFr serverSelection = _StringsServerSelectionFr._(_root);
+	@override late final _StringsHubDetailFr hubDetail = _StringsHubDetailFr._(_root);
+	@override late final _StringsLogsFr logs = _StringsLogsFr._(_root);
+	@override late final _StringsLicensesFr licenses = _StringsLicensesFr._(_root);
+	@override late final _StringsNavigationFr navigation = _StringsNavigationFr._(_root);
+	@override late final _StringsCollectionsFr collections = _StringsCollectionsFr._(_root);
+	@override late final _StringsPlaylistsFr playlists = _StringsPlaylistsFr._(_root);
+	@override late final _StringsWatchTogetherFr watchTogether = _StringsWatchTogetherFr._(_root);
+	@override late final _StringsDownloadsFr downloads = _StringsDownloadsFr._(_root);
+}
+
+// Path: app
+class _StringsAppFr implements _StringsAppEn {
+	_StringsAppFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Plezy';
+	@override String get loading => 'Chargement...';
+}
+
+// Path: auth
+class _StringsAuthFr implements _StringsAuthEn {
+	_StringsAuthFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get signInWithPlex => 'S\'inscrire avec Plex';
+	@override String get showQRCode => 'Afficher le QR Code';
+	@override String get cancel => 'Annuler';
+	@override String get authenticate => 'S\'authentifier';
+	@override String get retry => 'Réessayer';
+	@override String get debugEnterToken => 'Debug: Entrez votre token Plex';
+	@override String get plexTokenLabel => 'Token d\'authentification Plex';
+	@override String get plexTokenHint => 'Entrez votre token Plex.tv';
+	@override String get authenticationTimeout => 'Délai d\'authentification expiré. Veuillez réessayer.';
+	@override String get scanQRCodeInstruction => 'Scannez ce code QR avec un appareil connecté à Plex pour vous authentifier.';
+	@override String get waitingForAuth => 'En attente d\'authentification...\nVeuillez vous connecter dans votre navigateur.';
+}
+
+// Path: common
+class _StringsCommonFr implements _StringsCommonEn {
+	_StringsCommonFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get cancel => 'Annuler';
+	@override String get save => 'Sauvegarder';
+	@override String get close => 'Fermer';
+	@override String get clear => 'Nettoyer';
+	@override String get reset => 'Réinitialiser';
+	@override String get later => 'Plus tard';
+	@override String get submit => 'Soumettre';
+	@override String get confirm => 'Confirmer';
+	@override String get retry => 'Réessayer';
+	@override String get logout => 'Se déconnecter';
+	@override String get unknown => 'Inconnu';
+	@override String get refresh => 'Rafraichir';
+	@override String get yes => 'Oui';
+	@override String get no => 'Non';
+	@override String get delete => 'Supprimer';
+	@override String get shuffle => 'Mélanger';
+	@override String get addTo => 'Ajouter à...';
+}
+
+// Path: screens
+class _StringsScreensFr implements _StringsScreensEn {
+	_StringsScreensFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get licenses => 'Licenses';
+	@override String get switchProfile => 'Changer de profil';
+	@override String get subtitleStyling => 'Configuration des sous-titres';
+	@override String get mpvConfig => 'Configuration MPV';
+	@override String get search => 'Recherche';
+	@override String get logs => 'Logs';
+}
+
+// Path: update
+class _StringsUpdateFr implements _StringsUpdateEn {
+	_StringsUpdateFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get available => 'Mise à jour disponible';
+	@override String versionAvailable({required Object version}) => 'Version ${version} disponible';
+	@override String currentVersion({required Object version}) => 'Installé: ${version}';
+	@override String get skipVersion => 'Ignorer cette version';
+	@override String get viewRelease => 'Voir la Release';
+	@override String get latestVersion => 'Vous utilisez la dernière version';
+	@override String get checkFailed => 'Échec de la vérification des mises à jour';
+}
+
+// Path: settings
+class _StringsSettingsFr implements _StringsSettingsEn {
+	_StringsSettingsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Paramètres';
+	@override String get language => 'Langue';
+	@override String get theme => 'Thème';
+	@override String get appearance => 'Apparence';
+	@override String get videoPlayback => 'Lecture vidéo';
+	@override String get advanced => 'Avancé';
+	@override String get episodePosterMode => 'Style du Poster d\'épisode';
+	@override String get seriesPoster => 'Poster de série';
+	@override String get seriesPosterDescription => 'Afficher le poster de série pour tous les épisodes';
+	@override String get seasonPoster => 'Poster de saison';
+	@override String get seasonPosterDescription => 'Afficher le poster spécifique à la saison pour les épisodes';
+	@override String get episodeThumbnail => 'Mignature d\'épisode';
+	@override String get episodeThumbnailDescription => 'Afficher les vignettes des captures d\'écran des épisodes au format 16:9';
+	@override String get showHeroSectionDescription => 'Afficher le carrousel de contenu en vedette sur l\'écran d\'accueil';
+	@override String get secondsLabel => 'Secondes';
+	@override String get minutesLabel => 'Minutes';
+	@override String get secondsShort => 's';
+	@override String get minutesShort => 'm';
+	@override String durationHint({required Object min, required Object max}) => 'Entrez la durée (${min}-${max})';
+	@override String get systemTheme => 'Système';
+	@override String get systemThemeDescription => 'Suivre les paramètres système';
+	@override String get lightTheme => 'Light';
+	@override String get darkTheme => 'Dark';
+	@override String get libraryDensity => 'Densité des bibliothèques';
+	@override String get compact => 'Compact';
+	@override String get compactDescription => 'Cartes plus petites, plus d\'éléments visibles';
+	@override String get normal => 'Normal';
+	@override String get normalDescription => 'Taille par défaut';
+	@override String get comfortable => 'Confortable';
+	@override String get comfortableDescription => 'Cartes plus grandes, moins d\'éléments visibles';
+	@override String get viewMode => 'Mode d\'affichage';
+	@override String get gridView => 'Grille';
+	@override String get gridViewDescription => 'Afficher les éléments dans une disposition en grille';
+	@override String get listView => 'Liste';
+	@override String get listViewDescription => 'Afficher les éléments dans une liste';
+	@override String get showHeroSection => 'Afficher la section Hero';
+	@override String get useGlobalHubs => 'Utiliser la disposition Plex Home';
+	@override String get useGlobalHubsDescription => 'Afficher les hubs de la page d\'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.';
+	@override String get showServerNameOnHubs => 'Afficher le nom du serveur sur les hubs';
+	@override String get showServerNameOnHubsDescription => 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.';
+	@override String get hardwareDecoding => 'Décodage matériel';
+	@override String get hardwareDecodingDescription => 'Utilisez l\'accélération matérielle lorsqu\'elle est disponible.';
+	@override String get bufferSize => 'Taille du Buffer';
+	@override String bufferSizeMB({required Object size}) => '${size}MB';
+	@override String get subtitleStyling => 'Stylisation des sous-titres';
+	@override String get subtitleStylingDescription => 'Personnaliser l\'apparence des sous-titres';
+	@override String get smallSkipDuration => 'Small Skip Duration';
+	@override String get largeSkipDuration => 'Large Skip Duration';
+	@override String secondsUnit({required Object seconds}) => '${seconds} secondes';
+	@override String get defaultSleepTimer => 'Minuterie de mise en veille par défaut';
+	@override String minutesUnit({required Object minutes}) => '${minutes} minutes';
+	@override String get rememberTrackSelections => 'Mémoriser les sélections de pistes par émission/film';
+	@override String get rememberTrackSelectionsDescription => 'Enregistrer automatiquement les préférences linguistiques pour l\'audio et les sous-titres lorsque vous changez de piste pendant la lecture';
+	@override String get videoPlayerControls => 'Commandes du lecteur vidéo';
+	@override String get keyboardShortcuts => 'Raccourcis clavier';
+	@override String get keyboardShortcutsDescription => 'Personnaliser les raccourcis clavier';
+	@override String get videoPlayerNavigation => 'Navigation dans le lecteur vidéo';
+	@override String get videoPlayerNavigationDescription => 'Utilisez les touches fléchées pour naviguer dans les commandes du lecteur vidéo.';
+	@override String get debugLogging => 'Journalisation de débogage';
+	@override String get debugLoggingDescription => 'Activer la journalisation détaillée pour le dépannage';
+	@override String get viewLogs => 'Voir les logs';
+	@override String get viewLogsDescription => 'Voir les logs d\'application';
+	@override String get clearCache => 'Vider le cache';
+	@override String get clearCacheDescription => 'Cela effacera toutes les images et données mises en cache. Le chargement du contenu de l\'application peut prendre plus de temps après avoir effacé le cache.';
+	@override String get clearCacheSuccess => 'Cache effacé avec succès';
+	@override String get resetSettings => 'Réinitialiser les paramètres';
+	@override String get resetSettingsDescription => 'Cela réinitialisera tous les paramètres à leurs valeurs par défaut. Cette action ne peut pas être annulée.';
+	@override String get resetSettingsSuccess => 'Réinitialisation des paramètres réussie';
+	@override String get shortcutsReset => 'Raccourcis réinitialisés aux valeurs par défaut';
+	@override String get about => 'À propos';
+	@override String get aboutDescription => 'Informations sur l\'application et licences';
+	@override String get updates => 'Mises à jour';
+	@override String get updateAvailable => 'Mise à jour disponible';
+	@override String get checkForUpdates => 'Vérifier les mises à jour';
+	@override String get validationErrorEnterNumber => 'Veuillez saisir un numéro valide';
+	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'La durée doit être comprise entre ${min} et ${max} ${unit}';
+	@override String shortcutAlreadyAssigned({required Object action}) => 'Raccourci déjà attribué à ${action}';
+	@override String shortcutUpdated({required Object action}) => 'Raccourci mis à jour pour ${action}';
+	@override String get autoSkip => 'Skip automatique';
+	@override String get autoSkipIntro => 'Skip automatique de l\'introduction';
+	@override String get autoSkipIntroDescription => 'Skipper automatiquement l\'introduction après quelques secondes';
+	@override String get autoSkipCredits => 'Skip automatique des crédits';
+	@override String get autoSkipCreditsDescription => 'Passer les crédits et passer à l\'épisode suivant automatiquement';
+	@override String get autoSkipDelay => 'Délai avant skip automatique';
+	@override String autoSkipDelayDescription({required Object seconds}) => 'Attendre ${seconds} secondes avant l\'auto-skip';
+	@override String get downloads => 'Téléchargement';
+	@override String get downloadLocationDescription => 'Choisissez où stocker le contenu téléchargé';
+	@override String get downloadLocationDefault => 'Par défaut (stockage de l\'application)';
+	@override String get downloadLocationCustom => 'Emplacement personnalisé';
+	@override String get selectFolder => 'Sélectionner un dossier';
+	@override String get resetToDefault => 'Réinitialiser les paramètres par défaut';
+	@override String currentPath({required Object path}) => 'Actuel: ${path}';
+	@override String get downloadLocationChanged => 'Emplacement de téléchargement modifié';
+	@override String get downloadLocationReset => 'Emplacement de téléchargement réinitialisé à la valeur par défaut';
+	@override String get downloadLocationInvalid => 'Le dossier sélectionné n\'est pas accessible en écriture';
+	@override String get downloadLocationSelectError => 'Échec de la sélection du dossier';
+	@override String get downloadOnWifiOnly => 'Télécharger uniquement via WiFi';
+	@override String get downloadOnWifiOnlyDescription => 'Empêcher les téléchargements lorsque vous utilisez les données cellulaires';
+	@override String get cellularDownloadBlocked => 'Les téléchargements sont désactivés sur les données cellulaires. Connectez-vous au Wi-Fi ou modifiez le paramètre.';
+	@override String get maxVolume => 'Volume maximal';
+	@override String get maxVolumeDescription => 'Autoriser l\'augmentation du volume au-delà de 100 % pour les médias silencieux';
+	@override String maxVolumePercent({required Object percent}) => '${percent}%';
+	@override String get maxVolumeHint => 'Entrez le volume maximal (100-300)';
+	@override String get discordRichPresence => 'Discord Rich Presence';
+	@override String get discordRichPresenceDescription => 'Montrez ce que vous regardez sur Discord';
+	@override String get matchContentFrameRate => 'Fréquence d\'images du contenu correspondant';
+	@override String get matchContentFrameRateDescription => 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie';
+}
+
+// Path: search
+class _StringsSearchFr implements _StringsSearchEn {
+	_StringsSearchFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get hint => 'Rechercher des films, des séries, de la musique...';
+	@override String get tryDifferentTerm => 'Essayez un autre terme de recherche';
+	@override String get searchYourMedia => 'Rechercher dans vos médias';
+	@override String get enterTitleActorOrKeyword => 'Entrez un titre, un acteur ou un mot-clé';
+}
+
+// Path: hotkeys
+class _StringsHotkeysFr implements _StringsHotkeysEn {
+	_StringsHotkeysFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String setShortcutFor({required Object actionName}) => 'Définir un raccourci pour ${actionName}';
+	@override String get clearShortcut => 'Effacer le raccourci';
+	@override late final _StringsHotkeysActionsFr actions = _StringsHotkeysActionsFr._(_root);
+}
+
+// Path: pinEntry
+class _StringsPinEntryFr implements _StringsPinEntryEn {
+	_StringsPinEntryFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get enterPin => 'Entrer le code PIN';
+	@override String get showPin => 'Afficher le code PIN';
+	@override String get hidePin => 'Masquer le code PIN';
+}
+
+// Path: fileInfo
+class _StringsFileInfoFr implements _StringsFileInfoEn {
+	_StringsFileInfoFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Informations sur le fichier';
+	@override String get video => 'Vidéo';
+	@override String get audio => 'Audio';
+	@override String get file => 'Fichier';
+	@override String get advanced => 'Avancé';
+	@override String get codec => 'Codec';
+	@override String get resolution => 'Résolution';
+	@override String get bitrate => 'Bitrate';
+	@override String get frameRate => 'Fréquence d\'images';
+	@override String get aspectRatio => 'Format d\'image';
+	@override String get profile => 'Profil';
+	@override String get bitDepth => 'Profondeur de bits';
+	@override String get colorSpace => 'Espace colorimétrique';
+	@override String get colorRange => 'Gamme de couleurs';
+	@override String get colorPrimaries => 'Couleurs primaires';
+	@override String get chromaSubsampling => 'Sous-échantillonnage chromatique';
+	@override String get channels => 'Channels';
+	@override String get path => 'Chemin';
+	@override String get size => 'Taille';
+	@override String get container => 'Conteneur';
+	@override String get duration => 'Durée';
+	@override String get optimizedForStreaming => 'Optimisé pour le streaming';
+	@override String get has64bitOffsets => 'Décalages 64 bits';
+}
+
+// Path: mediaMenu
+class _StringsMediaMenuFr implements _StringsMediaMenuEn {
+	_StringsMediaMenuFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get markAsWatched => 'Marquer comme vu';
+	@override String get markAsUnwatched => 'Marquer comme non visionné';
+	@override String get removeFromContinueWatching => 'Supprimer de la liste "Continuer à regarder"';
+	@override String get goToSeries => 'Aller à la série';
+	@override String get goToSeason => 'Aller à la saison';
+	@override String get shufflePlay => 'Lecture aléatoire';
+	@override String get fileInfo => 'Informations sur le fichier';
+}
+
+// Path: accessibility
+class _StringsAccessibilityFr implements _StringsAccessibilityEn {
+	_StringsAccessibilityFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String mediaCardMovie({required Object title}) => '${title}, film';
+	@override String mediaCardShow({required Object title}) => '${title}, show TV';
+	@override String mediaCardEpisode({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+	@override String get mediaCardWatched => 'visionné';
+	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} pourcentage visionné';
+	@override String get mediaCardUnwatched => 'non visionné';
+	@override String get tapToPlay => 'Appuyez pour lire';
+}
+
+// Path: tooltips
+class _StringsTooltipsFr implements _StringsTooltipsEn {
+	_StringsTooltipsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get shufflePlay => 'Lecture aléatoire';
+	@override String get markAsWatched => 'Marqué comme vu';
+	@override String get markAsUnwatched => 'Marqué comme non vu';
+}
+
+// Path: videoControls
+class _StringsVideoControlsFr implements _StringsVideoControlsEn {
+	_StringsVideoControlsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get audioLabel => 'Audio';
+	@override String get subtitlesLabel => 'Sous-titres';
+	@override String get resetToZero => 'Réinitialiser à 0ms';
+	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
+	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
+	@override String playsLater({required Object label}) => '${label} lire plus tard';
+	@override String playsEarlier({required Object label}) => '${label} lire plus tôt';
+	@override String get noOffset => 'Pas de décalage';
+	@override String get letterbox => 'Boîte aux lettres';
+	@override String get fillScreen => 'Remplir l\'écran';
+	@override String get stretch => 'Etirer';
+	@override String get lockRotation => 'Verrouillage de la rotation';
+	@override String get unlockRotation => 'Déverrouiller la rotation';
+	@override String get sleepTimer => 'Minuterie de mise en veille';
+	@override String get timerActive => 'Minuterie active';
+	@override String playbackWillPauseIn({required Object duration}) => 'La lecture sera mise en pause dans ${duration}';
+	@override String get sleepTimerCompleted => 'Minuterie de mise en veille terminée - lecture en pause';
+	@override String get autoPlayNext => 'Lecture automatique suivante';
+	@override String get playNext => 'Lire l\'épisode suivant';
+	@override String get playButton => 'Lire';
+	@override String get pauseButton => 'Pause';
+	@override String seekBackwardButton({required Object seconds}) => 'Reculer de ${seconds} secondes';
+	@override String seekForwardButton({required Object seconds}) => 'Avancer de ${seconds} secondes';
+	@override String get previousButton => 'Épisode précédent';
+	@override String get nextButton => 'Épisode suivant';
+	@override String get previousChapterButton => 'Chapitre précédent';
+	@override String get nextChapterButton => 'Chapitre suivant';
+	@override String get muteButton => 'Mute';
+	@override String get unmuteButton => 'Dé-mute';
+	@override String get settingsButton => 'Paramètres vidéo';
+	@override String get audioTrackButton => 'Pistes audio';
+	@override String get subtitlesButton => 'Sous-titres';
+	@override String get chaptersButton => 'Chapitres';
+	@override String get versionsButton => 'Versions vidéo';
+	@override String get pipButton => 'Mode PiP (Picture-in-Picture)';
+	@override String get aspectRatioButton => 'Format d\'image';
+	@override String get fullscreenButton => 'Passer en mode plein écran';
+	@override String get exitFullscreenButton => 'Quitter le mode plein écran';
+	@override String get alwaysOnTopButton => 'Always on top';
+	@override String get rotationLockButton => 'Verrouillage de rotation';
+	@override String get timelineSlider => 'Timeline vidéo';
+	@override String get volumeSlider => 'Niveau sonore';
+	@override String get backButton => 'Retour';
+}
+
+// Path: userStatus
+class _StringsUserStatusFr implements _StringsUserStatusEn {
+	_StringsUserStatusFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get admin => 'Admin';
+	@override String get restricted => 'Restreint';
+	@override String get protected => 'Protégé';
+	@override String get current => 'ACTUEL';
+}
+
+// Path: messages
+class _StringsMessagesFr implements _StringsMessagesEn {
+	_StringsMessagesFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get markedAsWatched => 'Marqué comme vu';
+	@override String get markedAsUnwatched => 'Marqué comme non vu';
+	@override String get markedAsWatchedOffline => 'Marqué comme vu (se synchronisera lorsque vous serez en ligne)';
+	@override String get markedAsUnwatchedOffline => 'Marqué comme non vu (sera synchronisé lorsque vous serez en ligne)';
+	@override String get removedFromContinueWatching => 'Supprimer de "Continuer à regarder"';
+	@override String errorLoading({required Object error}) => 'Erreur: ${error}';
+	@override String get fileInfoNotAvailable => 'Informations sur le fichier non disponibles';
+	@override String errorLoadingFileInfo({required Object error}) => 'Erreur lors du chargement des informations sur le fichier: ${error}';
+	@override String get errorLoadingSeries => 'Erreur lors du chargement de la série';
+	@override String get errorLoadingSeason => 'Erreur lors du chargement de la saison';
+	@override String get musicNotSupported => 'La lecture de musique n\'est pas encore prise en charge';
+	@override String get logsCleared => 'Logs effacés';
+	@override String get logsCopied => 'Logs copiés dans le presse-papier';
+	@override String get noLogsAvailable => 'Aucun log disponible';
+	@override String libraryScanning({required Object title}) => 'Scan de "${title}"...';
+	@override String libraryScanStarted({required Object title}) => 'Scan de la bibliothèque démarrée pour "${title}"';
+	@override String libraryScanFailed({required Object error}) => 'Échec du scan de la bibliothèque: ${error}';
+	@override String metadataRefreshing({required Object title}) => 'Actualisation des métadonnées pour "${title}"...';
+	@override String metadataRefreshStarted({required Object title}) => 'Actualisation des métadonnées lancée pour "${title}"';
+	@override String metadataRefreshFailed({required Object error}) => 'Échec de l\'actualisation des métadonnées: ${error}';
+	@override String get logoutConfirm => 'Êtes-vous sûr de vouloir vous déconnecter ?';
+	@override String get noSeasonsFound => 'Aucune saison trouvée';
+	@override String get noEpisodesFound => 'Aucun épisode trouvé dans la première saison';
+	@override String get noEpisodesFoundGeneral => 'Aucun épisode trouvé';
+	@override String get noResultsFound => 'Aucun résultat trouvé';
+	@override String sleepTimerSet({required Object label}) => 'Minuterie de mise en veille réglée sur ${label}';
+	@override String get noItemsAvailable => 'Aucun élément disponible';
+	@override String get failedToCreatePlayQueue => 'Échec de la création de la file d\'attente de lecture';
+	@override String get failedToCreatePlayQueueNoItems => 'Échec de la création de la file d\'attente de lecture - aucun élément';
+	@override String failedPlayback({required Object action, required Object error}) => 'Echec de ${action}: ${error}';
+}
+
+// Path: subtitlingStyling
+class _StringsSubtitlingStylingFr implements _StringsSubtitlingStylingEn {
+	_StringsSubtitlingStylingFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get stylingOptions => 'Options de style';
+	@override String get fontSize => 'Taille de la police';
+	@override String get textColor => 'Couleur du texte';
+	@override String get borderSize => 'Taille de la bordure';
+	@override String get borderColor => 'Couleur de la bordure';
+	@override String get backgroundOpacity => 'Opacité d\'arrière-plan';
+	@override String get backgroundColor => 'Couleur d\'arrière-plan';
+}
+
+// Path: mpvConfig
+class _StringsMpvConfigFr implements _StringsMpvConfigEn {
+	_StringsMpvConfigFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Configuration MPV';
+	@override String get description => 'Paramètres avancés du lecteur vidéo';
+	@override String get properties => 'Propriétés';
+	@override String get presets => 'Préréglages';
+	@override String get noProperties => 'Aucune propriété configurée';
+	@override String get noPresets => 'Aucun préréglage enregistré';
+	@override String get addProperty => 'Ajouter une propriété';
+	@override String get editProperty => 'Modifier la propriété';
+	@override String get deleteProperty => 'Supprimer la propriété';
+	@override String get propertyKey => 'Clé';
+	@override String get propertyKeyHint => 'e.g., hwdec, demuxer-max-bytes';
+	@override String get propertyValue => 'Valeur';
+	@override String get propertyValueHint => 'e.g., auto, 256000000';
+	@override String get saveAsPreset => 'Enregistrer comme préréglage...';
+	@override String get presetName => 'Nom du préréglage';
+	@override String get presetNameHint => 'Entrez un nom pour ce préréglage';
+	@override String get loadPreset => 'Charger';
+	@override String get deletePreset => 'Supprimer';
+	@override String get presetSaved => 'Préréglage enregistré';
+	@override String get presetLoaded => 'Préréglage chargé';
+	@override String get presetDeleted => 'Préréglage supprimé';
+	@override String get confirmDeletePreset => 'Êtes-vous sûr de vouloir supprimer ce préréglage ?';
+	@override String get confirmDeleteProperty => 'Êtes-vous sûr de vouloir supprimer cette propriété ?';
+	@override String entriesCount({required Object count}) => '${count} entrées';
+}
+
+// Path: dialog
+class _StringsDialogFr implements _StringsDialogEn {
+	_StringsDialogFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get confirmAction => 'Confirmer l\'action';
+	@override String get cancel => 'Annuler';
+	@override String get playNow => 'Lire maintenant';
+}
+
+// Path: discover
+class _StringsDiscoverFr implements _StringsDiscoverEn {
+	_StringsDiscoverFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Découvrez';
+	@override String get switchProfile => 'Changer de profil';
+	@override String get logout => 'Déconnexion';
+	@override String get noContentAvailable => 'Aucun contenu disponible';
+	@override String get addMediaToLibraries => 'Ajoutez des médias à votre bibliothèque';
+	@override String get continueWatching => 'Continuer à regarder';
+	@override String get play => 'Lire';
+	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
+	@override String get pause => 'Pause';
+	@override String get overview => 'Aperçu';
+	@override String get cast => 'Cast';
+	@override String get seasons => 'Saisons';
+	@override String get studio => 'Studio';
+	@override String get rating => 'Évaluation';
+	@override String get watched => 'Vu';
+	@override String episodeCount({required Object count}) => '${count} épisodes';
+	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} vu';
+	@override String get movie => 'Film';
+	@override String get tvShow => 'Show TV';
+	@override String minutesLeft({required Object minutes}) => '${minutes} min restantes';
+}
+
+// Path: errors
+class _StringsErrorsFr implements _StringsErrorsEn {
+	_StringsErrorsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String searchFailed({required Object error}) => 'Recherche échouée: ${error}';
+	@override String connectionTimeout({required Object context}) => 'Délai d\'attente de connexion dépassé pendant le chargement ${context}';
+	@override String get connectionFailed => 'Impossible de se connecter au serveur Plex';
+	@override String failedToLoad({required Object context, required Object error}) => 'Échec du chargement ${context}: ${error}';
+	@override String get noClientAvailable => 'Aucun client disponible';
+	@override String authenticationFailed({required Object error}) => 'Échec de l\'authentification: ${error}';
+	@override String get couldNotLaunchUrl => 'Impossible de lancer l\'URL d\'authentification';
+	@override String get pleaseEnterToken => 'Veuillez saisir un token';
+	@override String get invalidToken => 'Token invalide';
+	@override String failedToVerifyToken({required Object error}) => 'Échec de la vérification du token: ${error}';
+	@override String failedToSwitchProfile({required Object displayName}) => 'Impossible de changer de profil vers ${displayName}';
+}
+
+// Path: libraries
+class _StringsLibrariesFr implements _StringsLibrariesEn {
+	_StringsLibrariesFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bibliothèques';
+	@override String get scanLibraryFiles => 'Scanner les fichiers de la bibliothèque';
+	@override String get scanLibrary => 'Scanner la bibliothèque';
+	@override String get analyze => 'Analyser';
+	@override String get analyzeLibrary => 'Analyser la bibliothèque';
+	@override String get refreshMetadata => 'Actualiser les métadonnées';
+	@override String get emptyTrash => 'Vider la corbeille';
+	@override String emptyingTrash({required Object title}) => 'Vider les poubelles pour "${title}"...';
+	@override String trashEmptied({required Object title}) => 'Poubelles vidées pour "${title}"';
+	@override String failedToEmptyTrash({required Object error}) => 'Échec de la suppression des éléments supprimés: ${error}';
+	@override String analyzing({required Object title}) => 'Analyse de "${title}"...';
+	@override String analysisStarted({required Object title}) => 'L\'analyse a commencé pour "${title}"';
+	@override String failedToAnalyze({required Object error}) => 'Échec de l\'analyse de la bibliothèque: ${error}';
+	@override String get noLibrariesFound => 'Aucune bibliothèque trouvée';
+	@override String get thisLibraryIsEmpty => 'Cette bibliothèque est vide';
+	@override String get all => 'Tout';
+	@override String get clearAll => 'Tout effacer';
+	@override String scanLibraryConfirm({required Object title}) => 'Êtes-vous sûr de vouloir lancer le scan de "${title}"?';
+	@override String analyzeLibraryConfirm({required Object title}) => 'Êtes-vous sûr de vouloir analyser "${title}"?';
+	@override String refreshMetadataConfirm({required Object title}) => 'Êtes-vous sûr de vouloir actualiser les métadonnées pour "${title}"?';
+	@override String emptyTrashConfirm({required Object title}) => 'Êtes-vous sûr de vouloir vider la corbeille pour "${title}"?';
+	@override String get manageLibraries => 'Gérer les bibliothèques';
+	@override String get sort => 'Trier';
+	@override String get sortBy => 'Trier par';
+	@override String get filters => 'Filtres';
+	@override String get confirmActionMessage => 'Êtes-vous sûr de vouloir effectuer cette action ?';
+	@override String get showLibrary => 'Afficher la bibliothèque';
+	@override String get hideLibrary => 'Masquer la bibliothèque';
+	@override String get libraryOptions => 'Options de bibliothèque';
+	@override String get content => 'contenu de la bibliothèque';
+	@override String get selectLibrary => 'Sélectionner la bibliothèque';
+	@override String filtersWithCount({required Object count}) => 'Filtres (${count})';
+	@override String get noRecommendations => 'Aucune recommandation disponible';
+	@override String get noCollections => 'Aucune collection dans cette bibliothèque';
+	@override String get noFoldersFound => 'Aucun dossier trouvé';
+	@override String get folders => 'dossiers';
+	@override late final _StringsLibrariesTabsFr tabs = _StringsLibrariesTabsFr._(_root);
+	@override late final _StringsLibrariesGroupingsFr groupings = _StringsLibrariesGroupingsFr._(_root);
+}
+
+// Path: about
+class _StringsAboutFr implements _StringsAboutEn {
+	_StringsAboutFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'À propos';
+	@override String get openSourceLicenses => 'Licences Open Source';
+	@override String versionLabel({required Object version}) => 'Version ${version}';
+	@override String get appDescription => 'Un magnifique client Plex pour Flutter';
+	@override String get viewLicensesDescription => 'Afficher les licences des bibliothèques tierces';
+}
+
+// Path: serverSelection
+class _StringsServerSelectionFr implements _StringsServerSelectionEn {
+	_StringsServerSelectionFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get allServerConnectionsFailed => 'Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.';
+	@override String get noServersFound => 'Aucun serveur trouvé';
+	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})';
+	@override String failedToLoadServers({required Object error}) => 'Échec du chargement des serveurs: ${error}';
+}
+
+// Path: hubDetail
+class _StringsHubDetailFr implements _StringsHubDetailEn {
+	_StringsHubDetailFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Titre';
+	@override String get releaseYear => 'Année de sortie';
+	@override String get dateAdded => 'Date d\'ajout';
+	@override String get rating => 'Évaluation';
+	@override String get noItemsFound => 'Aucun élément trouvé';
+}
+
+// Path: logs
+class _StringsLogsFr implements _StringsLogsEn {
+	_StringsLogsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get clearLogs => 'Effacer les logs';
+	@override String get copyLogs => 'Copier les logs';
+	@override String get error => 'Erreur:';
+	@override String get stackTrace => 'Liste des appels:';
+}
+
+// Path: licenses
+class _StringsLicensesFr implements _StringsLicensesEn {
+	_StringsLicensesFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get relatedPackages => 'Package associés';
+	@override String get license => 'Licence';
+	@override String licenseNumber({required Object number}) => 'Licence ${number}';
+	@override String licensesCount({required Object count}) => '${count} licences';
+}
+
+// Path: navigation
+class _StringsNavigationFr implements _StringsNavigationEn {
+	_StringsNavigationFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get home => 'Accueil';
+	@override String get search => 'Rechercher';
+	@override String get libraries => 'Bibliothèques';
+	@override String get settings => 'Paramètres';
+	@override String get downloads => 'Téléchargements';
+}
+
+// Path: collections
+class _StringsCollectionsFr implements _StringsCollectionsEn {
+	_StringsCollectionsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Collections';
+	@override String get collection => 'Collection';
+	@override String get empty => 'La collection est vide';
+	@override String get unknownLibrarySection => 'Impossible de supprimer : section de bibliothèque inconnue';
+	@override String get deleteCollection => 'Supprimer la collection';
+	@override String deleteConfirm({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cette action ne peut pas être annulée.';
+	@override String get deleted => 'Collection supprimée';
+	@override String get deleteFailed => 'Échec de la suppression de la collection';
+	@override String deleteFailedWithError({required Object error}) => 'Échec de la suppression de la collection: ${error}';
+	@override String failedToLoadItems({required Object error}) => 'Échec du chargement des éléments de la collection: ${error}';
+	@override String get selectCollection => 'Sélectionner une collection';
+	@override String get createNewCollection => 'Créer une nouvelle collection';
+	@override String get collectionName => 'Nom de la collection';
+	@override String get enterCollectionName => 'Entrez le nom de la collection';
+	@override String get addedToCollection => 'Ajouté à la collection';
+	@override String get errorAddingToCollection => 'Échec de l\'ajout à la collection';
+	@override String get created => 'Collection créée';
+	@override String get removeFromCollection => 'Supprimer de la collection';
+	@override String removeFromCollectionConfirm({required Object title}) => 'Retirer "${title}" de cette collection ?';
+	@override String get removedFromCollection => 'Retiré de la collection';
+	@override String get removeFromCollectionFailed => 'Impossible de supprimer de la collection';
+	@override String removeFromCollectionError({required Object error}) => 'Erreur lors de la suppression de la collection: ${error}';
+}
+
+// Path: playlists
+class _StringsPlaylistsFr implements _StringsPlaylistsEn {
+	_StringsPlaylistsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Playlists';
+	@override String get playlist => 'Playlist';
+	@override String get noPlaylists => 'Aucune playlist trouvée';
+	@override String get create => 'Créer une playlist';
+	@override String get playlistName => 'Nom de playlist';
+	@override String get enterPlaylistName => 'Entrer le nom de playlist';
+	@override String get delete => 'Supprimer la playlist';
+	@override String get removeItem => 'Retirer de la playlist';
+	@override String get smartPlaylist => 'Smart playlist';
+	@override String itemCount({required Object count}) => '${count} éléments';
+	@override String get oneItem => '1 élément';
+	@override String get emptyPlaylist => 'Cette playlist est vide';
+	@override String get deleteConfirm => 'Supprimer la playlist ?';
+	@override String deleteMessage({required Object name}) => 'Êtes-vous sûr de vouloir supprimer "${name}"?';
+	@override String get created => 'Playlist créée';
+	@override String get deleted => 'Playlist supprimée';
+	@override String get itemAdded => 'Ajouté à la playlist';
+	@override String get itemRemoved => 'Retiré de la playlist';
+	@override String get selectPlaylist => 'Select Playlist';
+	@override String get createNewPlaylist => 'Créer une nouvelle playlist';
+	@override String get errorCreating => 'Échec de la création de playlist';
+	@override String get errorDeleting => 'Échec de suppression de playlist';
+	@override String get errorLoading => 'Échec de chargement de playlists';
+	@override String get errorAdding => 'Échec d\'ajout dans la playlist';
+	@override String get errorReordering => 'Échec de réordonnacement d\'élément de playlist';
+	@override String get errorRemoving => 'Échec de suppression depuis la playlist';
+}
+
+// Path: watchTogether
+class _StringsWatchTogetherFr implements _StringsWatchTogetherEn {
+	_StringsWatchTogetherFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Regarder ensemble';
+	@override String get description => 'Regardez du contenu en synchronisation avec vos amis et votre famille';
+	@override String get createSession => 'Créer une session';
+	@override String get creating => 'Création...';
+	@override String get joinSession => 'Rejoindre la session';
+	@override String get joining => 'Rejoindre...';
+	@override String get controlMode => 'Mode de contrôle';
+	@override String get controlModeQuestion => 'Qui peut contrôler la lecture ?';
+	@override String get hostOnly => 'Hôte uniquement';
+	@override String get anyone => 'N\'importe qui';
+	@override String get hostingSession => 'Session d\'hébergement';
+	@override String get inSession => 'En session';
+	@override String get sessionCode => 'Code de session';
+	@override String get hostControlsPlayback => 'L\'hôte contrôle la lecture';
+	@override String get anyoneCanControl => 'Tout le monde peut contrôler la lecture';
+	@override String get hostControls => 'Commandes de l\'hôte';
+	@override String get anyoneControls => 'Tout le monde contrôle';
+	@override String get participants => 'Participants';
+	@override String get host => 'Hôte';
+	@override String get hostBadge => 'HOST';
+	@override String get youAreHost => 'Vous êtes l\'hôte';
+	@override String get watchingWithOthers => 'Regarder avec d\'autres personnes';
+	@override String get endSession => 'Fin de session';
+	@override String get leaveSession => 'Quitter la session';
+	@override String get endSessionQuestion => 'Terminer la session ?';
+	@override String get leaveSessionQuestion => 'Quitter la session ?';
+	@override String get endSessionConfirm => 'Cela mettra fin à la session pour tous les participants.';
+	@override String get leaveSessionConfirm => 'Vous allez être déconnecté de la session.';
+	@override String get endSessionConfirmOverlay => 'Cela mettra fin à la session de visionnage pour tous les participants.';
+	@override String get leaveSessionConfirmOverlay => 'Vous serez déconnecté de la session de visionnage.';
+	@override String get end => 'Terminer';
+	@override String get leave => 'Fin';
+	@override String get syncing => 'Synchronisation...';
+	@override String get participant => 'participant';
+	@override String get joinWatchSession => 'Rejoindre la session de visionnage';
+	@override String get enterCodeHint => 'Entrez le code à 8 caractères';
+	@override String get pasteFromClipboard => 'Coller depuis le presse-papiers';
+	@override String get pleaseEnterCode => 'Veuillez saisir un code de session';
+	@override String get codeMustBe8Chars => 'Le code de session doit comporter 8 caractères';
+	@override String get joinInstructions => 'Entrez le code de session partagé par l\'hôte pour rejoindre sa session de visionnage.';
+	@override String get failedToCreate => 'Échec de la création de la session';
+	@override String get failedToJoin => 'Échec de la connexion à la session';
+	@override String get sessionCodeCopied => 'Code de session copié dans le presse-papiers';
+}
+
+// Path: downloads
+class _StringsDownloadsFr implements _StringsDownloadsEn {
+	_StringsDownloadsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Téléchargements';
+	@override String get manage => 'Gérer';
+	@override String get tvShows => 'Show TV';
+	@override String get movies => 'Films';
+	@override String get noDownloads => 'Aucun téléchargement pour le moment';
+	@override String get noDownloadsDescription => 'Le contenu téléchargé apparaîtra ici pour être consulté hors ligne.';
+	@override String get downloadNow => 'Télécharger';
+	@override String get deleteDownload => 'Supprimer le téléchargement';
+	@override String get retryDownload => 'Réessayer le téléchargement';
+	@override String get downloadQueued => 'Téléchargement en attente';
+	@override String episodesQueued({required Object count}) => '${count} épisodes en attente de téléchargement';
+	@override String get downloadDeleted => 'Télécharger supprimé';
+	@override String deleteConfirm({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.';
+	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Suppression de ${title}... (${current} sur ${total})';
+}
+
+// Path: hotkeys.actions
+class _StringsHotkeysActionsFr implements _StringsHotkeysActionsEn {
+	_StringsHotkeysActionsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get playPause => 'Lecture/Pause';
+	@override String get volumeUp => 'Augmenter le volume';
+	@override String get volumeDown => 'Baisser le volume';
+	@override String seekForward({required Object seconds}) => 'Avancer (${seconds}s)';
+	@override String seekBackward({required Object seconds}) => 'Reculer (${seconds}s)';
+	@override String get fullscreenToggle => 'Basculer en mode plein écran';
+	@override String get muteToggle => 'Activer/désactiver le mode silencieux';
+	@override String get subtitleToggle => 'Activer/désactiver les sous-titres';
+	@override String get audioTrackNext => 'Piste audio suivante';
+	@override String get subtitleTrackNext => 'Piste de sous-titres suivante';
+	@override String get chapterNext => 'Chapitre suivant';
+	@override String get chapterPrevious => 'Chapitre précédent';
+	@override String get speedIncrease => 'Augmenter la vitesse';
+	@override String get speedDecrease => 'Réduire la vitesse';
+	@override String get speedReset => 'Réinitialiser la vitesse';
+	@override String get subSeekNext => 'Rechercher le sous-titre suivant';
+	@override String get subSeekPrev => 'Rechercher le sous-titre précédent';
+}
+
+// Path: libraries.tabs
+class _StringsLibrariesTabsFr implements _StringsLibrariesTabsEn {
+	_StringsLibrariesTabsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get recommended => 'Recommandé';
+	@override String get browse => 'Parcourir';
+	@override String get collections => 'Collections';
+	@override String get playlists => 'Playlists';
+}
+
+// Path: libraries.groupings
+class _StringsLibrariesGroupingsFr implements _StringsLibrariesGroupingsEn {
+	_StringsLibrariesGroupingsFr._(this._root);
+
+	@override final _StringsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get all => 'Tous';
+	@override String get movies => 'Films';
+	@override String get shows => 'Show TV';
+	@override String get seasons => 'Saisons';
+	@override String get episodes => 'Épisodes';
+	@override String get folders => 'Dossiers';
 }
 
 // Path: <root>
@@ -7622,6 +8536,551 @@ extension on _StringsDe {
 			case 'watchTogether.failedToCreate': return 'Sitzung konnte nicht erstellt werden';
 			case 'watchTogether.failedToJoin': return 'Sitzung konnte nicht beigetreten werden';
 			case 'watchTogether.sessionCodeCopied': return 'Sitzungscode in Zwischenablage kopiert';
+			default: return null;
+		}
+	}
+}
+
+extension on _StringsFr {
+	dynamic _flatMapFunction(String path) {
+		switch (path) {
+			case 'app.title': return 'Plezy';
+			case 'app.loading': return 'Chargement...';
+			case 'auth.signInWithPlex': return 'S\'inscrire avec Plex';
+			case 'auth.showQRCode': return 'Afficher le QR Code';
+			case 'auth.cancel': return 'Annuler';
+			case 'auth.authenticate': return 'S\'authentifier';
+			case 'auth.retry': return 'Réessayer';
+			case 'auth.debugEnterToken': return 'Debug: Entrez votre token Plex';
+			case 'auth.plexTokenLabel': return 'Token d\'authentification Plex';
+			case 'auth.plexTokenHint': return 'Entrez votre token Plex.tv';
+			case 'auth.authenticationTimeout': return 'Délai d\'authentification expiré. Veuillez réessayer.';
+			case 'auth.scanQRCodeInstruction': return 'Scannez ce code QR avec un appareil connecté à Plex pour vous authentifier.';
+			case 'auth.waitingForAuth': return 'En attente d\'authentification...\nVeuillez vous connecter dans votre navigateur.';
+			case 'common.cancel': return 'Annuler';
+			case 'common.save': return 'Sauvegarder';
+			case 'common.close': return 'Fermer';
+			case 'common.clear': return 'Nettoyer';
+			case 'common.reset': return 'Réinitialiser';
+			case 'common.later': return 'Plus tard';
+			case 'common.submit': return 'Soumettre';
+			case 'common.confirm': return 'Confirmer';
+			case 'common.retry': return 'Réessayer';
+			case 'common.logout': return 'Se déconnecter';
+			case 'common.unknown': return 'Inconnu';
+			case 'common.refresh': return 'Rafraichir';
+			case 'common.yes': return 'Oui';
+			case 'common.no': return 'Non';
+			case 'common.delete': return 'Supprimer';
+			case 'common.shuffle': return 'Mélanger';
+			case 'common.addTo': return 'Ajouter à...';
+			case 'screens.licenses': return 'Licenses';
+			case 'screens.switchProfile': return 'Changer de profil';
+			case 'screens.subtitleStyling': return 'Configuration des sous-titres';
+			case 'screens.mpvConfig': return 'Configuration MPV';
+			case 'screens.search': return 'Recherche';
+			case 'screens.logs': return 'Logs';
+			case 'update.available': return 'Mise à jour disponible';
+			case 'update.versionAvailable': return ({required Object version}) => 'Version ${version} disponible';
+			case 'update.currentVersion': return ({required Object version}) => 'Installé: ${version}';
+			case 'update.skipVersion': return 'Ignorer cette version';
+			case 'update.viewRelease': return 'Voir la Release';
+			case 'update.latestVersion': return 'Vous utilisez la dernière version';
+			case 'update.checkFailed': return 'Échec de la vérification des mises à jour';
+			case 'settings.title': return 'Paramètres';
+			case 'settings.language': return 'Langue';
+			case 'settings.theme': return 'Thème';
+			case 'settings.appearance': return 'Apparence';
+			case 'settings.videoPlayback': return 'Lecture vidéo';
+			case 'settings.advanced': return 'Avancé';
+			case 'settings.episodePosterMode': return 'Style du Poster d\'épisode';
+			case 'settings.seriesPoster': return 'Poster de série';
+			case 'settings.seriesPosterDescription': return 'Afficher le poster de série pour tous les épisodes';
+			case 'settings.seasonPoster': return 'Poster de saison';
+			case 'settings.seasonPosterDescription': return 'Afficher le poster spécifique à la saison pour les épisodes';
+			case 'settings.episodeThumbnail': return 'Mignature d\'épisode';
+			case 'settings.episodeThumbnailDescription': return 'Afficher les vignettes des captures d\'écran des épisodes au format 16:9';
+			case 'settings.showHeroSectionDescription': return 'Afficher le carrousel de contenu en vedette sur l\'écran d\'accueil';
+			case 'settings.secondsLabel': return 'Secondes';
+			case 'settings.minutesLabel': return 'Minutes';
+			case 'settings.secondsShort': return 's';
+			case 'settings.minutesShort': return 'm';
+			case 'settings.durationHint': return ({required Object min, required Object max}) => 'Entrez la durée (${min}-${max})';
+			case 'settings.systemTheme': return 'Système';
+			case 'settings.systemThemeDescription': return 'Suivre les paramètres système';
+			case 'settings.lightTheme': return 'Light';
+			case 'settings.darkTheme': return 'Dark';
+			case 'settings.libraryDensity': return 'Densité des bibliothèques';
+			case 'settings.compact': return 'Compact';
+			case 'settings.compactDescription': return 'Cartes plus petites, plus d\'éléments visibles';
+			case 'settings.normal': return 'Normal';
+			case 'settings.normalDescription': return 'Taille par défaut';
+			case 'settings.comfortable': return 'Confortable';
+			case 'settings.comfortableDescription': return 'Cartes plus grandes, moins d\'éléments visibles';
+			case 'settings.viewMode': return 'Mode d\'affichage';
+			case 'settings.gridView': return 'Grille';
+			case 'settings.gridViewDescription': return 'Afficher les éléments dans une disposition en grille';
+			case 'settings.listView': return 'Liste';
+			case 'settings.listViewDescription': return 'Afficher les éléments dans une liste';
+			case 'settings.showHeroSection': return 'Afficher la section Hero';
+			case 'settings.useGlobalHubs': return 'Utiliser la disposition Plex Home';
+			case 'settings.useGlobalHubsDescription': return 'Afficher les hubs de la page d\'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.';
+			case 'settings.showServerNameOnHubs': return 'Afficher le nom du serveur sur les hubs';
+			case 'settings.showServerNameOnHubsDescription': return 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.';
+			case 'settings.hardwareDecoding': return 'Décodage matériel';
+			case 'settings.hardwareDecodingDescription': return 'Utilisez l\'accélération matérielle lorsqu\'elle est disponible.';
+			case 'settings.bufferSize': return 'Taille du Buffer';
+			case 'settings.bufferSizeMB': return ({required Object size}) => '${size}MB';
+			case 'settings.subtitleStyling': return 'Stylisation des sous-titres';
+			case 'settings.subtitleStylingDescription': return 'Personnaliser l\'apparence des sous-titres';
+			case 'settings.smallSkipDuration': return 'Small Skip Duration';
+			case 'settings.largeSkipDuration': return 'Large Skip Duration';
+			case 'settings.secondsUnit': return ({required Object seconds}) => '${seconds} secondes';
+			case 'settings.defaultSleepTimer': return 'Minuterie de mise en veille par défaut';
+			case 'settings.minutesUnit': return ({required Object minutes}) => '${minutes} minutes';
+			case 'settings.rememberTrackSelections': return 'Mémoriser les sélections de pistes par émission/film';
+			case 'settings.rememberTrackSelectionsDescription': return 'Enregistrer automatiquement les préférences linguistiques pour l\'audio et les sous-titres lorsque vous changez de piste pendant la lecture';
+			case 'settings.videoPlayerControls': return 'Commandes du lecteur vidéo';
+			case 'settings.keyboardShortcuts': return 'Raccourcis clavier';
+			case 'settings.keyboardShortcutsDescription': return 'Personnaliser les raccourcis clavier';
+			case 'settings.videoPlayerNavigation': return 'Navigation dans le lecteur vidéo';
+			case 'settings.videoPlayerNavigationDescription': return 'Utilisez les touches fléchées pour naviguer dans les commandes du lecteur vidéo.';
+			case 'settings.debugLogging': return 'Journalisation de débogage';
+			case 'settings.debugLoggingDescription': return 'Activer la journalisation détaillée pour le dépannage';
+			case 'settings.viewLogs': return 'Voir les logs';
+			case 'settings.viewLogsDescription': return 'Voir les logs d\'application';
+			case 'settings.clearCache': return 'Vider le cache';
+			case 'settings.clearCacheDescription': return 'Cela effacera toutes les images et données mises en cache. Le chargement du contenu de l\'application peut prendre plus de temps après avoir effacé le cache.';
+			case 'settings.clearCacheSuccess': return 'Cache effacé avec succès';
+			case 'settings.resetSettings': return 'Réinitialiser les paramètres';
+			case 'settings.resetSettingsDescription': return 'Cela réinitialisera tous les paramètres à leurs valeurs par défaut. Cette action ne peut pas être annulée.';
+			case 'settings.resetSettingsSuccess': return 'Réinitialisation des paramètres réussie';
+			case 'settings.shortcutsReset': return 'Raccourcis réinitialisés aux valeurs par défaut';
+			case 'settings.about': return 'À propos';
+			case 'settings.aboutDescription': return 'Informations sur l\'application et licences';
+			case 'settings.updates': return 'Mises à jour';
+			case 'settings.updateAvailable': return 'Mise à jour disponible';
+			case 'settings.checkForUpdates': return 'Vérifier les mises à jour';
+			case 'settings.validationErrorEnterNumber': return 'Veuillez saisir un numéro valide';
+			case 'settings.validationErrorDuration': return ({required Object min, required Object max, required Object unit}) => 'La durée doit être comprise entre ${min} et ${max} ${unit}';
+			case 'settings.shortcutAlreadyAssigned': return ({required Object action}) => 'Raccourci déjà attribué à ${action}';
+			case 'settings.shortcutUpdated': return ({required Object action}) => 'Raccourci mis à jour pour ${action}';
+			case 'settings.autoSkip': return 'Skip automatique';
+			case 'settings.autoSkipIntro': return 'Skip automatique de l\'introduction';
+			case 'settings.autoSkipIntroDescription': return 'Skipper automatiquement l\'introduction après quelques secondes';
+			case 'settings.autoSkipCredits': return 'Skip automatique des crédits';
+			case 'settings.autoSkipCreditsDescription': return 'Passer les crédits et passer à l\'épisode suivant automatiquement';
+			case 'settings.autoSkipDelay': return 'Délai avant skip automatique';
+			case 'settings.autoSkipDelayDescription': return ({required Object seconds}) => 'Attendre ${seconds} secondes avant l\'auto-skip';
+			case 'settings.downloads': return 'Téléchargement';
+			case 'settings.downloadLocationDescription': return 'Choisissez où stocker le contenu téléchargé';
+			case 'settings.downloadLocationDefault': return 'Par défaut (stockage de l\'application)';
+			case 'settings.downloadLocationCustom': return 'Emplacement personnalisé';
+			case 'settings.selectFolder': return 'Sélectionner un dossier';
+			case 'settings.resetToDefault': return 'Réinitialiser les paramètres par défaut';
+			case 'settings.currentPath': return ({required Object path}) => 'Actuel: ${path}';
+			case 'settings.downloadLocationChanged': return 'Emplacement de téléchargement modifié';
+			case 'settings.downloadLocationReset': return 'Emplacement de téléchargement réinitialisé à la valeur par défaut';
+			case 'settings.downloadLocationInvalid': return 'Le dossier sélectionné n\'est pas accessible en écriture';
+			case 'settings.downloadLocationSelectError': return 'Échec de la sélection du dossier';
+			case 'settings.downloadOnWifiOnly': return 'Télécharger uniquement via WiFi';
+			case 'settings.downloadOnWifiOnlyDescription': return 'Empêcher les téléchargements lorsque vous utilisez les données cellulaires';
+			case 'settings.cellularDownloadBlocked': return 'Les téléchargements sont désactivés sur les données cellulaires. Connectez-vous au Wi-Fi ou modifiez le paramètre.';
+			case 'settings.maxVolume': return 'Volume maximal';
+			case 'settings.maxVolumeDescription': return 'Autoriser l\'augmentation du volume au-delà de 100 % pour les médias silencieux';
+			case 'settings.maxVolumePercent': return ({required Object percent}) => '${percent}%';
+			case 'settings.maxVolumeHint': return 'Entrez le volume maximal (100-300)';
+			case 'settings.discordRichPresence': return 'Discord Rich Presence';
+			case 'settings.discordRichPresenceDescription': return 'Montrez ce que vous regardez sur Discord';
+			case 'settings.matchContentFrameRate': return 'Fréquence d\'images du contenu correspondant';
+			case 'settings.matchContentFrameRateDescription': return 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie';
+			case 'search.hint': return 'Rechercher des films, des séries, de la musique...';
+			case 'search.tryDifferentTerm': return 'Essayez un autre terme de recherche';
+			case 'search.searchYourMedia': return 'Rechercher dans vos médias';
+			case 'search.enterTitleActorOrKeyword': return 'Entrez un titre, un acteur ou un mot-clé';
+			case 'hotkeys.setShortcutFor': return ({required Object actionName}) => 'Définir un raccourci pour ${actionName}';
+			case 'hotkeys.clearShortcut': return 'Effacer le raccourci';
+			case 'hotkeys.actions.playPause': return 'Lecture/Pause';
+			case 'hotkeys.actions.volumeUp': return 'Augmenter le volume';
+			case 'hotkeys.actions.volumeDown': return 'Baisser le volume';
+			case 'hotkeys.actions.seekForward': return ({required Object seconds}) => 'Avancer (${seconds}s)';
+			case 'hotkeys.actions.seekBackward': return ({required Object seconds}) => 'Reculer (${seconds}s)';
+			case 'hotkeys.actions.fullscreenToggle': return 'Basculer en mode plein écran';
+			case 'hotkeys.actions.muteToggle': return 'Activer/désactiver le mode silencieux';
+			case 'hotkeys.actions.subtitleToggle': return 'Activer/désactiver les sous-titres';
+			case 'hotkeys.actions.audioTrackNext': return 'Piste audio suivante';
+			case 'hotkeys.actions.subtitleTrackNext': return 'Piste de sous-titres suivante';
+			case 'hotkeys.actions.chapterNext': return 'Chapitre suivant';
+			case 'hotkeys.actions.chapterPrevious': return 'Chapitre précédent';
+			case 'hotkeys.actions.speedIncrease': return 'Augmenter la vitesse';
+			case 'hotkeys.actions.speedDecrease': return 'Réduire la vitesse';
+			case 'hotkeys.actions.speedReset': return 'Réinitialiser la vitesse';
+			case 'hotkeys.actions.subSeekNext': return 'Rechercher le sous-titre suivant';
+			case 'hotkeys.actions.subSeekPrev': return 'Rechercher le sous-titre précédent';
+			case 'pinEntry.enterPin': return 'Entrer le code PIN';
+			case 'pinEntry.showPin': return 'Afficher le code PIN';
+			case 'pinEntry.hidePin': return 'Masquer le code PIN';
+			case 'fileInfo.title': return 'Informations sur le fichier';
+			case 'fileInfo.video': return 'Vidéo';
+			case 'fileInfo.audio': return 'Audio';
+			case 'fileInfo.file': return 'Fichier';
+			case 'fileInfo.advanced': return 'Avancé';
+			case 'fileInfo.codec': return 'Codec';
+			case 'fileInfo.resolution': return 'Résolution';
+			case 'fileInfo.bitrate': return 'Bitrate';
+			case 'fileInfo.frameRate': return 'Fréquence d\'images';
+			case 'fileInfo.aspectRatio': return 'Format d\'image';
+			case 'fileInfo.profile': return 'Profil';
+			case 'fileInfo.bitDepth': return 'Profondeur de bits';
+			case 'fileInfo.colorSpace': return 'Espace colorimétrique';
+			case 'fileInfo.colorRange': return 'Gamme de couleurs';
+			case 'fileInfo.colorPrimaries': return 'Couleurs primaires';
+			case 'fileInfo.chromaSubsampling': return 'Sous-échantillonnage chromatique';
+			case 'fileInfo.channels': return 'Channels';
+			case 'fileInfo.path': return 'Chemin';
+			case 'fileInfo.size': return 'Taille';
+			case 'fileInfo.container': return 'Conteneur';
+			case 'fileInfo.duration': return 'Durée';
+			case 'fileInfo.optimizedForStreaming': return 'Optimisé pour le streaming';
+			case 'fileInfo.has64bitOffsets': return 'Décalages 64 bits';
+			case 'mediaMenu.markAsWatched': return 'Marquer comme vu';
+			case 'mediaMenu.markAsUnwatched': return 'Marquer comme non visionné';
+			case 'mediaMenu.removeFromContinueWatching': return 'Supprimer de la liste "Continuer à regarder"';
+			case 'mediaMenu.goToSeries': return 'Aller à la série';
+			case 'mediaMenu.goToSeason': return 'Aller à la saison';
+			case 'mediaMenu.shufflePlay': return 'Lecture aléatoire';
+			case 'mediaMenu.fileInfo': return 'Informations sur le fichier';
+			case 'accessibility.mediaCardMovie': return ({required Object title}) => '${title}, film';
+			case 'accessibility.mediaCardShow': return ({required Object title}) => '${title}, show TV';
+			case 'accessibility.mediaCardEpisode': return ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}';
+			case 'accessibility.mediaCardSeason': return ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
+			case 'accessibility.mediaCardWatched': return 'visionné';
+			case 'accessibility.mediaCardPartiallyWatched': return ({required Object percent}) => '${percent} pourcentage visionné';
+			case 'accessibility.mediaCardUnwatched': return 'non visionné';
+			case 'accessibility.tapToPlay': return 'Appuyez pour lire';
+			case 'tooltips.shufflePlay': return 'Lecture aléatoire';
+			case 'tooltips.markAsWatched': return 'Marqué comme vu';
+			case 'tooltips.markAsUnwatched': return 'Marqué comme non vu';
+			case 'videoControls.audioLabel': return 'Audio';
+			case 'videoControls.subtitlesLabel': return 'Sous-titres';
+			case 'videoControls.resetToZero': return 'Réinitialiser à 0ms';
+			case 'videoControls.addTime': return ({required Object amount, required Object unit}) => '+${amount}${unit}';
+			case 'videoControls.minusTime': return ({required Object amount, required Object unit}) => '-${amount}${unit}';
+			case 'videoControls.playsLater': return ({required Object label}) => '${label} lire plus tard';
+			case 'videoControls.playsEarlier': return ({required Object label}) => '${label} lire plus tôt';
+			case 'videoControls.noOffset': return 'Pas de décalage';
+			case 'videoControls.letterbox': return 'Boîte aux lettres';
+			case 'videoControls.fillScreen': return 'Remplir l\'écran';
+			case 'videoControls.stretch': return 'Etirer';
+			case 'videoControls.lockRotation': return 'Verrouillage de la rotation';
+			case 'videoControls.unlockRotation': return 'Déverrouiller la rotation';
+			case 'videoControls.sleepTimer': return 'Minuterie de mise en veille';
+			case 'videoControls.timerActive': return 'Minuterie active';
+			case 'videoControls.playbackWillPauseIn': return ({required Object duration}) => 'La lecture sera mise en pause dans ${duration}';
+			case 'videoControls.sleepTimerCompleted': return 'Minuterie de mise en veille terminée - lecture en pause';
+			case 'videoControls.autoPlayNext': return 'Lecture automatique suivante';
+			case 'videoControls.playNext': return 'Lire l\'épisode suivant';
+			case 'videoControls.playButton': return 'Lire';
+			case 'videoControls.pauseButton': return 'Pause';
+			case 'videoControls.seekBackwardButton': return ({required Object seconds}) => 'Reculer de ${seconds} secondes';
+			case 'videoControls.seekForwardButton': return ({required Object seconds}) => 'Avancer de ${seconds} secondes';
+			case 'videoControls.previousButton': return 'Épisode précédent';
+			case 'videoControls.nextButton': return 'Épisode suivant';
+			case 'videoControls.previousChapterButton': return 'Chapitre précédent';
+			case 'videoControls.nextChapterButton': return 'Chapitre suivant';
+			case 'videoControls.muteButton': return 'Mute';
+			case 'videoControls.unmuteButton': return 'Dé-mute';
+			case 'videoControls.settingsButton': return 'Paramètres vidéo';
+			case 'videoControls.audioTrackButton': return 'Pistes audio';
+			case 'videoControls.subtitlesButton': return 'Sous-titres';
+			case 'videoControls.chaptersButton': return 'Chapitres';
+			case 'videoControls.versionsButton': return 'Versions vidéo';
+			case 'videoControls.pipButton': return 'Mode PiP (Picture-in-Picture)';
+			case 'videoControls.aspectRatioButton': return 'Format d\'image';
+			case 'videoControls.fullscreenButton': return 'Passer en mode plein écran';
+			case 'videoControls.exitFullscreenButton': return 'Quitter le mode plein écran';
+			case 'videoControls.alwaysOnTopButton': return 'Always on top';
+			case 'videoControls.rotationLockButton': return 'Verrouillage de rotation';
+			case 'videoControls.timelineSlider': return 'Timeline vidéo';
+			case 'videoControls.volumeSlider': return 'Niveau sonore';
+			case 'videoControls.backButton': return 'Retour';
+			case 'userStatus.admin': return 'Admin';
+			case 'userStatus.restricted': return 'Restreint';
+			case 'userStatus.protected': return 'Protégé';
+			case 'userStatus.current': return 'ACTUEL';
+			case 'messages.markedAsWatched': return 'Marqué comme vu';
+			case 'messages.markedAsUnwatched': return 'Marqué comme non vu';
+			case 'messages.markedAsWatchedOffline': return 'Marqué comme vu (se synchronisera lorsque vous serez en ligne)';
+			case 'messages.markedAsUnwatchedOffline': return 'Marqué comme non vu (sera synchronisé lorsque vous serez en ligne)';
+			case 'messages.removedFromContinueWatching': return 'Supprimer de "Continuer à regarder"';
+			case 'messages.errorLoading': return ({required Object error}) => 'Erreur: ${error}';
+			case 'messages.fileInfoNotAvailable': return 'Informations sur le fichier non disponibles';
+			case 'messages.errorLoadingFileInfo': return ({required Object error}) => 'Erreur lors du chargement des informations sur le fichier: ${error}';
+			case 'messages.errorLoadingSeries': return 'Erreur lors du chargement de la série';
+			case 'messages.errorLoadingSeason': return 'Erreur lors du chargement de la saison';
+			case 'messages.musicNotSupported': return 'La lecture de musique n\'est pas encore prise en charge';
+			case 'messages.logsCleared': return 'Logs effacés';
+			case 'messages.logsCopied': return 'Logs copiés dans le presse-papier';
+			case 'messages.noLogsAvailable': return 'Aucun log disponible';
+			case 'messages.libraryScanning': return ({required Object title}) => 'Scan de "${title}"...';
+			case 'messages.libraryScanStarted': return ({required Object title}) => 'Scan de la bibliothèque démarrée pour "${title}"';
+			case 'messages.libraryScanFailed': return ({required Object error}) => 'Échec du scan de la bibliothèque: ${error}';
+			case 'messages.metadataRefreshing': return ({required Object title}) => 'Actualisation des métadonnées pour "${title}"...';
+			case 'messages.metadataRefreshStarted': return ({required Object title}) => 'Actualisation des métadonnées lancée pour "${title}"';
+			case 'messages.metadataRefreshFailed': return ({required Object error}) => 'Échec de l\'actualisation des métadonnées: ${error}';
+			case 'messages.logoutConfirm': return 'Êtes-vous sûr de vouloir vous déconnecter ?';
+			case 'messages.noSeasonsFound': return 'Aucune saison trouvée';
+			case 'messages.noEpisodesFound': return 'Aucun épisode trouvé dans la première saison';
+			case 'messages.noEpisodesFoundGeneral': return 'Aucun épisode trouvé';
+			case 'messages.noResultsFound': return 'Aucun résultat trouvé';
+			case 'messages.sleepTimerSet': return ({required Object label}) => 'Minuterie de mise en veille réglée sur ${label}';
+			case 'messages.noItemsAvailable': return 'Aucun élément disponible';
+			case 'messages.failedToCreatePlayQueue': return 'Échec de la création de la file d\'attente de lecture';
+			case 'messages.failedToCreatePlayQueueNoItems': return 'Échec de la création de la file d\'attente de lecture - aucun élément';
+			case 'messages.failedPlayback': return ({required Object action, required Object error}) => 'Echec de ${action}: ${error}';
+			case 'subtitlingStyling.stylingOptions': return 'Options de style';
+			case 'subtitlingStyling.fontSize': return 'Taille de la police';
+			case 'subtitlingStyling.textColor': return 'Couleur du texte';
+			case 'subtitlingStyling.borderSize': return 'Taille de la bordure';
+			case 'subtitlingStyling.borderColor': return 'Couleur de la bordure';
+			case 'subtitlingStyling.backgroundOpacity': return 'Opacité d\'arrière-plan';
+			case 'subtitlingStyling.backgroundColor': return 'Couleur d\'arrière-plan';
+			case 'mpvConfig.title': return 'Configuration MPV';
+			case 'mpvConfig.description': return 'Paramètres avancés du lecteur vidéo';
+			case 'mpvConfig.properties': return 'Propriétés';
+			case 'mpvConfig.presets': return 'Préréglages';
+			case 'mpvConfig.noProperties': return 'Aucune propriété configurée';
+			case 'mpvConfig.noPresets': return 'Aucun préréglage enregistré';
+			case 'mpvConfig.addProperty': return 'Ajouter une propriété';
+			case 'mpvConfig.editProperty': return 'Modifier la propriété';
+			case 'mpvConfig.deleteProperty': return 'Supprimer la propriété';
+			case 'mpvConfig.propertyKey': return 'Clé';
+			case 'mpvConfig.propertyKeyHint': return 'e.g., hwdec, demuxer-max-bytes';
+			case 'mpvConfig.propertyValue': return 'Valeur';
+			case 'mpvConfig.propertyValueHint': return 'e.g., auto, 256000000';
+			case 'mpvConfig.saveAsPreset': return 'Enregistrer comme préréglage...';
+			case 'mpvConfig.presetName': return 'Nom du préréglage';
+			case 'mpvConfig.presetNameHint': return 'Entrez un nom pour ce préréglage';
+			case 'mpvConfig.loadPreset': return 'Charger';
+			case 'mpvConfig.deletePreset': return 'Supprimer';
+			case 'mpvConfig.presetSaved': return 'Préréglage enregistré';
+			case 'mpvConfig.presetLoaded': return 'Préréglage chargé';
+			case 'mpvConfig.presetDeleted': return 'Préréglage supprimé';
+			case 'mpvConfig.confirmDeletePreset': return 'Êtes-vous sûr de vouloir supprimer ce préréglage ?';
+			case 'mpvConfig.confirmDeleteProperty': return 'Êtes-vous sûr de vouloir supprimer cette propriété ?';
+			case 'mpvConfig.entriesCount': return ({required Object count}) => '${count} entrées';
+			case 'dialog.confirmAction': return 'Confirmer l\'action';
+			case 'dialog.cancel': return 'Annuler';
+			case 'dialog.playNow': return 'Lire maintenant';
+			case 'discover.title': return 'Découvrez';
+			case 'discover.switchProfile': return 'Changer de profil';
+			case 'discover.logout': return 'Déconnexion';
+			case 'discover.noContentAvailable': return 'Aucun contenu disponible';
+			case 'discover.addMediaToLibraries': return 'Ajoutez des médias à votre bibliothèque';
+			case 'discover.continueWatching': return 'Continuer à regarder';
+			case 'discover.play': return 'Lire';
+			case 'discover.playEpisode': return ({required Object season, required Object episode}) => 'S${season}E${episode}';
+			case 'discover.pause': return 'Pause';
+			case 'discover.overview': return 'Aperçu';
+			case 'discover.cast': return 'Cast';
+			case 'discover.seasons': return 'Saisons';
+			case 'discover.studio': return 'Studio';
+			case 'discover.rating': return 'Évaluation';
+			case 'discover.watched': return 'Vu';
+			case 'discover.episodeCount': return ({required Object count}) => '${count} épisodes';
+			case 'discover.watchedProgress': return ({required Object watched, required Object total}) => '${watched}/${total} vu';
+			case 'discover.movie': return 'Film';
+			case 'discover.tvShow': return 'Show TV';
+			case 'discover.minutesLeft': return ({required Object minutes}) => '${minutes} min restantes';
+			case 'errors.searchFailed': return ({required Object error}) => 'Recherche échouée: ${error}';
+			case 'errors.connectionTimeout': return ({required Object context}) => 'Délai d\'attente de connexion dépassé pendant le chargement ${context}';
+			case 'errors.connectionFailed': return 'Impossible de se connecter au serveur Plex';
+			case 'errors.failedToLoad': return ({required Object context, required Object error}) => 'Échec du chargement ${context}: ${error}';
+			case 'errors.noClientAvailable': return 'Aucun client disponible';
+			case 'errors.authenticationFailed': return ({required Object error}) => 'Échec de l\'authentification: ${error}';
+			case 'errors.couldNotLaunchUrl': return 'Impossible de lancer l\'URL d\'authentification';
+			case 'errors.pleaseEnterToken': return 'Veuillez saisir un token';
+			case 'errors.invalidToken': return 'Token invalide';
+			case 'errors.failedToVerifyToken': return ({required Object error}) => 'Échec de la vérification du token: ${error}';
+			case 'errors.failedToSwitchProfile': return ({required Object displayName}) => 'Impossible de changer de profil vers ${displayName}';
+			case 'libraries.title': return 'Bibliothèques';
+			case 'libraries.scanLibraryFiles': return 'Scanner les fichiers de la bibliothèque';
+			case 'libraries.scanLibrary': return 'Scanner la bibliothèque';
+			case 'libraries.analyze': return 'Analyser';
+			case 'libraries.analyzeLibrary': return 'Analyser la bibliothèque';
+			case 'libraries.refreshMetadata': return 'Actualiser les métadonnées';
+			case 'libraries.emptyTrash': return 'Vider la corbeille';
+			case 'libraries.emptyingTrash': return ({required Object title}) => 'Vider les poubelles pour "${title}"...';
+			case 'libraries.trashEmptied': return ({required Object title}) => 'Poubelles vidées pour "${title}"';
+			case 'libraries.failedToEmptyTrash': return ({required Object error}) => 'Échec de la suppression des éléments supprimés: ${error}';
+			case 'libraries.analyzing': return ({required Object title}) => 'Analyse de "${title}"...';
+			case 'libraries.analysisStarted': return ({required Object title}) => 'L\'analyse a commencé pour "${title}"';
+			case 'libraries.failedToAnalyze': return ({required Object error}) => 'Échec de l\'analyse de la bibliothèque: ${error}';
+			case 'libraries.noLibrariesFound': return 'Aucune bibliothèque trouvée';
+			case 'libraries.thisLibraryIsEmpty': return 'Cette bibliothèque est vide';
+			case 'libraries.all': return 'Tout';
+			case 'libraries.clearAll': return 'Tout effacer';
+			case 'libraries.scanLibraryConfirm': return ({required Object title}) => 'Êtes-vous sûr de vouloir lancer le scan de "${title}"?';
+			case 'libraries.analyzeLibraryConfirm': return ({required Object title}) => 'Êtes-vous sûr de vouloir analyser "${title}"?';
+			case 'libraries.refreshMetadataConfirm': return ({required Object title}) => 'Êtes-vous sûr de vouloir actualiser les métadonnées pour "${title}"?';
+			case 'libraries.emptyTrashConfirm': return ({required Object title}) => 'Êtes-vous sûr de vouloir vider la corbeille pour "${title}"?';
+			case 'libraries.manageLibraries': return 'Gérer les bibliothèques';
+			case 'libraries.sort': return 'Trier';
+			case 'libraries.sortBy': return 'Trier par';
+			case 'libraries.filters': return 'Filtres';
+			case 'libraries.confirmActionMessage': return 'Êtes-vous sûr de vouloir effectuer cette action ?';
+			case 'libraries.showLibrary': return 'Afficher la bibliothèque';
+			case 'libraries.hideLibrary': return 'Masquer la bibliothèque';
+			case 'libraries.libraryOptions': return 'Options de bibliothèque';
+			case 'libraries.content': return 'contenu de la bibliothèque';
+			case 'libraries.selectLibrary': return 'Sélectionner la bibliothèque';
+			case 'libraries.filtersWithCount': return ({required Object count}) => 'Filtres (${count})';
+			case 'libraries.noRecommendations': return 'Aucune recommandation disponible';
+			case 'libraries.noCollections': return 'Aucune collection dans cette bibliothèque';
+			case 'libraries.noFoldersFound': return 'Aucun dossier trouvé';
+			case 'libraries.folders': return 'dossiers';
+			case 'libraries.tabs.recommended': return 'Recommandé';
+			case 'libraries.tabs.browse': return 'Parcourir';
+			case 'libraries.tabs.collections': return 'Collections';
+			case 'libraries.tabs.playlists': return 'Playlists';
+			case 'libraries.groupings.all': return 'Tous';
+			case 'libraries.groupings.movies': return 'Films';
+			case 'libraries.groupings.shows': return 'Show TV';
+			case 'libraries.groupings.seasons': return 'Saisons';
+			case 'libraries.groupings.episodes': return 'Épisodes';
+			case 'libraries.groupings.folders': return 'Dossiers';
+			case 'about.title': return 'À propos';
+			case 'about.openSourceLicenses': return 'Licences Open Source';
+			case 'about.versionLabel': return ({required Object version}) => 'Version ${version}';
+			case 'about.appDescription': return 'Un magnifique client Plex pour Flutter';
+			case 'about.viewLicensesDescription': return 'Afficher les licences des bibliothèques tierces';
+			case 'serverSelection.allServerConnectionsFailed': return 'Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.';
+			case 'serverSelection.noServersFound': return 'Aucun serveur trouvé';
+			case 'serverSelection.noServersFoundForAccount': return ({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})';
+			case 'serverSelection.failedToLoadServers': return ({required Object error}) => 'Échec du chargement des serveurs: ${error}';
+			case 'hubDetail.title': return 'Titre';
+			case 'hubDetail.releaseYear': return 'Année de sortie';
+			case 'hubDetail.dateAdded': return 'Date d\'ajout';
+			case 'hubDetail.rating': return 'Évaluation';
+			case 'hubDetail.noItemsFound': return 'Aucun élément trouvé';
+			case 'logs.clearLogs': return 'Effacer les logs';
+			case 'logs.copyLogs': return 'Copier les logs';
+			case 'logs.error': return 'Erreur:';
+			case 'logs.stackTrace': return 'Liste des appels:';
+			case 'licenses.relatedPackages': return 'Package associés';
+			case 'licenses.license': return 'Licence';
+			case 'licenses.licenseNumber': return ({required Object number}) => 'Licence ${number}';
+			case 'licenses.licensesCount': return ({required Object count}) => '${count} licences';
+			case 'navigation.home': return 'Accueil';
+			case 'navigation.search': return 'Rechercher';
+			case 'navigation.libraries': return 'Bibliothèques';
+			case 'navigation.settings': return 'Paramètres';
+			case 'navigation.downloads': return 'Téléchargements';
+			case 'collections.title': return 'Collections';
+			case 'collections.collection': return 'Collection';
+			case 'collections.empty': return 'La collection est vide';
+			case 'collections.unknownLibrarySection': return 'Impossible de supprimer : section de bibliothèque inconnue';
+			case 'collections.deleteCollection': return 'Supprimer la collection';
+			case 'collections.deleteConfirm': return ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cette action ne peut pas être annulée.';
+			case 'collections.deleted': return 'Collection supprimée';
+			case 'collections.deleteFailed': return 'Échec de la suppression de la collection';
+			case 'collections.deleteFailedWithError': return ({required Object error}) => 'Échec de la suppression de la collection: ${error}';
+			case 'collections.failedToLoadItems': return ({required Object error}) => 'Échec du chargement des éléments de la collection: ${error}';
+			case 'collections.selectCollection': return 'Sélectionner une collection';
+			case 'collections.createNewCollection': return 'Créer une nouvelle collection';
+			case 'collections.collectionName': return 'Nom de la collection';
+			case 'collections.enterCollectionName': return 'Entrez le nom de la collection';
+			case 'collections.addedToCollection': return 'Ajouté à la collection';
+			case 'collections.errorAddingToCollection': return 'Échec de l\'ajout à la collection';
+			case 'collections.created': return 'Collection créée';
+			case 'collections.removeFromCollection': return 'Supprimer de la collection';
+			case 'collections.removeFromCollectionConfirm': return ({required Object title}) => 'Retirer "${title}" de cette collection ?';
+			case 'collections.removedFromCollection': return 'Retiré de la collection';
+			case 'collections.removeFromCollectionFailed': return 'Impossible de supprimer de la collection';
+			case 'collections.removeFromCollectionError': return ({required Object error}) => 'Erreur lors de la suppression de la collection: ${error}';
+			case 'playlists.title': return 'Playlists';
+			case 'playlists.playlist': return 'Playlist';
+			case 'playlists.noPlaylists': return 'Aucune playlist trouvée';
+			case 'playlists.create': return 'Créer une playlist';
+			case 'playlists.playlistName': return 'Nom de playlist';
+			case 'playlists.enterPlaylistName': return 'Entrer le nom de playlist';
+			case 'playlists.delete': return 'Supprimer la playlist';
+			case 'playlists.removeItem': return 'Retirer de la playlist';
+			case 'playlists.smartPlaylist': return 'Smart playlist';
+			case 'playlists.itemCount': return ({required Object count}) => '${count} éléments';
+			case 'playlists.oneItem': return '1 élément';
+			case 'playlists.emptyPlaylist': return 'Cette playlist est vide';
+			case 'playlists.deleteConfirm': return 'Supprimer la playlist ?';
+			case 'playlists.deleteMessage': return ({required Object name}) => 'Êtes-vous sûr de vouloir supprimer "${name}"?';
+			case 'playlists.created': return 'Playlist créée';
+			case 'playlists.deleted': return 'Playlist supprimée';
+			case 'playlists.itemAdded': return 'Ajouté à la playlist';
+			case 'playlists.itemRemoved': return 'Retiré de la playlist';
+			case 'playlists.selectPlaylist': return 'Select Playlist';
+			case 'playlists.createNewPlaylist': return 'Créer une nouvelle playlist';
+			case 'playlists.errorCreating': return 'Échec de la création de playlist';
+			case 'playlists.errorDeleting': return 'Échec de suppression de playlist';
+			case 'playlists.errorLoading': return 'Échec de chargement de playlists';
+			case 'playlists.errorAdding': return 'Échec d\'ajout dans la playlist';
+			case 'playlists.errorReordering': return 'Échec de réordonnacement d\'élément de playlist';
+			case 'playlists.errorRemoving': return 'Échec de suppression depuis la playlist';
+			case 'watchTogether.title': return 'Regarder ensemble';
+			case 'watchTogether.description': return 'Regardez du contenu en synchronisation avec vos amis et votre famille';
+			case 'watchTogether.createSession': return 'Créer une session';
+			case 'watchTogether.creating': return 'Création...';
+			case 'watchTogether.joinSession': return 'Rejoindre la session';
+			case 'watchTogether.joining': return 'Rejoindre...';
+			case 'watchTogether.controlMode': return 'Mode de contrôle';
+			case 'watchTogether.controlModeQuestion': return 'Qui peut contrôler la lecture ?';
+			case 'watchTogether.hostOnly': return 'Hôte uniquement';
+			case 'watchTogether.anyone': return 'N\'importe qui';
+			case 'watchTogether.hostingSession': return 'Session d\'hébergement';
+			case 'watchTogether.inSession': return 'En session';
+			case 'watchTogether.sessionCode': return 'Code de session';
+			case 'watchTogether.hostControlsPlayback': return 'L\'hôte contrôle la lecture';
+			case 'watchTogether.anyoneCanControl': return 'Tout le monde peut contrôler la lecture';
+			case 'watchTogether.hostControls': return 'Commandes de l\'hôte';
+			case 'watchTogether.anyoneControls': return 'Tout le monde contrôle';
+			case 'watchTogether.participants': return 'Participants';
+			case 'watchTogether.host': return 'Hôte';
+			case 'watchTogether.hostBadge': return 'HOST';
+			case 'watchTogether.youAreHost': return 'Vous êtes l\'hôte';
+			case 'watchTogether.watchingWithOthers': return 'Regarder avec d\'autres personnes';
+			case 'watchTogether.endSession': return 'Fin de session';
+			case 'watchTogether.leaveSession': return 'Quitter la session';
+			case 'watchTogether.endSessionQuestion': return 'Terminer la session ?';
+			case 'watchTogether.leaveSessionQuestion': return 'Quitter la session ?';
+			case 'watchTogether.endSessionConfirm': return 'Cela mettra fin à la session pour tous les participants.';
+			case 'watchTogether.leaveSessionConfirm': return 'Vous allez être déconnecté de la session.';
+			case 'watchTogether.endSessionConfirmOverlay': return 'Cela mettra fin à la session de visionnage pour tous les participants.';
+			case 'watchTogether.leaveSessionConfirmOverlay': return 'Vous serez déconnecté de la session de visionnage.';
+			case 'watchTogether.end': return 'Terminer';
+			case 'watchTogether.leave': return 'Fin';
+			case 'watchTogether.syncing': return 'Synchronisation...';
+			case 'watchTogether.participant': return 'participant';
+			case 'watchTogether.joinWatchSession': return 'Rejoindre la session de visionnage';
+			case 'watchTogether.enterCodeHint': return 'Entrez le code à 8 caractères';
+			case 'watchTogether.pasteFromClipboard': return 'Coller depuis le presse-papiers';
+			case 'watchTogether.pleaseEnterCode': return 'Veuillez saisir un code de session';
+			case 'watchTogether.codeMustBe8Chars': return 'Le code de session doit comporter 8 caractères';
+			case 'watchTogether.joinInstructions': return 'Entrez le code de session partagé par l\'hôte pour rejoindre sa session de visionnage.';
+			case 'watchTogether.failedToCreate': return 'Échec de la création de la session';
+			case 'watchTogether.failedToJoin': return 'Échec de la connexion à la session';
+			case 'watchTogether.sessionCodeCopied': return 'Code de session copié dans le presse-papiers';
+			case 'downloads.title': return 'Téléchargements';
+			case 'downloads.manage': return 'Gérer';
+			case 'downloads.tvShows': return 'Show TV';
+			case 'downloads.movies': return 'Films';
+			case 'downloads.noDownloads': return 'Aucun téléchargement pour le moment';
+			case 'downloads.noDownloadsDescription': return 'Le contenu téléchargé apparaîtra ici pour être consulté hors ligne.';
+			case 'downloads.downloadNow': return 'Télécharger';
+			case 'downloads.deleteDownload': return 'Supprimer le téléchargement';
+			case 'downloads.retryDownload': return 'Réessayer le téléchargement';
+			case 'downloads.downloadQueued': return 'Téléchargement en attente';
+			case 'downloads.episodesQueued': return ({required Object count}) => '${count} épisodes en attente de téléchargement';
+			case 'downloads.downloadDeleted': return 'Télécharger supprimé';
+			case 'downloads.deleteConfirm': return ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.';
+			case 'downloads.deletingWithProgress': return ({required Object title, required Object current, required Object total}) => 'Suppression de ${title}... (${current} sur ${total})';
 			default: return null;
 		}
 	}
