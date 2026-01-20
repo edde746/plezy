@@ -39,10 +39,6 @@ class HubSection extends StatefulWidget {
   /// Used to navigate focus back to the tab bar.
   final VoidCallback? onBack;
 
-  /// Called when the user presses LEFT while at the leftmost item.
-  /// Used to navigate focus to the side navigation rail.
-  final VoidCallback? onNavigateLeft;
-
   /// Called when the user presses UP while at the topmost item (first hub).
   /// Used to navigate focus to the tab bar.
   final VoidCallback? onNavigateUp;
@@ -57,7 +53,6 @@ class HubSection extends StatefulWidget {
     this.showServerName = false,
     this.onVerticalNavigation,
     this.onBack,
-    this.onNavigateLeft,
     this.onNavigateUp,
   });
 
@@ -182,10 +177,8 @@ class HubSectionState extends State<HubSection> {
         HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
         _scrollToIndex(_focusedIndex);
         setState(() {});
-      } else if (widget.onNavigateLeft != null) {
-        // At leftmost item - navigate to sidebar
-        widget.onNavigateLeft!();
       }
+      // At leftmost item: do nothing, but consume event to prevent focus escape
       return KeyEventResult.handled;
     }
 

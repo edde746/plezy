@@ -7,7 +7,6 @@ import '../../../mixins/item_updatable.dart';
 import '../../../models/plex_hub.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../widgets/hub_section.dart';
-import '../../main_screen.dart';
 import 'base_library_tab.dart';
 
 /// Recommended tab for library screen
@@ -136,12 +135,6 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
     return false;
   }
 
-  /// Navigate to the sidebar (called when user presses left at leftmost item)
-  void _navigateToSidebar() {
-    final focusScope = MainScreenFocusScope.of(context);
-    focusScope?.focusSidebar();
-  }
-
   /// Focus the first item in the first hub (for tab activation)
   @override
   void focusFirstItem() {
@@ -170,7 +163,6 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
           onRemoveFromContinueWatching: isContinueWatching ? _refreshContinueWatching : null,
           onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
           onBack: widget.onBack,
-          onNavigateLeft: _navigateToSidebar,
           onNavigateUp: index == 0 ? widget.onBack : null,
         );
       },

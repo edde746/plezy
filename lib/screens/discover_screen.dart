@@ -179,12 +179,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return false;
   }
 
-  /// Navigate to the sidebar (called when user presses left at leftmost item)
-  void _navigateToSidebar() {
-    final focusScope = MainScreenFocusScope.of(context);
-    focusScope?.focusSidebar();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -1040,7 +1034,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onRemoveFromContinueWatching: _refreshContinueWatching,
                         isInContinueWatching: true,
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
-                        onNavigateLeft: _navigateToSidebar,
                         onNavigateUp: () {
                           _heroFocusNode.requestFocus();
                           _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
@@ -1059,7 +1052,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onRefresh: updateItem,
                         // Hub index is i + 1 if continue watching exists, otherwise i
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                        onNavigateLeft: _navigateToSidebar,
                         onNavigateUp: (i == 0 && _onDeck.isEmpty) ? () {
                           _heroFocusNode.requestFocus();
                           _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
