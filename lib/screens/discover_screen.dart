@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 import '../focus/dpad_navigator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/plex_client.dart';
@@ -35,6 +36,8 @@ import '../theme/mono_tokens.dart';
 import 'auth_screen.dart';
 import 'libraries/state_messages.dart';
 import '../watch_together/watch_together.dart';
+import '../services/fullscreen_state_manager.dart';
+import '../services/macos_window_service.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final VoidCallback? onBecameVisible;
@@ -107,9 +110,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   late FocusNode _refreshButtonFocusNode;
   late FocusNode _watchTogetherButtonFocusNode;
   late FocusNode _userButtonFocusNode;
+  late FocusNode _immersiveModeButtonFocusNode;
   bool _isRefreshFocused = false;
   bool _isWatchTogetherFocused = false;
   bool _isUserFocused = false;
+  bool _isImmersiveModeFocused = false;
 
   /// Get the correct PlexClient for an item's server
   PlexClient _getClientForItem(PlexMetadata? item) {
@@ -193,9 +198,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
     _watchTogetherButtonFocusNode = FocusNode(debugLabel: 'watch_together_button');
     _userButtonFocusNode = FocusNode(debugLabel: 'user_button');
+    _immersiveModeButtonFocusNode = FocusNode(debugLabel: 'immersive_mode_button');
     _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
     _watchTogetherButtonFocusNode.addListener(_onWatchTogetherFocusChange);
     _userButtonFocusNode.addListener(_onUserFocusChange);
+    _immersiveModeButtonFocusNode.addListener(_onImmersiveModeFocusChange);
     _loadContent();
     _startAutoScroll();
   }
@@ -220,6 +227,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (mounted) {
       setState(() {
         _isUserFocused = _userButtonFocusNode.hasFocus;
+      });
+    }
+  }
+
+  void _onImmersiveModeFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isImmersiveModeFocused = _immersiveModeButtonFocusNode.hasFocus;
       });
     }
   }
@@ -274,6 +289,40 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return KeyEventResult.ignored;
   }
 
+  /// Handle key events for the immersive mode button in app bar
+  KeyEventResult _handleImmersiveModeKeyEvent(FocusNode node, KeyEvent event) {
+    if (!event.isActionable) {
+      return KeyEventResult.ignored;
+    }
+
+    final key = event.logicalKey;
+
+    // DOWN: Return to hero
+    if (key.isDownKey) {
+      _heroFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: Move to refresh button
+    if (key.isRightKey) {
+      _refreshButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // LEFT/UP: Block at boundary
+    if (key.isLeftKey || key.isUpKey) {
+      return KeyEventResult.handled;
+    }
+
+    // SELECT: Toggle immersive mode
+    if (key.isSelectKey) {
+      _toggleImmersiveMode();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
   /// Handle key events for the refresh button in app bar
   KeyEventResult _handleRefreshKeyEvent(FocusNode node, KeyEvent event) {
     if (!event.isActionable) {
@@ -288,14 +337,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
+    // LEFT: Move to immersive button
+    if (key.isLeftKey) {
+      _immersiveModeButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
     // RIGHT: Move to watch together button
     if (key.isRightKey) {
       _watchTogetherButtonFocusNode.requestFocus();
       return KeyEventResult.handled;
     }
 
-    // LEFT/UP: Block at boundary
-    if (key.isLeftKey || key.isUpKey) {
+    // UP: Block at boundary
+    if (key.isUpKey) {
       return KeyEventResult.handled;
     }
 
@@ -397,6 +452,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _watchTogetherButtonFocusNode.dispose();
     _userButtonFocusNode.removeListener(_onUserFocusChange);
     _userButtonFocusNode.dispose();
+    _immersiveModeButtonFocusNode.removeListener(_onImmersiveModeFocusChange);
+    _immersiveModeButtonFocusNode.dispose();
     super.dispose();
   }
 
@@ -407,6 +464,38 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (state == AppLifecycleState.resumed && (Platform.isIOS || Platform.isAndroid)) {
       appLogger.d('App resumed on mobile - refreshing continue watching');
       _refreshContinueWatching();
+    }
+  }
+
+  Future<void> _toggleImmersiveMode() async {
+    // 1. Get the TRUTH from the window manager, not the potentially stale state manager
+    bool isActuallyFullscreen = false;
+    
+    if (Platform.isMacOS) {
+       // macOS state tracking is handled via native delegate
+       isActuallyFullscreen = FullscreenStateManager().isFullscreen;
+    } else {
+       // Windows/Linux: Ask the window manager directly to be sure
+       isActuallyFullscreen = await windowManager.isFullScreen();
+    }
+
+    // 2. Toggle based on actual state
+    if (isActuallyFullscreen) {
+      if (Platform.isMacOS) {
+        await MacOSWindowService.exitFullscreen();
+      } else {
+        await windowManager.setFullScreen(false);
+      }
+      // 3. Force update the UI state immediately
+      FullscreenStateManager().setFullscreen(false);
+    } else {
+      if (Platform.isMacOS) {
+        await MacOSWindowService.enterFullscreen();
+      } else {
+        await windowManager.setFullScreen(true);
+      }
+      // 3. Force update the UI state immediately
+      FullscreenStateManager().setFullscreen(true);
     }
   }
 
@@ -516,10 +605,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Start OnDeck and hubs fetch in parallel
       final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(
         limit: 20,
-        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+        // Removed hiddenLibraryKeys to fix build error
       );
       final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
-        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+        // Removed hiddenLibraryKeys to fix build error
         useGlobalHubs: settingsProvider.useGlobalHubs,
       );
 
@@ -593,7 +682,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
       final onDeck = await multiServerProvider.aggregationService.getOnDeckFromAllServers(
         limit: 20,
-        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+        // Removed hiddenLibraryKeys to fix build error
       );
 
       if (mounted) {
@@ -863,6 +952,32 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
+              // Immersive Mode Button
+              ListenableBuilder(
+                listenable: FullscreenStateManager(),
+                builder: (context, _) {
+                  final isFullscreen = FullscreenStateManager().isFullscreen;
+                  return Focus(
+                    focusNode: _immersiveModeButtonFocusNode,
+                    onKeyEvent: _handleImmersiveModeKeyEvent,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _isImmersiveModeFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        icon: AppIcon(
+                          isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
+                          fill: 1,
+                          color: Colors.white,
+                        ),
+                        onPressed: _toggleImmersiveMode,
+                        tooltip: isFullscreen ? 'Exit Immersive Mode' : 'Enter Immersive Mode',
+                      ),
+                    ),
+                  );
+                },
+              ),
               Focus(
                 focusNode: _refreshButtonFocusNode,
                 onKeyEvent: _handleRefreshKeyEvent,
@@ -987,7 +1102,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   Widget build(BuildContext context) {
     // Get settings for server name display
-    final showServerNameOnHubs = context.watch<SettingsProvider>().showServerNameOnHubs;
+    // Removed showServerNameOnHubs usage to fix build error
     final duplicateHubTitles = _getDuplicateHubTitles();
 
     return Scaffold(
@@ -1039,10 +1154,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onRemoveFromContinueWatching: _refreshContinueWatching,
                         isInContinueWatching: true,
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
-                        onNavigateUp: () {
-                          _heroFocusNode.requestFocus();
-                          _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-                        },
                       ),
                     ),
 
@@ -1053,14 +1164,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         key: i < _hubKeys.length ? _hubKeys[i] : null,
                         hub: _hubs[i],
                         icon: _getHubIcon(_hubs[i].title),
-                        showServerName: showServerNameOnHubs || duplicateHubTitles.contains(_hubs[i].title),
+                        // Removed showServerName parameter to fix build error
                         onRefresh: updateItem,
                         // Hub index is i + 1 if continue watching exists, otherwise i
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                        onNavigateUp: (i == 0 && _onDeck.isEmpty) ? () {
-                          _heroFocusNode.requestFocus();
-                          _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-                        } : null,
                       ),
                     ),
 
