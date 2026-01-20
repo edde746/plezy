@@ -186,9 +186,7 @@ class _SessionMenuSheet extends StatelessWidget {
                     children: [
                       Text(
                         '${t.watchTogether.sessionCode}: ',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                       Text(
                         provider.sessionId!,
@@ -198,11 +196,7 @@ class _SessionMenuSheet extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Icon(
-                        Symbols.content_copy_rounded,
-                        size: 16,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                      Icon(Symbols.content_copy_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
                     ],
                   ),
                 ),
@@ -261,9 +255,7 @@ class _SessionMenuSheet extends StatelessWidget {
 
   void _copySessionCode(BuildContext context, String sessionId) {
     Clipboard.setData(ClipboardData(text: sessionId));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(t.watchTogether.sessionCodeCopied)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.watchTogether.sessionCodeCopied)));
   }
 
   void _confirmLeave(BuildContext context) {

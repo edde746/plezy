@@ -48,10 +48,7 @@ class DataAggregationService {
 
   /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency
   /// Items are automatically tagged with server info by PlexClient
-  Future<List<PlexMetadata>> getOnDeckFromAllServers({
-    int? limit,
-    Set<String>? hiddenLibraryKeys,
-  }) async {
+  Future<List<PlexMetadata>> getOnDeckFromAllServers({int? limit, Set<String>? hiddenLibraryKeys}) async {
     final allOnDeck = await _perServer<PlexMetadata>(
       operationName: 'fetching on deck',
       operation: (serverId, client, server) async {
@@ -162,29 +159,32 @@ class DataAggregationService {
 
         // Filter out items from hidden libraries if specified
         if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
-          return hubs.map((hub) {
-            final filteredItems = hub.items.where((item) {
-              // Build the global key for the item's library section
-              final librarySectionId = item.librarySectionID;
-              if (librarySectionId == null) return true; // Keep if no section ID
-              final globalKey = '$serverId:$librarySectionId';
-              return !hiddenLibraryKeys.contains(globalKey);
-            }).toList();
+          return hubs
+              .map((hub) {
+                final filteredItems = hub.items.where((item) {
+                  // Build the global key for the item's library section
+                  final librarySectionId = item.librarySectionID;
+                  if (librarySectionId == null) return true; // Keep if no section ID
+                  final globalKey = '$serverId:$librarySectionId';
+                  return !hiddenLibraryKeys.contains(globalKey);
+                }).toList();
 
-            if (filteredItems.isEmpty) return null;
+                if (filteredItems.isEmpty) return null;
 
-            return PlexHub(
-              hubKey: hub.hubKey,
-              title: hub.title,
-              type: hub.type,
-              hubIdentifier: hub.hubIdentifier,
-              size: filteredItems.length,
-              more: hub.more,
-              items: filteredItems,
-              serverId: hub.serverId,
-              serverName: hub.serverName,
-            );
-          }).whereType<PlexHub>().toList();
+                return PlexHub(
+                  hubKey: hub.hubKey,
+                  title: hub.title,
+                  type: hub.type,
+                  hubIdentifier: hub.hubIdentifier,
+                  size: filteredItems.length,
+                  more: hub.more,
+                  items: filteredItems,
+                  serverId: hub.serverId,
+                  serverName: hub.serverName,
+                );
+              })
+              .whereType<PlexHub>()
+              .toList();
         }
 
         return hubs;

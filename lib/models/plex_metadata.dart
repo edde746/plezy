@@ -327,8 +327,7 @@ class PlexMetadata with MultiServerFields {
     }
 
     // For movies/shows in mixed hub context with episode thumbnail mode, use art (16:9)
-    if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail &&
-        (itemType == 'movie' || itemType == 'show')) {
+    if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail && (itemType == 'movie' || itemType == 'show')) {
       return art ?? thumb;
     }
 
@@ -344,7 +343,8 @@ class PlexMetadata with MultiServerFields {
       return true;
     }
     // Movies, shows, and seasons use 16:9 in mixed hubs with episode thumbnail mode
-    if (mixedHubContext && mode == EpisodePosterMode.episodeThumbnail &&
+    if (mixedHubContext &&
+        mode == EpisodePosterMode.episodeThumbnail &&
         (itemType == 'movie' || itemType == 'show' || itemType == 'season')) {
       return true;
     }

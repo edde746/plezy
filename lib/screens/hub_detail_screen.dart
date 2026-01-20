@@ -253,10 +253,8 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
               final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
 
               // Determine hub content type for layout decisions
-              final hasEpisodes = _filteredItems.any((item) =>
-                  item.usesWideAspectRatio(episodePosterMode));
-              final hasNonEpisodes = _filteredItems.any((item) =>
-                  !item.usesWideAspectRatio(episodePosterMode));
+              final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
+              final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
 
               // Mixed hub = has both episodes AND non-episodes
               final isMixedHub = hasEpisodes && hasNonEpisodes;
@@ -265,8 +263,8 @@ class _HubDetailScreenState extends State<HubDetailScreen> with Refreshable {
               final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
 
               // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
-              final useWideLayout = episodePosterMode == EpisodePosterMode.episodeThumbnail &&
-                  (isEpisodeOnlyHub || isMixedHub);
+              final useWideLayout =
+                  episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
               return MediaGridSliver(
                 items: _filteredItems,

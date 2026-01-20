@@ -1135,9 +1135,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   controller: _tabController,
                   // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
                   // See: https://github.com/flutter/flutter/issues/11132
-                  physics: PlatformDetector.isDesktop(context)
-                      ? const NeverScrollableScrollPhysics()
-                      : null,
+                  physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
                   children: [
                     LibraryRecommendedTab(
                       key: _recommendedTabKey,
@@ -1235,11 +1233,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       final key = _tileKeys[_focusedIndex];
       final context = key?.currentContext;
       if (context != null) {
-        Scrollable.ensureVisible(
-          context,
-          alignment: 0.25,
-          duration: const Duration(milliseconds: 200),
-        );
+        Scrollable.ensureVisible(context, alignment: 0.25, duration: const Duration(milliseconds: 200));
       }
     });
   }
@@ -1442,10 +1436,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             ),
             automaticallyImplyLeading: false,
             actions: [
-              IconButton(
-                icon: const AppIcon(Symbols.close_rounded, fill: 1),
-                onPressed: () => Navigator.pop(context),
-              ),
+              IconButton(icon: const AppIcon(Symbols.close_rounded, fill: 1), onPressed: () => Navigator.pop(context)),
             ],
           ),
           body: Focus(

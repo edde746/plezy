@@ -382,11 +382,7 @@ class _SessionCodeRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            Icon(
-              Symbols.content_copy_rounded,
-              size: 14,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            Icon(Symbols.content_copy_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
       ),
@@ -395,8 +391,6 @@ class _SessionCodeRow extends StatelessWidget {
 
   void _copySessionCode(BuildContext context) {
     Clipboard.setData(ClipboardData(text: sessionId));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(t.watchTogether.sessionCodeCopied)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.watchTogether.sessionCodeCopied)));
   }
 }
