@@ -227,7 +227,8 @@ class PlayerNative implements Player {
   void _handleMpvEvent(String name, Map? data) {
     switch (name) {
       case 'end-file':
-        final reason = data?['reason'] as String?;
+        final reasonValue = data?['reason'];
+        final reason = reasonValue is String ? reasonValue : reasonValue?.toString();
         if (reason == 'eof') {
           _state = _state.copyWith(completed: true);
           _completedController.add(true);

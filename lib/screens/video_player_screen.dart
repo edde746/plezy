@@ -68,9 +68,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // Track the currently active video to guard against duplicate navigation
   static String? _activeRatingKey;
   static int? _activeMediaIndex;
+  static VideoPlayerScreenState? _activeInstance;
 
   static String? get activeRatingKey => _activeRatingKey;
   static int? get activeMediaIndex => _activeMediaIndex;
+  static Future<void> shutdownActivePlayer() async {
+    final instance = _activeInstance;
+    if (instance == null) return;
+    await instance._shutdownForAppExit();
+  }
 
   Player? player;
   bool _isPlayerInitialized = false;
@@ -119,12 +125,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false); // Track if first video frame has rendered
-  final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false); // Track if navigating away (for black overlay)
 
   @override
   void initState() {
     super.initState();
 
+    _activeInstance = this;
     _activeRatingKey = widget.metadata.ratingKey;
     _activeMediaIndex = widget.selectedMediaIndex;
 
@@ -415,7 +421,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Listen to position for completion detection (fallback for unreliable MPV events)
       _positionSubscription = player!.streams.position.listen((position) {
-        final duration = player!.state.duration;
+        final currentPlayer = player;
+        if (currentPlayer == null || _isDisposingForNavigation) return;
+        final duration = currentPlayer.state.duration;
         if (duration.inMilliseconds > 0 &&
             position.inMilliseconds >= duration.inMilliseconds - 1000 &&
             !_showPlayNextDialog &&
@@ -586,15 +594,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Listen to playing state and update media controls
     player!.streams.playing.listen((isPlaying) {
+      if (player == null || _isDisposingForNavigation) return;
       _updateMediaControlsPlaybackState();
     });
 
     // Listen to position updates for media controls and Discord
     player!.streams.position.listen((position) {
+      final currentPlayer = player;
+      if (currentPlayer == null || _isDisposingForNavigation) return;
       _mediaControlsManager?.updatePlaybackState(
-        isPlaying: player!.state.playing,
+        isPlaying: currentPlayer.state.playing,
         position: position,
-        speed: player!.state.rate,
+        speed: currentPlayer.state.rate,
       );
       DiscordRPCService.instance.updatePosition(position);
     });
@@ -994,7 +1005,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               if (!mounted) return;
             }
           }
-          _isExiting.value = true;
           Navigator.of(context).pop(true);
         }
       }
@@ -1013,7 +1023,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     // Default behavior for hosts or non-session users
-    _isExiting.value = true;
     Navigator.of(context).pop(true);
   }
 
@@ -1038,7 +1047,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Dispose value notifiers
     _isBuffering.dispose();
     _hasFirstFrame.dispose();
-    _isExiting.dispose();
 
     // Stop progress tracking and send final state
     _progressTracker?.sendProgress('stopped');
@@ -1107,7 +1115,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _activeRatingKey = null;
       _activeMediaIndex = null;
     }
+    if (identical(_activeInstance, this)) {
+      _activeInstance = null;
+    }
     super.dispose();
+  }
+
+  Future<void> _shutdownForAppExit() async {
+    if (_isDisposingForNavigation) return;
+    _isDisposingForNavigation = true;
+
+    final playerToDispose = player;
+    try {
+      _progressTracker?.sendProgress('stopped');
+      _progressTracker?.stopTracking();
+      await _clearFrameRateMatching();
+      if (mounted) {
+        setState(() {
+          player = null;
+          _isPlayerInitialized = false;
+        });
+      } else {
+        player = null;
+        _isPlayerInitialized = false;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+      await playerToDispose?.stop();
+      await playerToDispose?.dispose();
+    } catch (e) {
+      appLogger.d('Error disposing player for app exit', error: e);
+    }
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
@@ -1519,7 +1556,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> disposePlayerForNavigation() async {
     if (_isDisposingForNavigation) return;
     _isDisposingForNavigation = true;
-    _isExiting.value = true; // Show black overlay during transition
 
     try {
       _detachFromWatchTogetherSession();
@@ -1527,6 +1563,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _progressTracker?.stopTracking();
       // Clear frame rate matching before disposing (Android only)
       await _clearFrameRateMatching();
+      await player?.stop();
       await player?.dispose();
     } catch (e) {
       appLogger.d('Error disposing player before navigation', error: e);
@@ -1783,7 +1820,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       return ValueListenableBuilder<bool>(
                         valueListenable: _hasFirstFrame,
                         builder: (context, hasFrame, child) {
-                          if ((!isBuffering && hasFrame) || _isExiting.value) return const SizedBox.shrink();
+                          if (!isBuffering && hasFrame) return const SizedBox.shrink();
                           // Show spinner only - controls overlay provides its own black background during loading
                           return IgnorePointer(
                             child: Positioned.fill(
@@ -1803,14 +1840,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                       );
                     },
                   );
-                },
-              ),
-              // Black overlay during exit (no spinner - just covers transparency)
-              ValueListenableBuilder<bool>(
-                valueListenable: _isExiting,
-                builder: (context, isExiting, child) {
-                  if (!isExiting) return const SizedBox.shrink();
-                  return Positioned.fill(child: Container(color: Colors.black));
                 },
               ),
             ],

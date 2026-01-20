@@ -57,6 +57,8 @@ void _absorbZeroOffsetPointerEvent(PointerEvent event) {
   }
 }
 
+final ValueNotifier<bool> appClosing = ValueNotifier<bool>(false);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
@@ -255,6 +257,17 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                 darkTheme: themeProvider.darkTheme,
                 themeMode: themeProvider.materialThemeMode,
                 navigatorObservers: [routeObserver],
+                builder: (context, child) {
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: appClosing,
+                    builder: (context, closing, _) {
+                      if (!closing) {
+                        return child ?? const SizedBox.shrink();
+                      }
+                      return const SizedBox.expand(child: ColoredBox(color: Colors.black));
+                    },
+                  );
+                },
                 home: const OrientationAwareSetup(),
               ),
             ),
@@ -305,6 +318,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
   Future<void> _loadSavedCredentials() async {
     final storage = await StorageService.getInstance();
+
     final registry = ServerRegistry(storage);
 
     // Migrate from single-server to multi-server if needed

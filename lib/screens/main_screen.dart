@@ -1,7 +1,10 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:window_manager/window_manager.dart';
 import '../../services/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../services/update_service.dart';
@@ -64,7 +67,8 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with RouteAware {
+class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener {
+  bool _isClosing = false;
   late int _currentIndex;
   String? _selectedLibraryGlobalKey;
 
@@ -97,6 +101,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     super.initState();
     _isOffline = widget.isOfflineMode;
 
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      windowManager.addListener(this);
+      windowManager.setPreventClose(true);
+    }
+
     // Start on Downloads tab when in offline mode
     // In offline mode: visual index 0 = Downloads (screen 3), 1 = Settings (screen 4)
     // In online mode: indices match directly
@@ -113,6 +122,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
 
     // Set up data invalidation callback for profile switching (skip in offline mode)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _setDiscoverActive(
+        !_isOffline && NavigationTab.isTabAtIndex(NavigationTabId.discover, _currentIndex, isOffline: _isOffline),
+      );
+
       if (!_isOffline) {
         // Initialize UserProfileProvider to ensure it's ready after sign-in
         final userProfileProvider = context.userProfile;
@@ -130,6 +143,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
       // Check for updates on startup
       _checkForUpdatesOnStartup();
     });
+  }
+
+  void _setDiscoverActive(bool active) {
+    if (_discoverKey.currentState case final DiscoverTabControls controls) {
+      controls.setTabActive(active);
+    }
   }
 
   Future<void> _checkForUpdatesOnStartup() async {
@@ -277,10 +296,44 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      windowManager.removeListener(this);
+      windowManager.setPreventClose(false);
+    }
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _sidebarFocusScope.dispose();
     _contentFocusScope.dispose();
     super.dispose();
+  }
+
+  @override
+  void onWindowClose() {
+    if (_isClosing) return;
+    _isClosing = true;
+
+    // Unmount UI early to remove external layers before window teardown.
+    appClosing.value = true;
+    // Give the video player a chance to stop/tear down native surfaces.
+    final shutdownFuture = VideoPlayerScreenState.shutdownActivePlayer();
+
+    var destroyed = false;
+    void scheduleDestroy() {
+      if (destroyed) return;
+      destroyed = true;
+      Future<void>(() async {
+        // Bound shutdown wait to avoid hanging on exit.
+        await shutdownFuture.timeout(const Duration(milliseconds: 200), onTimeout: () {});
+        // Small delay to let compositor flush after player teardown.
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await windowManager.setPreventClose(false);
+        await windowManager.destroy();
+      });
+    }
+
+    // Defer close to allow any last frame work before destroying the window.
+    Future<void>.delayed(const Duration(milliseconds: 150), () {
+      scheduleDestroy();
+    });
   }
 
   List<Widget> _buildScreens(bool offline) {
@@ -358,6 +411,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _sideNavKey.currentState?.focusActiveItem();
     });
+
+    _setDiscoverActive(
+      !_isOffline && NavigationTab.isTabAtIndex(NavigationTabId.discover, _currentIndex, isOffline: _isOffline),
+    );
 
     // Ensure profile provider is initialized when coming back online
     if (!_isOffline) {
@@ -504,10 +561,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
     });
 
     // Skip screen-specific logic in offline mode (only Downloads and Settings available)
-    if (_isOffline) return;
+    if (_isOffline) {
+      _setDiscoverActive(false);
+      return;
+    }
+
+    _setDiscoverActive(NavigationTab.isTabAtIndex(NavigationTabId.discover, index, isOffline: _isOffline));
 
     // Notify discover screen when it becomes visible via tab switch
-    if (index == 0) {
+    if (NavigationTab.isTabAtIndex(NavigationTabId.discover, index, isOffline: _isOffline)) {
       _onDiscoverBecameVisible();
     }
     // Ensure the libraries screen applies focus when brought into view

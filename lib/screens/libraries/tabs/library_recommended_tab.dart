@@ -119,7 +119,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
       // At top boundary - return false to allow onNavigateUp to handle it
       return false;
     }
-    
+
     if (targetIndex >= _hubKeys.length) {
       // At bottom boundary, block navigation
       return true;

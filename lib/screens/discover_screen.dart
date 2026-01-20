@@ -45,6 +45,10 @@ class DiscoverScreen extends StatefulWidget {
   State<DiscoverScreen> createState() => _DiscoverScreenState();
 }
 
+abstract class DiscoverTabControls {
+  void setTabActive(bool active);
+}
+
 class _DiscoverScreenState extends State<DiscoverScreen>
     with
         Refreshable,
@@ -52,7 +56,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ItemUpdatable,
         WatchStateAware,
         SingleTickerProviderStateMixin,
-        WidgetsBindingObserver {
+        WidgetsBindingObserver
+    implements DiscoverTabControls {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
 
   @override
@@ -72,9 +77,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final PageController _heroController = PageController();
   final ScrollController _scrollController = ScrollController();
   int _currentHeroIndex = 0;
+  bool _isTabActive = false;
+  bool _hasLoadedContent = false;
   Timer? _autoScrollTimer;
   late AnimationController _indicatorAnimationController;
-  bool _isAutoScrollPaused = false;
+  bool _isAutoScrollPaused = true;
 
   // WatchStateAware: watch on-deck items and their parent shows/seasons
   @override
@@ -196,8 +203,22 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
     _watchTogetherButtonFocusNode.addListener(_onWatchTogetherFocusChange);
     _userButtonFocusNode.addListener(_onUserFocusChange);
-    _loadContent();
-    _startAutoScroll();
+  }
+
+  @override
+  void setTabActive(bool active) {
+    if (_isTabActive == active) return;
+    _isTabActive = active;
+
+    if (active) {
+      if (!_hasLoadedContent) {
+        _hasLoadedContent = true;
+        _loadContent();
+      }
+      _resumeAutoScroll();
+    } else {
+      _pauseAutoScroll();
+    }
   }
 
   void _onRefreshFocusChange() {
@@ -408,6 +429,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       appLogger.d('App resumed on mobile - refreshing continue watching');
       _refreshContinueWatching();
     }
+
+    if (state == AppLifecycleState.resumed) {
+      if (_isTabActive) {
+        _resumeAutoScroll();
+      }
+      return;
+    }
+
+    _pauseAutoScroll();
   }
 
   void _startAutoScroll() {
@@ -525,7 +555,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
       // Wait for OnDeck to complete and show it immediately
       final onDeck = await onDeckFuture;
-
       setState(() {
         _onDeck = onDeck;
         _isLoading = false; // Show content, but hubs still loading
@@ -595,7 +624,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         limit: 20,
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
       );
-
       if (mounted) {
         setState(() {
           _onDeck = onDeck;
@@ -1041,7 +1069,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
                         onNavigateUp: () {
                           _heroFocusNode.requestFocus();
-                          _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+                          _scrollController.animateTo(
+                            0,
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
+                          );
                         },
                       ),
                     ),
@@ -1057,10 +1089,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onRefresh: updateItem,
                         // Hub index is i + 1 if continue watching exists, otherwise i
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                        onNavigateUp: (i == 0 && _onDeck.isEmpty) ? () {
-                          _heroFocusNode.requestFocus();
-                          _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-                        } : null,
+                        onNavigateUp: (i == 0 && _onDeck.isEmpty)
+                            ? () {
+                                _heroFocusNode.requestFocus();
+                                _scrollController.animateTo(
+                                  0,
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeOut,
+                                );
+                              }
+                            : null,
                       ),
                     ),
 
@@ -1330,6 +1368,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       builder: (context) {
                         final client = _getClientForItem(heroItem);
                         final mediaQuery = MediaQuery.of(context);
+
                         final imageUrl = PlexImageHelper.getOptimizedImageUrl(
                           client: client,
                           thumbPath: heroItem.art ?? heroItem.grandparentArt,
@@ -1398,6 +1437,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           builder: (context) {
                             final client = _getClientForItem(heroItem);
                             final dpr = MediaQuery.of(context).devicePixelRatio;
+
                             final logoUrl = PlexImageHelper.getOptimizedImageUrl(
                               client: client,
                               thumbPath: heroItem.clearLogo,
