@@ -205,8 +205,17 @@ void MpvPlayerPlugin::HandleMethodCall(
       }
     }
 
-    player_->Command(command_args);
-    result->Success();
+    // Use async command to prevent UI blocking during network operations
+    // Move result into shared_ptr for safe capture in callback
+    auto result_ptr = std::make_shared<std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>>(std::move(result));
+    player_->CommandAsync(command_args, [result_ptr](int error) {
+      if (error < 0) {
+        (*result_ptr)->Error("COMMAND_FAILED", "MPV command failed");
+      } else {
+        (*result_ptr)->Success();
+      }
+    });
+    return;  // Response will be sent asynchronously
   } else if (method == "setProperty") {
     if (!player_ || !player_->IsInitialized()) {
       result->Error("NOT_INITIALIZED", "Player not initialized");

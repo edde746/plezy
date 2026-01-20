@@ -178,8 +178,15 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPlayerD
             return
         }
 
-        playerCore?.command(commandArgs)
-        result(nil)
+        // Use async command to prevent UI blocking during network operations
+        playerCore?.commandAsync(commandArgs) { commandResult in
+            switch commandResult {
+            case .success:
+                result(nil)
+            case .failure(let error):
+                result(FlutterError(code: "COMMAND_FAILED", message: error.localizedDescription, details: nil))
+            }
+        } ?? result(nil)
     }
 
     private func handleSetVisible(call: FlutterMethodCall, result: @escaping FlutterResult) {

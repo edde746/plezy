@@ -39,6 +39,13 @@ class MpvPlayer {
   // Executes an mpv command.
   void Command(const std::vector<std::string>& args);
 
+  // Callback type for async command completion.
+  using CommandCallback = std::function<void(int error)>;
+
+  // Executes an mpv command asynchronously to prevent UI blocking.
+  // The callback is called on the main thread when the command completes.
+  void CommandAsync(const std::vector<std::string>& args, CommandCallback callback);
+
   // Sets an mpv property.
   void SetProperty(const std::string& name, const std::string& value);
 
@@ -83,6 +90,10 @@ class MpvPlayer {
 
   uint64_t next_reply_userdata_ = 1;
   std::map<std::string, uint64_t> observed_properties_;
+
+  // Pending async commands: request_id -> callback
+  std::map<uint64_t, CommandCallback> pending_commands_;
+  std::mutex pending_commands_mutex_;
 
   // HDR state
   bool hdr_enabled_ = true;      // User preference

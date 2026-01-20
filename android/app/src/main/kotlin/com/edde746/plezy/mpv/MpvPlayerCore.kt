@@ -22,8 +22,10 @@ import android.view.TextureView
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import dev.jdtech.mpv.MPVLib
+import io.flutter.plugin.common.MethodChannel
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.util.concurrent.Executors
 
 interface MpvPlayerDelegate {
     fun onPropertyChange(name: String, value: Any?)
@@ -47,6 +49,9 @@ class MpvPlayerCore(private val activity: Activity) :
     var delegate: MpvPlayerDelegate? = null
     var isInitialized: Boolean = false
         private set
+
+    // Executor for running MPV commands off the UI thread to prevent ANR
+    private val commandExecutor = Executors.newSingleThreadExecutor()
 
     // Frame rate matching
     private var currentVideoFps: Float = 0f
@@ -451,6 +456,32 @@ class MpvPlayerCore(private val activity: Activity) :
         MPVLib.command(args)
     }
 
+    /**
+     * Execute an MPV command asynchronously off the UI thread.
+     * This prevents ANR when commands like loadfile block waiting for network I/O.
+     * The result is called back on the UI thread when the command completes.
+     */
+    fun commandAsync(args: Array<String>, result: MethodChannel.Result) {
+        if (!isInitialized || args.isEmpty()) {
+            result.success(null)
+            return
+        }
+
+        commandExecutor.execute {
+            try {
+                MPVLib.command(args)
+                activity.runOnUiThread {
+                    result.success(null)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Async command failed: ${e.message}", e)
+                activity.runOnUiThread {
+                    result.error("COMMAND_FAILED", e.message, null)
+                }
+            }
+        }
+    }
+
     fun setVisible(visible: Boolean) {
         activity.runOnUiThread {
             surfaceView?.visibility = if (visible) View.VISIBLE else View.INVISIBLE
@@ -651,6 +682,9 @@ class MpvPlayerCore(private val activity: Activity) :
 
     fun dispose() {
         Log.d(TAG, "Disposing")
+
+        // Shutdown command executor
+        commandExecutor.shutdown()
 
         // Clean up frame rate listener
         clearVideoFrameRate()

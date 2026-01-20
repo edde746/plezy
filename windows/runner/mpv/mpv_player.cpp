@@ -116,6 +116,15 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
 void MpvPlayer::Dispose() {
   StopEventLoop();
 
+  // Cancel pending async commands
+  {
+    std::lock_guard<std::mutex> lock(pending_commands_mutex_);
+    for (auto& pair : pending_commands_) {
+      if (pair.second) pair.second(-1);  // Call with error
+    }
+    pending_commands_.clear();
+  }
+
   if (mpv_) {
     mpv_terminate_destroy(mpv_);
     mpv_ = nullptr;
@@ -140,6 +149,42 @@ void MpvPlayer::Command(const std::vector<std::string>& args) {
   c_args.push_back(nullptr);
 
   mpv_command(mpv_, c_args.data());
+}
+
+void MpvPlayer::CommandAsync(const std::vector<std::string>& args,
+                              CommandCallback callback) {
+  if (!mpv_) {
+    if (callback) callback(0);
+    return;
+  }
+
+  std::vector<const char*> c_args;
+  c_args.reserve(args.size() + 1);
+  for (const auto& arg : args) {
+    c_args.push_back(arg.c_str());
+  }
+  c_args.push_back(nullptr);
+
+  // Generate unique request ID and store callback
+  uint64_t request_id;
+  {
+    std::lock_guard<std::mutex> lock(pending_commands_mutex_);
+    request_id = next_reply_userdata_++;
+    pending_commands_[request_id] = std::move(callback);
+  }
+
+  // mpv_command_async returns immediately
+  int result = mpv_command_async(mpv_, request_id, c_args.data());
+  if (result < 0) {
+    // Submission failed, complete immediately with error
+    std::lock_guard<std::mutex> lock(pending_commands_mutex_);
+    auto it = pending_commands_.find(request_id);
+    if (it != pending_commands_.end()) {
+      auto cb = std::move(it->second);
+      pending_commands_.erase(it);
+      if (cb) cb(result);
+    }
+  }
 }
 
 void MpvPlayer::SetProperty(const std::string& name, const std::string& value) {
@@ -270,6 +315,23 @@ void MpvPlayer::EventLoop() {
 
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {
   switch (event->event_id) {
+    case MPV_EVENT_COMMAND_REPLY: {
+      // Handle async command completion
+      uint64_t request_id = event->reply_userdata;
+      CommandCallback callback;
+      {
+        std::lock_guard<std::mutex> lock(pending_commands_mutex_);
+        auto it = pending_commands_.find(request_id);
+        if (it != pending_commands_.end()) {
+          callback = std::move(it->second);
+          pending_commands_.erase(it);
+        }
+      }
+      if (callback) {
+        callback(event->error);
+      }
+      break;
+    }
     case MPV_EVENT_LOG_MESSAGE: {
       auto* msg = static_cast<mpv_event_log_message*>(event->data);
       char log_msg[512];

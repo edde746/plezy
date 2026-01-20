@@ -190,8 +190,10 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        playerCore?.command(args.toTypedArray())
-        result.success(null)
+        // Use async command to prevent ANR - command executes off UI thread
+        // and result is called back when complete
+        playerCore?.commandAsync(args.toTypedArray(), result)
+            ?: result.success(null)
     }
 
     private fun handleSetVisible(call: MethodCall, result: MethodChannel.Result) {

@@ -342,8 +342,21 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel,
             command_args.push_back(fl_value_get_string(item));
           }
         }
-        self->player->Command(command_args);
-        response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+        // Use async command to prevent UI blocking during network operations
+        // Take ownership of method_call to respond asynchronously
+        g_object_ref(method_call);
+        self->player->CommandAsync(command_args, [method_call](int error) {
+          g_autoptr(FlMethodResponse) async_response = nullptr;
+          if (error < 0) {
+            async_response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+                "COMMAND_FAILED", "MPV command failed", nullptr));
+          } else {
+            async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+          }
+          fl_method_call_respond(method_call, async_response, nullptr);
+          g_object_unref(method_call);
+        });
+        return;  // Response will be sent asynchronously
       }
     }
   } else if (strcmp(method, "setProperty") == 0) {
