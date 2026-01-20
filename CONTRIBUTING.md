@@ -57,8 +57,8 @@ This project uses `slang` for internationalization with JSON files.
 
 ### Adding New Languages
 
-1. Create new JSON file: `lib/i18n/strings_[locale].i18n.json`
-2. Copy structure from `strings.i18n.json` and translate values
+1. Create new JSON file: `lib/i18n/[locale].i18n.json`
+2. Copy structure from `en.i18n.json` and translate values
 3. Run `dart run slang` to regenerate files
 
 ### Guidelines
