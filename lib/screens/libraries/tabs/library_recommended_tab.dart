@@ -115,8 +115,13 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
     final targetIndex = isUp ? hubIndex - 1 : hubIndex + 1;
 
     // Check if target is valid
-    if (targetIndex < 0 || targetIndex >= _hubKeys.length) {
-      // At boundary, block navigation
+    if (targetIndex < 0) {
+      // At top boundary - return false to allow onNavigateUp to handle it
+      return false;
+    }
+    
+    if (targetIndex >= _hubKeys.length) {
+      // At bottom boundary, block navigation
       return true;
     }
 
@@ -158,6 +163,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
           onRemoveFromContinueWatching: isContinueWatching ? _refreshContinueWatching : null,
           onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
           onBack: widget.onBack,
+          onNavigateUp: index == 0 ? widget.onBack : null,
         );
       },
     );

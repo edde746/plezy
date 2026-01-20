@@ -39,6 +39,10 @@ class HubSection extends StatefulWidget {
   /// Used to navigate focus back to the tab bar.
   final VoidCallback? onBack;
 
+  /// Called when the user presses UP while at the topmost item (first hub).
+  /// Used to navigate focus to the tab bar.
+  final VoidCallback? onNavigateUp;
+
   const HubSection({
     super.key,
     required this.hub,
@@ -49,6 +53,7 @@ class HubSection extends StatefulWidget {
     this.showServerName = false,
     this.onVerticalNavigation,
     this.onBack,
+    this.onNavigateUp,
   });
 
   @override
@@ -173,6 +178,7 @@ class HubSectionState extends State<HubSection> {
         _scrollToIndex(_focusedIndex);
         setState(() {});
       }
+      // At leftmost item: do nothing, but consume event to prevent focus escape
       return KeyEventResult.handled;
     }
 
@@ -189,7 +195,11 @@ class HubSectionState extends State<HubSection> {
 
     // Up/Down: delegate to parent for vertical hub navigation, ALWAYS consume
     if (key.isUpKey) {
-      widget.onVerticalNavigation?.call(true);
+      final handled = widget.onVerticalNavigation?.call(true) ?? false;
+      // If not handled (at top boundary) and we have onNavigateUp, call it
+      if (!handled && widget.onNavigateUp != null) {
+        widget.onNavigateUp!();
+      }
       return KeyEventResult.handled;
     }
     if (key.isDownKey) {
