@@ -926,11 +926,29 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final isMobile = PlatformDetector.isMobile(context);
 
     if (!isMobile) {
+      final DateTime now = DateTime.now();
+
+      // Always perform the single-click behavior immediately
       if (widget.canControl && _clickVideoTogglesPlayback) {
         widget.player.playOrPause();
       } else {
         _toggleControls();
       }
+
+      // Detect double-click
+      final bool isDoubleClick = _lastSkipTapTime != null && now.difference(_lastSkipTapTime!).inMilliseconds < 250;
+
+      if (isDoubleClick) {
+        _lastSkipTapTime = null;
+
+        // Perform desktop double-click action: toggle fullscreen
+        _toggleFullscreen();
+
+        return;
+      }
+
+      // Record this click as a candidate for double-click detection
+      _lastSkipTapTime = now;
       return;
     }
 
