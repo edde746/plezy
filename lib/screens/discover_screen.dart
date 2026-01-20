@@ -46,7 +46,13 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen>
-    with Refreshable, FullRefreshable, ItemUpdatable, WatchStateAware, SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with
+        Refreshable,
+        FullRefreshable,
+        ItemUpdatable,
+        WatchStateAware,
+        SingleTickerProviderStateMixin,
+        WidgetsBindingObserver {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
 
   @override

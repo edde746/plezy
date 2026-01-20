@@ -274,7 +274,13 @@ class _MediaCardGrid extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: _buildPosterImage(context, item, isOffline: isOffline, localPosterPath: localPosterPath, mixedHubContext: mixedHubContext),
+          child: _buildPosterImage(
+            context,
+            item,
+            isOffline: isOffline,
+            localPosterPath: localPosterPath,
+            mixedHubContext: mixedHubContext,
+          ),
         ),
         _PosterOverlay(item: item),
       ],
@@ -571,7 +577,13 @@ class _MediaCardList extends StatelessWidget {
   }
 }
 
-Widget _buildPosterImage(BuildContext context, dynamic item, {bool isOffline = false, String? localPosterPath, bool mixedHubContext = false}) {
+Widget _buildPosterImage(
+  BuildContext context,
+  dynamic item, {
+  bool isOffline = false,
+  String? localPosterPath,
+  bool mixedHubContext = false,
+}) {
   String? posterUrl;
   IconData fallbackIcon = Symbols.movie_rounded;
 

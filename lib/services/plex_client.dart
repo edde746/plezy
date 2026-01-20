@@ -360,10 +360,7 @@ class PlexClient {
   ///
   /// When [forceRefresh] is true, bypasses cache to get fresh OnDeck data.
   /// Use this when cross-device sync is needed (e.g., after app resume).
-  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(
-    String ratingKey, {
-    bool forceRefresh = false,
-  }) async {
+  Future<Map<String, dynamic>> getMetadataWithImagesAndOnDeck(String ratingKey, {bool forceRefresh = false}) async {
     // Cache key is always the base endpoint (no query params)
     final cacheKey = '/library/metadata/$ratingKey';
 
@@ -1265,10 +1262,7 @@ class PlexClient {
   /// This matches the official Plex client's home page layout.
   Future<List<PlexHub>> getGlobalHubs({int limit = 10}) async {
     try {
-      final response = await _dio.get(
-        '/hubs',
-        queryParameters: {'count': limit, 'includeGuids': 1},
-      );
+      final response = await _dio.get('/hubs', queryParameters: {'count': limit, 'includeGuids': 1});
 
       final container = _getMediaContainer(response);
       if (container != null && container['Hub'] != null) {
