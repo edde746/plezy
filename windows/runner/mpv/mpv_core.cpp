@@ -97,7 +97,7 @@ void MpvCore::SetVisible(bool visible) {
       ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
                      SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
       if (!composition_enabled_) {
-        SetWindowComposition(flutter_window_, 6, 0);
+        SetWindowComposition(flutter_window_, 2, 0);
         composition_enabled_ = true;
       }
       ::ShowWindow(container_, SW_SHOWNOACTIVATE);
@@ -160,7 +160,7 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
           ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
                          SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
           if (!composition_enabled_) {
-            SetWindowComposition(flutter_window_, 6, 0);
+            SetWindowComposition(flutter_window_, 2, 0);
             composition_enabled_ = true;
           }
           ::ShowWindow(container_, SW_SHOWNOACTIVATE);
