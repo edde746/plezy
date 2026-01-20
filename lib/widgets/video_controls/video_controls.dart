@@ -786,6 +786,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     widget.onSeekCompleted?.call(position);
   }
 
+  /// Handle tap in skip zone for desktop mode
+  void _handleTapInSkipZoneDesktop() {
+    if (widget.canControl && _clickVideoTogglesPlayback) {
+      widget.player.playOrPause();
+    }
+
+    _toggleControls();
+  }
+
   /// Handle tap in skip zone with custom double-tap detection
   void _handleTapInSkipZone({required bool isForward}) {
     final now = DateTime.now();
@@ -1326,7 +1335,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                 right: 0,
                                 bottom: bottomExclude,
                                 child: GestureDetector(
-                                  onTap: _toggleControls,
+                                  onTap: _handleTapInSkipZoneDesktop,
                                   onDoubleTap: _toggleFullscreen,
                                   behavior: HitTestBehavior.translucent,
                                   child: Container(color: Colors.transparent),
