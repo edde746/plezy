@@ -48,6 +48,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keySubtitleBackgroundOpacity = 'subtitle_background_opacity';
   static const String _keyAppLocale = 'app_locale';
   static const String _keyRememberTrackSelections = 'remember_track_selections';
+  static const String _keyClickVideoTogglesPlayback = 'click_video_toggles_playback';
   static const String _keyAutoSkipIntro = 'auto_skip_intro';
   static const String _keyAutoSkipCredits = 'auto_skip_credits';
   static const String _keyAutoSkipDelay = 'auto_skip_delay';
@@ -804,6 +805,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyRememberTrackSelections) ?? true;
   }
 
+  // Click on Video Player Settings
+  Future<void> setClickVideoTogglesPlayback(bool value) async {
+    await prefs.setBool(_keyClickVideoTogglesPlayback, value);
+  }
+
+  bool getClickVideoTogglesPlayback() {
+    return prefs.getBool(_keyClickVideoTogglesPlayback) ?? false;
+  }
+
   // Auto Skip Intro
   Future<void> setAutoSkipIntro(bool value) async {
     await prefs.setBool(_keyAutoSkipIntro, value);
@@ -1045,6 +1055,7 @@ class SettingsService extends BaseSharedPreferencesService {
       'keyboardShortcuts': getKeyboardShortcuts(),
       'keyboardHotkeys': hotkeys.map((key, value) => MapEntry(key, _serializeHotKey(value))),
       'rememberTrackSelections': getRememberTrackSelections(),
+      'clickVideoTogglesPlayback': getClickVideoTogglesPlayback(),
       'autoSkipIntro': getAutoSkipIntro(),
       'autoSkipCredits': getAutoSkipCredits(),
       'autoSkipDelay': getAutoSkipDelay(),

@@ -220,6 +220,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes}분';
 	@override String get rememberTrackSelections => '에피소드/영화별 트랙 선택 기억';
 	@override String get rememberTrackSelectionsDescription => '재생 중 트랙을 변경할 때 오디오 및 자막 언어 설정을 자동으로 저장합니다';
+	@override String get clickVideoTogglesPlayback => '비디오를 클릭하여 재생/일시정지를 전환하세요.';
+	@override String get clickVideoTogglesPlaybackDescription => '이 옵션이 활성화되어 있으면 비디오 플레이어를 클릭할 때 재생 또는 일시정지가 됩니다. 그렇지 않으면 클릭 시 재생 컨트롤이 표시되거나 숨겨집니다.';
 	@override String get videoPlayerControls => '비디오 플레이어 컨트롤';
 	@override String get keyboardShortcuts => '키보드 단축키';
 	@override String get keyboardShortcutsDescription => '사용자 정의 키보드 단축키';
@@ -1033,6 +1035,8 @@ extension on TranslationsKo {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}분',
 			'settings.rememberTrackSelections' => '에피소드/영화별 트랙 선택 기억',
 			'settings.rememberTrackSelectionsDescription' => '재생 중 트랙을 변경할 때 오디오 및 자막 언어 설정을 자동으로 저장합니다',
+			'settings.clickVideoTogglesPlayback' => '비디오를 클릭하여 재생/일시정지를 전환하세요.',
+			'settings.clickVideoTogglesPlaybackDescription' => '이 옵션이 활성화되어 있으면 비디오 플레이어를 클릭할 때 재생 또는 일시정지가 됩니다. 그렇지 않으면 클릭 시 재생 컨트롤이 표시되거나 숨겨집니다.',
 			'settings.videoPlayerControls' => '비디오 플레이어 컨트롤',
 			'settings.keyboardShortcuts' => '키보드 단축키',
 			'settings.keyboardShortcutsDescription' => '사용자 정의 키보드 단축키',
@@ -1446,10 +1450,10 @@ extension on TranslationsKo {
 			'watchTogether.leaveSessionQuestion' => '세션을 탈퇴 하시겠습니까?',
 			'watchTogether.endSessionConfirm' => '이 작업은 모든 참가자의 세션을 종료합니다.',
 			'watchTogether.leaveSessionConfirm' => '당신은 세션에서 제거됩니다.',
-			'watchTogether.endSessionConfirmOverlay' => '이것은 모든 참가자의 시청 세션을 종료합니다.',
-			'watchTogether.leaveSessionConfirmOverlay' => '시청 세션 연결이 끊어집니다.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.endSessionConfirmOverlay' => '이것은 모든 참가자의 시청 세션을 종료합니다.',
+			'watchTogether.leaveSessionConfirmOverlay' => '시청 세션 연결이 끊어집니다.',
 			'watchTogether.end' => '종료',
 			'watchTogether.leave' => '이탈',
 			'watchTogether.syncing' => '동기화 중...',

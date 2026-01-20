@@ -107,6 +107,8 @@
     "minutesUnit": "${minutes} minuti",
     "rememberTrackSelections": "Ricorda selezioni tracce per serie/film",
     "rememberTrackSelectionsDescription": "Salva automaticamente le preferenze delle lingue audio e sottotitoli quando cambi tracce durante la riproduzione",
+    "clickVideoTogglesPlayback": "Fai clic sul video per avviare o mettere in pausa la riproduzione.",
+    "clickVideoTogglesPlaybackDescription": "Se questa opzione è abilitata, facendo clic sul lettore video la riproduzione verrà avviata o messa in pausa. In caso contrario, facendo clic verranno mostrati o nascosti i controlli di riproduzione.",
     "videoPlayerControls": "Controlli del lettore video",
     "keyboardShortcuts": "Scorciatoie da tastiera",
     "keyboardShortcutsDescription": "Personalizza le scorciatoie da tastiera",

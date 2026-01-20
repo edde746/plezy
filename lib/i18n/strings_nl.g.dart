@@ -220,6 +220,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => 'bij ${minutes} minuten';
 	@override String get rememberTrackSelections => 'Onthoud track selecties per serie/film';
 	@override String get rememberTrackSelectionsDescription => 'Bewaar automatisch audio- en ondertiteltaalvoorkeuren wanneer je tracks wijzigt tijdens afspelen';
+	@override String get clickVideoTogglesPlayback => 'Klik op de video om afspelen/pauzeren te wisselen.';
+	@override String get clickVideoTogglesPlaybackDescription => 'Als deze optie is ingeschakeld, wordt de video afgespeeld of gepauzeerd wanneer je op de videospeler klikt. Anders worden bij een klik de afspeelbedieningen weergegeven of verborgen.';
 	@override String get videoPlayerControls => 'Videospeler bediening';
 	@override String get keyboardShortcuts => 'Toetsenbord sneltoetsen';
 	@override String get keyboardShortcutsDescription => 'Pas toetsenbord sneltoetsen aan';
@@ -1033,6 +1035,8 @@ extension on TranslationsNl {
 			'settings.minutesUnit' => ({required Object minutes}) => 'bij ${minutes} minuten',
 			'settings.rememberTrackSelections' => 'Onthoud track selecties per serie/film',
 			'settings.rememberTrackSelectionsDescription' => 'Bewaar automatisch audio- en ondertiteltaalvoorkeuren wanneer je tracks wijzigt tijdens afspelen',
+			'settings.clickVideoTogglesPlayback' => 'Klik op de video om afspelen/pauzeren te wisselen.',
+			'settings.clickVideoTogglesPlaybackDescription' => 'Als deze optie is ingeschakeld, wordt de video afgespeeld of gepauzeerd wanneer je op de videospeler klikt. Anders worden bij een klik de afspeelbedieningen weergegeven of verborgen.',
 			'settings.videoPlayerControls' => 'Videospeler bediening',
 			'settings.keyboardShortcuts' => 'Toetsenbord sneltoetsen',
 			'settings.keyboardShortcutsDescription' => 'Pas toetsenbord sneltoetsen aan',
@@ -1446,10 +1450,10 @@ extension on TranslationsNl {
 			'watchTogether.inSession' => 'In Sessie',
 			'watchTogether.sessionCode' => 'Sessiecode',
 			'watchTogether.hostControlsPlayback' => 'Host bedient het afspelen',
-			'watchTogether.anyoneCanControl' => 'Iedereen kan het afspelen bedienen',
-			'watchTogether.hostControls' => 'Host bedient',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.anyoneCanControl' => 'Iedereen kan het afspelen bedienen',
+			'watchTogether.hostControls' => 'Host bedient',
 			'watchTogether.anyoneControls' => 'Iedereen bedient',
 			'watchTogether.participants' => 'Deelnemers',
 			'watchTogether.host' => 'Host',

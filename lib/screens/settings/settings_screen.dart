@@ -56,6 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _seekTimeLarge = 30;
   int _sleepTimerDuration = 30;
   bool _rememberTrackSelections = true;
+  bool _clickVideoTogglesPlayback = false;
   bool _autoSkipIntro = true;
   bool _autoSkipCredits = true;
   int _autoSkipDelay = 5;
@@ -89,6 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _seekTimeLarge = _settingsService.getSeekTimeLarge();
       _sleepTimerDuration = _settingsService.getSleepTimerDuration();
       _rememberTrackSelections = _settingsService.getRememberTrackSelections();
+      _clickVideoTogglesPlayback = _settingsService.getClickVideoTogglesPlayback();
       _autoSkipIntro = _settingsService.getAutoSkipIntro();
       _autoSkipCredits = _settingsService.getAutoSkipCredits();
       _autoSkipDelay = _settingsService.getAutoSkipDelay();
@@ -356,6 +358,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _rememberTrackSelections = value;
               });
               await _settingsService.setRememberTrackSelections(value);
+            },
+          ),
+          SwitchListTile(
+            secondary: const AppIcon(Symbols.play_pause_rounded, fill: 1),
+            title: Text(t.settings.clickVideoTogglesPlayback),
+            subtitle: Text(t.settings.clickVideoTogglesPlaybackDescription),
+            value: _clickVideoTogglesPlayback,
+            onChanged: (value) async {
+              setState(() {
+                _clickVideoTogglesPlayback = value;
+              });
+              await _settingsService.setClickVideoTogglesPlayback(value);
             },
           ),
           const Divider(),

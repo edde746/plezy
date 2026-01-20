@@ -220,6 +220,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} Minuten';
 	@override String get rememberTrackSelections => 'Spurauswahl pro Serie/Film merken';
 	@override String get rememberTrackSelectionsDescription => 'Audio- und Untertitelsprache automatisch speichern, wenn während der Wiedergabe geändert';
+	@override String get clickVideoTogglesPlayback => 'Klicken Sie auf das Video, um die Wiedergabe zu starten oder zu pausieren.';
+	@override String get clickVideoTogglesPlaybackDescription => 'Wenn diese Option aktiviert ist, wird durch Klicken auf den Videoplayer die Wiedergabe gestartet oder pausiert. Andernfalls werden durch Klicken die Wiedergabesteuerungen ein- oder ausgeblendet.';
 	@override String get videoPlayerControls => 'Videoplayer-Steuerung';
 	@override String get keyboardShortcuts => 'Tastenkürzel';
 	@override String get keyboardShortcutsDescription => 'Tastenkürzel anpassen';
@@ -1033,6 +1035,8 @@ extension on TranslationsDe {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} Minuten',
 			'settings.rememberTrackSelections' => 'Spurauswahl pro Serie/Film merken',
 			'settings.rememberTrackSelectionsDescription' => 'Audio- und Untertitelsprache automatisch speichern, wenn während der Wiedergabe geändert',
+			'settings.clickVideoTogglesPlayback' => 'Klicken Sie auf das Video, um die Wiedergabe zu starten oder zu pausieren.',
+			'settings.clickVideoTogglesPlaybackDescription' => 'Wenn diese Option aktiviert ist, wird durch Klicken auf den Videoplayer die Wiedergabe gestartet oder pausiert. Andernfalls werden durch Klicken die Wiedergabesteuerungen ein- oder ausgeblendet.',
 			'settings.videoPlayerControls' => 'Videoplayer-Steuerung',
 			'settings.keyboardShortcuts' => 'Tastenkürzel',
 			'settings.keyboardShortcutsDescription' => 'Tastenkürzel anpassen',
@@ -1446,10 +1450,10 @@ extension on TranslationsDe {
 			'watchTogether.inSession' => 'In Sitzung',
 			'watchTogether.sessionCode' => 'Sitzungscode',
 			'watchTogether.hostControlsPlayback' => 'Host steuert die Wiedergabe',
-			'watchTogether.anyoneCanControl' => 'Alle können die Wiedergabe steuern',
-			'watchTogether.hostControls' => 'Host steuert',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.anyoneCanControl' => 'Alle können die Wiedergabe steuern',
+			'watchTogether.hostControls' => 'Host steuert',
 			'watchTogether.anyoneControls' => 'Alle steuern',
 			'watchTogether.participants' => 'Teilnehmer',
 			'watchTogether.host' => 'Host',

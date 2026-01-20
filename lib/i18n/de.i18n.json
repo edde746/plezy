@@ -107,6 +107,8 @@
     "minutesUnit": "${minutes} Minuten",
     "rememberTrackSelections": "Spurauswahl pro Serie/Film merken",
     "rememberTrackSelectionsDescription": "Audio- und Untertitelsprache automatisch speichern, wenn während der Wiedergabe geändert",
+    "clickVideoTogglesPlayback": "Klicken Sie auf das Video, um die Wiedergabe zu starten oder zu pausieren.",
+    "clickVideoTogglesPlaybackDescription": "Wenn diese Option aktiviert ist, wird durch Klicken auf den Videoplayer die Wiedergabe gestartet oder pausiert. Andernfalls werden durch Klicken die Wiedergabesteuerungen ein- oder ausgeblendet.",
     "videoPlayerControls": "Videoplayer-Steuerung",
     "keyboardShortcuts": "Tastenkürzel",
     "keyboardShortcutsDescription": "Tastenkürzel anpassen",

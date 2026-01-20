@@ -107,6 +107,8 @@
     "minutesUnit": "bij ${minutes} minuten",
     "rememberTrackSelections": "Onthoud track selecties per serie/film",
     "rememberTrackSelectionsDescription": "Bewaar automatisch audio- en ondertiteltaalvoorkeuren wanneer je tracks wijzigt tijdens afspelen",
+    "clickVideoTogglesPlayback": "Klik op de video om afspelen/pauzeren te wisselen.",
+    "clickVideoTogglesPlaybackDescription": "Als deze optie is ingeschakeld, wordt de video afgespeeld of gepauzeerd wanneer je op de videospeler klikt. Anders worden bij een klik de afspeelbedieningen weergegeven of verborgen.",
     "videoPlayerControls": "Videospeler bediening",
     "keyboardShortcuts": "Toetsenbord sneltoetsen",
     "keyboardShortcutsDescription": "Pas toetsenbord sneltoetsen aan",

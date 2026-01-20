@@ -220,6 +220,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuti';
 	@override String get rememberTrackSelections => 'Ricorda selezioni tracce per serie/film';
 	@override String get rememberTrackSelectionsDescription => 'Salva automaticamente le preferenze delle lingue audio e sottotitoli quando cambi tracce durante la riproduzione';
+	@override String get clickVideoTogglesPlayback => 'Fai clic sul video per avviare o mettere in pausa la riproduzione.';
+	@override String get clickVideoTogglesPlaybackDescription => 'Se questa opzione è abilitata, facendo clic sul lettore video la riproduzione verrà avviata o messa in pausa. In caso contrario, facendo clic verranno mostrati o nascosti i controlli di riproduzione.';
 	@override String get videoPlayerControls => 'Controlli del lettore video';
 	@override String get keyboardShortcuts => 'Scorciatoie da tastiera';
 	@override String get keyboardShortcutsDescription => 'Personalizza le scorciatoie da tastiera';
@@ -1033,6 +1035,8 @@ extension on TranslationsIt {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuti',
 			'settings.rememberTrackSelections' => 'Ricorda selezioni tracce per serie/film',
 			'settings.rememberTrackSelectionsDescription' => 'Salva automaticamente le preferenze delle lingue audio e sottotitoli quando cambi tracce durante la riproduzione',
+			'settings.clickVideoTogglesPlayback' => 'Fai clic sul video per avviare o mettere in pausa la riproduzione.',
+			'settings.clickVideoTogglesPlaybackDescription' => 'Se questa opzione è abilitata, facendo clic sul lettore video la riproduzione verrà avviata o messa in pausa. In caso contrario, facendo clic verranno mostrati o nascosti i controlli di riproduzione.',
 			'settings.videoPlayerControls' => 'Controlli del lettore video',
 			'settings.keyboardShortcuts' => 'Scorciatoie da tastiera',
 			'settings.keyboardShortcutsDescription' => 'Personalizza le scorciatoie da tastiera',
@@ -1446,10 +1450,10 @@ extension on TranslationsIt {
 			'watchTogether.inSession' => 'In Sessione',
 			'watchTogether.sessionCode' => 'Codice Sessione',
 			'watchTogether.hostControlsPlayback' => 'L\'host controlla la riproduzione',
-			'watchTogether.anyoneCanControl' => 'Tutti possono controllare la riproduzione',
-			'watchTogether.hostControls' => 'Controllo host',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.anyoneCanControl' => 'Tutti possono controllare la riproduzione',
+			'watchTogether.hostControls' => 'Controllo host',
 			'watchTogether.anyoneControls' => 'Controllo di tutti',
 			'watchTogether.participants' => 'Partecipanti',
 			'watchTogether.host' => 'Host',
