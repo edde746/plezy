@@ -290,7 +290,15 @@
     "rotationLockButton": "旋转锁定",
     "timelineSlider": "视频时间轴",
     "volumeSlider": "音量调节",
-    "backButton": "返回"
+    "backButton": "返回",
+    "pipFailed": "画中画启动失败",
+    "pipErrors": {
+      "androidVersion": "需要 Android 8.0 或更高版本",
+      "permissionDisabled": "画中画权限已禁用。请在设置 > 应用 > Plezy > 画中画中启用",
+      "notSupported": "此设备不支持画中画模式",
+      "failed": "画中画启动失败",
+      "unknown": "发生错误：${error}"
+    }
   },
   "userStatus": {
     "admin": "管理员",

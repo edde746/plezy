@@ -442,6 +442,8 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Timeline video';
 	@override String get volumeSlider => 'Livello volume';
 	@override String get backButton => 'Indietro';
+	@override String get pipFailed => 'Impossibile avviare la modalità Picture-in-Picture';
+	@override late final _TranslationsVideoControlsPipErrorsIt pipErrors = _TranslationsVideoControlsPipErrorsIt._(_root);
 }
 
 // Path: userStatus
@@ -902,6 +904,20 @@ class _TranslationsHotkeysActionsIt implements TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Vai al sottotitolo precedente';
 }
 
+// Path: videoControls.pipErrors
+class _TranslationsVideoControlsPipErrorsIt implements TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get androidVersion => 'Richiede Android 8.0 o versioni successive';
+	@override String get permissionDisabled => 'L\'autorizzazione Picture-in-Picture è disabilitata. Abilitala in Impostazioni > App > Plezy > Picture-in-Picture';
+	@override String get notSupported => 'Questo dispositivo non supporta la modalità Picture-in-Picture';
+	@override String get failed => 'Impossibile avviare la modalità Picture-in-Picture';
+	@override String unknown({required Object error}) => 'Si è verificato un errore: ${error}';
+}
+
 // Path: libraries.tabs
 class _TranslationsLibrariesTabsIt implements TranslationsLibrariesTabsEn {
 	_TranslationsLibrariesTabsIt._(this._root);
@@ -1201,6 +1217,12 @@ extension on TranslationsIt {
 			'videoControls.timelineSlider' => 'Timeline video',
 			'videoControls.volumeSlider' => 'Livello volume',
 			'videoControls.backButton' => 'Indietro',
+			'videoControls.pipFailed' => 'Impossibile avviare la modalità Picture-in-Picture',
+			'videoControls.pipErrors.androidVersion' => 'Richiede Android 8.0 o versioni successive',
+			'videoControls.pipErrors.permissionDisabled' => 'L\'autorizzazione Picture-in-Picture è disabilitata. Abilitala in Impostazioni > App > Plezy > Picture-in-Picture',
+			'videoControls.pipErrors.notSupported' => 'Questo dispositivo non supporta la modalità Picture-in-Picture',
+			'videoControls.pipErrors.failed' => 'Impossibile avviare la modalità Picture-in-Picture',
+			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Si è verificato un errore: ${error}',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Limitato',
 			'userStatus.protected' => 'Protetto',
@@ -1444,14 +1466,14 @@ extension on TranslationsIt {
 			'watchTogether.joining' => 'Connessione...',
 			'watchTogether.controlMode' => 'Modalità di Controllo',
 			'watchTogether.controlModeQuestion' => 'Chi può controllare la riproduzione?',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostOnly' => 'Solo Host',
 			'watchTogether.anyone' => 'Tutti',
 			'watchTogether.hostingSession' => 'Hosting Sessione',
 			'watchTogether.inSession' => 'In Sessione',
 			'watchTogether.sessionCode' => 'Codice Sessione',
 			'watchTogether.hostControlsPlayback' => 'L\'host controlla la riproduzione',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.anyoneCanControl' => 'Tutti possono controllare la riproduzione',
 			'watchTogether.hostControls' => 'Controllo host',
 			'watchTogether.anyoneControls' => 'Controllo di tutti',

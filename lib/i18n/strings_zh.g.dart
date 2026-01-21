@@ -442,6 +442,8 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '视频时间轴';
 	@override String get volumeSlider => '音量调节';
 	@override String get backButton => '返回';
+	@override String get pipFailed => '画中画启动失败';
+	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 }
 
 // Path: userStatus
@@ -902,6 +904,20 @@ class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => '跳转到上一字幕';
 }
 
+// Path: videoControls.pipErrors
+class _TranslationsVideoControlsPipErrorsZh implements TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get androidVersion => '需要 Android 8.0 或更高版本';
+	@override String get permissionDisabled => '画中画权限已禁用。请在设置 > 应用 > Plezy > 画中画中启用';
+	@override String get notSupported => '此设备不支持画中画模式';
+	@override String get failed => '画中画启动失败';
+	@override String unknown({required Object error}) => '发生错误：${error}';
+}
+
 // Path: libraries.tabs
 class _TranslationsLibrariesTabsZh implements TranslationsLibrariesTabsEn {
 	_TranslationsLibrariesTabsZh._(this._root);
@@ -1201,6 +1217,12 @@ extension on TranslationsZh {
 			'videoControls.timelineSlider' => '视频时间轴',
 			'videoControls.volumeSlider' => '音量调节',
 			'videoControls.backButton' => '返回',
+			'videoControls.pipFailed' => '画中画启动失败',
+			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
+			'videoControls.pipErrors.permissionDisabled' => '画中画权限已禁用。请在设置 > 应用 > Plezy > 画中画中启用',
+			'videoControls.pipErrors.notSupported' => '此设备不支持画中画模式',
+			'videoControls.pipErrors.failed' => '画中画启动失败',
+			'videoControls.pipErrors.unknown' => ({required Object error}) => '发生错误：${error}',
 			'userStatus.admin' => '管理员',
 			'userStatus.restricted' => '受限',
 			'userStatus.protected' => '受保护',
@@ -1444,14 +1466,14 @@ extension on TranslationsZh {
 			'watchTogether.joining' => '加入中...',
 			'watchTogether.controlMode' => '控制模式',
 			'watchTogether.controlModeQuestion' => '谁可以控制播放？',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostOnly' => '仅主持人',
 			'watchTogether.anyone' => '任何人',
 			'watchTogether.hostingSession' => '主持会话',
 			'watchTogether.inSession' => '在会话中',
 			'watchTogether.sessionCode' => '会话代码',
 			'watchTogether.hostControlsPlayback' => '主持人控制播放',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.anyoneCanControl' => '任何人都可以控制播放',
 			'watchTogether.hostControls' => '主持人控制',
 			'watchTogether.anyoneControls' => '任何人控制',

@@ -289,7 +289,15 @@
     "rotationLockButton": "Verrouillage de rotation",
     "timelineSlider": "Timeline vidéo",
     "volumeSlider": "Niveau sonore",
-    "backButton": "Retour"
+    "backButton": "Retour",
+    "pipFailed": "Échec du démarrage du mode image dans l'image",
+    "pipErrors": {
+      "androidVersion": "Nécessite Android 8.0 ou plus récent",
+      "permissionDisabled": "L'autorisation Image dans l'image est désactivée. Activez-la dans Paramètres > Applications > Plezy > Image dans l'image",
+      "notSupported": "Cet appareil ne prend pas en charge le mode image dans l'image",
+      "failed": "Échec du démarrage du mode image dans l'image",
+      "unknown": "Une erreur s'est produite : ${error}"
+    }
   },
   "userStatus": {
     "admin": "Admin",

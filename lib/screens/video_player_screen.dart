@@ -858,10 +858,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
   }
 
-  void _togglePIPMode() {
-    setState(() {
-      _videoPIPManager?.togglePIP();
-    });
+  Future<void> _togglePIPMode() async {
+    final result = await _videoPIPManager?.togglePIP();
+    if (result != null && !result.$1 && mounted) {
+      showErrorSnackBar(context, result.$2 ?? t.videoControls.pipFailed);
+    }
   }
 
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)

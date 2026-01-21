@@ -935,6 +935,11 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Back'
 	String get backButton => 'Back';
+
+	/// en: 'Picture-in-picture failed to start'
+	String get pipFailed => 'Picture-in-picture failed to start';
+
+	late final TranslationsVideoControlsPipErrorsEn pipErrors = TranslationsVideoControlsPipErrorsEn._(_root);
 }
 
 // Path: userStatus
@@ -1963,6 +1968,30 @@ class TranslationsHotkeysActionsEn {
 	String get subSeekPrev => 'Seek to Previous Subtitle';
 }
 
+// Path: videoControls.pipErrors
+class TranslationsVideoControlsPipErrorsEn {
+	TranslationsVideoControlsPipErrorsEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Requires Android 8.0 or newer'
+	String get androidVersion => 'Requires Android 8.0 or newer';
+
+	/// en: 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture'
+	String get permissionDisabled => 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture';
+
+	/// en: 'Device doesn't support picture-in-picture mode'
+	String get notSupported => 'Device doesn\'t support picture-in-picture mode';
+
+	/// en: 'Picture-in-picture failed to start'
+	String get failed => 'Picture-in-picture failed to start';
+
+	/// en: 'An error occurred: ${error}'
+	String unknown({required Object error}) => 'An error occurred: ${error}';
+}
+
 // Path: libraries.tabs
 class TranslationsLibrariesTabsEn {
 	TranslationsLibrariesTabsEn._(this._root);
@@ -2281,6 +2310,12 @@ extension on Translations {
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.backButton' => 'Back',
+			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
+			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
+			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture',
+			'videoControls.pipErrors.notSupported' => 'Device doesn\'t support picture-in-picture mode',
+			'videoControls.pipErrors.failed' => 'Picture-in-picture failed to start',
+			'videoControls.pipErrors.unknown' => ({required Object error}) => 'An error occurred: ${error}',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Restricted',
 			'userStatus.protected' => 'Protected',
@@ -2525,14 +2560,14 @@ extension on Translations {
 			'watchTogether.watchingWithOthers' => 'Watching with others',
 			'watchTogether.endSession' => 'End Session',
 			'watchTogether.leaveSession' => 'Leave Session',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
 			'watchTogether.endSessionConfirm' => 'This will end the session for all participants.',
 			'watchTogether.leaveSessionConfirm' => 'You will be removed from the session.',
 			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.end' => 'End',
 			'watchTogether.leave' => 'Leave',
 			'watchTogether.syncing' => 'Syncing...',

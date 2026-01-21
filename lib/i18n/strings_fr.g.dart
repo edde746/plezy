@@ -441,6 +441,8 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Timeline vidéo';
 	@override String get volumeSlider => 'Niveau sonore';
 	@override String get backButton => 'Retour';
+	@override String get pipFailed => 'Échec du démarrage du mode image dans l\'image';
+	@override late final _TranslationsVideoControlsPipErrorsFr pipErrors = _TranslationsVideoControlsPipErrorsFr._(_root);
 }
 
 // Path: userStatus
@@ -900,6 +902,20 @@ class _TranslationsHotkeysActionsFr implements TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Rechercher le sous-titre précédent';
 }
 
+// Path: videoControls.pipErrors
+class _TranslationsVideoControlsPipErrorsFr implements TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get androidVersion => 'Nécessite Android 8.0 ou plus récent';
+	@override String get permissionDisabled => 'L\'autorisation Image dans l\'image est désactivée. Activez-la dans Paramètres > Applications > Plezy > Image dans l\'image';
+	@override String get notSupported => 'Cet appareil ne prend pas en charge le mode image dans l\'image';
+	@override String get failed => 'Échec du démarrage du mode image dans l\'image';
+	@override String unknown({required Object error}) => 'Une erreur s\'est produite : ${error}';
+}
+
 // Path: libraries.tabs
 class _TranslationsLibrariesTabsFr implements TranslationsLibrariesTabsEn {
 	_TranslationsLibrariesTabsFr._(this._root);
@@ -1198,6 +1214,12 @@ extension on TranslationsFr {
 			'videoControls.timelineSlider' => 'Timeline vidéo',
 			'videoControls.volumeSlider' => 'Niveau sonore',
 			'videoControls.backButton' => 'Retour',
+			'videoControls.pipFailed' => 'Échec du démarrage du mode image dans l\'image',
+			'videoControls.pipErrors.androidVersion' => 'Nécessite Android 8.0 ou plus récent',
+			'videoControls.pipErrors.permissionDisabled' => 'L\'autorisation Image dans l\'image est désactivée. Activez-la dans Paramètres > Applications > Plezy > Image dans l\'image',
+			'videoControls.pipErrors.notSupported' => 'Cet appareil ne prend pas en charge le mode image dans l\'image',
+			'videoControls.pipErrors.failed' => 'Échec du démarrage du mode image dans l\'image',
+			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Une erreur s\'est produite : ${error}',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Restreint',
 			'userStatus.protected' => 'Protégé',
@@ -1442,14 +1464,14 @@ extension on TranslationsFr {
 			'watchTogether.watchingWithOthers' => 'Regarder avec d\'autres personnes',
 			'watchTogether.endSession' => 'Fin de session',
 			'watchTogether.leaveSession' => 'Quitter la session',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.endSessionQuestion' => 'Terminer la session ?',
 			'watchTogether.leaveSessionQuestion' => 'Quitter la session ?',
 			'watchTogether.endSessionConfirm' => 'Cela mettra fin à la session pour tous les participants.',
 			'watchTogether.leaveSessionConfirm' => 'Vous allez être déconnecté de la session.',
 			'watchTogether.endSessionConfirmOverlay' => 'Cela mettra fin à la session de visionnage pour tous les participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'Vous serez déconnecté de la session de visionnage.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.end' => 'Terminer',
 			'watchTogether.leave' => 'Fin',
 			'watchTogether.syncing' => 'Synchronisation...',

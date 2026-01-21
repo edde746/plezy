@@ -2,7 +2,9 @@ package com.edde746.plezy
 
 import android.os.Build
 import android.os.Bundle
+import android.app.AppOpsManager
 import android.app.PictureInPictureParams
+import android.content.Context
 import android.content.res.Configuration
 import android.util.Rational
 import io.flutter.embedding.android.FlutterActivity
@@ -34,13 +36,41 @@ class MainActivity : FlutterActivity() {
                     result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 }
                 "enter" -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                        result.success(mapOf("success" to false, "errorCode" to "android_version"))
+                        return@setMethodCallHandler
+                    }
+
+                    // Check if PiP permission is granted via AppOpsManager
+                    val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                    val pipAllowed = appOpsManager.checkOpNoThrow(
+                        AppOpsManager.OPSTR_PICTURE_IN_PICTURE,
+                        applicationInfo.uid,
+                        packageName
+                    ) == AppOpsManager.MODE_ALLOWED
+
+                    if (!pipAllowed) {
+                        result.success(mapOf("success" to false, "errorCode" to "permission_disabled"))
+                        return@setMethodCallHandler
+                    }
+
+                    try {
                         val width = call.argument<Int>("width") ?: 16
                         val height = call.argument<Int>("height") ?: 9
-                        val params = PictureInPictureParams.Builder().setAspectRatio(Rational(width, height)).build()
-                        enterPictureInPictureMode(params)
+                        val params = PictureInPictureParams.Builder()
+                            .setAspectRatio(Rational(width, height))
+                            .build()
+                        val success = enterPictureInPictureMode(params)
+                        if (success) {
+                            result.success(mapOf("success" to true))
+                        } else {
+                            result.success(mapOf("success" to false, "errorCode" to "failed"))
+                        }
+                    } catch (e: IllegalStateException) {
+                        result.success(mapOf("success" to false, "errorCode" to "not_supported"))
+                    } catch (e: Exception) {
+                        result.success(mapOf("success" to false, "errorCode" to "unknown", "errorMessage" to (e.message ?: "Unknown error")))
                     }
-                    result.success(null)
                 } else -> result.notImplemented()
             }
         }

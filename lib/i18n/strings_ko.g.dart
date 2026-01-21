@@ -442,6 +442,8 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '타임라인';
 	@override String get volumeSlider => '볼륨 조절';
 	@override String get backButton => '뒤로 가기';
+	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
+	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 }
 
 // Path: userStatus
@@ -902,6 +904,20 @@ class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => '이전 자막으로 이동';
 }
 
+// Path: videoControls.pipErrors
+class _TranslationsVideoControlsPipErrorsKo implements TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get androidVersion => 'Android 8.0 이상이 필요합니다';
+	@override String get permissionDisabled => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요';
+	@override String get notSupported => '이 기기는 화면 속 화면 모드를 지원하지 않습니다';
+	@override String get failed => '화면 속 화면 모드를 시작할 수 없습니다';
+	@override String unknown({required Object error}) => '오류가 발생했습니다: ${error}';
+}
+
 // Path: libraries.tabs
 class _TranslationsLibrariesTabsKo implements TranslationsLibrariesTabsEn {
 	_TranslationsLibrariesTabsKo._(this._root);
@@ -1201,6 +1217,12 @@ extension on TranslationsKo {
 			'videoControls.timelineSlider' => '타임라인',
 			'videoControls.volumeSlider' => '볼륨 조절',
 			'videoControls.backButton' => '뒤로 가기',
+			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
+			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
+			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요',
+			'videoControls.pipErrors.notSupported' => '이 기기는 화면 속 화면 모드를 지원하지 않습니다',
+			'videoControls.pipErrors.failed' => '화면 속 화면 모드를 시작할 수 없습니다',
+			'videoControls.pipErrors.unknown' => ({required Object error}) => '오류가 발생했습니다: ${error}',
 			'userStatus.admin' => '관리자',
 			'userStatus.restricted' => '제한됨',
 			'userStatus.protected' => '보호됨',
@@ -1444,14 +1466,14 @@ extension on TranslationsKo {
 			'watchTogether.hostBadge' => '호스트',
 			'watchTogether.youAreHost' => '당신은 호스트 입니다',
 			'watchTogether.watchingWithOthers' => '다른 사람과 함께 시청 중',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.endSession' => '세션 종료',
 			'watchTogether.leaveSession' => '세션 탈퇴',
 			'watchTogether.endSessionQuestion' => '세션을 종료 하시겠습니까?',
 			'watchTogether.leaveSessionQuestion' => '세션을 탈퇴 하시겠습니까?',
 			'watchTogether.endSessionConfirm' => '이 작업은 모든 참가자의 세션을 종료합니다.',
 			'watchTogether.leaveSessionConfirm' => '당신은 세션에서 제거됩니다.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.endSessionConfirmOverlay' => '이것은 모든 참가자의 시청 세션을 종료합니다.',
 			'watchTogether.leaveSessionConfirmOverlay' => '시청 세션 연결이 끊어집니다.',
 			'watchTogether.end' => '종료',

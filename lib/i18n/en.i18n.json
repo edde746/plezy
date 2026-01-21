@@ -289,7 +289,15 @@
     "rotationLockButton": "Rotation lock",
     "timelineSlider": "Video timeline",
     "volumeSlider": "Volume level",
-    "backButton": "Back"
+    "backButton": "Back",
+    "pipFailed": "Picture-in-picture failed to start",
+    "pipErrors": {
+      "androidVersion": "Requires Android 8.0 or newer",
+      "permissionDisabled": "Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture",
+      "notSupported": "Device doesn't support picture-in-picture mode",
+      "failed": "Picture-in-picture failed to start",
+      "unknown": "An error occurred: ${error}"
+    }
   },
   "userStatus": {
     "admin": "Admin",

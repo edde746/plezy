@@ -442,6 +442,8 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Videotijdlijn';
 	@override String get volumeSlider => 'Volumeniveau';
 	@override String get backButton => 'Terug';
+	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
+	@override late final _TranslationsVideoControlsPipErrorsNl pipErrors = _TranslationsVideoControlsPipErrorsNl._(_root);
 }
 
 // Path: userStatus
@@ -902,6 +904,20 @@ class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Naar vorige ondertitel';
 }
 
+// Path: videoControls.pipErrors
+class _TranslationsVideoControlsPipErrorsNl implements TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get androidVersion => 'Vereist Android 8.0 of nieuwer';
+	@override String get permissionDisabled => 'Beeld-in-beeld toestemming is uitgeschakeld. Schakel deze in via Instellingen > Apps > Plezy > Beeld-in-beeld';
+	@override String get notSupported => 'Dit apparaat ondersteunt geen beeld-in-beeld modus';
+	@override String get failed => 'Beeld-in-beeld kon niet worden gestart';
+	@override String unknown({required Object error}) => 'Er is een fout opgetreden: ${error}';
+}
+
 // Path: libraries.tabs
 class _TranslationsLibrariesTabsNl implements TranslationsLibrariesTabsEn {
 	_TranslationsLibrariesTabsNl._(this._root);
@@ -1201,6 +1217,12 @@ extension on TranslationsNl {
 			'videoControls.timelineSlider' => 'Videotijdlijn',
 			'videoControls.volumeSlider' => 'Volumeniveau',
 			'videoControls.backButton' => 'Terug',
+			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
+			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
+			'videoControls.pipErrors.permissionDisabled' => 'Beeld-in-beeld toestemming is uitgeschakeld. Schakel deze in via Instellingen > Apps > Plezy > Beeld-in-beeld',
+			'videoControls.pipErrors.notSupported' => 'Dit apparaat ondersteunt geen beeld-in-beeld modus',
+			'videoControls.pipErrors.failed' => 'Beeld-in-beeld kon niet worden gestart',
+			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Er is een fout opgetreden: ${error}',
 			'userStatus.admin' => 'Beheerder',
 			'userStatus.restricted' => 'Beperkt',
 			'userStatus.protected' => 'Beschermd',
@@ -1444,14 +1466,14 @@ extension on TranslationsNl {
 			'watchTogether.joining' => 'Deelnemen...',
 			'watchTogether.controlMode' => 'Controlemodus',
 			'watchTogether.controlModeQuestion' => 'Wie kan het afspelen bedienen?',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostOnly' => 'Alleen Host',
 			'watchTogether.anyone' => 'Iedereen',
 			'watchTogether.hostingSession' => 'Sessie Hosten',
 			'watchTogether.inSession' => 'In Sessie',
 			'watchTogether.sessionCode' => 'Sessiecode',
 			'watchTogether.hostControlsPlayback' => 'Host bedient het afspelen',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.anyoneCanControl' => 'Iedereen kan het afspelen bedienen',
 			'watchTogether.hostControls' => 'Host bedient',
 			'watchTogether.anyoneControls' => 'Iedereen bedient',

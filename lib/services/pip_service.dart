@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:plezy/i18n/strings.g.dart';
 
 class PipService {
   static const MethodChannel _channel = MethodChannel('app.plezy/pip');
@@ -29,7 +30,25 @@ class PipService {
     return await _channel.invokeMethod<bool>('isSupported') ?? false;
   }
 
-  static Future<void> enter({int? width, int? height}) async {
-    await _channel.invokeMethod('enter', {'width': width, 'height': height});
+  static Future<(bool success, String? error)> enter({int? width, int? height}) async {
+    final result = await _channel.invokeMethod<Map>('enter', {'width': width, 'height': height});
+    if (result == null) {
+      return (false, t.videoControls.pipErrors.unknown(error: 'No response'));
+    }
+    final success = result['success'] as bool? ?? false;
+    final errorCode = result['errorCode'] as String?;
+    final errorMessage = result['errorMessage'] as String?;
+    final error = errorCode != null ? _getLocalizedError(errorCode, errorMessage) : null;
+    return (success, error);
+  }
+
+  static String _getLocalizedError(String errorCode, String? errorMessage) {
+    return switch (errorCode) {
+      'android_version' => t.videoControls.pipErrors.androidVersion,
+      'permission_disabled' => t.videoControls.pipErrors.permissionDisabled,
+      'not_supported' => t.videoControls.pipErrors.notSupported,
+      'failed' => t.videoControls.pipErrors.failed,
+      _ => t.videoControls.pipErrors.unknown(error: errorMessage ?? 'Unknown error'),
+    };
   }
 }

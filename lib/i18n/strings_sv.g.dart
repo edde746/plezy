@@ -442,6 +442,8 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Volymnivå';
 	@override String get backButton => 'Tillbaka';
+	@override String get pipFailed => 'Bild-i-bild kunde inte starta';
+	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
 }
 
 // Path: userStatus
@@ -902,6 +904,20 @@ class _TranslationsHotkeysActionsSv implements TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Hoppa till föregående undertext';
 }
 
+// Path: videoControls.pipErrors
+class _TranslationsVideoControlsPipErrorsSv implements TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get androidVersion => 'Kräver Android 8.0 eller nyare';
+	@override String get permissionDisabled => 'Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild';
+	@override String get notSupported => 'Denna enhet stöder inte bild-i-bild-läge';
+	@override String get failed => 'Bild-i-bild kunde inte starta';
+	@override String unknown({required Object error}) => 'Ett fel uppstod: ${error}';
+}
+
 // Path: libraries.tabs
 class _TranslationsLibrariesTabsSv implements TranslationsLibrariesTabsEn {
 	_TranslationsLibrariesTabsSv._(this._root);
@@ -1201,6 +1217,12 @@ extension on TranslationsSv {
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Volymnivå',
 			'videoControls.backButton' => 'Tillbaka',
+			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
+			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
+			'videoControls.pipErrors.permissionDisabled' => 'Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild',
+			'videoControls.pipErrors.notSupported' => 'Denna enhet stöder inte bild-i-bild-läge',
+			'videoControls.pipErrors.failed' => 'Bild-i-bild kunde inte starta',
+			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ett fel uppstod: ${error}',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Begränsad',
 			'userStatus.protected' => 'Skyddad',
@@ -1444,14 +1466,14 @@ extension on TranslationsSv {
 			'watchTogether.joining' => 'Ansluter...',
 			'watchTogether.controlMode' => 'Kontrollläge',
 			'watchTogether.controlModeQuestion' => 'Vem kan styra uppspelningen?',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostOnly' => 'Endast Värd',
 			'watchTogether.anyone' => 'Alla',
 			'watchTogether.hostingSession' => 'Värd för Session',
 			'watchTogether.inSession' => 'I Session',
 			'watchTogether.sessionCode' => 'Sessionskod',
 			'watchTogether.hostControlsPlayback' => 'Värden styr uppspelningen',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.anyoneCanControl' => 'Alla kan styra uppspelningen',
 			'watchTogether.hostControls' => 'Värd styr',
 			'watchTogether.anyoneControls' => 'Alla styr',

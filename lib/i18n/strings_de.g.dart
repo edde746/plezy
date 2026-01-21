@@ -442,6 +442,8 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => 'Video-Zeitleiste';
 	@override String get volumeSlider => 'Lautstärkepegel';
 	@override String get backButton => 'Zurück';
+	@override String get pipFailed => 'Bild-in-Bild konnte nicht gestartet werden';
+	@override late final _TranslationsVideoControlsPipErrorsDe pipErrors = _TranslationsVideoControlsPipErrorsDe._(_root);
 }
 
 // Path: userStatus
@@ -902,6 +904,20 @@ class _TranslationsHotkeysActionsDe implements TranslationsHotkeysActionsEn {
 	@override String get subSeekPrev => 'Zum vorherigen Untertitel springen';
 }
 
+// Path: videoControls.pipErrors
+class _TranslationsVideoControlsPipErrorsDe implements TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsDe._(this._root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get androidVersion => 'Erfordert Android 8.0 oder neuer';
+	@override String get permissionDisabled => 'Bild-in-Bild-Berechtigung ist deaktiviert. Aktiviere sie unter Einstellungen > Apps > Plezy > Bild-in-Bild';
+	@override String get notSupported => 'Dieses Gerät unterstützt den Bild-in-Bild-Modus nicht';
+	@override String get failed => 'Bild-in-Bild konnte nicht gestartet werden';
+	@override String unknown({required Object error}) => 'Ein Fehler ist aufgetreten: ${error}';
+}
+
 // Path: libraries.tabs
 class _TranslationsLibrariesTabsDe implements TranslationsLibrariesTabsEn {
 	_TranslationsLibrariesTabsDe._(this._root);
@@ -1201,6 +1217,12 @@ extension on TranslationsDe {
 			'videoControls.timelineSlider' => 'Video-Zeitleiste',
 			'videoControls.volumeSlider' => 'Lautstärkepegel',
 			'videoControls.backButton' => 'Zurück',
+			'videoControls.pipFailed' => 'Bild-in-Bild konnte nicht gestartet werden',
+			'videoControls.pipErrors.androidVersion' => 'Erfordert Android 8.0 oder neuer',
+			'videoControls.pipErrors.permissionDisabled' => 'Bild-in-Bild-Berechtigung ist deaktiviert. Aktiviere sie unter Einstellungen > Apps > Plezy > Bild-in-Bild',
+			'videoControls.pipErrors.notSupported' => 'Dieses Gerät unterstützt den Bild-in-Bild-Modus nicht',
+			'videoControls.pipErrors.failed' => 'Bild-in-Bild konnte nicht gestartet werden',
+			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ein Fehler ist aufgetreten: ${error}',
 			'userStatus.admin' => 'Eigentümer',
 			'userStatus.restricted' => 'Eingeschränkt',
 			'userStatus.protected' => 'Geschützt',
@@ -1444,14 +1466,14 @@ extension on TranslationsDe {
 			'watchTogether.joining' => 'Beitreten...',
 			'watchTogether.controlMode' => 'Steuerungsmodus',
 			'watchTogether.controlModeQuestion' => 'Wer kann die Wiedergabe steuern?',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.hostOnly' => 'Nur Host',
 			'watchTogether.anyone' => 'Alle',
 			'watchTogether.hostingSession' => 'Sitzung Hosten',
 			'watchTogether.inSession' => 'In Sitzung',
 			'watchTogether.sessionCode' => 'Sitzungscode',
 			'watchTogether.hostControlsPlayback' => 'Host steuert die Wiedergabe',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.anyoneCanControl' => 'Alle können die Wiedergabe steuern',
 			'watchTogether.hostControls' => 'Host steuert',
 			'watchTogether.anyoneControls' => 'Alle steuern',

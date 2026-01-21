@@ -290,7 +290,15 @@
     "rotationLockButton": "Rotationslås",
     "timelineSlider": "Videotidslinje",
     "volumeSlider": "Volymnivå",
-    "backButton": "Tillbaka"
+    "backButton": "Tillbaka",
+    "pipFailed": "Bild-i-bild kunde inte starta",
+    "pipErrors": {
+      "androidVersion": "Kräver Android 8.0 eller nyare",
+      "permissionDisabled": "Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild",
+      "notSupported": "Denna enhet stöder inte bild-i-bild-läge",
+      "failed": "Bild-i-bild kunde inte starta",
+      "unknown": "Ett fel uppstod: ${error}"
+    }
   },
   "userStatus": {
     "admin": "Admin",

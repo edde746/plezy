@@ -290,7 +290,15 @@
     "rotationLockButton": "Blocco rotazione",
     "timelineSlider": "Timeline video",
     "volumeSlider": "Livello volume",
-    "backButton": "Indietro"
+    "backButton": "Indietro",
+    "pipFailed": "Impossibile avviare la modalità Picture-in-Picture",
+    "pipErrors": {
+      "androidVersion": "Richiede Android 8.0 o versioni successive",
+      "permissionDisabled": "L'autorizzazione Picture-in-Picture è disabilitata. Abilitala in Impostazioni > App > Plezy > Picture-in-Picture",
+      "notSupported": "Questo dispositivo non supporta la modalità Picture-in-Picture",
+      "failed": "Impossibile avviare la modalità Picture-in-Picture",
+      "unknown": "Si è verificato un errore: ${error}"
+    }
   },
   "userStatus": {
     "admin": "Admin",

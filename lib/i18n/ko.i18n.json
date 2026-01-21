@@ -290,7 +290,15 @@
     "rotationLockButton": "회전 잠금",
     "timelineSlider": "타임라인",
     "volumeSlider": "볼륨 조절",
-    "backButton": "뒤로 가기"
+    "backButton": "뒤로 가기",
+    "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
+    "pipErrors": {
+      "androidVersion": "Android 8.0 이상이 필요합니다",
+      "permissionDisabled": "화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요",
+      "notSupported": "이 기기는 화면 속 화면 모드를 지원하지 않습니다",
+      "failed": "화면 속 화면 모드를 시작할 수 없습니다",
+      "unknown": "오류가 발생했습니다: ${error}"
+    }
   },
   "userStatus": {
     "admin": "관리자",

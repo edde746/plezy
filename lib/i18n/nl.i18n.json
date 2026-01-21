@@ -290,7 +290,15 @@
     "rotationLockButton": "Rotatievergrendeling",
     "timelineSlider": "Videotijdlijn",
     "volumeSlider": "Volumeniveau",
-    "backButton": "Terug"
+    "backButton": "Terug",
+    "pipFailed": "Beeld-in-beeld kon niet worden gestart",
+    "pipErrors": {
+      "androidVersion": "Vereist Android 8.0 of nieuwer",
+      "permissionDisabled": "Beeld-in-beeld toestemming is uitgeschakeld. Schakel deze in via Instellingen > Apps > Plezy > Beeld-in-beeld",
+      "notSupported": "Dit apparaat ondersteunt geen beeld-in-beeld modus",
+      "failed": "Beeld-in-beeld kon niet worden gestart",
+      "unknown": "Er is een fout opgetreden: ${error}"
+    }
   },
   "userStatus": {
     "admin": "Beheerder",

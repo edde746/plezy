@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../mpv/mpv.dart';
 import '../services/pip_service.dart';
@@ -16,9 +15,10 @@ class VideoPIPManager {
   ValueNotifier<bool> get isPipActive => PipService().isPipActive;
 
   /// Toggle native PiP
-  Future<void> togglePIP() async {
+  /// Returns a tuple of (success, error message) for error handling
+  Future<(bool success, String? error)> togglePIP() async {
     final supported = await PipService.isSupported();
-    if (!supported) return;
+    if (!supported) return (false, 'PiP not supported on this device');
 
     // Try to get actual video dimensions from MPV
     int? width;
@@ -39,6 +39,6 @@ class VideoPIPManager {
     width ??= _playerSize?.width.toInt();
     height ??= _playerSize?.height.toInt();
 
-    await PipService.enter(width: width, height: height);
+    return await PipService.enter(width: width, height: height);
   }
 }

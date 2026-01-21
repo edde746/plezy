@@ -290,7 +290,15 @@
     "rotationLockButton": "Dreh­sperre",
     "timelineSlider": "Video-Zeitleiste",
     "volumeSlider": "Lautstärkepegel",
-    "backButton": "Zurück"
+    "backButton": "Zurück",
+    "pipFailed": "Bild-in-Bild konnte nicht gestartet werden",
+    "pipErrors": {
+      "androidVersion": "Erfordert Android 8.0 oder neuer",
+      "permissionDisabled": "Bild-in-Bild-Berechtigung ist deaktiviert. Aktiviere sie unter Einstellungen > Apps > Plezy > Bild-in-Bild",
+      "notSupported": "Dieses Gerät unterstützt den Bild-in-Bild-Modus nicht",
+      "failed": "Bild-in-Bild konnte nicht gestartet werden",
+      "unknown": "Ein Fehler ist aufgetreten: ${error}"
+    }
   },
   "userStatus": {
     "admin": "Eigentümer",
