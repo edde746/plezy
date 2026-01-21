@@ -6,7 +6,7 @@ project(plezy LANGUAGES CXX)
 include(FetchContent)
 FetchContent_Declare(
   mpv_dev
-  URL https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20251201/mpv-dev-x86_64-v3-20251201-git-72dbcf1.7z
+  URL https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260120/mpv-dev-x86_64-v3-20260120-git-b7e8fe9.7z
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(mpv_dev)
