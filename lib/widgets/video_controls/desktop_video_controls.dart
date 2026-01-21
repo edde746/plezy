@@ -531,7 +531,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 isFullscreen: widget.isFullscreen,
                 isAlwaysOnTop: widget.isAlwaysOnTop,
                 serverId: widget.serverId,
-                onTogglePIPMode: null, // PIP not supported on desktop
+                onTogglePIPMode: widget.onTogglePIPMode,
                 onCycleBoxFitMode: widget.onCycleBoxFitMode,
                 onToggleFullscreen: widget.onToggleFullscreen,
                 onToggleAlwaysOnTop: widget.onToggleAlwaysOnTop,
