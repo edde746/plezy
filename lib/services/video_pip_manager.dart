@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../mpv/mpv.dart';
@@ -6,11 +7,41 @@ import '../services/pip_service.dart';
 /// Manages video Picture-in-Picture mode
 class VideoPIPManager {
   final Player player;
+  StreamSubscription? _playingSubscription;
 
-  VideoPIPManager({required this.player});
+  VideoPIPManager({required this.player}) {
+    // Set up PiP control callbacks
+    _setupPipCallbacks();
+    _listenToPlayerState();
+  }
 
   Size? _playerSize;
   Size? get playerSize => _playerSize;
+
+  void _setupPipCallbacks() {
+    final pipService = PipService();
+
+    pipService.onPlayPause = () {
+      player.playOrPause();
+    };
+
+    pipService.onSeek = (offset) {
+      final currentPosition = player.state.position;
+      final newPosition = currentPosition + Duration(seconds: offset);
+      player.seek(newPosition);
+    };
+  }
+
+  void _listenToPlayerState() {
+    _playingSubscription = player.streams.playing.listen((isPlaying) {
+      // Update play/pause icon when playing state changes
+      PipService.updatePlayPauseIcon(isPlaying: isPlaying);
+    });
+  }
+
+  void dispose() {
+    _playingSubscription?.cancel();
+  }
 
   /// Access PiP state from the service
   ValueNotifier<bool> get isPipActive => PipService().isPipActive;
@@ -39,6 +70,9 @@ class VideoPIPManager {
     width ??= _playerSize?.width.toInt();
     height ??= _playerSize?.height.toInt();
 
-    await PipService.enter(width: width, height: height);
+    // Pass current playing state so PiP overlay shows correct icon
+    final isPlaying = player.state.playing;
+
+    await PipService.enter(width: width, height: height, isPlaying: isPlaying);
   }
 }
