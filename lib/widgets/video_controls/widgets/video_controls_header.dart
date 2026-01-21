@@ -68,6 +68,14 @@ class VideoControlsHeader extends StatelessWidget {
       parts.add(formatDurationTextual(metadata.duration!));
     }
 
+    if (!hasEpisodeInfo && metadata.year != null) {
+      parts.add(metadata.year.toString());
+    }
+
+    if (hasEpisodeInfo && metadata.originallyAvailableAt != null) {
+      parts.add(formatFullDate(metadata.originallyAvailableAt!));
+    }
+
     return Text(
       toBulletedString(parts),
       style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
@@ -77,9 +85,11 @@ class VideoControlsHeader extends StatelessWidget {
   }
 
   Widget _buildMultiLineTitle() {
+    final hasEpisodeInfo = metadata.parentIndex != null && metadata.index != null;
+
     List<String> secondLineParts = [];
 
-    if (metadata.parentIndex != null && metadata.index != null) {
+    if (hasEpisodeInfo) {
       secondLineParts.add('S${metadata.parentIndex}');
       secondLineParts.add('E${metadata.index}');
       secondLineParts.add(metadata.title);
@@ -87,6 +97,14 @@ class VideoControlsHeader extends StatelessWidget {
 
     if (metadata.duration != null) {
       secondLineParts.add(formatDurationTextual(metadata.duration!));
+    }
+
+    if (!hasEpisodeInfo && metadata.year != null) {
+      secondLineParts.add(metadata.year.toString());
+    }
+
+    if (hasEpisodeInfo && metadata.originallyAvailableAt != null) {
+      secondLineParts.add(formatFullDate(metadata.originallyAvailableAt!));
     }
 
     return Column(
