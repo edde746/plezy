@@ -57,8 +57,31 @@ class MainActivity : FlutterActivity() {
                     try {
                         val width = call.argument<Int>("width") ?: 16
                         val height = call.argument<Int>("height") ?: 9
+
+                        // Android PiP requires aspect ratio between 0.418410 (5:12) and 2.39 (12:5)
+                        val ratio = width.toFloat() / height.toFloat()
+                        val clampedWidth: Int
+                        val clampedHeight: Int
+
+                        when {
+                            ratio < 0.42f -> {
+                                // Too tall - clamp to minimum ratio (5:12)
+                                clampedWidth = 5
+                                clampedHeight = 12
+                            }
+                            ratio > 2.39f -> {
+                                // Too wide - clamp to maximum ratio (12:5)
+                                clampedWidth = 12
+                                clampedHeight = 5
+                            }
+                            else -> {
+                                clampedWidth = width
+                                clampedHeight = height
+                            }
+                        }
+
                         val params = PictureInPictureParams.Builder()
-                            .setAspectRatio(Rational(width, height))
+                            .setAspectRatio(Rational(clampedWidth, clampedHeight))
                             .build()
                         val success = enterPictureInPictureMode(params)
                         if (success) {
