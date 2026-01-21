@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -68,7 +68,6 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener {
-  bool _isClosing = false;
   late int _currentIndex;
   String? _selectedLibraryGlobalKey;
 
@@ -298,16 +297,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   @override
   void onWindowClose() {
-    if (_isClosing) return;
-    _isClosing = true;
-
-    appClosing.value = true;
-
-    // Give the UI a brief moment to settle before tearing down the window.
-    Future<void>.delayed(const Duration(milliseconds: 150), () async {
-      await windowManager.setPreventClose(false);
-      await windowManager.destroy();
-    });
+    exit(0);
   }
 
   List<Widget> _buildScreens(bool offline) {
