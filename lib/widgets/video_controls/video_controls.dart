@@ -619,7 +619,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   /// Check whether PiP is supported on this device
   Future<void> _checkPipSupport() async {
-    if (!Platform.isAndroid) {
+    if (!Platform.isAndroid && !Platform.isMacOS) {
       return;
     }
 
@@ -730,7 +730,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitleSyncOffset: _subtitleSyncOffset,
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
-      onTogglePIPMode: (_isPipSupported && Platform.isAndroid) ? widget.onTogglePIPMode : null,
+      onTogglePIPMode: _isPipSupported ? widget.onTogglePIPMode : null,
       onCycleBoxFitMode: widget.onCycleBoxFitMode,
       onToggleRotationLock: _toggleRotationLock,
       onToggleFullscreen: _toggleFullscreen,
@@ -1562,9 +1562,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             subtitleSyncOffset: _subtitleSyncOffset,
                                             isFullscreen: _isFullscreen,
                                             isAlwaysOnTop: _isAlwaysOnTop,
-                                            onTogglePIPMode: (_isPipSupported && Platform.isAndroid)
-                                                ? widget.onTogglePIPMode
-                                                : null,
+                                            onTogglePIPMode: _isPipSupported ? widget.onTogglePIPMode : null,
                                             onCycleBoxFitMode: widget.onCycleBoxFitMode,
                                             onToggleFullscreen: _toggleFullscreen,
                                             onToggleAlwaysOnTop: _toggleAlwaysOnTop,
