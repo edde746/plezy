@@ -1,7 +1,10 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:window_manager/window_manager.dart';
 import '../../services/plex_client.dart';
 import '../i18n/strings.g.dart';
 import '../services/update_service.dart';
@@ -64,7 +67,8 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with RouteAware {
+class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener {
+  bool _isClosing = false;
   late int _currentIndex;
   String? _selectedLibraryGlobalKey;
 
@@ -96,6 +100,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   void initState() {
     super.initState();
     _isOffline = widget.isOfflineMode;
+
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      windowManager.addListener(this);
+      windowManager.setPreventClose(true);
+    }
 
     // Start on Downloads tab when in offline mode
     // In offline mode: visual index 0 = Downloads (screen 3), 1 = Settings (screen 4)
@@ -277,10 +286,28 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      windowManager.removeListener(this);
+      windowManager.setPreventClose(false);
+    }
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _sidebarFocusScope.dispose();
     _contentFocusScope.dispose();
     super.dispose();
+  }
+
+  @override
+  void onWindowClose() {
+    if (_isClosing) return;
+    _isClosing = true;
+
+    appClosing.value = true;
+
+    // Give the UI a brief moment to settle before tearing down the window.
+    Future<void>.delayed(const Duration(milliseconds: 150), () async {
+      await windowManager.setPreventClose(false);
+      await windowManager.destroy();
+    });
   }
 
   List<Widget> _buildScreens(bool offline) {
