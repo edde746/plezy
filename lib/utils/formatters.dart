@@ -121,15 +121,23 @@ String formatDurationWithSeconds(Duration duration) {
 ///
 /// Used for: video controls, chapters, episode durations.
 String formatDurationTimestamp(Duration duration) {
-  final hours = duration.inHours;
-  final minutes = duration.inMinutes.remainder(60);
-  final seconds = duration.inSeconds.remainder(60);
+  // Handle negative durations
+  final isNegative = duration.isNegative;
+  final absoluteDuration = duration.abs();
+
+  final hours = absoluteDuration.inHours;
+  final minutes = absoluteDuration.inMinutes.remainder(60);
+  final seconds = absoluteDuration.inSeconds.remainder(60);
+
+  final result;
 
   if (hours > 0) {
-    return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    result = '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   } else {
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+    result = '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
+
+  return isNegative ? '-$result' : result;
 }
 
 /// Formats a sync offset in milliseconds with sign indicator (e.g., "+150ms", "-15.1s").
@@ -169,4 +177,9 @@ DurationLocale _getDurationLocale() {
     // Fallback to English if language code is not supported
     return const EnglishDurationLocale();
   }
+}
+
+/// Takes a list of strings and returns one long string with each item in the list concatenated by a bullet
+String toBulletedString(List<String> parts) {
+  return parts.join(' · ');
 }
