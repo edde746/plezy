@@ -413,4 +413,42 @@ class StorageService extends BaseSharedPreferencesService {
     final jsonString = json.encode(list);
     await prefs.setString(key, jsonString);
   }
+
+  /// Save the window position
+  void saveWindowPosition(double x, double y) {
+    prefs.setDouble('window_x', x);
+    prefs.setDouble('window_y', y);
+  }
+
+  /// Get the window position
+  ({double x, double y})? getWindowPosition() {
+    final x = prefs.getDouble('window_x');
+    final y = prefs.getDouble('window_y');
+    if (x == null || y == null) return null;
+    return (x: x, y: y);
+  }
+
+  /// Save the window size
+  void saveWindowSize(double width, double height) {
+    prefs.setDouble('window_width', width);
+    prefs.setDouble('window_height', height);
+  }
+
+  /// Get the window size
+  ({double width, double height})? getWindowSize() {
+    final width = prefs.getDouble('window_width');
+    final height = prefs.getDouble('window_height');
+    if (width == null || height == null) return null;
+    return (width: width, height: height);
+  }
+
+  /// Save whether the window was maximized
+  void saveWindowMaximized(bool isMaximized) {
+    prefs.setBool('window_maximized', isMaximized);
+  }
+
+  /// Get whether the window was maximized
+  bool? getWindowMaximized() {
+    return prefs.getBool('window_maximized');
+  }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
@@ -94,6 +95,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   final FocusScopeNode _sidebarFocusScope = FocusScopeNode(debugLabel: 'Sidebar');
   final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
   bool _isSidebarFocused = false;
+
+  // Debounce timer for persisting the location/size since that event can fire very fast/often
+  Timer? _windowStateDebounce;
 
   @override
   void initState() {
@@ -292,12 +296,49 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _sidebarFocusScope.dispose();
     _contentFocusScope.dispose();
+
+    _windowStateDebounce?.cancel();
+
     super.dispose();
   }
 
   @override
   void onWindowClose() {
     exit(0);
+  }
+
+  @override
+  void onWindowMoved() {
+    _windowStateDebounce?.cancel();
+    _windowStateDebounce = Timer(const Duration(milliseconds: 250), () async {
+      final position = await windowManager.getPosition();
+      final storage = await StorageService.getInstance();
+      storage.saveWindowPosition(position.dx, position.dy);
+    });
+  }
+
+  @override
+  void onWindowResized() {
+    _windowStateDebounce?.cancel();
+    _windowStateDebounce = Timer(const Duration(milliseconds: 250), () async {
+      final size = await windowManager.getSize();
+      final storage = await StorageService.getInstance();
+      storage.saveWindowSize(size.width, size.height);
+    });
+  }
+
+  @override
+  void onWindowMaximize() {
+    StorageService.getInstance().then((storage) {
+      storage.saveWindowMaximized(true);
+    });
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    StorageService.getInstance().then((storage) {
+      storage.saveWindowMaximized(false);
+    });
   }
 
   List<Widget> _buildScreens(bool offline) {

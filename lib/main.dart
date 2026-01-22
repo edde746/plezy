@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:screen_retriever/screen_retriever.dart';
 import 'dart:io' show Platform;
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
@@ -97,6 +98,44 @@ void main() async {
 
   // Wait for all parallel services to complete
   await Future.wait(futures);
+
+  // Restore window position and size on desktop platforms
+  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final storage = await StorageService.getInstance();
+
+      // Load the info
+      final displays = await screenRetriever.getAllDisplays();
+      final position = storage.getWindowPosition();
+      final size = storage.getWindowSize();
+
+      // Validate that the saved position is within bounds of available displays
+      if (position != null && displays.isNotEmpty) {
+        bool isValidPosition = displays.any((display) {
+          final visiblePos = display.visiblePosition ?? Offset.zero;
+          final visibleSize = display.visibleSize ?? Size.zero;
+
+          return position.x >= visiblePos.dx &&
+              position.x < visiblePos.dx + visibleSize.width &&
+              position.y >= visiblePos.dy &&
+              position.y < visiblePos.dy + visibleSize.height;
+        });
+
+        if (isValidPosition) {
+          await windowManager.setPosition(Offset(position.x, position.y));
+        }
+      }
+
+      if (size != null) {
+        await windowManager.setSize(Size(size.width, size.height));
+      }
+
+      final wasMaximized = storage.getWindowMaximized() ?? false;
+      if (wasMaximized) {
+        windowManager.maximize();
+      }
+    });
+  }
 
   // Initialize logger level based on debug setting
   final debugEnabled = settings.getEnableDebugLogging();
