@@ -20,6 +20,11 @@ class StorageService extends BaseSharedPreferencesService {
   static const String _keyHiddenLibraries = 'hidden_libraries';
   static const String _keyServersList = 'servers_list';
   static const String _keyServerOrder = 'server_order';
+  static const String _keyWindowX = 'window_x';
+  static const String _keyWindowY = 'window_y';
+  static const String _keyWindowWidth = 'window_width';
+  static const String _keyWindowHeight = 'window_height';
+  static const String _keyWindowMaximized = 'window_maximized';
 
   // Key prefixes for per-id storage
   static const String _prefixServerEndpoint = 'server_endpoint_';
@@ -414,41 +419,43 @@ class StorageService extends BaseSharedPreferencesService {
     await prefs.setString(key, jsonString);
   }
 
+  // Window Management Methods
+
   /// Save the window position
   void saveWindowPosition(double x, double y) {
-    prefs.setDouble('window_x', x);
-    prefs.setDouble('window_y', y);
+    prefs.setDouble(_keyWindowX, x);
+    prefs.setDouble(_keyWindowY, y);
   }
 
   /// Get the window position
   ({double x, double y})? getWindowPosition() {
-    final x = prefs.getDouble('window_x');
-    final y = prefs.getDouble('window_y');
+    final x = prefs.getDouble(_keyWindowX);
+    final y = prefs.getDouble(_keyWindowY);
     if (x == null || y == null) return null;
     return (x: x, y: y);
   }
 
   /// Save the window size
   void saveWindowSize(double width, double height) {
-    prefs.setDouble('window_width', width);
-    prefs.setDouble('window_height', height);
+    prefs.setDouble(_keyWindowWidth, width);
+    prefs.setDouble(_keyWindowHeight, height);
   }
 
   /// Get the window size
   ({double width, double height})? getWindowSize() {
-    final width = prefs.getDouble('window_width');
-    final height = prefs.getDouble('window_height');
+    final width = prefs.getDouble(_keyWindowWidth);
+    final height = prefs.getDouble(_keyWindowHeight);
     if (width == null || height == null) return null;
     return (width: width, height: height);
   }
 
   /// Save whether the window was maximized
   void saveWindowMaximized(bool isMaximized) {
-    prefs.setBool('window_maximized', isMaximized);
+    prefs.setBool(_keyWindowMaximized, isMaximized);
   }
 
   /// Get whether the window was maximized
   bool? getWindowMaximized() {
-    return prefs.getBool('window_maximized');
+    return prefs.getBool(_keyWindowMaximized);
   }
 }
