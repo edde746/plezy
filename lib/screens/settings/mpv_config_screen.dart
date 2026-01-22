@@ -74,6 +74,9 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
     final keyController = TextEditingController(text: existingEntry?.key ?? '');
     final valueController = TextEditingController(text: existingEntry?.value ?? '');
+    final keyFocusNode = FocusNode();
+    final valueFocusNode = FocusNode();
+    final saveFocusNode = FocusNode();
 
     final result = await showDialog<bool>(
       context: context,
@@ -84,22 +87,29 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
           children: [
             TextField(
               controller: keyController,
+              focusNode: keyFocusNode,
               decoration: InputDecoration(labelText: t.mpvConfig.propertyKey, hintText: t.mpvConfig.propertyKeyHint),
               autofocus: true,
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => valueFocusNode.requestFocus(),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: valueController,
+              focusNode: valueFocusNode,
               decoration: InputDecoration(
                 labelText: t.mpvConfig.propertyValue,
                 hintText: t.mpvConfig.propertyValueHint,
               ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => saveFocusNode.requestFocus(),
             ),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
           TextButton(
+            focusNode: saveFocusNode,
             onPressed: () {
               if (keyController.text.isNotEmpty && valueController.text.isNotEmpty) {
                 Navigator.pop(context, true);
@@ -127,6 +137,9 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
     keyController.dispose();
     valueController.dispose();
+    keyFocusNode.dispose();
+    valueFocusNode.dispose();
+    saveFocusNode.dispose();
   }
 
   Future<bool> _showConfirmDeleteDialog({required String title, required String content}) async {
