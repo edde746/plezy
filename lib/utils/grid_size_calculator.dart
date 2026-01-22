@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/settings_service.dart' show LibraryDensity;
 import 'layout_constants.dart';
+import 'platform_detector.dart';
 
 /// Utility class for calculating consistent grid sizes across the app
 class GridSizeCalculator {
@@ -13,19 +14,23 @@ class GridSizeCalculator {
   /// Calculates the maximum cross-axis extent for grid items based on screen size and density
   static double getMaxCrossAxisExtent(BuildContext context, LibraryDensity density) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final isTV = PlatformDetector.isTV();
     final isDesktop = screenWidth > desktopBreakpoint;
     final isTablet = screenWidth > tabletBreakpoint && screenWidth <= desktopBreakpoint;
 
     switch (density) {
       case LibraryDensity.comfortable:
+        if (isTV) return GridLayoutConstants.comfortableTV;
         if (isDesktop) return GridLayoutConstants.comfortableDesktop;
         if (isTablet) return GridLayoutConstants.comfortableTablet;
         return GridLayoutConstants.comfortableMobile;
       case LibraryDensity.compact:
+        if (isTV) return GridLayoutConstants.compactTV;
         if (isDesktop) return GridLayoutConstants.compactDesktop;
         if (isTablet) return GridLayoutConstants.compactTablet;
         return GridLayoutConstants.compactMobile;
       case LibraryDensity.normal:
+        if (isTV) return GridLayoutConstants.normalTV;
         if (isDesktop) return GridLayoutConstants.normalDesktop;
         if (isTablet) return GridLayoutConstants.normalTablet;
         return GridLayoutConstants.normalMobile;
@@ -45,6 +50,24 @@ class GridSizeCalculator {
   ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final availableWidth = screenWidth - horizontalPadding;
+
+    // TV-specific sizing for 10ft viewing distance
+    if (PlatformDetector.isTV()) {
+      double divisor;
+      double maxItemWidth;
+      switch (density) {
+        case LibraryDensity.comfortable:
+          divisor = 7.0;
+          maxItemWidth = 220;
+        case LibraryDensity.normal:
+          divisor = 9.0;
+          maxItemWidth = 190;
+        case LibraryDensity.compact:
+          divisor = 11.0;
+          maxItemWidth = 160;
+      }
+      return (availableWidth / divisor).clamp(0, maxItemWidth);
+    }
 
     if (ScreenBreakpoints.isWideTabletOrLarger(screenWidth)) {
       // Wide screens (desktop/large tablet landscape): Responsive division

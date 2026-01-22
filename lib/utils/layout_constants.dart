@@ -59,6 +59,11 @@ class GridLayoutConstants {
   static const double normalTablet = 200;
   static const double normalMobile = 170;
 
+  /// Maximum cross-axis extent for grid items on TV (10ft viewing distance)
+  static const double comfortableTV = 200;
+  static const double normalTV = 170;
+  static const double compactTV = 140;
+
   /// Default aspect ratio for media card grid cells (poster + text)
   static const double posterAspectRatio = 2 / 3.3;
 

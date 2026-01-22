@@ -206,23 +206,21 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       final renderObject = context.findRenderObject();
       if (renderObject == null) return;
 
+      final scrollable = Scrollable.maybeOf(context);
+      if (scrollable == null) return;
+
+      final viewport = scrollable.context.findRenderObject() as RenderBox?;
+      if (viewport == null) return;
+
+      // Get item's position relative to viewport
+      final itemBox = renderObject as RenderBox;
+      final itemPosition = itemBox.localToGlobal(Offset.zero, ancestor: viewport);
+
+      final viewportHeight = viewport.size.height;
+      final itemHeight = itemBox.size.height;
+      final itemVerticalCenter = itemPosition.dy + itemHeight / 2;
+
       if (widget.useComfortableZone) {
-        // Check if item is already in the comfortable zone
-        final scrollable = Scrollable.maybeOf(context);
-        if (scrollable == null) return;
-
-        final viewport = scrollable.context.findRenderObject() as RenderBox?;
-        if (viewport == null) return;
-
-        // Get item's position relative to viewport
-        final itemBox = renderObject as RenderBox;
-        final itemPosition = itemBox.localToGlobal(Offset.zero, ancestor: viewport);
-
-        // Check if item is already in the comfortable zone
-        final viewportHeight = viewport.size.height;
-        final itemHeight = itemBox.size.height;
-        final itemVerticalCenter = itemPosition.dy + itemHeight / 2;
-
         // Define comfortable zone - if item center is within middle 60% of viewport, don't scroll
         final comfortZoneTop = viewportHeight * 0.2;
         final comfortZoneBottom = viewportHeight * 0.8;
@@ -231,9 +229,18 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
           // Item is in comfortable zone, no need to scroll
           return;
         }
+      } else {
+        // When not using comfortable zone, still skip scroll if item is already
+        // close to target position (prevents jitter when navigating horizontally)
+        final targetY = viewportHeight * widget.scrollAlignment;
+        final distance = (itemVerticalCenter - targetY).abs();
+        // Skip scroll if within half the item height of target
+        if (distance < itemHeight / 2) {
+          return;
+        }
       }
 
-      // Item is outside comfortable zone or comfortable zone disabled, scroll to alignment
+      // Scroll to alignment
       Scrollable.ensureVisible(
         context,
         alignment: widget.scrollAlignment,
