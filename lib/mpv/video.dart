@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'player/player.dart';
@@ -35,11 +37,29 @@ class Video extends StatefulWidget {
 
 class _VideoState extends State<Video> {
   Rect? _lastRect;
+  bool _hasFirstFrame = false;
+  StreamSubscription<void>? _playbackRestartSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _playbackRestartSubscription = widget.player.streams.playbackRestart.listen((_) {
+      if (!_hasFirstFrame && mounted) {
+        setState(() => _hasFirstFrame = true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _playbackRestartSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.transparent,
+      color: _hasFirstFrame ? Colors.transparent : widget.backgroundColor,
       child: Stack(
         fit: StackFit.expand,
         children: [
