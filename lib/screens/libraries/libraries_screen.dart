@@ -203,7 +203,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       }
 
       if (tabState != null) {
-        (tabState as dynamic).focusFirstItem();
+        // Browse tab has a chips bar - focus that first so DOWN navigates to grid
+        if (_tabController.index == 1) {
+          (tabState as dynamic).focusChipsBar();
+        } else {
+          (tabState as dynamic).focusFirstItem();
+        }
       } else {
         // State not available yet, retry after another frame
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -233,7 +238,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     if (tabState != null) {
-      (tabState as dynamic).focusFirstItem();
+      // Browse tab has a chips bar - focus that first so DOWN navigates to grid
+      if (_tabController.index == 1) {
+        (tabState as dynamic).focusChipsBar();
+      } else {
+        (tabState as dynamic).focusFirstItem();
+      }
     }
   }
 

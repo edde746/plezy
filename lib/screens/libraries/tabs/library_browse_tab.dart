@@ -82,13 +82,38 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   final FocusNode _filtersChipFocusNode = FocusNode(debugLabel: 'filters_chip');
   final FocusNode _sortChipFocusNode = FocusNode(debugLabel: 'sort_chip');
 
+  // Focus tracking for grid items
+  int? _lastFocusedIndex;
+  int _contentVersion = 0;
+  int _lastFocusedContentVersion = 0;
+  final Map<int, FocusNode> _gridItemFocusNodes = {};
+
   @override
   void dispose() {
     _cancelToken?.cancel();
     _groupingChipFocusNode.dispose();
     _filtersChipFocusNode.dispose();
     _sortChipFocusNode.dispose();
+    // Dispose all grid item focus nodes
+    for (final node in _gridItemFocusNodes.values) {
+      node.dispose();
+    }
+    _gridItemFocusNodes.clear();
     super.dispose();
+  }
+
+  /// Get or create a focus node for a grid item at the given index
+  FocusNode _getGridItemFocusNode(int index) {
+    return _gridItemFocusNodes.putIfAbsent(index, () => FocusNode(debugLabel: 'browse_grid_item_$index'));
+  }
+
+  /// Clean up focus nodes for items that no longer exist
+  void _cleanupFocusNodes() {
+    final keysToRemove = _gridItemFocusNodes.keys.where((index) => index >= items.length).toList();
+    for (final key in keysToRemove) {
+      _gridItemFocusNodes[key]?.dispose();
+      _gridItemFocusNodes.remove(key);
+    }
   }
 
   // Override loadData to use our custom _loadContent
@@ -133,6 +158,36 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
       request();
       WidgetsBinding.instance.addPostFrameCallback((_) => request());
+    }
+  }
+
+  /// Focus the chips bar (for navigating from tab bar to content).
+  /// Called by libraries screen when pressing DOWN on tab bar.
+  void focusChipsBar() {
+    // If in folders mode, no chips to focus - go directly to folder tree
+    if (_selectedGrouping == 'folders') {
+      focusFirstItem();
+      return;
+    }
+
+    // Scroll chips into view and focus the grouping chip
+    if (_groupingChipFocusNode.context != null) {
+      Scrollable.ensureVisible(
+        _groupingChipFocusNode.context!,
+        alignment: 0.0,
+        duration: const Duration(milliseconds: 200),
+      ).then((_) {
+        if (mounted) {
+          _groupingChipFocusNode.requestFocus();
+        }
+      });
+    } else {
+      // Context not available yet, try again next frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _groupingChipFocusNode.requestFocus();
+        }
+      });
     }
   }
 
@@ -219,6 +274,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       isLoading = true;
       if (!loadMore) {
         items = [];
+        // Increment content version when loading fresh content
+        // This invalidates the last focused index
+        _contentVersion++;
+        _cleanupFocusNodes();
       }
     });
 
@@ -432,11 +491,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     );
   }
 
-  /// Navigate focus from chips down to the first grid item
+  /// Navigate focus from chips down to the grid item.
+  /// Restores focus to the previously focused item if content hasn't changed.
   void _navigateToGrid() {
-    if (items.isNotEmpty) {
-      firstItemFocusNode.requestFocus();
-    }
+    if (items.isEmpty) return;
+
+    // Check if we should restore focus to the last focused item
+    final shouldRestoreFocus =
+        _lastFocusedIndex != null && _lastFocusedContentVersion == _contentVersion && _lastFocusedIndex! < items.length;
+
+    final targetIndex = shouldRestoreFocus ? _lastFocusedIndex! : 0;
+    _getGridItemFocusNode(targetIndex).requestFocus();
   }
 
   /// Navigate focus from grid up to the grouping chip
@@ -624,13 +689,25 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       );
     }
     final item = items[index];
+
+    // Use firstItemFocusNode for index 0 to maintain compatibility with base class
+    // All other items get managed focus nodes for restoration
+    final focusNode = index == 0 ? firstItemFocusNode : _getGridItemFocusNode(index);
+
     return FocusableMediaCard(
       key: Key(item.ratingKey),
       item: item,
-      focusNode: index == 0 ? firstItemFocusNode : null,
+      focusNode: focusNode,
       onRefresh: updateItem,
       onNavigateUp: isFirstRow ? _navigateToChips : null,
       onBack: widget.onBack,
+      onFocusChange: (hasFocus) {
+        if (hasFocus) {
+          // Track the focused index and current content version
+          _lastFocusedIndex = index;
+          _lastFocusedContentVersion = _contentVersion;
+        }
+      },
     );
   }
 }

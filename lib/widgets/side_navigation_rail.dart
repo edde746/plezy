@@ -610,30 +610,48 @@ class SideNavigationRailState extends State<SideNavigationRail> {
           ),
         ),
 
-        // Library items (hidden when collapsed to avoid clipped partial items)
-        if (_librariesExpanded && !isCollapsed) ...[
-          const SizedBox(height: 4),
-          _isLoadingLibraries
-              ? Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: t.textMuted),
-                    ),
-                  ),
-                )
-              : visibleLibraries.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    Translations.of(context).libraries.noLibrariesFound,
-                    style: TextStyle(fontSize: 12, color: t.textMuted),
-                  ),
-                )
-              : _buildLibraryItems(visibleLibraries, t),
-        ],
+        // Library items with animated height
+        TweenAnimationBuilder<double>(
+          tween: Tween(end: (_librariesExpanded && !isCollapsed) ? 1.0 : 0.0),
+          duration: tokens(context).normal,
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return ClipRect(
+              child: Align(
+                alignment: Alignment.topCenter,
+                heightFactor: value,
+                child: child,
+              ),
+            );
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              _isLoadingLibraries
+                  ? Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: t.textMuted),
+                        ),
+                      ),
+                    )
+                  : visibleLibraries.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            Translations.of(context).libraries.noLibrariesFound,
+                            style: TextStyle(fontSize: 12, color: t.textMuted),
+                          ),
+                        )
+                      : _buildLibraryItems(visibleLibraries, t),
+            ],
+          ),
+        ),
       ],
     );
   }
