@@ -93,6 +93,8 @@
     "useGlobalHubsDescription": "Afficher les hubs de la page d'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.",
     "showServerNameOnHubs": "Afficher le nom du serveur sur les hubs",
     "showServerNameOnHubsDescription": "Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s'affichent.",
+    "alwaysKeepSidebarOpen": "Toujours garder la barre latérale ouverte",
+    "alwaysKeepSidebarOpenDescription": "La barre latérale reste étendue et la zone de contenu s'adapte",
     "playerBackend": "Moteur de lecture",
     "exoPlayer": "ExoPlayer (Recommandé)",
     "exoPlayerDescription": "Lecteur natif Android avec meilleur support matériel",

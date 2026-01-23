@@ -94,6 +94,8 @@
     "useGlobalHubsDescription": "Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.",
     "showServerNameOnHubs": "Servernaam tonen bij hubs",
     "showServerNameOnHubsDescription": "Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.",
+    "alwaysKeepSidebarOpen": "Zijbalk altijd open houden",
+    "alwaysKeepSidebarOpenDescription": "Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan",
     "playerBackend": "Speler backend",
     "exoPlayer": "ExoPlayer (Aanbevolen)",
     "exoPlayerDescription": "Android-native speler met betere hardware-ondersteuning",

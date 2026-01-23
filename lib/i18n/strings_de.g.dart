@@ -207,6 +207,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.';
 	@override String get showServerNameOnHubs => 'Servername bei Hubs anzeigen';
 	@override String get showServerNameOnHubsDescription => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.';
+	@override String get alwaysKeepSidebarOpen => 'Seitenleiste immer geöffnet halten';
+	@override String get alwaysKeepSidebarOpenDescription => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an';
 	@override String get playerBackend => 'Player-Backend';
 	@override String get exoPlayer => 'ExoPlayer (Empfohlen)';
 	@override String get exoPlayerDescription => 'Android-nativer Player mit besserer Hardware-Unterstützung';
@@ -1044,6 +1046,8 @@ extension on TranslationsDe {
 			'settings.useGlobalHubsDescription' => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.',
 			'settings.showServerNameOnHubs' => 'Servername bei Hubs anzeigen',
 			'settings.showServerNameOnHubsDescription' => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.',
+			'settings.alwaysKeepSidebarOpen' => 'Seitenleiste immer geöffnet halten',
+			'settings.alwaysKeepSidebarOpenDescription' => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an',
 			'settings.playerBackend' => 'Player-Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Empfohlen)',
 			'settings.exoPlayerDescription' => 'Android-nativer Player mit besserer Hardware-Unterstützung',
@@ -1470,10 +1474,10 @@ extension on TranslationsDe {
 			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
 			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
-			'watchTogether.title' => 'Gemeinsam Schauen',
-			'watchTogether.description' => 'Inhalte synchron mit Freunden und Familie schauen',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.title' => 'Gemeinsam Schauen',
+			'watchTogether.description' => 'Inhalte synchron mit Freunden und Familie schauen',
 			'watchTogether.createSession' => 'Sitzung Erstellen',
 			'watchTogether.creating' => 'Erstellen...',
 			'watchTogether.joinSession' => 'Sitzung Beitreten',

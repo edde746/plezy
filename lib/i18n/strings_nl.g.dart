@@ -207,6 +207,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.';
 	@override String get showServerNameOnHubs => 'Servernaam tonen bij hubs';
 	@override String get showServerNameOnHubsDescription => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.';
+	@override String get alwaysKeepSidebarOpen => 'Zijbalk altijd open houden';
+	@override String get alwaysKeepSidebarOpenDescription => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan';
 	@override String get playerBackend => 'Speler backend';
 	@override String get exoPlayer => 'ExoPlayer (Aanbevolen)';
 	@override String get exoPlayerDescription => 'Android-native speler met betere hardware-ondersteuning';
@@ -1044,6 +1046,8 @@ extension on TranslationsNl {
 			'settings.useGlobalHubsDescription' => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.',
 			'settings.showServerNameOnHubs' => 'Servernaam tonen bij hubs',
 			'settings.showServerNameOnHubsDescription' => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.',
+			'settings.alwaysKeepSidebarOpen' => 'Zijbalk altijd open houden',
+			'settings.alwaysKeepSidebarOpenDescription' => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan',
 			'settings.playerBackend' => 'Speler backend',
 			'settings.exoPlayer' => 'ExoPlayer (Aanbevolen)',
 			'settings.exoPlayerDescription' => 'Android-native speler met betere hardware-ondersteuning',
@@ -1470,10 +1474,10 @@ extension on TranslationsNl {
 			'collections.removedFromCollection' => 'Uit collectie verwijderd',
 			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
-			'watchTogether.title' => 'Samen Kijken',
-			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.title' => 'Samen Kijken',
+			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',
 			'watchTogether.createSession' => 'Sessie Maken',
 			'watchTogether.creating' => 'Maken...',
 			'watchTogether.joinSession' => 'Sessie Deelnemen',

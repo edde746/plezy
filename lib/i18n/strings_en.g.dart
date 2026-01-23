@@ -376,6 +376,12 @@ class TranslationsSettingsEn {
 	/// en: 'Always display the server name in hub titles. When off, only shows for duplicate hub names.'
 	String get showServerNameOnHubsDescription => 'Always display the server name in hub titles. When off, only shows for duplicate hub names.';
 
+	/// en: 'Always Keep Sidebar Open'
+	String get alwaysKeepSidebarOpen => 'Always Keep Sidebar Open';
+
+	/// en: 'Sidebar stays expanded and content area adjusts to fit'
+	String get alwaysKeepSidebarOpenDescription => 'Sidebar stays expanded and content area adjusts to fit';
+
 	/// en: 'Player Backend'
 	String get playerBackend => 'Player Backend';
 
@@ -2149,6 +2155,8 @@ extension on Translations {
 			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
 			'settings.showServerNameOnHubsDescription' => 'Always display the server name in hub titles. When off, only shows for duplicate hub names.',
+			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
+			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.playerBackend' => 'Player Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Recommended)',
 			'settings.exoPlayerDescription' => 'Android native player with better hardware support',
@@ -2576,10 +2584,10 @@ extension on Translations {
 			'watchTogether.hostControlsPlayback' => 'Host controls playback',
 			'watchTogether.anyoneCanControl' => 'Anyone can control playback',
 			'watchTogether.hostControls' => 'Host controls',
-			'watchTogether.anyoneControls' => 'Anyone controls',
-			'watchTogether.participants' => 'Participants',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.anyoneControls' => 'Anyone controls',
+			'watchTogether.participants' => 'Participants',
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'You are the host',

@@ -94,6 +94,8 @@
     "useGlobalHubsDescription": "Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.",
     "showServerNameOnHubs": "Visa servernamn på hubbar",
     "showServerNameOnHubsDescription": "Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.",
+    "alwaysKeepSidebarOpen": "Håll sidofältet alltid öppet",
+    "alwaysKeepSidebarOpenDescription": "Sidofältet förblir expanderat och innehållsytan anpassas",
     "playerBackend": "Spelarmotor",
     "exoPlayer": "ExoPlayer (Rekommenderad)",
     "exoPlayerDescription": "Android-nativ spelare med bättre hårdvarustöd",

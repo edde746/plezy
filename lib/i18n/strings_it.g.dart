@@ -207,6 +207,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Mostra gli hub della home page come il client Plex ufficiale. Se disattivato, mostra invece i suggerimenti per libreria.';
 	@override String get showServerNameOnHubs => 'Mostra nome server sugli hub';
 	@override String get showServerNameOnHubsDescription => 'Mostra sempre il nome del server nei titoli degli hub. Se disattivato, solo per nomi hub duplicati.';
+	@override String get alwaysKeepSidebarOpen => 'Mantieni sempre aperta la barra laterale';
+	@override String get alwaysKeepSidebarOpenDescription => 'La barra laterale rimane espansa e l\'area del contenuto si adatta';
 	@override String get playerBackend => 'Motore di riproduzione';
 	@override String get exoPlayer => 'ExoPlayer (Consigliato)';
 	@override String get exoPlayerDescription => 'Lettore nativo Android con migliore supporto hardware';
@@ -1044,6 +1046,8 @@ extension on TranslationsIt {
 			'settings.useGlobalHubsDescription' => 'Mostra gli hub della home page come il client Plex ufficiale. Se disattivato, mostra invece i suggerimenti per libreria.',
 			'settings.showServerNameOnHubs' => 'Mostra nome server sugli hub',
 			'settings.showServerNameOnHubsDescription' => 'Mostra sempre il nome del server nei titoli degli hub. Se disattivato, solo per nomi hub duplicati.',
+			'settings.alwaysKeepSidebarOpen' => 'Mantieni sempre aperta la barra laterale',
+			'settings.alwaysKeepSidebarOpenDescription' => 'La barra laterale rimane espansa e l\'area del contenuto si adatta',
 			'settings.playerBackend' => 'Motore di riproduzione',
 			'settings.exoPlayer' => 'ExoPlayer (Consigliato)',
 			'settings.exoPlayerDescription' => 'Lettore nativo Android con migliore supporto hardware',
@@ -1470,10 +1474,10 @@ extension on TranslationsIt {
 			'collections.removedFromCollection' => 'Rimosso dalla raccolta',
 			'collections.removeFromCollectionFailed' => 'Impossibile rimuovere dalla raccolta',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}',
-			'watchTogether.title' => 'Guarda Insieme',
-			'watchTogether.description' => 'Guarda contenuti in sincronia con amici e familiari',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.title' => 'Guarda Insieme',
+			'watchTogether.description' => 'Guarda contenuti in sincronia con amici e familiari',
 			'watchTogether.createSession' => 'Crea Sessione',
 			'watchTogether.creating' => 'Creazione...',
 			'watchTogether.joinSession' => 'Unisciti alla Sessione',

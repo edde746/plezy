@@ -138,7 +138,7 @@ class NavigationRailItem extends StatelessWidget {
               constrainedAxis: Axis.vertical,
               clipBehavior: Clip.hardEdge,
               child: SizedBox(
-                width: SideNavigationRailState._expandedWidth - 24,
+                width: SideNavigationRailState.expandedWidth - 24,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 17),
                   child: Row(
@@ -173,6 +173,7 @@ class SideNavigationRail extends StatefulWidget {
   final String? selectedLibraryKey;
   final bool isOfflineMode;
   final bool isSidebarFocused;
+  final bool alwaysExpanded;
   final ValueChanged<int> onDestinationSelected;
   final ValueChanged<String> onLibrarySelected;
 
@@ -182,6 +183,7 @@ class SideNavigationRail extends StatefulWidget {
     this.selectedLibraryKey,
     this.isOfflineMode = false,
     this.isSidebarFocused = false,
+    this.alwaysExpanded = false,
     required this.onDestinationSelected,
     required this.onLibrarySelected,
   });
@@ -199,7 +201,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   bool _isHovered = false;
   Timer? _collapseTimer;
   static const double collapsedWidth = 80.0;
-  static const double _expandedWidth = 220.0;
+  static const double expandedWidth = 220.0;
   static const Duration _collapseDelay = Duration(milliseconds: 150);
 
   // Focus keys for main nav items
@@ -212,8 +214,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   // Unified focus state tracker for all nav items (main + libraries)
   late final _FocusStateTracker _focusTracker;
 
-  /// Whether the sidebar should be expanded (hover or focus)
-  bool get _shouldExpand => _isHovered || widget.isSidebarFocused;
+  /// Whether the sidebar should be expanded (always, hover, or focus)
+  bool get _shouldExpand => widget.alwaysExpanded || _isHovered || widget.isSidebarFocused;
 
   @override
   void initState() {
@@ -387,7 +389,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
           child: AnimatedContainer(
             duration: t.normal,
             curve: Curves.easeOutCubic,
-            width: isCollapsed ? collapsedWidth : _expandedWidth,
+            width: isCollapsed ? collapsedWidth : expandedWidth,
             clipBehavior: Clip.hardEdge,
             decoration: BoxDecoration(color: t.surface),
             child: Column(
@@ -564,7 +566,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                   constrainedAxis: Axis.vertical,
                   clipBehavior: Clip.hardEdge,
                   child: SizedBox(
-                    width: _expandedWidth - 24,
+                    width: expandedWidth - 24,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 17),
                       child: Row(
@@ -617,11 +619,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
           curve: Curves.easeOutCubic,
           builder: (context, value, child) {
             return ClipRect(
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: value,
-                child: child,
-              ),
+              child: Align(alignment: Alignment.topCenter, heightFactor: value, child: child),
             );
           },
           child: Column(
@@ -641,14 +639,14 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                       ),
                     )
                   : visibleLibraries.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            Translations.of(context).libraries.noLibrariesFound,
-                            style: TextStyle(fontSize: 12, color: t.textMuted),
-                          ),
-                        )
-                      : _buildLibraryItems(visibleLibraries, t),
+                  ? Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        Translations.of(context).libraries.noLibrariesFound,
+                        style: TextStyle(fontSize: 12, color: t.textMuted),
+                      ),
+                    )
+                  : _buildLibraryItems(visibleLibraries, t),
             ],
           ),
         ),

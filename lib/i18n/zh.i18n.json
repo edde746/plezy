@@ -94,6 +94,8 @@
     "useGlobalHubsDescription": "显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。",
     "showServerNameOnHubs": "在推荐栏显示服务器名称",
     "showServerNameOnHubsDescription": "始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。",
+    "alwaysKeepSidebarOpen": "始终保持侧边栏展开",
+    "alwaysKeepSidebarOpenDescription": "侧边栏保持展开状态，内容区域自动调整",
     "playerBackend": "播放器引擎",
     "exoPlayer": "ExoPlayer（推荐）",
     "exoPlayerDescription": "Android 原生播放器，硬件支持更好",

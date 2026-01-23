@@ -207,6 +207,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。';
 	@override String get showServerNameOnHubs => '在推荐栏显示服务器名称';
 	@override String get showServerNameOnHubsDescription => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。';
+	@override String get alwaysKeepSidebarOpen => '始终保持侧边栏展开';
+	@override String get alwaysKeepSidebarOpenDescription => '侧边栏保持展开状态，内容区域自动调整';
 	@override String get playerBackend => '播放器引擎';
 	@override String get exoPlayer => 'ExoPlayer（推荐）';
 	@override String get exoPlayerDescription => 'Android 原生播放器，硬件支持更好';
@@ -1044,6 +1046,8 @@ extension on TranslationsZh {
 			'settings.useGlobalHubsDescription' => '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。',
 			'settings.showServerNameOnHubs' => '在推荐栏显示服务器名称',
 			'settings.showServerNameOnHubsDescription' => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。',
+			'settings.alwaysKeepSidebarOpen' => '始终保持侧边栏展开',
+			'settings.alwaysKeepSidebarOpenDescription' => '侧边栏保持展开状态，内容区域自动调整',
 			'settings.playerBackend' => '播放器引擎',
 			'settings.exoPlayer' => 'ExoPlayer（推荐）',
 			'settings.exoPlayerDescription' => 'Android 原生播放器，硬件支持更好',
@@ -1470,10 +1474,10 @@ extension on TranslationsZh {
 			'collections.removedFromCollection' => '已从合集移除',
 			'collections.removeFromCollectionFailed' => '从合集移除失败',
 			'collections.removeFromCollectionError' => ({required Object error}) => '从合集移除时出错：${error}',
-			'watchTogether.title' => '一起看',
-			'watchTogether.description' => '与朋友和家人同步观看内容',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.title' => '一起看',
+			'watchTogether.description' => '与朋友和家人同步观看内容',
 			'watchTogether.createSession' => '创建会话',
 			'watchTogether.creating' => '创建中...',
 			'watchTogether.joinSession' => '加入会话',

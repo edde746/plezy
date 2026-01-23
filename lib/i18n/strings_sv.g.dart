@@ -207,6 +207,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.';
 	@override String get showServerNameOnHubs => 'Visa servernamn på hubbar';
 	@override String get showServerNameOnHubsDescription => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.';
+	@override String get alwaysKeepSidebarOpen => 'Håll sidofältet alltid öppet';
+	@override String get alwaysKeepSidebarOpenDescription => 'Sidofältet förblir expanderat och innehållsytan anpassas';
 	@override String get playerBackend => 'Spelarmotor';
 	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
 	@override String get exoPlayerDescription => 'Android-nativ spelare med bättre hårdvarustöd';
@@ -1044,6 +1046,8 @@ extension on TranslationsSv {
 			'settings.useGlobalHubsDescription' => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.',
 			'settings.showServerNameOnHubs' => 'Visa servernamn på hubbar',
 			'settings.showServerNameOnHubsDescription' => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.',
+			'settings.alwaysKeepSidebarOpen' => 'Håll sidofältet alltid öppet',
+			'settings.alwaysKeepSidebarOpenDescription' => 'Sidofältet förblir expanderat och innehållsytan anpassas',
 			'settings.playerBackend' => 'Spelarmotor',
 			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
 			'settings.exoPlayerDescription' => 'Android-nativ spelare med bättre hårdvarustöd',
@@ -1470,10 +1474,10 @@ extension on TranslationsSv {
 			'collections.removedFromCollection' => 'Borttagen från samling',
 			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
-			'watchTogether.title' => 'Titta Tillsammans',
-			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.title' => 'Titta Tillsammans',
+			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',
 			'watchTogether.createSession' => 'Skapa Session',
 			'watchTogether.creating' => 'Skapar...',
 			'watchTogether.joinSession' => 'Gå med i Session',

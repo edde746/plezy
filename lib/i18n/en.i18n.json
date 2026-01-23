@@ -93,6 +93,8 @@
     "useGlobalHubsDescription": "Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.",
     "showServerNameOnHubs": "Show Server Name on Hubs",
     "showServerNameOnHubsDescription": "Always display the server name in hub titles. When off, only shows for duplicate hub names.",
+    "alwaysKeepSidebarOpen": "Always Keep Sidebar Open",
+    "alwaysKeepSidebarOpenDescription": "Sidebar stays expanded and content area adjusts to fit",
     "playerBackend": "Player Backend",
     "exoPlayer": "ExoPlayer (Recommended)",
     "exoPlayerDescription": "Android native player with better hardware support",

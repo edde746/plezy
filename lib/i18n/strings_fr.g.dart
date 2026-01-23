@@ -206,6 +206,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Afficher les hubs de la page d\'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.';
 	@override String get showServerNameOnHubs => 'Afficher le nom du serveur sur les hubs';
 	@override String get showServerNameOnHubsDescription => 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.';
+	@override String get alwaysKeepSidebarOpen => 'Toujours garder la barre latérale ouverte';
+	@override String get alwaysKeepSidebarOpenDescription => 'La barre latérale reste étendue et la zone de contenu s\'adapte';
 	@override String get playerBackend => 'Moteur de lecture';
 	@override String get exoPlayer => 'ExoPlayer (Recommandé)';
 	@override String get exoPlayerDescription => 'Lecteur natif Android avec meilleur support matériel';
@@ -1041,6 +1043,8 @@ extension on TranslationsFr {
 			'settings.useGlobalHubsDescription' => 'Afficher les hubs de la page d\'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.',
 			'settings.showServerNameOnHubs' => 'Afficher le nom du serveur sur les hubs',
 			'settings.showServerNameOnHubsDescription' => 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.',
+			'settings.alwaysKeepSidebarOpen' => 'Toujours garder la barre latérale ouverte',
+			'settings.alwaysKeepSidebarOpenDescription' => 'La barre latérale reste étendue et la zone de contenu s\'adapte',
 			'settings.playerBackend' => 'Moteur de lecture',
 			'settings.exoPlayer' => 'ExoPlayer (Recommandé)',
 			'settings.exoPlayerDescription' => 'Lecteur natif Android avec meilleur support matériel',
@@ -1468,10 +1472,10 @@ extension on TranslationsFr {
 			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',
 			'watchTogether.anyoneCanControl' => 'Tout le monde peut contrôler la lecture',
 			'watchTogether.hostControls' => 'Commandes de l\'hôte',
-			'watchTogether.anyoneControls' => 'Tout le monde contrôle',
-			'watchTogether.participants' => 'Participants',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.anyoneControls' => 'Tout le monde contrôle',
+			'watchTogether.participants' => 'Participants',
 			'watchTogether.host' => 'Hôte',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'Vous êtes l\'hôte',

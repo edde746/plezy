@@ -65,6 +65,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
   static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
   static const String _keyUseExoPlayer = 'use_exoplayer';
+  static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
 
   SettingsService._();
 
@@ -992,6 +993,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyUseExoPlayer) ?? true; // Default: ExoPlayer
   }
 
+  // Always Keep Sidebar Open (Desktop/TV only)
+  Future<void> setAlwaysKeepSidebarOpen(bool enabled) async {
+    await prefs.setBool(_keyAlwaysKeepSidebarOpen, enabled);
+  }
+
+  bool getAlwaysKeepSidebarOpen() {
+    return prefs.getBool(_keyAlwaysKeepSidebarOpen) ?? false; // Default: collapsed
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1037,6 +1047,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyDefaultPlaybackSpeed),
       prefs.remove(_keyAutoPlayNextEpisode),
       prefs.remove(_keyUseExoPlayer),
+      prefs.remove(_keyAlwaysKeepSidebarOpen),
     ]);
   }
 

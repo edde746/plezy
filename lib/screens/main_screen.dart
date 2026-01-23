@@ -19,6 +19,7 @@ import '../providers/multi_server_provider.dart';
 import '../providers/server_state_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../providers/offline_mode_provider.dart';
 import '../services/plex_auth_service.dart';
@@ -582,66 +583,75 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
 
     if (useSideNav) {
-      // Collapsed sidebar width for content padding
-      const collapsedSidebarWidth = SideNavigationRailState.collapsedWidth;
+      return Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, child) {
+          final alwaysExpanded = settingsProvider.alwaysKeepSidebarOpen;
+          final contentLeftPadding = alwaysExpanded
+              ? SideNavigationRailState.expandedWidth
+              : SideNavigationRailState.collapsedWidth;
 
-      return PopScope(
-        canPop: false, // Prevent system back from popping on Android TV
-        onPopInvokedWithResult: (didPop, result) {
-          // No-op: back key events bubble through widget tree and are handled
-          // by content screens (e.g., LibrariesScreen) or MainScreen's _handleBackKey.
-          // We only use PopScope to prevent the system from popping the route.
-        },
-        child: Focus(
-          onKeyEvent: (node, event) => _handleBackKey(event),
-          child: MainScreenFocusScope(
-            focusSidebar: _focusSidebar,
-            focusContent: _focusContent,
-            isSidebarFocused: _isSidebarFocused,
-            child: SideNavigationScope(
-              child: Stack(
-                children: [
-                  // Content with fixed left padding for collapsed sidebar
-                  Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: collapsedSidebarWidth),
-                      child: FocusScope(
-                        node: _contentFocusScope,
-                        // No autofocus - we control focus programmatically to prevent
-                        // autofocus from stealing focus back after setState() rebuilds
-                        child: IndexedStack(index: _currentIndex, children: _screens),
+          return PopScope(
+            canPop: false, // Prevent system back from popping on Android TV
+            onPopInvokedWithResult: (didPop, result) {
+              // No-op: back key events bubble through widget tree and are handled
+              // by content screens (e.g., LibrariesScreen) or MainScreen's _handleBackKey.
+              // We only use PopScope to prevent the system from popping the route.
+            },
+            child: Focus(
+              onKeyEvent: (node, event) => _handleBackKey(event),
+              child: MainScreenFocusScope(
+                focusSidebar: _focusSidebar,
+                focusContent: _focusContent,
+                isSidebarFocused: _isSidebarFocused,
+                child: SideNavigationScope(
+                  child: Stack(
+                    children: [
+                      // Content with animated left padding based on sidebar state
+                      Positioned.fill(
+                        child: AnimatedPadding(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOutCubic,
+                          padding: EdgeInsets.only(left: contentLeftPadding),
+                          child: FocusScope(
+                            node: _contentFocusScope,
+                            // No autofocus - we control focus programmatically to prevent
+                            // autofocus from stealing focus back after setState() rebuilds
+                            child: IndexedStack(index: _currentIndex, children: _screens),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  // Sidebar overlays content when expanded
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    child: FocusScope(
-                      node: _sidebarFocusScope,
-                      child: SideNavigationRail(
-                        key: _sideNavKey,
-                        selectedIndex: _currentIndex,
-                        selectedLibraryKey: _selectedLibraryGlobalKey,
-                        isOfflineMode: _isOffline,
-                        isSidebarFocused: _isSidebarFocused,
-                        onDestinationSelected: (index) {
-                          _selectTab(index);
-                          _focusContent();
-                        },
-                        onLibrarySelected: (key) {
-                          _selectLibrary(key);
-                          _focusContent();
-                        },
+                      // Sidebar overlays content when expanded (unless always expanded)
+                      Positioned(
+                        top: 0,
+                        bottom: 0,
+                        left: 0,
+                        child: FocusScope(
+                          node: _sidebarFocusScope,
+                          child: SideNavigationRail(
+                            key: _sideNavKey,
+                            selectedIndex: _currentIndex,
+                            selectedLibraryKey: _selectedLibraryGlobalKey,
+                            isOfflineMode: _isOffline,
+                            isSidebarFocused: _isSidebarFocused,
+                            alwaysExpanded: alwaysExpanded,
+                            onDestinationSelected: (index) {
+                              _selectTab(index);
+                              _focusContent();
+                            },
+                            onLibrarySelected: (key) {
+                              _selectLibrary(key);
+                              _focusContent();
+                            },
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       );
     }
 

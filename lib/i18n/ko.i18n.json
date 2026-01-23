@@ -94,6 +94,8 @@
     "useGlobalHubsDescription": "공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.",
     "showServerNameOnHubs": "허브에 서버 이름 표시",
     "showServerNameOnHubsDescription": "허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.",
+    "alwaysKeepSidebarOpen": "사이드바 항상 열어두기",
+    "alwaysKeepSidebarOpenDescription": "사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다",
     "playerBackend": "플레이어 백엔드",
     "exoPlayer": "ExoPlayer (권장)",
     "exoPlayerDescription": "더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어",

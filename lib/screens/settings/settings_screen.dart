@@ -243,6 +243,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          if (PlatformDetector.shouldUseSideNavigation(context))
+            Consumer<SettingsProvider>(
+              builder: (context, settingsProvider, child) {
+                return SwitchListTile(
+                  secondary: const AppIcon(Symbols.dock_to_left_rounded, fill: 1),
+                  title: Text(t.settings.alwaysKeepSidebarOpen),
+                  subtitle: Text(t.settings.alwaysKeepSidebarOpenDescription),
+                  value: settingsProvider.alwaysKeepSidebarOpen,
+                  onChanged: (value) async {
+                    await settingsProvider.setAlwaysKeepSidebarOpen(value);
+                  },
+                );
+              },
+            ),
         ],
       ),
     );

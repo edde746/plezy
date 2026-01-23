@@ -207,6 +207,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.';
 	@override String get showServerNameOnHubs => '허브에 서버 이름 표시';
 	@override String get showServerNameOnHubsDescription => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.';
+	@override String get alwaysKeepSidebarOpen => '사이드바 항상 열어두기';
+	@override String get alwaysKeepSidebarOpenDescription => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다';
 	@override String get playerBackend => '플레이어 백엔드';
 	@override String get exoPlayer => 'ExoPlayer (권장)';
 	@override String get exoPlayerDescription => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어';
@@ -1044,6 +1046,8 @@ extension on TranslationsKo {
 			'settings.useGlobalHubsDescription' => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.',
 			'settings.showServerNameOnHubs' => '허브에 서버 이름 표시',
 			'settings.showServerNameOnHubsDescription' => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.',
+			'settings.alwaysKeepSidebarOpen' => '사이드바 항상 열어두기',
+			'settings.alwaysKeepSidebarOpenDescription' => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다',
 			'settings.playerBackend' => '플레이어 백엔드',
 			'settings.exoPlayer' => 'ExoPlayer (권장)',
 			'settings.exoPlayerDescription' => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어',
@@ -1470,10 +1474,10 @@ extension on TranslationsKo {
 			'watchTogether.inSession' => '세션 중',
 			'watchTogether.sessionCode' => '세션 코드',
 			'watchTogether.hostControlsPlayback' => '호스트 재생 제어',
-			'watchTogether.anyoneCanControl' => '누구나 재생 제어 가능',
-			'watchTogether.hostControls' => '호스트 제어',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.anyoneCanControl' => '누구나 재생 제어 가능',
+			'watchTogether.hostControls' => '호스트 제어',
 			'watchTogether.anyoneControls' => '누구나 제어',
 			'watchTogether.participants' => '참가자',
 			'watchTogether.host' => '호스트',
