@@ -23,6 +23,7 @@ class _FocusStateTracker {
   final Map<String, FocusNode> _nodes = {};
   final Set<String> _focused = {};
   final VoidCallback _onChanged;
+  String? _lastFocusedKey; // Track last focused item for restoration
 
   _FocusStateTracker(this._onChanged);
 
@@ -34,6 +35,7 @@ class _FocusStateTracker {
         final wasFocused = _focused.contains(key);
         if (node.hasFocus && !wasFocused) {
           _focused.add(key);
+          _lastFocusedKey = key; // Remember this key for restoration
           _onChanged();
         } else if (!node.hasFocus && wasFocused) {
           _focused.remove(key);
@@ -43,6 +45,9 @@ class _FocusStateTracker {
       return node;
     });
   }
+
+  /// Get the last focused key (for focus restoration)
+  String? get lastFocusedKey => _lastFocusedKey;
 
   /// Check if a key is currently focused
   bool isFocused(String key) => _focused.contains(key);
@@ -66,6 +71,10 @@ class _FocusStateTracker {
       _nodes[key]?.dispose();
       _nodes.remove(key);
       _focused.remove(key);
+    }
+    // Clear last focused if it was pruned
+    if (_lastFocusedKey != null && !validKeys.contains(_lastFocusedKey)) {
+      _lastFocusedKey = null;
     }
   }
 }
@@ -258,23 +267,18 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     });
   }
 
-  /// Focus the currently selected nav item
+  /// Focus the last focused nav item, or Home as fallback
   void focusActiveItem() {
-    if (widget.selectedLibraryKey != null) {
-      // A library is selected - focus that library item
-      _focusTracker.nodeFor(widget.selectedLibraryKey!)?.requestFocus();
-    } else {
-      // Focus main nav item based on selectedIndex
-      final key = switch (widget.selectedIndex) {
-        0 => _kHome,
-        1 => _kLibraries,
-        2 => _kSearch,
-        3 => _kDownloads,
-        4 => _kSettings,
-        _ => null,
-      };
-      if (key != null) _focusTracker.nodeFor(key)?.requestFocus();
+    // Try to restore last focused item
+    if (_focusTracker.lastFocusedKey != null) {
+      final node = _focusTracker.nodeFor(_focusTracker.lastFocusedKey!);
+      if (node != null) {
+        node.requestFocus();
+        return;
+      }
     }
+    // Fallback: focus Home if nothing was previously focused
+    _focusTracker.nodeFor(_kHome)?.requestFocus();
   }
 
   /// Fetch, filter, and order libraries (pure logic, no state changes)
