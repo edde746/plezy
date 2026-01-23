@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -61,6 +64,8 @@ class HubSection extends StatefulWidget {
 }
 
 class HubSectionState extends State<HubSection> {
+  static const _longPressDuration = Duration(milliseconds: 500);
+
   late FocusNode _hubFocusNode;
   final ScrollController _scrollController = ScrollController();
 
@@ -70,6 +75,10 @@ class HubSectionState extends State<HubSection> {
   /// Item extent for scroll calculations
   double _itemExtent = 0;
   static const double _leadingPadding = 12.0;
+
+  Timer? _longPressTimer;
+  bool _isSelectKeyDown = false;
+  bool _longPressTriggered = false;
 
   @override
   void initState() {
@@ -92,6 +101,7 @@ class HubSectionState extends State<HubSection> {
 
   @override
   void dispose() {
+    _longPressTimer?.cancel();
     _hubFocusNode.removeListener(_onFocusChange);
     _hubFocusNode.dispose();
     _scrollController.dispose();
@@ -99,6 +109,12 @@ class HubSectionState extends State<HubSection> {
   }
 
   void _onFocusChange() {
+    // Reset long press state when focus is lost
+    if (!_hubFocusNode.hasFocus) {
+      _longPressTimer?.cancel();
+      _isSelectKeyDown = false;
+      _longPressTriggered = false;
+    }
     // Rebuild to update visual focus state
     if (mounted) setState(() {});
   }
@@ -161,12 +177,43 @@ class HubSectionState extends State<HubSection> {
 
   /// Handle ALL key events at the hub level
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    final key = event.logicalKey;
+
+    if (key.isSelectKey) {
+      if (event is KeyDownEvent) {
+        if (!_isSelectKeyDown) {
+          _isSelectKeyDown = true;
+          _longPressTriggered = false;
+          _longPressTimer?.cancel();
+          _longPressTimer = Timer(_longPressDuration, () {
+            if (!mounted) return;
+            if (_isSelectKeyDown) {
+              _longPressTriggered = true;
+              SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+              _showContextMenuForCurrentItem();
+            }
+          });
+        }
+        return KeyEventResult.handled;
+      } else if (event is KeyRepeatEvent) {
+        return KeyEventResult.handled;
+      } else if (event is KeyUpEvent) {
+        final timerWasActive = _longPressTimer?.isActive ?? false;
+        _longPressTimer?.cancel();
+        if (!_longPressTriggered && timerWasActive && _isSelectKeyDown) {
+          _activateCurrentItem();
+        }
+        _isSelectKeyDown = false;
+        _longPressTriggered = false;
+        return KeyEventResult.handled;
+      }
+    }
+
     // Handle key down and repeat events
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
 
-    final key = event.logicalKey;
     final itemCount = widget.hub.items.length;
     if (itemCount == 0) return KeyEventResult.ignored;
 
@@ -204,12 +251,6 @@ class HubSectionState extends State<HubSection> {
     }
     if (key.isDownKey) {
       widget.onVerticalNavigation?.call(false);
-      return KeyEventResult.handled;
-    }
-
-    // Select: activate the current item
-    if (key.isSelectKey) {
-      _activateCurrentItem();
       return KeyEventResult.handled;
     }
 

@@ -57,3 +57,23 @@ extension DpadKeyExtension on LogicalKeyboardKey {
   /// Whether this key moves focus down.
   bool get isDownKey => this == LogicalKeyboardKey.arrowDown;
 }
+
+/// Global helper to suppress the next SELECT key-up event.
+class SelectKeyUpSuppressor {
+  static bool _suppressSelectUntilKeyUp = false;
+
+  static void suppressSelectUntilKeyUp() {
+    _suppressSelectUntilKeyUp = true;
+  }
+
+  static bool consumeIfSuppressed(KeyEvent event) {
+    if (!_suppressSelectUntilKeyUp) return false;
+    if (event.logicalKey.isSelectKey) {
+      if (event is KeyUpEvent) {
+        _suppressSelectUntilKeyUp = false;
+      }
+      return true;
+    }
+    return false;
+  }
+}

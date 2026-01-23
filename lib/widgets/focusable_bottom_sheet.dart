@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../focus/input_mode_tracker.dart';
+import '../focus/dpad_navigator.dart';
 
 /// A wrapper widget that provides autofocus functionality for bottom sheets.
 ///
@@ -56,6 +57,16 @@ class _FocusableBottomSheetState extends State<FocusableBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.child;
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (node, event) {
+        if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: widget.child,
+    );
   }
 }

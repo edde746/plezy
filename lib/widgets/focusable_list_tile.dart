@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../focus/dpad_navigator.dart';
 
 /// A ListTile that accepts a FocusNode for keyboard/controller navigation.
 ///
 /// Uses Flutter's native ListTile focus support - no custom styling wrapper.
 /// The focusNode allows programmatic focus control (e.g., auto-focus first item).
-class FocusableListTile extends StatelessWidget {
+class FocusableListTile extends StatefulWidget {
   /// The primary content of the list tile.
   final Widget? title;
 
@@ -41,6 +43,9 @@ class FocusableListTile extends StatelessWidget {
   /// The tile's internal padding.
   final EdgeInsetsGeometry? contentPadding;
 
+  /// If true, consumes the first select key event to avoid accidental activation.
+  final bool suppressInitialSelect;
+
   const FocusableListTile({
     super.key,
     this.title,
@@ -55,23 +60,51 @@ class FocusableListTile extends StatelessWidget {
     this.focusNode,
     this.autofocus = false,
     this.contentPadding,
+    this.suppressInitialSelect = false,
   });
 
   @override
+  State<FocusableListTile> createState() => _FocusableListTileState();
+}
+
+class _FocusableListTileState extends State<FocusableListTile> {
+  bool _suppressionConsumed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: title,
-      subtitle: subtitle,
-      leading: leading,
-      trailing: trailing,
-      onTap: onTap,
-      onLongPress: onLongPress,
-      dense: dense,
-      enabled: enabled,
-      selected: selected,
-      contentPadding: contentPadding,
-      focusNode: focusNode,
-      autofocus: autofocus,
+    final tile = ListTile(
+      title: widget.title,
+      subtitle: widget.subtitle,
+      leading: widget.leading,
+      trailing: widget.trailing,
+      onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
+      dense: widget.dense,
+      enabled: widget.enabled,
+      selected: widget.selected,
+      contentPadding: widget.contentPadding,
+      focusNode: widget.suppressInitialSelect ? null : widget.focusNode,
+      autofocus: widget.suppressInitialSelect ? false : widget.autofocus,
+    );
+
+    if (!widget.suppressInitialSelect) {
+      return tile;
+    }
+
+    return Focus(
+      focusNode: widget.focusNode,
+      autofocus: widget.autofocus,
+      onKeyEvent: (node, event) {
+        if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+          return KeyEventResult.handled;
+        }
+        if (!_suppressionConsumed && event.logicalKey.isSelectKey) {
+          _suppressionConsumed = true;
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: tile,
     );
   }
 }

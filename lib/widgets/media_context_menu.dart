@@ -16,6 +16,7 @@ import '../utils/library_refresh_notifier.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
 import '../utils/focus_utils.dart';
+import '../focus/dpad_navigator.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/season_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
@@ -1222,44 +1223,54 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
       top = screenSize.height - estimatedHeight - 8;
     }
 
-    return Stack(
-      children: [
-        // Barrier to close menu when clicking outside
-        Positioned.fill(
-          child: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            behavior: HitTestBehavior.opaque,
-            child: Container(color: Colors.transparent),
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (node, event) {
+        if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Stack(
+        children: [
+          // Barrier to close menu when clicking outside
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              behavior: HitTestBehavior.opaque,
+              child: Container(color: Colors.transparent),
+            ),
           ),
-        ),
-        // Menu
-        Positioned(
-          left: left,
-          top: top,
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-            clipBehavior: Clip.antiAlias,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: widget.actions.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final action = entry.value;
-                  return FocusableListTile(
-                    focusNode: index == 0 ? _initialFocusNode : null,
-                    leading: AppIcon(action.icon, fill: 1, size: 20),
-                    title: Text(action.label),
-                    onTap: () => Navigator.pop(context, action.value),
-                  );
-                }).toList(),
+          // Menu
+          Positioned(
+            left: left,
+            top: top,
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+              clipBehavior: Clip.antiAlias,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: widget.actions.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final action = entry.value;
+                    return FocusableListTile(
+                      focusNode: index == 0 ? _initialFocusNode : null,
+                      leading: AppIcon(action.icon, fill: 1, size: 20),
+                      title: Text(action.label),
+                      onTap: () => Navigator.pop(context, action.value),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -182,6 +182,12 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         _isFocused = hasFocus;
       });
 
+      // Reset long press state when focus is lost
+      if (!hasFocus) {
+        _longPressTimer?.cancel();
+        _isSelectKeyDown = false;
+      }
+
       // Animate scale
       if (hasFocus) {
         _animationController.forward();
@@ -252,6 +258,10 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
+
+    if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+      return KeyEventResult.handled;
+    }
 
     // Call custom key handler first
     if (widget.onKeyEvent != null) {
