@@ -23,6 +23,12 @@ class FocusableFilterChip extends StatefulWidget {
   /// Called when the user presses UP from this chip.
   final VoidCallback? onNavigateUp;
 
+  /// Called when the user presses LEFT from this chip.
+  final VoidCallback? onNavigateLeft;
+
+  /// Called when the user presses RIGHT from this chip.
+  final VoidCallback? onNavigateRight;
+
   /// Called when the user presses BACK from this chip.
   final VoidCallback? onBack;
 
@@ -34,6 +40,8 @@ class FocusableFilterChip extends StatefulWidget {
     this.focusNode,
     this.onNavigateDown,
     this.onNavigateUp,
+    this.onNavigateLeft,
+    this.onNavigateRight,
     this.onBack,
   });
 
@@ -74,6 +82,8 @@ class _FocusableFilterChipState extends State<FocusableFilterChip> with Focusabl
         onSelect: widget.onPressed,
         onNavigateDown: widget.onNavigateDown,
         onNavigateUp: widget.onNavigateUp,
+        onNavigateLeft: widget.onNavigateLeft,
+        onNavigateRight: widget.onNavigateRight,
         onBack: widget.onBack,
       ),
     );

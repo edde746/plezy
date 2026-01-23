@@ -246,10 +246,24 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         }
       }
 
-      // Scroll to alignment
-      Scrollable.ensureVisible(
-        context,
-        alignment: widget.scrollAlignment,
+      // Calculate target scroll offset for the immediate scrollable only.
+      // This avoids Scrollable.ensureVisible which scrolls ALL ancestor scrollables,
+      // which can cause issues with nested scroll views (e.g., chips bar scrolling
+      // out of view when focusing grid items in library browse tab).
+      final position = scrollable.position;
+      final currentOffset = position.pixels;
+
+      // Target: item center should be at scrollAlignment of viewport
+      final targetViewportY = viewportHeight * widget.scrollAlignment;
+      final scrollDelta = itemVerticalCenter - targetViewportY;
+
+      final targetOffset = (currentOffset + scrollDelta).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+
+      position.animateTo(
+        targetOffset,
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
       );

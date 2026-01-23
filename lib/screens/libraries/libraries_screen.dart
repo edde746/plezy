@@ -115,6 +115,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _collectionsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_collections');
   final _playlistsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_playlists');
 
+  // Scroll controller for the outer CustomScrollView
+  final ScrollController _outerScrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -183,6 +186,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       });
     }
 
+    // Scroll outer view to top to ensure tab content (including chips bar) is visible
+    if (_outerScrollController.hasClients && _outerScrollController.offset > 0) {
+      _outerScrollController.jumpTo(0);
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
@@ -221,6 +229,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Focus without additional frame delay (used for retry)
   void _focusCurrentTabImmediate() {
+    // Scroll outer view to top to ensure tab content (including chips bar) is visible
+    if (_outerScrollController.hasClients && _outerScrollController.offset > 0) {
+      _outerScrollController.jumpTo(0);
+    }
+
     State? tabState;
     switch (_tabController.index) {
       case 0:
@@ -313,6 +326,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _cancelToken?.cancel();
+    _outerScrollController.dispose();
     _recommendedTabChipFocusNode.dispose();
     _browseTabChipFocusNode.dispose();
     _collectionsTabChipFocusNode.dispose();
@@ -1077,6 +1091,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     return Scaffold(
       body: CustomScrollView(
+        controller: _outerScrollController,
         slivers: [
           DesktopSliverAppBar(
             title: _buildAppBarTitle(visibleLibraries),

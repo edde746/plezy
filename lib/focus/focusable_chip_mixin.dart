@@ -114,15 +114,15 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
       return KeyEventResult.handled;
     }
 
-    // LEFT arrow
-    if (key.isLeftKey && callbacks.onNavigateLeft != null) {
-      callbacks.onNavigateLeft!();
+    // LEFT arrow - always consume to prevent default focus traversal
+    if (key.isLeftKey) {
+      callbacks.onNavigateLeft?.call();
       return KeyEventResult.handled;
     }
 
-    // RIGHT arrow
-    if (key.isRightKey && callbacks.onNavigateRight != null) {
-      callbacks.onNavigateRight!();
+    // RIGHT arrow - always consume to prevent default focus traversal
+    if (key.isRightKey) {
+      callbacks.onNavigateRight?.call();
       return KeyEventResult.handled;
     }
 

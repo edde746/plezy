@@ -88,9 +88,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   int _lastFocusedContentVersion = 0;
   final Map<int, FocusNode> _gridItemFocusNodes = {};
 
+  // Scroll controller for the CustomScrollView
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void dispose() {
     _cancelToken?.cancel();
+    _scrollController.dispose();
     _groupingChipFocusNode.dispose();
     _filtersChipFocusNode.dispose();
     _sortChipFocusNode.dispose();
@@ -161,6 +165,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     }
   }
 
+  /// Height of the chips bar (padding + chip + padding)
+  static const double _chipsBarHeight = 48.0;
+
   /// Focus the chips bar (for navigating from tab bar to content).
   /// Called by libraries screen when pressing DOWN on tab bar.
   void focusChipsBar() {
@@ -170,25 +177,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       return;
     }
 
-    // Scroll chips into view and focus the grouping chip
-    if (_groupingChipFocusNode.context != null) {
-      Scrollable.ensureVisible(
-        _groupingChipFocusNode.context!,
-        alignment: 0.0,
-        duration: const Duration(milliseconds: 200),
-      ).then((_) {
-        if (mounted) {
-          _groupingChipFocusNode.requestFocus();
-        }
-      });
-    } else {
-      // Context not available yet, try again next frame
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _groupingChipFocusNode.requestFocus();
-        }
-      });
+    // Scroll the inner grid up by the chips bar height so the chips become
+    // visible while keeping the grid content roughly in the same position.
+    if (_scrollController.hasClients) {
+      final newOffset = (_scrollController.offset - _chipsBarHeight).clamp(
+        0.0,
+        _scrollController.position.maxScrollExtent,
+      );
+      _scrollController.jumpTo(newOffset);
     }
+
+    _groupingChipFocusNode.requestFocus();
   }
 
   Future<void> _loadContent() async {
@@ -501,7 +500,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         _lastFocusedIndex != null && _lastFocusedContentVersion == _contentVersion && _lastFocusedIndex! < items.length;
 
     final targetIndex = shouldRestoreFocus ? _lastFocusedIndex! : 0;
-    _getGridItemFocusNode(targetIndex).requestFocus();
+
+    // Use firstItemFocusNode for index 0 (matches _buildMediaCardItem)
+    if (targetIndex == 0) {
+      firstItemFocusNode.requestFocus();
+    } else {
+      _getGridItemFocusNode(targetIndex).requestFocus();
+    }
   }
 
   /// Navigate focus from grid up to the grouping chip
@@ -525,7 +530,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
-    // For folders mode, keep the column structure with FolderTreeView
+    // For folders mode, use FolderTreeView instead of grid/list
     if (_selectedGrouping == 'folders') {
       return Column(
         children: [
@@ -541,8 +546,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       );
     }
 
-    // For list/grid modes, use CustomScrollView with slivers
-    // Chips are pinned at the top while content scrolls underneath
+    // For list/grid modes, use Column with chips always visible at top
+    // and scrollable content below. This avoids nested scroll complications
+    // that caused focus issues on Android TV.
+    return Column(
+      children: [
+        _buildChipsBar(),
+        Expanded(
+          child: _buildScrollableContent(),
+        ),
+      ],
+    );
+  }
+
+  /// Builds the scrollable content (grid/list) with pagination support
+  Widget _buildScrollableContent() {
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 300 && _hasMoreItems && !isLoading) {
@@ -551,21 +569,23 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         return false;
       },
       child: CustomScrollView(
-        slivers: [
-          // Floating chips bar - hides on scroll down, reappears on scroll up
-          SliverPersistentHeader(floating: true, delegate: _ChipsHeaderDelegate(child: _buildChipsBar())),
-
-          // Content slivers
-          ..._buildContentSlivers(),
-        ],
+        controller: _scrollController,
+        slivers: _buildContentSlivers(),
       ),
     );
   }
 
+  /// Whether the filters chip is visible
+  bool get _isFiltersChipVisible => _filters.isNotEmpty && _selectedGrouping != 'folders';
+
+  /// Whether the sort chip is visible
+  bool get _isSortChipVisible => _sortOptions.isNotEmpty && _selectedGrouping != 'folders';
+
   /// Builds the chips bar widget
   Widget _buildChipsBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      color: Theme.of(context).scaffoldBackgroundColor,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       alignment: Alignment.centerLeft,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -578,11 +598,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             onPressed: _showGroupingBottomSheet,
             onNavigateDown: _navigateToGrid,
             onNavigateUp: widget.onBack,
+            onNavigateRight: _isFiltersChipVisible
+                ? () => _filtersChipFocusNode.requestFocus()
+                : _isSortChipVisible
+                    ? () => _sortChipFocusNode.requestFocus()
+                    : null,
             onBack: widget.onBack,
           ),
           const SizedBox(width: 8),
           // Filters chip
-          if (_filters.isNotEmpty && _selectedGrouping != 'folders')
+          if (_isFiltersChipVisible)
             FocusableFilterChip(
               focusNode: _filtersChipFocusNode,
               icon: Symbols.filter_alt_rounded,
@@ -592,11 +617,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
               onPressed: _showFiltersBottomSheet,
               onNavigateDown: _navigateToGrid,
               onNavigateUp: widget.onBack,
+              onNavigateLeft: () => _groupingChipFocusNode.requestFocus(),
+              onNavigateRight: _isSortChipVisible ? () => _sortChipFocusNode.requestFocus() : null,
               onBack: widget.onBack,
             ),
-          if (_filters.isNotEmpty && _selectedGrouping != 'folders') const SizedBox(width: 8),
+          if (_isFiltersChipVisible) const SizedBox(width: 8),
           // Sort chip
-          if (_sortOptions.isNotEmpty && _selectedGrouping != 'folders')
+          if (_isSortChipVisible)
             FocusableFilterChip(
               focusNode: _sortChipFocusNode,
               icon: Symbols.sort_rounded,
@@ -604,6 +631,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
               onPressed: _showSortBottomSheet,
               onNavigateDown: _navigateToGrid,
               onNavigateUp: widget.onBack,
+              onNavigateLeft: _isFiltersChipVisible
+                  ? () => _filtersChipFocusNode.requestFocus()
+                  : () => _groupingChipFocusNode.requestFocus(),
               onBack: widget.onBack,
             ),
         ],
@@ -709,28 +739,5 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         }
       },
     );
-  }
-}
-
-/// Delegate for pinned chips header that stays fixed at the top while content scrolls underneath
-class _ChipsHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final Widget child;
-
-  _ChipsHeaderDelegate({required this.child});
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(color: Theme.of(context).scaffoldBackgroundColor, child: child);
-  }
-
-  @override
-  double get maxExtent => 40.0; // Height of chips bar
-
-  @override
-  double get minExtent => 40.0; // Same as max (no shrinking)
-
-  @override
-  bool shouldRebuild(covariant _ChipsHeaderDelegate oldDelegate) {
-    return child != oldDelegate.child;
   }
 }
