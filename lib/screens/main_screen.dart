@@ -582,6 +582,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
 
     if (useSideNav) {
+      // Collapsed sidebar width for content padding
+      const collapsedSidebarWidth = SideNavigationRailState.collapsedWidth;
+
       return PopScope(
         canPop: false, // Prevent system back from popping on Android TV
         onPopInvokedWithResult: (didPop, result) {
@@ -596,31 +599,42 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
             focusContent: _focusContent,
             isSidebarFocused: _isSidebarFocused,
             child: SideNavigationScope(
-              child: Row(
+              child: Stack(
                 children: [
-                  FocusScope(
-                    node: _sidebarFocusScope,
-                    child: SideNavigationRail(
-                      key: _sideNavKey,
-                      selectedIndex: _currentIndex,
-                      selectedLibraryKey: _selectedLibraryGlobalKey,
-                      isOfflineMode: _isOffline,
-                      onDestinationSelected: (index) {
-                        _selectTab(index);
-                        _focusContent();
-                      },
-                      onLibrarySelected: (key) {
-                        _selectLibrary(key);
-                        _focusContent();
-                      },
+                  // Content with fixed left padding for collapsed sidebar
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: collapsedSidebarWidth),
+                      child: FocusScope(
+                        node: _contentFocusScope,
+                        // No autofocus - we control focus programmatically to prevent
+                        // autofocus from stealing focus back after setState() rebuilds
+                        child: IndexedStack(index: _currentIndex, children: _screens),
+                      ),
                     ),
                   ),
-                  Expanded(
+                  // Sidebar overlays content when expanded
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
                     child: FocusScope(
-                      node: _contentFocusScope,
-                      // No autofocus - we control focus programmatically to prevent
-                      // autofocus from stealing focus back after setState() rebuilds
-                      child: IndexedStack(index: _currentIndex, children: _screens),
+                      node: _sidebarFocusScope,
+                      child: SideNavigationRail(
+                        key: _sideNavKey,
+                        selectedIndex: _currentIndex,
+                        selectedLibraryKey: _selectedLibraryGlobalKey,
+                        isOfflineMode: _isOffline,
+                        isSidebarFocused: _isSidebarFocused,
+                        onDestinationSelected: (index) {
+                          _selectTab(index);
+                          _focusContent();
+                        },
+                        onLibrarySelected: (key) {
+                          _selectLibrary(key);
+                          _focusContent();
+                        },
+                      ),
                     ),
                   ),
                 ],

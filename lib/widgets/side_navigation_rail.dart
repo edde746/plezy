@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -76,10 +77,11 @@ class NavigationRailItem extends StatelessWidget {
   final Widget label;
   final bool isSelected;
   final bool isFocused;
+  final bool isCollapsed;
+  final bool useSimpleLayout;
   final VoidCallback onTap;
   final FocusNode focusNode;
   final bool autofocus;
-  final EdgeInsets padding;
   final BorderRadius borderRadius;
   final double iconSize;
 
@@ -90,10 +92,11 @@ class NavigationRailItem extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.isFocused,
+    this.isCollapsed = false,
+    this.useSimpleLayout = false,
     required this.onTap,
     required this.focusNode,
     this.autofocus = false,
-    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.borderRadius = const BorderRadius.all(Radius.circular(12)),
     this.iconSize = 22,
   });
@@ -119,7 +122,6 @@ class NavigationRailItem extends StatelessWidget {
           onTap: onTap,
           borderRadius: borderRadius,
           child: Container(
-            padding: padding,
             decoration: BoxDecoration(
               color: isSelected && isFocused
                   ? t.text.withValues(alpha: 0.15) // Selected + focused
@@ -130,17 +132,33 @@ class NavigationRailItem extends StatelessWidget {
                   : null,
               borderRadius: borderRadius,
             ),
-            child: Row(
-              children: [
-                AppIcon(
-                  isSelected && selectedIcon != null ? selectedIcon! : icon,
-                  fill: 1,
-                  size: iconSize,
-                  color: isSelected ? t.text : t.textMuted,
+            clipBehavior: Clip.hardEdge,
+            child: UnconstrainedBox(
+              alignment: Alignment.centerLeft,
+              constrainedAxis: Axis.vertical,
+              clipBehavior: Clip.hardEdge,
+              child: SizedBox(
+                width: SideNavigationRailState._expandedWidth - 24,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 17),
+                  child: Row(
+                    children: [
+                      AppIcon(
+                        isSelected && selectedIcon != null ? selectedIcon! : icon,
+                        fill: 1,
+                        size: iconSize,
+                        color: isSelected ? t.text : t.textMuted,
+                      ),
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: useSimpleLayout
+                            ? label
+                            : AnimatedOpacity(opacity: isCollapsed ? 0.0 : 1.0, duration: t.fast, child: label),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(child: label),
-              ],
+              ),
             ),
           ),
         ),
@@ -154,6 +172,7 @@ class SideNavigationRail extends StatefulWidget {
   final int selectedIndex;
   final String? selectedLibraryKey;
   final bool isOfflineMode;
+  final bool isSidebarFocused;
   final ValueChanged<int> onDestinationSelected;
   final ValueChanged<String> onLibrarySelected;
 
@@ -162,6 +181,7 @@ class SideNavigationRail extends StatefulWidget {
     required this.selectedIndex,
     this.selectedLibraryKey,
     this.isOfflineMode = false,
+    this.isSidebarFocused = false,
     required this.onDestinationSelected,
     required this.onLibrarySelected,
   });
@@ -175,6 +195,13 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   List<PlexLibrary> _libraries = [];
   bool _isLoadingLibraries = true;
 
+  // Collapsed/expanded state
+  bool _isHovered = false;
+  Timer? _collapseTimer;
+  static const double collapsedWidth = 80.0;
+  static const double _expandedWidth = 220.0;
+  static const Duration _collapseDelay = Duration(milliseconds: 150);
+
   // Focus keys for main nav items
   static const _kHome = 'home';
   static const _kLibraries = 'libraries';
@@ -184,6 +211,9 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
   // Unified focus state tracker for all nav items (main + libraries)
   late final _FocusStateTracker _focusTracker;
+
+  /// Whether the sidebar should be expanded (hover or focus)
+  bool get _shouldExpand => _isHovered || widget.isSidebarFocused;
 
   @override
   void initState() {
@@ -195,9 +225,35 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   @override
+  void didUpdateWidget(SideNavigationRail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Trigger rebuild when focus state changes
+    if (oldWidget.isSidebarFocused != widget.isSidebarFocused) {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
+    _collapseTimer?.cancel();
     _focusTracker.dispose();
     super.dispose();
+  }
+
+  void _onHoverEnter() {
+    _collapseTimer?.cancel();
+    if (!_isHovered) {
+      setState(() => _isHovered = true);
+    }
+  }
+
+  void _onHoverExit() {
+    _collapseTimer?.cancel();
+    _collapseTimer = Timer(_collapseDelay, () {
+      if (mounted && _isHovered) {
+        setState(() => _isHovered = false);
+      }
+    });
   }
 
   /// Focus the currently selected nav item
@@ -319,96 +375,110 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     // Filter visible libraries
     final visibleLibraries = _libraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
+    final isCollapsed = !_shouldExpand;
+
     // Listen to fullscreen changes for macOS
     return ListenableBuilder(
       listenable: FullscreenStateManager(),
       builder: (context, _) {
-        return Container(
-          width: 220,
-          color: t.surface,
-          child: Column(
-            children: [
-              // Safe area for status bar and macOS traffic lights
-              SizedBox(height: _getTopPadding(context)),
+        return MouseRegion(
+          onEnter: (_) => _onHoverEnter(),
+          onExit: (_) => _onHoverExit(),
+          child: AnimatedContainer(
+            duration: t.normal,
+            curve: Curves.easeOutCubic,
+            width: isCollapsed ? collapsedWidth : _expandedWidth,
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(color: t.surface),
+            child: Column(
+              children: [
+                // Safe area for status bar and macOS traffic lights
+                SizedBox(height: _getTopPadding(context)),
 
-              // Navigation content
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  children: [
-                    // In offline mode, only show Downloads and Settings
-                    if (!widget.isOfflineMode) ...[
-                      // Home
+                // Navigation content
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    clipBehavior: Clip.hardEdge,
+                    children: [
+                      // In offline mode, only show Downloads and Settings
+                      if (!widget.isOfflineMode) ...[
+                        // Home
+                        _buildNavItem(
+                          icon: Symbols.home_rounded,
+                          selectedIcon: Symbols.home_rounded,
+                          label: Translations.of(context).navigation.home,
+                          isSelected: widget.selectedIndex == 0,
+                          isFocused: _focusTracker.isFocused(_kHome),
+                          onTap: () => widget.onDestinationSelected(0),
+                          focusNode: _focusTracker.get(_kHome),
+                          isCollapsed: isCollapsed,
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Libraries section
+                        _buildLibrariesSection(visibleLibraries, t, isCollapsed: isCollapsed),
+
+                        const SizedBox(height: 8),
+
+                        // Search
+                        _buildNavItem(
+                          icon: Symbols.search_rounded,
+                          selectedIcon: Symbols.search_rounded,
+                          label: Translations.of(context).navigation.search,
+                          isSelected: widget.selectedIndex == 2,
+                          isFocused: _focusTracker.isFocused(_kSearch),
+                          onTap: () => widget.onDestinationSelected(2),
+                          focusNode: _focusTracker.get(_kSearch),
+                          isCollapsed: isCollapsed,
+                        ),
+
+                        const SizedBox(height: 8),
+                      ],
+
+                      // Downloads
                       _buildNavItem(
-                        icon: Symbols.home_rounded,
-                        selectedIcon: Symbols.home_rounded,
-                        label: Translations.of(context).navigation.home,
-                        isSelected: widget.selectedIndex == 0,
-                        isFocused: _focusTracker.isFocused(_kHome),
-                        onTap: () => widget.onDestinationSelected(0),
-                        focusNode: _focusTracker.get(_kHome),
+                        icon: Symbols.download_rounded,
+                        selectedIcon: Symbols.download_rounded,
+                        label: Translations.of(context).navigation.downloads,
+                        isSelected: NavigationTab.isTabAtIndex(
+                          NavigationTabId.downloads,
+                          widget.selectedIndex,
+                          isOffline: widget.isOfflineMode,
+                        ),
+                        isFocused: _focusTracker.isFocused(_kDownloads),
+                        onTap: () => widget.onDestinationSelected(
+                          NavigationTab.indexFor(NavigationTabId.downloads, isOffline: widget.isOfflineMode),
+                        ),
+                        focusNode: _focusTracker.get(_kDownloads),
+                        isCollapsed: isCollapsed,
                       ),
 
                       const SizedBox(height: 8),
 
-                      // Libraries section
-                      _buildLibrariesSection(visibleLibraries, t),
-
-                      const SizedBox(height: 8),
-
-                      // Search
+                      // Settings
                       _buildNavItem(
-                        icon: Symbols.search_rounded,
-                        selectedIcon: Symbols.search_rounded,
-                        label: Translations.of(context).navigation.search,
-                        isSelected: widget.selectedIndex == 2,
-                        isFocused: _focusTracker.isFocused(_kSearch),
-                        onTap: () => widget.onDestinationSelected(2),
-                        focusNode: _focusTracker.get(_kSearch),
+                        icon: Symbols.settings_rounded,
+                        selectedIcon: Symbols.settings_rounded,
+                        label: Translations.of(context).navigation.settings,
+                        isSelected: NavigationTab.isTabAtIndex(
+                          NavigationTabId.settings,
+                          widget.selectedIndex,
+                          isOffline: widget.isOfflineMode,
+                        ),
+                        isFocused: _focusTracker.isFocused(_kSettings),
+                        onTap: () => widget.onDestinationSelected(
+                          NavigationTab.indexFor(NavigationTabId.settings, isOffline: widget.isOfflineMode),
+                        ),
+                        focusNode: _focusTracker.get(_kSettings),
+                        isCollapsed: isCollapsed,
                       ),
-
-                      const SizedBox(height: 8),
                     ],
-
-                    // Downloads
-                    _buildNavItem(
-                      icon: Symbols.download_rounded,
-                      selectedIcon: Symbols.download_rounded,
-                      label: Translations.of(context).navigation.downloads,
-                      isSelected: NavigationTab.isTabAtIndex(
-                        NavigationTabId.downloads,
-                        widget.selectedIndex,
-                        isOffline: widget.isOfflineMode,
-                      ),
-                      isFocused: _focusTracker.isFocused(_kDownloads),
-                      onTap: () => widget.onDestinationSelected(
-                        NavigationTab.indexFor(NavigationTabId.downloads, isOffline: widget.isOfflineMode),
-                      ),
-                      focusNode: _focusTracker.get(_kDownloads),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Settings
-                    _buildNavItem(
-                      icon: Symbols.settings_rounded,
-                      selectedIcon: Symbols.settings_rounded,
-                      label: Translations.of(context).navigation.settings,
-                      isSelected: NavigationTab.isTabAtIndex(
-                        NavigationTabId.settings,
-                        widget.selectedIndex,
-                        isOffline: widget.isOfflineMode,
-                      ),
-                      isFocused: _focusTracker.isFocused(_kSettings),
-                      onTap: () => widget.onDestinationSelected(
-                        NavigationTab.indexFor(NavigationTabId.settings, isOffline: widget.isOfflineMode),
-                      ),
-                      focusNode: _focusTracker.get(_kSettings),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -423,6 +493,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     required bool isFocused,
     required VoidCallback onTap,
     required FocusNode focusNode,
+    required bool isCollapsed,
     bool autofocus = false,
   }) {
     final t = tokens(context);
@@ -437,16 +508,19 @@ class SideNavigationRailState extends State<SideNavigationRail> {
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           color: isSelected ? t.text : t.textMuted,
         ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
       ),
       isSelected: isSelected,
       isFocused: isFocused,
+      isCollapsed: isCollapsed,
       onTap: onTap,
       focusNode: focusNode,
       autofocus: autofocus,
     );
   }
 
-  Widget _buildLibrariesSection(List<PlexLibrary> visibleLibraries, dynamic t) {
+  Widget _buildLibrariesSection(List<PlexLibrary> visibleLibraries, dynamic t, {bool isCollapsed = false}) {
     final isLibrariesSelected = widget.selectedIndex == 1 && widget.selectedLibraryKey == null;
     final isLibrariesFocused = _focusTracker.isFocused(_kLibraries);
 
@@ -476,7 +550,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
               },
               borderRadius: BorderRadius.circular(tokens(context).radiusMd),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: isLibrariesSelected
                       ? t.text.withValues(alpha: 0.1)
@@ -485,40 +558,61 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                       : null,
                   borderRadius: BorderRadius.circular(tokens(context).radiusMd),
                 ),
-                child: Row(
-                  children: [
-                    AppIcon(
-                      widget.selectedIndex == 1 ? Symbols.video_library_rounded : Symbols.video_library_rounded,
-                      fill: 1,
-                      size: 22,
-                      color: widget.selectedIndex == 1 ? t.text : t.textMuted,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        Translations.of(context).navigation.libraries,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: widget.selectedIndex == 1 ? FontWeight.w600 : FontWeight.w400,
-                          color: widget.selectedIndex == 1 ? t.text : t.textMuted,
-                        ),
+                clipBehavior: Clip.hardEdge,
+                child: UnconstrainedBox(
+                  alignment: Alignment.centerLeft,
+                  constrainedAxis: Axis.vertical,
+                  clipBehavior: Clip.hardEdge,
+                  child: SizedBox(
+                    width: _expandedWidth - 24,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 17),
+                      child: Row(
+                        children: [
+                          AppIcon(
+                            Symbols.video_library_rounded,
+                            fill: 1,
+                            size: 22,
+                            color: widget.selectedIndex == 1 ? t.text : t.textMuted,
+                          ),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: AnimatedOpacity(
+                              opacity: isCollapsed ? 0.0 : 1.0,
+                              duration: tokens(context).fast,
+                              child: Text(
+                                Translations.of(context).navigation.libraries,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: widget.selectedIndex == 1 ? FontWeight.w600 : FontWeight.w400,
+                                  color: widget.selectedIndex == 1 ? t.text : t.textMuted,
+                                ),
+                              ),
+                            ),
+                          ),
+                          AnimatedOpacity(
+                            opacity: isCollapsed ? 0.0 : 1.0,
+                            duration: tokens(context).fast,
+                            child: AppIcon(
+                              _librariesExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
+                              fill: 1,
+                              size: 20,
+                              color: t.textMuted,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    AppIcon(
-                      _librariesExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
-                      fill: 1,
-                      size: 20,
-                      color: t.textMuted,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
 
-        // Library items
-        if (_librariesExpanded)
+        // Library items (hidden when collapsed to avoid clipped partial items)
+        if (_librariesExpanded && !isCollapsed) ...[
+          const SizedBox(height: 4),
           _isLoadingLibraries
               ? Padding(
                   padding: const EdgeInsets.all(16),
@@ -539,6 +633,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                   ),
                 )
               : _buildLibraryItems(visibleLibraries, t),
+        ],
       ],
     );
   }
@@ -570,14 +665,14 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     final isFocused = _focusTracker.isFocused(library.globalKey);
     final focusNode = _focusTracker.get(library.globalKey);
 
-    return NavigationRailItem(
-      icon: _getLibraryIcon(library.type),
-      selectedIcon: _getLibraryIcon(library.type),
-      label: SizedBox(
-        height: 32, // Fixed height for consistent item sizing
-        child: Column(
+    return Padding(
+      padding: const EdgeInsets.only(left: 12),
+      child: NavigationRailItem(
+        icon: _getLibraryIcon(library.type),
+        selectedIcon: _getLibraryIcon(library.type),
+        label: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               library.title,
@@ -596,14 +691,14 @@ class SideNavigationRailState extends State<SideNavigationRail> {
               ),
           ],
         ),
+        isSelected: isSelected,
+        isFocused: isFocused,
+        useSimpleLayout: true,
+        onTap: () => widget.onLibrarySelected(library.globalKey),
+        focusNode: focusNode,
+        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+        iconSize: 18,
       ),
-      isSelected: isSelected,
-      isFocused: isFocused,
-      onTap: () => widget.onLibrarySelected(library.globalKey),
-      focusNode: focusNode,
-      padding: const EdgeInsets.only(left: 28, right: 12, top: 10, bottom: 10),
-      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-      iconSize: 18,
     );
   }
 }

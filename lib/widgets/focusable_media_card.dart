@@ -36,6 +36,10 @@ class FocusableMediaCard extends StatefulWidget {
   /// Used to navigate from tab content to tab bar.
   final VoidCallback? onBack;
 
+  /// Called when focus changes.
+  /// Used to track which grid item was last focused.
+  final ValueChanged<bool>? onFocusChange;
+
   const FocusableMediaCard({
     super.key,
     required this.item,
@@ -51,6 +55,7 @@ class FocusableMediaCard extends StatefulWidget {
     this.focusNode,
     this.onNavigateUp,
     this.onBack,
+    this.onFocusChange,
   });
 
   @override
@@ -69,6 +74,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
       onLongPress: () => _mediaCardKey.currentState?.showContextMenu(),
       onNavigateUp: widget.onNavigateUp,
       onBack: widget.onBack,
+      onFocusChange: widget.onFocusChange,
       enableLongPress: true,
       useComfortableZone: !PlatformDetector.isTV(), // Always center on TV
       scrollAlignment: 0.5,
