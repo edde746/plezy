@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:plezy/windows_native_window_state.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
@@ -81,6 +83,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   bool _autoSwitchedToDownloads = false;
 
   OfflineModeProvider? _offlineModeProvider;
+
+  Timer? _windowStateSaveDebounceTimer;
 
   late List<Widget> _screens;
   final GlobalKey<State<DiscoverScreen>> _discoverKey = GlobalKey();
@@ -283,6 +287,40 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   @override
+  void onWindowMoved() {
+    super.onWindowMoved();
+    _debounceSaveWindowState();
+  }
+
+  @override
+  void onWindowResized() {
+    super.onWindowResized();
+    _debounceSaveWindowState();
+  }
+
+  @override
+  void onWindowMaximize() {
+    super.onWindowMaximize();
+    _debounceSaveWindowState();
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    super.onWindowUnmaximize();
+    _debounceSaveWindowState();
+  }
+
+  void _debounceSaveWindowState() {
+    _windowStateSaveDebounceTimer?.cancel();
+    _windowStateSaveDebounceTimer = Timer(const Duration(milliseconds: 500), () async {
+      if (Platform.isWindows) {
+        final isMaximized = await windowManager.isMaximized();
+        WindowsNativeWindowState.saveWindowState(isMaximized: isMaximized);
+      }
+    });
+  }
+
+  @override
   void dispose() {
     routeObserver.unsubscribe(this);
     if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
@@ -292,6 +330,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _sidebarFocusScope.dispose();
     _contentFocusScope.dispose();
+
+    _windowStateSaveDebounceTimer?.cancel();
+
     super.dispose();
   }
 

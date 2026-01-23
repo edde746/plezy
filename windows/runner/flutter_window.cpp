@@ -1,4 +1,5 @@
 #include "flutter_window.h"
+#include "native_window_state_plugin.h"
 
 #include <optional>
 
@@ -33,10 +34,28 @@ bool FlutterWindow::OnCreate() {
       flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
   OutputDebugStringA("FlutterWindow: MpvPlayerPlugin registered\n");
 
+  // Register our native window state plugin
+  auto registrar_raw = flutter_controller_->engine()->GetRegistrarForPlugin("NativeWindowStatePlugin");
+  NativeWindowStatePlugin::RegisterWithRegistrar(
+      new flutter::PluginRegistrarWindows(registrar_raw));
+
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
-  flutter_controller_->engine()->SetNextFrameCallback([&]() {
-    this->Show();
+  // Load window state before showing the window
+  HWND hwnd = this->GetHandle();
+  bool should_start_maximized = false;
+  
+  if (hwnd) {
+    NativeWindowStatePlugin::LoadWindowStateStatic(hwnd, &should_start_maximized);
+  }
+
+  flutter_controller_->engine()->SetNextFrameCallback([this, hwnd, should_start_maximized]() {
+    // Show maximized or normal based on saved state
+    if (should_start_maximized && hwnd) {
+      ::ShowWindow(hwnd, SW_SHOWMAXIMIZED);
+    } else {
+      this->Show();
+    }
   });
 
   // Flutter can complete the first frame before the "show window" callback is
