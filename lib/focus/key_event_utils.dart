@@ -29,8 +29,14 @@ import 'dpad_navigator.dart';
 /// )
 /// ```
 KeyEventResult handleBackKeyNavigation<T>(BuildContext context, KeyEvent event, {T? result}) {
-  if (event is KeyDownEvent && event.logicalKey.isBackKey) {
+  // Handle on KeyUpEvent to prevent double-pop when returning from child screens
+  // (KeyDownEvent can be received by both the popping screen and the returned-to screen)
+  if (event is KeyUpEvent && event.logicalKey.isBackKey) {
     Navigator.pop(context, result);
+    return KeyEventResult.handled;
+  }
+  // Consume KeyDownEvent to prevent it from propagating but don't pop yet
+  if (event is KeyDownEvent && event.logicalKey.isBackKey) {
     return KeyEventResult.handled;
   }
   return KeyEventResult.ignored;

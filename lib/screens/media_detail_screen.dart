@@ -1,13 +1,18 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
+import '../widgets/focus_builders.dart';
+import '../widgets/media_card.dart';
 import '../i18n/strings.g.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../utils/plex_image_helper.dart';
@@ -27,7 +32,6 @@ import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
-import '../widgets/focusable_media_card.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
 import '../mixins/watch_state_aware.dart';
@@ -54,6 +58,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   final ScrollController _seasonsScrollController = ScrollController();
   bool _watchStateChanged = false;
   double _scrollOffset = 0;
+
+  // Locked focus pattern for seasons
+  int _focusedSeasonIndex = 0;
+  late final FocusNode _seasonsFocusNode;
+  late final FocusNode _playButtonFocusNode;
+  Timer? _selectKeyTimer;
+  bool _isSelectKeyDown = false;
+  bool _longPressTriggered = false;
+  static const _longPressDuration = Duration(milliseconds: 500);
 
   // WatchStateAware: watch the show/movie and all season ratingKeys
   @override
@@ -115,6 +128,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _seasonsFocusNode = FocusNode(debugLabel: 'seasons_row');
+    _playButtonFocusNode = FocusNode(debugLabel: 'play_button');
     _loadFullMetadata();
   }
 
@@ -128,6 +143,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   void dispose() {
     _scrollController.dispose();
     _seasonsScrollController.dispose();
+    _seasonsFocusNode.dispose();
+    _playButtonFocusNode.dispose();
+    _selectKeyTimer?.cancel();
     super.dispose();
   }
 
@@ -213,6 +231,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
         SizedBox(
           height: 48,
           child: FilledButton(
+            focusNode: _playButtonFocusNode,
             autofocus: InputModeTracker.isKeyboardMode(context),
             onPressed: onPlayPressed,
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16)),
@@ -749,7 +768,118 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     }
   }
 
+  /// Scroll season list to center the item at the given index
+  void _scrollSeasonToIndex(int index, {bool animate = true}) {
+    if (!_seasonsScrollController.hasClients) return;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth >= 1400
+        ? 220.0
+        : screenWidth >= 900
+        ? 200.0
+        : screenWidth >= 700
+        ? 190.0
+        : 160.0;
+    final itemExtent = cardWidth + 4; // card + padding
+
+    final viewport = _seasonsScrollController.position.viewportDimension;
+    final targetCenter = 12 + (index * itemExtent) + (itemExtent / 2); // 12 = leading padding
+    final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, _seasonsScrollController.position.maxScrollExtent);
+
+    if (animate) {
+      _seasonsScrollController.animateTo(
+        desiredOffset,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+      );
+    } else {
+      _seasonsScrollController.jumpTo(desiredOffset);
+    }
+  }
+
+  /// Handle key events for the seasons row (locked focus pattern)
+  KeyEventResult _handleSeasonsKeyEvent(FocusNode node, KeyEvent event) {
+    final key = event.logicalKey;
+
+    // Let back key propagate to parent Focus handler
+    if (key.isBackKey) {
+      return KeyEventResult.ignored;
+    }
+
+    // Handle SELECT with long-press detection
+    if (key.isSelectKey) {
+      if (event is KeyDownEvent) {
+        if (!_isSelectKeyDown) {
+          _isSelectKeyDown = true;
+          _longPressTriggered = false;
+          _selectKeyTimer?.cancel();
+          _selectKeyTimer = Timer(_longPressDuration, () {
+            if (!mounted) return;
+            if (_isSelectKeyDown) {
+              _longPressTriggered = true;
+              SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+              // Long-press: could show context menu if needed
+            }
+          });
+        }
+        return KeyEventResult.handled;
+      } else if (event is KeyRepeatEvent) {
+        return KeyEventResult.handled;
+      } else if (event is KeyUpEvent) {
+        final timerWasActive = _selectKeyTimer?.isActive ?? false;
+        _selectKeyTimer?.cancel();
+        if (!_longPressTriggered && timerWasActive && _isSelectKeyDown) {
+          // Short tap: navigate to season
+          if (_focusedSeasonIndex < _seasons.length) {
+            _navigateToSeason(_seasons[_focusedSeasonIndex]);
+          }
+        }
+        _isSelectKeyDown = false;
+        _longPressTriggered = false;
+        return KeyEventResult.handled;
+      }
+    }
+
+    if (!event.isActionable) return KeyEventResult.ignored;
+    if (_seasons.isEmpty) return KeyEventResult.ignored;
+
+    // LEFT: previous season
+    if (key.isLeftKey) {
+      if (_focusedSeasonIndex > 0) {
+        _focusedSeasonIndex--;
+        _scrollSeasonToIndex(_focusedSeasonIndex);
+        setState(() {});
+      }
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT: next season
+    if (key.isRightKey) {
+      if (_focusedSeasonIndex < _seasons.length - 1) {
+        _focusedSeasonIndex++;
+        _scrollSeasonToIndex(_focusedSeasonIndex);
+        setState(() {});
+      }
+      return KeyEventResult.handled;
+    }
+
+    // UP: scroll to top and focus play button
+    if (key.isUpKey) {
+      _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+      _playButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // DOWN: consume (nothing below seasons to focus)
+    if (key.isDownKey) {
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
   /// Build horizontal seasons list for larger screens (>=600px)
+  /// Uses locked focus pattern for D-pad centered scrolling
   Widget _buildHorizontalSeasons() {
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth >= 1400
@@ -762,32 +892,45 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     final posterHeight = (cardWidth - 16) * 1.5;
     final containerHeight = posterHeight + 66;
 
-    return SizedBox(
-      height: containerHeight,
-      child: HorizontalScrollWithArrows(
-        controller: _seasonsScrollController,
-        builder: (scrollController) => ListView.builder(
-          controller: scrollController,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(vertical: 5),
-          itemCount: _seasons.length,
-          itemBuilder: (context, index) {
-            final season = _seasons[index];
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: FocusableMediaCard(
-                item: season,
-                width: cardWidth,
-                height: posterHeight,
-                forceGridMode: true,
-                isOffline: widget.isOffline,
-                onRefresh: (_) {
-                  _watchStateChanged = true;
-                  _updateWatchState();
-                },
-              ),
-            );
-          },
+    final hasFocus = _seasonsFocusNode.hasFocus;
+
+    return Focus(
+      focusNode: _seasonsFocusNode,
+      onKeyEvent: _handleSeasonsKeyEvent,
+      child: SizedBox(
+        height: containerHeight,
+        child: HorizontalScrollWithArrows(
+          controller: _seasonsScrollController,
+          builder: (scrollController) => ListView.builder(
+            controller: scrollController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            itemCount: _seasons.length,
+            itemBuilder: (context, index) {
+              final season = _seasons[index];
+              final isFocused = hasFocus && index == _focusedSeasonIndex;
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: FocusBuilders.buildLockedFocusWrapper(
+                  context: context,
+                  isFocused: isFocused,
+                  onTap: () => _navigateToSeason(season),
+                  child: MediaCard(
+                    item: season,
+                    width: cardWidth,
+                    height: posterHeight,
+                    forceGridMode: true,
+                    isOffline: widget.isOffline,
+                    onRefresh: (_) {
+                      _watchStateChanged = true;
+                      _updateWatchState();
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
