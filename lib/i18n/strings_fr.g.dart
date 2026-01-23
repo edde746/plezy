@@ -206,6 +206,11 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Afficher les hubs de la page d\'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.';
 	@override String get showServerNameOnHubs => 'Afficher le nom du serveur sur les hubs';
 	@override String get showServerNameOnHubsDescription => 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.';
+	@override String get playerBackend => 'Moteur de lecture';
+	@override String get exoPlayer => 'ExoPlayer (Recommandé)';
+	@override String get exoPlayerDescription => 'Lecteur natif Android avec meilleur support matériel';
+	@override String get mpv => 'MPV';
+	@override String get mpvDescription => 'Lecteur avancé avec plus de fonctionnalités et support des sous-titres ASS';
 	@override String get hardwareDecoding => 'Décodage matériel';
 	@override String get hardwareDecodingDescription => 'Utilisez l\'accélération matérielle lorsqu\'elle est disponible.';
 	@override String get bufferSize => 'Taille du Buffer';
@@ -495,6 +500,7 @@ class _TranslationsMessagesFr implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueue => 'Échec de la création de la file d\'attente de lecture';
 	@override String get failedToCreatePlayQueueNoItems => 'Échec de la création de la file d\'attente de lecture - aucun élément';
 	@override String failedPlayback({required Object action, required Object error}) => 'Echec de ${action}: ${error}';
+	@override String get switchingToCompatiblePlayer => 'Passage au lecteur compatible...';
 }
 
 // Path: subtitlingStyling
@@ -1035,6 +1041,11 @@ extension on TranslationsFr {
 			'settings.useGlobalHubsDescription' => 'Afficher les hubs de la page d\'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.',
 			'settings.showServerNameOnHubs' => 'Afficher le nom du serveur sur les hubs',
 			'settings.showServerNameOnHubsDescription' => 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.',
+			'settings.playerBackend' => 'Moteur de lecture',
+			'settings.exoPlayer' => 'ExoPlayer (Recommandé)',
+			'settings.exoPlayerDescription' => 'Lecteur natif Android avec meilleur support matériel',
+			'settings.mpv' => 'MPV',
+			'settings.mpvDescription' => 'Lecteur avancé avec plus de fonctionnalités et support des sous-titres ASS',
 			'settings.hardwareDecoding' => 'Décodage matériel',
 			'settings.hardwareDecodingDescription' => 'Utilisez l\'accélération matérielle lorsqu\'elle est disponible.',
 			'settings.bufferSize' => 'Taille du Buffer',
@@ -1254,6 +1265,7 @@ extension on TranslationsFr {
 			'messages.failedToCreatePlayQueue' => 'Échec de la création de la file d\'attente de lecture',
 			'messages.failedToCreatePlayQueueNoItems' => 'Échec de la création de la file d\'attente de lecture - aucun élément',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Echec de ${action}: ${error}',
+			'messages.switchingToCompatiblePlayer' => 'Passage au lecteur compatible...',
 			'subtitlingStyling.stylingOptions' => 'Options de style',
 			'subtitlingStyling.fontSize' => 'Taille de la police',
 			'subtitlingStyling.textColor' => 'Couleur du texte',
@@ -1458,14 +1470,14 @@ extension on TranslationsFr {
 			'watchTogether.hostControls' => 'Commandes de l\'hôte',
 			'watchTogether.anyoneControls' => 'Tout le monde contrôle',
 			'watchTogether.participants' => 'Participants',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.host' => 'Hôte',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'Vous êtes l\'hôte',
 			'watchTogether.watchingWithOthers' => 'Regarder avec d\'autres personnes',
 			'watchTogether.endSession' => 'Fin de session',
 			'watchTogether.leaveSession' => 'Quitter la session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.endSessionQuestion' => 'Terminer la session ?',
 			'watchTogether.leaveSessionQuestion' => 'Quitter la session ?',
 			'watchTogether.endSessionConfirm' => 'Cela mettra fin à la session pour tous les participants.',

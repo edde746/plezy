@@ -207,6 +207,11 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Mostra gli hub della home page come il client Plex ufficiale. Se disattivato, mostra invece i suggerimenti per libreria.';
 	@override String get showServerNameOnHubs => 'Mostra nome server sugli hub';
 	@override String get showServerNameOnHubsDescription => 'Mostra sempre il nome del server nei titoli degli hub. Se disattivato, solo per nomi hub duplicati.';
+	@override String get playerBackend => 'Motore di riproduzione';
+	@override String get exoPlayer => 'ExoPlayer (Consigliato)';
+	@override String get exoPlayerDescription => 'Lettore nativo Android con migliore supporto hardware';
+	@override String get mpv => 'MPV';
+	@override String get mpvDescription => 'Lettore avanzato con più funzionalità e supporto sottotitoli ASS';
 	@override String get hardwareDecoding => 'Decodifica Hardware';
 	@override String get hardwareDecodingDescription => 'Utilizza l\'accelerazione hardware quando disponibile';
 	@override String get bufferSize => 'Dimensione buffer';
@@ -496,6 +501,7 @@ class _TranslationsMessagesIt implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueue => 'Impossibile creare la coda di riproduzione';
 	@override String get failedToCreatePlayQueueNoItems => 'Impossibile creare la coda di riproduzione - nessun elemento';
 	@override String failedPlayback({required Object action, required Object error}) => 'Impossibile ${action}: ${error}';
+	@override String get switchingToCompatiblePlayer => 'Passaggio al lettore compatibile...';
 }
 
 // Path: subtitlingStyling
@@ -1038,6 +1044,11 @@ extension on TranslationsIt {
 			'settings.useGlobalHubsDescription' => 'Mostra gli hub della home page come il client Plex ufficiale. Se disattivato, mostra invece i suggerimenti per libreria.',
 			'settings.showServerNameOnHubs' => 'Mostra nome server sugli hub',
 			'settings.showServerNameOnHubsDescription' => 'Mostra sempre il nome del server nei titoli degli hub. Se disattivato, solo per nomi hub duplicati.',
+			'settings.playerBackend' => 'Motore di riproduzione',
+			'settings.exoPlayer' => 'ExoPlayer (Consigliato)',
+			'settings.exoPlayerDescription' => 'Lettore nativo Android con migliore supporto hardware',
+			'settings.mpv' => 'MPV',
+			'settings.mpvDescription' => 'Lettore avanzato con più funzionalità e supporto sottotitoli ASS',
 			'settings.hardwareDecoding' => 'Decodifica Hardware',
 			'settings.hardwareDecodingDescription' => 'Utilizza l\'accelerazione hardware quando disponibile',
 			'settings.bufferSize' => 'Dimensione buffer',
@@ -1257,6 +1268,7 @@ extension on TranslationsIt {
 			'messages.failedToCreatePlayQueue' => 'Impossibile creare la coda di riproduzione',
 			'messages.failedToCreatePlayQueueNoItems' => 'Impossibile creare la coda di riproduzione - nessun elemento',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Impossibile ${action}: ${error}',
+			'messages.switchingToCompatiblePlayer' => 'Passaggio al lettore compatibile...',
 			'subtitlingStyling.stylingOptions' => 'Opzioni stile',
 			'subtitlingStyling.fontSize' => 'Dimensione',
 			'subtitlingStyling.textColor' => 'Colore testo',
@@ -1460,14 +1472,14 @@ extension on TranslationsIt {
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}',
 			'watchTogether.title' => 'Guarda Insieme',
 			'watchTogether.description' => 'Guarda contenuti in sincronia con amici e familiari',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.createSession' => 'Crea Sessione',
 			'watchTogether.creating' => 'Creazione...',
 			'watchTogether.joinSession' => 'Unisciti alla Sessione',
 			'watchTogether.joining' => 'Connessione...',
 			'watchTogether.controlMode' => 'Modalità di Controllo',
 			'watchTogether.controlModeQuestion' => 'Chi può controllare la riproduzione?',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.hostOnly' => 'Solo Host',
 			'watchTogether.anyone' => 'Tutti',
 			'watchTogether.hostingSession' => 'Hosting Sessione',

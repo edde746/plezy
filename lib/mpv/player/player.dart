@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import '../models.dart';
+import 'player_android.dart';
 import 'player_native.dart';
 import 'player_state.dart';
 import 'player_streams.dart';
@@ -229,11 +230,25 @@ abstract class Player {
   /// Creates a new player instance.
   ///
   /// Returns a platform-specific implementation:
-  /// - macOS/iOS/Android: [PlayerNative] using MPVKit/libmpv with texture rendering
+  /// - macOS/iOS: [PlayerNative] using MPVKit/libmpv with Metal rendering
+  /// - Android: [PlayerAndroid] using ExoPlayer (default) or [PlayerNative] using MPV (fallback)
   /// - Windows: [PlayerWindows] using libmpv with native window embedding
   /// - Linux: [PlayerLinux] using libmpv with OpenGL rendering via GtkGLArea
-  factory Player() {
-    if (Platform.isMacOS || Platform.isIOS || Platform.isAndroid) {
+  ///
+  /// On Android, pass [useExoPlayer] to override the default:
+  /// - true: Use ExoPlayer (default, better hardware support)
+  /// - false: Use MPV (more features, ASS subtitle rendering)
+  factory Player({bool? useExoPlayer}) {
+    if (Platform.isAndroid) {
+      // Default to ExoPlayer on Android, with MPV as fallback
+      // The caller should pass useExoPlayer based on SettingsService.getUseExoPlayer()
+      final useExo = useExoPlayer ?? true;
+      if (useExo) {
+        return PlayerAndroid(); // ExoPlayer (default)
+      }
+      return PlayerNative(); // MPV fallback
+    }
+    if (Platform.isMacOS || Platform.isIOS) {
       return PlayerNative();
     }
     if (Platform.isWindows) {

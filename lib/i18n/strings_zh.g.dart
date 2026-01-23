@@ -207,6 +207,11 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。';
 	@override String get showServerNameOnHubs => '在推荐栏显示服务器名称';
 	@override String get showServerNameOnHubsDescription => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。';
+	@override String get playerBackend => '播放器引擎';
+	@override String get exoPlayer => 'ExoPlayer（推荐）';
+	@override String get exoPlayerDescription => 'Android 原生播放器，硬件支持更好';
+	@override String get mpv => 'MPV';
+	@override String get mpvDescription => '功能更多的高级播放器，支持 ASS 字幕';
 	@override String get hardwareDecoding => '硬件解码';
 	@override String get hardwareDecodingDescription => '如果可用，使用硬件加速';
 	@override String get bufferSize => '缓冲区大小';
@@ -496,6 +501,7 @@ class _TranslationsMessagesZh implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueue => '创建播放队列失败';
 	@override String get failedToCreatePlayQueueNoItems => '创建播放队列失败 - 没有项目';
 	@override String failedPlayback({required Object action, required Object error}) => '无法${action}: ${error}';
+	@override String get switchingToCompatiblePlayer => '正在切换到兼容的播放器...';
 }
 
 // Path: subtitlingStyling
@@ -1038,6 +1044,11 @@ extension on TranslationsZh {
 			'settings.useGlobalHubsDescription' => '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。',
 			'settings.showServerNameOnHubs' => '在推荐栏显示服务器名称',
 			'settings.showServerNameOnHubsDescription' => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。',
+			'settings.playerBackend' => '播放器引擎',
+			'settings.exoPlayer' => 'ExoPlayer（推荐）',
+			'settings.exoPlayerDescription' => 'Android 原生播放器，硬件支持更好',
+			'settings.mpv' => 'MPV',
+			'settings.mpvDescription' => '功能更多的高级播放器，支持 ASS 字幕',
 			'settings.hardwareDecoding' => '硬件解码',
 			'settings.hardwareDecodingDescription' => '如果可用，使用硬件加速',
 			'settings.bufferSize' => '缓冲区大小',
@@ -1257,6 +1268,7 @@ extension on TranslationsZh {
 			'messages.failedToCreatePlayQueue' => '创建播放队列失败',
 			'messages.failedToCreatePlayQueueNoItems' => '创建播放队列失败 - 没有项目',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '无法${action}: ${error}',
+			'messages.switchingToCompatiblePlayer' => '正在切换到兼容的播放器...',
 			'subtitlingStyling.stylingOptions' => '样式选项',
 			'subtitlingStyling.fontSize' => '字号',
 			'subtitlingStyling.textColor' => '文本颜色',
@@ -1460,14 +1472,14 @@ extension on TranslationsZh {
 			'collections.removeFromCollectionError' => ({required Object error}) => '从合集移除时出错：${error}',
 			'watchTogether.title' => '一起看',
 			'watchTogether.description' => '与朋友和家人同步观看内容',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.createSession' => '创建会话',
 			'watchTogether.creating' => '创建中...',
 			'watchTogether.joinSession' => '加入会话',
 			'watchTogether.joining' => '加入中...',
 			'watchTogether.controlMode' => '控制模式',
 			'watchTogether.controlModeQuestion' => '谁可以控制播放？',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.hostOnly' => '仅主持人',
 			'watchTogether.anyone' => '任何人',
 			'watchTogether.hostingSession' => '主持会话',

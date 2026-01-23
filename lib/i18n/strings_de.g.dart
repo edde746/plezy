@@ -207,6 +207,11 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.';
 	@override String get showServerNameOnHubs => 'Servername bei Hubs anzeigen';
 	@override String get showServerNameOnHubsDescription => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.';
+	@override String get playerBackend => 'Player-Backend';
+	@override String get exoPlayer => 'ExoPlayer (Empfohlen)';
+	@override String get exoPlayerDescription => 'Android-nativer Player mit besserer Hardware-Unterstützung';
+	@override String get mpv => 'MPV';
+	@override String get mpvDescription => 'Erweiterter Player mit mehr Funktionen und ASS-Untertitel-Unterstützung';
 	@override String get hardwareDecoding => 'Hardware-Decodierung';
 	@override String get hardwareDecodingDescription => 'Hardwarebeschleunigung verwenden, sofern verfügbar';
 	@override String get bufferSize => 'Puffergröße';
@@ -496,6 +501,7 @@ class _TranslationsMessagesDe implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueue => 'Wiedergabewarteschlange konnte nicht erstellt werden';
 	@override String get failedToCreatePlayQueueNoItems => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente';
 	@override String failedPlayback({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}';
+	@override String get switchingToCompatiblePlayer => 'Wechsle zu kompatiblem Player...';
 }
 
 // Path: subtitlingStyling
@@ -1038,6 +1044,11 @@ extension on TranslationsDe {
 			'settings.useGlobalHubsDescription' => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.',
 			'settings.showServerNameOnHubs' => 'Servername bei Hubs anzeigen',
 			'settings.showServerNameOnHubsDescription' => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.',
+			'settings.playerBackend' => 'Player-Backend',
+			'settings.exoPlayer' => 'ExoPlayer (Empfohlen)',
+			'settings.exoPlayerDescription' => 'Android-nativer Player mit besserer Hardware-Unterstützung',
+			'settings.mpv' => 'MPV',
+			'settings.mpvDescription' => 'Erweiterter Player mit mehr Funktionen und ASS-Untertitel-Unterstützung',
 			'settings.hardwareDecoding' => 'Hardware-Decodierung',
 			'settings.hardwareDecodingDescription' => 'Hardwarebeschleunigung verwenden, sofern verfügbar',
 			'settings.bufferSize' => 'Puffergröße',
@@ -1257,6 +1268,7 @@ extension on TranslationsDe {
 			'messages.failedToCreatePlayQueue' => 'Wiedergabewarteschlange konnte nicht erstellt werden',
 			'messages.failedToCreatePlayQueueNoItems' => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}',
+			'messages.switchingToCompatiblePlayer' => 'Wechsle zu kompatiblem Player...',
 			'subtitlingStyling.stylingOptions' => 'Stiloptionen',
 			'subtitlingStyling.fontSize' => 'Schriftgröße',
 			'subtitlingStyling.textColor' => 'Textfarbe',
@@ -1460,14 +1472,14 @@ extension on TranslationsDe {
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
 			'watchTogether.title' => 'Gemeinsam Schauen',
 			'watchTogether.description' => 'Inhalte synchron mit Freunden und Familie schauen',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.createSession' => 'Sitzung Erstellen',
 			'watchTogether.creating' => 'Erstellen...',
 			'watchTogether.joinSession' => 'Sitzung Beitreten',
 			'watchTogether.joining' => 'Beitreten...',
 			'watchTogether.controlMode' => 'Steuerungsmodus',
 			'watchTogether.controlModeQuestion' => 'Wer kann die Wiedergabe steuern?',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.hostOnly' => 'Nur Host',
 			'watchTogether.anyone' => 'Alle',
 			'watchTogether.hostingSession' => 'Sitzung Hosten',

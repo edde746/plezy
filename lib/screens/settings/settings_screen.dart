@@ -65,6 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _maxVolume = 100;
   bool _enableDiscordRPC = false;
   bool _matchContentFrameRate = false;
+  bool _useExoPlayer = true; // Android only: ExoPlayer vs MPV
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -99,6 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _maxVolume = _settingsService.getMaxVolume();
       _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
       _matchContentFrameRate = _settingsService.getMatchContentFrameRate();
+      _useExoPlayer = _settingsService.getUseExoPlayer();
       _isLoading = false;
     });
   }
@@ -260,6 +262,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
+          if (Platform.isAndroid)
+            ListTile(
+              leading: const AppIcon(Symbols.play_circle_rounded, fill: 1),
+              title: Text(t.settings.playerBackend),
+              subtitle: Text(_useExoPlayer ? t.settings.exoPlayerDescription : t.settings.mpvDescription),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () => _showPlayerBackendDialog(),
+            ),
           SwitchListTile(
             secondary: const AppIcon(Symbols.hardware_rounded, fill: 1),
             title: Text(t.settings.hardwareDecoding),
@@ -301,15 +311,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const SubtitleStylingScreen()));
             },
           ),
-          ListTile(
-            leading: const AppIcon(Symbols.tune_rounded, fill: 1),
-            title: Text(t.mpvConfig.title),
-            subtitle: Text(t.mpvConfig.description),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const MpvConfigScreen()));
-            },
-          ),
+          // MPV Config is only available when using MPV player backend
+          if (!Platform.isAndroid || !_useExoPlayer)
+            ListTile(
+              leading: const AppIcon(Symbols.tune_rounded, fill: 1),
+              title: Text(t.mpvConfig.title),
+              subtitle: Text(t.mpvConfig.description),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const MpvConfigScreen()));
+              },
+            ),
           ListTile(
             leading: const AppIcon(Symbols.replay_10_rounded, fill: 1),
             title: Text(t.settings.smallSkipDuration),
@@ -1055,6 +1067,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onSave: (value) async {
         setState(() => _maxVolume = value);
         await _settingsService.setMaxVolume(value);
+      },
+    );
+  }
+
+  void _showPlayerBackendDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(t.settings.playerBackend),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: AppIcon(
+                  _useExoPlayer ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
+                  fill: 1,
+                ),
+                title: Text(t.settings.exoPlayer),
+                subtitle: Text(t.settings.exoPlayerDescription),
+                onTap: () async {
+                  setState(() {
+                    _useExoPlayer = true;
+                  });
+                  await _settingsService.setUseExoPlayer(true);
+                  if (context.mounted) Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: AppIcon(
+                  !_useExoPlayer ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
+                  fill: 1,
+                ),
+                title: Text(t.settings.mpv),
+                subtitle: Text(t.settings.mpvDescription),
+                onTap: () async {
+                  setState(() {
+                    _useExoPlayer = false;
+                  });
+                  await _settingsService.setUseExoPlayer(false);
+                  if (context.mounted) Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],
+        );
       },
     );
   }

@@ -94,6 +94,11 @@
     "useGlobalHubsDescription": "Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.",
     "showServerNameOnHubs": "Servername bei Hubs anzeigen",
     "showServerNameOnHubsDescription": "Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.",
+    "playerBackend": "Player-Backend",
+    "exoPlayer": "ExoPlayer (Empfohlen)",
+    "exoPlayerDescription": "Android-nativer Player mit besserer Hardware-Unterstützung",
+    "mpv": "MPV",
+    "mpvDescription": "Erweiterter Player mit mehr Funktionen und ASS-Untertitel-Unterstützung",
     "hardwareDecoding": "Hardware-Decodierung",
     "hardwareDecodingDescription": "Hardwarebeschleunigung verwenden, sofern verfügbar",
     "bufferSize": "Puffergröße",
@@ -336,7 +341,8 @@
     "noItemsAvailable": "Keine Elemente verfügbar",
     "failedToCreatePlayQueue": "Wiedergabewarteschlange konnte nicht erstellt werden",
     "failedToCreatePlayQueueNoItems": "Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente",
-    "failedPlayback": "Wiedergabe für ${action} fehlgeschlagen: ${error}"
+    "failedPlayback": "Wiedergabe für ${action} fehlgeschlagen: ${error}",
+    "switchingToCompatiblePlayer": "Wechsle zu kompatiblem Player..."
   },
   "subtitlingStyling": {
     "stylingOptions": "Stiloptionen",

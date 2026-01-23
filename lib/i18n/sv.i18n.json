@@ -94,6 +94,11 @@
     "useGlobalHubsDescription": "Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.",
     "showServerNameOnHubs": "Visa servernamn på hubbar",
     "showServerNameOnHubsDescription": "Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.",
+    "playerBackend": "Spelarmotor",
+    "exoPlayer": "ExoPlayer (Rekommenderad)",
+    "exoPlayerDescription": "Android-nativ spelare med bättre hårdvarustöd",
+    "mpv": "MPV",
+    "mpvDescription": "Avancerad spelare med fler funktioner och ASS-undertextstöd",
     "hardwareDecoding": "Hårdvaruavkodning",
     "hardwareDecodingDescription": "Använd hårdvaruacceleration när tillgängligt",
     "bufferSize": "Bufferstorlek",
@@ -336,7 +341,8 @@
     "noItemsAvailable": "Inga objekt tillgängliga",
     "failedToCreatePlayQueue": "Det gick inte att skapa uppspelningskö",
     "failedToCreatePlayQueueNoItems": "Det gick inte att skapa uppspelningskö – inga objekt",
-    "failedPlayback": "Kunde inte ${action}: ${error}"
+    "failedPlayback": "Kunde inte ${action}: ${error}",
+    "switchingToCompatiblePlayer": "Byter till kompatibel spelare..."
   },
   "subtitlingStyling": {
     "stylingOptions": "Stilalternativ",

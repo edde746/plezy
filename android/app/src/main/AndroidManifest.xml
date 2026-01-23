@@ -29,7 +29,8 @@
         android:label="Plezy"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:appCategory="video">
+        android:appCategory="video"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

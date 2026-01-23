@@ -207,6 +207,11 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.';
 	@override String get showServerNameOnHubs => 'Servernaam tonen bij hubs';
 	@override String get showServerNameOnHubsDescription => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.';
+	@override String get playerBackend => 'Speler backend';
+	@override String get exoPlayer => 'ExoPlayer (Aanbevolen)';
+	@override String get exoPlayerDescription => 'Android-native speler met betere hardware-ondersteuning';
+	@override String get mpv => 'MPV';
+	@override String get mpvDescription => 'Geavanceerde speler met meer functies en ASS-ondertitelondersteuning';
 	@override String get hardwareDecoding => 'Hardware decodering';
 	@override String get hardwareDecodingDescription => 'Gebruik hardware versnelling indien beschikbaar';
 	@override String get bufferSize => 'Buffer grootte';
@@ -496,6 +501,7 @@ class _TranslationsMessagesNl implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueue => 'Kan afspeelwachtrij niet maken';
 	@override String get failedToCreatePlayQueueNoItems => 'Kan afspeelwachtrij niet maken - geen items';
 	@override String failedPlayback({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}';
+	@override String get switchingToCompatiblePlayer => 'Overschakelen naar compatibele speler...';
 }
 
 // Path: subtitlingStyling
@@ -1038,6 +1044,11 @@ extension on TranslationsNl {
 			'settings.useGlobalHubsDescription' => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.',
 			'settings.showServerNameOnHubs' => 'Servernaam tonen bij hubs',
 			'settings.showServerNameOnHubsDescription' => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.',
+			'settings.playerBackend' => 'Speler backend',
+			'settings.exoPlayer' => 'ExoPlayer (Aanbevolen)',
+			'settings.exoPlayerDescription' => 'Android-native speler met betere hardware-ondersteuning',
+			'settings.mpv' => 'MPV',
+			'settings.mpvDescription' => 'Geavanceerde speler met meer functies en ASS-ondertitelondersteuning',
 			'settings.hardwareDecoding' => 'Hardware decodering',
 			'settings.hardwareDecodingDescription' => 'Gebruik hardware versnelling indien beschikbaar',
 			'settings.bufferSize' => 'Buffer grootte',
@@ -1257,6 +1268,7 @@ extension on TranslationsNl {
 			'messages.failedToCreatePlayQueue' => 'Kan afspeelwachtrij niet maken',
 			'messages.failedToCreatePlayQueueNoItems' => 'Kan afspeelwachtrij niet maken - geen items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}',
+			'messages.switchingToCompatiblePlayer' => 'Overschakelen naar compatibele speler...',
 			'subtitlingStyling.stylingOptions' => 'Opmaak opties',
 			'subtitlingStyling.fontSize' => 'Lettergrootte',
 			'subtitlingStyling.textColor' => 'Tekstkleur',
@@ -1460,14 +1472,14 @@ extension on TranslationsNl {
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
 			'watchTogether.title' => 'Samen Kijken',
 			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.createSession' => 'Sessie Maken',
 			'watchTogether.creating' => 'Maken...',
 			'watchTogether.joinSession' => 'Sessie Deelnemen',
 			'watchTogether.joining' => 'Deelnemen...',
 			'watchTogether.controlMode' => 'Controlemodus',
 			'watchTogether.controlModeQuestion' => 'Wie kan het afspelen bedienen?',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.hostOnly' => 'Alleen Host',
 			'watchTogether.anyone' => 'Iedereen',
 			'watchTogether.hostingSession' => 'Sessie Hosten',

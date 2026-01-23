@@ -94,6 +94,11 @@
     "useGlobalHubsDescription": "Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.",
     "showServerNameOnHubs": "Servernaam tonen bij hubs",
     "showServerNameOnHubsDescription": "Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.",
+    "playerBackend": "Speler backend",
+    "exoPlayer": "ExoPlayer (Aanbevolen)",
+    "exoPlayerDescription": "Android-native speler met betere hardware-ondersteuning",
+    "mpv": "MPV",
+    "mpvDescription": "Geavanceerde speler met meer functies en ASS-ondertitelondersteuning",
     "hardwareDecoding": "Hardware decodering",
     "hardwareDecodingDescription": "Gebruik hardware versnelling indien beschikbaar",
     "bufferSize": "Buffer grootte",
@@ -336,7 +341,8 @@
     "noItemsAvailable": "Geen items beschikbaar",
     "failedToCreatePlayQueue": "Kan afspeelwachtrij niet maken",
     "failedToCreatePlayQueueNoItems": "Kan afspeelwachtrij niet maken - geen items",
-    "failedPlayback": "Afspelen van ${action} mislukt: ${error}"
+    "failedPlayback": "Afspelen van ${action} mislukt: ${error}",
+    "switchingToCompatiblePlayer": "Overschakelen naar compatibele speler..."
   },
   "subtitlingStyling": {
     "stylingOptions": "Opmaak opties",

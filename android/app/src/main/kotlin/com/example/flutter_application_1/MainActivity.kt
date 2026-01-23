@@ -8,8 +8,11 @@ import android.content.Context
 import android.content.res.Configuration
 import android.util.Rational
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.RenderMode
+import io.flutter.embedding.android.TransparencyMode
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
 
 class MainActivity : FlutterActivity() {
@@ -26,9 +29,21 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun getRenderMode(): RenderMode {
+        // Use TextureView so Flutter doesn't occupy a SurfaceView layer.
+        // This allows the libass subtitle SurfaceView to sit between video and Flutter UI.
+        return RenderMode.texture
+    }
+
+    override fun getTransparencyMode(): TransparencyMode {
+        // Keep Flutter transparent so video/subtitles are visible below.
+        return TransparencyMode.transparent
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         flutterEngine.plugins.add(MpvPlayerPlugin())
+        flutterEngine.plugins.add(ExoPlayerPlugin())
 
         MethodChannel( flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL ).setMethodCallHandler { call, result ->
             when (call.method) {

@@ -92,6 +92,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<Tracks>? _trackLoadingSubscription;
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<void>? _playbackRestartSubscription;
+  StreamSubscription<void>? _backendSwitchedSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
@@ -290,9 +291,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
+      final useExoPlayer = settingsService.getUseExoPlayer();
 
-      // Create player
-      player = Player();
+      // Create player (on Android, uses ExoPlayer by default, MPV as fallback)
+      player = Player(useExoPlayer: useExoPlayer);
 
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
       await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
@@ -401,6 +403,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Listen to MPV errors
       _errorSubscription = player!.streams.error.listen(_onPlayerError);
+
+      // Listen for backend switched event (ExoPlayer -> MPV fallback on Android)
+      if (Platform.isAndroid && useExoPlayer) {
+        _backendSwitchedSubscription = player!.streams.backendSwitched.listen((_) => _onBackendSwitched());
+      }
 
       // Listen to buffering state
       _bufferingSubscription = player!.streams.buffering.listen((isBuffering) {
@@ -1069,6 +1076,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _trackLoadingSubscription?.cancel();
     _positionSubscription?.cancel();
     _playbackRestartSubscription?.cancel();
+    _backendSwitchedSubscription?.cancel();
 
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
@@ -1202,6 +1210,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   void _onPlayerError(String error) {
     appLogger.e('[MPV ERROR] $error');
+  }
+
+  /// Handle notification when native player switched from ExoPlayer to MPV
+  void _onBackendSwitched() {
+    appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t.messages.switchingToCompatiblePlayer), duration: const Duration(seconds: 2)),
+      );
+    }
   }
 
   // OS Media Controls Integration

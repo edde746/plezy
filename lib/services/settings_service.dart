@@ -64,6 +64,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
   static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
   static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
+  static const String _keyUseExoPlayer = 'use_exoplayer';
 
   SettingsService._();
 
@@ -981,6 +982,16 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyAutoPlayNextEpisode) ?? true; // Default enabled
   }
 
+  // Use ExoPlayer on Android (default: true)
+  // When false, uses MPV as the player backend
+  Future<void> setUseExoPlayer(bool enabled) async {
+    await prefs.setBool(_keyUseExoPlayer, enabled);
+  }
+
+  bool getUseExoPlayer() {
+    return prefs.getBool(_keyUseExoPlayer) ?? true; // Default: ExoPlayer
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1025,6 +1036,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyMatchContentFrameRate),
       prefs.remove(_keyDefaultPlaybackSpeed),
       prefs.remove(_keyAutoPlayNextEpisode),
+      prefs.remove(_keyUseExoPlayer),
     ]);
   }
 

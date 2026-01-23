@@ -376,6 +376,21 @@ class TranslationsSettingsEn {
 	/// en: 'Always display the server name in hub titles. When off, only shows for duplicate hub names.'
 	String get showServerNameOnHubsDescription => 'Always display the server name in hub titles. When off, only shows for duplicate hub names.';
 
+	/// en: 'Player Backend'
+	String get playerBackend => 'Player Backend';
+
+	/// en: 'ExoPlayer (Recommended)'
+	String get exoPlayer => 'ExoPlayer (Recommended)';
+
+	/// en: 'Android native player with better hardware support'
+	String get exoPlayerDescription => 'Android native player with better hardware support';
+
+	/// en: 'MPV'
+	String get mpv => 'MPV';
+
+	/// en: 'Advanced player with more features and ASS subtitle support'
+	String get mpvDescription => 'Advanced player with more features and ASS subtitle support';
+
 	/// en: 'Hardware Decoding'
 	String get hardwareDecoding => 'Hardware Decoding';
 
@@ -1060,6 +1075,9 @@ class TranslationsMessagesEn {
 
 	/// en: 'Failed to ${action}: ${error}'
 	String failedPlayback({required Object action, required Object error}) => 'Failed to ${action}: ${error}';
+
+	/// en: 'Switching to compatible player...'
+	String get switchingToCompatiblePlayer => 'Switching to compatible player...';
 }
 
 // Path: subtitlingStyling
@@ -2131,6 +2149,11 @@ extension on Translations {
 			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
 			'settings.showServerNameOnHubsDescription' => 'Always display the server name in hub titles. When off, only shows for duplicate hub names.',
+			'settings.playerBackend' => 'Player Backend',
+			'settings.exoPlayer' => 'ExoPlayer (Recommended)',
+			'settings.exoPlayerDescription' => 'Android native player with better hardware support',
+			'settings.mpv' => 'MPV',
+			'settings.mpvDescription' => 'Advanced player with more features and ASS subtitle support',
 			'settings.hardwareDecoding' => 'Hardware Decoding',
 			'settings.hardwareDecodingDescription' => 'Use hardware acceleration when available',
 			'settings.bufferSize' => 'Buffer Size',
@@ -2350,6 +2373,7 @@ extension on Translations {
 			'messages.failedToCreatePlayQueue' => 'Failed to create play queue',
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
+			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'subtitlingStyling.stylingOptions' => 'Styling Options',
 			'subtitlingStyling.fontSize' => 'Font Size',
 			'subtitlingStyling.textColor' => 'Text Color',
@@ -2554,14 +2578,14 @@ extension on Translations {
 			'watchTogether.hostControls' => 'Host controls',
 			'watchTogether.anyoneControls' => 'Anyone controls',
 			'watchTogether.participants' => 'Participants',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.host' => 'Host',
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.youAreHost' => 'You are the host',
 			'watchTogether.watchingWithOthers' => 'Watching with others',
 			'watchTogether.endSession' => 'End Session',
 			'watchTogether.leaveSession' => 'Leave Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
 			'watchTogether.endSessionConfirm' => 'This will end the session for all participants.',

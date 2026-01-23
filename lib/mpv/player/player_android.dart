@@ -1,21 +1,19 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
 import '../../utils/app_logger.dart';
-import '../font_loader.dart';
 import '../models.dart';
 import 'player.dart';
 import 'player_state.dart';
 import 'player_streams.dart';
 
-/// Shared native implementation of [Player] for iOS and macOS.
-/// Uses MPVKit via platform channels with Metal rendering.
-class PlayerNative implements Player {
-  static const _methodChannel = MethodChannel('com.plezy/mpv_player');
-  static const _eventChannel = EventChannel('com.plezy/mpv_player/events');
+/// Android implementation of [Player] using ExoPlayer.
+/// Provides hardware-accelerated playback with ASS subtitle support via libass-android.
+class PlayerAndroid implements Player {
+  static const _methodChannel = MethodChannel('com.plezy/exo_player');
+  static const _eventChannel = EventChannel('com.plezy/exo_player/events');
 
   PlayerState _state = const PlayerState();
 
@@ -28,7 +26,7 @@ class PlayerNative implements Player {
   PlayerStreams get streams => _streams;
 
   @override
-  int? get textureId => null; // Uses direct Metal layer, not Flutter texture
+  int? get textureId => null; // Uses SurfaceView, not Flutter texture
 
   // Stream controllers
   final _playingController = StreamController<bool>.broadcast();
@@ -46,14 +44,13 @@ class PlayerNative implements Player {
   final _audioDeviceController = StreamController<AudioDevice>.broadcast();
   final _audioDevicesController = StreamController<List<AudioDevice>>.broadcast();
   final _playbackRestartController = StreamController<void>.broadcast();
-  // MPV handles all formats, so this stream never emits (only ExoPlayer needs fallback)
   final _backendSwitchedController = StreamController<void>.broadcast();
 
   StreamSubscription? _eventSubscription;
   bool _disposed = false;
   bool _initialized = false;
 
-  PlayerNative() {
+  PlayerAndroid() {
     _streams = PlayerStreams(
       playing: _playingController.stream,
       completed: _completedController.stream,
@@ -75,12 +72,12 @@ class PlayerNative implements Player {
 
     _setupEventListener();
 
-    // Forward MPV logs to app logger
+    // Forward logs to app logger
     _logController.stream.listen(_forwardToAppLogger);
   }
 
   void _forwardToAppLogger(PlayerLog log) {
-    final message = '[MPV:${log.prefix}] ${log.text}'.trimRight();
+    final message = '[ExoPlayer:${log.prefix}] ${log.text}'.trimRight();
     switch (log.level) {
       case PlayerLogLevel.fatal:
       case PlayerLogLevel.error:
@@ -96,19 +93,6 @@ class PlayerNative implements Player {
       case PlayerLogLevel.none:
         break;
     }
-  }
-
-  PlayerLogLevel _parseLogLevel(String level) {
-    return switch (level) {
-      'fatal' => PlayerLogLevel.fatal,
-      'error' => PlayerLogLevel.error,
-      'warn' => PlayerLogLevel.warn,
-      'info' => PlayerLogLevel.info,
-      'v' || 'verbose' => PlayerLogLevel.verbose,
-      'debug' => PlayerLogLevel.debug,
-      'trace' => PlayerLogLevel.trace,
-      _ => PlayerLogLevel.info,
-    };
   }
 
   void _setupEventListener() {
@@ -129,7 +113,7 @@ class PlayerNative implements Player {
     if (type == 'property' && name != null) {
       _handlePropertyChange(name, event['value']);
     } else if (type == 'event' && name != null) {
-      _handleMpvEvent(name, event['data'] as Map?);
+      _handlePlayerEvent(name, event['data'] as Map?);
     }
   }
 
@@ -197,19 +181,15 @@ class PlayerNative implements Player {
         List? trackList;
         if (value is List) {
           trackList = value;
-        } else if (value is String) {
-          // Android - JSON string that needs parsing
+        } else if (value is String && value.isNotEmpty) {
+          // MPV sends track-list as JSON string after fallback
           try {
-            final decoded = jsonDecode(value);
-            if (decoded is List) {
-              trackList = decoded;
-            }
-          } catch (e) {
-            // Invalid JSON, ignore
-            break;
+            final parsed = jsonDecode(value);
+            if (parsed is List) trackList = parsed;
+          } catch (_) {
+            // Ignore parse errors
           }
         }
-
         if (trackList != null) {
           final tracks = _parseTrackList(trackList);
           _state = _state.copyWith(tracks: tracks);
@@ -227,7 +207,7 @@ class PlayerNative implements Player {
     }
   }
 
-  void _handleMpvEvent(String name, Map? data) {
+  void _handlePlayerEvent(String name, Map? data) {
     switch (name) {
       case 'end-file':
         final reason = data?['reason'] as String?;
@@ -235,19 +215,22 @@ class PlayerNative implements Player {
           _state = _state.copyWith(completed: true);
           _completedController.add(true);
         } else if (reason == 'error') {
-          _errorController.add('Playback error');
+          _errorController.add(data?['message'] as String? ?? 'Playback error');
         }
         break;
 
       case 'file-loaded':
-        // Reset completed state when new file is loaded
         _state = _state.copyWith(completed: false);
         _completedController.add(false);
         break;
 
       case 'playback-restart':
-        // Playback started/restarted - first frame is ready
         _playbackRestartController.add(null);
+        break;
+
+      case 'backend-switched':
+        // Native player switched from ExoPlayer to MPV due to unsupported format
+        _backendSwitchedController.add(null);
         break;
 
       case 'log-message':
@@ -258,6 +241,19 @@ class PlayerNative implements Player {
         _logController.add(PlayerLog(level: level, prefix: prefix, text: text));
         break;
     }
+  }
+
+  PlayerLogLevel _parseLogLevel(String level) {
+    return switch (level) {
+      'fatal' => PlayerLogLevel.fatal,
+      'error' => PlayerLogLevel.error,
+      'warn' => PlayerLogLevel.warn,
+      'info' => PlayerLogLevel.info,
+      'v' || 'verbose' => PlayerLogLevel.verbose,
+      'debug' => PlayerLogLevel.debug,
+      'trace' => PlayerLogLevel.trace,
+      _ => PlayerLogLevel.info,
+    };
   }
 
   Tracks _parseTrackList(List trackList) {
@@ -300,11 +296,15 @@ class PlayerNative implements Player {
   }
 
   void _updateSelectedAudioTrack(dynamic trackId) {
-    _updateSelectedTrack<AudioTrack>(
-      trackId,
-      _state.tracks.audio.cast<AudioTrack?>().toList(),
-      (selection, track) => selection.copyWith(audio: track),
-    );
+    final id = trackId?.toString();
+    AudioTrack? selectedTrack;
+
+    if (id != null && id != 'no') {
+      selectedTrack = _state.tracks.audio.cast<AudioTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
+    }
+
+    _state = _state.copyWith(track: _state.track.copyWith(audio: selectedTrack));
+    _trackController.add(_state.track);
   }
 
   void _updateSelectedSubtitleTrack(dynamic trackId) {
@@ -312,7 +312,6 @@ class PlayerNative implements Player {
     SubtitleTrack? selectedTrack;
 
     if (id == null || id == 'no') {
-      // Explicitly set SubtitleTrack.off so episode navigation can detect "subtitles off"
       selectedTrack = SubtitleTrack.off;
     } else {
       selectedTrack = _state.tracks.subtitle.cast<SubtitleTrack?>().firstWhere((t) => t?.id == id, orElse: () => null);
@@ -322,27 +321,6 @@ class PlayerNative implements Player {
     _trackController.add(_state.track);
   }
 
-  void _updateSelectedTrack<T>(
-    dynamic trackId,
-    List<T?> tracks,
-    TrackSelection Function(TrackSelection, T?) selectionSetter,
-  ) {
-    final id = trackId?.toString();
-    T? selectedTrack;
-
-    if (id != null && id != 'no') {
-      selectedTrack = tracks.firstWhere((track) => _getTrackId(track) == id, orElse: () => null);
-    }
-
-    _state = _state.copyWith(track: selectionSetter(_state.track, selectedTrack));
-    _trackController.add(_state.track);
-  }
-
-  String? _getTrackId<T>(T? track) {
-    final dynamic t = track;
-    return t?.id?.toString();
-  }
-
   Future<void> _ensureInitialized() async {
     if (_initialized) return;
 
@@ -350,48 +328,11 @@ class PlayerNative implements Player {
       final result = await _methodChannel.invokeMethod<bool>('initialize');
       _initialized = result == true;
       if (!_initialized) {
-        throw Exception('Failed to initialize player');
+        throw Exception('Failed to initialize ExoPlayer');
       }
-
-      // Configure subtitle fonts for libass support
-      await _configureSubtitleFonts();
-
-      // Subscribe to MPV properties
-      await _observeProperty('time-pos', 'double');
-      await _observeProperty('duration', 'double');
-      await _observeProperty('pause', 'flag');
-      await _observeProperty('paused-for-cache', 'flag');
-      await _observeProperty('track-list', (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node');
-      await _observeProperty('eof-reached', 'flag');
-      await _observeProperty('volume', 'double');
-      await _observeProperty('speed', 'double');
-      await _observeProperty('aid', 'string');
-      await _observeProperty('sid', 'string');
     } catch (e) {
       _errorController.add('Initialization failed: $e');
       rethrow;
-    }
-  }
-
-  Future<void> _observeProperty(String name, String format) async {
-    await _methodChannel.invokeMethod('observeProperty', {'name': name, 'format': format});
-  }
-
-  /// Configures subtitle fonts for libass support.
-  /// Provides a comprehensive Unicode font (Go Noto) with CJK coverage to ensure
-  /// proper rendering of non-Latin characters in subtitles.
-  Future<void> _configureSubtitleFonts() async {
-    try {
-      final fontDir = await SubtitleFontLoader.loadSubtitleFont();
-      if (fontDir != null) {
-        // Configure MPV to use the extracted font for libass
-        await setProperty('config', 'yes');
-        await setProperty('sub-fonts-dir', fontDir);
-        await setProperty('sub-font', SubtitleFontLoader.fontName);
-      }
-    } catch (e) {
-      // Font configuration is not critical - continue without it
-      _errorController.add('Failed to configure subtitle fonts: $e');
     }
   }
 
@@ -410,43 +351,27 @@ class PlayerNative implements Player {
     _checkDisposed();
     await _ensureInitialized();
 
-    // Show the video layer (use error-handled method)
+    // Show the video layer
     await setVisible(true);
 
-    // Set HTTP headers for Plex authentication and profile
-    if (media.headers != null && media.headers!.isNotEmpty) {
-      final headerList = media.headers!.entries.map((e) => '${e.key}: ${e.value}').toList();
-      await setProperty('http-header-fields', headerList.join(','));
-    }
-
-    // Set start position if provided (must be set before loading file)
-    if (media.start != null && media.start!.inSeconds > 0) {
-      await setProperty('start', media.start!.inSeconds.toString());
-    } else {
-      // Reset start position if not resuming
-      await setProperty('start', 'none');
-    }
-
-    // Set pause BEFORE loadfile to prevent decoder from starting immediately.
-    // This is important for adding external subtitles before playback begins,
-    // avoiding a race condition that can freeze the video decoder on Android (issue #226).
-    if (!play) {
-      await setProperty('pause', 'yes');
-    }
-
-    await command(['loadfile', media.uri, 'replace']);
+    await _methodChannel.invokeMethod('open', {
+      'uri': media.uri,
+      'headers': media.headers,
+      'startPositionMs': media.start?.inMilliseconds ?? 0,
+      'autoPlay': play,
+    });
   }
 
   @override
   Future<void> play() async {
     _checkDisposed();
-    await setProperty('pause', 'no');
+    await _methodChannel.invokeMethod('play');
   }
 
   @override
   Future<void> pause() async {
     _checkDisposed();
-    await setProperty('pause', 'yes');
+    await _methodChannel.invokeMethod('pause');
   }
 
   @override
@@ -462,14 +387,14 @@ class PlayerNative implements Player {
   @override
   Future<void> stop() async {
     _checkDisposed();
-    await command(['stop']);
-    await _methodChannel.invokeMethod('setVisible', {'visible': false});
+    await _methodChannel.invokeMethod('stop');
+    await setVisible(false);
   }
 
   @override
   Future<void> seek(Duration position) async {
     _checkDisposed();
-    await command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']);
+    await _methodChannel.invokeMethod('seek', {'positionMs': position.inMilliseconds});
   }
 
   // ============================================
@@ -479,22 +404,24 @@ class PlayerNative implements Player {
   @override
   Future<void> selectAudioTrack(AudioTrack track) async {
     _checkDisposed();
-    await setProperty('aid', track.id);
+    await _methodChannel.invokeMethod('selectAudioTrack', {'trackId': track.id});
   }
 
   @override
   Future<void> selectSubtitleTrack(SubtitleTrack track) async {
     _checkDisposed();
-    await setProperty('sid', track.id);
+    await _methodChannel.invokeMethod('selectSubtitleTrack', {'trackId': track.id});
   }
 
   @override
   Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
     _checkDisposed();
-    final args = ['sub-add', uri, select ? 'select' : 'auto'];
-    if (title != null) args.add('title=$title');
-    if (language != null) args.add('lang=$language');
-    await command(args);
+    await _methodChannel.invokeMethod('addSubtitleTrack', {
+      'uri': uri,
+      'title': title,
+      'language': language,
+      'select': select,
+    });
   }
 
   // ============================================
@@ -504,60 +431,115 @@ class PlayerNative implements Player {
   @override
   Future<void> setVolume(double volume) async {
     _checkDisposed();
-    await setProperty('volume', volume.toString());
+    await _methodChannel.invokeMethod('setVolume', {'volume': volume});
   }
 
   @override
   Future<void> setRate(double rate) async {
     _checkDisposed();
-    await setProperty('speed', rate.toString());
+    await _methodChannel.invokeMethod('setRate', {'rate': rate});
   }
 
   @override
   Future<void> setAudioDevice(AudioDevice device) async {
-    _checkDisposed();
-    await setProperty('audio-device', device.name);
+    // ExoPlayer doesn't support audio device selection on Android
+    // This is a no-op
   }
 
   // ============================================
-  // MPV Properties
+  // MPV Properties (Compatibility Layer)
   // ============================================
 
   @override
   Future<void> setProperty(String name, String value) async {
     _checkDisposed();
-    await _ensureInitialized();
-    await _methodChannel.invokeMethod('setProperty', {'name': name, 'value': value});
+    // ExoPlayer doesn't use MPV properties, but we handle common ones
+    switch (name) {
+      case 'pause':
+        if (value == 'yes') {
+          await pause();
+        } else {
+          await play();
+        }
+        break;
+      case 'volume':
+        await setVolume(double.tryParse(value) ?? 100);
+        break;
+      case 'speed':
+        await setRate(double.tryParse(value) ?? 1.0);
+        break;
+      // Other properties are no-ops for ExoPlayer
+      default:
+        // No-op for MPV-specific properties
+        break;
+    }
   }
 
   @override
   Future<String?> getProperty(String name) async {
     _checkDisposed();
-    await _ensureInitialized();
-    return await _methodChannel.invokeMethod<String>('getProperty', {'name': name});
+    // Return state-based values for common properties
+    switch (name) {
+      case 'pause':
+        return _state.playing ? 'no' : 'yes';
+      case 'volume':
+        return _state.volume.toString();
+      case 'speed':
+        return _state.rate.toString();
+      case 'time-pos':
+        return (_state.position.inMilliseconds / 1000.0).toString();
+      case 'duration':
+        return (_state.duration.inMilliseconds / 1000.0).toString();
+      default:
+        return null;
+    }
   }
 
   @override
   Future<void> command(List<String> args) async {
     _checkDisposed();
-    await _ensureInitialized();
-    await _methodChannel.invokeMethod('command', {'args': args});
+    // Handle MPV commands by translating to ExoPlayer equivalents
+    if (args.isEmpty) return;
+
+    switch (args[0]) {
+      case 'loadfile':
+        if (args.length > 1) {
+          await open(Media(args[1]));
+        }
+        break;
+      case 'seek':
+        if (args.length > 1) {
+          final seconds = double.tryParse(args[1]) ?? 0;
+          final mode = args.length > 2 ? args[2] : 'relative';
+          if (mode == 'absolute') {
+            await seek(Duration(milliseconds: (seconds * 1000).toInt()));
+          } else {
+            final newPos = _state.position + Duration(milliseconds: (seconds * 1000).toInt());
+            await seek(newPos);
+          }
+        }
+        break;
+      case 'stop':
+        await stop();
+        break;
+      case 'sub-add':
+        if (args.length > 1) {
+          final select = args.length > 2 && args[2] == 'select';
+          await addSubtitleTrack(uri: args[1], select: select);
+        }
+        break;
+      // Other commands are no-ops
+    }
   }
 
   // ============================================
-  // Passthrough
+  // Passthrough (Not supported by ExoPlayer)
   // ============================================
 
   @override
   Future<void> setAudioPassthrough(bool enabled) async {
-    _checkDisposed();
-    if (enabled) {
-      await setProperty('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd');
-      await setProperty('audio-exclusive', 'yes');
-    } else {
-      await setProperty('audio-spdif', '');
-      await setProperty('audio-exclusive', 'no');
-    }
+    // ExoPlayer doesn't support direct audio passthrough configuration
+    // This is handled by the device's audio settings
   }
 
   // ============================================
@@ -579,22 +561,16 @@ class PlayerNative implements Player {
 
   @override
   Future<void> updateFrame() async {
-    _checkDisposed();
-    if (!_initialized) return;
-    // Only iOS and macOS use Metal layer that needs frame updates
-    if (Platform.isIOS || Platform.isMacOS) {
-      await _methodChannel.invokeMethod('updateFrame');
-    }
+    // Not needed for ExoPlayer on Android
   }
 
   // ============================================
-  // Frame Rate Matching (Android)
+  // Frame Rate Matching
   // ============================================
 
   @override
   Future<void> setVideoFrameRate(double fps, int durationMs) async {
     _checkDisposed();
-    if (!Platform.isAndroid) return;
     if (!_initialized) return;
 
     await _methodChannel.invokeMethod('setVideoFrameRate', {'fps': fps, 'duration': durationMs});
@@ -603,20 +579,18 @@ class PlayerNative implements Player {
   @override
   Future<void> clearVideoFrameRate() async {
     _checkDisposed();
-    if (!Platform.isAndroid) return;
     if (!_initialized) return;
 
     await _methodChannel.invokeMethod('clearVideoFrameRate');
   }
 
   // ============================================
-  // Audio Focus (Android)
+  // Audio Focus
   // ============================================
 
   @override
   Future<bool> requestAudioFocus() async {
     _checkDisposed();
-    if (!Platform.isAndroid) return true;
     if (!_initialized) return false;
 
     final result = await _methodChannel.invokeMethod<bool>('requestAudioFocus');
@@ -626,7 +600,6 @@ class PlayerNative implements Player {
   @override
   Future<void> abandonAudioFocus() async {
     _checkDisposed();
-    if (!Platform.isAndroid) return;
     if (!_initialized) return;
 
     await _methodChannel.invokeMethod('abandonAudioFocus');

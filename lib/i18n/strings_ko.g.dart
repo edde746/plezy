@@ -207,6 +207,11 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.';
 	@override String get showServerNameOnHubs => '허브에 서버 이름 표시';
 	@override String get showServerNameOnHubsDescription => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.';
+	@override String get playerBackend => '플레이어 백엔드';
+	@override String get exoPlayer => 'ExoPlayer (권장)';
+	@override String get exoPlayerDescription => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어';
+	@override String get mpv => 'MPV';
+	@override String get mpvDescription => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
 	@override String get bufferSize => '버퍼 크기';
@@ -496,6 +501,7 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueue => '재생 대기열 생성 실패';
 	@override String get failedToCreatePlayQueueNoItems => '재생 대기열 생성 실패 - 항목 없음';
 	@override String failedPlayback({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}';
+	@override String get switchingToCompatiblePlayer => '호환되는 플레이어로 전환 중...';
 }
 
 // Path: subtitlingStyling
@@ -1038,6 +1044,11 @@ extension on TranslationsKo {
 			'settings.useGlobalHubsDescription' => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.',
 			'settings.showServerNameOnHubs' => '허브에 서버 이름 표시',
 			'settings.showServerNameOnHubsDescription' => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.',
+			'settings.playerBackend' => '플레이어 백엔드',
+			'settings.exoPlayer' => 'ExoPlayer (권장)',
+			'settings.exoPlayerDescription' => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어',
+			'settings.mpv' => 'MPV',
+			'settings.mpvDescription' => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어',
 			'settings.hardwareDecoding' => '하드웨어 디코딩',
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
 			'settings.bufferSize' => '버퍼 크기',
@@ -1257,6 +1268,7 @@ extension on TranslationsKo {
 			'messages.failedToCreatePlayQueue' => '재생 대기열 생성 실패',
 			'messages.failedToCreatePlayQueueNoItems' => '재생 대기열 생성 실패 - 항목 없음',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}',
+			'messages.switchingToCompatiblePlayer' => '호환되는 플레이어로 전환 중...',
 			'subtitlingStyling.stylingOptions' => '스타일 옵션',
 			'subtitlingStyling.fontSize' => '글자 크기',
 			'subtitlingStyling.textColor' => '텍스트 색상',
@@ -1460,14 +1472,14 @@ extension on TranslationsKo {
 			'watchTogether.hostControlsPlayback' => '호스트 재생 제어',
 			'watchTogether.anyoneCanControl' => '누구나 재생 제어 가능',
 			'watchTogether.hostControls' => '호스트 제어',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.anyoneControls' => '누구나 제어',
 			'watchTogether.participants' => '참가자',
 			'watchTogether.host' => '호스트',
 			'watchTogether.hostBadge' => '호스트',
 			'watchTogether.youAreHost' => '당신은 호스트 입니다',
 			'watchTogether.watchingWithOthers' => '다른 사람과 함께 시청 중',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.endSession' => '세션 종료',
 			'watchTogether.leaveSession' => '세션 탈퇴',
 			'watchTogether.endSessionQuestion' => '세션을 종료 하시겠습니까?',

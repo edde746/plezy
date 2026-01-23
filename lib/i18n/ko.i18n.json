@@ -94,6 +94,11 @@
     "useGlobalHubsDescription": "공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.",
     "showServerNameOnHubs": "허브에 서버 이름 표시",
     "showServerNameOnHubsDescription": "허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.",
+    "playerBackend": "플레이어 백엔드",
+    "exoPlayer": "ExoPlayer (권장)",
+    "exoPlayerDescription": "더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어",
+    "mpv": "MPV",
+    "mpvDescription": "더 많은 기능과 ASS 자막을 지원하는 고급 플레이어",
     "hardwareDecoding": "하드웨어 디코딩",
     "hardwareDecodingDescription": "가능한 경우 하드웨어 가속을 사용합니다",
     "bufferSize": "버퍼 크기",
@@ -336,7 +341,8 @@
     "noItemsAvailable": "사용 가능한 항목이 없습니다",
     "failedToCreatePlayQueue": "재생 대기열 생성 실패",
     "failedToCreatePlayQueueNoItems": "재생 대기열 생성 실패 - 항목 없음",
-    "failedPlayback": "${action}을(를) 수행할 수 없습니다: ${error}"
+    "failedPlayback": "${action}을(를) 수행할 수 없습니다: ${error}",
+    "switchingToCompatiblePlayer": "호환되는 플레이어로 전환 중..."
   },
   "subtitlingStyling": {
     "stylingOptions": "스타일 옵션",

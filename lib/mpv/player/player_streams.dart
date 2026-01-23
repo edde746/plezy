@@ -50,6 +50,10 @@ class PlayerStreams {
   /// Stream that emits when playback restarts (first frame ready after load/seek).
   final Stream<void> playbackRestart;
 
+  /// Stream that emits when the native player backend switches (e.g., ExoPlayer to MPV).
+  /// Only emitted on Android when ExoPlayer encounters an unsupported format.
+  final Stream<void> backendSwitched;
+
   const PlayerStreams({
     required this.playing,
     required this.completed,
@@ -66,5 +70,6 @@ class PlayerStreams {
     required this.audioDevice,
     required this.audioDevices,
     required this.playbackRestart,
+    required this.backendSwitched,
   });
 }

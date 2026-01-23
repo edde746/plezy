@@ -57,6 +57,13 @@ android {
             // If key.properties doesn't exist, it will use debug signing for CI builds
         }
     }
+
+    packaging {
+        jniLibs {
+            // Resolve conflict between libass-android and libmpv native libraries
+            pickFirsts.add("lib/*/libc++_shared.so")
+        }
+    }
 }
 
 flutter {
@@ -65,4 +72,16 @@ flutter {
 
 dependencies {
     implementation("dev.jdtech.mpv:libmpv:0.5.1")
+
+    // Media3 ExoPlayer for Android
+    implementation("androidx.media3:media3-exoplayer:1.5.1")
+    implementation("androidx.media3:media3-ui:1.5.1")
+    implementation("androidx.media3:media3-common:1.5.1")
+    implementation("androidx.media3:media3-session:1.5.1")
+
+    // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
+    implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
+
+    // libass-android for ASS/SSA subtitle rendering
+    implementation("io.github.peerless2012:ass-media:0.4.0-beta01")
 }

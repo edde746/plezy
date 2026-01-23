@@ -207,6 +207,11 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.';
 	@override String get showServerNameOnHubs => 'Visa servernamn på hubbar';
 	@override String get showServerNameOnHubsDescription => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.';
+	@override String get playerBackend => 'Spelarmotor';
+	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
+	@override String get exoPlayerDescription => 'Android-nativ spelare med bättre hårdvarustöd';
+	@override String get mpv => 'MPV';
+	@override String get mpvDescription => 'Avancerad spelare med fler funktioner och ASS-undertextstöd';
 	@override String get hardwareDecoding => 'Hårdvaruavkodning';
 	@override String get hardwareDecodingDescription => 'Använd hårdvaruacceleration när tillgängligt';
 	@override String get bufferSize => 'Bufferstorlek';
@@ -496,6 +501,7 @@ class _TranslationsMessagesSv implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueue => 'Det gick inte att skapa uppspelningskö';
 	@override String get failedToCreatePlayQueueNoItems => 'Det gick inte att skapa uppspelningskö – inga objekt';
 	@override String failedPlayback({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}';
+	@override String get switchingToCompatiblePlayer => 'Byter till kompatibel spelare...';
 }
 
 // Path: subtitlingStyling
@@ -1038,6 +1044,11 @@ extension on TranslationsSv {
 			'settings.useGlobalHubsDescription' => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.',
 			'settings.showServerNameOnHubs' => 'Visa servernamn på hubbar',
 			'settings.showServerNameOnHubsDescription' => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.',
+			'settings.playerBackend' => 'Spelarmotor',
+			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
+			'settings.exoPlayerDescription' => 'Android-nativ spelare med bättre hårdvarustöd',
+			'settings.mpv' => 'MPV',
+			'settings.mpvDescription' => 'Avancerad spelare med fler funktioner och ASS-undertextstöd',
 			'settings.hardwareDecoding' => 'Hårdvaruavkodning',
 			'settings.hardwareDecodingDescription' => 'Använd hårdvaruacceleration när tillgängligt',
 			'settings.bufferSize' => 'Bufferstorlek',
@@ -1257,6 +1268,7 @@ extension on TranslationsSv {
 			'messages.failedToCreatePlayQueue' => 'Det gick inte att skapa uppspelningskö',
 			'messages.failedToCreatePlayQueueNoItems' => 'Det gick inte att skapa uppspelningskö – inga objekt',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}',
+			'messages.switchingToCompatiblePlayer' => 'Byter till kompatibel spelare...',
 			'subtitlingStyling.stylingOptions' => 'Stilalternativ',
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
 			'subtitlingStyling.textColor' => 'Textfärg',
@@ -1460,14 +1472,14 @@ extension on TranslationsSv {
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
 			'watchTogether.title' => 'Titta Tillsammans',
 			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.createSession' => 'Skapa Session',
 			'watchTogether.creating' => 'Skapar...',
 			'watchTogether.joinSession' => 'Gå med i Session',
 			'watchTogether.joining' => 'Ansluter...',
 			'watchTogether.controlMode' => 'Kontrollläge',
 			'watchTogether.controlModeQuestion' => 'Vem kan styra uppspelningen?',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.hostOnly' => 'Endast Värd',
 			'watchTogether.anyone' => 'Alla',
 			'watchTogether.hostingSession' => 'Värd för Session',
