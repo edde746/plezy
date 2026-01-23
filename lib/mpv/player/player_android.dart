@@ -28,6 +28,9 @@ class PlayerAndroid implements Player {
   @override
   int? get textureId => null; // Uses SurfaceView, not Flutter texture
 
+  @override
+  String get playerType => 'exoplayer';
+
   // Stream controllers
   final _playingController = StreamController<bool>.broadcast();
   final _completedController = StreamController<bool>.broadcast();
@@ -492,6 +495,29 @@ class PlayerAndroid implements Player {
         return (_state.duration.inMilliseconds / 1000.0).toString();
       default:
         return null;
+    }
+  }
+
+  /// Get all playback stats from ExoPlayer.
+  /// Returns a map with video/audio codec info, buffer state, and performance metrics.
+  Future<Map<String, dynamic>> getStats() async {
+    _checkDisposed();
+    try {
+      final result = await _methodChannel.invokeMethod<Map>('getStats');
+      return Map<String, dynamic>.from(result ?? {});
+    } catch (e) {
+      return {};
+    }
+  }
+
+  /// Get the current player type ('exoplayer' or 'mpv' if fallback is active).
+  Future<String> getPlayerType() async {
+    _checkDisposed();
+    try {
+      final result = await _methodChannel.invokeMethod<String>('getPlayerType');
+      return result ?? 'unknown';
+    } catch (e) {
+      return 'unknown';
     }
   }
 

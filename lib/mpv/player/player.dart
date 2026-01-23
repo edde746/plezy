@@ -48,6 +48,9 @@ abstract class Player {
   /// rendering is initialized. Returns null if not ready.
   int? get textureId;
 
+  /// The type of player backend being used (e.g., 'mpv', 'exoplayer').
+  String get playerType;
+
   // ============================================
   // Playback Control
   // ============================================

@@ -1,8 +1,11 @@
 /// Data model for video player performance statistics.
 ///
-/// Contains metrics queried from libmpv including video/audio codec info,
-/// playback performance, and buffer state.
+/// Contains metrics queried from the video player (MPV or ExoPlayer)
+/// including video/audio codec info, playback performance, and buffer state.
 class PerformanceStats {
+  // Player info
+  final String playerType; // 'mpv' or 'exoplayer'
+
   // Video metrics
   final String? videoCodec;
   final int? videoWidth;
@@ -12,6 +15,7 @@ class PerformanceStats {
   final int? videoBitrate;
   final String? aspectName;
   final int? rotate;
+  final String? videoDecoderName;
 
   // Color/Format metrics
   final String? pixelformat;
@@ -49,6 +53,7 @@ class PerformanceStats {
   final double? uiFps;
 
   const PerformanceStats({
+    this.playerType = 'unknown',
     this.videoCodec,
     this.videoWidth,
     this.videoHeight,
@@ -57,6 +62,7 @@ class PerformanceStats {
     this.videoBitrate,
     this.aspectName,
     this.rotate,
+    this.videoDecoderName,
     this.pixelformat,
     this.hwPixelformat,
     this.colormatrix,
@@ -84,7 +90,8 @@ class PerformanceStats {
 
   /// Creates an empty stats object (used as initial state).
   const PerformanceStats.empty()
-    : videoCodec = null,
+    : playerType = 'unknown',
+      videoCodec = null,
       videoWidth = null,
       videoHeight = null,
       videoFps = null,
@@ -92,6 +99,7 @@ class PerformanceStats {
       videoBitrate = null,
       aspectName = null,
       rotate = null,
+      videoDecoderName = null,
       pixelformat = null,
       hwPixelformat = null,
       colormatrix = null,
@@ -196,6 +204,23 @@ class PerformanceStats {
 
   /// Format hardware decoding mode.
   String get hwdecFormatted {
+    // For ExoPlayer, use the decoder name
+    if (videoDecoderName != null && videoDecoderName!.isNotEmpty) {
+      // Check if it's a hardware decoder (contains OMX, c2, or MediaCodec patterns)
+      final decoder = videoDecoderName!;
+      if (decoder.contains('c2.') || decoder.contains('OMX.') || decoder.contains('.hw.')) {
+        // Extract a cleaner name
+        if (decoder.contains('c2.android.')) return 'Android HW';
+        if (decoder.contains('c2.nvidia')) return 'NVIDIA HW';
+        if (decoder.contains('c2.qti') || decoder.contains('c2.qcom')) return 'Qualcomm HW';
+        if (decoder.contains('c2.mtk') || decoder.contains('c2.mediatek')) return 'MediaTek HW';
+        if (decoder.contains('c2.exynos') || decoder.contains('c2.samsung')) return 'Exynos HW';
+        if (decoder.contains('OMX.google')) return 'Software';
+        return 'Hardware';
+      }
+      return 'Software';
+    }
+    // For MPV, use hwdec-current property
     if (hwdecCurrent == null || hwdecCurrent!.isEmpty || hwdecCurrent == 'no') {
       return 'Software';
     }
@@ -248,5 +273,29 @@ class PerformanceStats {
   /// Check if HDR metadata is available.
   bool get hasHdrMetadata {
     return maxLuma != null || maxCll != null;
+  }
+
+  /// Check if video FPS is valid (not null, not negative, not zero).
+  bool get hasValidVideoFps {
+    return videoFps != null && videoFps! > 0;
+  }
+
+  /// Check if video bitrate is valid (not null, not negative, not zero).
+  bool get hasValidVideoBitrate {
+    return videoBitrate != null && videoBitrate! > 0;
+  }
+
+  /// Check if audio bitrate is valid (not null, not negative, not zero).
+  bool get hasValidAudioBitrate {
+    return audioBitrate != null && audioBitrate! > 0;
+  }
+
+  /// Format player type for display.
+  String get playerTypeFormatted {
+    return switch (playerType.toLowerCase()) {
+      'mpv' => 'MPV',
+      'exoplayer' => 'ExoPlayer',
+      _ => playerType,
+    };
   }
 }

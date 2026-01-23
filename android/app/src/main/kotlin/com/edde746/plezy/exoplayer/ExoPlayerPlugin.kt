@@ -115,6 +115,8 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 if (usingMpvFallback) mpvCore?.isInitialized ?: false
                 else playerCore?.isInitialized ?: false
             )
+            "getStats" -> handleGetStats(result)
+            "getPlayerType" -> result.success(if (usingMpvFallback) "mpv" else "exoplayer")
             else -> result.notImplemented()
         }
     }
@@ -404,6 +406,19 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             playerCore?.abandonAudioFocus()
         }
         result.success(null)
+    }
+
+    private fun handleGetStats(result: MethodChannel.Result) {
+        activity?.runOnUiThread {
+            val stats = if (usingMpvFallback) {
+                // For MPV fallback, return empty - stats are fetched via getProperty
+                mapOf("playerType" to "mpv")
+            } else {
+                val coreStats = playerCore?.getStats() ?: emptyMap()
+                coreStats + mapOf("playerType" to "exoplayer")
+            }
+            result.success(stats)
+        } ?: result.success(mapOf("playerType" to "unknown"))
     }
 
     // ExoPlayerDelegate

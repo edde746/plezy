@@ -228,24 +228,26 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
             surfaceContainer!!.addView(surfaceView)
 
-            // Create SubtitleView - will be added to surfaceContainer above video
-            // With OVERLAY_CANVAS mode, libass-android adds AssSubtitleView as a child
-            // which renders ASS subtitles with full styling
+            // Create SubtitleView - added to surfaceContainer above video
+            // With OVERLAY_OPEN_GL mode, libass-android adds AssSubtitleTextureView as a child
+            // which renders ASS subtitles with full styling using GPU texture composition
             subtitleView = SubtitleView(activity).apply {
                 layoutParams = FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT
                 )
             }
-            Log.d(TAG, "SubtitleView created")
+            // Add SubtitleView to surfaceContainer (above video SurfaceView)
+            // Flutter renders on top of entire surfaceContainer, keeping subtitles below UI
+            surfaceContainer!!.addView(subtitleView)
+            Log.d(TAG, "SubtitleView created and added to surfaceContainer")
 
             val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
             contentView.addView(surfaceContainer, 0)
 
             // Find FlutterView and configure z-order
             // Video SurfaceView is at the bottom (setZOrderOnTop=false, setZOrderMediaOverlay=false)
-            // Flutter SurfaceView uses setZOrderMediaOverlay to render above video
-            // SubtitleView will be added to surfaceContainer so Flutter stays on top
+            // Flutter SurfaceView uses setZOrderMediaOverlay to render above video and subtitles
             for (i in 0 until contentView.childCount) {
                 val child = contentView.getChildAt(i)
                 if (child is ViewGroup && child.javaClass.name.contains("FlutterView")) {
@@ -265,22 +267,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 }
             }
 
-            // Add SubtitleView just below FlutterView so it stays above video but below Flutter UI
-            var flutterViewIndex: Int? = null
-            for (i in 0 until contentView.childCount) {
-                val child = contentView.getChildAt(i)
-                if (child is ViewGroup && child.javaClass.name.contains("FlutterView")) {
-                    flutterViewIndex = i
-                    break
-                }
-            }
-            if (flutterViewIndex != null) {
-                contentView.addView(subtitleView, flutterViewIndex)
-                Log.d(TAG, "SubtitleView added below FlutterView at index $flutterViewIndex")
-            } else {
-                contentView.addView(subtitleView)
-                Log.d(TAG, "SubtitleView added to contentView (FlutterView not found)")
-            }
             ensureFlutterOverlayOnTop()
             overlayLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
                 ensureFlutterOverlayOnTop()
@@ -317,15 +303,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val dataSourceFactory = DefaultDataSource.Factory(activity)
             val extractorsFactory = DefaultExtractorsFactory()
 
-            // Use buildWithAssSupport with OVERLAY_CANVAS mode for proper libass rendering
-            // This renders ASS subtitles with full styling via AssSubtitleView
+            // Use buildWithAssSupport with OVERLAY_OPEN_GL mode for proper libass rendering
+            // OVERLAY_OPEN_GL uses TextureView which follows normal View hierarchy z-ordering,
+            // preventing hardware overlay promotion issues on devices like Nvidia Shield
             Log.d(TAG, "SubtitleView childCount before buildWithAssSupport: ${subtitleView?.childCount}")
             exoPlayer = ExoPlayer.Builder(activity)
                 .setTrackSelector(trackSelector!!)
                 .setAudioAttributes(audioAttributes, false) // We handle audio focus manually
                 .buildWithAssSupport(
                     context = activity,
-                    renderType = AssRenderType.OVERLAY_CANVAS,  // Use OVERLAY mode for libass styling
+                    renderType = AssRenderType.OVERLAY_OPEN_GL,  // Use OVERLAY_OPEN_GL to fix z-ordering on Nvidia Shield
                     subtitleView = subtitleView,
                     dataSourceFactory = dataSourceFactory,
                     extractorsFactory = extractorsFactory,
@@ -1046,6 +1033,75 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 }
                 registerDisplayListener()
             }
+        }
+    }
+
+    // Stats
+
+    fun getStats(): Map<String, Any?> {
+        val player = exoPlayer ?: return emptyMap()
+        val videoFormat = player.videoFormat
+        val audioFormat = player.audioFormat
+
+        // Get decoder info from the format's codecs field and check if hardware accelerated
+        val videoDecoderInfo = getVideoDecoderInfo(videoFormat)
+
+        return mapOf(
+            // Video metrics
+            "videoCodec" to videoFormat?.codecs,
+            "videoMimeType" to videoFormat?.sampleMimeType,
+            "videoWidth" to videoFormat?.width,
+            "videoHeight" to videoFormat?.height,
+            "videoFps" to videoFormat?.frameRate,
+            "videoBitrate" to videoFormat?.bitrate,
+            "videoDecoderName" to videoDecoderInfo,
+            "videoDroppedFrames" to player.videoDecoderCounters?.droppedBufferCount,
+            "videoRenderedFrames" to player.videoDecoderCounters?.renderedOutputBufferCount,
+            // Color info
+            "colorSpace" to videoFormat?.colorInfo?.colorSpace,
+            "colorRange" to videoFormat?.colorInfo?.colorRange,
+            "colorTransfer" to videoFormat?.colorInfo?.colorTransfer,
+            "hdrStaticInfo" to (videoFormat?.colorInfo?.hdrStaticInfo != null),
+            // Audio metrics
+            "audioCodec" to audioFormat?.codecs,
+            "audioMimeType" to audioFormat?.sampleMimeType,
+            "audioSampleRate" to audioFormat?.sampleRate,
+            "audioChannels" to audioFormat?.channelCount,
+            "audioBitrate" to audioFormat?.bitrate,
+            // Buffer metrics
+            "bufferedPositionMs" to player.bufferedPosition,
+            "currentPositionMs" to player.currentPosition,
+            "totalBufferedDurationMs" to player.totalBufferedDuration,
+            // Playback state
+            "playbackSpeed" to player.playbackParameters.speed,
+            "isPlaying" to player.isPlaying,
+            "playbackState" to player.playbackState,
+        )
+    }
+
+    private fun getVideoDecoderInfo(videoFormat: androidx.media3.common.Format?): String? {
+        if (videoFormat == null) return null
+        val mimeType = videoFormat.sampleMimeType ?: return null
+
+        // Check available decoders for this mime type
+        try {
+            val codecList = android.media.MediaCodecList(android.media.MediaCodecList.ALL_CODECS)
+            for (info in codecList.codecInfos) {
+                if (info.isEncoder) continue
+                for (type in info.supportedTypes) {
+                    if (type.equals(mimeType, ignoreCase = true)) {
+                        // Return the first hardware decoder found, or software if none
+                        val name = info.name
+                        if (!name.startsWith("OMX.google.") && !name.contains(".sw.")) {
+                            return name // Hardware decoder
+                        }
+                    }
+                }
+            }
+            // Fallback - assume software if no HW decoder found
+            return "Software"
+        } catch (e: Exception) {
+            return null
         }
     }
 

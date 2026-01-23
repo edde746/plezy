@@ -45,6 +45,8 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final isMpv = _stats.playerType == 'mpv';
+
     return Container(
       constraints: const BoxConstraints(maxWidth: 380),
       padding: const EdgeInsets.all(12),
@@ -66,21 +68,24 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
                 _buildSection(Symbols.videocam_rounded, 'Video', [
                   _metric('Codec', _stats.videoCodec ?? 'N/A'),
                   _metric('Resolution', _stats.resolution),
-                  _metric('FPS', _stats.videoFpsFormatted),
-                  _metric('Bitrate', _stats.videoBitrateFormatted),
+                  if (_stats.hasValidVideoFps) _metric('FPS', _stats.videoFpsFormatted),
+                  if (_stats.hasValidVideoBitrate) _metric('Bitrate', _stats.videoBitrateFormatted),
                   _metric('Decoder', _stats.hwdecFormatted),
                   if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty) _metric('Aspect', _stats.aspectName!),
                   if (_stats.rotate != null && _stats.rotate != 0) _metric('Rotation', _stats.rotateFormatted),
                 ]),
-                const SizedBox(height: 12),
-                _buildSection(Symbols.palette_rounded, 'Color', [
-                  _metric('Pixel Fmt', _stats.pixelformat ?? 'N/A'),
-                  if (_stats.hwPixelformat != null && _stats.hwPixelformat != _stats.pixelformat)
-                    _metric('HW Fmt', _stats.hwPixelformat!),
-                  _metric('Matrix', _stats.colormatrix ?? 'N/A'),
-                  _metric('Primaries', _stats.primaries ?? 'N/A'),
-                  _metric('Transfer', _stats.gamma ?? 'N/A'),
-                ]),
+                // Color section - MPV only (ExoPlayer doesn't provide this info)
+                if (isMpv) ...[
+                  const SizedBox(height: 12),
+                  _buildSection(Symbols.palette_rounded, 'Color', [
+                    _metric('Pixel Fmt', _stats.pixelformat ?? 'N/A'),
+                    if (_stats.hwPixelformat != null && _stats.hwPixelformat != _stats.pixelformat)
+                      _metric('HW Fmt', _stats.hwPixelformat!),
+                    _metric('Matrix', _stats.colormatrix ?? 'N/A'),
+                    _metric('Primaries', _stats.primaries ?? 'N/A'),
+                    _metric('Transfer', _stats.gamma ?? 'N/A'),
+                  ]),
+                ],
                 if (_stats.hasHdrMetadata) ...[
                   const SizedBox(height: 12),
                   _buildSection(Symbols.hdr_on_rounded, 'HDR', [
@@ -101,26 +106,27 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildSection(Symbols.volume_up_rounded, 'Audio', [
-                  _metric('Codec', _stats.audioCodec ?? 'N/A'),
+                  if (_stats.audioCodec != null) _metric('Codec', _stats.audioCodec!),
                   _metric('Sample Rate', _stats.sampleRateFormatted),
                   _metric('Channels', _stats.audioChannels ?? 'N/A'),
-                  _metric('Bitrate', _stats.audioBitrateFormatted),
+                  if (_stats.hasValidAudioBitrate) _metric('Bitrate', _stats.audioBitrateFormatted),
                 ]),
                 const SizedBox(height: 12),
                 _buildSection(Symbols.speed_rounded, 'Performance', [
-                  _metric('Render FPS', _stats.actualFpsFormatted),
-                  _metric('Display FPS', _stats.displayFpsFormatted),
-                  _metric('A/V Sync', _stats.avsyncFormatted),
+                  if (isMpv) _metric('Render FPS', _stats.actualFpsFormatted),
+                  if (isMpv) _metric('Display FPS', _stats.displayFpsFormatted),
+                  if (isMpv) _metric('A/V Sync', _stats.avsyncFormatted),
                   _metric('Dropped', _stats.droppedFramesFormatted),
                 ]),
                 const SizedBox(height: 12),
                 _buildSection(Symbols.memory_rounded, 'Buffer', [
                   _metric('Duration', _stats.cacheDurationFormatted),
-                  _metric('Cache Used', _stats.cacheUsedFormatted),
-                  _metric('Speed', _stats.cacheSpeedFormatted),
+                  if (isMpv) _metric('Cache Used', _stats.cacheUsedFormatted),
+                  if (isMpv) _metric('Speed', _stats.cacheSpeedFormatted),
                 ]),
                 const SizedBox(height: 12),
                 _buildSection(Symbols.apps_rounded, 'App', [
+                  _metric('Player', _stats.playerTypeFormatted),
                   _metric('Memory', _stats.appMemoryFormatted),
                   _metric('UI FPS', _stats.uiFpsFormatted),
                 ]),

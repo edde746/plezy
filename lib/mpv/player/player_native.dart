@@ -30,6 +30,9 @@ class PlayerNative implements Player {
   @override
   int? get textureId => null; // Uses direct Metal layer, not Flutter texture
 
+  @override
+  String get playerType => 'mpv';
+
   // Stream controllers
   final _playingController = StreamController<bool>.broadcast();
   final _completedController = StreamController<bool>.broadcast();
