@@ -121,4 +121,18 @@ class GridSizeCalculator {
   static bool isMobile(BuildContext context) {
     return MediaQuery.of(context).size.width <= tabletBreakpoint;
   }
+
+  /// Calculates the number of columns in a grid based on screen width and density.
+  ///
+  /// Accounts for standard horizontal padding (16px total).
+  static int getColumnCount(BuildContext context, LibraryDensity density) {
+    final screenWidth = MediaQuery.of(context).size.width - 16;
+    final maxCrossAxisExtent = getMaxCrossAxisExtent(context, density);
+    return (screenWidth / maxCrossAxisExtent).floor().clamp(1, 100);
+  }
+
+  /// Check if the given index is in the first row of a grid with given column count.
+  static bool isFirstRow(int index, int columnCount) {
+    return index < columnCount;
+  }
 }

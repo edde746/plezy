@@ -506,18 +506,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _groupingChipFocusNode.requestFocus();
   }
 
-  /// Calculate the number of columns in the current grid based on screen width
-  int _getGridColumnCount(BuildContext context, SettingsProvider settingsProvider) {
-    final screenWidth = MediaQuery.of(context).size.width - 16; // Subtract padding
-    final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
-    return (screenWidth / maxCrossAxisExtent).floor().clamp(1, 100);
-  }
-
-  /// Check if the given index is in the first row of the grid
-  bool _isFirstRow(int index, int columnCount) {
-    return index < columnCount;
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
@@ -544,16 +532,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     return Stack(
       children: [
         // Grid fills the entire area, with top padding for chips bar
-        Positioned.fill(
-          child: _buildScrollableContent(),
-        ),
+        Positioned.fill(child: _buildScrollableContent()),
         // Chips bar on top with solid background
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: _buildChipsBar(),
-        ),
+        Positioned(top: 0, left: 0, right: 0, child: _buildChipsBar()),
       ],
     );
   }
@@ -602,8 +583,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             onNavigateRight: _isFiltersChipVisible
                 ? () => _filtersChipFocusNode.requestFocus()
                 : _isSortChipVisible
-                    ? () => _sortChipFocusNode.requestFocus()
-                    : null,
+                ? () => _sortChipFocusNode.requestFocus()
+                : null,
             onBack: widget.onBack,
           ),
           const SizedBox(width: 8),
@@ -697,7 +678,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       );
     } else {
       // In grid view, calculate columns and pass to item builder
-      final columnCount = _getGridColumnCount(context, settingsProvider);
+      final columnCount = GridSizeCalculator.getColumnCount(context, settingsProvider.libraryDensity);
       // Use 16:9 aspect ratio when browsing episodes with episode thumbnail mode
       final useWideRatio =
           _selectedGrouping == 'episodes' && settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
@@ -710,7 +691,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             useWideAspectRatio: useWideRatio,
           ),
           itemCount: itemCount,
-          itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: _isFirstRow(index, columnCount)),
+          itemBuilder: (context, index) =>
+              _buildMediaCardItem(index, isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount)),
         ),
       );
     }

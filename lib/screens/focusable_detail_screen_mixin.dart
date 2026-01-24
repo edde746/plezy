@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../widgets/app_icon.dart';
-import '../i18n/strings.g.dart';
 
 /// Configuration for app bar buttons
 class AppBarButtonConfig {
@@ -236,11 +234,6 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
         }
       });
     }
-  }
-
-  /// Check if the given index is in the first row of a grid with given column count
-  bool isFirstRow(int index, int columnCount) {
-    return index < columnCount;
   }
 
   /// Track focus on a grid item. Call from onFocusChange of grid items.

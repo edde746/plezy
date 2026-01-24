@@ -9,7 +9,6 @@ import '../../models/plex_playlist.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/provider_extensions.dart';
-import '../../widgets/media_grid_sliver.dart';
 import '../../widgets/focusable_media_card.dart';
 import '../../widgets/media_grid_delegate.dart';
 import '../../utils/grid_size_calculator.dart';
@@ -623,18 +622,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
   }
 
-  /// Calculate the number of columns in the current grid
-  int _getGridColumnCount(BuildContext context, SettingsProvider settingsProvider) {
-    final screenWidth = MediaQuery.of(context).size.width - 16;
-    final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
-    return (screenWidth / maxCrossAxisExtent).floor().clamp(1, 100);
-  }
-
-  /// Check if the given index is in the first row of the grid
-  bool _isFirstRow(int index, int columnCount) {
-    return index < columnCount;
-  }
-
   /// Build focusable app bar actions
   List<Widget> _buildFocusableAppBarActions() {
     final colorScheme = Theme.of(context).colorScheme;
@@ -763,7 +750,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   Widget _buildSmartPlaylistGrid(bool isKeyboardMode) {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
-        final columnCount = _getGridColumnCount(context, settingsProvider);
+        final columnCount = GridSizeCalculator.getColumnCount(context, settingsProvider.libraryDensity);
         return SliverPadding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           sliver: SliverGrid.builder(
@@ -771,7 +758,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              final isFirstRow = _isFirstRow(index, columnCount);
+              final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
               final focusNode = index == 0 ? _firstItemFocusNode : _getGridItemFocusNode(index);
 
               return FocusableMediaCard(

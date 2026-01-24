@@ -130,12 +130,6 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     }
   }
 
-  int _getGridColumnCount(BuildContext context, SettingsProvider settingsProvider) {
-    final screenWidth = MediaQuery.of(context).size.width - 16;
-    final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
-    return (screenWidth / maxCrossAxisExtent).floor().clamp(1, 100);
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -163,7 +157,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   Widget _buildFocusableGrid() {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
-        final columnCount = _getGridColumnCount(context, settingsProvider);
+        final columnCount = GridSizeCalculator.getColumnCount(context, settingsProvider.libraryDensity);
         return SliverPadding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           sliver: SliverGrid.builder(
@@ -171,7 +165,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              final inFirstRow = isFirstRow(index, columnCount);
+              final inFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
               final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index);
 
               return FocusableMediaCard(

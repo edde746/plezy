@@ -146,8 +146,6 @@ class DataAggregationService {
   }) async {
     appLogger.d('Fetching global hubs from ${clients.length} servers');
 
-    final allHubs = <PlexHub>[];
-
     // Fetch global hubs from all servers in parallel
     final hubFutures = clients.entries.map((entry) async {
       final serverId = entry.key;
@@ -196,14 +194,7 @@ class DataAggregationService {
     });
 
     final results = await Future.wait(hubFutures);
-
-    // Flatten results
-    for (final hubs in results) {
-      allHubs.addAll(hubs);
-    }
-
-    // Apply limit if specified (applied after merging from all servers)
-    final result = limit != null && limit < allHubs.length ? allHubs.sublist(0, limit) : allHubs;
+    final result = _collectAndLimitResults(results, limit);
 
     appLogger.i('Fetched ${result.length} global hubs from all servers');
 
@@ -221,8 +212,6 @@ class DataAggregationService {
     final libraries = librariesByServer ?? await getLibrariesFromAllServersGrouped();
 
     appLogger.d('Fetching per-library hubs from ${clients.length} servers');
-
-    final allHubs = <PlexHub>[];
 
     // Fetch from all servers in parallel using cached libraries
     final hubFutures = clients.entries.map((entry) async {
@@ -282,14 +271,7 @@ class DataAggregationService {
     });
 
     final results = await Future.wait(hubFutures);
-
-    // Flatten results
-    for (final hubs in results) {
-      allHubs.addAll(hubs);
-    }
-
-    // Apply limit if specified
-    final result = limit != null && limit < allHubs.length ? allHubs.sublist(0, limit) : allHubs;
+    final result = _collectAndLimitResults(results, limit);
 
     appLogger.i('Fetched ${result.length} library hubs from all servers');
 
@@ -352,6 +334,15 @@ class DataAggregationService {
   }
 
   // Private helper methods
+
+  /// Collect results from multiple lists and optionally limit the total count.
+  List<T> _collectAndLimitResults<T>(List<List<T>> results, int? limit) {
+    final all = <T>[];
+    for (final items in results) {
+      all.addAll(items);
+    }
+    return limit != null && limit < all.length ? all.sublist(0, limit) : all;
+  }
 
   /// Base helper for per-server fan-out operations
   ///

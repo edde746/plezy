@@ -8,6 +8,8 @@ import 'player_streams.dart';
 import 'platform/player_linux.dart';
 import 'platform/player_windows.dart';
 
+export 'player_base.dart';
+
 /// Abstract interface for the video player.
 ///
 /// This interface defines all playback control methods, state access,

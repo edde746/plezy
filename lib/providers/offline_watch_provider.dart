@@ -167,31 +167,43 @@ class OfflineWatchProvider extends ChangeNotifier {
     return episodes.first;
   }
 
-  /// Mark an item as watched while offline.
-  ///
-  /// This queues the action for sync when online and emits a [WatchStateEvent].
-  Future<void> markAsWatched({required String serverId, required String ratingKey}) async {
-    await _syncService.queueMarkWatched(serverId: serverId, ratingKey: ratingKey);
-
-    // Emit event for immediate UI update
+  /// Emit a watch state change event for immediate UI update.
+  void _emitWatchStateChange({
+    required String serverId,
+    required String ratingKey,
+    required bool isNowWatched,
+    required WatchStateChangeType changeType,
+  }) {
     final globalKey = '$serverId:$ratingKey';
     final metadata = _downloadProvider.getMetadata(globalKey);
     if (metadata != null) {
-      WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: true);
+      WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: isNowWatched);
     } else {
       // Fallback: emit minimal event without parent chain
       WatchStateNotifier().notify(
         WatchStateEvent(
           ratingKey: ratingKey,
           serverId: serverId,
-          changeType: WatchStateChangeType.watched,
+          changeType: changeType,
           parentChain: [],
           mediaType: 'unknown',
-          isNowWatched: true,
+          isNowWatched: isNowWatched,
         ),
       );
     }
+  }
 
+  /// Mark an item as watched while offline.
+  ///
+  /// This queues the action for sync when online and emits a [WatchStateEvent].
+  Future<void> markAsWatched({required String serverId, required String ratingKey}) async {
+    await _syncService.queueMarkWatched(serverId: serverId, ratingKey: ratingKey);
+    _emitWatchStateChange(
+      serverId: serverId,
+      ratingKey: ratingKey,
+      isNowWatched: true,
+      changeType: WatchStateChangeType.watched,
+    );
     notifyListeners();
   }
 
@@ -200,26 +212,12 @@ class OfflineWatchProvider extends ChangeNotifier {
   /// This queues the action for sync when online and emits a [WatchStateEvent].
   Future<void> markAsUnwatched({required String serverId, required String ratingKey}) async {
     await _syncService.queueMarkUnwatched(serverId: serverId, ratingKey: ratingKey);
-
-    // Emit event for immediate UI update
-    final globalKey = '$serverId:$ratingKey';
-    final metadata = _downloadProvider.getMetadata(globalKey);
-    if (metadata != null) {
-      WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: false);
-    } else {
-      // Fallback: emit minimal event without parent chain
-      WatchStateNotifier().notify(
-        WatchStateEvent(
-          ratingKey: ratingKey,
-          serverId: serverId,
-          changeType: WatchStateChangeType.unwatched,
-          parentChain: [],
-          mediaType: 'unknown',
-          isNowWatched: false,
-        ),
-      );
-    }
-
+    _emitWatchStateChange(
+      serverId: serverId,
+      ratingKey: ratingKey,
+      isNowWatched: false,
+      changeType: WatchStateChangeType.unwatched,
+    );
     notifyListeners();
   }
 
