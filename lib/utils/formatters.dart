@@ -130,7 +130,7 @@ String formatDurationTimestamp(Duration duration) {
   final minutes = absoluteDuration.inMinutes.remainder(60);
   final seconds = absoluteDuration.inSeconds.remainder(60);
 
-  final result;
+  final String result;
 
   if (hours > 0) {
     result = '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';

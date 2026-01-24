@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../models/plex_metadata.dart';
-import '../widgets/media_grid_sliver.dart';
-import '../widgets/focused_scroll_scaffold.dart';
+import '../widgets/focusable_media_card.dart';
+import '../widgets/media_grid_delegate.dart';
+import '../utils/grid_size_calculator.dart';
+import '../widgets/desktop_app_bar.dart';
+import '../providers/settings_provider.dart';
 import '../i18n/strings.g.dart';
 import '../utils/dialogs.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import 'base_media_list_detail_screen.dart';
+import 'focusable_detail_screen_mixin.dart';
 
 /// Screen to display the contents of a collection
 class CollectionDetailScreen extends StatefulWidget {
@@ -19,7 +25,7 @@ class CollectionDetailScreen extends StatefulWidget {
 }
 
 class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionDetailScreen>
-    with StandardItemLoader<CollectionDetailScreen> {
+    with StandardItemLoader<CollectionDetailScreen>, FocusableDetailScreenMixin<CollectionDetailScreen> {
   @override
   PlexMetadata get mediaItem => widget.collection;
 
@@ -30,8 +36,27 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   String get emptyMessage => t.collections.empty;
 
   @override
+  bool get hasItems => items.isNotEmpty;
+
+  @override
+  int get appBarButtonCount => items.isNotEmpty ? 3 : 1; // play, shuffle, delete (or just delete if empty)
+
+  @override
+  void dispose() {
+    disposeFocusResources();
+    super.dispose();
+  }
+
+  @override
   Future<List<PlexMetadata>> fetchItems() async {
     return await client.getCollectionItems(widget.collection.ratingKey);
+  }
+
+  @override
+  Future<void> loadItems() async {
+    contentVersion++;
+    await super.loadItems();
+    autoFocusFirstItemAfterLoad();
   }
 
   @override
@@ -44,11 +69,28 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     return 'Loaded $itemCount items for collection: ${widget.collection.title}';
   }
 
-  Future<void> _deleteCollection() async {
-    // Get library section ID from the collection or its items
-    int? sectionId = widget.collection.librarySectionID;
+  @override
+  List<AppBarButtonConfig> getAppBarButtons() {
+    final buttons = <AppBarButtonConfig>[];
+    if (items.isNotEmpty) {
+      buttons.add(AppBarButtonConfig(icon: Symbols.play_arrow_rounded, tooltip: t.discover.play, onPressed: playItems));
+      buttons.add(
+        AppBarButtonConfig(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
+      );
+    }
+    buttons.add(
+      AppBarButtonConfig(
+        icon: Symbols.delete_rounded,
+        tooltip: t.common.delete,
+        onPressed: _deleteCollection,
+        color: Colors.red,
+      ),
+    );
+    return buttons;
+  }
 
-    // If collection doesn't have it, try to get it from loaded items
+  Future<void> _deleteCollection() async {
+    int? sectionId = widget.collection.librarySectionID;
     if (sectionId == null && items.isNotEmpty) {
       sectionId = items.first.librarySectionID;
     }
@@ -60,7 +102,6 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
       return;
     }
 
-    // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.collections.deleteCollection,
@@ -75,13 +116,11 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
       if (!mounted) return;
 
-      if (mounted) {
-        if (success) {
-          showSuccessSnackBar(context, t.collections.deleted);
-          Navigator.pop(context, true); // Return true to indicate refresh needed
-        } else {
-          showErrorSnackBar(context, t.collections.deleteFailed);
-        }
+      if (success) {
+        showSuccessSnackBar(context, t.collections.deleted);
+        Navigator.pop(context, true);
+      } else {
+        showErrorSnackBar(context, t.collections.deleteFailed);
       }
     } catch (e) {
       appLogger.e('Failed to delete collection', error: e);
@@ -91,22 +130,65 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     }
   }
 
+  int _getGridColumnCount(BuildContext context, SettingsProvider settingsProvider) {
+    final screenWidth = MediaQuery.of(context).size.width - 16;
+    final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+    return (screenWidth / maxCrossAxisExtent).floor().clamp(1, 100);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FocusedScrollScaffold(
-      title: Text(widget.collection.title),
-      actions: buildAppBarActions(onDelete: _deleteCollection),
-      slivers: [
-        ...buildStateSlivers(),
-        if (items.isNotEmpty)
-          MediaGridSliver(
-            items: items,
-            onRefresh: updateItem,
-            collectionId: widget.collection.ratingKey,
-            onListRefresh: loadItems,
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        final shouldPop = handleBackNavigation();
+        if (shouldPop && mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        body: CustomScrollView(
+          controller: scrollController,
+          slivers: [
+            CustomAppBar(title: Text(widget.collection.title), actions: buildFocusableAppBarActions()),
+            ...buildStateSlivers(),
+            if (items.isNotEmpty) _buildFocusableGrid(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFocusableGrid() {
+    return Consumer<SettingsProvider>(
+      builder: (context, settingsProvider, child) {
+        final columnCount = _getGridColumnCount(context, settingsProvider);
+        return SliverPadding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+          sliver: SliverGrid.builder(
+            gridDelegate: MediaGridDelegate.createDelegate(context: context, density: settingsProvider.libraryDensity),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final inFirstRow = isFirstRow(index, columnCount);
+              final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index);
+
+              return FocusableMediaCard(
+                key: Key(item.ratingKey),
+                item: item,
+                focusNode: focusNode,
+                onRefresh: updateItem,
+                collectionId: widget.collection.ratingKey,
+                onListRefresh: loadItems,
+                onNavigateUp: inFirstRow ? navigateToAppBar : null,
+                onBack: handleBackFromContent,
+                onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+              );
+            },
           ),
-      ],
+        );
+      },
     );
   }
 }

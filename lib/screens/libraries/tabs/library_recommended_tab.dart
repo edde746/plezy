@@ -143,12 +143,17 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
     }
   }
 
+  // Extra top padding for focus decoration (scale + border extends beyond item bounds)
+  static const double _focusDecorationPadding = 8.0;
+
   @override
   Widget buildContent(List<PlexHub> items) {
     _ensureHubKeys(items.length);
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.fromLTRB(0, 8 + _focusDecorationPadding, 0, 8),
+      // Allow focus decoration to render outside scroll bounds
+      clipBehavior: Clip.none,
       itemCount: items.length,
       itemBuilder: (context, index) {
         final hub = items[index];

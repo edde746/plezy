@@ -20,6 +20,11 @@ class PlaylistItemCard extends StatefulWidget {
   final void Function(String ratingKey)? onRefresh;
   final bool canReorder; // Whether drag handle should be shown
 
+  // Focus state for keyboard/D-pad navigation
+  final bool isFocused;
+  final int? focusedColumn; // 0=row, 1=drag handle, 2=remove button
+  final bool isMoving; // Whether this item is being moved/reordered
+
   const PlaylistItemCard({
     super.key,
     required this.item,
@@ -28,6 +33,9 @@ class PlaylistItemCard extends StatefulWidget {
     this.onTap,
     this.onRefresh,
     this.canReorder = true,
+    this.isFocused = false,
+    this.focusedColumn,
+    this.isMoving = false,
   });
 
   @override
@@ -40,6 +48,29 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Determine if row is focused (main content area)
+    final isRowFocused = widget.isFocused && widget.focusedColumn == 0;
+
+    // Focus states for individual elements
+    final isDragHandleFocused = widget.isFocused && widget.focusedColumn == 1;
+    final isRemoveButtonFocused = widget.isFocused && widget.focusedColumn == 2;
+
+    // Determine card styling based on focus/move state
+    Color? cardColor;
+    ShapeBorder? cardShape;
+    if (widget.isMoving) {
+      cardColor = colorScheme.primaryContainer;
+    } else if (isRowFocused) {
+      // Row is focused - use visible border like FocusableWrapper
+      cardColor = colorScheme.surfaceContainerHighest;
+      cardShape = RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.primary, width: 2.5),
+      );
+    }
+
     return MediaContextMenu(
       key: _contextMenuKey,
       item: item,
@@ -47,6 +78,8 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
       onTap: widget.onTap,
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        color: cardColor,
+        shape: cardShape,
         child: InkWell(
           onTap: widget.onTap,
           child: Padding(
@@ -60,9 +93,20 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                     onLongPress: () {},
                     child: ReorderableDragStartListener(
                       index: widget.index,
-                      child: const Padding(
-                        padding: EdgeInsets.only(right: 12),
-                        child: AppIcon(Symbols.drag_indicator_rounded, fill: 1, color: Colors.grey),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.only(right: 4),
+                        decoration: isDragHandleFocused
+                            ? BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              )
+                            : null,
+                        child: AppIcon(
+                          widget.isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
+                          fill: 1,
+                          color: (widget.isMoving || isDragHandleFocused) ? colorScheme.primary : Colors.grey,
+                        ),
                       ),
                     ),
                   ),
@@ -115,11 +159,19 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                 const SizedBox(width: 8),
 
                 // Remove button
-                IconButton(
-                  icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
-                  onPressed: widget.onRemove,
-                  tooltip: t.playlists.removeItem,
-                  color: Colors.grey[400],
+                Container(
+                  decoration: isRemoveButtonFocused
+                      ? BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(20),
+                        )
+                      : null,
+                  child: IconButton(
+                    icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
+                    onPressed: widget.onRemove,
+                    tooltip: t.playlists.removeItem,
+                    color: isRemoveButtonFocused ? colorScheme.primary : Colors.grey[400],
+                  ),
                 ),
               ],
             ),

@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  intl: ^0.20.2
   dio: ^5.4.0
   json_annotation: ^4.8.1
   shared_preferences: ^2.2.2

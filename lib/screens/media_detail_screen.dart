@@ -524,7 +524,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                 } else {
                   await offlineWatch.markAsWatched(serverId: metadata.serverId!, ratingKey: metadata.ratingKey);
                 }
-                if (context.mounted) {
+                if (mounted) {
                   showAppSnackBar(
                     context,
                     isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline,
@@ -542,7 +542,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                 } else {
                   await client.markAsWatched(metadata.ratingKey);
                 }
-                if (context.mounted) {
+                if (mounted) {
                   _watchStateChanged = true;
                   showSuccessSnackBar(context, isWatched ? t.messages.markedAsUnwatched : t.messages.markedAsWatched);
                   // Update watch state without full rebuild
@@ -550,7 +550,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                 }
               }
             } catch (e) {
-              if (context.mounted) {
+              if (mounted) {
                 showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
               }
             }

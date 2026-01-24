@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
 
 /// A ListTile that accepts a FocusNode for keyboard/controller navigation.

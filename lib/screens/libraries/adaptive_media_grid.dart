@@ -52,20 +52,29 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
     );
   }
 
+  // Extra top padding for focus decoration (scale + border extends beyond item bounds)
+  static const double _focusDecorationPadding = 8.0;
+
   /// Builds either a list or grid view based on the view mode
   Widget _buildItemsView(BuildContext context, ViewMode viewMode, LibraryDensity density) {
-    final effectivePadding = padding ?? GridLayoutConstants.gridPadding;
+    final basePadding = padding ?? GridLayoutConstants.gridPadding;
+    // Add extra top padding for focus decoration of first row items
+    final effectivePadding = basePadding.copyWith(top: basePadding.top + _focusDecorationPadding);
     final effectiveAspectRatio = childAspectRatio ?? GridLayoutConstants.posterAspectRatio;
 
     if (viewMode == ViewMode.list) {
       return ListView.builder(
         padding: effectivePadding,
+        // Allow focus decoration to render outside scroll bounds
+        clipBehavior: Clip.none,
         itemCount: items.length,
         itemBuilder: (context, index) => itemBuilder(context, items[index], index),
       );
     } else {
       return GridView.builder(
         padding: effectivePadding,
+        // Allow focus decoration to render outside scroll bounds
+        clipBehavior: Clip.none,
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: GridSizeCalculator.getMaxCrossAxisExtent(context, density),
           childAspectRatio: effectiveAspectRatio,

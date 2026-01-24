@@ -1012,6 +1012,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               if (!mounted) return;
             }
           }
+          if (!mounted) return;
           _isExiting.value = true;
           Navigator.of(context).pop(true);
         }
@@ -1031,6 +1032,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     // Default behavior for hosts or non-session users
+    if (!mounted) return;
     _isExiting.value = true;
     Navigator.of(context).pop(true);
   }
