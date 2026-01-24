@@ -1356,19 +1356,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       streamID = matched.id;
       appLogger.d('Matched audio by lang/title: streamID $streamID');
     } else {
-      appLogger.w('Could not match audio track, using fallback index');
-      // Fallback - normally no offset for audio
-      try {
-        final trackIndex = int.parse(track.id);
+      // Use property-based matching from track_selection_service
+      final matchedPlex = findPlexTrackForMpvAudio(track, _currentMediaInfo!.audioTracks);
 
-        if (trackIndex >= 0 && trackIndex < _currentMediaInfo!.audioTracks.length) {
-          streamID = _currentMediaInfo!.audioTracks[trackIndex].id;
-          appLogger.d('Using fallback: audio index $trackIndex -> streamID $streamID');
-        } else {
-          appLogger.e('Fallback index $trackIndex out of bounds (total: ${_currentMediaInfo!.audioTracks.length})');
-        }
-      } catch (e) {
-        appLogger.e('Failed to parse track index', error: e);
+      if (matchedPlex != null) {
+        streamID = matchedPlex.id;
+        appLogger.d('Matched audio by properties: streamID $streamID');
+      } else {
+        appLogger.e('Could not match audio track to any Plex track');
       }
     }
 
@@ -1456,23 +1451,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         streamID = matched.id;
         appLogger.d('Matched subtitle by lang/title: streamID $streamID');
       } else {
-        appLogger.w('Could not match subtitle track, using fallback index');
-        // Fallback with offset correction
-        try {
-          final trackIndex = int.parse(track.id);
+        // Use property-based matching from track_selection_service
+        final matchedPlex = findPlexTrackForMpvSubtitle(track, _currentMediaInfo!.subtitleTracks);
 
-          // media kit has a "no" (off) at index 0, so real subtitles start at 1
-          // We need to subtract 1 to get the actual index in PlexMediaInfo
-          final plexIndex = trackIndex > 0 ? trackIndex - 1 : 0;
-
-          if (plexIndex >= 0 && plexIndex < _currentMediaInfo!.subtitleTracks.length) {
-            streamID = _currentMediaInfo!.subtitleTracks[plexIndex].id;
-            appLogger.d('Using fallback: media_kit index $trackIndex -> Plex index $plexIndex -> streamID $streamID');
-          } else {
-            appLogger.e('Fallback index $plexIndex out of bounds (total: ${_currentMediaInfo!.subtitleTracks.length})');
-          }
-        } catch (e) {
-          appLogger.e('Failed to parse track index', error: e);
+        if (matchedPlex != null) {
+          streamID = matchedPlex.id;
+          appLogger.d('Matched subtitle by properties: streamID $streamID');
+        } else {
+          appLogger.e('Could not match subtitle track to any Plex track');
         }
       }
     }

@@ -6,6 +6,305 @@ import '../models/plex_user_profile.dart';
 import '../utils/app_logger.dart';
 import '../utils/language_codes.dart';
 
+// ============================================================================
+// Track Matching Utilities
+// ============================================================================
+// These functions match MPV tracks to Plex tracks by properties (language,
+// codec, title, etc.) instead of list index, since the two may be ordered
+// differently.
+
+/// Find the MPV subtitle track that matches a Plex subtitle track
+SubtitleTrack? findMpvTrackForPlexSubtitle(PlexSubtitleTrack plexTrack, List<SubtitleTrack> mpvTracks) {
+  if (mpvTracks.isEmpty) return null;
+
+  // For external subtitles, match by URI containing the Plex key
+  if (plexTrack.isExternal && plexTrack.key != null) {
+    for (final mpvTrack in mpvTracks) {
+      if (mpvTrack.isExternal && mpvTrack.uri != null) {
+        // Check if the MPV URI contains the Plex key path
+        if (mpvTrack.uri!.contains(plexTrack.key!)) {
+          return mpvTrack;
+        }
+      }
+    }
+  }
+
+  // For internal subtitles, use scoring based on properties
+  SubtitleTrack? bestMatch;
+  int bestScore = 0;
+
+  for (final mpvTrack in mpvTracks) {
+    // Skip external tracks when matching internal Plex tracks
+    if (!plexTrack.isExternal && mpvTrack.isExternal) continue;
+
+    int score = 0;
+
+    // Language match is most important (+10)
+    if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
+      score += 10;
+    }
+
+    // Codec match (+5)
+    if (_subtitleCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+      score += 5;
+    }
+
+    // Title match (+3)
+    if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
+      score += 3;
+    }
+
+    // Forced flag match (+2)
+    if (mpvTrack.isForced == plexTrack.forced) {
+      score += 2;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = mpvTrack;
+    }
+  }
+
+  // Require at least language match for a valid match
+  return bestScore >= 10 ? bestMatch : null;
+}
+
+/// Find the Plex subtitle track that matches an MPV subtitle track
+PlexSubtitleTrack? findPlexTrackForMpvSubtitle(SubtitleTrack mpvTrack, List<PlexSubtitleTrack> plexTracks) {
+  if (plexTracks.isEmpty) return null;
+
+  // For external subtitles, match by URI containing the Plex key
+  if (mpvTrack.isExternal && mpvTrack.uri != null) {
+    for (final plexTrack in plexTracks) {
+      if (plexTrack.isExternal && plexTrack.key != null) {
+        if (mpvTrack.uri!.contains(plexTrack.key!)) {
+          return plexTrack;
+        }
+      }
+    }
+  }
+
+  // For internal subtitles, use scoring based on properties
+  PlexSubtitleTrack? bestMatch;
+  int bestScore = 0;
+
+  for (final plexTrack in plexTracks) {
+    // Skip external Plex tracks when matching internal MPV tracks
+    if (!mpvTrack.isExternal && plexTrack.isExternal) continue;
+
+    int score = 0;
+
+    // Language match is most important (+10)
+    if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
+      score += 10;
+    }
+
+    // Codec match (+5)
+    if (_subtitleCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+      score += 5;
+    }
+
+    // Title match (+3)
+    if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
+      score += 3;
+    }
+
+    // Forced flag match (+2)
+    if (mpvTrack.isForced == plexTrack.forced) {
+      score += 2;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = plexTrack;
+    }
+  }
+
+  // Require at least language match for a valid match
+  return bestScore >= 10 ? bestMatch : null;
+}
+
+/// Find the MPV audio track that matches a Plex audio track
+AudioTrack? findMpvTrackForPlexAudio(PlexAudioTrack plexTrack, List<AudioTrack> mpvTracks) {
+  if (mpvTracks.isEmpty) return null;
+
+  AudioTrack? bestMatch;
+  int bestScore = 0;
+
+  for (final mpvTrack in mpvTracks) {
+    int score = 0;
+
+    // Language match is most important (+10)
+    if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
+      score += 10;
+    }
+
+    // Codec match (+5)
+    if (_audioCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+      score += 5;
+    }
+
+    // Channel count match (+3)
+    if (mpvTrack.channels != null && plexTrack.channels != null) {
+      if (mpvTrack.channels == plexTrack.channels) {
+        score += 3;
+      }
+    }
+
+    // Title match (+2)
+    if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
+      score += 2;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = mpvTrack;
+    }
+  }
+
+  // Require at least language match for a valid match
+  return bestScore >= 10 ? bestMatch : null;
+}
+
+/// Find the Plex audio track that matches an MPV audio track
+PlexAudioTrack? findPlexTrackForMpvAudio(AudioTrack mpvTrack, List<PlexAudioTrack> plexTracks) {
+  if (plexTracks.isEmpty) return null;
+
+  PlexAudioTrack? bestMatch;
+  int bestScore = 0;
+
+  for (final plexTrack in plexTracks) {
+    int score = 0;
+
+    // Language match is most important (+10)
+    if (_languagesMatch(mpvTrack.language, plexTrack.languageCode)) {
+      score += 10;
+    }
+
+    // Codec match (+5)
+    if (_audioCodecsMatch(mpvTrack.codec, plexTrack.codec)) {
+      score += 5;
+    }
+
+    // Channel count match (+3)
+    if (mpvTrack.channels != null && plexTrack.channels != null) {
+      if (mpvTrack.channels == plexTrack.channels) {
+        score += 3;
+      }
+    }
+
+    // Title match (+2)
+    if (_titlesMatch(mpvTrack.title, plexTrack.title, plexTrack.displayTitle)) {
+      score += 2;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = plexTrack;
+    }
+  }
+
+  // Require at least language match for a valid match
+  return bestScore >= 10 ? bestMatch : null;
+}
+
+/// Check if two language codes refer to the same language
+/// Handles both ISO 639-1 (2-letter) and ISO 639-2 (3-letter) codes
+bool _languagesMatch(String? mpvLang, String? plexLang) {
+  if (mpvLang == null || plexLang == null) return false;
+
+  final mpvNormalized = mpvLang.toLowerCase().split('-').first;
+  final plexNormalized = plexLang.toLowerCase().split('-').first;
+
+  // Direct match
+  if (mpvNormalized == plexNormalized) return true;
+
+  // Use LanguageCodes to get all variations and check for overlap
+  try {
+    final mpvVariations = LanguageCodes.getVariations(mpvNormalized);
+    return mpvVariations.contains(plexNormalized);
+  } catch (_) {
+    // LanguageCodes not initialized, fall back to direct comparison
+    return false;
+  }
+}
+
+/// Check if two subtitle codec strings match
+/// Handles common aliases (e.g., subrip/srt, ass/ssa)
+bool _subtitleCodecsMatch(String? mpvCodec, String? plexCodec) {
+  if (mpvCodec == null || plexCodec == null) return false;
+
+  final mpvNorm = mpvCodec.toLowerCase();
+  final plexNorm = plexCodec.toLowerCase();
+
+  if (mpvNorm == plexNorm) return true;
+
+  // Common subtitle codec aliases
+  const aliases = {
+    'subrip': ['srt', 'subrip'],
+    'srt': ['srt', 'subrip'],
+    'ass': ['ass', 'ssa'],
+    'ssa': ['ass', 'ssa'],
+    'pgs': ['pgs', 'hdmv_pgs_subtitle'],
+    'hdmv_pgs_subtitle': ['pgs', 'hdmv_pgs_subtitle'],
+    'vobsub': ['vobsub', 'dvd_subtitle'],
+    'dvd_subtitle': ['vobsub', 'dvd_subtitle'],
+    'webvtt': ['webvtt', 'vtt'],
+    'vtt': ['webvtt', 'vtt'],
+  };
+
+  final mpvAliases = aliases[mpvNorm] ?? [mpvNorm];
+  return mpvAliases.contains(plexNorm);
+}
+
+/// Check if two audio codec strings match
+/// Handles common aliases (e.g., ac3/a52, dts variants)
+bool _audioCodecsMatch(String? mpvCodec, String? plexCodec) {
+  if (mpvCodec == null || plexCodec == null) return false;
+
+  final mpvNorm = mpvCodec.toLowerCase();
+  final plexNorm = plexCodec.toLowerCase();
+
+  if (mpvNorm == plexNorm) return true;
+
+  // Common audio codec aliases
+  const aliases = {
+    'ac3': ['ac3', 'a52', 'eac3', 'dolby digital'],
+    'a52': ['ac3', 'a52'],
+    'eac3': ['eac3', 'e-ac-3', 'dolby digital plus', 'ac3'],
+    'dts': ['dts', 'dca'],
+    'dca': ['dts', 'dca'],
+    'aac': ['aac', 'mp4a'],
+    'mp4a': ['aac', 'mp4a'],
+    'truehd': ['truehd', 'mlp'],
+    'mlp': ['truehd', 'mlp'],
+    'flac': ['flac'],
+    'opus': ['opus'],
+    'vorbis': ['vorbis', 'ogg'],
+    'mp3': ['mp3', 'mp3float'],
+  };
+
+  final mpvAliases = aliases[mpvNorm] ?? [mpvNorm];
+  return mpvAliases.contains(plexNorm);
+}
+
+/// Check if titles match (fuzzy comparison)
+bool _titlesMatch(String? mpvTitle, String? plexTitle, String? plexDisplayTitle) {
+  if (mpvTitle == null || mpvTitle.isEmpty) return true; // No title to match against
+
+  final mpvNorm = mpvTitle.toLowerCase().trim();
+
+  // Check exact match with either Plex title
+  if (plexTitle != null && plexTitle.toLowerCase().trim() == mpvNorm) return true;
+  if (plexDisplayTitle != null && plexDisplayTitle.toLowerCase().trim() == mpvNorm) return true;
+
+  // Check if one contains the other (partial match)
+  if (plexTitle != null && plexTitle.toLowerCase().contains(mpvNorm)) return true;
+  if (plexDisplayTitle != null && plexDisplayTitle.toLowerCase().contains(mpvNorm)) return true;
+
+  return false;
+}
+
 /// Priority levels for track selection
 enum TrackSelectionPriority {
   navigation, // Priority 1: User's manual selection from previous episode
@@ -336,11 +635,15 @@ class TrackSelectionService {
     }
 
     // Priority 2: Check Plex-selected track from media info
-    if (plexMediaInfo != null) {
-      final plexAudioTracks = plexMediaInfo!.audioTracks;
-      final plexSelectedIndex = plexAudioTracks.indexWhere((t) => t.selected);
-      if (plexSelectedIndex >= 0 && plexSelectedIndex < availableTracks.length) {
-        return TrackSelectionResult(availableTracks[plexSelectedIndex], TrackSelectionPriority.plexSelected);
+    if (plexMediaInfo != null && availableTracks.isNotEmpty) {
+      final plexSelectedTrack = plexMediaInfo!.audioTracks.where((t) => t.selected).firstOrNull;
+
+      if (plexSelectedTrack != null) {
+        final matchedMpvTrack = findMpvTrackForPlexAudio(plexSelectedTrack, availableTracks);
+
+        if (matchedMpvTrack != null) {
+          return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.plexSelected);
+        }
       }
     }
 
@@ -396,10 +699,14 @@ class TrackSelectionService {
 
     // Priority 2: Check Plex-selected track from media info
     if (plexMediaInfo != null && availableTracks.isNotEmpty) {
-      final plexSubtitleTracks = plexMediaInfo!.subtitleTracks;
-      final plexSelectedIndex = plexSubtitleTracks.indexWhere((t) => t.selected);
-      if (plexSelectedIndex >= 0 && plexSelectedIndex < availableTracks.length) {
-        return TrackSelectionResult(availableTracks[plexSelectedIndex], TrackSelectionPriority.plexSelected);
+      final plexSelectedTrack = plexMediaInfo!.subtitleTracks.where((t) => t.selected).firstOrNull;
+
+      if (plexSelectedTrack != null) {
+        final matchedMpvTrack = findMpvTrackForPlexSubtitle(plexSelectedTrack, availableTracks);
+
+        if (matchedMpvTrack != null) {
+          return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.plexSelected);
+        }
       }
     }
 
