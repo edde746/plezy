@@ -43,6 +43,7 @@ import '../utils/video_player_navigation.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/input_mode_tracker.dart';
+import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 
@@ -96,6 +97,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
+  bool _isHandlingBack = false;
 
   // Auto-play next episode
   Timer? _autoPlayTimer;
@@ -981,6 +983,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton() async {
+    if (_isHandlingBack) return;
+    _isHandlingBack = true;
+    try {
     // For non-host participants, show leave session confirmation
     if (_watchTogetherProvider != null && _watchTogetherProvider!.isInSession && !_watchTogetherProvider!.isHost) {
       final confirmed = await showDialog<bool>(
@@ -1035,6 +1040,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (!mounted) return;
     _isExiting.value = true;
     Navigator.of(context).pop(true);
+    } finally {
+      _isHandlingBack = false;
+    }
   }
 
   @override
@@ -1586,8 +1594,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return PopScope(
       canPop: false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
       onPopInvokedWithResult: (didPop, result) {
+        if (BackKeyCoordinator.consumeIfHandled()) return;
         // Allow programmatic back navigation from UI controls
-        if (!didPop) _handleBackButton();
+        if (!didPop) {
+          // Mark handled to prevent the same BACK press from reaching the next route.
+          BackKeyCoordinator.markHandled();
+          _handleBackButton();
+        }
       },
       child: Scaffold(
         // Use transparent background on macOS when native video layer is active

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
+import '../focus/key_event_utils.dart';
 import 'app_icon.dart';
 import '../theme/mono_tokens.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -114,15 +115,17 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
 
+    if (widget.onCancel != null) {
+      final backResult = handleBackKeyAction(event, widget.onCancel!);
+      if (backResult != KeyEventResult.ignored) {
+        return backResult;
+      }
+    }
+
     if (event is KeyDownEvent) {
       // Handle SELECT key to confirm/move to save button
       if (key.isSelectKey && widget.onConfirm != null) {
         widget.onConfirm!();
-        return KeyEventResult.handled;
-      }
-      // Handle BACK key to cancel
-      if (key.isBackKey && widget.onCancel != null) {
-        widget.onCancel!();
         return KeyEventResult.handled;
       }
       if (key.isUpKey || key.isRightKey) {

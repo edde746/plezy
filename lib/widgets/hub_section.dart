@@ -6,6 +6,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/key_event_utils.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart' show EpisodePosterMode;
 import '../theme/mono_tokens.dart';
@@ -209,6 +210,13 @@ class HubSectionState extends State<HubSection> {
       }
     }
 
+    if (widget.onBack != null) {
+      final backResult = handleBackKeyAction(event, widget.onBack!);
+      if (backResult != KeyEventResult.ignored) {
+        return backResult;
+      }
+    }
+
     // Handle key down and repeat events
     if (!event.isActionable) {
       return KeyEventResult.ignored;
@@ -257,12 +265,6 @@ class HubSectionState extends State<HubSection> {
     // Context menu key: show context menu
     if (key.isContextMenuKey) {
       _showContextMenuForCurrentItem();
-      return KeyEventResult.handled;
-    }
-
-    // Back key: navigate to tab bar
-    if (key.isBackKey && widget.onBack != null) {
-      widget.onBack!();
       return KeyEventResult.handled;
     }
 

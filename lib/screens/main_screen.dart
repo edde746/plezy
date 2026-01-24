@@ -27,6 +27,7 @@ import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/side_navigation_rail.dart';
+import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
 import 'libraries/libraries_screen.dart';
 import 'search_screen.dart';
@@ -419,25 +420,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   KeyEventResult _handleBackKey(KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
-    // Handle all back keys - this handler is only reached if lower widgets
-    // (e.g., LibrariesScreen tab content/chips) don't handle the back key first
-    final isBackKey =
-        event.logicalKey == LogicalKeyboardKey.escape ||
-        event.logicalKey == LogicalKeyboardKey.goBack ||
-        event.logicalKey == LogicalKeyboardKey.browserBack ||
-        event.logicalKey == LogicalKeyboardKey.gameButtonB;
-
-    if (!isBackKey) return KeyEventResult.ignored;
-
-    // Toggle focus between sidebar and content
-    if (_isSidebarFocused) {
-      _focusContent();
-    } else {
-      _focusSidebar();
-    }
-    return KeyEventResult.handled;
+    // Toggle focus between sidebar and content on BACK key
+    return handleBackKeyAction(event, () {
+      if (_isSidebarFocused) {
+        _focusContent();
+      } else {
+        _focusSidebar();
+      }
+    });
   }
 
   @override

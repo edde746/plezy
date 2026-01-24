@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../../focus/dpad_navigator.dart';
+import '../../../focus/key_event_utils.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../i18n/strings.g.dart';
@@ -92,15 +93,19 @@ class _VolumeControlState extends State<VolumeControl> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (!event.isActionable) {
-      return KeyEventResult.ignored;
-    }
-
     final key = event.logicalKey;
 
     if (_isAdjustMode) {
+      if (key.isBackKey) {
+        return handleBackKeyAction(event, _exitAdjustMode);
+      }
+
       // Notify activity on any key in adjust mode (to reset hide timer)
       widget.onFocusActivity?.call();
+
+      if (!event.isActionable) {
+        return KeyEventResult.ignored;
+      }
 
       // In adjust mode: left/right adjusts volume, back/escape exits
       if (key == LogicalKeyboardKey.arrowLeft) {
@@ -111,7 +116,7 @@ class _VolumeControlState extends State<VolumeControl> {
         _adjustVolume(_volumeStep);
         return KeyEventResult.handled;
       }
-      if (key.isBackKey || key.isSelectKey) {
+      if (key.isSelectKey) {
         _exitAdjustMode();
         return KeyEventResult.handled;
       }
@@ -123,6 +128,10 @@ class _VolumeControlState extends State<VolumeControl> {
       }
       // Consume other keys in adjust mode
       return KeyEventResult.handled;
+    }
+
+    if (!event.isActionable) {
+      return KeyEventResult.ignored;
     }
 
     // Not in adjust mode: use the provided key event handler for navigation

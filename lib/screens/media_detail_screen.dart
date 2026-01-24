@@ -1200,12 +1200,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
 
     // Show loading state while fetching full metadata
     if (_isLoadingMetadata) {
-      return Focus(
+      final loading = Focus(
         onKeyEvent: handleBack,
         child: Scaffold(
           appBar: AppBar(),
           body: const Center(child: CircularProgressIndicator()),
         ),
+      );
+      final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+      if (!blockSystemBack) {
+        return loading;
+      }
+      return PopScope(
+        canPop: false, // Prevent system back from double-popping on Android keyboard/TV
+        onPopInvokedWithResult: (didPop, result) {},
+        child: loading,
       );
     }
 
@@ -1213,7 +1222,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     final size = MediaQuery.of(context).size;
     final headerHeight = size.height * 0.6;
 
-    return Focus(
+    final content = Focus(
       onKeyEvent: handleBack,
       child: Scaffold(
         body: Stack(
@@ -1617,6 +1626,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
           ],
         ),
       ),
+    );
+
+    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+    if (!blockSystemBack) {
+      return content;
+    }
+
+    return PopScope(
+      canPop: false, // Prevent system back from double-popping on Android keyboard/TV
+      onPopInvokedWithResult: (didPop, result) {},
+      child: content,
     );
   }
 

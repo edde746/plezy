@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'dpad_navigator.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
+import 'key_event_utils.dart';
 
 /// A wrapper widget that makes its child focusable with D-pad navigation support.
 ///
@@ -300,6 +301,13 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       }
     }
 
+    if (widget.onBack != null) {
+      final backResult = handleBackKeyAction(event, widget.onBack!);
+      if (backResult != KeyEventResult.ignored) {
+        return backResult;
+      }
+    }
+
     // Handle SELECT key with optional long-press detection
     if (key.isSelectKey) {
       if (widget.enableLongPress) {
@@ -355,12 +363,6 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     // UP arrow - if callback provided, navigate up
     if (key == LogicalKeyboardKey.arrowUp && widget.onNavigateUp != null) {
       widget.onNavigateUp!();
-      return KeyEventResult.handled;
-    }
-
-    // BACK key
-    if (key.isBackKey && widget.onBack != null) {
-      widget.onBack!();
       return KeyEventResult.handled;
     }
 

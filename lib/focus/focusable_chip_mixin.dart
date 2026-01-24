@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'dpad_navigator.dart';
+import 'key_event_utils.dart';
 
 /// Callbacks for chip key event handling.
 class ChipKeyCallbacks {
@@ -102,11 +103,18 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   /// Returns [KeyEventResult.handled] if the event was consumed,
   /// [KeyEventResult.ignored] otherwise.
   KeyEventResult handleChipKeyEvent(FocusNode node, KeyEvent event, ChipKeyCallbacks callbacks) {
+    final key = event.logicalKey;
+
+    if (callbacks.onBack != null) {
+      final backResult = handleBackKeyAction(event, callbacks.onBack!);
+      if (backResult != KeyEventResult.ignored) {
+        return backResult;
+      }
+    }
+
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }
-
-    final key = event.logicalKey;
 
     // SELECT key activates the chip
     if (key.isSelectKey && callbacks.onSelect != null) {
@@ -135,12 +143,6 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
     // UP arrow
     if (key.isUpKey && callbacks.onNavigateUp != null) {
       callbacks.onNavigateUp!();
-      return KeyEventResult.handled;
-    }
-
-    // BACK key
-    if (key.isBackKey && callbacks.onBack != null) {
-      callbacks.onBack!();
       return KeyEventResult.handled;
     }
 

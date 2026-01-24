@@ -16,6 +16,7 @@ import '../../widgets/desktop_app_bar.dart';
 import '../../providers/settings_provider.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
+import '../../focus/key_event_utils.dart';
 import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/dialogs.dart';
@@ -369,9 +370,23 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   /// Handle key events for list navigation
   KeyEventResult _handleListKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
     final key = event.logicalKey;
+
+    final backResult = handleBackKeyAction(event, () {
+      if (_movingIndex != null) {
+        // Cancel move mode, set flag to prevent PopScope exit
+        _backHandledByKeyEvent = true;
+        _cancelMoveMode();
+      } else {
+        // Navigate to app bar on BACK, set flag to prevent PopScope exit
+        _handleBackFromContent();
+      }
+    });
+    if (backResult != KeyEventResult.ignored) {
+      return backResult;
+    }
+
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
     if (_movingIndex != null) {
       // Move mode - arrows reorder the item
@@ -409,12 +424,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         });
         // Persist the change via API (list is already in correct order)
         _persistMoveToServer(oldIndex, newIndex);
-        return KeyEventResult.handled;
-      }
-      if (key.isBackKey) {
-        // Cancel move mode, set flag to prevent PopScope exit
-        _backHandledByKeyEvent = true;
-        _cancelMoveMode();
         return KeyEventResult.handled;
       }
     } else {
@@ -481,11 +490,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         }
         return KeyEventResult.handled;
       }
-      if (key.isBackKey) {
-        // Navigate to app bar on BACK, set flag to prevent PopScope exit
-        _handleBackFromContent();
-        return KeyEventResult.handled;
-      }
     }
 
     return KeyEventResult.ignored;
@@ -493,11 +497,16 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   /// Handle key events when app bar is focused
   KeyEventResult _handleAppBarKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
     final key = event.logicalKey;
     final hasDelete = !widget.playlist.smart;
     final maxButton = hasDelete ? 2 : 1;
+
+    final backResult = handleBackKeyAction(event, () => Navigator.pop(context));
+    if (backResult != KeyEventResult.ignored) {
+      return backResult;
+    }
+
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
     if (key.isLeftKey && _appBarFocusedButton > 0) {
       setState(() => _appBarFocusedButton--);
@@ -523,11 +532,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
     if (key.isSelectKey) {
       _triggerAppBarButton(_appBarFocusedButton);
-      return KeyEventResult.handled;
-    }
-    if (key.isBackKey) {
-      // Already on app bar, exit the screen
-      Navigator.pop(context);
       return KeyEventResult.handled;
     }
 
@@ -701,6 +705,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
+        if (BackKeyCoordinator.consumeIfHandled()) return;
         if (didPop) return;
         final shouldPop = _handleBackNavigation();
         if (shouldPop && mounted) {

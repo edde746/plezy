@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
+import '../main.dart';
 import '../focus/key_event_utils.dart';
+import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
@@ -23,6 +26,7 @@ import '../mixins/watch_state_aware.dart';
 import '../utils/watch_state_notifier.dart';
 import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
+import '../utils/platform_detector.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
   final PlexMetadata season;
@@ -34,7 +38,7 @@ class SeasonDetailScreen extends StatefulWidget {
   State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
 }
 
-class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdatable, WatchStateAware {
+class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdatable, WatchStateAware, RouteAware {
   PlexClient? _client;
 
   @override
@@ -45,6 +49,8 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
   bool _watchStateChanged = false;
   // Capture keyboard mode once at init to avoid rebuild dependency
   bool _initialKeyboardMode = false;
+  bool _suppressNextBackKeyUp = false;
+  bool _routeSubscribed = false;
 
   // WatchStateAware: watch all episode ratingKeys
   @override
@@ -136,9 +142,44 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_routeSubscribed) return;
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+      _routeSubscribed = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_routeSubscribed) {
+      routeObserver.unsubscribe(this);
+      _routeSubscribed = false;
+    }
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Returning from a child route (e.g., video player).
+    // Suppress the first BACK KeyUp which can otherwise pop this route.
+    _suppressNextBackKeyUp = true;
+  }
+
+  KeyEventResult _handleBackKeyEvent(KeyEvent event) {
+    if (_suppressNextBackKeyUp && event is KeyUpEvent && event.logicalKey.isBackKey) {
+      _suppressNextBackKeyUp = false;
+      return KeyEventResult.handled;
+    }
+    return handleBackKeyNavigation(context, event, result: _watchStateChanged);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Focus(
-      onKeyEvent: (_, event) => handleBackKeyNavigation(context, event, result: _watchStateChanged),
+    final content = Focus(
+      onKeyEvent: (_, event) => _handleBackKeyEvent(event),
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
@@ -199,6 +240,17 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
           ],
         ),
       ),
+    );
+
+    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+    if (!blockSystemBack) {
+      return content;
+    }
+
+    return PopScope(
+      canPop: false, // Prevent system back from double-popping on Android keyboard/TV
+      onPopInvokedWithResult: (didPop, result) {},
+      child: content,
     );
   }
 }

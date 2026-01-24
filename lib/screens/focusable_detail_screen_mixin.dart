@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
+import '../focus/key_event_utils.dart';
 import '../widgets/app_icon.dart';
 
 /// Configuration for app bar buttons
@@ -141,10 +142,15 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
 
   /// Handle key events when app bar is focused
   KeyEventResult handleAppBarKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
     final key = event.logicalKey;
     final maxButton = appBarButtonCount - 1;
+
+    final backResult = handleBackKeyAction(event, () => Navigator.pop(context));
+    if (backResult != KeyEventResult.ignored) {
+      return backResult;
+    }
+
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
     if (key.isLeftKey && appBarFocusedButton > 0) {
       setState(() => appBarFocusedButton--);
@@ -166,11 +172,6 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
       if (appBarFocusedButton < buttons.length) {
         buttons[appBarFocusedButton].onPressed();
       }
-      return KeyEventResult.handled;
-    }
-    if (key.isBackKey) {
-      // Already on app bar, exit the screen
-      Navigator.pop(context);
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;

@@ -28,6 +28,7 @@ import '../../models/plex_media_info.dart';
 import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
 import '../../screens/video_player_screen.dart';
+import '../../focus/key_event_utils.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
@@ -1136,14 +1137,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         key == LogicalKeyboardKey.arrowRight;
   }
 
-  /// Check if a key is a back/escape key
-  bool _isBackKey(LogicalKeyboardKey key) {
-    return key == LogicalKeyboardKey.escape ||
-        key == LogicalKeyboardKey.goBack ||
-        key == LogicalKeyboardKey.browserBack ||
-        key == LogicalKeyboardKey.gameButtonB;
-  }
-
   /// Check if a key is a select/enter key
   bool _isSelectKey(LogicalKeyboardKey key) {
     return key == LogicalKeyboardKey.select ||
@@ -1300,6 +1293,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           focusNode: _focusNode,
           autofocus: true,
           onKeyEvent: (node, event) {
+            final backResult = handleBackKeyAction(event, () {
+              // On Windows/Linux with navigation off, ESC first exits fullscreen
+              if (!_videoPlayerNavigationEnabled && _isFullscreen && (Platform.isWindows || Platform.isLinux)) {
+                _toggleFullscreen();
+                return;
+              }
+              if (!_showControls) {
+                _showControlsWithFocus();
+                return;
+              }
+              // Controls visible - navigate back
+              (widget.onBack ?? () => Navigator.of(context).pop(true))();
+            });
+            if (backResult != KeyEventResult.ignored) {
+              return backResult;
+            }
+
             // Only handle KeyDown and KeyRepeat events
             if (!event.isActionable) {
               return KeyEventResult.ignored;
@@ -1344,23 +1354,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                 _seekToChapter(forward: key == LogicalKeyboardKey.mediaTrackNext);
               }
               _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
-              return KeyEventResult.handled;
-            }
-
-            // Handle Back/Escape: show controls if hidden, navigate back if visible
-            if (_isBackKey(key)) {
-              // On Windows/Linux with navigation off, ESC first exits fullscreen
-              if (!_videoPlayerNavigationEnabled && _isFullscreen && (Platform.isWindows || Platform.isLinux)) {
-                _toggleFullscreen();
-                return KeyEventResult.handled;
-              }
-
-              if (!_showControls) {
-                _showControlsWithFocus();
-                return KeyEventResult.handled;
-              }
-              // Controls visible - navigate back
-              (widget.onBack ?? () => Navigator.of(context).pop(true))();
               return KeyEventResult.handled;
             }
 

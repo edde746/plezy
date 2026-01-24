@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
+import '../../focus/key_event_utils.dart';
 import '../../services/gamepad_service.dart';
 import '../../../services/plex_client.dart';
 import '../../models/plex_library.dart';
@@ -1223,9 +1224,29 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
     final key = event.logicalKey;
+
+    final backResult = handleBackKeyAction(event, () {
+      if (_movingIndex != null) {
+        // Cancel move - restore original position
+        setState(() {
+          if (_originalOrder != null) {
+            _tempLibraries = List.from(_originalOrder!);
+          }
+          _focusedIndex = _originalIndex ?? 0;
+          _movingIndex = null;
+          _originalIndex = null;
+          _originalOrder = null;
+        });
+      } else {
+        Navigator.pop(context);
+      }
+    });
+    if (backResult != KeyEventResult.ignored) {
+      return backResult;
+    }
+
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
     if (_movingIndex != null) {
       // Move mode - arrows reorder the item
@@ -1251,19 +1272,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         // Confirm move - apply the reorder
         widget.onReorder(_tempLibraries);
         setState(() {
-          _movingIndex = null;
-          _originalIndex = null;
-          _originalOrder = null;
-        });
-        return KeyEventResult.handled;
-      }
-      if (key.isBackKey) {
-        // Cancel move - restore original position
-        setState(() {
-          if (_originalOrder != null) {
-            _tempLibraries = List.from(_originalOrder!);
-          }
-          _focusedIndex = _originalIndex ?? 0;
           _movingIndex = null;
           _originalIndex = null;
           _originalOrder = null;
@@ -1313,10 +1321,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           final library = _tempLibraries[_focusedIndex];
           _showLibraryMenuBottomSheet(context, library);
         }
-        return KeyEventResult.handled;
-      }
-      if (key.isBackKey) {
-        Navigator.pop(context);
         return KeyEventResult.handled;
       }
     }
