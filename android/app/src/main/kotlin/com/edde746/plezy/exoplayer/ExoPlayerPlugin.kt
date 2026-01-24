@@ -411,14 +411,62 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun handleGetStats(result: MethodChannel.Result) {
         activity?.runOnUiThread {
             val stats = if (usingMpvFallback) {
-                // For MPV fallback, return empty - stats are fetched via getProperty
-                mapOf("playerType" to "mpv")
+                // For MPV fallback, query MPV properties directly
+                getMpvStats()
             } else {
                 val coreStats = playerCore?.getStats() ?: emptyMap()
                 coreStats + mapOf("playerType" to "exoplayer")
             }
             result.success(stats)
         } ?: result.success(mapOf("playerType" to "unknown"))
+    }
+
+    /**
+     * Get playback stats from MPV when in fallback mode.
+     * Queries relevant MPV properties and returns them in a map format
+     * compatible with the performance overlay.
+     */
+    private fun getMpvStats(): Map<String, Any?> {
+        val mpv = mpvCore ?: return mapOf("playerType" to "mpv")
+
+        return mapOf(
+            "playerType" to "mpv",
+            // Video metrics
+            "video-codec" to mpv.getProperty("video-codec"),
+            "video-params/w" to mpv.getProperty("video-params/w"),
+            "video-params/h" to mpv.getProperty("video-params/h"),
+            "container-fps" to mpv.getProperty("container-fps"),
+            "estimated-vf-fps" to mpv.getProperty("estimated-vf-fps"),
+            "video-bitrate" to mpv.getProperty("video-bitrate"),
+            "hwdec-current" to mpv.getProperty("hwdec-current"),
+            // Audio metrics
+            "audio-codec-name" to mpv.getProperty("audio-codec-name"),
+            "audio-params/samplerate" to mpv.getProperty("audio-params/samplerate"),
+            "audio-params/hr-channels" to mpv.getProperty("audio-params/hr-channels"),
+            "audio-bitrate" to mpv.getProperty("audio-bitrate"),
+            // Performance metrics
+            "total-avsync-change" to mpv.getProperty("total-avsync-change"),
+            "cache-used" to mpv.getProperty("cache-used"),
+            "cache-speed" to mpv.getProperty("cache-speed"),
+            "display-fps" to mpv.getProperty("display-fps"),
+            "frame-drop-count" to mpv.getProperty("frame-drop-count"),
+            "decoder-frame-drop-count" to mpv.getProperty("decoder-frame-drop-count"),
+            "demuxer-cache-duration" to mpv.getProperty("demuxer-cache-duration"),
+            // Color/Format properties
+            "video-params/pixelformat" to mpv.getProperty("video-params/pixelformat"),
+            "video-params/hw-pixelformat" to mpv.getProperty("video-params/hw-pixelformat"),
+            "video-params/colormatrix" to mpv.getProperty("video-params/colormatrix"),
+            "video-params/primaries" to mpv.getProperty("video-params/primaries"),
+            "video-params/gamma" to mpv.getProperty("video-params/gamma"),
+            // HDR metadata
+            "video-params/max-luma" to mpv.getProperty("video-params/max-luma"),
+            "video-params/min-luma" to mpv.getProperty("video-params/min-luma"),
+            "video-params/max-cll" to mpv.getProperty("video-params/max-cll"),
+            "video-params/max-fall" to mpv.getProperty("video-params/max-fall"),
+            // Other
+            "video-params/aspect-name" to mpv.getProperty("video-params/aspect-name"),
+            "video-params/rotate" to mpv.getProperty("video-params/rotate")
+        )
     }
 
     // ExoPlayerDelegate
