@@ -29,6 +29,7 @@
         android:label="Plezy"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:banner="@drawable/tv_banner"
         android:appCategory="video"
         android:usesCleartextTraffic="true">
         <activity
