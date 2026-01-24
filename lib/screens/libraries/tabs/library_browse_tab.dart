@@ -177,16 +177,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       return;
     }
 
-    // Scroll the inner grid up by the chips bar height so the chips become
-    // visible while keeping the grid content roughly in the same position.
-    if (_scrollController.hasClients) {
-      final newOffset = (_scrollController.offset - _chipsBarHeight).clamp(
-        0.0,
-        _scrollController.position.maxScrollExtent,
-      );
-      _scrollController.jumpTo(newOffset);
-    }
-
+    // With Stack layout, chips are always visible on top of the grid.
+    // No need to scroll - just focus the chip.
     _groupingChipFocusNode.requestFocus();
   }
 
@@ -546,14 +538,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       );
     }
 
-    // For list/grid modes, use Column with chips always visible at top
-    // and scrollable content below. This avoids nested scroll complications
-    // that caused focus issues on Android TV.
-    return Column(
+    // For list/grid modes, use Stack with chips layered on top of grid.
+    // This allows the grid to use Clip.none for focus decorations while
+    // the chips bar (with background) covers any overflow at the top.
+    return Stack(
       children: [
-        _buildChipsBar(),
-        Expanded(
+        // Grid fills the entire area, with top padding for chips bar
+        Positioned.fill(
           child: _buildScrollableContent(),
+        ),
+        // Chips bar on top with solid background
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: _buildChipsBar(),
         ),
       ],
     );
@@ -570,6 +569,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       },
       child: CustomScrollView(
         controller: _scrollController,
+        // Allow focus decoration to render outside scroll bounds
+        clipBehavior: Clip.none,
         slivers: _buildContentSlivers(),
       ),
     );
@@ -677,6 +678,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     ];
   }
 
+  // Top padding for grid content = chips bar height + extra space for focus decoration
+  // Chips bar is ~48px, focus ring extends ~6px beyond item bounds
+  static const double _gridTopPadding = _chipsBarHeight + 12.0;
+
   /// Builds either a sliver list or sliver grid based on the view mode
   Widget _buildItemsSliver(BuildContext context, SettingsProvider settingsProvider) {
     final itemCount = items.length + (_hasMoreItems && isLoading ? 1 : 0);
@@ -684,7 +689,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     if (settingsProvider.viewMode == ViewMode.list) {
       // In list view, only the first item can navigate up to chips
       return SliverPadding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.fromLTRB(8, _gridTopPadding, 8, 8),
         sliver: SliverList.builder(
           itemCount: itemCount,
           itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: index == 0),
@@ -697,7 +702,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       final useWideRatio =
           _selectedGrouping == 'episodes' && settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
       return SliverPadding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.fromLTRB(8, _gridTopPadding, 8, 8),
         sliver: SliverGrid.builder(
           gridDelegate: MediaGridDelegate.createDelegate(
             context: context,

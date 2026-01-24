@@ -205,6 +205,10 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     }
   }
 
+  // Extra padding for focus decoration (scale + border extends beyond item bounds)
+  // Scale 1.02 adds ~1% on each side, plus 2.5px border = ~8px total padding needed
+  static const double _focusDecorationPadding = 8.0;
+
   void _scrollIntoView() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_isFocused) return;
@@ -226,12 +230,16 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       final itemHeight = itemBox.size.height;
       final itemVerticalCenter = itemPosition.dy + itemHeight / 2;
 
+      // Account for focus decoration when checking item visibility
+      final itemTop = itemPosition.dy - _focusDecorationPadding;
+      final itemBottom = itemPosition.dy + itemHeight + _focusDecorationPadding;
+
       if (widget.useComfortableZone) {
-        // Define comfortable zone - if item center is within middle 60% of viewport, don't scroll
+        // Define comfortable zone - if item (including focus decoration) is within middle 60% of viewport, don't scroll
         final comfortZoneTop = viewportHeight * 0.2;
         final comfortZoneBottom = viewportHeight * 0.8;
 
-        if (itemVerticalCenter >= comfortZoneTop && itemVerticalCenter <= comfortZoneBottom) {
+        if (itemTop >= comfortZoneTop && itemBottom <= comfortZoneBottom) {
           // Item is in comfortable zone, no need to scroll
           return;
         }
@@ -254,8 +262,15 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       final currentOffset = position.pixels;
 
       // Target: item center should be at scrollAlignment of viewport
+      // Add padding to ensure focus decoration is fully visible
       final targetViewportY = viewportHeight * widget.scrollAlignment;
-      final scrollDelta = itemVerticalCenter - targetViewportY;
+      var scrollDelta = itemVerticalCenter - targetViewportY;
+
+      // If item would be near the top edge, add extra scroll to show focus decoration
+      final projectedItemTop = itemTop - scrollDelta;
+      if (projectedItemTop < _focusDecorationPadding) {
+        scrollDelta -= (_focusDecorationPadding - projectedItemTop);
+      }
 
       final targetOffset = (currentOffset + scrollDelta).clamp(
         position.minScrollExtent,
