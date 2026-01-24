@@ -123,7 +123,8 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 }
                 val success = playerCore?.initialize() ?: false
 
-                // Start hidden
+                // Start hidden - now safe because setVisible operates on the container,
+                // not the SurfaceView directly (matching ExoPlayer's approach)
                 playerCore?.setVisible(false)
 
                 Log.d(TAG, "Initialized: $success")

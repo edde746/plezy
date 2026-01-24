@@ -43,6 +43,7 @@ class MpvPlayerCore(private val activity: Activity) :
     }
 
     private var surfaceView: SurfaceView? = null
+    private var surfaceContainer: android.widget.FrameLayout? = null
     private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? =
         null
     private var voInUse: String = "gpu"
@@ -146,11 +147,11 @@ class MpvPlayerCore(private val activity: Activity) :
             }
 
             // Fallback for release (FlutterView may be obfuscated): pick the last ViewGroup
-            // that is not our mpv SurfaceView and has children.
+            // that is not our mpv container and has children.
             if (flutterContainer == null) {
                 for (i in contentView.childCount - 1 downTo 0) {
                     val child = contentView.getChildAt(i)
-                    if (child is ViewGroup && child != surfaceView?.parent && child.childCount > 0) {
+                    if (child is ViewGroup && child != surfaceContainer && child.childCount > 0) {
                         flutterContainer = child
                         break
                     }
@@ -186,13 +187,23 @@ class MpvPlayerCore(private val activity: Activity) :
             // Initialize AudioManager for audio focus handling
             audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-            // Create SurfaceView for video rendering
-            surfaceView = SurfaceView(activity).apply {
+            // Create FrameLayout container for video (matches ExoPlayer pattern)
+            // Setting visibility on container instead of SurfaceView directly allows
+            // the surface to be created even when hidden (required with RenderMode.texture)
+            surfaceContainer = android.widget.FrameLayout(activity).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 setBackgroundColor(Color.BLACK)
+            }
+
+            // Create SurfaceView for video rendering
+            surfaceView = SurfaceView(activity).apply {
+                layoutParams = android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                )
                 // Keep video composited in the normal view hierarchy (avoid hardware overlay promotion)
                 // so Flutter controls reliably draw above it in release builds.
                 alpha = 0.999f
@@ -203,9 +214,12 @@ class MpvPlayerCore(private val activity: Activity) :
                 setZOrderMediaOverlay(false)
             }
 
-            // Insert SurfaceView at bottom of view hierarchy (behind Flutter)
+            // Add SurfaceView to container
+            surfaceContainer!!.addView(surfaceView)
+
+            // Insert container at bottom of view hierarchy (behind Flutter)
             val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-            contentView.addView(surfaceView, 0)
+            contentView.addView(surfaceContainer, 0)
 
             // Find FlutterView and its internal FlutterSurfaceView, set it on top
             for (i in 0 until contentView.childCount) {
@@ -484,7 +498,10 @@ class MpvPlayerCore(private val activity: Activity) :
 
     fun setVisible(visible: Boolean) {
         activity.runOnUiThread {
-            surfaceView?.visibility = if (visible) View.VISIBLE else View.INVISIBLE
+            // Set visibility on the container, not the SurfaceView directly.
+            // This allows the SurfaceView surface to be created even when hidden,
+            // which is required with RenderMode.texture (TextureView mode).
+            surfaceContainer?.visibility = if (visible) View.VISIBLE else View.INVISIBLE
             Log.d(TAG, "setVisible($visible)")
         }
     }
@@ -703,7 +720,8 @@ class MpvPlayerCore(private val activity: Activity) :
         }
 
         val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
-        surfaceView?.let { contentView.removeView(it) }
+        surfaceContainer?.let { contentView.removeView(it) }
+        surfaceContainer = null
         surfaceView = null
 
         MPVLib.destroy()
