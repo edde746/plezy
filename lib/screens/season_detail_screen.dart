@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -224,6 +225,8 @@ class _EpisodeCard extends StatelessWidget {
   });
 
   Widget _buildEpisodeMetaRow(BuildContext context) {
+    final isMobile = PlatformDetector.isMobile(context);
+
     return Row(
       children: [
         if (episode.duration != null)
@@ -231,6 +234,19 @@ class _EpisodeCard extends StatelessWidget {
             formatDurationTimestamp(Duration(milliseconds: episode.duration!)),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
           ),
+        if (!isMobile && episode.originallyAvailableAt != null) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              '•',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
+            ),
+          ),
+          Text(
+            formatFullDate(episode.originallyAvailableAt!),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
+          ),
+        ],
         // Hide watch status when offline (not tracked)
         if (!isOffline && episode.duration != null && episode.isWatched) ...[
           Padding(

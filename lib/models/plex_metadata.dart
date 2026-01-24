@@ -47,6 +47,7 @@ class PlexMetadata with MultiServerFields {
   final double? rating;
   final double? audienceRating;
   final int? year;
+  final String? originallyAvailableAt; // Full release date (YYYY-MM-DD)
   final String? thumb;
   final String? art;
   final int? duration;
@@ -120,6 +121,7 @@ class PlexMetadata with MultiServerFields {
     this.rating,
     this.audienceRating,
     this.year,
+    this.originallyAvailableAt,
     this.thumb,
     this.art,
     this.duration,
@@ -165,6 +167,7 @@ class PlexMetadata with MultiServerFields {
     double? rating,
     double? audienceRating,
     int? year,
+    String? originallyAvailableAt,
     String? thumb,
     String? art,
     int? duration,
@@ -208,6 +211,7 @@ class PlexMetadata with MultiServerFields {
       rating: rating ?? this.rating,
       audienceRating: audienceRating ?? this.audienceRating,
       year: year ?? this.year,
+      originallyAvailableAt: originallyAvailableAt ?? this.originallyAvailableAt,
       thumb: thumb ?? this.thumb,
       art: art ?? this.art,
       duration: duration ?? this.duration,
