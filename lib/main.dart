@@ -39,6 +39,7 @@ import 'utils/orientation_helper.dart';
 import 'utils/language_codes.dart';
 import 'i18n/strings.g.dart';
 import 'focus/input_mode_tracker.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
@@ -67,6 +68,9 @@ void main() async {
 
   // Initialize localization with saved locale
   LocaleSettings.setLocale(savedLocale);
+
+  // Needed for formatting dates in different locales
+  await initializeDateFormatting(savedLocale.languageCode, null);
 
   // Configure image cache for large libraries
   PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20; // 200MB
