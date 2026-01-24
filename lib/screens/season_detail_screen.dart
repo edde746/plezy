@@ -225,8 +225,6 @@ class _EpisodeCard extends StatelessWidget {
   });
 
   Widget _buildEpisodeMetaRow(BuildContext context) {
-    final isMobile = PlatformDetector.isMobile(context);
-
     return Row(
       children: [
         if (episode.duration != null)
@@ -234,7 +232,7 @@ class _EpisodeCard extends StatelessWidget {
             formatDurationTimestamp(Duration(milliseconds: episode.duration!)),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
           ),
-        if (!isMobile && episode.originallyAvailableAt != null) ...[
+        if (episode.originallyAvailableAt != null) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Text(
@@ -244,20 +242,6 @@ class _EpisodeCard extends StatelessWidget {
           ),
           Text(
             formatFullDate(episode.originallyAvailableAt!),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
-          ),
-        ],
-        // Hide watch status when offline (not tracked)
-        if (!isOffline && episode.duration != null && episode.isWatched) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Text(
-              '•',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
-            ),
-          ),
-          Text(
-            '${t.discover.watched} ✓',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12),
           ),
         ],
@@ -360,6 +344,21 @@ class _EpisodeCard extends StatelessWidget {
                             backgroundColor: tokens(context).outline,
                             minHeight: 3,
                           ),
+                        ),
+                      ),
+
+                    if (episode.isWatched)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: tokens(context).text,
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
+                          ),
+                          child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 12),
                         ),
                       ),
                   ],
