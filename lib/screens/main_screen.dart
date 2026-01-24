@@ -516,6 +516,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     if (_searchKey.currentState case final FullRefreshable refreshable) {
       refreshable.fullRefresh();
     }
+
+    // Refresh sidebar libraries for new profile
+    _sideNavKey.currentState?.reloadLibraries();
   }
 
   void _selectTab(int index) {
