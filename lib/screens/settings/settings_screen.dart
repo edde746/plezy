@@ -970,6 +970,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     required Future<void> Function(int value) onSave,
   }) {
     int spinnerValue = currentValue;
+    final saveFocusNode = FocusNode();
 
     showDialog(
       context: context,
@@ -992,6 +993,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                         spinnerValue = value;
                       });
                     },
+                    onConfirm: () => saveFocusNode.requestFocus(),
+                    onCancel: () => Navigator.pop(dialogContext),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -1005,6 +1008,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               actions: [
                 TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
                 TextButton(
+                  focusNode: saveFocusNode,
                   onPressed: () async {
                     await onSave(spinnerValue);
                     if (dialogContext.mounted) {
@@ -1018,7 +1022,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           },
         );
       },
-    );
+    ).then((_) => saveFocusNode.dispose());
   }
 
   /// Standard numeric input dialog with TextField for non-TV platforms.

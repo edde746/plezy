@@ -33,6 +33,14 @@ class TvNumberSpinner extends StatefulWidget {
   /// Called when the value changes.
   final ValueChanged<int> onChanged;
 
+  /// Called when the user presses SELECT to confirm.
+  /// Use this to move focus to a confirm/save button.
+  final VoidCallback? onConfirm;
+
+  /// Called when the user presses BACK to cancel.
+  /// Use this to close the dialog or cancel the operation.
+  final VoidCallback? onCancel;
+
   /// Whether the spinner should request focus when built.
   final bool autofocus;
 
@@ -45,6 +53,8 @@ class TvNumberSpinner extends StatefulWidget {
     this.step = 1,
     this.suffix,
     this.autofocus = false,
+    this.onConfirm,
+    this.onCancel,
   });
 
   @override
@@ -105,6 +115,16 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> {
     final key = event.logicalKey;
 
     if (event is KeyDownEvent) {
+      // Handle SELECT key to confirm/move to save button
+      if (key.isSelectKey && widget.onConfirm != null) {
+        widget.onConfirm!();
+        return KeyEventResult.handled;
+      }
+      // Handle BACK key to cancel
+      if (key.isBackKey && widget.onCancel != null) {
+        widget.onCancel!();
+        return KeyEventResult.handled;
+      }
       if (key.isUpKey || key.isRightKey) {
         _startRepeat(_increment);
         return KeyEventResult.handled;
