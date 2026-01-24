@@ -1154,7 +1154,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   /// Determine if the key event should toggle play/pause based on configured hotkeys.
   bool _isPlayPauseKey(KeyEvent event) {
+    final logicalKey = event.logicalKey;
     final physicalKey = event.physicalKey;
+
+    // Always accept hardware media play/pause keys (Android TV remotes)
+    if (logicalKey == LogicalKeyboardKey.mediaPlayPause ||
+        logicalKey == LogicalKeyboardKey.mediaPlay ||
+        logicalKey == LogicalKeyboardKey.mediaPause) {
+      return true;
+    }
 
     // When the shortcuts service is available, respect the configured play/pause hotkey
     if (_keyboardService != null) {
@@ -1165,6 +1173,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     // Fallback to defaults while the service is loading
     return physicalKey == PhysicalKeyboardKey.space || physicalKey == PhysicalKeyboardKey.mediaPlayPause;
+  }
+
+  /// Check if a key is a media seek key (Android TV remotes)
+  bool _isMediaSeekKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.mediaFastForward ||
+        key == LogicalKeyboardKey.mediaRewind ||
+        key == LogicalKeyboardKey.mediaSkipForward ||
+        key == LogicalKeyboardKey.mediaSkipBackward;
+  }
+
+  /// Check if a key is a media track key (Android TV remotes)
+  bool _isMediaTrackKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.mediaTrackNext || key == LogicalKeyboardKey.mediaTrackPrevious;
   }
 
   bool _isPlayPauseActivation(KeyEvent event) {
@@ -1301,6 +1322,28 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
                 }
               }
+              return KeyEventResult.handled;
+            }
+
+            // Handle media seek keys (Android TV remotes)
+            // Uses chapter navigation if chapters are available, otherwise seeks by configured time
+            if (event is KeyDownEvent && _isMediaSeekKey(key)) {
+              if (widget.canControl) {
+                final isForward =
+                    key == LogicalKeyboardKey.mediaFastForward || key == LogicalKeyboardKey.mediaSkipForward;
+                _seekToChapter(forward: isForward);
+              }
+              _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
+              return KeyEventResult.handled;
+            }
+
+            // Handle next/previous track keys (Android TV remotes)
+            // Uses same behavior as seek keys: chapter navigation or time-based seek
+            if (event is KeyDownEvent && _isMediaTrackKey(key)) {
+              if (widget.canControl) {
+                _seekToChapter(forward: key == LogicalKeyboardKey.mediaTrackNext);
+              }
+              _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
               return KeyEventResult.handled;
             }
 
