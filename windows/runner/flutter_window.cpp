@@ -40,6 +40,7 @@ static void SaveWindowPlacement(HWND hwnd) {
 }
 
 // Load and apply WINDOWPLACEMENT from registry
+// Returns whether the window should be maximized
 static bool LoadWindowPlacement(HWND hwnd) {
   HKEY hKey;
   if (RegOpenKeyExW(HKEY_CURRENT_USER, kWindowPlacementKey, 0, KEY_READ,
@@ -49,18 +50,19 @@ static bool LoadWindowPlacement(HWND hwnd) {
   WINDOWPLACEMENT wp{};
   wp.length = sizeof(wp);
   DWORD size = sizeof(wp);
-  bool success = false;
+  bool wasMaximized = false;
 
   if (RegQueryValueExW(hKey, kWindowPlacementValue, nullptr, nullptr,
                        reinterpret_cast<BYTE*>(&wp), &size) == ERROR_SUCCESS &&
       size == sizeof(wp)) {
     // Prevent restoring as minimized
     if (wp.showCmd == SW_SHOWMINIMIZED) wp.showCmd = SW_SHOWNORMAL;
-    success = SetWindowPlacement(hwnd, &wp) != 0;
+    SetWindowPlacement(hwnd, &wp);
+    wasMaximized = (wp.showCmd == SW_SHOWMAXIMIZED);
   }
 
   RegCloseKey(hKey);
-  return success;
+  return wasMaximized;
 }
 
 // Debounce save to avoid excessive registry writes during resize/move
@@ -102,10 +104,10 @@ bool FlutterWindow::OnCreate() {
 
   // Load saved window placement before showing
   HWND hwnd = GetHandle();
-  bool hasPlacement = LoadWindowPlacement(hwnd);
+  bool maximized = LoadWindowPlacement(hwnd);
 
-  flutter_controller_->engine()->SetNextFrameCallback([this, hasPlacement]() {
-    this->Show();
+  flutter_controller_->engine()->SetNextFrameCallback([this, maximized]() {
+    ::ShowWindow(this->GetHandle(), maximized ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
   });
 
   // Flutter can complete the first frame before the "show window" callback is
