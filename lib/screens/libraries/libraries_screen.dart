@@ -170,7 +170,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     setState(() {});
   }
 
-  /// Focus the first item in the currently active tab
+  /// Focus the first item in the currently active tab.
+  /// Used for initial load and tab switching - focuses the grid content directly.
   void _focusCurrentTab() {
     // Don't focus during tab animations - wait for animation to complete
     // This prevents race conditions during focus restoration
@@ -186,37 +187,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       });
     }
 
-    // Scroll outer view to top to ensure tab content (including chips bar) is visible
-    if (_outerScrollController.hasClients && _outerScrollController.offset > 0) {
-      _outerScrollController.jumpTo(0);
-    }
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      State? tabState;
-      switch (_tabController.index) {
-        case 0:
-          tabState = _recommendedTabKey.currentState;
-          break;
-        case 1:
-          tabState = _browseTabKey.currentState;
-          break;
-        case 2:
-          tabState = _collectionsTabKey.currentState;
-          break;
-        case 3:
-          tabState = _playlistsTabKey.currentState;
-          break;
-      }
-
+      final tabState = _getTabState(_tabController.index);
       if (tabState != null) {
-        // Browse tab has a chips bar - focus that first so DOWN navigates to grid
-        if (_tabController.index == 1) {
-          (tabState as dynamic).focusChipsBar();
-        } else {
-          (tabState as dynamic).focusFirstItem();
-        }
+        (tabState as dynamic).focusFirstItem();
       } else {
         // State not available yet, retry after another frame
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -229,34 +205,59 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Focus without additional frame delay (used for retry)
   void _focusCurrentTabImmediate() {
+    final tabState = _getTabState(_tabController.index);
+    if (tabState != null) {
+      (tabState as dynamic).focusFirstItem();
+    }
+  }
+
+  /// Focus tab content when navigating DOWN from the tab bar.
+  /// For browse tab, this focuses the chips bar first so DOWN navigates to grid.
+  /// For other tabs, focuses the first item directly.
+  void _focusCurrentTabFromTabBar() {
+    if (_tabController.indexIsChanging) {
+      return;
+    }
+
+    if (_suppressAutoFocus) {
+      setState(() {
+        _suppressAutoFocus = false;
+      });
+    }
+
     // Scroll outer view to top to ensure tab content (including chips bar) is visible
     if (_outerScrollController.hasClients && _outerScrollController.offset > 0) {
       _outerScrollController.jumpTo(0);
     }
 
-    State? tabState;
-    switch (_tabController.index) {
-      case 0:
-        tabState = _recommendedTabKey.currentState;
-        break;
-      case 1:
-        tabState = _browseTabKey.currentState;
-        break;
-      case 2:
-        tabState = _collectionsTabKey.currentState;
-        break;
-      case 3:
-        tabState = _playlistsTabKey.currentState;
-        break;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
 
-    if (tabState != null) {
-      // Browse tab has a chips bar - focus that first so DOWN navigates to grid
-      if (_tabController.index == 1) {
-        (tabState as dynamic).focusChipsBar();
-      } else {
-        (tabState as dynamic).focusFirstItem();
+      final tabState = _getTabState(_tabController.index);
+      if (tabState != null) {
+        // Browse tab has a chips bar - focus that first so DOWN navigates to grid
+        if (_tabController.index == 1) {
+          (tabState as dynamic).focusChipsBar();
+        } else {
+          (tabState as dynamic).focusFirstItem();
+        }
       }
+    });
+  }
+
+  /// Get the state for a tab by index
+  State? _getTabState(int index) {
+    switch (index) {
+      case 0:
+        return _recommendedTabKey.currentState;
+      case 1:
+        return _browseTabKey.currentState;
+      case 2:
+        return _collectionsTabKey.currentState;
+      case 3:
+        return _playlistsTabKey.currentState;
+      default:
+        return null;
     }
   }
 
@@ -1003,7 +1004,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               _getTabChipFocusNode(newIndex).requestFocus();
             }
           : null,
-      onNavigateDown: _focusCurrentTab,
+      onNavigateDown: _focusCurrentTabFromTabBar,
       onBack: _onTabBarBack,
     );
   }
@@ -1095,7 +1096,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         slivers: [
           DesktopSliverAppBar(
             title: _buildAppBarTitle(visibleLibraries),
-            floating: true,
             pinned: true,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             surfaceTintColor: Colors.transparent,
