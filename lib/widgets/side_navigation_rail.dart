@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../focus/dpad_navigator.dart';
+import '../focus/focus_memory_tracker.dart';
 import '../models/plex_library.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/hidden_libraries_provider.dart';
@@ -17,67 +18,6 @@ import '../services/storage_service.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/content_utils.dart';
 import '../i18n/strings.g.dart';
-
-/// Tracks focus state for a set of named items, avoiding repeated boilerplate
-class _FocusStateTracker {
-  final Map<String, FocusNode> _nodes = {};
-  final Set<String> _focused = {};
-  final VoidCallback _onChanged;
-  String? _lastFocusedKey; // Track last focused item for restoration
-
-  _FocusStateTracker(this._onChanged);
-
-  /// Get or create a focus node for the given key
-  FocusNode get(String key, {String? debugLabel}) {
-    return _nodes.putIfAbsent(key, () {
-      final node = FocusNode(debugLabel: debugLabel ?? 'nav_$key');
-      node.addListener(() {
-        final wasFocused = _focused.contains(key);
-        if (node.hasFocus && !wasFocused) {
-          _focused.add(key);
-          _lastFocusedKey = key; // Remember this key for restoration
-          _onChanged();
-        } else if (!node.hasFocus && wasFocused) {
-          _focused.remove(key);
-          _onChanged();
-        }
-      });
-      return node;
-    });
-  }
-
-  /// Get the last focused key (for focus restoration)
-  String? get lastFocusedKey => _lastFocusedKey;
-
-  /// Check if a key is currently focused
-  bool isFocused(String key) => _focused.contains(key);
-
-  /// Check if a node exists for the given key
-  FocusNode? nodeFor(String key) => _nodes[key];
-
-  /// Dispose all nodes
-  void dispose() {
-    for (final node in _nodes.values) {
-      node.dispose();
-    }
-    _nodes.clear();
-    _focused.clear();
-  }
-
-  /// Remove nodes not in the given set of valid keys (prunes stale nodes)
-  void pruneExcept(Set<String> validKeys) {
-    final toRemove = _nodes.keys.where((k) => !validKeys.contains(k)).toList();
-    for (final key in toRemove) {
-      _nodes[key]?.dispose();
-      _nodes.remove(key);
-      _focused.remove(key);
-    }
-    // Clear last focused if it was pruned
-    if (_lastFocusedKey != null && !validKeys.contains(_lastFocusedKey)) {
-      _lastFocusedKey = null;
-    }
-  }
-}
 
 /// Reusable navigation rail item widget that handles focus, selection, and interaction
 class NavigationRailItem extends StatelessWidget {
@@ -221,7 +161,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   static const _kSettings = 'settings';
 
   // Unified focus state tracker for all nav items (main + libraries)
-  late final _FocusStateTracker _focusTracker;
+  late final FocusMemoryTracker _focusTracker;
 
   /// Whether the sidebar should be expanded (always, hover, or focus)
   bool get _shouldExpand => widget.alwaysExpanded || _isHovered || widget.isSidebarFocused;
@@ -229,9 +169,12 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   @override
   void initState() {
     super.initState();
-    _focusTracker = _FocusStateTracker(() {
-      if (mounted) setState(() {});
-    });
+    _focusTracker = FocusMemoryTracker(
+      onFocusChanged: () {
+        if (mounted) setState(() {});
+      },
+      debugLabelPrefix: 'nav',
+    );
     _loadLibraries();
   }
 
@@ -269,16 +212,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
   /// Focus the last focused nav item, or Home as fallback
   void focusActiveItem() {
-    // Try to restore last focused item
-    if (_focusTracker.lastFocusedKey != null) {
-      final node = _focusTracker.nodeFor(_focusTracker.lastFocusedKey!);
-      if (node != null) {
-        node.requestFocus();
-        return;
-      }
-    }
-    // Fallback: focus Home if nothing was previously focused
-    _focusTracker.nodeFor(_kHome)?.requestFocus();
+    _focusTracker.restoreFocus(fallbackKey: _kHome);
   }
 
   /// Fetch, filter, and order libraries (pure logic, no state changes)

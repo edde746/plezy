@@ -8,7 +8,9 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../focus/focus_memory_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/refreshable.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/download_storage_service.dart';
 import '../../services/saf_storage_service.dart';
@@ -43,8 +45,46 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   late settings.SettingsService _settingsService;
+  late final FocusMemoryTracker _focusTracker;
+
+  // Setting keys for focus tracking
+  static const _kTheme = 'theme';
+  static const _kLanguage = 'language';
+  static const _kLibraryDensity = 'library_density';
+  static const _kViewMode = 'view_mode';
+  static const _kEpisodePosterMode = 'episode_poster_mode';
+  static const _kShowHeroSection = 'show_hero_section';
+  static const _kUseGlobalHubs = 'use_global_hubs';
+  static const _kShowServerNameOnHubs = 'show_server_name_on_hubs';
+  static const _kAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
+  static const _kPlayerBackend = 'player_backend';
+  static const _kHardwareDecoding = 'hardware_decoding';
+  static const _kMatchContentFrameRate = 'match_content_frame_rate';
+  static const _kBufferSize = 'buffer_size';
+  static const _kSubtitleStyling = 'subtitle_styling';
+  static const _kMpvConfig = 'mpv_config';
+  static const _kSmallSkipDuration = 'small_skip_duration';
+  static const _kLargeSkipDuration = 'large_skip_duration';
+  static const _kDefaultSleepTimer = 'default_sleep_timer';
+  static const _kMaxVolume = 'max_volume';
+  static const _kDiscordRichPresence = 'discord_rich_presence';
+  static const _kRememberTrackSelections = 'remember_track_selections';
+  static const _kClickVideoTogglesPlayback = 'click_video_toggles_playback';
+  static const _kAutoSkipIntro = 'auto_skip_intro';
+  static const _kAutoSkipCredits = 'auto_skip_credits';
+  static const _kAutoSkipDelay = 'auto_skip_delay';
+  static const _kDownloadLocation = 'download_location';
+  static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
+  static const _kVideoPlayerControls = 'video_player_controls';
+  static const _kVideoPlayerNavigation = 'video_player_navigation';
+  static const _kDebugLogging = 'debug_logging';
+  static const _kViewLogs = 'view_logs';
+  static const _kClearCache = 'clear_cache';
+  static const _kResetSettings = 'reset_settings';
+  static const _kCheckForUpdates = 'check_for_updates';
+  static const _kAbout = 'about';
   KeyboardShortcutsService? _keyboardService;
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
   bool _isLoading = true;
@@ -74,7 +114,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _focusTracker = FocusMemoryTracker(
+      onFocusChanged: () {
+        if (mounted) setState(() {});
+      },
+      debugLabelPrefix: 'settings',
+    );
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _focusTracker.dispose();
+    super.dispose();
+  }
+
+  @override
+  void focusActiveTabIfReady() {
+    _focusTracker.restoreFocus(fallbackKey: _kTheme);
   }
 
   Future<void> _loadSettings() async {
@@ -154,6 +211,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               return ListTile(
+                focusNode: _focusTracker.get(_kTheme),
                 leading: AppIcon(themeProvider.themeModeIcon, fill: 1),
                 title: Text(t.settings.theme),
                 subtitle: Text(themeProvider.themeModeDisplayName),
@@ -163,6 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kLanguage),
             leading: const AppIcon(Symbols.language_rounded, fill: 1),
             title: Text(t.settings.language),
             subtitle: Text(_getLanguageDisplayName(LocaleSettings.currentLocale)),
@@ -172,6 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return ListTile(
+                focusNode: _focusTracker.get(_kLibraryDensity),
                 leading: const AppIcon(Symbols.grid_view_rounded, fill: 1),
                 title: Text(t.settings.libraryDensity),
                 subtitle: Text(settingsProvider.libraryDensityDisplayName),
@@ -183,6 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return ListTile(
+                focusNode: _focusTracker.get(_kViewMode),
                 leading: const AppIcon(Symbols.view_list_rounded, fill: 1),
                 title: Text(t.settings.viewMode),
                 subtitle: Text(
@@ -196,6 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return ListTile(
+                focusNode: _focusTracker.get(_kEpisodePosterMode),
                 leading: const AppIcon(Symbols.image_rounded, fill: 1),
                 title: Text(t.settings.episodePosterMode),
                 subtitle: Text(settingsProvider.episodePosterModeDisplayName),
@@ -207,6 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
+                focusNode: _focusTracker.get(_kShowHeroSection),
                 secondary: const AppIcon(Symbols.featured_play_list_rounded, fill: 1),
                 title: Text(t.settings.showHeroSection),
                 subtitle: Text(t.settings.showHeroSectionDescription),
@@ -220,6 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
+                focusNode: _focusTracker.get(_kUseGlobalHubs),
                 secondary: const AppIcon(Symbols.home_rounded, fill: 1),
                 title: Text(t.settings.useGlobalHubs),
                 subtitle: Text(t.settings.useGlobalHubsDescription),
@@ -233,6 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
+                focusNode: _focusTracker.get(_kShowServerNameOnHubs),
                 secondary: const AppIcon(Symbols.dns_rounded, fill: 1),
                 title: Text(t.settings.showServerNameOnHubs),
                 subtitle: Text(t.settings.showServerNameOnHubsDescription),
@@ -247,6 +312,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Consumer<SettingsProvider>(
               builder: (context, settingsProvider, child) {
                 return SwitchListTile(
+                  focusNode: _focusTracker.get(_kAlwaysKeepSidebarOpen),
                   secondary: const AppIcon(Symbols.dock_to_left_rounded, fill: 1),
                   title: Text(t.settings.alwaysKeepSidebarOpen),
                   subtitle: Text(t.settings.alwaysKeepSidebarOpenDescription),
@@ -278,6 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           if (Platform.isAndroid)
             ListTile(
+              focusNode: _focusTracker.get(_kPlayerBackend),
               leading: const AppIcon(Symbols.play_circle_rounded, fill: 1),
               title: Text(t.settings.playerBackend),
               subtitle: Text(_useExoPlayer ? t.settings.exoPlayerDescription : t.settings.mpvDescription),
@@ -285,6 +352,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () => _showPlayerBackendDialog(),
             ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kHardwareDecoding),
             secondary: const AppIcon(Symbols.hardware_rounded, fill: 1),
             title: Text(t.settings.hardwareDecoding),
             subtitle: Text(t.settings.hardwareDecodingDescription),
@@ -298,6 +366,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           if (Platform.isAndroid)
             SwitchListTile(
+              focusNode: _focusTracker.get(_kMatchContentFrameRate),
               secondary: const AppIcon(Symbols.display_settings_rounded, fill: 1),
               title: Text(t.settings.matchContentFrameRate),
               subtitle: Text(t.settings.matchContentFrameRateDescription),
@@ -310,6 +379,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ListTile(
+            focusNode: _focusTracker.get(_kBufferSize),
             leading: const AppIcon(Symbols.memory_rounded, fill: 1),
             title: Text(t.settings.bufferSize),
             subtitle: Text(t.settings.bufferSizeMB(size: _bufferSize.toString())),
@@ -317,6 +387,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _showBufferSizeDialog(),
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kSubtitleStyling),
             leading: const AppIcon(Symbols.subtitles_rounded, fill: 1),
             title: Text(t.settings.subtitleStyling),
             subtitle: Text(t.settings.subtitleStylingDescription),
@@ -328,6 +399,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // MPV Config is only available when using MPV player backend
           if (!Platform.isAndroid || !_useExoPlayer)
             ListTile(
+              focusNode: _focusTracker.get(_kMpvConfig),
               leading: const AppIcon(Symbols.tune_rounded, fill: 1),
               title: Text(t.mpvConfig.title),
               subtitle: Text(t.mpvConfig.description),
@@ -337,6 +409,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ListTile(
+            focusNode: _focusTracker.get(_kSmallSkipDuration),
             leading: const AppIcon(Symbols.replay_10_rounded, fill: 1),
             title: Text(t.settings.smallSkipDuration),
             subtitle: Text(t.settings.secondsUnit(seconds: _seekTimeSmall.toString())),
@@ -344,6 +417,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _showSeekTimeSmallDialog(),
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kLargeSkipDuration),
             leading: const AppIcon(Symbols.replay_30_rounded, fill: 1),
             title: Text(t.settings.largeSkipDuration),
             subtitle: Text(t.settings.secondsUnit(seconds: _seekTimeLarge.toString())),
@@ -351,6 +425,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _showSeekTimeLargeDialog(),
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kDefaultSleepTimer),
             leading: const AppIcon(Symbols.bedtime_rounded, fill: 1),
             title: Text(t.settings.defaultSleepTimer),
             subtitle: Text(t.settings.minutesUnit(minutes: _sleepTimerDuration.toString())),
@@ -358,6 +433,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _showSleepTimerDurationDialog(),
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kMaxVolume),
             leading: const AppIcon(Symbols.volume_up_rounded, fill: 1),
             title: Text(t.settings.maxVolume),
             subtitle: Text(t.settings.maxVolumePercent(percent: _maxVolume.toString())),
@@ -366,6 +442,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           if (DiscordRPCService.isAvailable)
             SwitchListTile(
+              focusNode: _focusTracker.get(_kDiscordRichPresence),
               secondary: const AppIcon(Symbols.chat_rounded, fill: 1),
               title: Text(t.settings.discordRichPresence),
               subtitle: Text(t.settings.discordRichPresenceDescription),
@@ -377,6 +454,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kRememberTrackSelections),
             secondary: const AppIcon(Symbols.bookmark_rounded, fill: 1),
             title: Text(t.settings.rememberTrackSelections),
             subtitle: Text(t.settings.rememberTrackSelectionsDescription),
@@ -390,6 +468,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           if (!isMobile)
             SwitchListTile(
+              focusNode: _focusTracker.get(_kClickVideoTogglesPlayback),
               secondary: const AppIcon(Symbols.play_pause_rounded, fill: 1),
               title: Text(t.settings.clickVideoTogglesPlayback),
               subtitle: Text(t.settings.clickVideoTogglesPlaybackDescription),
@@ -413,6 +492,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kAutoSkipIntro),
             secondary: const AppIcon(Symbols.fast_forward_rounded, fill: 1),
             title: Text(t.settings.autoSkipIntro),
             subtitle: Text(t.settings.autoSkipIntroDescription),
@@ -425,6 +505,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kAutoSkipCredits),
             secondary: const AppIcon(Symbols.skip_next_rounded, fill: 1),
             title: Text(t.settings.autoSkipCredits),
             subtitle: Text(t.settings.autoSkipCreditsDescription),
@@ -437,6 +518,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kAutoSkipDelay),
             leading: const AppIcon(Symbols.timer_rounded, fill: 1),
             title: Text(t.settings.autoSkipDelay),
             subtitle: Text(t.settings.autoSkipDelayDescription(seconds: _autoSkipDelay.toString())),
@@ -471,6 +553,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final currentPath = snapshot.data ?? '...';
 
                 return ListTile(
+                  focusNode: _focusTracker.get(_kDownloadLocation),
                   leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                   title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
                   subtitle: Text(currentPath, maxLines: 2, overflow: TextOverflow.ellipsis),
@@ -480,6 +563,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kDownloadOnWifiOnly),
             secondary: const AppIcon(Symbols.wifi_rounded, fill: 1),
             title: Text(t.settings.downloadOnWifiOnly),
             subtitle: Text(t.settings.downloadOnWifiOnlyDescription),
@@ -613,6 +697,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kVideoPlayerControls),
             leading: const AppIcon(Symbols.keyboard_rounded, fill: 1),
             title: Text(t.settings.videoPlayerControls),
             subtitle: Text(t.settings.keyboardShortcutsDescription),
@@ -620,6 +705,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _showKeyboardShortcutsDialog(),
           ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kVideoPlayerNavigation),
             secondary: const AppIcon(Symbols.gamepad_rounded, fill: 1),
             title: Text(t.settings.videoPlayerNavigation),
             subtitle: Text(t.settings.videoPlayerNavigationDescription),
@@ -649,6 +735,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kDebugLogging),
             secondary: const AppIcon(Symbols.bug_report_rounded, fill: 1),
             title: Text(t.settings.debugLogging),
             subtitle: Text(t.settings.debugLoggingDescription),
@@ -661,6 +748,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kViewLogs),
             leading: const AppIcon(Symbols.article_rounded, fill: 1),
             title: Text(t.settings.viewLogs),
             subtitle: Text(t.settings.viewLogsDescription),
@@ -670,6 +758,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kClearCache),
             leading: const AppIcon(Symbols.cleaning_services_rounded, fill: 1),
             title: Text(t.settings.clearCache),
             subtitle: Text(t.settings.clearCacheDescription),
@@ -677,6 +766,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _showClearCacheDialog(),
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kResetSettings),
             leading: const AppIcon(Symbols.restore_rounded, fill: 1),
             title: Text(t.settings.resetSettings),
             subtitle: Text(t.settings.resetSettingsDescription),
@@ -703,6 +793,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           ListTile(
+            focusNode: _focusTracker.get(_kCheckForUpdates),
             leading: AppIcon(
               hasUpdate ? Symbols.system_update_rounded : Symbols.check_circle_rounded,
               fill: 1,
@@ -731,6 +822,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAboutSection() {
     return Card(
       child: ListTile(
+        focusNode: _focusTracker.get(_kAbout),
         leading: const AppIcon(Symbols.info_rounded, fill: 1),
         title: Text(t.settings.about),
         subtitle: Text(t.settings.aboutDescription),

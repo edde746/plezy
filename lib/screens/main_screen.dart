@@ -399,9 +399,18 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     setState(() => _isSidebarFocused = false);
     _contentFocusScope.requestFocus();
     // When content regains focus while on Libraries, retry focusing the active tab
-    if (_currentIndex == 1) {
+    if (_currentIndex == 1 && !_isOffline) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_librariesKey.currentState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
+        }
+      });
+    }
+    // When content regains focus while on Settings, restore focus to last focused setting
+    final settingsIndex = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline);
+    if (_currentIndex == settingsIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_settingsKey.currentState case final FocusableTab focusable) {
           focusable.focusActiveTabIfReady();
         }
       });
@@ -521,23 +530,33 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       }
     });
 
-    // Skip screen-specific logic in offline mode (only Downloads and Settings available)
-    if (_isOffline) return;
+    // Handle screen-specific logic
+    final settingsIndex = NavigationTab.indexFor(NavigationTabId.settings, isOffline: _isOffline);
 
-    // Notify discover screen when it becomes visible via tab switch
-    if (index == 0) {
-      _onDiscoverBecameVisible();
-    }
-    // Ensure the libraries screen applies focus when brought into view
-    if (index == 1 && previousIndex != 1) {
-      if (_librariesKey.currentState case final FocusableTab focusable) {
-        focusable.focusActiveTabIfReady();
+    // Skip online-only screen logic in offline mode
+    if (!_isOffline) {
+      // Notify discover screen when it becomes visible via tab switch
+      if (index == 0) {
+        _onDiscoverBecameVisible();
+      }
+      // Ensure the libraries screen applies focus when brought into view
+      if (index == 1 && previousIndex != 1) {
+        if (_librariesKey.currentState case final FocusableTab focusable) {
+          focusable.focusActiveTabIfReady();
+        }
+      }
+      // Focus search input when selecting Search tab
+      if (index == 2) {
+        if (_searchKey.currentState case final SearchInputFocusable searchable) {
+          searchable.focusSearchInput();
+        }
       }
     }
-    // Focus search input when selecting Search tab
-    if (index == 2) {
-      if (_searchKey.currentState case final SearchInputFocusable searchable) {
-        searchable.focusSearchInput();
+
+    // Restore focus when switching to Settings tab (works in both online and offline mode)
+    if (index == settingsIndex && previousIndex != settingsIndex) {
+      if (_settingsKey.currentState case final FocusableTab focusable) {
+        focusable.focusActiveTabIfReady();
       }
     }
   }
