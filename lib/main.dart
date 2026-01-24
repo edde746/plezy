@@ -19,6 +19,7 @@ import 'providers/server_state_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/hidden_libraries_provider.dart';
+import 'providers/libraries_provider.dart';
 import 'providers/playback_state_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
@@ -245,6 +246,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => SettingsProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider(), lazy: true),
+        ChangeNotifierProvider(create: (context) => LibrariesProvider()),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
         ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
       ],
@@ -357,6 +359,11 @@ class _SetupScreenState extends State<SetupScreen> {
         appLogger.i('Successfully connected to $connectedCount servers');
 
         if (mounted) {
+          // Initialize and load libraries
+          final librariesProvider = context.read<LibrariesProvider>();
+          librariesProvider.initialize(multiServerProvider.aggregationService);
+          await librariesProvider.loadLibraries();
+
           // Now that Plex clients are available, trigger initial watch sync
           context.read<OfflineWatchSyncService>().onServersConnected();
 

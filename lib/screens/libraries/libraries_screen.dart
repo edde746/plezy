@@ -12,6 +12,7 @@ import '../../models/plex_library.dart';
 import '../../models/plex_metadata.dart';
 import '../../models/plex_sort.dart';
 import '../../providers/hidden_libraries_provider.dart';
+import '../../providers/libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
@@ -81,8 +82,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _collectionsTabKey = GlobalKey<State<LibraryCollectionsTab>>();
   final _playlistsTabKey = GlobalKey<State<LibraryPlaylistsTab>>();
 
-  List<PlexLibrary> _allLibraries = []; // All libraries from API (unfiltered)
-  bool _isLoadingLibraries = true;
   String? _errorMessage;
   String? _selectedLibraryGlobalKey;
   bool _isInitialLoad = true;
@@ -123,11 +122,59 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_onTabChanged);
-    _loadLibraries();
+
+    // Initialize with libraries from the provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeWithLibraries();
+    });
 
     // Register L1/R1 callbacks for tab navigation
     GamepadService.onL1Pressed = _goToPreviousTab;
     GamepadService.onR1Pressed = _goToNextTab;
+  }
+
+  /// Initialize the screen with libraries from the provider.
+  /// This handles initial library selection and content loading.
+  Future<void> _initializeWithLibraries() async {
+    final librariesProvider = context.read<LibrariesProvider>();
+    final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+    final allLibraries = librariesProvider.libraries;
+
+    if (allLibraries.isEmpty) {
+      // No libraries available yet
+      return;
+    }
+
+    // Compute visible libraries for initial load
+    final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+    final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
+
+    // Load saved preferences
+    final storage = await StorageService.getInstance();
+    final savedLibraryKey = storage.getSelectedLibraryKey();
+
+    // Find the library by key in visible libraries
+    String? libraryGlobalKeyToLoad;
+    if (savedLibraryKey != null) {
+      // Check if saved library exists and is visible
+      final libraryExists = visibleLibraries.any((lib) => lib.globalKey == savedLibraryKey);
+      if (libraryExists) {
+        libraryGlobalKeyToLoad = savedLibraryKey;
+      }
+    }
+
+    // Fallback to first visible library if saved key not found
+    if (libraryGlobalKeyToLoad == null && visibleLibraries.isNotEmpty) {
+      libraryGlobalKeyToLoad = visibleLibraries.first.globalKey;
+    }
+
+    if (libraryGlobalKeyToLoad != null && mounted) {
+      final savedFilters = storage.getLibraryFilters(sectionId: libraryGlobalKeyToLoad);
+      if (savedFilters.isNotEmpty) {
+        _selectedFilters = Map.from(savedFilters);
+      }
+      _loadLibraryContent(libraryGlobalKeyToLoad);
+    }
   }
 
   void _goToPreviousTab() {
@@ -353,118 +400,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Check if libraries come from multiple servers
-  bool get _hasMultipleServers {
-    final uniqueServerIds = _allLibraries.where((lib) => lib.serverId != null).map((lib) => lib.serverId).toSet();
+  bool _hasMultipleServers(List<PlexLibrary> libraries) {
+    final uniqueServerIds = libraries.where((lib) => lib.serverId != null).map((lib) => lib.serverId).toSet();
     return uniqueServerIds.length > 1;
   }
 
-  Future<void> _loadLibraries() async {
-    // Extract context dependencies before async gap
-    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
-
-    setState(() {
-      _isLoadingLibraries = true;
-      _errorMessage = null;
-    });
-
-    try {
-      // Check if we have any connected servers
-      if (!multiServerProvider.hasConnectedServers) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-
-      final storage = await StorageService.getInstance();
-
-      // Fetch libraries from all servers
-      final allLibraries = await multiServerProvider.aggregationService.getLibrariesFromAllServers();
-
-      // Filter out music libraries (type: 'artist') since music playback is not yet supported
-      // Only show movie and TV show libraries
-      final filteredLibraries = allLibraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();
-
-      // Load saved library order and apply it
-      final savedOrder = storage.getLibraryOrder();
-      final orderedLibraries = _applyLibraryOrder(filteredLibraries, savedOrder);
-
-      _updateState(() {
-        _allLibraries = orderedLibraries; // Store all libraries with ordering applied
-        _isLoadingLibraries = false;
-      });
-
-      if (allLibraries.isNotEmpty) {
-        // Compute visible libraries for initial load
-        final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
-        final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
-
-        // Load saved preferences
-        final savedLibraryKey = storage.getSelectedLibraryKey();
-
-        // Find the library by key in visible libraries
-        String? libraryGlobalKeyToLoad;
-        if (savedLibraryKey != null) {
-          // Check if saved library exists and is visible
-          final libraryExists = visibleLibraries.any((lib) => lib.globalKey == savedLibraryKey);
-          if (libraryExists) {
-            libraryGlobalKeyToLoad = savedLibraryKey;
-          }
-        }
-
-        // Fallback to first visible library if saved key not found
-        if (libraryGlobalKeyToLoad == null && visibleLibraries.isNotEmpty) {
-          libraryGlobalKeyToLoad = visibleLibraries.first.globalKey;
-        }
-
-        if (libraryGlobalKeyToLoad != null && mounted) {
-          final savedFilters = storage.getLibraryFilters(sectionId: libraryGlobalKeyToLoad);
-          if (savedFilters.isNotEmpty) {
-            _selectedFilters = Map.from(savedFilters);
-          }
-          _loadLibraryContent(libraryGlobalKeyToLoad);
-        }
-      }
-    } catch (e) {
-      _updateState(() {
-        _errorMessage = _getErrorMessage(e, 'libraries');
-        _isLoadingLibraries = false;
-      });
-    }
-  }
-
-  List<PlexLibrary> _applyLibraryOrder(List<PlexLibrary> libraries, List<String>? savedOrder) {
-    if (savedOrder == null || savedOrder.isEmpty) {
-      return libraries;
-    }
-
-    // Create a map for quick lookup
-    final libraryMap = {for (var lib in libraries) lib.globalKey: lib};
-
-    // Build ordered list based on saved order
-    final orderedLibraries = <PlexLibrary>[];
-    final addedKeys = <String>{};
-
-    // Add libraries in saved order
-    for (final key in savedOrder) {
-      if (libraryMap.containsKey(key)) {
-        orderedLibraries.add(libraryMap[key]!);
-        addedKeys.add(key);
-      }
-    }
-
-    // Add any new libraries that weren't in the saved order
-    for (final library in libraries) {
-      if (!addedKeys.contains(library.globalKey)) {
-        orderedLibraries.add(library);
-      }
-    }
-
-    return orderedLibraries;
-  }
-
-  Future<void> _saveLibraryOrder() async {
-    final storage = await StorageService.getInstance();
-    final libraryKeys = _allLibraries.map((lib) => lib.globalKey).toList();
-    await storage.saveLibraryOrder(libraryKeys);
+  /// Notify parent that library order changed
+  void _notifyLibraryOrderChanged() {
     widget.onLibraryOrderChanged?.call();
   }
 
@@ -475,10 +417,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Future<void> _loadLibraryContent(String libraryGlobalKey) async {
+    // Get libraries from provider
+    final librariesProvider = context.read<LibrariesProvider>();
+    final allLibraries = librariesProvider.libraries;
+
     // Compute visible libraries based on current provider state
     final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
-    final visibleLibraries = _allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
+    final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
     // Find the library by key
     final libraryIndex = visibleLibraries.indexWhere((lib) => lib.globalKey == libraryGlobalKey);
@@ -672,7 +618,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   // Public method to refresh content (for normal navigation)
   @override
   void refresh() {
-    _loadLibraries();
+    // Reinitialize with current libraries
+    _initializeWithLibraries();
   }
 
   // Refresh the currently active tab
@@ -709,14 +656,19 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   void fullRefresh() {
     appLogger.d('LibrariesScreen.fullRefresh() called - reloading all content');
-    // Reload libraries and clear any selected library/filters
+    // Clear local state
     _selectedLibraryGlobalKey = null;
     _selectedFilters.clear();
     _items.clear();
-    _loadLibraries();
+    _errorMessage = null;
+    setState(() {});
+
+    // Reinitialize with current libraries from provider
+    _initializeWithLibraries();
   }
 
   Future<void> _toggleLibraryVisibility(PlexLibrary library) async {
+    final librariesProvider = context.read<LibrariesProvider>();
     final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
     final isHidden = hiddenLibrariesProvider.hiddenLibraryKeys.contains(library.globalKey);
 
@@ -731,7 +683,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       // If we just hid the selected library, select the first visible one
       if (isCurrentlySelected) {
         // Compute visible libraries after hiding
-        final visibleLibraries = _allLibraries
+        final allLibraries = librariesProvider.libraries;
+        final visibleLibraries = allLibraries
             .where((lib) => !hiddenLibrariesProvider.hiddenLibraryKeys.contains(lib.globalKey))
             .toList();
 
@@ -799,20 +752,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   void _showLibraryManagementSheet() {
+    final librariesProvider = context.read<LibrariesProvider>();
     final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
+    final allLibraries = librariesProvider.libraries;
 
     if (PlatformDetector.isTV()) {
       showDialog(
         context: context,
         builder: (context) => _LibraryManagementSheet(
           isDialog: true,
-          allLibraries: List.from(_allLibraries),
+          allLibraries: List.from(allLibraries),
           hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
           onReorder: (reorderedLibraries) {
-            setState(() {
-              _allLibraries = reorderedLibraries;
-            });
-            _saveLibraryOrder();
+            librariesProvider.updateLibraryOrder(reorderedLibraries);
+            _notifyLibraryOrderChanged();
           },
           onToggleVisibility: _toggleLibraryVisibility,
           getLibraryMenuItems: _getLibraryMenuItems,
@@ -824,13 +777,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         context: context,
         isScrollControlled: true,
         builder: (context) => _LibraryManagementSheet(
-          allLibraries: List.from(_allLibraries),
+          allLibraries: List.from(allLibraries),
           hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
           onReorder: (reorderedLibraries) {
-            setState(() {
-              _allLibraries = reorderedLibraries;
-            });
-            _saveLibraryOrder();
+            librariesProvider.updateLibraryOrder(reorderedLibraries);
+            _notifyLibraryOrderChanged();
           },
           onToggleVisibility: _toggleLibraryVisibility,
           getLibraryMenuItems: _getLibraryMenuItems,
@@ -1057,7 +1008,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           children: [
             AppIcon(ContentTypeHelper.getLibraryIcon(selectedLibrary.type), fill: 1, size: 20),
             const SizedBox(width: 8),
-            if (_hasMultipleServers && selectedLibrary.serverName != null)
+            if (_hasMultipleServers(visibleLibraries) && selectedLibrary.serverName != null)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -1083,12 +1034,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Watch libraries provider for updates
+    final librariesProvider = context.watch<LibrariesProvider>();
+    final allLibraries = librariesProvider.libraries;
+    final isLoadingLibraries = librariesProvider.isLoading;
+
     // Watch for hidden libraries changes to trigger rebuild
     final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
 
     // Compute visible libraries (filtered from all libraries)
-    final visibleLibraries = _allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
+    final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
     return Scaffold(
       body: CustomScrollView(
@@ -1102,7 +1058,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
             actions: [
-              if (_allLibraries.isNotEmpty)
+              if (allLibraries.isNotEmpty)
                 IconButton(
                   icon: const AppIcon(Symbols.edit_rounded, fill: 1),
                   tooltip: t.libraries.manageLibraries,
@@ -1115,14 +1071,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               ),
             ],
           ),
-          if (_isLoadingLibraries)
+          if (isLoadingLibraries)
             const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
           else if (_errorMessage != null && visibleLibraries.isEmpty)
             SliverFillRemaining(
               child: ErrorStateWidget(
                 message: _errorMessage!,
                 icon: Symbols.error_outline_rounded,
-                onRetry: _loadLibraries,
+                onRetry: () {
+                  final librariesProvider = context.read<LibrariesProvider>();
+                  librariesProvider.refresh();
+                },
               ),
             )
           else if (visibleLibraries.isEmpty)
@@ -1164,7 +1123,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   children: [
                     LibraryRecommendedTab(
                       key: _recommendedTabKey,
-                      library: _allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                      library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
                       isActive: _tabController.index == 0,
                       suppressAutoFocus: _suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(0),
@@ -1172,7 +1131,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     ),
                     LibraryBrowseTab(
                       key: _browseTabKey,
-                      library: _allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                      library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
                       isActive: _tabController.index == 1,
                       suppressAutoFocus: _suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(1),
@@ -1180,7 +1139,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     ),
                     LibraryCollectionsTab(
                       key: _collectionsTabKey,
-                      library: _allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                      library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
                       isActive: _tabController.index == 2,
                       suppressAutoFocus: _suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(2),
@@ -1188,7 +1147,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     ),
                     LibraryPlaylistsTab(
                       key: _playlistsTabKey,
-                      library: _allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                      library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
                       isActive: _tabController.index == 3,
                       suppressAutoFocus: _suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(3),

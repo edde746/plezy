@@ -12,11 +12,9 @@ import '../focus/focus_memory_tracker.dart';
 import '../models/plex_library.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/hidden_libraries_provider.dart';
-import '../providers/multi_server_provider.dart';
+import '../providers/libraries_provider.dart';
 import '../services/fullscreen_state_manager.dart';
-import '../services/storage_service.dart';
 import '../theme/mono_tokens.dart';
-import '../utils/content_utils.dart';
 import '../i18n/strings.g.dart';
 
 /// Reusable navigation rail item widget that handles focus, selection, and interaction
@@ -143,8 +141,6 @@ class SideNavigationRail extends StatefulWidget {
 
 class SideNavigationRailState extends State<SideNavigationRail> {
   bool _librariesExpanded = true;
-  List<PlexLibrary> _libraries = [];
-  bool _isLoadingLibraries = true;
 
   // Collapsed/expanded state
   bool _isHovered = false;
@@ -175,7 +171,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       },
       debugLabelPrefix: 'nav',
     );
-    _loadLibraries();
   }
 
   @override
@@ -215,64 +210,15 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _focusTracker.restoreFocus(fallbackKey: _kHome);
   }
 
-  /// Fetch, filter, and order libraries (pure logic, no state changes)
-  Future<List<PlexLibrary>> _resolveLibraries(MultiServerProvider provider, StorageService storage) async {
-    if (!provider.hasConnectedServers) return [];
-
-    final libraries = await provider.aggregationService.getLibrariesFromAllServers();
-
-    // Filter out unsupported library types (music)
-    var filtered = libraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();
-
-    // Apply saved order
-    final savedOrder = storage.getLibraryOrder();
-    if (savedOrder == null || savedOrder.isEmpty) return filtered;
-
-    final libraryMap = {for (var lib in filtered) lib.globalKey: lib};
-    final ordered = <PlexLibrary>[];
-    for (final key in savedOrder) {
-      final lib = libraryMap.remove(key);
-      if (lib != null) ordered.add(lib);
-    }
-    ordered.addAll(libraryMap.values); // New libraries not in saved order
-    return ordered;
-  }
-
   /// Build the set of valid focus keys (main nav + current libraries)
   Set<String> _buildValidFocusKeys(List<PlexLibrary> libraries) {
     return {_kHome, _kLibraries, _kSearch, _kDownloads, _kSettings, ...libraries.map((lib) => lib.globalKey)};
   }
 
-  Future<void> _loadLibraries() async {
-    final provider = context.read<MultiServerProvider>();
-    final storage = await StorageService.getInstance();
-
-    try {
-      final libraries = await _resolveLibraries(provider, storage);
-
-      if (mounted) {
-        setState(() {
-          _libraries = libraries;
-          _isLoadingLibraries = false;
-        });
-        // Prune stale library focus nodes
-        _focusTracker.pruneExcept(_buildValidFocusKeys(libraries));
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingLibraries = false;
-        });
-      }
-    }
-  }
-
-  /// Reload libraries (called when servers change)
+  /// Reload libraries (called when servers change or profile switches)
   void reloadLibraries() {
-    setState(() {
-      _isLoadingLibraries = true;
-    });
-    _loadLibraries();
+    final librariesProvider = context.read<LibrariesProvider>();
+    librariesProvider.refresh();
   }
 
   IconData _getLibraryIcon(String type) {
@@ -309,11 +255,16 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   @override
   Widget build(BuildContext context) {
     final t = tokens(context);
+    final librariesProvider = context.watch<LibrariesProvider>();
     final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
 
-    // Filter visible libraries
-    final visibleLibraries = _libraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
+    // Get libraries from provider and filter visible ones
+    final allLibraries = librariesProvider.libraries;
+    final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
+
+    // Prune stale focus nodes when libraries change
+    _focusTracker.pruneExcept(_buildValidFocusKeys(allLibraries));
 
     final isCollapsed = !_shouldExpand;
 
@@ -461,6 +412,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   Widget _buildLibrariesSection(List<PlexLibrary> visibleLibraries, dynamic t, {bool isCollapsed = false}) {
+    final librariesProvider = context.watch<LibrariesProvider>();
+    final isLoading = librariesProvider.isLoading;
     final isLibrariesSelected = widget.selectedIndex == 1 && widget.selectedLibraryKey == null;
     final isLibrariesFocused = _focusTracker.isFocused(_kLibraries);
 
@@ -565,7 +518,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 4),
-              _isLoadingLibraries
+              isLoading
                   ? Padding(
                       padding: const EdgeInsets.all(16),
                       child: Center(

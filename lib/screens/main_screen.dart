@@ -18,6 +18,7 @@ import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/server_state_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
+import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/offline_watch_sync_service.dart';
@@ -478,7 +479,11 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     final multiServerProvider = context.read<MultiServerProvider>();
     final serverStateProvider = context.read<ServerStateProvider>();
     final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+    final librariesProvider = context.read<LibrariesProvider>();
     final playbackStateProvider = context.read<PlaybackStateProvider>();
+
+    // Clear libraries provider state before reconnecting
+    librariesProvider.clear();
 
     // Reconnect to all servers with new profile tokens
     if (servers.isNotEmpty) {
@@ -492,6 +497,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       if (connectedCount > 0) {
         if (!mounted) return;
         context.read<OfflineWatchSyncService>().onServersConnected();
+
+        // Reload libraries after reconnection
+        librariesProvider.initialize(multiServerProvider.aggregationService);
+        await librariesProvider.refresh();
       }
     }
 
@@ -517,8 +526,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       refreshable.fullRefresh();
     }
 
-    // Refresh sidebar libraries for new profile
-    _sideNavKey.currentState?.reloadLibraries();
+    // Sidebar automatically updates since it watches LibrariesProvider
   }
 
   void _selectTab(int index) {

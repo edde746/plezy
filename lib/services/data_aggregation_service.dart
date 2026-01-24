@@ -12,27 +12,12 @@ import 'plex_auth_service.dart';
 class DataAggregationService {
   final MultiServerManager _serverManager;
 
-  // Cache for libraries with TTL
-  Map<String, List<PlexLibrary>>? _cachedLibrariesByServer;
-  DateTime? _librariesCacheTime;
-  static const Duration _librariesCacheTTL = Duration(hours: 1);
-
   DataAggregationService(this._serverManager);
 
-  /// Clear the libraries cache (useful for server changes or logout)
+  /// Clear any cached data (for compatibility with existing callers)
   void clearCache() {
-    _cachedLibrariesByServer = null;
-    _librariesCacheTime = null;
-  }
-
-  /// Check if libraries cache is still valid
-  bool get _isLibrariesCacheValid {
-    if (_cachedLibrariesByServer == null || _librariesCacheTime == null) {
-      return false;
-    }
-
-    final cacheAge = DateTime.now().difference(_librariesCacheTime!);
-    return cacheAge < _librariesCacheTTL;
+    // Cache is now managed by LibrariesProvider
+    // This method is kept for compatibility
   }
 
   /// Fetch libraries from all online servers
@@ -81,32 +66,6 @@ class DataAggregationService {
     appLogger.i('Fetched ${result.length} on deck items from all servers');
 
     return result;
-  }
-
-  /// Fetch libraries from all servers and cache them for hub fetching
-  /// This allows libraries to be fetched in parallel with other operations
-  Future<Map<String, List<PlexLibrary>>> getLibrariesFromAllServersGrouped({bool forceRefresh = false}) async {
-    // Return cached libraries if still valid and not forcing refresh
-    if (!forceRefresh && _isLibrariesCacheValid) {
-      appLogger.d('Using cached libraries data');
-      return _cachedLibrariesByServer!;
-    }
-
-    final librariesByServer = await _perServerGrouped<PlexLibrary>(
-      operationName: 'fetching libraries',
-      operation: (serverId, client, server) async {
-        return await client.getLibraries();
-      },
-    );
-
-    // Cache the results
-    _cachedLibrariesByServer = librariesByServer;
-    _librariesCacheTime = DateTime.now();
-
-    final totalLibraries = librariesByServer.values.fold<int>(0, (sum, libs) => sum + libs.length);
-    appLogger.d('Fetched $totalLibraries libraries from ${librariesByServer.length} servers');
-
-    return librariesByServer;
   }
 
   /// Fetch recommendation hubs from all servers
@@ -208,8 +167,8 @@ class DataAggregationService {
     Set<String>? hiddenLibraryKeys,
     Map<String, List<PlexLibrary>>? librariesByServer,
   }) async {
-    // Use pre-fetched libraries or fetch them if not provided
-    final libraries = librariesByServer ?? await getLibrariesFromAllServersGrouped();
+    // Use pre-fetched libraries or fetch and group them
+    final libraries = librariesByServer ?? groupLibrariesByServer(await getLibrariesFromAllServers());
 
     appLogger.d('Fetching per-library hubs from ${clients.length} servers');
 
@@ -394,16 +353,5 @@ class DataAggregationService {
   }) async {
     final results = await _perServerRaw(operationName: operationName, operation: operation);
     return [for (final (_, items) in results) ...items];
-  }
-
-  /// Higher-order helper for per-server fan-out operations that groups results by server
-  ///
-  /// Similar to [_perServer] but returns a Map with results grouped by serverId.
-  Future<Map<String, List<T>>> _perServerGrouped<T>({
-    required String operationName,
-    required Future<List<T>> Function(String serverId, PlexClient client, PlexServer? server) operation,
-  }) async {
-    final results = await _perServerRaw(operationName: operationName, operation: operation);
-    return {for (final (id, items) in results) id: items};
   }
 }
