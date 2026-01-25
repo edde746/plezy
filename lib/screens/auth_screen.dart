@@ -9,6 +9,8 @@ import '../services/storage_service.dart';
 import '../services/server_registry.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/plex_client_provider.dart';
+import '../providers/libraries_provider.dart';
+import '../services/offline_watch_sync_service.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
@@ -90,6 +92,21 @@ class _AuthScreenState extends State<AuthScreen> {
       // Set it as the legacy client
       final plexClientProvider = context.read<PlexClientProvider>();
       plexClientProvider.setClient(firstClient);
+
+      // Initialize and load libraries (mirroring SetupScreen behavior)
+      final librariesProvider = context.read<LibrariesProvider>();
+      librariesProvider.initialize(multiServerProvider.aggregationService);
+      try {
+        await librariesProvider.loadLibraries();
+      } catch (e) {
+        appLogger.w('Failed to load libraries during sign-in', error: e);
+        // Continue anyway - MainScreen will retry
+      }
+
+      // Trigger initial watch sync now that Plex clients are available
+      if (mounted) {
+        context.read<OfflineWatchSyncService>().onServersConnected();
+      }
 
       // Navigate to main screen
       if (!mounted) return;
