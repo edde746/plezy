@@ -794,6 +794,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
           // PIP Manager
           _videoPIPManager = VideoPIPManager(player: player!);
+          _videoPIPManager!.onBeforeEnterPip = () {
+            _videoFilterManager?.enterPipMode();
+          };
+          _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
         }
 
         // Add external subtitles while paused, then start playback
@@ -871,6 +875,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final result = await _videoPIPManager?.togglePIP();
     if (result != null && !result.$1 && mounted) {
       showErrorSnackBar(context, result.$2 ?? t.videoControls.pipFailed);
+    }
+  }
+
+  /// Handle PiP state changes to restore video scaling when exiting PiP
+  void _onPipStateChanged() {
+    if (_videoPIPManager == null || _videoFilterManager == null) return;
+
+    final isInPip = _videoPIPManager!.isPipActive.value;
+    // Only handle exit - entry is handled by onBeforeEnterPip callback
+    if (!isInPip) {
+      _videoFilterManager!.exitPipMode();
     }
   }
 
@@ -986,60 +1001,60 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (_isHandlingBack) return;
     _isHandlingBack = true;
     try {
-    // For non-host participants, show leave session confirmation
-    if (_watchTogetherProvider != null && _watchTogetherProvider!.isInSession && !_watchTogetherProvider!.isHost) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Leave Session?'),
-          content: const Text('You will be removed from the session.'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error),
-              child: const Text('Leave'),
-            ),
-          ],
-        ),
-      );
+      // For non-host participants, show leave session confirmation
+      if (_watchTogetherProvider != null && _watchTogetherProvider!.isInSession && !_watchTogetherProvider!.isHost) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Leave Session?'),
+            content: const Text('You will be removed from the session.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error),
+                child: const Text('Leave'),
+              ),
+            ],
+          ),
+        );
 
-      if (confirmed == true && mounted) {
-        await _watchTogetherProvider!.leaveSession();
-        if (mounted) {
-          // Exit fullscreen before leaving player (Windows/Linux only)
-          if (Platform.isWindows || Platform.isLinux) {
-            final isFullscreen = await windowManager.isFullScreen();
-            if (isFullscreen) {
-              await windowManager.setFullScreen(false);
-              // Wait for a frame to allow window manager to process the fullscreen exit
-              await Future.delayed(const Duration(milliseconds: 100));
-              if (!mounted) return;
+        if (confirmed == true && mounted) {
+          await _watchTogetherProvider!.leaveSession();
+          if (mounted) {
+            // Exit fullscreen before leaving player (Windows/Linux only)
+            if (Platform.isWindows || Platform.isLinux) {
+              final isFullscreen = await windowManager.isFullScreen();
+              if (isFullscreen) {
+                await windowManager.setFullScreen(false);
+                // Wait for a frame to allow window manager to process the fullscreen exit
+                await Future.delayed(const Duration(milliseconds: 100));
+                if (!mounted) return;
+              }
             }
+            if (!mounted) return;
+            _isExiting.value = true;
+            Navigator.of(context).pop(true);
           }
+        }
+        return;
+      }
+
+      // Exit fullscreen before leaving player (Windows/Linux only)
+      if (Platform.isWindows || Platform.isLinux) {
+        final isFullscreen = await windowManager.isFullScreen();
+        if (isFullscreen) {
+          await windowManager.setFullScreen(false);
+          // Wait for a frame to allow window manager to process the fullscreen exit
+          await Future.delayed(const Duration(milliseconds: 100));
           if (!mounted) return;
-          _isExiting.value = true;
-          Navigator.of(context).pop(true);
         }
       }
-      return;
-    }
 
-    // Exit fullscreen before leaving player (Windows/Linux only)
-    if (Platform.isWindows || Platform.isLinux) {
-      final isFullscreen = await windowManager.isFullScreen();
-      if (isFullscreen) {
-        await windowManager.setFullScreen(false);
-        // Wait for a frame to allow window manager to process the fullscreen exit
-        await Future.delayed(const Duration(milliseconds: 100));
-        if (!mounted) return;
-      }
-    }
-
-    // Default behavior for hosts or non-session users
-    if (!mounted) return;
-    _isExiting.value = true;
-    Navigator.of(context).pop(true);
+      // Default behavior for hosts or non-session users
+      if (!mounted) return;
+      _isExiting.value = true;
+      Navigator.of(context).pop(true);
     } finally {
       _isHandlingBack = false;
     }
@@ -1073,7 +1088,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _progressTracker?.stopTracking();
     _progressTracker?.dispose();
 
-    // Dispose video filter manager
+    // Remove PiP state listener, clear callback, and dispose video filter manager
+    _videoPIPManager?.isPipActive.removeListener(_onPipStateChanged);
+    _videoPIPManager?.onBeforeEnterPip = null;
     _videoFilterManager?.dispose();
 
     // Cancel stream subscriptions
@@ -1638,10 +1655,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                     // Update player size when layout changes
                     final newSize = Size(constraints.maxWidth, constraints.maxHeight);
 
-                    // Update player size in video filter manager and native layer
+                    // Update player size in video filter manager, PiP manager, and native layer
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (mounted && player != null) {
                         _videoFilterManager?.updatePlayerSize(newSize);
+                        _videoPIPManager?.updatePlayerSize(newSize);
                         // Update Metal layer frame on iOS/macOS for rotation
                         player!.updateFrame();
                       }

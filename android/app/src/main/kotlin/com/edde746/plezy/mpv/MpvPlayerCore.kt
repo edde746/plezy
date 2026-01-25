@@ -506,6 +506,10 @@ class MpvPlayerCore(private val activity: Activity) :
         }
     }
 
+    fun onPipModeChanged(isInPipMode: Boolean) {
+        // MPV handles aspect ratio internally via its own surface management
+    }
+
     // Frame Rate Matching
 
     private fun getDisplayManager(): DisplayManager {

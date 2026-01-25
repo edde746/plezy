@@ -21,6 +21,9 @@ class VideoFilterManager {
   /// BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode = 0;
 
+  /// Store the boxFitMode before entering PiP so it can be restored
+  int? _prePipBoxFitMode;
+
   /// Track if a pinch gesture is occurring (public for gesture tracking)
   bool isPinching = false;
 
@@ -55,6 +58,24 @@ class VideoFilterManager {
   void toggleContainCover() {
     _boxFitMode = _boxFitMode == 0 ? 1 : 0;
     updateVideoFilter();
+  }
+
+  /// Force contain mode for PiP (no cropping/stretching)
+  void enterPipMode() {
+    if (_boxFitMode != 0) {
+      _prePipBoxFitMode = _boxFitMode;
+      _boxFitMode = 0; // Contain mode
+      updateVideoFilter();
+    }
+  }
+
+  /// Restore previous mode when exiting PiP
+  void exitPipMode() {
+    if (_prePipBoxFitMode != null) {
+      _boxFitMode = _prePipBoxFitMode!;
+      _prePipBoxFitMode = null;
+      updateVideoFilter();
+    }
   }
 
   /// Update player size when layout changes

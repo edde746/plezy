@@ -825,6 +825,19 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
     }
 
+    fun onPipModeChanged(isInPipMode: Boolean) {
+        activity.runOnUiThread {
+            // Force recalculation of surface size based on new container dimensions
+            // Use a slight delay to allow the window to resize first
+            handler.postDelayed({
+                val videoSize = exoPlayer?.videoSize
+                if (videoSize != null && videoSize.width > 0 && videoSize.height > 0) {
+                    updateSurfaceViewSize(videoSize.width, videoSize.height, videoSize.pixelWidthHeightRatio)
+                }
+            }, 100)
+        }
+    }
+
     // Audio Focus
 
     fun requestAudioFocus(): Boolean {

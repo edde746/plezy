@@ -26,7 +26,6 @@ import '../mixins/watch_state_aware.dart';
 import '../utils/watch_state_notifier.dart';
 import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
-import '../utils/platform_detector.dart';
 
 class SeasonDetailScreen extends StatefulWidget {
   final PlexMetadata season;

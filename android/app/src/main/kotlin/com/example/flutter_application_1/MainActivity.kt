@@ -117,5 +117,10 @@ class MainActivity : FlutterActivity() {
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean,newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         MethodChannel( flutterEngine!!.dartExecutor.binaryMessenger, PIP_CHANNEL ).invokeMethod( "onPipChanged" , isInPictureInPictureMode)
+
+        // Notify ExoPlayer plugin to resize video surface for PiP
+        flutterEngine?.plugins?.get(ExoPlayerPlugin::class.java)?.let { plugin ->
+            (plugin as? ExoPlayerPlugin)?.onPipModeChanged(isInPictureInPictureMode)
+        }
     }
 }

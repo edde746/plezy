@@ -469,6 +469,18 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         )
     }
 
+    // PiP Mode handling
+
+    fun onPipModeChanged(isInPipMode: Boolean) {
+        activity?.runOnUiThread {
+            if (usingMpvFallback) {
+                mpvCore?.onPipModeChanged(isInPipMode)
+            } else {
+                playerCore?.onPipModeChanged(isInPipMode)
+            }
+        }
+    }
+
     // ExoPlayerDelegate
 
     override fun onPropertyChange(name: String, value: Any?) {

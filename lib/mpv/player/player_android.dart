@@ -186,6 +186,17 @@ class PlayerAndroid extends PlayerBase {
         return (state.position.inMilliseconds / 1000.0).toString();
       case 'duration':
         return (state.duration.inMilliseconds / 1000.0).toString();
+      // Video dimensions - query from ExoPlayer stats
+      case 'width':
+      case 'dwidth':
+        final stats = await getStats();
+        final width = stats['videoWidth'];
+        return width?.toString();
+      case 'height':
+      case 'dheight':
+        final stats = await getStats();
+        final height = stats['videoHeight'];
+        return height?.toString();
       default:
         return null;
     }
