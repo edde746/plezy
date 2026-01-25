@@ -88,6 +88,9 @@ class SyncMessage {
   /// Title of the media (for mediaSwitch message)
   final String? mediaTitle;
 
+  /// Whether playback is currently playing (for positionSync heartbeat)
+  final bool? isPlaying;
+
   const SyncMessage({
     required this.type,
     required this.timestamp,
@@ -102,6 +105,7 @@ class SyncMessage {
     this.ratingKey,
     this.serverId,
     this.mediaTitle,
+    this.isPlaying,
   });
 
   /// Create a PLAY message
@@ -139,13 +143,14 @@ class SyncMessage {
     );
   }
 
-  /// Create a POSITION_SYNC message
-  factory SyncMessage.positionSync(Duration position, {String? peerId}) {
+  /// Create a POSITION_SYNC message (heartbeat with optional play/pause state)
+  factory SyncMessage.positionSync(Duration position, {String? peerId, bool? isPlaying}) {
     return SyncMessage(
       type: SyncMessageType.positionSync,
       timestamp: DateTime.now().millisecondsSinceEpoch,
       positionMs: position.inMilliseconds,
       peerId: peerId,
+      isPlaying: isPlaying,
     );
   }
 
@@ -268,6 +273,7 @@ class SyncMessage {
     if (ratingKey != null) map['rk'] = ratingKey;
     if (serverId != null) map['sid'] = serverId;
     if (mediaTitle != null) map['title'] = mediaTitle;
+    if (isPlaying != null) map['pl'] = isPlaying;
 
     return jsonEncode(map);
   }
@@ -296,6 +302,7 @@ class SyncMessage {
       ratingKey: map['rk'] as String?,
       serverId: map['sid'] as String?,
       mediaTitle: map['title'] as String?,
+      isPlaying: map['pl'] as bool?,
     );
   }
 

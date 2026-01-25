@@ -39,8 +39,17 @@ class WatchTogetherSyncManager {
 
   // Drift correction constants
   static const Duration maxAllowedDrift = Duration(seconds: 2);
-  static const Duration positionSyncInterval = Duration(seconds: 5);
+  static const Duration positionSyncInterval = Duration(seconds: 3);
   static const Duration excessiveDrift = Duration(seconds: 10);
+
+  // Buffering debounce constants
+  static const Duration _bufferingDebounceDelay = Duration(milliseconds: 500);
+
+  // Buffering debounce timer - prevents false pauses from brief buffering events
+  Timer? _bufferingDebounceTimer;
+
+  // Peers with pending (debounced) buffering state
+  final Map<String, bool> _pendingBufferingState = {};
 
   // Track last known state to avoid duplicate broadcasts
   bool _lastKnownPlaying = false;
@@ -159,13 +168,16 @@ class WatchTogetherSyncManager {
     _rateSubscription?.cancel();
     _messageSubscription?.cancel();
     _positionSyncTimer?.cancel();
+    _bufferingDebounceTimer?.cancel();
 
     _playingSubscription = null;
     _bufferingSubscription = null;
     _rateSubscription = null;
     _messageSubscription = null;
     _positionSyncTimer = null;
+    _bufferingDebounceTimer = null;
 
+    _pendingBufferingState.clear();
     _player = null;
     appLogger.d('WatchTogether: Player detached');
   }
@@ -201,7 +213,7 @@ class WatchTogetherSyncManager {
     });
 
     // Listen to buffering state changes
-    _bufferingSubscription = _player!.streams.buffering.listen((isBuffering) {
+    _bufferingSubscription = _player!.streams.buffering.listen((isBuffering) async {
       if (_isRemoteAction) return;
 
       // Announce ready when we stop buffering for the first time (video loaded)
@@ -218,6 +230,13 @@ class WatchTogetherSyncManager {
       }
 
       _peerService.broadcast(SyncMessage.buffering(isBuffering, peerId: _peerService.myPeerId));
+
+      // Check for auto-resume when LOCAL buffering stops
+      // This fixes the bug where subtitle loading would pause both users but
+      // only resume would trigger from remote buffering messages, not local
+      if (!isBuffering) {
+        await _checkAutoResume();
+      }
     });
 
     // Listen to rate changes
@@ -239,11 +258,18 @@ class WatchTogetherSyncManager {
   }
 
   /// Start periodic position sync (host only)
+  /// Includes play/pause state for eventual consistency
   void _startPositionSync() {
     _positionSyncTimer?.cancel();
     _positionSyncTimer = Timer.periodic(positionSyncInterval, (_) {
       if (_player != null && _session.isHost) {
-        _peerService.broadcast(SyncMessage.positionSync(_player!.state.position, peerId: _peerService.myPeerId));
+        _peerService.broadcast(
+          SyncMessage.positionSync(
+            _player!.state.position,
+            peerId: _peerService.myPeerId,
+            isPlaying: _player!.state.playing,
+          ),
+        );
       }
     });
   }
@@ -364,20 +390,36 @@ class WatchTogetherSyncManager {
           break;
         }
         if (message.peerId != null && message.bufferingState != null) {
-          _participantBuffering[message.peerId!] = message.bufferingState!;
+          final peerId = message.peerId!;
+          final isBuffering = message.bufferingState!;
 
-          // Auto-pause when any peer starts buffering
-          if (isAnyBuffering && _player!.state.playing) {
-            _wasPlayingBeforeBuffering = true;
-            appLogger.d('WatchTogether: Peer buffering, pausing playback');
-            await _applyRemotePause();
-          }
-          // Auto-resume when all peers stop buffering AND all ready (if we were playing before)
-          else if (isAllReady && !isAnyBuffering && !_player!.state.playing && _wasPlayingBeforeBuffering) {
-            _wasPlayingBeforeBuffering = false;
-            appLogger.d('WatchTogether: All peers done buffering, resuming playback');
-            await _applyRemotePlay(position: _pendingPlayPosition);
-            _pendingPlayPosition = null;
+          if (isBuffering) {
+            // Peer started buffering - use debounce to avoid false pauses
+            _pendingBufferingState[peerId] = true;
+
+            // Cancel existing debounce timer if any
+            _bufferingDebounceTimer?.cancel();
+            _bufferingDebounceTimer = Timer(_bufferingDebounceDelay, () async {
+              // Check if still pending after debounce delay
+              if (_pendingBufferingState[peerId] == true) {
+                _participantBuffering[peerId] = true;
+                _pendingBufferingState.remove(peerId);
+
+                // Auto-pause when any peer starts buffering (sustained)
+                if (isAnyBuffering && _player != null && _player!.state.playing) {
+                  _wasPlayingBeforeBuffering = true;
+                  appLogger.d('WatchTogether: Peer buffering (sustained), pausing playback');
+                  await _applyRemotePause();
+                }
+              }
+            });
+          } else {
+            // Peer stopped buffering - cancel pending debounce and update immediately
+            _pendingBufferingState.remove(peerId);
+            _participantBuffering[peerId] = false;
+
+            // Auto-resume when all peers stop buffering AND all ready
+            await _checkAutoResume();
           }
         }
         break;
@@ -385,6 +427,20 @@ class WatchTogetherSyncManager {
       case SyncMessageType.positionSync:
         if (message.position != null) {
           _checkAndCorrectDrift(message.position!, message.timestamp);
+        }
+        // Reconcile play/pause state if host sent it and we diverged
+        // This provides eventual consistency for play/pause state
+        if (message.isPlaying != null && _player != null && !_session.isHost) {
+          final localPlaying = _player!.state.playing;
+          if (message.isPlaying! && !localPlaying && !isAnyBuffering && isAllReady) {
+            // Host is playing but we're paused - sync up
+            appLogger.d('WatchTogether: Play/pause state diverged, syncing to host (playing)');
+            await _applyRemotePlay(position: message.position);
+          } else if (!message.isPlaying! && localPlaying) {
+            // Host is paused but we're playing - sync up
+            appLogger.d('WatchTogether: Play/pause state diverged, syncing to host (paused)');
+            await _applyRemotePause();
+          }
         }
         break;
 
@@ -437,12 +493,7 @@ class WatchTogetherSyncManager {
           appLogger.d('WatchTogether: Peer ${message.peerId} player ready: ${message.bufferingState}');
 
           // If we were waiting to play and all are now ready, start playback
-          if (isAllReady && !isAnyBuffering && _wasPlayingBeforeBuffering) {
-            _wasPlayingBeforeBuffering = false;
-            appLogger.d('WatchTogether: All players ready, starting playback');
-            await _applyRemotePlay(position: _pendingPlayPosition);
-            _pendingPlayPosition = null;
-          }
+          await _checkAutoResume();
         }
         break;
     }
@@ -516,6 +567,21 @@ class WatchTogetherSyncManager {
     } finally {
       _isRemoteAction = false;
     }
+  }
+
+  /// Check if conditions are met to auto-resume playback
+  /// Called when local or remote buffering stops, or when a peer becomes ready
+  Future<void> _checkAutoResume() async {
+    if (_player == null) return;
+    if (!isAllReady) return;
+    if (isAnyBuffering) return;
+    if (_player!.state.playing) return;
+    if (!_wasPlayingBeforeBuffering) return;
+
+    _wasPlayingBeforeBuffering = false;
+    appLogger.d('WatchTogether: All conditions met, auto-resuming playback');
+    await _applyRemotePlay(position: _pendingPlayPosition);
+    _pendingPlayPosition = null;
   }
 
   /// Apply remote rate change
@@ -691,6 +757,7 @@ class WatchTogetherSyncManager {
     detachPlayer();
     _participantBuffering.clear();
     _participantReady.clear();
+    _pendingBufferingState.clear();
     _hasAnnouncedReady = false;
   }
 }

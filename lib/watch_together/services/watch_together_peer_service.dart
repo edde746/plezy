@@ -42,10 +42,18 @@ class WatchTogetherPeerService {
   final _errorController = StreamController<PeerError>.broadcast();
   final _connectionStateController = StreamController<bool>.broadcast();
 
-  // Reconnection state
+  // Reconnection state (signaling server)
   int _reconnectAttempts = 0;
   static const int _maxReconnectAttempts = 3;
   Timer? _reconnectTimer;
+
+  // Peer health monitoring (data channel)
+  final Map<String, DateTime> _lastPeerActivity = {};
+  final Map<String, int> _peerReconnectAttempts = {};
+  Timer? _peerHealthCheckTimer;
+  static const Duration _peerTimeout = Duration(seconds: 30);
+  static const Duration _peerHealthCheckInterval = Duration(seconds: 10);
+  static const int _maxPeerReconnectAttempts = 3;
 
   /// Stream of peer IDs when a new peer connects
   Stream<String> get onPeerConnected => _peerConnectedController.stream;
@@ -218,8 +226,14 @@ class WatchTogetherPeerService {
     conn.on('open').listen((_) {
       appLogger.d('WatchTogether: Data channel opened with: $peerId');
       _connections[peerId] = conn;
+      _updatePeerActivity(peerId); // Track initial activity
       _peerConnectedController.add(peerId);
       _connectionStateController.add(true);
+
+      // Start health monitoring if not already running
+      if (_peerHealthCheckTimer == null) {
+        _startPeerHealthCheck();
+      }
 
       if (completer != null && !completer.isCompleted) {
         completer.complete();
@@ -228,6 +242,7 @@ class WatchTogetherPeerService {
 
     conn.on('data').listen((data) {
       try {
+        _updatePeerActivity(peerId); // Track activity on each message
         final message = SyncMessage.fromJson(data as String);
         appLogger.d('WatchTogether: Received message: ${message.type} from $peerId');
         _messageReceivedController.add(message);
@@ -239,9 +254,12 @@ class WatchTogetherPeerService {
     conn.on('close').listen((_) {
       appLogger.d('WatchTogether: Connection closed with: $peerId');
       _connections.remove(peerId);
+      _lastPeerActivity.remove(peerId);
+      _peerReconnectAttempts.remove(peerId);
       _peerDisconnectedController.add(peerId);
 
       if (_connections.isEmpty) {
+        _stopPeerHealthCheck();
         _connectionStateController.add(false);
       }
     });
@@ -255,6 +273,9 @@ class WatchTogetherPeerService {
           originalError: error,
         ),
       );
+
+      // Attempt reconnection on data channel error
+      _attemptPeerReconnect(peerId);
     });
   }
 
@@ -281,6 +302,84 @@ class WatchTogetherPeerService {
         ),
       );
     }
+  }
+
+  /// Start peer health monitoring
+  void _startPeerHealthCheck() {
+    _peerHealthCheckTimer?.cancel();
+    _peerHealthCheckTimer = Timer.periodic(_peerHealthCheckInterval, (_) {
+      _checkPeerHealth();
+    });
+  }
+
+  /// Stop peer health monitoring
+  void _stopPeerHealthCheck() {
+    _peerHealthCheckTimer?.cancel();
+    _peerHealthCheckTimer = null;
+  }
+
+  /// Check health of all peer connections
+  void _checkPeerHealth() {
+    final now = DateTime.now();
+    final peersToReconnect = <String>[];
+
+    for (final peerId in _connections.keys.toList()) {
+      final lastActivity = _lastPeerActivity[peerId];
+      if (lastActivity != null && now.difference(lastActivity) > _peerTimeout) {
+        appLogger.w('WatchTogether: Peer $peerId timed out (no activity for ${_peerTimeout.inSeconds}s)');
+        peersToReconnect.add(peerId);
+      }
+    }
+
+    for (final peerId in peersToReconnect) {
+      _attemptPeerReconnect(peerId);
+    }
+  }
+
+  /// Update peer activity timestamp (called on each message received)
+  void _updatePeerActivity(String peerId) {
+    _lastPeerActivity[peerId] = DateTime.now();
+    // Reset reconnect attempts on successful activity
+    _peerReconnectAttempts[peerId] = 0;
+  }
+
+  /// Attempt to reconnect to a peer with exponential backoff
+  void _attemptPeerReconnect(String peerId) {
+    final attempts = _peerReconnectAttempts[peerId] ?? 0;
+
+    if (attempts >= _maxPeerReconnectAttempts) {
+      appLogger.e('WatchTogether: Max reconnect attempts reached for peer $peerId');
+      // Remove the dead connection and notify
+      _connections.remove(peerId);
+      _lastPeerActivity.remove(peerId);
+      _peerReconnectAttempts.remove(peerId);
+      _peerDisconnectedController.add(peerId);
+
+      if (_connections.isEmpty) {
+        _connectionStateController.add(false);
+      }
+      return;
+    }
+
+    _peerReconnectAttempts[peerId] = attempts + 1;
+    final delay = Duration(seconds: (attempts + 1) * 2); // Exponential backoff
+
+    appLogger.d(
+      'WatchTogether: Attempting peer reconnect to $peerId (${attempts + 1}/$_maxPeerReconnectAttempts) in ${delay.inSeconds}s',
+    );
+
+    // Close existing connection if any
+    _connections[peerId]?.close();
+    _connections.remove(peerId);
+
+    // Schedule reconnection attempt
+    Timer(delay, () {
+      if (_peer != null && !_connections.containsKey(peerId)) {
+        appLogger.d('WatchTogether: Reconnecting to peer $peerId');
+        final conn = _peer!.connect(peerId, options: PeerConnectOption(reliable: true));
+        _handleNewConnection(conn, isOutgoing: true);
+      }
+    });
   }
 
   /// Broadcast a message to all connected peers
@@ -317,6 +416,11 @@ class WatchTogetherPeerService {
 
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+
+    // Stop peer health monitoring
+    _stopPeerHealthCheck();
+    _lastPeerActivity.clear();
+    _peerReconnectAttempts.clear();
 
     // Close all data connections
     for (final conn in _connections.values) {
