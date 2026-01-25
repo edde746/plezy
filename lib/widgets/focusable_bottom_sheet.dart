@@ -64,6 +64,9 @@ class _FocusableBottomSheetState extends State<FocusableBottomSheet> {
         if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
           return KeyEventResult.handled;
         }
+        if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
+          return KeyEventResult.handled;
+        }
         return KeyEventResult.ignored;
       },
       child: widget.child,

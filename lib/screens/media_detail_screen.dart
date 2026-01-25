@@ -9,6 +9,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../focus/dpad_navigator.dart';
+import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
 import '../widgets/focus_builders.dart';
@@ -67,6 +68,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   bool _isSelectKeyDown = false;
   bool _longPressTriggered = false;
   static const _longPressDuration = Duration(milliseconds: 500);
+
+  // GlobalKeys for season cards to access their context menu
+  final Map<int, GlobalKey<MediaCardState>> _seasonCardKeys = {};
 
   // WatchStateAware: watch the show/movie and all season ratingKeys
   @override
@@ -809,19 +813,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     // Handle SELECT with long-press detection
     if (key.isSelectKey) {
       if (event is KeyDownEvent) {
-        if (!_isSelectKeyDown) {
-          _isSelectKeyDown = true;
-          _longPressTriggered = false;
-          _selectKeyTimer?.cancel();
-          _selectKeyTimer = Timer(_longPressDuration, () {
-            if (!mounted) return;
-            if (_isSelectKeyDown) {
-              _longPressTriggered = true;
-              SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-              // Long-press: could show context menu if needed
-            }
-          });
-        }
+        // Always reset state on KeyDown to handle cases where KeyUp was
+        // consumed by a modal (e.g., context menu) and we didn't see it
+        _selectKeyTimer?.cancel();
+        _isSelectKeyDown = true;
+        _longPressTriggered = false;
+        _selectKeyTimer = Timer(_longPressDuration, () {
+          if (!mounted) return;
+          if (_isSelectKeyDown) {
+            _longPressTriggered = true;
+            SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+            // Long-press: show context menu for the focused season
+            _seasonCardKeys[_focusedSeasonIndex]?.currentState?.showContextMenu();
+          }
+        });
         return KeyEventResult.handled;
       } else if (event is KeyRepeatEvent) {
         return KeyEventResult.handled;
@@ -909,6 +914,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
             itemBuilder: (context, index) {
               final season = _seasons[index];
               final isFocused = hasFocus && index == _focusedSeasonIndex;
+              // Get or create a GlobalKey for this season card
+              final cardKey = _seasonCardKeys.putIfAbsent(index, () => GlobalKey<MediaCardState>());
 
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -917,6 +924,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                   isFocused: isFocused,
                   onTap: () => _navigateToSeason(season),
                   child: MediaCard(
+                    key: cardKey,
                     item: season,
                     width: cardWidth,
                     height: posterHeight,
@@ -1698,14 +1706,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
   }
 }
 
-/// Season card widget
-class _SeasonCard extends StatelessWidget {
+/// Season card widget with D-pad long-press support
+class _SeasonCard extends StatefulWidget {
   final PlexMetadata season;
   final PlexClient? client;
   final VoidCallback onTap;
   final VoidCallback onRefresh;
   final bool isOffline;
   final String? localPosterPath;
+  final FocusNode? focusNode;
+  final bool autofocus;
 
   const _SeasonCard({
     required this.season,
@@ -1714,122 +1724,146 @@ class _SeasonCard extends StatelessWidget {
     required this.onRefresh,
     this.isOffline = false,
     this.localPosterPath,
+    this.focusNode,
+    this.autofocus = false,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: MediaContextMenu(
-        item: season,
-        onRefresh: (ratingKey) => onRefresh(),
-        onTap: onTap,
-        child: Semantics(
-          label: "media-season-${season.ratingKey}",
-          identifier: "media-season-${season.ratingKey}",
-          button: true,
-          hint: "Tap to view ${season.title}",
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  // Season poster
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: isOffline && localPosterPath != null
-                        ? Image.file(
-                            File(localPosterPath!),
-                            width: 80,
-                            height: 120,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              width: 80,
-                              height: 120,
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
-                            ),
-                          )
-                        : season.thumb != null
-                        ? PlexOptimizedImage.poster(
-                            client: client,
-                            imagePath: season.thumb,
-                            width: 80,
-                            height: 120,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              width: 80,
-                              height: 120,
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              width: 80,
-                              height: 120,
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
-                            ),
-                          )
-                        : Container(
-                            width: 80,
-                            height: 120,
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
-                          ),
-                  ),
-                  const SizedBox(width: 16),
+  State<_SeasonCard> createState() => _SeasonCardState();
+}
 
-                  // Season info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          season.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        if (season.leafCount != null)
+class _SeasonCardState extends State<_SeasonCard> {
+  final _contextMenuKey = GlobalKey<MediaContextMenuState>();
+
+  void _showContextMenu() {
+    _contextMenuKey.currentState?.showContextMenu(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FocusableWrapper(
+      focusNode: widget.focusNode,
+      autofocus: widget.autofocus,
+      enableLongPress: true,
+      onSelect: widget.onTap,
+      onLongPress: _showContextMenu,
+      borderRadius: 12, // Match card border radius
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: MediaContextMenu(
+          key: _contextMenuKey,
+          item: widget.season,
+          onRefresh: (ratingKey) => widget.onRefresh(),
+          onTap: widget.onTap,
+          child: Semantics(
+            label: "media-season-${widget.season.ratingKey}",
+            identifier: "media-season-${widget.season.ratingKey}",
+            button: true,
+            hint: "Tap to view ${widget.season.title}",
+            child: InkWell(
+              onTap: widget.onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // Season poster
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: widget.isOffline && widget.localPosterPath != null
+                          ? Image.file(
+                              File(widget.localPosterPath!),
+                              width: 80,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: 80,
+                                height: 120,
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+                              ),
+                            )
+                          : widget.season.thumb != null
+                          ? PlexOptimizedImage.poster(
+                              client: widget.client,
+                              imagePath: widget.season.thumb,
+                              width: 80,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                width: 80,
+                                height: 120,
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              ),
+                              errorWidget: (context, url, error) => Container(
+                                width: 80,
+                                height: 120,
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+                              ),
+                            )
+                          : Container(
+                              width: 80,
+                              height: 120,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              child: const AppIcon(Symbols.movie_rounded, fill: 1, size: 32),
+                            ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Season info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            t.discover.episodeCount(count: season.leafCount.toString()),
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                            widget.season.title,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
-                        // Hide watch progress when offline (not tracked)
-                        if (!isOffline) ...[
-                          const SizedBox(height: 8),
-                          if (season.viewedLeafCount != null && season.leafCount != null)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 200,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: season.viewedLeafCount! / season.leafCount!,
-                                      backgroundColor: tokens(context).outline,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
-                                      minHeight: 6,
+                          const SizedBox(height: 4),
+                          if (widget.season.leafCount != null)
+                            Text(
+                              t.discover.episodeCount(count: widget.season.leafCount.toString()),
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                            ),
+                          // Hide watch progress when offline (not tracked)
+                          if (!widget.isOffline) ...[
+                            const SizedBox(height: 8),
+                            if (widget.season.viewedLeafCount != null && widget.season.leafCount != null)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 200,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: LinearProgressIndicator(
+                                        value: widget.season.viewedLeafCount! / widget.season.leafCount!,
+                                        backgroundColor: tokens(context).outline,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          Theme.of(context).colorScheme.primary,
+                                        ),
+                                        minHeight: 6,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  t.discover.watchedProgress(
-                                    watched: season.viewedLeafCount.toString(),
-                                    total: season.leafCount.toString(),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    t.discover.watchedProgress(
+                                      watched: widget.season.viewedLeafCount.toString(),
+                                      total: widget.season.leafCount.toString(),
+                                    ),
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
                                   ),
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
 
-                  const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                ],
+                    const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  ],
+                ),
               ),
             ),
           ),

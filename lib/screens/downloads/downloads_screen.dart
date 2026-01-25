@@ -34,7 +34,7 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
   final _moviesTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_movies');
 
   /// When true, suppress auto-focus in tabs (used when navigating via tab bar)
-  bool _suppressAutoFocus = false;
+  bool _suppressAutoFocus = true;
 
   @override
   void initState() {
@@ -259,6 +259,9 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                             },
                             onCancel: downloadProvider.cancelDownload,
                             onDelete: downloadProvider.deleteDownload,
+                            onNavigateLeft: () => MainScreenFocusScope.of(context)?.focusSidebar(),
+                            onBack: focusTabBar,
+                            suppressAutoFocus: _suppressAutoFocus,
                           );
                         },
                       ),
@@ -287,15 +290,41 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
 enum DownloadType { manage, tvShows, movies }
 
 /// Grid content for TV Shows and Movies tabs
-class _DownloadsGridContent extends StatelessWidget {
+class _DownloadsGridContent extends StatefulWidget {
   final DownloadType type;
   final bool suppressAutoFocus;
   final VoidCallback? onBack;
 
   const _DownloadsGridContent({required this.type, required this.suppressAutoFocus, this.onBack});
 
+  @override
+  State<_DownloadsGridContent> createState() => _DownloadsGridContentState();
+}
+
+class _DownloadsGridContentState extends State<_DownloadsGridContent> {
+  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'DownloadsGrid_firstItem');
+
+  @override
+  void dispose() {
+    _firstItemFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_DownloadsGridContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When suppressAutoFocus changes from true to false, focus the first item
+    if (oldWidget.suppressAutoFocus && !widget.suppressAutoFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _firstItemFocusNode.canRequestFocus) {
+          _firstItemFocusNode.requestFocus();
+        }
+      });
+    }
+  }
+
   /// Navigate focus to the sidebar
-  void _navigateToSidebar(BuildContext context) {
+  void _navigateToSidebar() {
     MainScreenFocusScope.of(context)?.focusSidebar();
   }
 
@@ -308,36 +337,41 @@ class _DownloadsGridContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<DownloadProvider, SettingsProvider>(
       builder: (context, downloadProvider, settingsProvider, _) {
-        final List<PlexMetadata> items = type == DownloadType.tvShows
+        final List<PlexMetadata> items = widget.type == DownloadType.tvShows
             ? downloadProvider.downloadedShows
             : downloadProvider.downloadedMovies;
 
         if (items.isEmpty) {
-          return _buildEmptyState(context);
+          return _buildEmptyState();
         }
 
-        const padding = EdgeInsets.symmetric(horizontal: 8);
+        // Extra top padding for focus decoration (scale + border extends beyond item bounds)
+        const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
         final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
         const crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
 
         // Use LayoutBuilder to get actual available width (accounting for sidebar)
         return LayoutBuilder(
           builder: (context, constraints) {
-            final availableWidth = constraints.maxWidth - padding.left - padding.right;
+            final availableWidth = constraints.maxWidth - effectivePadding.left - effectivePadding.right;
             final columnCount = _calculateColumnCount(availableWidth, maxCrossAxisExtent, crossAxisSpacing);
 
             return GridView.builder(
-              padding: padding,
+              padding: effectivePadding,
+              // Allow focus decoration to render outside scroll bounds
+              clipBehavior: Clip.none,
               gridDelegate: MediaGridDelegate.createDelegate(context: context, density: settingsProvider.libraryDensity),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
                 final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
+                final isFirst = index == 0;
                 return FocusableMediaCard(
                   item: item,
-                  onBack: onBack,
+                  focusNode: isFirst ? _firstItemFocusNode : null,
+                  onBack: widget.onBack,
                   isOffline: true, // Downloaded content works without server
-                  onNavigateLeft: isFirstColumn ? () => _navigateToSidebar(context) : null,
+                  onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
                 );
               },
             );
@@ -347,7 +381,7 @@ class _DownloadsGridContent extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState() {
     return EmptyStateWidget(
       message: t.downloads.noDownloads,
       subtitle: t.downloads.noDownloadsDescription,

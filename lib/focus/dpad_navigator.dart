@@ -77,3 +77,26 @@ class SelectKeyUpSuppressor {
     return false;
   }
 }
+
+/// Global helper to suppress the next BACK key-up event.
+///
+/// Use this when a modal (bottom sheet, dialog) closes to prevent
+/// the BACK key-up from propagating to the underlying screen.
+class BackKeyUpSuppressor {
+  static bool _suppressBackUntilKeyUp = false;
+
+  static void suppressBackUntilKeyUp() {
+    _suppressBackUntilKeyUp = true;
+  }
+
+  static bool consumeIfSuppressed(KeyEvent event) {
+    if (!_suppressBackUntilKeyUp) return false;
+    if (event.logicalKey.isBackKey) {
+      if (event is KeyUpEvent) {
+        _suppressBackUntilKeyUp = false;
+      }
+      return true;
+    }
+    return false;
+  }
+}

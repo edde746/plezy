@@ -113,6 +113,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (_isContextMenuOpen) return;
     _isContextMenuOpen = true;
 
+    // Capture the currently focused node for restoration after menu closes
+    final previousFocus = FocusManager.instance.primaryFocus;
+    bool didNavigate = false;
+
     final isPlaylist = widget.item is PlexPlaylist;
     final metadata = isPlaylist ? null : widget.item as PlexMetadata;
     final mediaType = isPlaylist ? null : metadata!.mediaType;
@@ -257,6 +261,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           focusFirstItem: openedFromKeyboard,
         ),
       );
+      // Suppress BACK key-up to prevent it from propagating to the parent screen
+      BackKeyUpSuppressor.suppressBackUntilKeyUp();
     } else {
       // Show custom focusable popup menu on larger screens
       // Use stored tap position or fallback to widget position
@@ -276,6 +282,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         builder: (dialogContext) =>
             _FocusablePopupMenu(actions: menuActions, position: position, focusFirstItem: openedFromKeyboard),
       );
+      // Suppress BACK key-up to prevent it from propagating to the parent screen
+      BackKeyUpSuppressor.suppressBackUntilKeyUp();
     }
 
     try {
@@ -353,6 +361,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'series':
+          didNavigate = true;
           await _navigateToRelated(
             context,
             metadata!.grandparentRatingKey,
@@ -362,6 +371,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'season':
+          didNavigate = true;
           await _navigateToRelated(
             context,
             metadata!.parentRatingKey,
@@ -404,6 +414,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } finally {
       _isContextMenuOpen = false;
+
+      // Restore focus to the previously focused item after the menu closes,
+      // but only if no navigation occurred and the focus node is still valid
+      if (!didNavigate && previousFocus != null && previousFocus.canRequestFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (previousFocus.canRequestFocus) {
+            previousFocus.requestFocus();
+          }
+        });
+      }
     }
   }
 
@@ -477,6 +497,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           backgroundColor: Colors.transparent,
           builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
         );
+        BackKeyUpSuppressor.suppressBackUntilKeyUp();
       } else if (context.mounted) {
         showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
       }
@@ -543,6 +564,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           ),
         ),
       );
+      BackKeyUpSuppressor.suppressBackUntilKeyUp();
     } else {
       // Show popup menu on desktop
       selected = await showMenu<String>(
@@ -563,6 +585,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           );
         }).toList(),
       );
+      BackKeyUpSuppressor.suppressBackUntilKeyUp();
     }
 
     // Handle the submenu selection
@@ -591,6 +614,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         context: context,
         builder: (context) => _PlaylistSelectionDialog(playlists: playlists),
       );
+      BackKeyUpSuppressor.suppressBackUntilKeyUp();
 
       if (result == null || !context.mounted) return;
 
@@ -609,6 +633,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           labelText: t.playlists.playlistName,
           hintText: t.playlists.enterPlaylistName,
         );
+        BackKeyUpSuppressor.suppressBackUntilKeyUp();
 
         if (playlistName == null || playlistName.isEmpty || !context.mounted) {
           return;
@@ -727,6 +752,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         context: context,
         builder: (context) => _CollectionSelectionDialog(collections: collections),
       );
+      BackKeyUpSuppressor.suppressBackUntilKeyUp();
 
       if (result == null || !context.mounted) return;
 
@@ -744,6 +770,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           labelText: t.collections.collectionName,
           hintText: t.collections.enterCollectionName,
         );
+        BackKeyUpSuppressor.suppressBackUntilKeyUp();
 
         if (collectionName == null || collectionName.isEmpty || !context.mounted) {
           return;
@@ -1228,6 +1255,9 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
       skipTraversal: true,
       onKeyEvent: (node, event) {
         if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+          return KeyEventResult.handled;
+        }
+        if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;

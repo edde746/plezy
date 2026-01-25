@@ -36,6 +36,9 @@ class FocusableWrapper extends StatefulWidget {
   /// Called when the user presses LEFT and there's no focusable item to the left.
   final VoidCallback? onNavigateLeft;
 
+  /// Called when the user presses RIGHT and there's no focusable item to the right.
+  final VoidCallback? onNavigateRight;
+
   /// Called when the user presses BACK.
   final VoidCallback? onBack;
 
@@ -92,6 +95,7 @@ class FocusableWrapper extends StatefulWidget {
     this.onFocusChange,
     this.onNavigateUp,
     this.onNavigateLeft,
+    this.onNavigateRight,
     this.onBack,
     this.autofocus = false,
     this.focusNode,
@@ -374,6 +378,13 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     // for only providing this callback when the item is at the left edge)
     if (key == LogicalKeyboardKey.arrowLeft && widget.onNavigateLeft != null) {
       widget.onNavigateLeft!();
+      return KeyEventResult.handled;
+    }
+
+    // RIGHT arrow - if callback provided, navigate right (caller is responsible
+    // for only providing this callback when the item is at the right edge)
+    if (key == LogicalKeyboardKey.arrowRight && widget.onNavigateRight != null) {
+      widget.onNavigateRight!();
       return KeyEventResult.handled;
     }
 

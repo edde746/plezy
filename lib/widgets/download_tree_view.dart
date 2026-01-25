@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
@@ -56,6 +57,9 @@ class DownloadTreeView extends StatefulWidget {
   final void Function(String globalKey)? onRetry;
   final void Function(String globalKey)? onCancel;
   final void Function(String globalKey)? onDelete;
+  final VoidCallback? onNavigateLeft;
+  final VoidCallback? onBack;
+  final bool suppressAutoFocus;
 
   const DownloadTreeView({
     super.key,
@@ -66,6 +70,9 @@ class DownloadTreeView extends StatefulWidget {
     this.onRetry,
     this.onCancel,
     this.onDelete,
+    this.onNavigateLeft,
+    this.onBack,
+    this.suppressAutoFocus = false,
   });
 
   @override
@@ -74,6 +81,26 @@ class DownloadTreeView extends StatefulWidget {
 
 class _DownloadTreeViewState extends State<DownloadTreeView> {
   final Set<String> _expandedNodes = {};
+  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'DownloadTreeView_firstItem');
+
+  @override
+  void dispose() {
+    _firstItemFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(DownloadTreeView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When suppressAutoFocus changes from true to false, focus the first item
+    if (oldWidget.suppressAutoFocus && !widget.suppressAutoFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _firstItemFocusNode.canRequestFocus) {
+          _firstItemFocusNode.requestFocus();
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +116,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       itemCount: flattenedNodes.length,
       itemBuilder: (context, index) {
         final item = flattenedNodes[index];
-        return _buildTreeItem(item.node, item.depth);
+        return _buildTreeItem(item.node, item.depth, isFirst: index == 0);
       },
     );
   }
@@ -319,248 +346,25 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
   }
 
   /// Build a tree item widget
-  Widget _buildTreeItem(DownloadTreeNode node, int depth) {
-    final isExpanded = _expandedNodes.contains(node.key);
-    final canExpand = node.hasChildren;
-
-    return InkWell(
-      onTap: canExpand ? () => _toggleExpansion(node.key) : null,
-      child: Padding(
-        padding: EdgeInsets.only(left: depth * 16.0),
-        child: _buildNodeContent(node, isExpanded, canExpand),
-      ),
+  Widget _buildTreeItem(DownloadTreeNode node, int depth, {bool isFirst = false}) {
+    return _DownloadTreeItem(
+      node: node,
+      depth: depth,
+      isExpanded: _expandedNodes.contains(node.key),
+      onToggleExpansion: () => _toggleExpansion(node.key),
+      onPause: widget.onPause,
+      onResume: widget.onResume,
+      onRetry: widget.onRetry,
+      onCancel: widget.onCancel,
+      onDelete: widget.onDelete,
+      onNavigateLeft: widget.onNavigateLeft,
+      onBack: widget.onBack,
+      rowFocusNode: isFirst ? _firstItemFocusNode : null,
+      autofocus: isFirst && !widget.suppressAutoFocus,
+      pauseAllChildren: _pauseAllChildren,
+      resumeAllChildren: _resumeAllChildren,
+      deleteAllChildren: _deleteAllChildren,
     );
-  }
-
-  /// Build the content for a node
-  Widget _buildNodeContent(DownloadTreeNode node, bool isExpanded, bool canExpand) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          // Expand/collapse icon
-          if (canExpand)
-            AppIcon(isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded, fill: 1, size: 20)
-          else
-            const SizedBox(width: 20),
-
-          const SizedBox(width: 8),
-
-          // Status icon
-          _buildStatusIcon(node.status),
-
-          const SizedBox(width: 12),
-
-          // Title and info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  node.title,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: canExpand ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                if (canExpand) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    _getNodeSummary(node),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-
-                // Progress bar
-                if (node.status == DownloadStatus.downloading || node.status == DownloadStatus.queued) ...[
-                  const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: node.progress,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  ),
-                  if (node.downloadProgress != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '${(node.progress * 100).toStringAsFixed(1)}% - ${node.downloadProgress!.speedFormatted}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
-                ],
-              ],
-            ),
-          ),
-
-          // Actions
-          _buildActions(node),
-        ],
-      ),
-    );
-  }
-
-  /// Build status icon
-  Widget _buildStatusIcon(DownloadStatus status) {
-    IconData iconData;
-    Color? color;
-
-    switch (status) {
-      case DownloadStatus.downloading:
-        iconData = Symbols.downloading_rounded;
-        color = Colors.blue;
-        break;
-      case DownloadStatus.queued:
-        iconData = Symbols.schedule_rounded;
-        color = Colors.orange;
-        break;
-      case DownloadStatus.paused:
-        iconData = Symbols.pause_circle_outline_rounded;
-        color = Colors.grey;
-        break;
-      case DownloadStatus.completed:
-        iconData = Symbols.check_circle_rounded;
-        color = Colors.green;
-        break;
-      case DownloadStatus.failed:
-        iconData = Symbols.error_rounded;
-        color = Colors.red;
-        break;
-      case DownloadStatus.cancelled:
-        iconData = Symbols.cancel_rounded;
-        color = Colors.grey;
-        break;
-      case DownloadStatus.partial:
-        iconData = Symbols.downloading_rounded;
-        color = Colors.orange;
-        break;
-    }
-
-    return AppIcon(iconData, fill: 1, size: 20, color: color);
-  }
-
-  /// Get summary text for container nodes (shows/seasons)
-  String _getNodeSummary(DownloadTreeNode node) {
-    final total = node.children.length;
-    final completed = node.completedChildrenCount;
-    return '$completed/$total completed';
-  }
-
-  /// Build action buttons for nodes
-  Widget _buildActions(DownloadTreeNode node) {
-    final isContainer = node.type == DownloadNodeType.show || node.type == DownloadNodeType.season;
-
-    final actions = isContainer ? _getContainerActions(node) : _getItemActions(node);
-
-    return Row(mainAxisSize: MainAxisSize.min, children: actions);
-  }
-
-  /// Get action buttons for individual items (episodes/movies)
-  List<Widget> _getItemActions(DownloadTreeNode node) {
-    final globalKey = node.key;
-    final status = node.status;
-    final actions = <Widget>[];
-
-    // Pause button for downloading items
-    if (status == DownloadStatus.downloading && widget.onPause != null) {
-      actions.add(
-        _buildActionButton(icon: Symbols.pause_rounded, tooltip: 'Pause', onPressed: () => widget.onPause!(globalKey)),
-      );
-    }
-
-    // Resume button for paused items
-    if (status == DownloadStatus.paused && widget.onResume != null) {
-      actions.add(
-        _buildActionButton(
-          icon: Symbols.play_arrow_rounded,
-          tooltip: 'Resume',
-          onPressed: () => widget.onResume!(globalKey),
-        ),
-      );
-    }
-
-    // Cancel button for downloading/queued items
-    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onCancel != null) {
-      actions.add(
-        _buildActionButton(
-          icon: Symbols.close_rounded,
-          tooltip: 'Cancel',
-          onPressed: () => widget.onCancel!(globalKey),
-        ),
-      );
-    }
-
-    // Retry button for failed items
-    if (status == DownloadStatus.failed && widget.onRetry != null) {
-      actions.add(
-        _buildActionButton(
-          icon: Symbols.refresh_rounded,
-          tooltip: t.downloads.retryDownload,
-          onPressed: () => widget.onRetry!(globalKey),
-        ),
-      );
-    }
-
-    // Delete button for completed/failed/cancelled items
-    if ((status == DownloadStatus.completed || status == DownloadStatus.failed || status == DownloadStatus.cancelled) &&
-        widget.onDelete != null) {
-      actions.add(
-        _buildActionButton(
-          icon: Symbols.delete_rounded,
-          tooltip: 'Delete',
-          onPressed: () => widget.onDelete!(globalKey),
-        ),
-      );
-    }
-
-    return actions;
-  }
-
-  /// Get action buttons for container nodes (shows/seasons)
-  List<Widget> _getContainerActions(DownloadTreeNode node) {
-    final status = node.status;
-    final actions = <Widget>[];
-
-    // Pause all button - show if any children are downloading or queued
-    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onPause != null) {
-      actions.add(
-        _buildActionButton(icon: Symbols.pause_rounded, tooltip: 'Pause all', onPressed: () => _pauseAllChildren(node)),
-      );
-    }
-
-    // Resume all button - show if container is paused
-    if (status == DownloadStatus.paused && widget.onResume != null) {
-      actions.add(
-        _buildActionButton(
-          icon: Symbols.play_arrow_rounded,
-          tooltip: 'Resume all',
-          onPressed: () => _resumeAllChildren(node),
-        ),
-      );
-    }
-
-    // Delete all button
-    if (widget.onDelete != null) {
-      actions.add(
-        _buildActionButton(
-          icon: Symbols.delete_sweep_rounded,
-          tooltip: 'Delete all',
-          onPressed: () => _deleteAllChildren(node),
-        ),
-      );
-    }
-
-    return actions;
-  }
-
-  /// Build a single action button
-  Widget _buildActionButton({required IconData icon, required String tooltip, required VoidCallback onPressed}) {
-    return IconButton(icon: AppIcon(icon, fill: 1, size: 20), onPressed: onPressed, tooltip: tooltip);
   }
 
   /// Pause all active (downloading and queued) children of a container node
@@ -635,4 +439,434 @@ class _FlatNode {
   final int depth;
 
   const _FlatNode({required this.node, required this.depth});
+}
+
+/// A single tree item with focusable row content and action buttons
+class _DownloadTreeItem extends StatefulWidget {
+  final DownloadTreeNode node;
+  final int depth;
+  final bool isExpanded;
+  final VoidCallback onToggleExpansion;
+  final void Function(String globalKey)? onPause;
+  final void Function(String globalKey)? onResume;
+  final void Function(String globalKey)? onRetry;
+  final void Function(String globalKey)? onCancel;
+  final void Function(String globalKey)? onDelete;
+  final VoidCallback? onNavigateLeft;
+  final VoidCallback? onBack;
+  final FocusNode? rowFocusNode;
+  final bool autofocus;
+  final void Function(DownloadTreeNode) pauseAllChildren;
+  final void Function(DownloadTreeNode) resumeAllChildren;
+  final void Function(DownloadTreeNode) deleteAllChildren;
+
+  const _DownloadTreeItem({
+    required this.node,
+    required this.depth,
+    required this.isExpanded,
+    required this.onToggleExpansion,
+    this.onPause,
+    this.onResume,
+    this.onRetry,
+    this.onCancel,
+    this.onDelete,
+    this.onNavigateLeft,
+    this.onBack,
+    this.rowFocusNode,
+    this.autofocus = false,
+    required this.pauseAllChildren,
+    required this.resumeAllChildren,
+    required this.deleteAllChildren,
+  });
+
+  @override
+  State<_DownloadTreeItem> createState() => _DownloadTreeItemState();
+}
+
+class _DownloadTreeItemState extends State<_DownloadTreeItem> {
+  // Focus node for row content (only created if not provided externally)
+  FocusNode? _ownedRowFocusNode;
+  // Focus nodes for action buttons (up to 3 buttons max)
+  final List<FocusNode> _buttonFocusNodes = [];
+
+  FocusNode get _rowFocusNode => widget.rowFocusNode ?? _ownedRowFocusNode!;
+
+  @override
+  void initState() {
+    super.initState();
+    _initRowFocusNode();
+    _initButtonFocusNodes();
+  }
+
+  @override
+  void didUpdateWidget(_DownloadTreeItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reinitialize focus nodes if action count might have changed
+    if (oldWidget.node.status != widget.node.status) {
+      _disposeButtonFocusNodes();
+      _initButtonFocusNodes();
+    }
+  }
+
+  void _initRowFocusNode() {
+    if (widget.rowFocusNode == null) {
+      _ownedRowFocusNode = FocusNode(debugLabel: 'download_row_${widget.node.key}');
+    }
+  }
+
+  void _initButtonFocusNodes() {
+    final actionCount = _getActionCount();
+    for (int i = 0; i < actionCount; i++) {
+      _buttonFocusNodes.add(FocusNode(debugLabel: 'download_action_$i'));
+    }
+  }
+
+  void _disposeButtonFocusNodes() {
+    for (final node in _buttonFocusNodes) {
+      node.dispose();
+    }
+    _buttonFocusNodes.clear();
+  }
+
+  @override
+  void dispose() {
+    _ownedRowFocusNode?.dispose();
+    _disposeButtonFocusNodes();
+    super.dispose();
+  }
+
+  int _getActionCount() {
+    final isContainer = widget.node.type == DownloadNodeType.show ||
+                        widget.node.type == DownloadNodeType.season;
+    if (isContainer) {
+      return _getContainerActionCount();
+    }
+    return _getItemActionCount();
+  }
+
+  int _getItemActionCount() {
+    int count = 0;
+    final status = widget.node.status;
+    if (status == DownloadStatus.downloading && widget.onPause != null) count++;
+    if (status == DownloadStatus.paused && widget.onResume != null) count++;
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) &&
+        widget.onCancel != null) count++;
+    if (status == DownloadStatus.failed && widget.onRetry != null) count++;
+    if ((status == DownloadStatus.completed || status == DownloadStatus.failed ||
+         status == DownloadStatus.cancelled) && widget.onDelete != null) count++;
+    return count;
+  }
+
+  int _getContainerActionCount() {
+    int count = 0;
+    final status = widget.node.status;
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) &&
+        widget.onPause != null) count++;
+    if (status == DownloadStatus.paused && widget.onResume != null) count++;
+    if (widget.onDelete != null) count++;
+    return count;
+  }
+
+  void _focusFirstButton() {
+    if (_buttonFocusNodes.isNotEmpty) {
+      _buttonFocusNodes[0].requestFocus();
+    }
+  }
+
+  void _focusRow() {
+    _rowFocusNode.requestFocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final canExpand = widget.node.hasChildren;
+    final hasActions = _buttonFocusNodes.isNotEmpty;
+
+    return Padding(
+      padding: EdgeInsets.only(left: widget.depth * 16.0),
+      child: FocusableWrapper(
+        focusNode: _rowFocusNode,
+        autofocus: widget.autofocus,
+        onSelect: canExpand ? widget.onToggleExpansion : null,
+        onNavigateLeft: widget.onNavigateLeft,
+        onNavigateRight: hasActions ? _focusFirstButton : null,
+        onBack: widget.onBack,
+        borderRadius: 8.0,
+        disableScale: true,
+        useBackgroundFocus: true,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              // Row content
+              Expanded(child: _buildRowContent(theme, canExpand)),
+
+              // Action buttons
+              if (hasActions) _buildActions(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRowContent(ThemeData theme, bool canExpand) {
+    return Row(
+      children: [
+        // Expand/collapse icon
+        if (canExpand)
+          AppIcon(
+            widget.isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded,
+            fill: 1,
+            size: 20,
+          )
+        else
+          const SizedBox(width: 20),
+
+        const SizedBox(width: 8),
+
+        // Status icon
+        _buildStatusIcon(widget.node.status),
+
+        const SizedBox(width: 12),
+
+        // Title and info
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.node.title,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: canExpand ? FontWeight.w600 : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              if (canExpand) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _getNodeSummary(),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+
+              // Progress bar
+              if (widget.node.status == DownloadStatus.downloading ||
+                  widget.node.status == DownloadStatus.queued) ...[
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: widget.node.progress,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                ),
+                if (widget.node.downloadProgress != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusIcon(DownloadStatus status) {
+    IconData iconData;
+    Color? color;
+
+    switch (status) {
+      case DownloadStatus.downloading:
+        iconData = Symbols.downloading_rounded;
+        color = Colors.blue;
+        break;
+      case DownloadStatus.queued:
+        iconData = Symbols.schedule_rounded;
+        color = Colors.orange;
+        break;
+      case DownloadStatus.paused:
+        iconData = Symbols.pause_circle_outline_rounded;
+        color = Colors.grey;
+        break;
+      case DownloadStatus.completed:
+        iconData = Symbols.check_circle_rounded;
+        color = Colors.green;
+        break;
+      case DownloadStatus.failed:
+        iconData = Symbols.error_rounded;
+        color = Colors.red;
+        break;
+      case DownloadStatus.cancelled:
+        iconData = Symbols.cancel_rounded;
+        color = Colors.grey;
+        break;
+      case DownloadStatus.partial:
+        iconData = Symbols.downloading_rounded;
+        color = Colors.orange;
+        break;
+    }
+
+    return AppIcon(iconData, fill: 1, size: 20, color: color);
+  }
+
+  String _getNodeSummary() {
+    final total = widget.node.children.length;
+    final completed = widget.node.completedChildrenCount;
+    return '$completed/$total completed';
+  }
+
+  Widget _buildActions() {
+    final isContainer = widget.node.type == DownloadNodeType.show ||
+                        widget.node.type == DownloadNodeType.season;
+
+    final actions = isContainer ? _buildContainerActions() : _buildItemActions();
+
+    return Row(mainAxisSize: MainAxisSize.min, children: actions);
+  }
+
+  List<Widget> _buildItemActions() {
+    final globalKey = widget.node.key;
+    final status = widget.node.status;
+    final actions = <Widget>[];
+    int buttonIndex = 0;
+
+    // Pause button for downloading items
+    if (status == DownloadStatus.downloading && widget.onPause != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.pause_rounded,
+        tooltip: 'Pause',
+        onPressed: () => widget.onPause!(globalKey),
+        buttonIndex: buttonIndex++,
+      ));
+    }
+
+    // Resume button for paused items
+    if (status == DownloadStatus.paused && widget.onResume != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.play_arrow_rounded,
+        tooltip: 'Resume',
+        onPressed: () => widget.onResume!(globalKey),
+        buttonIndex: buttonIndex++,
+      ));
+    }
+
+    // Cancel button for downloading/queued items
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) &&
+        widget.onCancel != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.close_rounded,
+        tooltip: 'Cancel',
+        onPressed: () => widget.onCancel!(globalKey),
+        buttonIndex: buttonIndex++,
+      ));
+    }
+
+    // Retry button for failed items
+    if (status == DownloadStatus.failed && widget.onRetry != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.refresh_rounded,
+        tooltip: t.downloads.retryDownload,
+        onPressed: () => widget.onRetry!(globalKey),
+        buttonIndex: buttonIndex++,
+      ));
+    }
+
+    // Delete button for completed/failed/cancelled items
+    if ((status == DownloadStatus.completed || status == DownloadStatus.failed ||
+         status == DownloadStatus.cancelled) && widget.onDelete != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.delete_rounded,
+        tooltip: 'Delete',
+        onPressed: () => widget.onDelete!(globalKey),
+        buttonIndex: buttonIndex++,
+      ));
+    }
+
+    return actions;
+  }
+
+  List<Widget> _buildContainerActions() {
+    final status = widget.node.status;
+    final actions = <Widget>[];
+    int buttonIndex = 0;
+
+    // Pause all button
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) &&
+        widget.onPause != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.pause_rounded,
+        tooltip: 'Pause all',
+        onPressed: () => widget.pauseAllChildren(widget.node),
+        buttonIndex: buttonIndex++,
+      ));
+    }
+
+    // Resume all button
+    if (status == DownloadStatus.paused && widget.onResume != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.play_arrow_rounded,
+        tooltip: 'Resume all',
+        onPressed: () => widget.resumeAllChildren(widget.node),
+        buttonIndex: buttonIndex++,
+      ));
+    }
+
+    // Delete all button
+    if (widget.onDelete != null) {
+      actions.add(_buildActionButton(
+        icon: Symbols.delete_sweep_rounded,
+        tooltip: 'Delete all',
+        onPressed: () => widget.deleteAllChildren(widget.node),
+        buttonIndex: buttonIndex++,
+      ));
+    }
+
+    return actions;
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    required int buttonIndex,
+  }) {
+    final isFirst = buttonIndex == 0;
+    final isLast = buttonIndex == _buttonFocusNodes.length - 1;
+
+    return FocusableWrapper(
+      focusNode: _buttonFocusNodes[buttonIndex],
+      onSelect: onPressed,
+      onNavigateLeft: isFirst
+          ? _focusRow
+          : () => _buttonFocusNodes[buttonIndex - 1].requestFocus(),
+      onNavigateRight: isLast
+          ? null
+          : () => _buttonFocusNodes[buttonIndex + 1].requestFocus(),
+      onBack: widget.onBack,
+      borderRadius: 20.0,
+      disableScale: true,
+      useBackgroundFocus: true,
+      autoScroll: false,
+      child: Tooltip(
+        message: tooltip,
+        child: GestureDetector(
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: AppIcon(icon, fill: 1, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
 }

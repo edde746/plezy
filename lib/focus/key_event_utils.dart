@@ -56,11 +56,13 @@ class BackKeyCoordinator {
 ///
 /// This consumes KeyDown/KeyRepeat to avoid duplicate actions from key repeat.
 /// Optionally suppresses stray KeyUp events delivered to the next route after a pop.
-KeyEventResult handleBackKeyAction(
-  KeyEvent event,
-  VoidCallback onBack,
-) {
+KeyEventResult handleBackKeyAction(KeyEvent event, VoidCallback onBack) {
   if (!event.logicalKey.isBackKey) return KeyEventResult.ignored;
+
+  // Check if this BACK event should be suppressed (e.g., after modal closed)
+  if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
+    return KeyEventResult.handled;
+  }
 
   if (event is KeyUpEvent) {
     BackKeyCoordinator.markHandled();
