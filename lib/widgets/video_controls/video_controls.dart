@@ -64,6 +64,7 @@ Widget plexVideoControlsBuilder(
   bool canControl = true,
   ValueNotifier<bool>? hasFirstFrame,
   FocusNode? playNextFocusNode,
+  ValueNotifier<bool>? controlsVisible,
 }) {
   return PlexVideoControls(
     player: player,
@@ -82,6 +83,7 @@ Widget plexVideoControlsBuilder(
     canControl: canControl,
     hasFirstFrame: hasFirstFrame,
     playNextFocusNode: playNextFocusNode,
+    controlsVisible: controlsVisible,
   );
 }
 
@@ -113,6 +115,9 @@ class PlexVideoControls extends StatefulWidget {
   /// Optional focus node for Play Next dialog button (for TV navigation from timeline)
   final FocusNode? playNextFocusNode;
 
+  /// Notifier to report controls visibility to parent (for popup positioning)
+  final ValueNotifier<bool>? controlsVisible;
+
   const PlexVideoControls({
     super.key,
     required this.player,
@@ -131,6 +136,7 @@ class PlexVideoControls extends StatefulWidget {
     this.canControl = true,
     this.hasFirstFrame,
     this.playNextFocusNode,
+    this.controlsVisible,
   });
 
   @override
@@ -322,6 +328,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         setState(() {
           _showControls = true;
         });
+        // Notify parent of visibility change (for popup positioning)
+        widget.controlsVisible?.value = true;
         _hideTimer?.cancel();
       }
     });
@@ -548,6 +556,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           setState(() {
             _showControls = false;
           });
+          // Notify parent of visibility change (for popup positioning)
+          widget.controlsVisible?.value = false;
           // Hide traffic lights on macOS when controls auto-hide
           if (Platform.isMacOS) {
             _updateTrafficLightVisibility();
@@ -570,6 +580,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       setState(() {
         _showControls = true;
       });
+      // Notify parent of visibility change (for popup positioning)
+      widget.controlsVisible?.value = true;
       // On macOS, keep window controls in sync with the overlay
       if (Platform.isMacOS) {
         _updateTrafficLightVisibility();
@@ -584,6 +596,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     setState(() {
       _showControls = !_showControls;
     });
+    // Notify parent of visibility change (for popup positioning)
+    widget.controlsVisible?.value = _showControls;
     if (_showControls) {
       _startHideTimer();
       // Cancel auto-skip when user manually shows controls
@@ -1212,6 +1226,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       setState(() {
         _showControls = true;
       });
+      // Notify parent of visibility change (for popup positioning)
+      widget.controlsVisible?.value = true;
       if (Platform.isMacOS) {
         _updateTrafficLightVisibility();
       }
@@ -1240,6 +1256,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       setState(() {
         _showControls = true;
       });
+      // Notify parent of visibility change (for popup positioning)
+      widget.controlsVisible?.value = true;
       if (Platform.isMacOS) {
         _updateTrafficLightVisibility();
       }
@@ -1271,6 +1289,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       setState(() {
         _showControls = false;
       });
+      // Notify parent of visibility change (for popup positioning)
+      widget.controlsVisible?.value = false;
       // Return focus to the main focus node
       _focusNode.requestFocus();
       if (Platform.isMacOS) {
@@ -1643,9 +1663,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   if (_showSpeedIndicator) Positioned.fill(child: IgnorePointer(child: _buildSpeedIndicator())),
                   // Skip intro/credits button
                   if (_currentMarker != null)
-                    Positioned(
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
                       right: 24,
-                      bottom: isMobile ? 80 : 115,
+                      bottom: _showControls ? (isMobile ? 80 : 115) : 24,
                       child: AnimatedOpacity(
                         opacity: 1.0,
                         duration: tokens(context).slow,

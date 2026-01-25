@@ -129,6 +129,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false); // Track if first video frame has rendered
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false); // Track if navigating away (for black overlay)
+  final ValueNotifier<bool> _controlsVisible = ValueNotifier<bool>(
+    true,
+  ); // Track if video controls are visible (for popup positioning)
 
   @override
   void initState() {
@@ -1082,6 +1085,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _isBuffering.dispose();
     _hasFirstFrame.dispose();
     _isExiting.dispose();
+    _controlsVisible.dispose();
 
     // Stop progress tracking and send final state
     _progressTracker?.sendProgress('stopped');
@@ -1707,6 +1711,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         canControl: canControl,
                         hasFirstFrame: _hasFirstFrame,
                         playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
+                        controlsVisible: _controlsVisible,
                       ),
                     );
                   },
@@ -1719,165 +1724,172 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                   if (isInPip || !_showPlayNextDialog || _nextEpisode == null) {
                     return const SizedBox.shrink();
                   }
-                  return Positioned(
-                    right: 24,
-                    bottom: 100,
-                    child: Container(
-                      width: 320,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Consumer<PlaybackStateProvider>(
-                                      builder: (context, playbackState, child) {
-                                        final isShuffleActive = playbackState.isShuffleActive;
-                                        return Row(
-                                          children: [
-                                            Text(
-                                              'Next Episode',
-                                              style: TextStyle(
-                                                color: Colors.white.withValues(alpha: 0.7),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            if (isShuffleActive) ...[
-                                              const SizedBox(width: 4),
-                                              AppIcon(
-                                                Symbols.shuffle_rounded,
-                                                fill: 1,
-                                                size: 12,
-                                                color: Colors.white.withValues(alpha: 0.7),
-                                              ),
-                                            ],
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(height: 4),
-                                    if (_nextEpisode!.parentIndex != null && _nextEpisode!.index != null)
-                                      Text(
-                                        'S${_nextEpisode!.parentIndex} E${_nextEpisode!.index} · ${_nextEpisode!.title}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      )
-                                    else
-                                      Text(
-                                        _nextEpisode!.title,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                  return ValueListenableBuilder<bool>(
+                    valueListenable: _controlsVisible,
+                    builder: (context, controlsShown, child) {
+                      return AnimatedPositioned(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        right: 24,
+                        bottom: controlsShown ? 100 : 24,
+                        child: Container(
+                          width: 320,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(height: 12),
-                          Row(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: FocusableWrapper(
-                                  focusNode: _playNextCancelFocusNode,
-                                  onSelect: _cancelAutoPlay,
-                                  useBackgroundFocus: true,
-                                  autoScroll: false,
-                                  borderRadius: 20,
-                                  onKeyEvent: (node, event) {
-                                    if (event is KeyDownEvent) {
-                                      // RIGHT arrow moves focus to Play Next button
-                                      if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-                                        _playNextConfirmFocusNode.requestFocus();
-                                        return KeyEventResult.handled;
-                                      }
-                                      // Trap focus - consume UP/DOWN to prevent escape
-                                      if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                                          event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                        return KeyEventResult.handled;
-                                      }
-                                    }
-                                    return KeyEventResult.ignored;
-                                  },
-                                  child: OutlinedButton(
-                                    onPressed: _cancelAutoPlay,
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.white,
-                                      side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                    ),
-                                    child: Text(t.dialog.cancel),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: FocusableWrapper(
-                                  focusNode: _playNextConfirmFocusNode,
-                                  onSelect: _playNext,
-                                  useBackgroundFocus: true,
-                                  autoScroll: false,
-                                  borderRadius: 20,
-                                  onKeyEvent: (node, event) {
-                                    if (event is KeyDownEvent) {
-                                      // LEFT arrow moves focus to Cancel button
-                                      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-                                        _playNextCancelFocusNode.requestFocus();
-                                        return KeyEventResult.handled;
-                                      }
-                                      // Trap focus - consume UP/DOWN to prevent escape
-                                      if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-                                          event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                                        return KeyEventResult.handled;
-                                      }
-                                    }
-                                    return KeyEventResult.ignored;
-                                  },
-                                  child: FilledButton(
-                                    onPressed: _playNext,
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: Colors.black,
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        if (_autoPlayCountdown > 0) ...[
-                                          Text('$_autoPlayCountdown'),
-                                          const SizedBox(width: 4),
-                                          const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
-                                        ] else
-                                          Text(t.videoControls.playNext),
+                                        Consumer<PlaybackStateProvider>(
+                                          builder: (context, playbackState, child) {
+                                            final isShuffleActive = playbackState.isShuffleActive;
+                                            return Row(
+                                              children: [
+                                                Text(
+                                                  'Next Episode',
+                                                  style: TextStyle(
+                                                    color: Colors.white.withValues(alpha: 0.7),
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                if (isShuffleActive) ...[
+                                                  const SizedBox(width: 4),
+                                                  AppIcon(
+                                                    Symbols.shuffle_rounded,
+                                                    fill: 1,
+                                                    size: 12,
+                                                    color: Colors.white.withValues(alpha: 0.7),
+                                                  ),
+                                                ],
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(height: 4),
+                                        if (_nextEpisode!.parentIndex != null && _nextEpisode!.index != null)
+                                          Text(
+                                            'S${_nextEpisode!.parentIndex} E${_nextEpisode!.index} · ${_nextEpisode!.title}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          )
+                                        else
+                                          Text(
+                                            _nextEpisode!.title,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                       ],
                                     ),
                                   ),
-                                ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: FocusableWrapper(
+                                      focusNode: _playNextCancelFocusNode,
+                                      onSelect: _cancelAutoPlay,
+                                      useBackgroundFocus: true,
+                                      autoScroll: false,
+                                      borderRadius: 20,
+                                      onKeyEvent: (node, event) {
+                                        if (event is KeyDownEvent) {
+                                          // RIGHT arrow moves focus to Play Next button
+                                          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                                            _playNextConfirmFocusNode.requestFocus();
+                                            return KeyEventResult.handled;
+                                          }
+                                          // Trap focus - consume UP/DOWN to prevent escape
+                                          if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                                              event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                            return KeyEventResult.handled;
+                                          }
+                                        }
+                                        return KeyEventResult.ignored;
+                                      },
+                                      child: OutlinedButton(
+                                        onPressed: _cancelAutoPlay,
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                        child: Text(t.dialog.cancel),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: FocusableWrapper(
+                                      focusNode: _playNextConfirmFocusNode,
+                                      onSelect: _playNext,
+                                      useBackgroundFocus: true,
+                                      autoScroll: false,
+                                      borderRadius: 20,
+                                      onKeyEvent: (node, event) {
+                                        if (event is KeyDownEvent) {
+                                          // LEFT arrow moves focus to Cancel button
+                                          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                                            _playNextCancelFocusNode.requestFocus();
+                                            return KeyEventResult.handled;
+                                          }
+                                          // Trap focus - consume UP/DOWN to prevent escape
+                                          if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                                              event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                            return KeyEventResult.handled;
+                                          }
+                                        }
+                                        return KeyEventResult.ignored;
+                                      },
+                                      child: FilledButton(
+                                        onPressed: _playNext,
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: Colors.black,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            if (_autoPlayCountdown > 0) ...[
+                                              Text('$_autoPlayCountdown'),
+                                              const SizedBox(width: 4),
+                                              const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                                            ] else
+                                              Text(t.videoControls.playNext),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),

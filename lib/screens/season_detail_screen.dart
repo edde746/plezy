@@ -264,7 +264,6 @@ class _EpisodeCard extends StatefulWidget {
   final bool autofocus;
   final bool isOffline;
   final String? localPosterPath;
-  final FocusNode? focusNode;
 
   const _EpisodeCard({
     required this.episode,
@@ -274,7 +273,6 @@ class _EpisodeCard extends StatefulWidget {
     this.autofocus = false,
     this.isOffline = false,
     this.localPosterPath,
-    this.focusNode,
   });
 
   @override
@@ -324,7 +322,6 @@ class _EpisodeCardState extends State<_EpisodeCard> {
     final progress = hasProgress ? widget.episode.viewOffset! / widget.episode.duration! : 0.0;
 
     return FocusableWrapper(
-      focusNode: widget.focusNode,
       autofocus: widget.autofocus,
       enableLongPress: true,
       onSelect: widget.onTap,

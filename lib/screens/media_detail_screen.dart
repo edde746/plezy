@@ -1714,8 +1714,6 @@ class _SeasonCard extends StatefulWidget {
   final VoidCallback onRefresh;
   final bool isOffline;
   final String? localPosterPath;
-  final FocusNode? focusNode;
-  final bool autofocus;
 
   const _SeasonCard({
     required this.season,
@@ -1724,8 +1722,6 @@ class _SeasonCard extends StatefulWidget {
     required this.onRefresh,
     this.isOffline = false,
     this.localPosterPath,
-    this.focusNode,
-    this.autofocus = false,
   });
 
   @override
@@ -1742,8 +1738,6 @@ class _SeasonCardState extends State<_SeasonCard> {
   @override
   Widget build(BuildContext context) {
     return FocusableWrapper(
-      focusNode: widget.focusNode,
-      autofocus: widget.autofocus,
       enableLongPress: true,
       onSelect: widget.onTap,
       onLongPress: _showContextMenu,
