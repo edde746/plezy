@@ -32,6 +32,9 @@ class NavigationRailItem extends StatelessWidget {
   final BorderRadius borderRadius;
   final double iconSize;
 
+  /// Called when RIGHT arrow is pressed to navigate to content area.
+  final VoidCallback? onNavigateRight;
+
   const NavigationRailItem({
     super.key,
     required this.icon,
@@ -46,6 +49,7 @@ class NavigationRailItem extends StatelessWidget {
     this.autofocus = false,
     this.borderRadius = const BorderRadius.all(Radius.circular(12)),
     this.iconSize = 22,
+    this.onNavigateRight,
   });
 
   @override
@@ -59,6 +63,11 @@ class NavigationRailItem extends StatelessWidget {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
         if (event.logicalKey.isSelectKey) {
           onTap();
+          return KeyEventResult.handled;
+        }
+        // RIGHT arrow navigates to content area
+        if (event.logicalKey == LogicalKeyboardKey.arrowRight && onNavigateRight != null) {
+          onNavigateRight!();
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -124,6 +133,9 @@ class SideNavigationRail extends StatefulWidget {
   final ValueChanged<int> onDestinationSelected;
   final ValueChanged<String> onLibrarySelected;
 
+  /// Called when RIGHT arrow is pressed to navigate to content without selecting.
+  final VoidCallback? onNavigateToContent;
+
   const SideNavigationRail({
     super.key,
     required this.selectedIndex,
@@ -133,6 +145,7 @@ class SideNavigationRail extends StatefulWidget {
     this.alwaysExpanded = false,
     required this.onDestinationSelected,
     required this.onLibrarySelected,
+    this.onNavigateToContent,
   });
 
   @override
@@ -408,6 +421,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       onTap: onTap,
       focusNode: focusNode,
       autofocus: autofocus,
+      onNavigateRight: widget.onNavigateToContent,
     );
   }
 
@@ -429,6 +443,11 @@ class SideNavigationRailState extends State<SideNavigationRail> {
               setState(() {
                 _librariesExpanded = !_librariesExpanded;
               });
+              return KeyEventResult.handled;
+            }
+            // RIGHT arrow navigates to content area
+            if (event.logicalKey == LogicalKeyboardKey.arrowRight && widget.onNavigateToContent != null) {
+              widget.onNavigateToContent!();
               return KeyEventResult.handled;
             }
             return KeyEventResult.ignored;
@@ -605,6 +624,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
         focusNode: focusNode,
         borderRadius: BorderRadius.circular(tokens(context).radiusSm),
         iconSize: 18,
+        onNavigateRight: widget.onNavigateToContent,
       ),
     );
   }

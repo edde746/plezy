@@ -6,6 +6,8 @@ import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/gamepad_service.dart';
+import '../../utils/grid_size_calculator.dart';
+import '../../utils/layout_constants.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
@@ -156,7 +158,7 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
               });
               _getTabChipFocusNode(newIndex).requestFocus();
             }
-          : null,
+          : _onTabBarBack,
       onNavigateRight: index < tabCount - 1
           ? () {
               final newIndex = index + 1;
@@ -292,6 +294,16 @@ class _DownloadsGridContent extends StatelessWidget {
 
   const _DownloadsGridContent({required this.type, required this.suppressAutoFocus, this.onBack});
 
+  /// Navigate focus to the sidebar
+  void _navigateToSidebar(BuildContext context) {
+    MainScreenFocusScope.of(context)?.focusSidebar();
+  }
+
+  /// Calculate column count based on actual available width.
+  int _calculateColumnCount(double availableWidth, double maxCrossAxisExtent, double crossAxisSpacing) {
+    return ((availableWidth + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer2<DownloadProvider, SettingsProvider>(
@@ -304,16 +316,30 @@ class _DownloadsGridContent extends StatelessWidget {
           return _buildEmptyState(context);
         }
 
-        return GridView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          gridDelegate: MediaGridDelegate.createDelegate(context: context, density: settingsProvider.libraryDensity),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return FocusableMediaCard(
-              item: item,
-              onBack: onBack,
-              isOffline: true, // Downloaded content works without server
+        const padding = EdgeInsets.symmetric(horizontal: 8);
+        final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+        const crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
+
+        // Use LayoutBuilder to get actual available width (accounting for sidebar)
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final availableWidth = constraints.maxWidth - padding.left - padding.right;
+            final columnCount = _calculateColumnCount(availableWidth, maxCrossAxisExtent, crossAxisSpacing);
+
+            return GridView.builder(
+              padding: padding,
+              gridDelegate: MediaGridDelegate.createDelegate(context: context, density: settingsProvider.libraryDensity),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
+                return FocusableMediaCard(
+                  item: item,
+                  onBack: onBack,
+                  isOffline: true, // Downloaded content works without server
+                  onNavigateLeft: isFirstColumn ? () => _navigateToSidebar(context) : null,
+                );
+              },
             );
           },
         );

@@ -21,6 +21,7 @@ import '../../../services/storage_service.dart';
 import '../../../services/settings_service.dart' show ViewMode, EpisodePosterMode;
 import '../../../mixins/item_updatable.dart';
 import '../../../i18n/strings.g.dart';
+import '../../main_screen.dart';
 import 'base_library_tab.dart';
 
 /// Browse tab for library screen
@@ -506,6 +507,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _groupingChipFocusNode.requestFocus();
   }
 
+  /// Navigate focus to the sidebar
+  void _navigateToSidebar() {
+    MainScreenFocusScope.of(context)?.focusSidebar();
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
@@ -580,6 +586,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             onPressed: _showGroupingBottomSheet,
             onNavigateDown: _navigateToGrid,
             onNavigateUp: widget.onBack,
+            onNavigateLeft: _navigateToSidebar,
             onNavigateRight: _isFiltersChipVisible
                 ? () => _filtersChipFocusNode.requestFocus()
                 : _isSortChipVisible
@@ -668,12 +675,16 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     final itemCount = items.length + (_hasMoreItems && isLoading ? 1 : 0);
 
     if (settingsProvider.viewMode == ViewMode.list) {
-      // In list view, only the first item can navigate up to chips
+      // In list view, all items are in a single column (first column)
       return SliverPadding(
         padding: const EdgeInsets.fromLTRB(8, _gridTopPadding, 8, 8),
         sliver: SliverList.builder(
           itemCount: itemCount,
-          itemBuilder: (context, index) => _buildMediaCardItem(index, isFirstRow: index == 0),
+          itemBuilder: (context, index) => _buildMediaCardItem(
+            index,
+            isFirstRow: index == 0,
+            isFirstColumn: true, // List view = single column
+          ),
         ),
       );
     } else {
@@ -691,14 +702,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
             useWideAspectRatio: useWideRatio,
           ),
           itemCount: itemCount,
-          itemBuilder: (context, index) =>
-              _buildMediaCardItem(index, isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount)),
+          itemBuilder: (context, index) => _buildMediaCardItem(
+            index,
+            isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
+            isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
+          ),
         ),
       );
     }
   }
 
-  Widget _buildMediaCardItem(int index, {required bool isFirstRow}) {
+  Widget _buildMediaCardItem(int index, {required bool isFirstRow, required bool isFirstColumn}) {
     if (index >= items.length) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
@@ -717,6 +731,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       focusNode: focusNode,
       onRefresh: updateItem,
       onNavigateUp: isFirstRow ? _navigateToChips : null,
+      onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
       onBack: widget.onBack,
       onFocusChange: (hasFocus) {
         if (hasFocus) {

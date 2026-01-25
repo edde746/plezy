@@ -32,6 +32,10 @@ class FocusableMediaCard extends StatefulWidget {
   /// Used to navigate from the top row to filter chips.
   final VoidCallback? onNavigateUp;
 
+  /// Called when the user presses LEFT and there's no focusable item to the left.
+  /// Used to navigate from the first column to the sidebar.
+  final VoidCallback? onNavigateLeft;
+
   /// Called when the user presses BACK.
   /// Used to navigate from tab content to tab bar.
   final VoidCallback? onBack;
@@ -54,6 +58,7 @@ class FocusableMediaCard extends StatefulWidget {
     this.isOffline = false,
     this.focusNode,
     this.onNavigateUp,
+    this.onNavigateLeft,
     this.onBack,
     this.onFocusChange,
   });
@@ -73,6 +78,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
       onSelect: () => _mediaCardKey.currentState?.handleTap(),
       onLongPress: () => _mediaCardKey.currentState?.showContextMenu(),
       onNavigateUp: widget.onNavigateUp,
+      onNavigateLeft: widget.onNavigateLeft,
       onBack: widget.onBack,
       onFocusChange: widget.onFocusChange,
       enableLongPress: true,

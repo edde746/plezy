@@ -34,6 +34,7 @@ import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
 import 'auth_screen.dart';
 import 'libraries/state_messages.dart';
+import 'main_screen.dart';
 import '../watch_together/watch_together.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -184,6 +185,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return false;
   }
 
+  /// Navigate focus to the sidebar
+  void _navigateToSidebar() {
+    MainScreenFocusScope.of(context)?.focusSidebar();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -247,10 +253,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
-    // LEFT: Navigate hero carousel to previous
+    // LEFT: Navigate hero carousel to previous, or focus sidebar at index 0
     if (key.isLeftKey) {
       if (_currentHeroIndex > 0) {
         _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
+      } else {
+        _navigateToSidebar();
       }
       return KeyEventResult.handled;
     }
@@ -294,8 +302,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return KeyEventResult.handled;
     }
 
-    // LEFT/UP: Block at boundary
-    if (key.isLeftKey || key.isUpKey) {
+    // LEFT: Navigate to sidebar
+    if (key.isLeftKey) {
+      _navigateToSidebar();
+      return KeyEventResult.handled;
+    }
+
+    // UP: Block at boundary
+    if (key.isUpKey) {
       return KeyEventResult.handled;
     }
 
@@ -1043,6 +1057,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           _heroFocusNode.requestFocus();
                           _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
                         },
+                        onNavigateToSidebar: _navigateToSidebar,
                       ),
                     ),
 
@@ -1061,6 +1076,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           _heroFocusNode.requestFocus();
                           _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
                         } : null,
+                        onNavigateToSidebar: _navigateToSidebar,
                       ),
                     ),
 

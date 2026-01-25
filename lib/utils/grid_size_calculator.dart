@@ -124,15 +124,25 @@ class GridSizeCalculator {
 
   /// Calculates the number of columns in a grid based on screen width and density.
   ///
-  /// Accounts for standard horizontal padding (16px total).
-  static int getColumnCount(BuildContext context, LibraryDensity density) {
-    final screenWidth = MediaQuery.of(context).size.width - 16;
+  /// Uses the same formula as Flutter's SliverGridDelegateWithMaxCrossAxisExtent:
+  /// `((crossAxisExtent + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil()`
+  ///
+  /// [horizontalPadding] should match the grid's total horizontal padding.
+  static int getColumnCount(BuildContext context, LibraryDensity density, {double horizontalPadding = 16}) {
+    final screenWidth = MediaQuery.of(context).size.width - horizontalPadding;
     final maxCrossAxisExtent = getMaxCrossAxisExtent(context, density);
-    return (screenWidth / maxCrossAxisExtent).floor().clamp(1, 100);
+    final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
+    // Match Flutter's grid delegate calculation
+    return ((screenWidth + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
   }
 
   /// Check if the given index is in the first row of a grid with given column count.
   static bool isFirstRow(int index, int columnCount) {
     return index < columnCount;
+  }
+
+  /// Check if the given index is in the first column of a grid with given column count.
+  static bool isFirstColumn(int index, int columnCount) {
+    return index % columnCount == 0;
   }
 }

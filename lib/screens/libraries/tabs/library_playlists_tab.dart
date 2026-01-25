@@ -4,6 +4,7 @@ import '../../../models/plex_playlist.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../i18n/strings.g.dart';
+import '../adaptive_media_grid.dart';
 import 'base_library_tab.dart';
 import 'library_grid_tab_state.dart';
 
@@ -51,13 +52,14 @@ class _LibraryPlaylistsTabState extends LibraryGridTabState<PlexPlaylist, Librar
   }
 
   @override
-  Widget buildGridItem(BuildContext context, PlexPlaylist playlist, int index) {
+  Widget buildGridItem(BuildContext context, PlexPlaylist playlist, int index, [GridItemContext? gridContext]) {
     return FocusableMediaCard(
       key: Key(playlist.ratingKey),
       item: playlist,
       focusNode: index == 0 ? firstItemFocusNode : null,
       onListRefresh: loadItems,
       onBack: widget.onBack,
+      onNavigateLeft: gridContext?.isFirstColumn == true ? gridContext?.navigateToSidebar : null,
     );
   }
 }

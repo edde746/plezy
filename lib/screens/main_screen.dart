@@ -662,6 +662,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                               _selectLibrary(key);
                               _focusContent();
                             },
+                            onNavigateToContent: _focusContent,
                           ),
                         ),
                       ),

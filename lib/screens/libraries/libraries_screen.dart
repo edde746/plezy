@@ -945,7 +945,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               });
               _getTabChipFocusNode(newIndex).requestFocus();
             }
-          : null,
+          : _onTabBarBack,
       onNavigateRight: index < tabCount - 1
           ? () {
               final newIndex = index + 1;

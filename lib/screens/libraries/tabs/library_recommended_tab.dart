@@ -7,6 +7,7 @@ import '../../../mixins/item_updatable.dart';
 import '../../../models/plex_hub.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../widgets/hub_section.dart';
+import '../../main_screen.dart';
 import 'base_library_tab.dart';
 
 /// Recommended tab for library screen
@@ -143,6 +144,11 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
     }
   }
 
+  /// Navigate focus to the sidebar
+  void _navigateToSidebar() {
+    MainScreenFocusScope.of(context)?.focusSidebar();
+  }
+
   // Extra top padding for focus decoration (scale + border extends beyond item bounds)
   static const double _focusDecorationPadding = 8.0;
 
@@ -169,6 +175,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<PlexHub, LibraryRe
           onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
           onBack: widget.onBack,
           onNavigateUp: index == 0 ? widget.onBack : null,
+          onNavigateToSidebar: _navigateToSidebar,
         );
       },
     );

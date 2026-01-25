@@ -9,13 +9,16 @@ import '../mixins/refreshable.dart';
 import '../models/plex_metadata.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/settings_service.dart' show ViewMode;
 import '../utils/app_logger.dart';
+import '../utils/grid_size_calculator.dart';
 import '../utils/sliver_adaptive_media_builder.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../widgets/media_card.dart';
+import '../widgets/focusable_media_card.dart';
 import '../utils/focus_utils.dart';
 import 'libraries/state_messages.dart';
+import 'main_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -148,88 +151,119 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
     }
   }
 
+  /// Navigate focus to the sidebar
+  void _navigateToSidebar() {
+    MainScreenFocusScope.of(context)?.focusSidebar();
+  }
+
+  /// Calculate column count based on available width.
+  int _calculateColumnCount(double availableWidth, double maxCrossAxisExtent, double crossAxisSpacing) {
+    return ((availableWidth + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            DesktopSliverAppBar(title: Text(t.screens.search), floating: true),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  decoration: InputDecoration(
-                    hintText: t.search.hint,
-                    prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const AppIcon(Symbols.clear_rounded, fill: 1),
-                            onPressed: () {
-                              _searchController.clear();
-                              // State update handled by listener
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(100), borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(100),
-                      borderSide: BorderSide.none,
+    // Use LayoutBuilder to get the actual available width (accounting for sidebar)
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+
+        return Scaffold(
+          body: SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                DesktopSliverAppBar(title: Text(t.screens.search), floating: true),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      decoration: InputDecoration(
+                        hintText: t.search.hint,
+                        prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const AppIcon(Symbols.clear_rounded, fill: 1),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  // State update handled by listener
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(100), borderSide: BorderSide.none),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(100),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(100),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(100),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                 ),
-              ),
-            ),
-            if (_isSearching)
-              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-            else if (!_hasSearched)
-              SliverFillRemaining(
-                child: StateMessageWidget(
-                  message: t.search.searchYourMedia,
-                  subtitle: t.search.enterTitleActorOrKeyword,
-                  icon: Symbols.search_rounded,
-                  iconSize: 80,
-                ),
-              )
-            else if (_searchResults.isEmpty)
-              SliverFillRemaining(
-                child: StateMessageWidget(
-                  message: t.messages.noResultsFound,
-                  subtitle: t.search.tryDifferentTerm,
-                  icon: Symbols.search_off_rounded,
-                  iconSize: 80,
-                ),
-              )
-            else
-              Consumer<SettingsProvider>(
-                builder: (context, settingsProvider, child) {
-                  return buildAdaptiveMediaSliverBuilder<PlexMetadata>(
-                    context: context,
-                    items: _searchResults,
-                    itemBuilder: (context, item, index) {
-                      return MediaCard(key: Key(item.ratingKey), item: item, onRefresh: updateItem);
-                    },
+                if (_isSearching)
+                  const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                else if (!_hasSearched)
+                  SliverFillRemaining(
+                    child: StateMessageWidget(
+                      message: t.search.searchYourMedia,
+                      subtitle: t.search.enterTitleActorOrKeyword,
+                      icon: Symbols.search_rounded,
+                      iconSize: 80,
+                    ),
+                  )
+                else if (_searchResults.isEmpty)
+                  SliverFillRemaining(
+                    child: StateMessageWidget(
+                      message: t.messages.noResultsFound,
+                      subtitle: t.search.tryDifferentTerm,
+                      icon: Symbols.search_off_rounded,
+                      iconSize: 80,
+                    ),
+                  )
+                else
+                  Consumer<SettingsProvider>(
+                    builder: (context, settingsProvider, child) {
+                      final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+                      const gridPadding = EdgeInsets.all(16);
+                      const crossAxisSpacing = 8.0;
+                      final gridAvailableWidth = availableWidth - gridPadding.left - gridPadding.right;
+                      final columnCount = _calculateColumnCount(gridAvailableWidth, maxCrossAxisExtent, crossAxisSpacing);
+                      final isList = settingsProvider.viewMode == ViewMode.list;
+
+                      return buildAdaptiveMediaSliverBuilder<PlexMetadata>(
+                        context: context,
+                        items: _searchResults,
+                        itemBuilder: (context, item, index) {
+                          // In list view, all items are in the first column
+                          final isFirstColumn = isList || GridSizeCalculator.isFirstColumn(index, columnCount);
+                          return FocusableMediaCard(
+                            key: Key(item.ratingKey),
+                            item: item,
+                            onListRefresh: () => updateItem(item.ratingKey),
+                            onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
+                          );
+                        },
                     viewMode: settingsProvider.viewMode,
                     density: settingsProvider.libraryDensity,
                     padding: const EdgeInsets.all(16),
                     childAspectRatio: 2 / 3.3,
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
-                  );
-                },
-              ),
-          ],
-        ),
-      ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

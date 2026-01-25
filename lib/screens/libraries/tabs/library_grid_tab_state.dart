@@ -11,7 +11,9 @@ import 'base_library_tab.dart';
 abstract class LibraryGridTabState<T, W extends BaseLibraryTab<T>> extends BaseLibraryTabState<T, W>
     with LibraryTabFocusMixin {
   /// Build a single grid item.
-  Widget buildGridItem(BuildContext context, T item, int index);
+  /// [gridContext] provides information about the item's position in the grid
+  /// and callbacks for navigation (e.g., navigating to sidebar from first column).
+  Widget buildGridItem(BuildContext context, T item, int index, [GridItemContext? gridContext]);
 
   @override
   int get itemCount => items.length;
@@ -20,10 +22,11 @@ abstract class LibraryGridTabState<T, W extends BaseLibraryTab<T>> extends BaseL
   Widget buildContent(List<T> items) {
     return AdaptiveMediaGrid<T>(
       items: items,
-      itemBuilder: (context, item, index) => buildGridItem(context, item, index),
+      itemBuilder: (context, item, index, [gridContext]) => buildGridItem(context, item, index, gridContext),
       onRefresh: loadItems,
       firstItemFocusNode: firstItemFocusNode,
       onBack: widget.onBack,
+      enableSidebarNavigation: true,
     );
   }
 }

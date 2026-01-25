@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
@@ -10,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../focus/focus_memory_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../main_screen.dart';
 import '../../mixins/refreshable.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/download_storage_service.dart';
@@ -134,6 +136,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     _focusTracker.restoreFocus(fallbackKey: _kTheme);
   }
 
+  /// Navigate focus to the sidebar
+  void _navigateToSidebar() {
+    MainScreenFocusScope.of(context)?.focusSidebar();
+  }
+
+  /// Handle key events for LEFT arrow → sidebar navigation
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      _navigateToSidebar();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   Future<void> _loadSettings() async {
     _settingsService = await settings.SettingsService.getInstance();
     if (_keyboardShortcutsSupported) {
@@ -169,29 +185,32 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     }
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          CustomAppBar(title: Text(t.settings.title), pinned: true),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildAppearanceSection(),
-                const SizedBox(height: 24),
-                _buildVideoPlaybackSection(),
-                const SizedBox(height: 24),
-                _buildDownloadsSection(),
-                const SizedBox(height: 24),
-                if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection(), const SizedBox(height: 24)],
-                _buildAdvancedSection(),
-                const SizedBox(height: 24),
-                if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection(), const SizedBox(height: 24)],
-                _buildAboutSection(),
-                const SizedBox(height: 24),
-              ]),
+      body: Focus(
+        onKeyEvent: _handleKeyEvent,
+        child: CustomScrollView(
+          slivers: [
+            CustomAppBar(title: Text(t.settings.title), pinned: true),
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _buildAppearanceSection(),
+                  const SizedBox(height: 24),
+                  _buildVideoPlaybackSection(),
+                  const SizedBox(height: 24),
+                  _buildDownloadsSection(),
+                  const SizedBox(height: 24),
+                  if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection(), const SizedBox(height: 24)],
+                  _buildAdvancedSection(),
+                  const SizedBox(height: 24),
+                  if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection(), const SizedBox(height: 24)],
+                  _buildAboutSection(),
+                  const SizedBox(height: 24),
+                ]),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

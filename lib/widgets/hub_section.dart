@@ -47,6 +47,10 @@ class HubSection extends StatefulWidget {
   /// Used to navigate focus to the tab bar.
   final VoidCallback? onNavigateUp;
 
+  /// Called when the user presses LEFT while at the leftmost item (index 0).
+  /// Used to navigate focus to the sidebar.
+  final VoidCallback? onNavigateToSidebar;
+
   const HubSection({
     super.key,
     required this.hub,
@@ -58,6 +62,7 @@ class HubSection extends StatefulWidget {
     this.onVerticalNavigation,
     this.onBack,
     this.onNavigateUp,
+    this.onNavigateToSidebar,
   });
 
   @override
@@ -225,15 +230,18 @@ class HubSectionState extends State<HubSection> {
     final itemCount = widget.hub.items.length;
     if (itemCount == 0) return KeyEventResult.ignored;
 
-    // Left: move to previous item, ALWAYS consume to prevent escape
+    // Left: move to previous item, or navigate to sidebar at left edge
     if (key.isLeftKey) {
       if (_focusedIndex > 0) {
         _focusedIndex--;
         HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
         _scrollToIndex(_focusedIndex);
         setState(() {});
+      } else if (widget.onNavigateToSidebar != null) {
+        // At leftmost item: navigate to sidebar
+        widget.onNavigateToSidebar!();
       }
-      // At leftmost item: do nothing, but consume event to prevent focus escape
+      // Always consume to prevent focus escape
       return KeyEventResult.handled;
     }
 
