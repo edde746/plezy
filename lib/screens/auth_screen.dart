@@ -158,7 +158,11 @@ class _AuthScreenState extends State<AuthScreen> {
         // Open browser (in-app for mobile, external for desktop)
         final uri = Uri.parse(authUrl);
         if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+          // On TV, use inAppWebView (simpler WebView) instead of Chrome Custom Tabs
+          final mode = PlatformDetector.isTV()
+              ? LaunchMode.inAppWebView
+              : LaunchMode.inAppBrowserView;
+          await launchUrl(uri, mode: mode);
         } else {
           throw Exception(t.errors.couldNotLaunchUrl);
         }
