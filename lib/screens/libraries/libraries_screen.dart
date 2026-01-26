@@ -115,6 +115,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _collectionsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_collections');
   final _playlistsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_playlists');
 
+  // App bar action button focus
+  late FocusNode _editButtonFocusNode;
+  late FocusNode _refreshButtonFocusNode;
+  bool _isEditFocused = false;
+  bool _isRefreshFocused = false;
+
   // Scroll controller for the outer CustomScrollView
   final ScrollController _outerScrollController = ScrollController();
 
@@ -123,6 +129,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_onTabChanged);
+
+    // Initialize action button focus nodes
+    _editButtonFocusNode = FocusNode(debugLabel: 'EditButton');
+    _refreshButtonFocusNode = FocusNode(debugLabel: 'RefreshButton');
+    _editButtonFocusNode.addListener(_onEditFocusChange);
+    _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
 
     // Initialize with libraries from the provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -370,6 +382,75 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     focusScope?.focusSidebar();
   }
 
+  void _onEditFocusChange() {
+    if (mounted) {
+      setState(() => _isEditFocused = _editButtonFocusNode.hasFocus);
+    }
+  }
+
+  void _onRefreshFocusChange() {
+    if (mounted) {
+      setState(() => _isRefreshFocused = _refreshButtonFocusNode.hasFocus);
+    }
+  }
+
+  /// Handle key events for the edit button in app bar
+  KeyEventResult _handleEditKeyEvent(FocusNode node, KeyEvent event) {
+    if (!event.isActionable) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    if (key.isLeftKey) {
+      // Navigate back to last tab (Playlists)
+      _getTabChipFocusNode(3).requestFocus();
+      return KeyEventResult.handled;
+    }
+    if (key.isRightKey) {
+      _refreshButtonFocusNode.requestFocus();
+      return KeyEventResult.handled;
+    }
+    if (key.isDownKey) {
+      _focusCurrentTab();
+      return KeyEventResult.handled;
+    }
+    if (key.isUpKey) {
+      return KeyEventResult.handled; // Block at boundary
+    }
+    if (key.isSelectKey) {
+      _showLibraryManagementSheet();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  /// Handle key events for the refresh button in app bar
+  KeyEventResult _handleRefreshKeyEvent(FocusNode node, KeyEvent event) {
+    if (!event.isActionable) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    if (key.isLeftKey) {
+      // Navigate to edit button if libraries exist, else to last tab
+      final librariesProvider = context.read<LibrariesProvider>();
+      if (librariesProvider.libraries.isNotEmpty) {
+        _editButtonFocusNode.requestFocus();
+      } else {
+        _getTabChipFocusNode(3).requestFocus();
+      }
+      return KeyEventResult.handled;
+    }
+    if (key.isRightKey || key.isUpKey) {
+      return KeyEventResult.handled; // Block at boundary
+    }
+    if (key.isDownKey) {
+      _focusCurrentTab();
+      return KeyEventResult.handled;
+    }
+    if (key.isSelectKey) {
+      _refreshCurrentTab();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   void dispose() {
     _tabController.removeListener(_onTabChanged);
@@ -380,6 +461,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _browseTabChipFocusNode.dispose();
     _collectionsTabChipFocusNode.dispose();
     _playlistsTabChipFocusNode.dispose();
+    _editButtonFocusNode.removeListener(_onEditFocusChange);
+    _editButtonFocusNode.dispose();
+    _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
+    _refreshButtonFocusNode.dispose();
     // Clear L1/R1 callbacks
     GamepadService.onL1Pressed = null;
     GamepadService.onR1Pressed = null;
@@ -955,7 +1040,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               });
               _getTabChipFocusNode(newIndex).requestFocus();
             }
-          : null,
+          : () {
+              // Navigate to first action button (edit if libraries exist, else refresh)
+              final librariesProvider = context.read<LibrariesProvider>();
+              if (librariesProvider.libraries.isNotEmpty) {
+                _editButtonFocusNode.requestFocus();
+              } else {
+                _refreshButtonFocusNode.requestFocus();
+              }
+            },
       onNavigateDown: _focusCurrentTabFromTabBar,
       onBack: _onTabBarBack,
     );
@@ -1060,15 +1153,35 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             scrolledUnderElevation: 0,
             actions: [
               if (allLibraries.isNotEmpty)
-                IconButton(
-                  icon: const AppIcon(Symbols.edit_rounded, fill: 1),
-                  tooltip: t.libraries.manageLibraries,
-                  onPressed: _showLibraryManagementSheet,
+                Focus(
+                  focusNode: _editButtonFocusNode,
+                  onKeyEvent: _handleEditKeyEvent,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _isEditFocused ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: IconButton(
+                      icon: const AppIcon(Symbols.edit_rounded, fill: 1),
+                      tooltip: t.libraries.manageLibraries,
+                      onPressed: _showLibraryManagementSheet,
+                    ),
+                  ),
                 ),
-              IconButton(
-                icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
-                tooltip: t.common.refresh,
-                onPressed: _refreshCurrentTab,
+              Focus(
+                focusNode: _refreshButtonFocusNode,
+                onKeyEvent: _handleRefreshKeyEvent,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _isRefreshFocused ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: IconButton(
+                    icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
+                    tooltip: t.common.refresh,
+                    onPressed: _refreshCurrentTab,
+                  ),
+                ),
               ),
             ],
           ),
