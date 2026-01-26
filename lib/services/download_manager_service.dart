@@ -18,6 +18,9 @@ import '../utils/codec_utils.dart';
 import '../utils/plex_cache_parser.dart';
 
 /// Extension methods on AppDatabase for download operations
+/// Result of a download attempt for queue processing decisions
+enum _DownloadResult { success, networkError, permanentFailure }
+
 extension DownloadDatabaseOperations on AppDatabase {
   /// Insert a new download into the database
   Future<void> insertDownload({
@@ -193,6 +196,23 @@ class DownloadManagerService {
     return shouldBlockDownloadOnCellular();
   }
 
+  /// Determine if an error is a retriable network error vs a permanent failure
+  bool _isRetriableNetworkError(Object e) {
+    if (e is DioException) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.receiveTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.connectionError:
+          return true;
+        default:
+          return false;
+      }
+    }
+    if (e is SocketException) return true;
+    return false;
+  }
+
   /// Public method to check if downloads should be blocked due to cellular-only setting
   /// Can be used by DownloadProvider to show user-friendly error
   static Future<bool> shouldBlockDownloadOnCellular() async {
@@ -295,7 +315,13 @@ class DownloadManagerService {
           break;
         }
 
-        await _startDownload(nextItem.mediaGlobalKey, client, nextItem);
+        final result = await _startDownload(nextItem.mediaGlobalKey, client, nextItem);
+
+        // If download failed due to network, wait before retrying to avoid rapid loops
+        if (result == _DownloadResult.networkError) {
+          appLogger.i('Network error - waiting 5 seconds before processing next item');
+          await Future.delayed(const Duration(seconds: 5));
+        }
       }
     } finally {
       _isProcessingQueue = false;
@@ -318,7 +344,8 @@ class DownloadManagerService {
   }
 
   /// Start downloading a specific item
-  Future<void> _startDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
+  /// Returns the result of the download attempt for queue processing decisions
+  Future<_DownloadResult> _startDownload(String globalKey, PlexClient client, DownloadQueueItem queueItem) async {
     try {
       appLogger.i('Starting download for $globalKey');
 
@@ -473,6 +500,7 @@ class DownloadManagerService {
       _activeDownloads.remove(globalKey);
 
       appLogger.i('Download completed for $globalKey');
+      return _DownloadResult.success;
     } catch (e) {
       // Check if this was a user-initiated cancel/pause (not a real failure)
       if (e is DioException && e.type == DioExceptionType.cancel) {
@@ -480,15 +508,25 @@ class DownloadManagerService {
         // Just clean up and exit without marking as failed
         appLogger.d('Download cancelled/paused for $globalKey: ${e.message}');
         _activeDownloads.remove(globalKey);
-        return;
+        return _DownloadResult.success; // User action, not a failure
       }
 
+      // Check if this is a retriable network error
+      if (_isRetriableNetworkError(e)) {
+        // Network error - keep in queue for auto-retry when connectivity returns
+        appLogger.w('Download interrupted by network error for $globalKey, will retry on reconnect');
+        await _transitionStatus(globalKey, DownloadStatus.queued);
+        _activeDownloads.remove(globalKey);
+        return _DownloadResult.networkError; // Stay in queue - will auto-retry
+      }
+
+      // Permanent failure - remove from queue
       appLogger.e('Download failed for $globalKey', error: e);
       await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: e.toString());
       await _database.updateDownloadError(globalKey, e.toString());
-      // Remove from queue to prevent endless retry loop
       await _database.removeFromQueue(globalKey);
       _activeDownloads.remove(globalKey);
+      return _DownloadResult.permanentFailure;
     }
   }
 
