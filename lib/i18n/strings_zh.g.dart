@@ -98,8 +98,9 @@ class _TranslationsAuthZh implements TranslationsAuthEn {
 	@override String get plexTokenLabel => 'Plex 授权令牌 (Auth Token)';
 	@override String get plexTokenHint => '输入你的 Plex.tv 令牌';
 	@override String get authenticationTimeout => '验证超时。请重试。';
-	@override String get scanQRCodeInstruction => '请使用已登录 Plex 的设备扫描此二维码进行验证。';
+	@override String get scanQRToSignIn => '扫描二维码登录';
 	@override String get waitingForAuth => '等待验证中...\n请在你的浏览器中完成登录。';
+	@override String get useBrowser => '使用浏览器';
 }
 
 // Path: common
@@ -973,8 +974,9 @@ extension on TranslationsZh {
 			'auth.plexTokenLabel' => 'Plex 授权令牌 (Auth Token)',
 			'auth.plexTokenHint' => '输入你的 Plex.tv 令牌',
 			'auth.authenticationTimeout' => '验证超时。请重试。',
-			'auth.scanQRCodeInstruction' => '请使用已登录 Plex 的设备扫描此二维码进行验证。',
+			'auth.scanQRToSignIn' => '扫描二维码登录',
 			'auth.waitingForAuth' => '等待验证中...\n请在你的浏览器中完成登录。',
+			'auth.useBrowser' => '使用浏览器',
 			'common.cancel' => '取消',
 			'common.save' => '保存',
 			'common.close' => '关闭',
@@ -1473,9 +1475,9 @@ extension on TranslationsZh {
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '将“${title}”从此合集移除？',
 			'collections.removedFromCollection' => '已从合集移除',
 			'collections.removeFromCollectionFailed' => '从合集移除失败',
-			'collections.removeFromCollectionError' => ({required Object error}) => '从合集移除时出错：${error}',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollectionError' => ({required Object error}) => '从合集移除时出错：${error}',
 			'watchTogether.title' => '一起看',
 			'watchTogether.description' => '与朋友和家人同步观看内容',
 			'watchTogether.createSession' => '创建会话',

@@ -98,8 +98,9 @@ class _TranslationsAuthDe implements TranslationsAuthEn {
 	@override String get plexTokenLabel => 'Plex-Auth-Token';
 	@override String get plexTokenHint => 'Plex.tv-Token eingeben';
 	@override String get authenticationTimeout => 'Authentifizierung abgelaufen. Bitte erneut versuchen.';
-	@override String get scanQRCodeInstruction => 'Diesen QR-Code mit einem bei Plex angemeldeten Gerät scannen, um zu authentifizieren.';
+	@override String get scanQRToSignIn => 'QR-Code scannen zum Anmelden';
 	@override String get waitingForAuth => 'Warte auf Authentifizierung...\nBitte Anmeldung im Browser abschließen.';
+	@override String get useBrowser => 'Browser verwenden';
 }
 
 // Path: common
@@ -973,8 +974,9 @@ extension on TranslationsDe {
 			'auth.plexTokenLabel' => 'Plex-Auth-Token',
 			'auth.plexTokenHint' => 'Plex.tv-Token eingeben',
 			'auth.authenticationTimeout' => 'Authentifizierung abgelaufen. Bitte erneut versuchen.',
-			'auth.scanQRCodeInstruction' => 'Diesen QR-Code mit einem bei Plex angemeldeten Gerät scannen, um zu authentifizieren.',
+			'auth.scanQRToSignIn' => 'QR-Code scannen zum Anmelden',
 			'auth.waitingForAuth' => 'Warte auf Authentifizierung...\nBitte Anmeldung im Browser abschließen.',
+			'auth.useBrowser' => 'Browser verwenden',
 			'common.cancel' => 'Abbrechen',
 			'common.save' => 'Speichern',
 			'common.close' => 'Schließen',
@@ -1473,9 +1475,9 @@ extension on TranslationsDe {
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?',
 			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
 			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
-			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
 			'watchTogether.title' => 'Gemeinsam Schauen',
 			'watchTogether.description' => 'Inhalte synchron mit Freunden und Familie schauen',
 			'watchTogether.createSession' => 'Sitzung Erstellen',

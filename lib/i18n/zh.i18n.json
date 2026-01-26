@@ -13,8 +13,9 @@
     "plexTokenLabel": "Plex 授权令牌 (Auth Token)",
     "plexTokenHint": "输入你的 Plex.tv 令牌",
     "authenticationTimeout": "验证超时。请重试。",
-    "scanQRCodeInstruction": "请使用已登录 Plex 的设备扫描此二维码进行验证。",
-    "waitingForAuth": "等待验证中...\n请在你的浏览器中完成登录。"
+    "scanQRToSignIn": "扫描二维码登录",
+    "waitingForAuth": "等待验证中...\n请在你的浏览器中完成登录。",
+    "useBrowser": "使用浏览器"
   },
   "common": {
     "cancel": "取消",

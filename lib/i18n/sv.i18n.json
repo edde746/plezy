@@ -13,8 +13,9 @@
     "plexTokenLabel": "Plex-autentiseringstoken",
     "plexTokenHint": "Ange din Plex.tv-token",
     "authenticationTimeout": "Autentisering tog för lång tid. Försök igen.",
-    "scanQRCodeInstruction": "Skanna denna QR-kod med en enhet inloggad på Plex för att autentisera.",
-    "waitingForAuth": "Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare."
+    "scanQRToSignIn": "Skanna QR-koden för att logga in",
+    "waitingForAuth": "Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.",
+    "useBrowser": "Använd webbläsare"
   },
   "common": {
     "cancel": "Avbryt",

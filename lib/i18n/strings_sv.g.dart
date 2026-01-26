@@ -98,8 +98,9 @@ class _TranslationsAuthSv implements TranslationsAuthEn {
 	@override String get plexTokenLabel => 'Plex-autentiseringstoken';
 	@override String get plexTokenHint => 'Ange din Plex.tv-token';
 	@override String get authenticationTimeout => 'Autentisering tog för lång tid. Försök igen.';
-	@override String get scanQRCodeInstruction => 'Skanna denna QR-kod med en enhet inloggad på Plex för att autentisera.';
+	@override String get scanQRToSignIn => 'Skanna QR-koden för att logga in';
 	@override String get waitingForAuth => 'Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.';
+	@override String get useBrowser => 'Använd webbläsare';
 }
 
 // Path: common
@@ -973,8 +974,9 @@ extension on TranslationsSv {
 			'auth.plexTokenLabel' => 'Plex-autentiseringstoken',
 			'auth.plexTokenHint' => 'Ange din Plex.tv-token',
 			'auth.authenticationTimeout' => 'Autentisering tog för lång tid. Försök igen.',
-			'auth.scanQRCodeInstruction' => 'Skanna denna QR-kod med en enhet inloggad på Plex för att autentisera.',
+			'auth.scanQRToSignIn' => 'Skanna QR-koden för att logga in',
 			'auth.waitingForAuth' => 'Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.',
+			'auth.useBrowser' => 'Använd webbläsare',
 			'common.cancel' => 'Avbryt',
 			'common.save' => 'Spara',
 			'common.close' => 'Stäng',
@@ -1473,9 +1475,9 @@ extension on TranslationsSv {
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
 			'collections.removedFromCollection' => 'Borttagen från samling',
 			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
-			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
 			'watchTogether.title' => 'Titta Tillsammans',
 			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',
 			'watchTogether.createSession' => 'Skapa Session',

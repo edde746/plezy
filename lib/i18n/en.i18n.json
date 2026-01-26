@@ -13,8 +13,9 @@
     "plexTokenLabel": "Plex Auth Token",
     "plexTokenHint": "Enter your Plex.tv token",
     "authenticationTimeout": "Authentication timed out. Please try again.",
-    "scanQRCodeInstruction": "Scan this QR code with a device logged into Plex to authenticate.",
-    "waitingForAuth": "Waiting for authentication...\nPlease complete sign-in in your browser."
+    "scanQRToSignIn": "Scan this QR code to sign in",
+    "waitingForAuth": "Waiting for authentication...\nPlease complete sign-in in your browser.",
+    "useBrowser": "Use browser"
   },
   "common": {
     "cancel": "Cancel",

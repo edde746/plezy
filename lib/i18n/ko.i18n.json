@@ -13,8 +13,9 @@
     "plexTokenLabel": "Plex 인증 토큰",
     "plexTokenHint": "Plex.tv 토큰을 입력하세요",
     "authenticationTimeout": "인증 시간이 초과되었습니다. 다시 시도해 주세요.",
-    "scanQRCodeInstruction": "Plex 계정에 로그인된 기기에서 이 QR 코드를 스캔하여 본인 인증을 해주세요.",
-    "waitingForAuth": "인증 대기 중... 브라우저에서 로그인을 완료해 주세요."
+    "scanQRToSignIn": "QR 코드를 스캔하여 로그인",
+    "waitingForAuth": "인증 대기 중... 브라우저에서 로그인을 완료해 주세요.",
+    "useBrowser": "브라우저 사용"
   },
   "common": {
     "cancel": "취소",

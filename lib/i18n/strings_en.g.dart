@@ -124,11 +124,14 @@ class TranslationsAuthEn {
 	/// en: 'Authentication timed out. Please try again.'
 	String get authenticationTimeout => 'Authentication timed out. Please try again.';
 
-	/// en: 'Scan this QR code with a device logged into Plex to authenticate.'
-	String get scanQRCodeInstruction => 'Scan this QR code with a device logged into Plex to authenticate.';
+	/// en: 'Scan this QR code to sign in'
+	String get scanQRToSignIn => 'Scan this QR code to sign in';
 
 	/// en: 'Waiting for authentication... Please complete sign-in in your browser.'
 	String get waitingForAuth => 'Waiting for authentication...\nPlease complete sign-in in your browser.';
+
+	/// en: 'Use browser'
+	String get useBrowser => 'Use browser';
 }
 
 // Path: common
@@ -2083,8 +2086,9 @@ extension on Translations {
 			'auth.plexTokenLabel' => 'Plex Auth Token',
 			'auth.plexTokenHint' => 'Enter your Plex.tv token',
 			'auth.authenticationTimeout' => 'Authentication timed out. Please try again.',
-			'auth.scanQRCodeInstruction' => 'Scan this QR code with a device logged into Plex to authenticate.',
+			'auth.scanQRToSignIn' => 'Scan this QR code to sign in',
 			'auth.waitingForAuth' => 'Waiting for authentication...\nPlease complete sign-in in your browser.',
+			'auth.useBrowser' => 'Use browser',
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
@@ -2583,9 +2587,9 @@ extension on Translations {
 			'watchTogether.sessionCode' => 'Session Code',
 			'watchTogether.hostControlsPlayback' => 'Host controls playback',
 			'watchTogether.anyoneCanControl' => 'Anyone can control playback',
-			'watchTogether.hostControls' => 'Host controls',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.hostControls' => 'Host controls',
 			'watchTogether.anyoneControls' => 'Anyone controls',
 			'watchTogether.participants' => 'Participants',
 			'watchTogether.host' => 'Host',

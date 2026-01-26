@@ -98,8 +98,9 @@ class _TranslationsAuthKo implements TranslationsAuthEn {
 	@override String get plexTokenLabel => 'Plex 인증 토큰';
 	@override String get plexTokenHint => 'Plex.tv 토큰을 입력하세요';
 	@override String get authenticationTimeout => '인증 시간이 초과되었습니다. 다시 시도해 주세요.';
-	@override String get scanQRCodeInstruction => 'Plex 계정에 로그인된 기기에서 이 QR 코드를 스캔하여 본인 인증을 해주세요.';
+	@override String get scanQRToSignIn => 'QR 코드를 스캔하여 로그인';
 	@override String get waitingForAuth => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.';
+	@override String get useBrowser => '브라우저 사용';
 }
 
 // Path: common
@@ -973,8 +974,9 @@ extension on TranslationsKo {
 			'auth.plexTokenLabel' => 'Plex 인증 토큰',
 			'auth.plexTokenHint' => 'Plex.tv 토큰을 입력하세요',
 			'auth.authenticationTimeout' => '인증 시간이 초과되었습니다. 다시 시도해 주세요.',
-			'auth.scanQRCodeInstruction' => 'Plex 계정에 로그인된 기기에서 이 QR 코드를 스캔하여 본인 인증을 해주세요.',
+			'auth.scanQRToSignIn' => 'QR 코드를 스캔하여 로그인',
 			'auth.waitingForAuth' => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.',
+			'auth.useBrowser' => '브라우저 사용',
 			'common.cancel' => '취소',
 			'common.save' => '저장',
 			'common.close' => '닫기',
@@ -1473,9 +1475,9 @@ extension on TranslationsKo {
 			'watchTogether.hostingSession' => '세션 호스팅',
 			'watchTogether.inSession' => '세션 중',
 			'watchTogether.sessionCode' => '세션 코드',
-			'watchTogether.hostControlsPlayback' => '호스트 재생 제어',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.hostControlsPlayback' => '호스트 재생 제어',
 			'watchTogether.anyoneCanControl' => '누구나 재생 제어 가능',
 			'watchTogether.hostControls' => '호스트 제어',
 			'watchTogether.anyoneControls' => '누구나 제어',

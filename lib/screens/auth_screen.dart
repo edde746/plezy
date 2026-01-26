@@ -14,6 +14,7 @@ import '../services/offline_watch_sync_service.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 import 'main_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -39,6 +40,14 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _initializeAuthService() async {
     _authService = await PlexAuthService.create();
+
+    // On Android TV, auto-start QR code flow
+    if (PlatformDetector.isTV()) {
+      setState(() {
+        _useQrFlow = true;
+      });
+      _startAuthentication();
+    }
   }
 
   /// Connect to all available servers and navigate to main screen
@@ -325,117 +334,119 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(width: 48),
                     // Second column - All authentication content
                     Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (_isAuthenticating) ...[
-                            if (_useQrFlow && _qrAuthUrl != null)
-                              _buildQrAuthWidget(qrSize: 300)
-                            else
-                              _buildBrowserAuthWidget(),
-                          ] else ...[
-                            // Initial state buttons
-                            ElevatedButton(
-                              onPressed: _startAuthentication,
-                              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                              child: Text(t.auth.signInWithPlex),
-                            ),
-                            const SizedBox(height: 12),
-                            OutlinedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _useQrFlow = true;
-                                });
-                                _startAuthentication();
-                              },
-                              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                              child: Text(t.auth.showQRCode),
-                            ),
-                            if (kDebugMode) ...[
-                              const SizedBox(height: 12),
-                              OutlinedButton(
-                                onPressed: _handleDebugTap,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
-                                ),
-                                child: Text(t.auth.debugEnterToken, style: TextStyle(fontSize: 12)),
-                              ),
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (_isAuthenticating) ...[
+                                if (_useQrFlow && _qrAuthUrl != null)
+                                  _buildQrAuthWidget(qrSize: 300)
+                                else
+                                  _buildBrowserAuthWidget(),
+                              ] else
+                                _buildInitialButtons(),
                             ],
-                            if (_errorMessage != null) ...[
-                              const SizedBox(height: 16),
-                              Text(
-                                _errorMessage!,
-                                style: TextStyle(color: Theme.of(context).colorScheme.error),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ],
-                        ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Image.asset('assets/plezy.png', width: 120, height: 120),
-                    const SizedBox(height: 24),
-                    Text(
-                      t.app.title,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 48),
-                    if (_isAuthenticating) ...[
-                      if (_useQrFlow && _qrAuthUrl != null)
-                        _buildQrAuthWidget(qrSize: 200)
-                      else
-                        _buildBrowserAuthWidget(),
-                    ] else ...[
-                      // add QR button here
-                      ElevatedButton(
-                        onPressed: _startAuthentication,
-                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                        child: Text(t.auth.signInWithPlex),
+              : SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Image.asset('assets/plezy.png', width: 120, height: 120),
+                      const SizedBox(height: 24),
+                      Text(
+                        t.app.title,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            _useQrFlow = true;
-                          });
-                          _startAuthentication();
-                        },
-                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                        child: Text(t.auth.showQRCode),
-                      ),
-                      if (kDebugMode) ...[
-                        const SizedBox(height: 12),
-                        OutlinedButton(
-                          onPressed: _handleDebugTap,
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
-                          ),
-                          child: Text(t.auth.debugEnterToken, style: TextStyle(fontSize: 12)),
-                        ),
-                      ],
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          _errorMessage!,
-                          style: TextStyle(color: Theme.of(context).colorScheme.error),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                      const SizedBox(height: 48),
+                      if (_isAuthenticating) ...[
+                        if (_useQrFlow && _qrAuthUrl != null)
+                          _buildQrAuthWidget(qrSize: 200)
+                        else
+                          _buildBrowserAuthWidget(),
+                      ] else
+                        _buildInitialButtons(),
                     ],
-                  ],
+                  ),
                 ),
         ),
       ),
+    );
+  }
+
+  /// Builds the initial authentication buttons (before auth starts)
+  Widget _buildInitialButtons() {
+    final isTV = PlatformDetector.isTV();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (isTV) ...[
+          // On TV: QR is primary, browser is secondary
+          ElevatedButton(
+            autofocus: true,
+            onPressed: () {
+              setState(() {
+                _useQrFlow = true;
+              });
+              _startAuthentication();
+            },
+            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            child: Text(t.auth.showQRCode),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: _startAuthentication,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            child: Text(t.auth.useBrowser),
+          ),
+        ] else ...[
+          // On other platforms: Browser is primary, QR is secondary
+          ElevatedButton(
+            onPressed: _startAuthentication,
+            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            child: Text(t.auth.signInWithPlex),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: () {
+              setState(() {
+                _useQrFlow = true;
+              });
+              _startAuthentication();
+            },
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            child: Text(t.auth.showQRCode),
+          ),
+        ],
+        if (kDebugMode) ...[
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: _handleDebugTap,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5)),
+            ),
+            child: Text(t.auth.debugEnterToken, style: TextStyle(fontSize: 12)),
+          ),
+        ],
+        if (_errorMessage != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            _errorMessage!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ],
     );
   }
 
@@ -455,11 +466,12 @@ class _AuthScreenState extends State<AuthScreen> {
 
   /// Builds the QR code authentication widget
   Widget _buildQrAuthWidget({required double qrSize}) {
+    final isTV = PlatformDetector.isTV();
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          t.auth.scanQRCodeInstruction,
+          t.auth.scanQRToSignIn,
           textAlign: TextAlign.center,
           style: const TextStyle(color: Colors.grey),
         ),
@@ -475,7 +487,33 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ),
         ),
-        _buildRetryButton(),
+        // On TV, show retry and browser buttons in a row
+        if (isTV) ...[
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OutlinedButton(
+                autofocus: true,
+                onPressed: _retryAuthentication,
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
+                child: Text(t.auth.retry),
+              ),
+              const SizedBox(width: 16),
+              OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _useQrFlow = false;
+                  });
+                  _startAuthentication();
+                },
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
+                child: Text(t.auth.useBrowser),
+              ),
+            ],
+          ),
+        ] else
+          _buildRetryButton(),
       ],
     );
   }

@@ -13,8 +13,9 @@
     "plexTokenLabel": "Plex Authenticatietoken",
     "plexTokenHint": "Voer je Plex.tv token in",
     "authenticationTimeout": "Authenticatie verlopen. Probeer opnieuw.",
-    "scanQRCodeInstruction": "Scan deze QR-code met een apparaat dat is ingelogd op Plex om te authenticeren.",
-    "waitingForAuth": "Wachten op authenticatie...\nVoltooi het inloggen in je browser."
+    "scanQRToSignIn": "Scan deze QR-code om in te loggen",
+    "waitingForAuth": "Wachten op authenticatie...\nVoltooi het inloggen in je browser.",
+    "useBrowser": "Gebruik browser"
   },
   "common": {
     "cancel": "Annuleren",

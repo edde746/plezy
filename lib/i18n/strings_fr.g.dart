@@ -98,8 +98,9 @@ class _TranslationsAuthFr implements TranslationsAuthEn {
 	@override String get plexTokenLabel => 'Token d\'authentification Plex';
 	@override String get plexTokenHint => 'Entrez votre token Plex.tv';
 	@override String get authenticationTimeout => 'Délai d\'authentification expiré. Veuillez réessayer.';
-	@override String get scanQRCodeInstruction => 'Scannez ce code QR avec un appareil connecté à Plex pour vous authentifier.';
+	@override String get scanQRToSignIn => 'Scannez ce QR code pour vous connecter';
 	@override String get waitingForAuth => 'En attente d\'authentification...\nVeuillez vous connecter dans votre navigateur.';
+	@override String get useBrowser => 'Utiliser le navigateur';
 }
 
 // Path: common
@@ -971,8 +972,9 @@ extension on TranslationsFr {
 			'auth.plexTokenLabel' => 'Token d\'authentification Plex',
 			'auth.plexTokenHint' => 'Entrez votre token Plex.tv',
 			'auth.authenticationTimeout' => 'Délai d\'authentification expiré. Veuillez réessayer.',
-			'auth.scanQRCodeInstruction' => 'Scannez ce code QR avec un appareil connecté à Plex pour vous authentifier.',
+			'auth.scanQRToSignIn' => 'Scannez ce QR code pour vous connecter',
 			'auth.waitingForAuth' => 'En attente d\'authentification...\nVeuillez vous connecter dans votre navigateur.',
+			'auth.useBrowser' => 'Utiliser le navigateur',
 			'common.cancel' => 'Annuler',
 			'common.save' => 'Sauvegarder',
 			'common.close' => 'Fermer',
@@ -1471,9 +1473,9 @@ extension on TranslationsFr {
 			'watchTogether.sessionCode' => 'Code de session',
 			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',
 			'watchTogether.anyoneCanControl' => 'Tout le monde peut contrôler la lecture',
-			'watchTogether.hostControls' => 'Commandes de l\'hôte',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.hostControls' => 'Commandes de l\'hôte',
 			'watchTogether.anyoneControls' => 'Tout le monde contrôle',
 			'watchTogether.participants' => 'Participants',
 			'watchTogether.host' => 'Hôte',

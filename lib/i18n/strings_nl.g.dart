@@ -98,8 +98,9 @@ class _TranslationsAuthNl implements TranslationsAuthEn {
 	@override String get plexTokenLabel => 'Plex Authenticatietoken';
 	@override String get plexTokenHint => 'Voer je Plex.tv token in';
 	@override String get authenticationTimeout => 'Authenticatie verlopen. Probeer opnieuw.';
-	@override String get scanQRCodeInstruction => 'Scan deze QR-code met een apparaat dat is ingelogd op Plex om te authenticeren.';
+	@override String get scanQRToSignIn => 'Scan deze QR-code om in te loggen';
 	@override String get waitingForAuth => 'Wachten op authenticatie...\nVoltooi het inloggen in je browser.';
+	@override String get useBrowser => 'Gebruik browser';
 }
 
 // Path: common
@@ -973,8 +974,9 @@ extension on TranslationsNl {
 			'auth.plexTokenLabel' => 'Plex Authenticatietoken',
 			'auth.plexTokenHint' => 'Voer je Plex.tv token in',
 			'auth.authenticationTimeout' => 'Authenticatie verlopen. Probeer opnieuw.',
-			'auth.scanQRCodeInstruction' => 'Scan deze QR-code met een apparaat dat is ingelogd op Plex om te authenticeren.',
+			'auth.scanQRToSignIn' => 'Scan deze QR-code om in te loggen',
 			'auth.waitingForAuth' => 'Wachten op authenticatie...\nVoltooi het inloggen in je browser.',
+			'auth.useBrowser' => 'Gebruik browser',
 			'common.cancel' => 'Annuleren',
 			'common.save' => 'Opslaan',
 			'common.close' => 'Sluiten',
@@ -1473,9 +1475,9 @@ extension on TranslationsNl {
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
 			'collections.removedFromCollection' => 'Uit collectie verwijderd',
 			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
-			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
 			'watchTogether.title' => 'Samen Kijken',
 			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',
 			'watchTogether.createSession' => 'Sessie Maken',
