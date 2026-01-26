@@ -22,7 +22,11 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 - [macOS (Universal)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg)
 - [Linux (x64)](https://github.com/edde746/plezy/releases/latest) - .deb, .rpm, .pkg.tar.zst, and portable tar.gz available
 - [NixOS/Nix](https://github.com/mio-19/nurpkgs/tree/main/pkgs/plezy) - Community package by [@mio-19](https://github.com/mio-19)
-- [Homebrew](https://github.com/Tazi0/homebrew-plezy) - Community tap by [@Tazi0](https://github.com/Tazi0)
+- **Homebrew** (macOS):
+  ```bash
+  brew tap edde746/plezy https://github.com/edde746/plezy
+  brew install --cask plezy
+  ```
 
 ## Features
 
