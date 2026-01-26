@@ -532,32 +532,35 @@ class SideNavigationRailState extends State<SideNavigationRail> {
               child: Align(alignment: Alignment.topCenter, heightFactor: value, child: child),
             );
           },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              isLoading
-                  ? Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: t.textMuted),
+          child: ExcludeFocus(
+            excluding: !_librariesExpanded || isCollapsed,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                isLoading
+                    ? Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: t.textMuted),
+                          ),
                         ),
-                      ),
-                    )
-                  : visibleLibraries.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        Translations.of(context).libraries.noLibrariesFound,
-                        style: TextStyle(fontSize: 12, color: t.textMuted),
-                      ),
-                    )
-                  : _buildLibraryItems(visibleLibraries, t),
-            ],
+                      )
+                    : visibleLibraries.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          Translations.of(context).libraries.noLibrariesFound,
+                          style: TextStyle(fontSize: 12, color: t.textMuted),
+                        ),
+                      )
+                    : _buildLibraryItems(visibleLibraries, t),
+              ],
+            ),
           ),
         ),
       ],
