@@ -79,6 +79,7 @@ class MpvPlayerCore: NSObject {
             layer.contentsScale = screen.backingScaleFactor
         }
         layer.framebufferOnly = true
+        layer.backgroundColor = NSColor.black.cgColor
         layer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
 
         metalLayer = layer
