@@ -84,7 +84,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isPhone = false;
   List<PlexMediaVersion> _availableVersions = [];
   PlexMediaInfo? _currentMediaInfo;
-  StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<String>? _errorSubscription;
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
@@ -402,9 +401,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Listen to completion
       _completedSubscription = player!.streams.completed.listen(_onVideoCompleted);
-
-      // Listen to MPV logs
-      _logSubscription = player!.streams.log.listen(_onPlayerLog);
 
       // Listen to MPV errors
       _errorSubscription = player!.streams.error.listen(_onPlayerError);
@@ -1104,7 +1100,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Cancel stream subscriptions
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
-    _logSubscription?.cancel();
     _errorSubscription?.cancel();
     _mediaControlSubscription?.cancel();
     _bufferingSubscription?.cancel();
@@ -1217,29 +1212,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    }
-  }
-
-  void _onPlayerLog(PlayerLog log) {
-    // Map MPV log levels to app logger levels
-    switch (log.level) {
-      case PlayerLogLevel.fatal:
-      case PlayerLogLevel.error:
-        appLogger.e('[MPV:${log.prefix}] ${log.text}');
-        break;
-      case PlayerLogLevel.warn:
-        appLogger.w('[MPV:${log.prefix}] ${log.text}');
-        break;
-      case PlayerLogLevel.info:
-        appLogger.i('[MPV:${log.prefix}] ${log.text}');
-        break;
-      case PlayerLogLevel.debug:
-      case PlayerLogLevel.trace:
-      case PlayerLogLevel.verbose:
-        appLogger.d('[MPV:${log.prefix}] ${log.text}');
-        break;
-      default:
-        appLogger.d('[MPV:${log.prefix}:${log.level.name}] ${log.text}');
     }
   }
 
