@@ -433,8 +433,18 @@ class PlexServer {
       );
     }
 
-    final firstConnection = _updateConnectionUrl(firstCandidate.connection, firstCandidate.url);
+    // Attempt HTTPS upgrade on the Phase 1 winner before emitting
+    final upgradedFirstCandidate = await _upgradeCandidateToHttpsIfPossible(firstCandidate);
+    final emitCandidate = upgradedFirstCandidate ?? firstCandidate;
+
+    final firstConnection = _updateConnectionUrl(emitCandidate.connection, emitCandidate.url);
     yield firstConnection;
+    if (upgradedFirstCandidate != null && upgradedFirstCandidate.url != firstCandidate.url) {
+      appLogger.i(
+        'Phase 1 winner upgraded to HTTPS',
+        error: {'from': firstCandidate.url, 'to': upgradedFirstCandidate.url},
+      );
+    }
     appLogger.d(
       'Emitted first working connection, continuing latency tests in background',
       error: {'uri': firstConnection.uri},
