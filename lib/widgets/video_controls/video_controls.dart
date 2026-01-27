@@ -255,6 +255,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Focus play/pause button if we're in keyboard navigation mode (desktop/TV only)
   void _focusPlayPauseIfKeyboardMode() {
     if (!mounted) return;
+    if (!_videoPlayerNavigationEnabled) return;
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
     if (!isMobile && InputModeTracker.isKeyboardMode(context)) {
       _desktopControlsKey.currentState?.requestPlayPauseFocus();
