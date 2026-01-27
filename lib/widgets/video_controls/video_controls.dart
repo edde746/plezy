@@ -562,6 +562,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           if (Platform.isMacOS) {
             _updateTrafficLightVisibility();
           }
+          // Restore focus to the main node so keyboard shortcuts keep working
+          // after FocusScope(canRequestFocus: false) ejects child focus.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_focusNode.hasFocus) {
+              _focusNode.requestFocus();
+            }
+          });
         }
       });
     }
@@ -1215,6 +1222,27 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       widget.player.playOrPause();
       _showControlsWithFocus(requestFocus: false);
       return true; // Event handled, stop propagation
+    }
+
+    // Fallback: handle all other shortcuts when focus has drifted away
+    // (e.g. after controls auto-hide). The !hasFocus guard prevents
+    // double-handling when the Focus onKeyEvent already processes the event.
+    if (!_focusNode.hasFocus && _keyboardService != null) {
+      final result = _keyboardService!.handleVideoPlayerKeyEvent(
+        event,
+        widget.player,
+        _toggleFullscreen,
+        _toggleSubtitles,
+        _nextAudioTrack,
+        _nextSubtitleTrack,
+        _nextChapter,
+        _previousChapter,
+        onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
+      );
+      if (result == KeyEventResult.handled) {
+        _focusNode.requestFocus(); // self-heal focus
+        return true;
+      }
     }
 
     return false; // Let event continue to other handlers
