@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/focus/dpad_navigator.dart';
 import 'video_sheet_header.dart';
 
 /// Base class for video control bottom sheets providing common UI structure
@@ -45,6 +46,7 @@ class BaseVideoControlSheet extends StatelessWidget {
       constraints: getBottomSheetConstraints(context),
       builder: builder,
     ).whenComplete(() {
+      BackKeyUpSuppressor.suppressBackUntilKeyUp();
       onClose?.call();
     });
   }
