@@ -208,9 +208,11 @@ void MpvPlayerPlugin::HandleMethodCall(
     // Use async command to prevent UI blocking during network operations
     // Move result into shared_ptr for safe capture in callback
     auto result_ptr = std::make_shared<std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>>(std::move(result));
-    player_->CommandAsync(command_args, [result_ptr](int error) {
+    std::string cmd_name = command_args.empty() ? "unknown" : command_args[0];
+    player_->CommandAsync(command_args, [result_ptr, cmd_name](int error) {
       if (error < 0) {
-        (*result_ptr)->Error("COMMAND_FAILED", "MPV command failed");
+        (*result_ptr)->Error("COMMAND_FAILED",
+          "MPV command failed: " + cmd_name + " (error " + std::to_string(error) + ")");
       } else {
         (*result_ptr)->Success();
       }

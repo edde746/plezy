@@ -814,7 +814,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             if (player != null && mounted) {
               await player!.play();
               final pos = player!.state.position;
-              await player!.seek(pos.inMilliseconds > 0 ? pos : Duration.zero);
+              try {
+                await player!.seek(pos.inMilliseconds > 0 ? pos : Duration.zero);
+              } catch (e) {
+                appLogger.w('Non-critical seek after subtitle load failed', error: e);
+              }
 
               // Fallback if playbackRestart doesn't fire
               Future.delayed(const Duration(seconds: 3), () {
