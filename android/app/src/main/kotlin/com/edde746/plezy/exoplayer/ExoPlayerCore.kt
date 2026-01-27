@@ -448,34 +448,20 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     override fun onPlayerError(error: PlaybackException) {
-        Log.e(TAG, "Player error: ${error.message}", error)
+        Log.e(TAG, "Player error: ${error.message} (code: ${error.errorCode})", error)
 
-        // Detect format/codec unsupported errors
-        val isFormatUnsupported = when {
-            error.errorCode == PlaybackException.ERROR_CODE_DECODING_FAILED -> true
-            error.errorCode == PlaybackException.ERROR_CODE_DECODER_INIT_FAILED -> true
-            error.errorCode == PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED -> true
-            error.cause?.message?.contains("EXCEEDS_CAPABILITIES") == true -> true
-            error.cause?.message?.contains("MediaCodec") == true -> true
-            else -> false
-        }
-
-        if (isFormatUnsupported && currentMediaUri != null) {
-            Log.w(TAG, "Format unsupported - attempting fallback to MPV")
+        if (currentMediaUri != null) {
+            Log.w(TAG, "ExoPlayer error (code ${error.errorCode}) - attempting fallback to MPV")
             val handled = delegate?.onFormatUnsupported(
                 uri = currentMediaUri!!,
                 headers = currentHeaders,
                 positionMs = lastPosition,
-                errorMessage = error.message ?: "Unknown format error"
+                errorMessage = error.message ?: "Unknown error"
             ) ?: false
 
-            if (handled) {
-                // Fallback was handled by the plugin, don't emit error
-                return
-            }
+            if (handled) return
         }
 
-        // Fallback not handled or not a format error - emit error event
         delegate?.onEvent("end-file", mapOf(
             "reason" to "error",
             "message" to (error.message ?: "Unknown error")

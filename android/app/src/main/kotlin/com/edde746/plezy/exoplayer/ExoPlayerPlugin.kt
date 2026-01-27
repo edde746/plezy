@@ -510,7 +510,7 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     ): Boolean {
         val currentActivity = activity ?: return false
 
-        Log.i(TAG, "Format unsupported, switching to MPV fallback at ${positionMs}ms")
+        Log.i(TAG, "ExoPlayer error, switching to MPV fallback at ${positionMs}ms: $errorMessage")
 
         currentActivity.runOnUiThread {
             try {

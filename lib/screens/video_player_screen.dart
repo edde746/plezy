@@ -1240,7 +1240,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   void _onPlayerError(String error) {
-    appLogger.e('[MPV ERROR] $error');
+    appLogger.e('[Player ERROR] $error');
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(t.messages.failedPlayback(action: 'play', error: error)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   /// Handle notification when native player switched from ExoPlayer to MPV
