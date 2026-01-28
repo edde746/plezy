@@ -17,6 +17,7 @@ import '../models/plex_sort.dart';
 import '../models/plex_video_playback_data.dart';
 import '../utils/endpoint_failover_interceptor.dart';
 import '../utils/app_logger.dart';
+import '../utils/connection_constants.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/plex_cache_parser.dart';
 import '../utils/plex_url_helper.dart';
@@ -86,8 +87,8 @@ class PlexClient {
       BaseOptions(
         baseUrl: config.baseUrl,
         headers: config.headers,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 120),
+        connectTimeout: ConnectionTimeouts.connect,
+        receiveTimeout: ConnectionTimeouts.receive,
         validateStatus: (status) => status != null && status < 500,
         responseType: ResponseType.json,
         contentType: 'application/json; charset=utf-8',

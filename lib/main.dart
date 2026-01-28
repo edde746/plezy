@@ -13,7 +13,6 @@ import 'utils/platform_detector.dart';
 import 'services/discord_rpc_service.dart';
 import 'services/gamepad_service.dart';
 import 'providers/user_profile_provider.dart';
-import 'providers/plex_client_provider.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/server_state_provider.dart';
 import 'providers/theme_provider.dart';
@@ -27,6 +26,7 @@ import 'providers/offline_watch_provider.dart';
 import 'watch_together/watch_together.dart';
 import 'services/multi_server_manager.dart';
 import 'services/offline_watch_sync_service.dart';
+import 'services/server_connection_orchestrator.dart';
 import 'services/data_aggregation_service.dart';
 import 'services/in_app_review_service.dart';
 import 'services/server_registry.dart';
@@ -190,9 +190,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Legacy provider for backward compatibility
-        ChangeNotifierProvider(create: (context) => PlexClientProvider()),
-        // New multi-server providers
         ChangeNotifierProvider(create: (context) => MultiServerProvider(_serverManager, _aggregationService)),
         ChangeNotifierProvider(create: (context) => ServerStateProvider()),
         // Offline mode provider - depends on MultiServerProvider
@@ -313,9 +310,6 @@ class _SetupScreenState extends State<SetupScreen> {
     final storage = await StorageService.getInstance();
     final registry = ServerRegistry(storage);
 
-    // Migrate from single-server to multi-server if needed
-    await registry.migrateFromSingleServer();
-
     // Refresh servers from API to get updated connection info (IPs may change)
     await registry.refreshServersFromApi();
 
@@ -323,74 +317,40 @@ class _SetupScreenState extends State<SetupScreen> {
     final servers = await registry.getServers();
 
     if (servers.isEmpty) {
-      // No servers configured - show auth screen
       if (mounted) {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
       }
       return;
     }
 
-    // Get multi-server provider
     if (!mounted) return;
-    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
 
     try {
-      appLogger.i('Connecting to ${servers.length} servers...');
-
-      // Get or generate client identifier
-      final clientId = storage.getClientIdentifier();
-
-      // Connect to all servers in parallel
-      final connectedCount = await multiServerProvider.serverManager.connectToAllServers(
-        servers,
-        clientIdentifier: clientId,
-        timeout: const Duration(seconds: 10),
-        onServerConnected: (serverId, client) {
-          // Set first connected client in legacy provider for backward compatibility
-          final legacyProvider = Provider.of<PlexClientProvider>(context, listen: false);
-          if (legacyProvider.client == null) {
-            legacyProvider.setClient(client);
-          }
-        },
+      final result = await ServerConnectionOrchestrator.connectAndInitialize(
+        servers: servers,
+        multiServerProvider: context.read<MultiServerProvider>(),
+        librariesProvider: context.read<LibrariesProvider>(),
+        syncService: context.read<OfflineWatchSyncService>(),
+        clientIdentifier: storage.getClientIdentifier(),
       );
 
-      if (connectedCount > 0) {
-        // At least one server connected successfully
-        appLogger.i('Successfully connected to $connectedCount servers');
+      if (!mounted) return;
 
-        if (mounted) {
-          // Initialize and load libraries
-          final librariesProvider = context.read<LibrariesProvider>();
-          librariesProvider.initialize(multiServerProvider.aggregationService);
-          await librariesProvider.loadLibraries();
-
-          // Now that Plex clients are available, trigger initial watch sync
-          context.read<OfflineWatchSyncService>().onServersConnected();
-
-          // Navigate to main screen immediately
-          // Get first connected client for backward compatibility
-          final firstClient = multiServerProvider.serverManager.onlineClients.values.first;
-
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen(client: firstClient)));
-        }
+      if (result.hasConnections) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen(client: result.firstClient!)),
+        );
       } else {
-        // All connections failed - navigate to offline mode
-        appLogger.w('Failed to connect to any servers, entering offline mode');
-
-        if (mounted) {
-          // Navigate to MainScreen in offline mode
-          // User can still access Downloads and Settings
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
-          );
-        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
+        );
       }
     } catch (e, stackTrace) {
       appLogger.e('Error during multi-server connection', error: e, stackTrace: stackTrace);
 
       if (mounted) {
-        // Navigate to MainScreen in offline mode
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),

@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'plex_client.dart';
 import '../models/plex_config.dart';
 import '../utils/app_logger.dart';
+import '../utils/connection_constants.dart';
 import 'plex_auth_service.dart';
 import 'storage_service.dart';
 
@@ -156,7 +157,7 @@ class MultiServerManager {
   Future<int> connectToAllServers(
     List<PlexServer> servers, {
     String? clientIdentifier,
-    Duration timeout = const Duration(seconds: 10),
+    Duration timeout = ConnectionTimeouts.connectAll,
     Function(String serverId, PlexClient client)? onServerConnected,
     Function(String serverId, Object error)? onServerFailed,
   }) async {

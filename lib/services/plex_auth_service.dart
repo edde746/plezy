@@ -7,6 +7,7 @@ import '../models/plex_user_profile.dart';
 import '../models/plex_home.dart';
 import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
+import '../utils/connection_constants.dart';
 
 class PlexAuthService {
   static const String _appName = 'Plezy';
@@ -364,8 +365,8 @@ class PlexServer {
       return;
     }
 
-    const preferredTimeout = Duration(seconds: 2);
-    const raceTimeout = Duration(seconds: 4);
+    const preferredTimeout = ConnectionTimeouts.preferredEndpointProbe;
+    const raceTimeout = ConnectionTimeouts.connectionRace;
 
     final candidates = _buildPrioritizedCandidates();
     if (candidates.isEmpty) {
@@ -647,7 +648,7 @@ class PlexServer {
     final result = await PlexClient.testConnectionWithLatency(
       httpsUrl,
       accessToken,
-      timeout: const Duration(seconds: 4),
+      timeout: ConnectionTimeouts.connectionRace,
     );
 
     if (!result.success) {

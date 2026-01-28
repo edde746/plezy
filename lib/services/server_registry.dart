@@ -138,37 +138,4 @@ class ServerRegistry {
       // Don't rethrow - we can continue with cached servers
     }
   }
-
-  /// Migrate from single server storage to multi-server
-  /// This is called during app startup to migrate existing users
-  Future<void> migrateFromSingleServer() async {
-    try {
-      // Check if we already have servers in the new format
-      final existingServers = await getServers();
-      if (existingServers.isNotEmpty) {
-        appLogger.d('Servers already migrated, skipping migration');
-        return;
-      }
-
-      // Try to load old single-server data
-      final oldServerData = _storage.getServerData();
-      if (oldServerData == null) {
-        appLogger.d('No old server data to migrate');
-        return;
-      }
-
-      // Parse and migrate
-      final server = PlexServer.fromJson(oldServerData);
-
-      appLogger.i('Migrating single server to multi-server: ${server.name}');
-
-      // Save as first server in new format
-      await saveServers([server]);
-
-      appLogger.i('Migration complete');
-    } catch (e, stackTrace) {
-      appLogger.e('Failed to migrate from single server', error: e, stackTrace: stackTrace);
-      // Don't rethrow - migration failure shouldn't crash the app
-    }
-  }
 }

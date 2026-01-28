@@ -7,8 +7,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/server_registry.dart';
+import '../services/server_connection_orchestrator.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/plex_client_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../i18n/strings.g.dart';
@@ -81,12 +81,16 @@ class _AuthScreenState extends State<AuthScreen> {
       final registry = ServerRegistry(storage);
       await registry.saveServers(servers);
 
-      // Connect to all servers
       if (!mounted) return;
-      final multiServerProvider = context.read<MultiServerProvider>();
-      final connectedCount = await multiServerProvider.serverManager.connectToAllServers(servers);
 
-      if (connectedCount == 0) {
+      final result = await ServerConnectionOrchestrator.connectAndInitialize(
+        servers: servers,
+        multiServerProvider: context.read<MultiServerProvider>(),
+        librariesProvider: context.read<LibrariesProvider>(),
+        syncService: context.read<OfflineWatchSyncService>(),
+      );
+
+      if (!result.hasConnections) {
         setState(() {
           _isAuthenticating = false;
           _errorMessage = t.serverSelection.allServerConnectionsFailed;
@@ -94,32 +98,11 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
 
-      // Get the first connected client for backward compatibility
       if (!mounted) return;
-      final firstClient = multiServerProvider.serverManager.onlineClients.values.first;
-
-      // Set it as the legacy client
-      final plexClientProvider = context.read<PlexClientProvider>();
-      plexClientProvider.setClient(firstClient);
-
-      // Initialize and load libraries (mirroring SetupScreen behavior)
-      final librariesProvider = context.read<LibrariesProvider>();
-      librariesProvider.initialize(multiServerProvider.aggregationService);
-      try {
-        await librariesProvider.loadLibraries();
-      } catch (e) {
-        appLogger.w('Failed to load libraries during sign-in', error: e);
-        // Continue anyway - MainScreen will retry
-      }
-
-      // Trigger initial watch sync now that Plex clients are available
-      if (mounted) {
-        context.read<OfflineWatchSyncService>().onServersConnected();
-      }
-
-      // Navigate to main screen
-      if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen(client: firstClient)));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen(client: result.firstClient!)),
+      );
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       setState(() {
@@ -159,9 +142,7 @@ class _AuthScreenState extends State<AuthScreen> {
         final uri = Uri.parse(authUrl);
         if (await canLaunchUrl(uri)) {
           // On TV, use inAppWebView (simpler WebView) instead of Chrome Custom Tabs
-          final mode = PlatformDetector.isTV()
-              ? LaunchMode.inAppWebView
-              : LaunchMode.inAppBrowserView;
+          final mode = PlatformDetector.isTV() ? LaunchMode.inAppWebView : LaunchMode.inAppBrowserView;
           await launchUrl(uri, mode: mode);
         } else {
           throw Exception(t.errors.couldNotLaunchUrl);

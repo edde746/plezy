@@ -782,7 +782,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (confirm == true && mounted) {
       // Use comprehensive logout through UserProfileProvider
       final userProfileProvider = Provider.of<UserProfileProvider>(context, listen: false);
-      final plexClientProvider = context.plexClient;
       final multiServerProvider = context.read<MultiServerProvider>();
       final serverStateProvider = context.read<ServerStateProvider>();
       final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
@@ -790,7 +789,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
       // Clear all user data and provider states
       await userProfileProvider.logout();
-      plexClientProvider.clearClient();
       multiServerProvider.clearAllConnections();
       serverStateProvider.reset();
       await hiddenLibrariesProvider.refresh();
@@ -1055,7 +1053,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
                         onNavigateUp: () {
                           _heroFocusNode.requestFocus();
-                          _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+                          _scrollController.animateTo(
+                            0,
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
+                          );
                         },
                         onNavigateToSidebar: _navigateToSidebar,
                       ),
@@ -1072,10 +1074,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         onRefresh: updateItem,
                         // Hub index is i + 1 if continue watching exists, otherwise i
                         onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                        onNavigateUp: (i == 0 && _onDeck.isEmpty) ? () {
-                          _heroFocusNode.requestFocus();
-                          _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-                        } : null,
+                        onNavigateUp: (i == 0 && _onDeck.isEmpty)
+                            ? () {
+                                _heroFocusNode.requestFocus();
+                                _scrollController.animateTo(
+                                  0,
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeOut,
+                                );
+                              }
+                            : null,
                         onNavigateToSidebar: _navigateToSidebar,
                       ),
                     ),

@@ -6,9 +6,7 @@ import '../models/plex_user_profile.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
-import '../utils/provider_extensions.dart';
 import '../screens/profile/pin_entry_dialog.dart';
-import 'plex_client_provider.dart';
 
 class UserProfileProvider extends ChangeNotifier {
   PlexHome? _home;
@@ -227,28 +225,13 @@ class UserProfileProvider extends ChangeNotifier {
       return true;
     }
 
-    // Extract client provider before async operations
-    PlexClientProvider? clientProvider;
-    if (context != null) {
-      try {
-        clientProvider = context.plexClient;
-      } catch (e) {
-        appLogger.w('Failed to get PlexClientProvider', error: e);
-      }
-    }
-
     _setLoading(true);
     _clearError();
 
-    return await _attemptUserSwitch(user, context, clientProvider, null);
+    return await _attemptUserSwitch(user, context, null);
   }
 
-  Future<bool> _attemptUserSwitch(
-    PlexHomeUser user,
-    BuildContext? context,
-    PlexClientProvider? clientProvider,
-    String? errorMessage,
-  ) async {
+  Future<bool> _attemptUserSwitch(PlexHomeUser user, BuildContext? context, String? errorMessage) async {
     try {
       final currentToken = _storageService!.getPlexToken();
       if (currentToken == null) {
@@ -324,12 +307,7 @@ class UserProfileProvider extends ChangeNotifier {
 
             // Retry with error message if context is still available
             if (context != null && context.mounted) {
-              return await _attemptUserSwitch(
-                user,
-                context,
-                clientProvider,
-                errorMessage ?? 'Incorrect PIN. Please try again.',
-              );
+              return await _attemptUserSwitch(user, context, errorMessage ?? 'Incorrect PIN. Please try again.');
             }
 
             // If context not available, return false without showing error

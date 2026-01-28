@@ -7,16 +7,11 @@ import '../models/plex_metadata.dart';
 import '../models/plex_user_profile.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/plex_client_provider.dart';
 import '../providers/user_profile_provider.dart';
 import 'app_logger.dart';
 
 extension ProviderExtensions on BuildContext {
-  PlexClientProvider get plexClient => Provider.of<PlexClientProvider>(this, listen: false);
-
   UserProfileProvider get userProfile => Provider.of<UserProfileProvider>(this, listen: false);
-
-  PlexClientProvider watchPlexClient() => Provider.of<PlexClientProvider>(this, listen: true);
 
   UserProfileProvider watchUserProfile() => Provider.of<UserProfileProvider>(this, listen: true);
 
