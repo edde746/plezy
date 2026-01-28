@@ -190,6 +190,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get systemThemeDescription => 'Suivre les paramètres système';
 	@override String get lightTheme => 'Light';
 	@override String get darkTheme => 'Dark';
+	@override String get oledTheme => 'OLED';
+	@override String get oledThemeDescription => 'Noir pur pour les écrans OLED';
 	@override String get libraryDensity => 'Densité des bibliothèques';
 	@override String get compact => 'Compact';
 	@override String get compactDescription => 'Cartes plus petites, plus d\'éléments visibles';
@@ -1028,6 +1030,8 @@ extension on TranslationsFr {
 			'settings.systemThemeDescription' => 'Suivre les paramètres système',
 			'settings.lightTheme' => 'Light',
 			'settings.darkTheme' => 'Dark',
+			'settings.oledTheme' => 'OLED',
+			'settings.oledThemeDescription' => 'Noir pur pour les écrans OLED',
 			'settings.libraryDensity' => 'Densité des bibliothèques',
 			'settings.compact' => 'Compact',
 			'settings.compactDescription' => 'Cartes plus petites, plus d\'éléments visibles',
@@ -1471,10 +1475,10 @@ extension on TranslationsFr {
 			'watchTogether.hostingSession' => 'Session d\'hébergement',
 			'watchTogether.inSession' => 'En session',
 			'watchTogether.sessionCode' => 'Code de session',
-			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',
-			'watchTogether.anyoneCanControl' => 'Tout le monde peut contrôler la lecture',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',
+			'watchTogether.anyoneCanControl' => 'Tout le monde peut contrôler la lecture',
 			'watchTogether.hostControls' => 'Commandes de l\'hôte',
 			'watchTogether.anyoneControls' => 'Tout le monde contrôle',
 			'watchTogether.participants' => 'Participants',

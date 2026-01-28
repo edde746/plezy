@@ -78,6 +78,8 @@
     "systemThemeDescription": "시스템 설정에 따름",
     "lightTheme": "라이트 모드",
     "darkTheme": "다크 모드",
+    "oledTheme": "OLED",
+    "oledThemeDescription": "OLED 화면을 위한 순수 검정",
     "libraryDensity": "라이브러리 표시 밀도",
     "compact": "좁게",
     "compactDescription": "카드를 작게 표시하여 더 많은 항목을 보여줍니다.",

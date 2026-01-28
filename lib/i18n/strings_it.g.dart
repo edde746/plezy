@@ -191,6 +191,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get systemThemeDescription => 'Segui le impostazioni di sistema';
 	@override String get lightTheme => 'Chiaro';
 	@override String get darkTheme => 'Scuro';
+	@override String get oledTheme => 'OLED';
+	@override String get oledThemeDescription => 'Nero puro per schermi OLED';
 	@override String get libraryDensity => 'Densità libreria';
 	@override String get compact => 'Compatta';
 	@override String get compactDescription => 'Schede più piccole, più elementi visibili';
@@ -1031,6 +1033,8 @@ extension on TranslationsIt {
 			'settings.systemThemeDescription' => 'Segui le impostazioni di sistema',
 			'settings.lightTheme' => 'Chiaro',
 			'settings.darkTheme' => 'Scuro',
+			'settings.oledTheme' => 'OLED',
+			'settings.oledThemeDescription' => 'Nero puro per schermi OLED',
 			'settings.libraryDensity' => 'Densità libreria',
 			'settings.compact' => 'Compatta',
 			'settings.compactDescription' => 'Schede più piccole, più elementi visibili',
@@ -1473,10 +1477,10 @@ extension on TranslationsIt {
 			'collections.created' => 'Raccolta creata',
 			'collections.removeFromCollection' => 'Rimuovi dalla raccolta',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Rimuovere "${title}" da questa raccolta?',
-			'collections.removedFromCollection' => 'Rimosso dalla raccolta',
-			'collections.removeFromCollectionFailed' => 'Impossibile rimuovere dalla raccolta',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removedFromCollection' => 'Rimosso dalla raccolta',
+			'collections.removeFromCollectionFailed' => 'Impossibile rimuovere dalla raccolta',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}',
 			'watchTogether.title' => 'Guarda Insieme',
 			'watchTogether.description' => 'Guarda contenuti in sincronia con amici e familiari',

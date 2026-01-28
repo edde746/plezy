@@ -7,7 +7,7 @@ import '../models/mpv_config_models.dart';
 import 'base_shared_preferences_service.dart';
 import '../utils/platform_detector.dart';
 
-enum ThemeMode { system, light, dark }
+enum ThemeMode { system, light, dark, oled }
 
 enum LibraryDensity { compact, normal, comfortable }
 
@@ -86,6 +86,11 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   ThemeMode getThemeMode() {
+    final stored = prefs.getString(_keyThemeMode);
+    if (stored == null) {
+      // Default to OLED on Android TV, system elsewhere
+      return TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system;
+    }
     return _getEnumValue(_keyThemeMode, ThemeMode.values, ThemeMode.system);
   }
 

@@ -191,6 +191,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get systemThemeDescription => 'Systemeinstellungen folgen';
 	@override String get lightTheme => 'Hell';
 	@override String get darkTheme => 'Dunkel';
+	@override String get oledTheme => 'OLED';
+	@override String get oledThemeDescription => 'Reines Schwarz für OLED-Bildschirme';
 	@override String get libraryDensity => 'Mediathekdichte';
 	@override String get compact => 'Kompakt';
 	@override String get compactDescription => 'Kleinere Karten, mehr Elemente sichtbar';
@@ -1031,6 +1033,8 @@ extension on TranslationsDe {
 			'settings.systemThemeDescription' => 'Systemeinstellungen folgen',
 			'settings.lightTheme' => 'Hell',
 			'settings.darkTheme' => 'Dunkel',
+			'settings.oledTheme' => 'OLED',
+			'settings.oledThemeDescription' => 'Reines Schwarz für OLED-Bildschirme',
 			'settings.libraryDensity' => 'Mediathekdichte',
 			'settings.compact' => 'Kompakt',
 			'settings.compactDescription' => 'Kleinere Karten, mehr Elemente sichtbar',
@@ -1473,10 +1477,10 @@ extension on TranslationsDe {
 			'collections.created' => 'Sammlung erstellt',
 			'collections.removeFromCollection' => 'Aus Sammlung entfernen',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?',
-			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
-			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
+			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
 			'watchTogether.title' => 'Gemeinsam Schauen',
 			'watchTogether.description' => 'Inhalte synchron mit Freunden und Familie schauen',

@@ -191,6 +191,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get systemThemeDescription => 'Följ systeminställningar';
 	@override String get lightTheme => 'Ljust';
 	@override String get darkTheme => 'Mörkt';
+	@override String get oledTheme => 'OLED';
+	@override String get oledThemeDescription => 'Rent svart för OLED-skärmar';
 	@override String get libraryDensity => 'Biblioteksdensitet';
 	@override String get compact => 'Kompakt';
 	@override String get compactDescription => 'Mindre kort, fler objekt synliga';
@@ -1031,6 +1033,8 @@ extension on TranslationsSv {
 			'settings.systemThemeDescription' => 'Följ systeminställningar',
 			'settings.lightTheme' => 'Ljust',
 			'settings.darkTheme' => 'Mörkt',
+			'settings.oledTheme' => 'OLED',
+			'settings.oledThemeDescription' => 'Rent svart för OLED-skärmar',
 			'settings.libraryDensity' => 'Biblioteksdensitet',
 			'settings.compact' => 'Kompakt',
 			'settings.compactDescription' => 'Mindre kort, fler objekt synliga',
@@ -1473,10 +1477,10 @@ extension on TranslationsSv {
 			'collections.created' => 'Samling skapad',
 			'collections.removeFromCollection' => 'Ta bort från samling',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
-			'collections.removedFromCollection' => 'Borttagen från samling',
-			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removedFromCollection' => 'Borttagen från samling',
+			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
 			'watchTogether.title' => 'Titta Tillsammans',
 			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',

@@ -78,6 +78,8 @@
     "systemThemeDescription": "Segui le impostazioni di sistema",
     "lightTheme": "Chiaro",
     "darkTheme": "Scuro",
+    "oledTheme": "OLED",
+    "oledThemeDescription": "Nero puro per schermi OLED",
     "libraryDensity": "Densità libreria",
     "compact": "Compatta",
     "compactDescription": "Schede più piccole, più elementi visibili",

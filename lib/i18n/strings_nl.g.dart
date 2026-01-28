@@ -191,6 +191,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get systemThemeDescription => 'Volg systeeminstellingen';
 	@override String get lightTheme => 'Licht';
 	@override String get darkTheme => 'Donker';
+	@override String get oledTheme => 'OLED';
+	@override String get oledThemeDescription => 'Puur zwart voor OLED-schermen';
 	@override String get libraryDensity => 'Bibliotheek dichtheid';
 	@override String get compact => 'Compact';
 	@override String get compactDescription => 'Kleinere kaarten, meer items zichtbaar';
@@ -1031,6 +1033,8 @@ extension on TranslationsNl {
 			'settings.systemThemeDescription' => 'Volg systeeminstellingen',
 			'settings.lightTheme' => 'Licht',
 			'settings.darkTheme' => 'Donker',
+			'settings.oledTheme' => 'OLED',
+			'settings.oledThemeDescription' => 'Puur zwart voor OLED-schermen',
 			'settings.libraryDensity' => 'Bibliotheek dichtheid',
 			'settings.compact' => 'Compact',
 			'settings.compactDescription' => 'Kleinere kaarten, meer items zichtbaar',
@@ -1473,10 +1477,10 @@ extension on TranslationsNl {
 			'collections.created' => 'Collectie gemaakt',
 			'collections.removeFromCollection' => 'Verwijderen uit collectie',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
-			'collections.removedFromCollection' => 'Uit collectie verwijderd',
-			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removedFromCollection' => 'Uit collectie verwijderd',
+			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
 			'watchTogether.title' => 'Samen Kijken',
 			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',

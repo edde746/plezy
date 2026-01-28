@@ -77,6 +77,8 @@
     "systemThemeDescription": "Suivre les paramètres système",
     "lightTheme": "Light",
     "darkTheme": "Dark",
+    "oledTheme": "OLED",
+    "oledThemeDescription": "Noir pur pour les écrans OLED",
     "libraryDensity": "Densité des bibliothèques",
     "compact": "Compact",
     "compactDescription": "Cartes plus petites, plus d'éléments visibles",

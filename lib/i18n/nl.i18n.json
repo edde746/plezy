@@ -78,6 +78,8 @@
     "systemThemeDescription": "Volg systeeminstellingen",
     "lightTheme": "Licht",
     "darkTheme": "Donker",
+    "oledTheme": "OLED",
+    "oledThemeDescription": "Puur zwart voor OLED-schermen",
     "libraryDensity": "Bibliotheek dichtheid",
     "compact": "Compact",
     "compactDescription": "Kleinere kaarten, meer items zichtbaar",

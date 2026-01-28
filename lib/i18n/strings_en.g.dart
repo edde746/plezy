@@ -328,6 +328,12 @@ class TranslationsSettingsEn {
 	/// en: 'Dark'
 	String get darkTheme => 'Dark';
 
+	/// en: 'OLED'
+	String get oledTheme => 'OLED';
+
+	/// en: 'Pure black for OLED screens'
+	String get oledThemeDescription => 'Pure black for OLED screens';
+
 	/// en: 'Library Density'
 	String get libraryDensity => 'Library Density';
 
@@ -2142,6 +2148,8 @@ extension on Translations {
 			'settings.systemThemeDescription' => 'Follow system settings',
 			'settings.lightTheme' => 'Light',
 			'settings.darkTheme' => 'Dark',
+			'settings.oledTheme' => 'OLED',
+			'settings.oledThemeDescription' => 'Pure black for OLED screens',
 			'settings.libraryDensity' => 'Library Density',
 			'settings.compact' => 'Compact',
 			'settings.compactDescription' => 'Smaller cards, more items visible',
@@ -2585,10 +2593,10 @@ extension on Translations {
 			'watchTogether.hostingSession' => 'Hosting Session',
 			'watchTogether.inSession' => 'In Session',
 			'watchTogether.sessionCode' => 'Session Code',
-			'watchTogether.hostControlsPlayback' => 'Host controls playback',
-			'watchTogether.anyoneCanControl' => 'Anyone can control playback',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.hostControlsPlayback' => 'Host controls playback',
+			'watchTogether.anyoneCanControl' => 'Anyone can control playback',
 			'watchTogether.hostControls' => 'Host controls',
 			'watchTogether.anyoneControls' => 'Anyone controls',
 			'watchTogether.participants' => 'Participants',

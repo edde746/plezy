@@ -902,6 +902,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   Navigator.pop(context);
                 },
               ),
+              ListTile(
+                leading: AppIcon(
+                  themeProvider.themeMode == settings.ThemeMode.oled
+                      ? Symbols.radio_button_checked_rounded
+                      : Symbols.radio_button_unchecked_rounded,
+                  fill: 1,
+                ),
+                title: Text(t.settings.oledTheme),
+                subtitle: Text(t.settings.oledThemeDescription),
+                onTap: () {
+                  themeProvider.setThemeMode(settings.ThemeMode.oled);
+                  Navigator.pop(context);
+                },
+              ),
             ],
           ),
           actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel))],

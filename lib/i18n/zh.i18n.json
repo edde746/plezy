@@ -78,6 +78,8 @@
     "systemThemeDescription": "跟随系统设置",
     "lightTheme": "浅色",
     "darkTheme": "深色",
+    "oledTheme": "OLED",
+    "oledThemeDescription": "纯黑色适用于 OLED 屏幕",
     "libraryDensity": "媒体库密度",
     "compact": "紧凑",
     "compactDescription": "卡片更小，显示更多项目",

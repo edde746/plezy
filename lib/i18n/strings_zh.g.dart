@@ -191,6 +191,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get systemThemeDescription => '跟随系统设置';
 	@override String get lightTheme => '浅色';
 	@override String get darkTheme => '深色';
+	@override String get oledTheme => 'OLED';
+	@override String get oledThemeDescription => '纯黑色适用于 OLED 屏幕';
 	@override String get libraryDensity => '媒体库密度';
 	@override String get compact => '紧凑';
 	@override String get compactDescription => '卡片更小，显示更多项目';
@@ -1031,6 +1033,8 @@ extension on TranslationsZh {
 			'settings.systemThemeDescription' => '跟随系统设置',
 			'settings.lightTheme' => '浅色',
 			'settings.darkTheme' => '深色',
+			'settings.oledTheme' => 'OLED',
+			'settings.oledThemeDescription' => '纯黑色适用于 OLED 屏幕',
 			'settings.libraryDensity' => '媒体库密度',
 			'settings.compact' => '紧凑',
 			'settings.compactDescription' => '卡片更小，显示更多项目',
@@ -1473,10 +1477,10 @@ extension on TranslationsZh {
 			'collections.created' => '已创建合集',
 			'collections.removeFromCollection' => '从合集移除',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '将“${title}”从此合集移除？',
-			'collections.removedFromCollection' => '已从合集移除',
-			'collections.removeFromCollectionFailed' => '从合集移除失败',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removedFromCollection' => '已从合集移除',
+			'collections.removeFromCollectionFailed' => '从合集移除失败',
 			'collections.removeFromCollectionError' => ({required Object error}) => '从合集移除时出错：${error}',
 			'watchTogether.title' => '一起看',
 			'watchTogether.description' => '与朋友和家人同步观看内容',

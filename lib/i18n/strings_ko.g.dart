@@ -191,6 +191,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get systemThemeDescription => '시스템 설정에 따름';
 	@override String get lightTheme => '라이트 모드';
 	@override String get darkTheme => '다크 모드';
+	@override String get oledTheme => 'OLED';
+	@override String get oledThemeDescription => 'OLED 화면을 위한 순수 검정';
 	@override String get libraryDensity => '라이브러리 표시 밀도';
 	@override String get compact => '좁게';
 	@override String get compactDescription => '카드를 작게 표시하여 더 많은 항목을 보여줍니다.';
@@ -1031,6 +1033,8 @@ extension on TranslationsKo {
 			'settings.systemThemeDescription' => '시스템 설정에 따름',
 			'settings.lightTheme' => '라이트 모드',
 			'settings.darkTheme' => '다크 모드',
+			'settings.oledTheme' => 'OLED',
+			'settings.oledThemeDescription' => 'OLED 화면을 위한 순수 검정',
 			'settings.libraryDensity' => '라이브러리 표시 밀도',
 			'settings.compact' => '좁게',
 			'settings.compactDescription' => '카드를 작게 표시하여 더 많은 항목을 보여줍니다.',
@@ -1473,10 +1477,10 @@ extension on TranslationsKo {
 			'watchTogether.hostOnly' => '호스트만',
 			'watchTogether.anyone' => '누구나',
 			'watchTogether.hostingSession' => '세션 호스팅',
-			'watchTogether.inSession' => '세션 중',
-			'watchTogether.sessionCode' => '세션 코드',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inSession' => '세션 중',
+			'watchTogether.sessionCode' => '세션 코드',
 			'watchTogether.hostControlsPlayback' => '호스트 재생 제어',
 			'watchTogether.anyoneCanControl' => '누구나 재생 제어 가능',
 			'watchTogether.hostControls' => '호스트 제어',

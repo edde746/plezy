@@ -78,6 +78,8 @@
     "systemThemeDescription": "Följ systeminställningar",
     "lightTheme": "Ljust",
     "darkTheme": "Mörkt",
+    "oledTheme": "OLED",
+    "oledThemeDescription": "Rent svart för OLED-skärmar",
     "libraryDensity": "Biblioteksdensitet",
     "compact": "Kompakt",
     "compactDescription": "Mindre kort, fler objekt synliga",
