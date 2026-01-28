@@ -13,7 +13,7 @@
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowBackground">@android:color/black</item>
         <!-- Disable Android's default green focus highlight that appears during d-pad/keyboard navigation -->
         <item name="android:defaultFocusHighlightEnabled">false</item>
         <item name="android:colorControlHighlight">@android:color/transparent</item>
