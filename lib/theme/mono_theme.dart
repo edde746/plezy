@@ -27,6 +27,8 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
           textMuted: const Color(0x99111111),
         );
 
+  final isDark = dark || oled;
+
   final buttonStyle = ButtonStyle(
     padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
     elevation: const WidgetStatePropertyAll(0),
@@ -34,8 +36,6 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
     foregroundColor: WidgetStatePropertyAll(isDark ? c.bg : Colors.white),
     shape: const WidgetStatePropertyAll(StadiumBorder()),
   );
-
-  final isDark = dark || oled;
 
   final base = ThemeData(
     useMaterial3: true,

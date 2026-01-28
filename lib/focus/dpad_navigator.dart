@@ -84,9 +84,30 @@ class SelectKeyUpSuppressor {
 /// the BACK key-up from propagating to the underlying screen.
 class BackKeyUpSuppressor {
   static bool _suppressBackUntilKeyUp = false;
+  static bool _closedViaBackKey = false;
 
+  /// Mark that a modal is being closed via back key press.
+  /// Call this before Navigator.pop() in back key handlers.
+  static void markClosedViaBackKey() {
+    _closedViaBackKey = true;
+  }
+
+  /// Request suppression of back key-up events.
+  /// Suppression is skipped if the modal was closed via back key
+  /// (since the key-up already triggered the close).
   static void suppressBackUntilKeyUp() {
+    if (_closedViaBackKey) {
+      _closedViaBackKey = false;
+      return;
+    }
     _suppressBackUntilKeyUp = true;
+  }
+
+  /// Clear any pending suppression. Call when opening a new modal
+  /// to ensure stale suppression from previous closes doesn't affect it.
+  static void clearSuppression() {
+    _suppressBackUntilKeyUp = false;
+    _closedViaBackKey = false;
   }
 
   static bool consumeIfSuppressed(KeyEvent event) {

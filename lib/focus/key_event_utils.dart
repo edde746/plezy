@@ -66,6 +66,8 @@ KeyEventResult handleBackKeyAction(KeyEvent event, VoidCallback onBack) {
 
   if (event is KeyUpEvent) {
     BackKeyCoordinator.markHandled();
+    // Mark that we're closing via back key so suppressBackUntilKeyUp() knows to skip
+    BackKeyUpSuppressor.markClosedViaBackKey();
     onBack();
     return KeyEventResult.handled;
   }

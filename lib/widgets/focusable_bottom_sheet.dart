@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../focus/input_mode_tracker.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/key_event_utils.dart';
 
 /// A wrapper widget that provides autofocus functionality for bottom sheets.
 ///
@@ -29,6 +30,8 @@ class _FocusableBottomSheetState extends State<FocusableBottomSheet> {
   @override
   void initState() {
     super.initState();
+    // Clear any stale back key suppression from previous sheet closes
+    BackKeyUpSuppressor.clearSuppression();
     _requestInitialFocus();
   }
 
@@ -61,13 +64,12 @@ class _FocusableBottomSheetState extends State<FocusableBottomSheet> {
       canRequestFocus: false,
       skipTraversal: true,
       onKeyEvent: (node, event) {
+        // Handle select key suppression (for when sheet was opened via select key)
         if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
           return KeyEventResult.handled;
         }
-        if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
+        // Handle back key to close the bottom sheet
+        return handleBackKeyNavigation(context, event);
       },
       child: widget.child,
     );
