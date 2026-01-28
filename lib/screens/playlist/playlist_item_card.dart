@@ -97,10 +97,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                         padding: const EdgeInsets.all(8),
                         margin: const EdgeInsets.only(right: 4),
                         decoration: isDragHandleFocused
-                            ? BoxDecoration(
-                                color: colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              )
+                            ? BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(8))
                             : null,
                         child: AppIcon(
                           widget.isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
@@ -161,10 +158,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
                 // Remove button
                 Container(
                   decoration: isRemoveButtonFocused
-                      ? BoxDecoration(
-                          color: colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(20),
-                        )
+                      ? BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(20))
                       : null,
                   child: IconButton(
                     icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),

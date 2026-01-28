@@ -1,5 +1,6 @@
 import 'dart:math';
 import '../services/plex_client.dart';
+import 'plex_url_helper.dart';
 
 /// Image types for different transcoding strategies
 enum ImageType {
@@ -91,9 +92,7 @@ class PlexImageHelper {
     final token = client.config.token;
 
     // URL encode the original path with token
-    final encodedPath = Uri.encodeComponent(
-      '$originalPath${originalPath.contains('?') ? '&' : '?'}X-Plex-Token=$token',
-    );
+    final encodedPath = Uri.encodeComponent(originalPath.withPlexToken(token));
 
     // Build the transcode URL
     final transcodeParams = {

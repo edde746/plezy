@@ -14,6 +14,8 @@ import '../../services/fullscreen_state_manager.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/focusable_wrapper.dart';
+import 'widgets/first_frame_guard.dart';
+import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
 import 'widgets/volume_control.dart';
@@ -352,24 +354,17 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: widget.hasFirstFrame ?? ValueNotifier(true),
-      builder: (context, hasFrame, child) {
-        return Column(
-          children: [
-            // Top bar with back button and title (always visible)
-            _buildTopBar(context),
-            if (!hasFrame)
-              // Loading: empty space, spinner shown by video_player_screen
-              const Expanded(child: SizedBox.shrink())
-            else ...[
-              // Loaded: spacer + bottom controls
-              const Spacer(),
-              _buildBottomControlsContent(context, hasFrame: true),
-            ],
-          ],
-        );
-      },
+    return Column(
+      children: [
+        // Top bar with back button and title (always visible)
+        _buildTopBar(context),
+        FirstFrameGuard(
+          hasFirstFrame: widget.hasFirstFrame,
+          placeholder: const Expanded(child: SizedBox.shrink()),
+          builder: (context) =>
+              Expanded(child: Column(children: [const Spacer(), _buildBottomControlsContent(context, hasFrame: true)])),
+        ),
+      ],
     );
   }
 
@@ -456,11 +451,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               // Play/Pause
               Opacity(
                 opacity: widget.canControl ? 1.0 : 0.5,
-                child: StreamBuilder<bool>(
-                  stream: widget.player.streams.playing,
-                  initialData: widget.player.state.playing,
-                  builder: (context, snapshot) {
-                    final isPlaying = snapshot.data ?? false;
+                child: PlayPauseStreamBuilder(
+                  player: widget.player,
+                  builder: (context, isPlaying) {
                     return _buildFocusableButton(
                       focusNode: _playPauseFocusNode,
                       index: 2,

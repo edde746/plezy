@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../mpv/mpv.dart';
@@ -7,6 +6,9 @@ import '../../models/plex_media_info.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../i18n/strings.g.dart';
+import 'widgets/circular_control_button.dart';
+import 'widgets/first_frame_guard.dart';
+import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/video_controls_header.dart';
 import 'widgets/video_timeline_bar.dart';
 
@@ -100,41 +102,25 @@ class MobileVideoControls extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // Check if we're still loading first frame
-    final hasFirstFrameNotifier = hasFirstFrame;
-    if (hasFirstFrameNotifier != null) {
-      return ValueListenableBuilder<bool>(
-        valueListenable: hasFirstFrameNotifier,
-        builder: (context, hasFrame, child) {
-          if (!hasFrame) {
-            // Empty space, spinner shown by video_player_screen
-            return const SizedBox.shrink();
-          }
-          return _buildPlaybackControlsContent(context);
-        },
-      );
-    }
-    return _buildPlaybackControlsContent(context);
+    return FirstFrameGuard(hasFirstFrame: hasFirstFrame, builder: (context) => _buildPlaybackControlsContent(context));
   }
 
   Widget _buildPlaybackControlsContent(BuildContext context) {
-    return StreamBuilder<bool>(
-      stream: player.streams.playing,
-      initialData: player.state.playing,
-      builder: (context, snapshot) {
-        final isPlaying = snapshot.data ?? false;
+    return PlayPauseStreamBuilder(
+      player: player,
+      builder: (context, isPlaying) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Previous episode button (greyed out when unavailable)
-            _buildCircularButton(
+            CircularControlButton(
               semanticLabel: t.videoControls.previousButton,
               icon: Symbols.skip_previous_rounded,
               iconSize: 48,
               onPressed: onPrevious,
             ),
             const SizedBox(width: 24),
-            _buildCircularButton(
+            CircularControlButton(
               semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
               icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
               iconSize: 72,
@@ -150,7 +136,7 @@ class MobileVideoControls extends StatelessWidget {
             ),
             const SizedBox(width: 24),
             // Next episode button (greyed out when unavailable)
-            _buildCircularButton(
+            CircularControlButton(
               semanticLabel: t.videoControls.nextButton,
               icon: Symbols.skip_next_rounded,
               iconSize: 48,
@@ -163,21 +149,7 @@ class MobileVideoControls extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext context) {
-    // Check if we're still loading first frame
-    final hasFirstFrameNotifier = hasFirstFrame;
-    if (hasFirstFrameNotifier != null) {
-      return ValueListenableBuilder<bool>(
-        valueListenable: hasFirstFrameNotifier,
-        builder: (context, hasFrame, child) {
-          if (!hasFrame) {
-            // Hide timeline while loading
-            return const SizedBox.shrink();
-          }
-          return _buildBottomBarContent(context);
-        },
-      );
-    }
-    return _buildBottomBarContent(context);
+    return FirstFrameGuard(hasFirstFrame: hasFirstFrame, builder: (context) => _buildBottomBarContent(context));
   }
 
   Widget _buildBottomBarContent(BuildContext context) {
@@ -194,33 +166,6 @@ class MobileVideoControls extends StatelessWidget {
           onSeekEnd: onSeekEnd,
           horizontalLayout: false,
           enabled: canControl,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCircularButton({
-    required String semanticLabel,
-    required IconData icon,
-    required double iconSize,
-    VoidCallback? onPressed,
-  }) {
-    final isEnabled = onPressed != null;
-    return Container(
-      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
-      child: Semantics(
-        label: semanticLabel,
-        button: true,
-        excludeSemantics: true,
-        child: IconButton(
-          icon: AppIcon(
-            icon,
-            fill: 1,
-            color: isEnabled ? Colors.white : Colors.white.withValues(alpha: 0.3),
-            size: iconSize,
-          ),
-          iconSize: iconSize,
-          onPressed: onPressed,
         ),
       ),
     );

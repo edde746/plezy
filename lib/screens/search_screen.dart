@@ -229,7 +229,10 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
                               : null,
                           filled: true,
                           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(100), borderSide: BorderSide.none),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(100),
+                            borderSide: BorderSide.none,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(100),
                             borderSide: BorderSide.none,
@@ -267,11 +270,18 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
                 else
                   Consumer<SettingsProvider>(
                     builder: (context, settingsProvider, child) {
-                      final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+                      final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(
+                        context,
+                        settingsProvider.libraryDensity,
+                      );
                       const gridPadding = EdgeInsets.all(16);
                       const crossAxisSpacing = 8.0;
                       final gridAvailableWidth = availableWidth - gridPadding.left - gridPadding.right;
-                      final columnCount = _calculateColumnCount(gridAvailableWidth, maxCrossAxisExtent, crossAxisSpacing);
+                      final columnCount = _calculateColumnCount(
+                        gridAvailableWidth,
+                        maxCrossAxisExtent,
+                        crossAxisSpacing,
+                      );
                       final isList = settingsProvider.viewMode == ViewMode.list;
 
                       return buildAdaptiveMediaSliverBuilder<PlexMetadata>(
@@ -290,12 +300,12 @@ class _SearchScreenState extends State<SearchScreen> with Refreshable, FullRefre
                             onNavigateUp: isFirstRow ? focusSearchInput : null,
                           );
                         },
-                    viewMode: settingsProvider.viewMode,
-                    density: settingsProvider.libraryDensity,
-                    padding: const EdgeInsets.all(16),
-                    childAspectRatio: 2 / 3.3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
+                        viewMode: settingsProvider.viewMode,
+                        density: settingsProvider.libraryDensity,
+                        padding: const EdgeInsets.all(16),
+                        childAspectRatio: 2 / 3.3,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
                       );
                     },
                   ),

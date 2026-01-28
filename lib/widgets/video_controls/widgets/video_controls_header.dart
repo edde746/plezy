@@ -60,12 +60,8 @@ class VideoControlsHeader extends StatelessWidget {
     List<String> parts = [seriesName];
 
     if (hasEpisodeInfo) {
-      parts.add('S${metadata.parentIndex}');
-      parts.add('E${metadata.index}');
-    }
-
-    if (metadata.duration != null) {
-      parts.add(formatDurationTextual(metadata.duration!));
+      parts.add('S${metadata.parentIndex}E${metadata.index}');
+      parts.add(metadata.title);
     }
 
     return Text(

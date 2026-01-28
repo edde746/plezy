@@ -135,16 +135,6 @@ class PlexClient {
     }
   }
 
-  /// Test connection to server
-  Future<bool> testConnection() async {
-    try {
-      final response = await _dio.get('/');
-      return response.statusCode == 200 || response.statusCode == 401;
-    } catch (e) {
-      return false;
-    }
-  }
-
   /// Test connection to a specific URL with token and measure latency
   static Future<ConnectionTestResult> testConnectionWithLatency(
     String baseUrl,
@@ -433,38 +423,6 @@ class PlexClient {
       return _tagMetadata(PlexMetadata.fromJsonWithImages(firstMetadata));
     }
     return null;
-  }
-
-  /// Fetch metadata with cache support for offline mode and network fallback.
-  ///
-  /// Returns the raw response data (Map) or null if not available.
-  /// Used by playback methods to share caching logic.
-  Future<Map<String, dynamic>?> _fetchMetadataWithCache(String ratingKey, {Map<String, dynamic>? queryParams}) async {
-    final cacheKey = '/library/metadata/$ratingKey';
-
-    // Offline mode: cache only
-    if (_offlineMode) {
-      return await _cache.get(serverId, cacheKey);
-    }
-
-    // Online: try network first
-    try {
-      // Always include markers and chapters to ensure cached data is complete
-      // This prevents cache corruption when different methods fetch the same endpoint
-      final mergedParams = {'includeMarkers': 1, 'includeChapters': 1, ...?queryParams};
-      final response = await _dio.get('/library/metadata/$ratingKey', queryParameters: mergedParams);
-
-      // Cache at base endpoint
-      if (response.data != null) {
-        await _cache.put(serverId, cacheKey, response.data);
-      }
-
-      return response.data;
-    } catch (e) {
-      // Network failed - try cache as fallback
-      appLogger.w('Network request failed for metadata, trying cache', error: e);
-      return await _cache.get(serverId, cacheKey);
-    }
   }
 
   /// Generic cache-network-fallback helper for fetching data
@@ -940,7 +898,18 @@ class PlexClient {
   /// This is the primary method for playback initialization.
   /// Uses cache for offline mode support and network fallback.
   Future<PlexVideoPlaybackData> getVideoPlaybackData(String ratingKey, {int mediaIndex = 0}) async {
-    final data = await _fetchMetadataWithCache(ratingKey);
+    Map<String, dynamic>? data;
+    try {
+      data = await _fetchWithCacheFallback<Map<String, dynamic>>(
+        cacheKey: '/library/metadata/$ratingKey',
+        networkCall: () =>
+            _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
+        parseCache: (cached) => cached as Map<String, dynamic>?,
+        parseResponse: (response) => response.data as Map<String, dynamic>?,
+      );
+    } catch (_) {
+      // Gracefully degrade: return empty playback data on total failure
+    }
     final metadataJson = _getFirstMetadataJsonFromData(data);
 
     String? videoUrl;
@@ -1014,7 +983,13 @@ class PlexClient {
   /// Uses cache for offline mode support and network fallback.
   Future<PlexFileInfo?> getFileInfo(String ratingKey) async {
     try {
-      final data = await _fetchMetadataWithCache(ratingKey);
+      final data = await _fetchWithCacheFallback<Map<String, dynamic>>(
+        cacheKey: '/library/metadata/$ratingKey',
+        networkCall: () =>
+            _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
+        parseCache: (cached) => cached as Map<String, dynamic>?,
+        parseResponse: (response) => response.data as Map<String, dynamic>?,
+      );
       final metadataJson = _getFirstMetadataJsonFromData(data);
 
       if (metadataJson != null && metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {

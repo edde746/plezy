@@ -281,16 +281,9 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         scrollDelta -= (_focusDecorationPadding - projectedItemTop);
       }
 
-      final targetOffset = (currentOffset + scrollDelta).clamp(
-        position.minScrollExtent,
-        position.maxScrollExtent,
-      );
+      final targetOffset = (currentOffset + scrollDelta).clamp(position.minScrollExtent, position.maxScrollExtent);
 
-      position.animateTo(
-        targetOffset,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-      );
+      position.animateTo(targetOffset, duration: const Duration(milliseconds: 200), curve: Curves.easeInOut);
     });
   }
 

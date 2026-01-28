@@ -1360,8 +1360,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             }
 
             // Only handle KeyDown and KeyRepeat events
+            // Consume KeyUp events to prevent them leaking to previous routes
             if (!event.isActionable) {
-              return KeyEventResult.ignored;
+              return KeyEventResult.handled;
             }
 
             // Reset hide timer on any keyboard/controller input when controls are visible
@@ -1426,13 +1427,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                 }
                 return KeyEventResult.handled;
               }
-              // If controls are shown, let the event propagate to the focused control
-              // The DesktopVideoControls will handle navigation
-              return KeyEventResult.ignored;
+              // Children (DesktopVideoControls) handle navigation first via their own onKeyEvent.
+              // If we reach here, children already declined the event — consume it to prevent leaking.
+              return KeyEventResult.handled;
             }
 
             // Pass other events to the keyboard shortcuts service
-            if (_keyboardService == null) return KeyEventResult.ignored;
+            if (_keyboardService == null) return KeyEventResult.handled;
 
             final result = _keyboardService!.handleVideoPlayerKeyEvent(
               event,
@@ -1445,7 +1446,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               _previousChapter,
               onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
             );
-            return result;
+            // Never return .ignored from fullscreen video — prevent leaking to previous routes
+            return result == KeyEventResult.ignored ? KeyEventResult.handled : result;
           },
           child: Listener(
             behavior: HitTestBehavior.translucent,

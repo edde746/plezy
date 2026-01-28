@@ -536,8 +536,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   }
 
   int _getActionCount() {
-    final isContainer = widget.node.type == DownloadNodeType.show ||
-                        widget.node.type == DownloadNodeType.season;
+    final isContainer = widget.node.type == DownloadNodeType.show || widget.node.type == DownloadNodeType.season;
     if (isContainer) {
       return _getContainerActionCount();
     }
@@ -549,19 +548,18 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final status = widget.node.status;
     if (status == DownloadStatus.downloading && widget.onPause != null) count++;
     if (status == DownloadStatus.paused && widget.onResume != null) count++;
-    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) &&
-        widget.onCancel != null) count++;
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onCancel != null) count++;
     if (status == DownloadStatus.failed && widget.onRetry != null) count++;
-    if ((status == DownloadStatus.completed || status == DownloadStatus.failed ||
-         status == DownloadStatus.cancelled) && widget.onDelete != null) count++;
+    if ((status == DownloadStatus.completed || status == DownloadStatus.failed || status == DownloadStatus.cancelled) &&
+        widget.onDelete != null)
+      count++;
     return count;
   }
 
   int _getContainerActionCount() {
     int count = 0;
     final status = widget.node.status;
-    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) &&
-        widget.onPause != null) count++;
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onPause != null) count++;
     if (status == DownloadStatus.paused && widget.onResume != null) count++;
     if (widget.onDelete != null) count++;
     return count;
@@ -616,11 +614,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
       children: [
         // Expand/collapse icon
         if (canExpand)
-          AppIcon(
-            widget.isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded,
-            fill: 1,
-            size: 20,
-          )
+          AppIcon(widget.isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded, fill: 1, size: 20)
         else
           const SizedBox(width: 20),
 
@@ -650,15 +644,12 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                 const SizedBox(height: 4),
                 Text(
                   _getNodeSummary(),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                 ),
               ],
 
               // Progress bar
-              if (widget.node.status == DownloadStatus.downloading ||
-                  widget.node.status == DownloadStatus.queued) ...[
+              if (widget.node.status == DownloadStatus.downloading || widget.node.status == DownloadStatus.queued) ...[
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: widget.node.progress,
@@ -726,8 +717,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   }
 
   Widget _buildActions() {
-    final isContainer = widget.node.type == DownloadNodeType.show ||
-                        widget.node.type == DownloadNodeType.season;
+    final isContainer = widget.node.type == DownloadNodeType.show || widget.node.type == DownloadNodeType.season;
 
     final actions = isContainer ? _buildContainerActions() : _buildItemActions();
 
@@ -742,54 +732,63 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
 
     // Pause button for downloading items
     if (status == DownloadStatus.downloading && widget.onPause != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.pause_rounded,
-        tooltip: 'Pause',
-        onPressed: () => widget.onPause!(globalKey),
-        buttonIndex: buttonIndex++,
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.pause_rounded,
+          tooltip: 'Pause',
+          onPressed: () => widget.onPause!(globalKey),
+          buttonIndex: buttonIndex++,
+        ),
+      );
     }
 
     // Resume button for paused items
     if (status == DownloadStatus.paused && widget.onResume != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.play_arrow_rounded,
-        tooltip: 'Resume',
-        onPressed: () => widget.onResume!(globalKey),
-        buttonIndex: buttonIndex++,
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.play_arrow_rounded,
+          tooltip: 'Resume',
+          onPressed: () => widget.onResume!(globalKey),
+          buttonIndex: buttonIndex++,
+        ),
+      );
     }
 
     // Cancel button for downloading/queued items
-    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) &&
-        widget.onCancel != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.close_rounded,
-        tooltip: 'Cancel',
-        onPressed: () => widget.onCancel!(globalKey),
-        buttonIndex: buttonIndex++,
-      ));
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onCancel != null) {
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.close_rounded,
+          tooltip: 'Cancel',
+          onPressed: () => widget.onCancel!(globalKey),
+          buttonIndex: buttonIndex++,
+        ),
+      );
     }
 
     // Retry button for failed items
     if (status == DownloadStatus.failed && widget.onRetry != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.refresh_rounded,
-        tooltip: t.downloads.retryDownload,
-        onPressed: () => widget.onRetry!(globalKey),
-        buttonIndex: buttonIndex++,
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.refresh_rounded,
+          tooltip: t.downloads.retryDownload,
+          onPressed: () => widget.onRetry!(globalKey),
+          buttonIndex: buttonIndex++,
+        ),
+      );
     }
 
     // Delete button for completed/failed/cancelled items
-    if ((status == DownloadStatus.completed || status == DownloadStatus.failed ||
-         status == DownloadStatus.cancelled) && widget.onDelete != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.delete_rounded,
-        tooltip: 'Delete',
-        onPressed: () => widget.onDelete!(globalKey),
-        buttonIndex: buttonIndex++,
-      ));
+    if ((status == DownloadStatus.completed || status == DownloadStatus.failed || status == DownloadStatus.cancelled) &&
+        widget.onDelete != null) {
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.delete_rounded,
+          tooltip: 'Delete',
+          onPressed: () => widget.onDelete!(globalKey),
+          buttonIndex: buttonIndex++,
+        ),
+      );
     }
 
     return actions;
@@ -801,34 +800,39 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     int buttonIndex = 0;
 
     // Pause all button
-    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) &&
-        widget.onPause != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.pause_rounded,
-        tooltip: 'Pause all',
-        onPressed: () => widget.pauseAllChildren(widget.node),
-        buttonIndex: buttonIndex++,
-      ));
+    if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onPause != null) {
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.pause_rounded,
+          tooltip: 'Pause all',
+          onPressed: () => widget.pauseAllChildren(widget.node),
+          buttonIndex: buttonIndex++,
+        ),
+      );
     }
 
     // Resume all button
     if (status == DownloadStatus.paused && widget.onResume != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.play_arrow_rounded,
-        tooltip: 'Resume all',
-        onPressed: () => widget.resumeAllChildren(widget.node),
-        buttonIndex: buttonIndex++,
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.play_arrow_rounded,
+          tooltip: 'Resume all',
+          onPressed: () => widget.resumeAllChildren(widget.node),
+          buttonIndex: buttonIndex++,
+        ),
+      );
     }
 
     // Delete all button
     if (widget.onDelete != null) {
-      actions.add(_buildActionButton(
-        icon: Symbols.delete_sweep_rounded,
-        tooltip: 'Delete all',
-        onPressed: () => widget.deleteAllChildren(widget.node),
-        buttonIndex: buttonIndex++,
-      ));
+      actions.add(
+        _buildActionButton(
+          icon: Symbols.delete_sweep_rounded,
+          tooltip: 'Delete all',
+          onPressed: () => widget.deleteAllChildren(widget.node),
+          buttonIndex: buttonIndex++,
+        ),
+      );
     }
 
     return actions;
@@ -846,12 +850,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     return FocusableWrapper(
       focusNode: _buttonFocusNodes[buttonIndex],
       onSelect: onPressed,
-      onNavigateLeft: isFirst
-          ? _focusRow
-          : () => _buttonFocusNodes[buttonIndex - 1].requestFocus(),
-      onNavigateRight: isLast
-          ? null
-          : () => _buttonFocusNodes[buttonIndex + 1].requestFocus(),
+      onNavigateLeft: isFirst ? _focusRow : () => _buttonFocusNodes[buttonIndex - 1].requestFocus(),
+      onNavigateRight: isLast ? null : () => _buttonFocusNodes[buttonIndex + 1].requestFocus(),
       onBack: widget.onBack,
       borderRadius: 20.0,
       disableScale: true,
@@ -861,10 +861,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
         message: tooltip,
         child: GestureDetector(
           onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: AppIcon(icon, fill: 1, size: 20),
-          ),
+          child: Padding(padding: const EdgeInsets.all(8.0), child: AppIcon(icon, fill: 1, size: 20)),
         ),
       ),
     );

@@ -117,7 +117,9 @@ class PlaybackProgressTracker {
         await _sendOnlineProgress(state, position, duration);
         // Success — reset backoff state
         if (_consecutiveFailures > 0) {
-          appLogger.d('Progress update succeeded after $_consecutiveFailures consecutive failure(s), resetting backoff');
+          appLogger.d(
+            'Progress update succeeded after $_consecutiveFailures consecutive failure(s), resetting backoff',
+          );
           _consecutiveFailures = 0;
           _ticksToSkip = 0;
         }

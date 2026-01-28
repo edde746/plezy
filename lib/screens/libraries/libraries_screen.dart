@@ -1158,7 +1158,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   onKeyEvent: _handleEditKeyEvent,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: _isEditFocused ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.transparent,
+                      color: _isEditFocused
+                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: IconButton(
@@ -1173,7 +1175,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 onKeyEvent: _handleRefreshKeyEvent,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: _isRefreshFocused ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.transparent,
+                    color: _isRefreshFocused
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: IconButton(

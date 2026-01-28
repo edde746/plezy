@@ -360,7 +360,10 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
               padding: effectivePadding,
               // Allow focus decoration to render outside scroll bounds
               clipBehavior: Clip.none,
-              gridDelegate: MediaGridDelegate.createDelegate(context: context, density: settingsProvider.libraryDensity),
+              gridDelegate: MediaGridDelegate.createDelegate(
+                context: context,
+                density: settingsProvider.libraryDensity,
+              ),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
