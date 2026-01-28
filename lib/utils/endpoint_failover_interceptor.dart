@@ -2,6 +2,9 @@ import 'package:dio/dio.dart';
 
 import '../utils/app_logger.dart';
 
+/// Key used to stamp requests with the failover generation they were issued under.
+const _generationKey = '_failoverGeneration';
+
 /// Maintains the list of endpoints we can cycle through when one fails.
 class EndpointFailoverManager {
   EndpointFailoverManager(List<String> urls) {
@@ -10,6 +13,11 @@ class EndpointFailoverManager {
 
   late List<String> _endpoints;
   int _currentIndex = 0;
+
+  /// Incremented every time the active endpoint changes. Requests stamped with
+  /// an older generation should not trigger additional failover cascades.
+  int _generation = 0;
+  int get generation => _generation;
 
   List<String> get endpoints => List.unmodifiable(_endpoints);
 
@@ -21,7 +29,18 @@ class EndpointFailoverManager {
   String? moveToNext() {
     if (!hasFallback) return null;
     _currentIndex++;
+    _generation++;
     return _endpoints[_currentIndex];
+  }
+
+  /// Reset back to the first (preferred) endpoint. Called when all endpoints
+  /// are exhausted so the next failure cycle starts from the best candidate.
+  void resetToFirst() {
+    if (_currentIndex != 0) {
+      _currentIndex = 0;
+      _generation++;
+      appLogger.d('Failover endpoint list reset to first candidate');
+    }
   }
 
   /// Replace the endpoint list and optionally set the active endpoint.
@@ -33,6 +52,7 @@ class EndpointFailoverManager {
     } else {
       _currentIndex = 0;
     }
+    _generation++;
   }
 
   void _setEndpoints(List<String> urls) {
@@ -66,8 +86,36 @@ class EndpointFailoverInterceptor extends Interceptor {
   bool _isSwitching = false;
 
   @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    // Stamp every outgoing request with the current failover generation so
+    // we can detect stale requests in onError.
+    options.extra[_generationKey] = endpointManager.generation;
+    handler.next(options);
+  }
+
+  @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (_isSwitching || !_shouldAttemptFailover(err) || !endpointManager.hasFallback) {
+    if (_isSwitching || !_shouldAttemptFailover(err)) {
+      handler.next(err);
+      return;
+    }
+
+    // If the endpoint changed since this request was dispatched, the request
+    // timed out on an already-abandoned endpoint. Don't cascade another switch.
+    final requestGeneration = err.requestOptions.extra[_generationKey] as int?;
+    if (requestGeneration != null && requestGeneration != endpointManager.generation) {
+      appLogger.d(
+        'Skipping failover for stale request (generation $requestGeneration != ${endpointManager.generation})',
+        error: {'path': err.requestOptions.path},
+      );
+      handler.next(err);
+      return;
+    }
+
+    if (!endpointManager.hasFallback) {
+      // All endpoints exhausted — reset to first so the next failure cycle
+      // starts from the preferred endpoint (handles transient network outages).
+      endpointManager.resetToFirst();
       handler.next(err);
       return;
     }

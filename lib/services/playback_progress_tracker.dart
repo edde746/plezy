@@ -37,6 +37,12 @@ class PlaybackProgressTracker {
   /// Update interval (default: 10 seconds)
   final Duration updateInterval;
 
+  /// Counts consecutive online progress failures for backoff logic.
+  int _consecutiveFailures = 0;
+
+  /// Timer ticks to skip before retrying after failures (exponential backoff).
+  int _ticksToSkip = 0;
+
   PlaybackProgressTracker({
     required this.client,
     required this.metadata,
@@ -64,6 +70,12 @@ class PlaybackProgressTracker {
 
     _progressTimer = Timer.periodic(updateInterval, (timer) {
       if (player.state.playing) {
+        // Skip ticks when backing off after consecutive failures to avoid
+        // flooding the network with doomed requests during an outage.
+        if (_ticksToSkip > 0) {
+          _ticksToSkip--;
+          return;
+        }
         _sendProgress('playing');
       }
     });
@@ -103,6 +115,12 @@ class PlaybackProgressTracker {
       } else {
         // Send progress to server immediately
         await _sendOnlineProgress(state, position, duration);
+        // Success — reset backoff state
+        if (_consecutiveFailures > 0) {
+          appLogger.d('Progress update succeeded after $_consecutiveFailures consecutive failure(s), resetting backoff');
+          _consecutiveFailures = 0;
+          _ticksToSkip = 0;
+        }
       }
 
       // Emit watch state event on stop for UI updates across screens
@@ -114,7 +132,18 @@ class PlaybackProgressTracker {
         );
       }
     } catch (e) {
-      appLogger.d('Failed to send progress update (non-critical)', error: e);
+      if (!isOffline) {
+        _consecutiveFailures++;
+        // Exponential backoff: skip 1, 2, 4, 8... ticks (capped at 6 ≈ 60s)
+        _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
+        appLogger.d(
+          'Progress update failed ($_consecutiveFailures consecutive), '
+          'skipping next $_ticksToSkip tick(s)',
+          error: e,
+        );
+      } else {
+        appLogger.d('Failed to send progress update (non-critical)', error: e);
+      }
     }
   }
 
