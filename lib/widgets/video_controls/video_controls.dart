@@ -426,6 +426,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _clickVideoTogglesPlayback = settingsService.getClickVideoTogglesPlayback();
       });
 
+      // Focus play/pause if navigation is now enabled and controls are visible
+      // (handles case where initState focus attempt failed due to async settings load)
+      if (_videoPlayerNavigationEnabled && _showControls) {
+        _focusPlayPauseIfKeyboardMode();
+      }
+
       // Apply rotation lock setting
       if (_isRotationLocked) {
         SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);

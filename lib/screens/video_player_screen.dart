@@ -1891,8 +1891,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         builder: (context, hasFrame, child) {
                           if ((!isBuffering && hasFrame) || _isExiting.value) return const SizedBox.shrink();
                           // Show spinner only - controls overlay provides its own black background during loading
-                          return IgnorePointer(
-                            child: Positioned.fill(
+                          return Positioned.fill(
+                            child: IgnorePointer(
                               child: Center(
                                 child: Container(
                                   padding: const EdgeInsets.all(20),
