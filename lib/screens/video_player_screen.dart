@@ -1610,9 +1610,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Widget build(BuildContext context) {
     // Show loading indicator while player initializes
     if (!_isPlayerInitialized || player == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+        body: Focus(
+          autofocus: true,
+          onKeyEvent: (node, event) => KeyEventResult.handled,
+          child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+        ),
       );
     }
 
