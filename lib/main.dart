@@ -342,6 +342,8 @@ class _SetupScreenState extends State<SetupScreen> {
           MaterialPageRoute(builder: (context) => MainScreen(client: result.firstClient!)),
         );
       } else {
+        await context.read<DownloadProvider>().ensureInitialized();
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
@@ -351,6 +353,8 @@ class _SetupScreenState extends State<SetupScreen> {
       appLogger.e('Error during multi-server connection', error: e, stackTrace: stackTrace);
 
       if (mounted) {
+        await context.read<DownloadProvider>().ensureInitialized();
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),

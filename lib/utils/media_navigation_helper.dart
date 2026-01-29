@@ -95,7 +95,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
       continue defaultCase;
 
     case PlexMediaType.season:
-      await Navigator.push(context, MaterialPageRoute(builder: (context) => SeasonDetailScreen(season: metadata)));
+      await Navigator.push(context, MaterialPageRoute(builder: (context) => SeasonDetailScreen(season: metadata, isOffline: isOffline)));
       onRefresh?.call(metadata.ratingKey);
       return MediaNavigationResult.navigated;
 

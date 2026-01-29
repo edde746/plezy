@@ -33,6 +33,7 @@ class DownloadProvider extends ChangeNotifier {
   final DownloadManagerService _downloadManager;
   StreamSubscription<DownloadProgress>? _progressSubscription;
   StreamSubscription<DeletionProgress>? _deletionProgressSubscription;
+  late final Future<void> _initFuture;
 
   // Track download progress by globalKey (serverId:ratingKey)
   final Map<String, DownloadProgress> _downloads = {};
@@ -61,8 +62,11 @@ class DownloadProvider extends ChangeNotifier {
     _deletionProgressSubscription = _downloadManager.deletionProgressStream.listen(_onDeletionProgressUpdate);
 
     // Load persisted downloads from database
-    _loadPersistedDownloads();
+    _initFuture = _loadPersistedDownloads();
   }
+
+  /// Ensures persisted downloads have been loaded from disk.
+  Future<void> ensureInitialized() => _initFuture;
 
   /// Load all persisted downloads and metadata from the database/cache
   Future<void> _loadPersistedDownloads() async {
