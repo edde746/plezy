@@ -32,6 +32,8 @@ import '../services/track_selection_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_pip_manager.dart';
 import '../services/pip_service.dart';
+import '../services/shader_service.dart';
+import '../providers/shader_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/orientation_helper.dart';
@@ -115,6 +117,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
   VideoPIPManager? _videoPIPManager;
+  ShaderService? _shaderService;
   final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
   // Watch Together provider reference (stored early to use in dispose)
@@ -797,6 +800,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             _videoFilterManager?.enterPipMode();
           };
           _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
+
+          // Shader Service (MPV only)
+          _shaderService = ShaderService(player!);
+          if (_shaderService!.isSupported) {
+            await _applySavedShaderPreset();
+          }
         }
 
         // Add external subtitles while paused, then start playback
@@ -889,6 +898,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Only handle exit - entry is handled by onBeforeEnterPip callback
     if (!isInPip) {
       _videoFilterManager!.exitPipMode();
+    }
+  }
+
+  /// Apply the saved shader preset on playback start
+  Future<void> _applySavedShaderPreset() async {
+    if (_shaderService == null || !_shaderService!.isSupported) return;
+
+    try {
+      final shaderProvider = context.read<ShaderProvider>();
+      final preset = shaderProvider.savedPreset;
+      await _shaderService!.applyPreset(preset);
+      shaderProvider.setCurrentPreset(preset);
+    } catch (e) {
+      appLogger.d('Could not apply shader preset', error: e);
     }
   }
 
@@ -1696,6 +1719,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         hasFirstFrame: _hasFirstFrame,
                         playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
                         controlsVisible: _controlsVisible,
+                        shaderService: _shaderService,
+                        onShaderChanged: () => setState(() {}),
                       ),
                     );
                   },

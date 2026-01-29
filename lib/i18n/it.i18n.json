@@ -200,7 +200,8 @@
       "speedDecrease": "Diminuisci velocità",
       "speedReset": "Ripristina velocità",
       "subSeekNext": "Vai al sottotitolo successivo",
-      "subSeekPrev": "Vai al sottotitolo precedente"
+      "subSeekPrev": "Vai al sottotitolo precedente",
+      "shaderToggle": "Attiva/disattiva shader"
     }
   },
   "pinEntry": {
@@ -628,5 +629,16 @@
     "failedToCreate": "Impossibile creare la sessione",
     "failedToJoin": "Impossibile unirsi alla sessione",
     "sessionCodeCopied": "Codice sessione copiato negli appunti"
+  },
+  "shaders": {
+    "title": "Shader",
+    "noShaderDescription": "Nessun miglioramento video",
+    "nvscalerDescription": "Ridimensionamento NVIDIA per video più nitido",
+    "qualityFast": "Veloce",
+    "qualityHQ": "Alta qualità",
+    "mode": "Modalità",
+    "presetChanged": "Preset shader cambiato",
+    "hdrDetected": "HDR rilevato - shader saltato",
+    "mpvOnly": "Gli shader sono disponibili solo con il lettore MPV"
   }
 }

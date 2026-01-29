@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:io' show Platform;
@@ -23,6 +24,7 @@ import 'providers/playback_state_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
+import 'providers/shader_provider.dart';
 import 'watch_together/watch_together.dart';
 import 'services/multi_server_manager.dart';
 import 'services/offline_watch_sync_service.dart';
@@ -121,7 +123,63 @@ void main() async {
 
   // DTD service is available for MCP tooling connection if needed
 
+  // Register bundled shader licenses
+  _registerShaderLicenses();
+
   runApp(const MainApp());
+}
+
+void _registerShaderLicenses() {
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(
+      ['Anime4K'],
+      'MIT License\n'
+      '\n'
+      'Copyright (c) 2019-2021 bloc97\n'
+      'All rights reserved.\n'
+      '\n'
+      'Permission is hereby granted, free of charge, to any person obtaining a copy '
+      'of this software and associated documentation files (the "Software"), to deal '
+      'in the Software without restriction, including without limitation the rights '
+      'to use, copy, modify, merge, publish, distribute, sublicense, and/or sell '
+      'copies of the Software, and to permit persons to whom the Software is '
+      'furnished to do so, subject to the following conditions:\n'
+      '\n'
+      'The above copyright notice and this permission notice shall be included in all '
+      'copies or substantial portions of the Software.\n'
+      '\n'
+      'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR '
+      'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, '
+      'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE '
+      'AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER '
+      'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, '
+      'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE '
+      'SOFTWARE.',
+    );
+    yield LicenseEntryWithLineBreaks(
+      ['NVIDIA Image Scaling (NVScaler)'],
+      'The MIT License (MIT)\n'
+      '\n'
+      'Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.\n'
+      '\n'
+      'Permission is hereby granted, free of charge, to any person obtaining a copy of '
+      'this software and associated documentation files (the "Software"), to deal in '
+      'the Software without restriction, including without limitation the rights to '
+      'use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of '
+      'the Software, and to permit persons to whom the Software is furnished to do so, '
+      'subject to the following conditions:\n'
+      '\n'
+      'The above copyright notice and this permission notice shall be included in all '
+      'copies or substantial portions of the Software.\n'
+      '\n'
+      'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR '
+      'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS '
+      'FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR '
+      'COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER '
+      'IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN '
+      'CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.',
+    );
+  });
 }
 
 // Global RouteObserver for tracking navigation
@@ -246,6 +304,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (context) => LibrariesProvider()),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
         ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
+        ChangeNotifierProvider(create: (context) => ShaderProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

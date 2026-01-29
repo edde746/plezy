@@ -14,6 +14,7 @@ import '../../services/fullscreen_state_manager.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/focusable_wrapper.dart';
+import '../../services/shader_service.dart';
 import 'widgets/first_frame_guard.dart';
 import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/video_controls_header.dart';
@@ -73,6 +74,9 @@ class DesktopVideoControls extends StatefulWidget {
   /// Notifier for whether first video frame has rendered (shows loading state when false).
   final ValueNotifier<bool>? hasFirstFrame;
 
+  final ShaderService? shaderService;
+  final VoidCallback? onShaderChanged;
+
   const DesktopVideoControls({
     super.key,
     required this.player,
@@ -112,6 +116,8 @@ class DesktopVideoControls extends StatefulWidget {
     this.onBack,
     this.canControl = true,
     this.hasFirstFrame,
+    this.shaderService,
+    this.onShaderChanged,
   });
 
   @override
@@ -538,6 +544,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 onFocusChange: _onFocusChange,
                 onNavigateLeft: navigateFromTrackToVolume,
                 canControl: widget.canControl,
+                shaderService: widget.shaderService,
+                onShaderChanged: widget.onShaderChanged,
               ),
             ],
           ),

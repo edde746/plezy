@@ -200,7 +200,8 @@
       "speedDecrease": "减速",
       "speedReset": "重置速度",
       "subSeekNext": "跳转到下一字幕",
-      "subSeekPrev": "跳转到上一字幕"
+      "subSeekPrev": "跳转到上一字幕",
+      "shaderToggle": "切换着色器"
     }
   },
   "pinEntry": {
@@ -628,5 +629,16 @@
     "failedToCreate": "创建会话失败",
     "failedToJoin": "加入会话失败",
     "sessionCodeCopied": "会话代码已复制到剪贴板"
+  },
+  "shaders": {
+    "title": "着色器",
+    "noShaderDescription": "无视频增强",
+    "nvscalerDescription": "NVIDIA 图像缩放，使视频更清晰",
+    "qualityFast": "快速",
+    "qualityHQ": "高质量",
+    "mode": "模式",
+    "presetChanged": "着色器预设已更改",
+    "hdrDetected": "检测到 HDR - 已跳过着色器",
+    "mpvOnly": "着色器仅在使用 MPV 播放器时可用"
   }
 }

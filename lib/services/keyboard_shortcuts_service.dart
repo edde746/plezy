@@ -163,6 +163,7 @@ class KeyboardShortcutsService {
     VoidCallback? onNextChapter,
     VoidCallback? onPreviousChapter, {
     VoidCallback? onBack,
+    VoidCallback? onToggleShader,
   }) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
@@ -238,6 +239,7 @@ class KeyboardShortcutsService {
           onNextSubtitleTrack,
           onNextChapter,
           onPreviousChapter,
+          onToggleShader: onToggleShader,
         );
         return KeyEventResult.handled;
       }
@@ -254,8 +256,9 @@ class KeyboardShortcutsService {
     VoidCallback? onNextAudioTrack,
     VoidCallback? onNextSubtitleTrack,
     VoidCallback? onNextChapter,
-    VoidCallback? onPreviousChapter,
-  ) {
+    VoidCallback? onPreviousChapter, {
+    VoidCallback? onToggleShader,
+  }) {
     switch (action) {
       case 'play_pause':
         player.playOrPause();
@@ -325,6 +328,9 @@ class KeyboardShortcutsService {
       case 'sub_seek_prev':
         player.command(['sub-seek', '-1']);
         break;
+      case 'shader_toggle':
+        onToggleShader?.call();
+        break;
     }
   }
 
@@ -369,6 +375,8 @@ class KeyboardShortcutsService {
         return t.hotkeys.actions.subSeekNext;
       case 'sub_seek_prev':
         return t.hotkeys.actions.subSeekPrev;
+      case 'shader_toggle':
+        return t.hotkeys.actions.shaderToggle;
       default:
         return action;
     }

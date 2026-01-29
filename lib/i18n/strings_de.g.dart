@@ -69,6 +69,7 @@ class TranslationsDe with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsPlaylistsDe playlists = _TranslationsPlaylistsDe._(_root);
 	@override late final _TranslationsCollectionsDe collections = _TranslationsCollectionsDe._(_root);
 	@override late final _TranslationsWatchTogetherDe watchTogether = _TranslationsWatchTogetherDe._(_root);
+	@override late final _TranslationsShadersDe shaders = _TranslationsShadersDe._(_root);
 }
 
 // Path: app
@@ -889,6 +890,24 @@ class _TranslationsWatchTogetherDe implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Sitzungscode in Zwischenablage kopiert';
 }
 
+// Path: shaders
+class _TranslationsShadersDe implements TranslationsShadersEn {
+	_TranslationsShadersDe._(this._root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Shader';
+	@override String get noShaderDescription => 'Keine Videoverbesserung';
+	@override String get nvscalerDescription => 'NVIDIA-Bildskalierung für schärferes Video';
+	@override String get qualityFast => 'Schnell';
+	@override String get qualityHQ => 'Hohe Qualität';
+	@override String get mode => 'Modus';
+	@override String get presetChanged => 'Shader-Voreinstellung geändert';
+	@override String get hdrDetected => 'HDR erkannt – Shader übersprungen';
+	@override String get mpvOnly => 'Shader sind nur mit dem MPV-Player verfügbar';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsDe implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsDe._(this._root);
@@ -913,6 +932,7 @@ class _TranslationsHotkeysActionsDe implements TranslationsHotkeysActionsEn {
 	@override String get speedReset => 'Geschwindigkeit zurücksetzen';
 	@override String get subSeekNext => 'Zum nächsten Untertitel springen';
 	@override String get subSeekPrev => 'Zum vorherigen Untertitel springen';
+	@override String get shaderToggle => 'Shader umschalten';
 }
 
 // Path: videoControls.pipErrors
@@ -1151,6 +1171,7 @@ extension on TranslationsDe {
 			'hotkeys.actions.speedReset' => 'Geschwindigkeit zurücksetzen',
 			'hotkeys.actions.subSeekNext' => 'Zum nächsten Untertitel springen',
 			'hotkeys.actions.subSeekPrev' => 'Zum vorherigen Untertitel springen',
+			'hotkeys.actions.shaderToggle' => 'Shader umschalten',
 			'pinEntry.enterPin' => 'PIN eingeben',
 			'pinEntry.showPin' => 'PIN anzeigen',
 			'pinEntry.hidePin' => 'PIN verbergen',
@@ -1476,9 +1497,9 @@ extension on TranslationsDe {
 			'collections.errorAddingToCollection' => 'Fehler beim Hinzufügen zur Sammlung',
 			'collections.created' => 'Sammlung erstellt',
 			'collections.removeFromCollection' => 'Aus Sammlung entfernen',
-			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?',
 			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
 			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
@@ -1525,6 +1546,15 @@ extension on TranslationsDe {
 			'watchTogether.failedToCreate' => 'Sitzung konnte nicht erstellt werden',
 			'watchTogether.failedToJoin' => 'Sitzung konnte nicht beigetreten werden',
 			'watchTogether.sessionCodeCopied' => 'Sitzungscode in Zwischenablage kopiert',
+			'shaders.title' => 'Shader',
+			'shaders.noShaderDescription' => 'Keine Videoverbesserung',
+			'shaders.nvscalerDescription' => 'NVIDIA-Bildskalierung für schärferes Video',
+			'shaders.qualityFast' => 'Schnell',
+			'shaders.qualityHQ' => 'Hohe Qualität',
+			'shaders.mode' => 'Modus',
+			'shaders.presetChanged' => 'Shader-Voreinstellung geändert',
+			'shaders.hdrDetected' => 'HDR erkannt – Shader übersprungen',
+			'shaders.mpvOnly' => 'Shader sind nur mit dem MPV-Player verfügbar',
 			_ => null,
 		};
 	}

@@ -199,7 +199,8 @@
       "speedDecrease": "Decrease Speed",
       "speedReset": "Reset Speed",
       "subSeekNext": "Seek to Next Subtitle",
-      "subSeekPrev": "Seek to Previous Subtitle"
+      "subSeekPrev": "Seek to Previous Subtitle",
+      "shaderToggle": "Toggle Shaders"
     }
   },
   "pinEntry": {
@@ -626,5 +627,16 @@
     "downloadDeleted": "Download deleted",
     "deleteConfirm": "Are you sure you want to delete \"${title}\"? This will remove the downloaded file from your device.",
     "deletingWithProgress": "Deleting ${title}... (${current} of ${total})"
+  },
+  "shaders": {
+    "title": "Shaders",
+    "noShaderDescription": "No video enhancement",
+    "nvscalerDescription": "NVIDIA image scaling for sharper video",
+    "qualityFast": "Fast",
+    "qualityHQ": "High Quality",
+    "mode": "Mode",
+    "presetChanged": "Shader preset changed",
+    "hdrDetected": "HDR detected - shader skipped",
+    "mpvOnly": "Shaders are only available with MPV player"
   }
 }

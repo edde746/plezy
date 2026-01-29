@@ -200,7 +200,8 @@
       "speedDecrease": "속도 낮추기",
       "speedReset": "속도 초기화",
       "subSeekNext": "다음 자막으로 이동",
-      "subSeekPrev": "이전 자막으로 이동"
+      "subSeekPrev": "이전 자막으로 이동",
+      "shaderToggle": "셰이더 전환"
     }
   },
   "pinEntry": {
@@ -628,5 +629,16 @@
     "downloadDeleted": "다운로드 삭제됨",
     "deleteConfirm": "\"${title}\"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.",
     "deletingWithProgress": "${title} 삭제 중... (${current}/${total})"
+  },
+  "shaders": {
+    "title": "셰이더",
+    "noShaderDescription": "비디오 향상 없음",
+    "nvscalerDescription": "더 선명한 비디오를 위한 NVIDIA 이미지 스케일링",
+    "qualityFast": "빠름",
+    "qualityHQ": "고품질",
+    "mode": "모드",
+    "presetChanged": "셰이더 프리셋 변경됨",
+    "hdrDetected": "HDR 감지됨 - 셰이더 건너뜀",
+    "mpvOnly": "셰이더는 MPV 플레이어에서만 사용 가능합니다"
   }
 }

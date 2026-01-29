@@ -200,7 +200,8 @@
       "speedDecrease": "Minska hastighet",
       "speedReset": "Återställ hastighet",
       "subSeekNext": "Hoppa till nästa undertext",
-      "subSeekPrev": "Hoppa till föregående undertext"
+      "subSeekPrev": "Hoppa till föregående undertext",
+      "shaderToggle": "Växla shaders"
     }
   },
   "pinEntry": {
@@ -628,5 +629,16 @@
     "failedToCreate": "Det gick inte att skapa session",
     "failedToJoin": "Det gick inte att gå med i session",
     "sessionCodeCopied": "Sessionskod kopierad till urklipp"
+  },
+  "shaders": {
+    "title": "Shaders",
+    "noShaderDescription": "Ingen videoförbättring",
+    "nvscalerDescription": "NVIDIA-bildskalning för skarpare video",
+    "qualityFast": "Snabb",
+    "qualityHQ": "Hög kvalitet",
+    "mode": "Läge",
+    "presetChanged": "Shader-förinställning ändrad",
+    "hdrDetected": "HDR upptäckt - shader hoppades över",
+    "mpvOnly": "Shaders är bara tillgängliga med MPV-spelaren"
   }
 }

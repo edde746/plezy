@@ -69,6 +69,7 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsPlaylistsNl playlists = _TranslationsPlaylistsNl._(_root);
 	@override late final _TranslationsCollectionsNl collections = _TranslationsCollectionsNl._(_root);
 	@override late final _TranslationsWatchTogetherNl watchTogether = _TranslationsWatchTogetherNl._(_root);
+	@override late final _TranslationsShadersNl shaders = _TranslationsShadersNl._(_root);
 }
 
 // Path: app
@@ -889,6 +890,24 @@ class _TranslationsWatchTogetherNl implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Sessiecode gekopieerd naar klembord';
 }
 
+// Path: shaders
+class _TranslationsShadersNl implements TranslationsShadersEn {
+	_TranslationsShadersNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Shaders';
+	@override String get noShaderDescription => 'Geen videoverbetering';
+	@override String get nvscalerDescription => 'NVIDIA-beeldschaling voor scherpere video';
+	@override String get qualityFast => 'Snel';
+	@override String get qualityHQ => 'Hoge kwaliteit';
+	@override String get mode => 'Modus';
+	@override String get presetChanged => 'Shader-voorinstelling gewijzigd';
+	@override String get hdrDetected => 'HDR gedetecteerd - shader overgeslagen';
+	@override String get mpvOnly => 'Shaders zijn alleen beschikbaar met de MPV-speler';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsNl._(this._root);
@@ -913,6 +932,7 @@ class _TranslationsHotkeysActionsNl implements TranslationsHotkeysActionsEn {
 	@override String get speedReset => 'Snelheid resetten';
 	@override String get subSeekNext => 'Naar volgende ondertitel';
 	@override String get subSeekPrev => 'Naar vorige ondertitel';
+	@override String get shaderToggle => 'Shaders aan/uit';
 }
 
 // Path: videoControls.pipErrors
@@ -1151,6 +1171,7 @@ extension on TranslationsNl {
 			'hotkeys.actions.speedReset' => 'Snelheid resetten',
 			'hotkeys.actions.subSeekNext' => 'Naar volgende ondertitel',
 			'hotkeys.actions.subSeekPrev' => 'Naar vorige ondertitel',
+			'hotkeys.actions.shaderToggle' => 'Shaders aan/uit',
 			'pinEntry.enterPin' => 'Voer PIN in',
 			'pinEntry.showPin' => 'Toon PIN',
 			'pinEntry.hidePin' => 'Verberg PIN',
@@ -1476,9 +1497,9 @@ extension on TranslationsNl {
 			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
 			'collections.created' => 'Collectie gemaakt',
 			'collections.removeFromCollection' => 'Verwijderen uit collectie',
-			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
 			'collections.removedFromCollection' => 'Uit collectie verwijderd',
 			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
@@ -1525,6 +1546,15 @@ extension on TranslationsNl {
 			'watchTogether.failedToCreate' => 'Sessie maken mislukt',
 			'watchTogether.failedToJoin' => 'Sessie deelnemen mislukt',
 			'watchTogether.sessionCodeCopied' => 'Sessiecode gekopieerd naar klembord',
+			'shaders.title' => 'Shaders',
+			'shaders.noShaderDescription' => 'Geen videoverbetering',
+			'shaders.nvscalerDescription' => 'NVIDIA-beeldschaling voor scherpere video',
+			'shaders.qualityFast' => 'Snel',
+			'shaders.qualityHQ' => 'Hoge kwaliteit',
+			'shaders.mode' => 'Modus',
+			'shaders.presetChanged' => 'Shader-voorinstelling gewijzigd',
+			'shaders.hdrDetected' => 'HDR gedetecteerd - shader overgeslagen',
+			'shaders.mpvOnly' => 'Shaders zijn alleen beschikbaar met de MPV-speler',
 			_ => null,
 		};
 	}

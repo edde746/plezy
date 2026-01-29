@@ -4,8 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'package:provider/provider.dart';
+
+import '../../../models/shader_preset.dart';
 import '../../../mpv/mpv.dart';
+import '../../../providers/shader_provider.dart';
 import '../../../services/settings_service.dart';
+import '../../../services/shader_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
@@ -16,7 +21,7 @@ import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
 
-enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice }
+enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice, shader }
 
 /// Reusable menu item widget for settings sheet
 class _SettingsMenuItem extends StatelessWidget {
@@ -72,12 +77,20 @@ class VideoSettingsSheet extends StatefulWidget {
   /// Whether the user can control playback (false hides speed option in host-only mode).
   final bool canControl;
 
+  /// Optional shader service for MPV shader control
+  final ShaderService? shaderService;
+
+  /// Called when shader preset changes
+  final VoidCallback? onShaderChanged;
+
   const VideoSettingsSheet({
     super.key,
     required this.player,
     required this.audioSyncOffset,
     required this.subtitleSyncOffset,
     this.canControl = true,
+    this.shaderService,
+    this.onShaderChanged,
   });
 
   static Future<void> show(
@@ -88,6 +101,8 @@ class VideoSettingsSheet extends StatefulWidget {
     VoidCallback? onOpen,
     VoidCallback? onClose,
     bool canControl = true,
+    ShaderService? shaderService,
+    VoidCallback? onShaderChanged,
   }) {
     return BaseVideoControlSheet.showSheet(
       context: context,
@@ -98,6 +113,8 @@ class VideoSettingsSheet extends StatefulWidget {
         audioSyncOffset: audioSyncOffset,
         subtitleSyncOffset: subtitleSyncOffset,
         canControl: canControl,
+        shaderService: shaderService,
+        onShaderChanged: onShaderChanged,
       ),
     );
   }
@@ -194,6 +211,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return 'Subtitle Sync';
       case _SettingsView.audioDevice:
         return 'Audio Output';
+      case _SettingsView.shader:
+        return t.shaders.title;
     }
   }
 
@@ -211,6 +230,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.subtitles_rounded;
       case _SettingsView.audioDevice:
         return Symbols.speaker_rounded;
+      case _SettingsView.shader:
+        return Symbols.auto_fix_high_rounded;
     }
   }
 
@@ -326,6 +347,16 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 onTap: () => _navigateTo(_SettingsView.audioDevice),
               );
             },
+          ),
+
+        // Shader Preset (MPV only)
+        if (widget.shaderService != null && widget.shaderService!.isSupported)
+          _SettingsMenuItem(
+            icon: Symbols.auto_fix_high_rounded,
+            title: t.shaders.title,
+            valueText: widget.shaderService!.currentPreset.name,
+            isHighlighted: widget.shaderService!.currentPreset.isEnabled,
+            onTap: () => _navigateTo(_SettingsView.shader),
           ),
 
         // Performance Overlay Toggle
@@ -455,19 +486,72 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     );
   }
 
+  Widget _buildShaderView() {
+    if (widget.shaderService == null) return const SizedBox.shrink();
+
+    return Consumer<ShaderProvider>(
+      builder: (context, shaderProvider, _) {
+        final currentPreset = widget.shaderService!.currentPreset;
+        final presets = ShaderPreset.allPresets;
+
+        return ListView.builder(
+          itemCount: presets.length,
+          itemBuilder: (context, index) {
+            final preset = presets[index];
+            final isSelected = preset.id == currentPreset.id;
+
+            return FocusableListTile(
+              title: Text(
+                preset.name,
+                style: TextStyle(color: isSelected ? Colors.amber : Colors.white),
+              ),
+              subtitle: _getShaderSubtitle(preset) != null
+                  ? Text(_getShaderSubtitle(preset)!, style: const TextStyle(color: Colors.white54, fontSize: 12))
+                  : null,
+              trailing: isSelected ? const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.amber) : null,
+              onTap: () async {
+                await widget.shaderService!.applyPreset(preset);
+                await shaderProvider.setPreset(preset);
+                widget.onShaderChanged?.call();
+                if (context.mounted) Navigator.pop(context);
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String? _getShaderSubtitle(ShaderPreset preset) {
+    switch (preset.type) {
+      case ShaderPresetType.none:
+        return t.shaders.noShaderDescription;
+      case ShaderPresetType.nvscaler:
+        return t.shaders.nvscalerDescription;
+      case ShaderPresetType.anime4k:
+        if (preset.anime4kConfig != null) {
+          final quality = preset.anime4kConfig!.quality == Anime4KQuality.fast ? t.shaders.qualityFast : t.shaders.qualityHQ;
+          final mode = preset.modeDisplayName;
+          return '$quality - ${t.shaders.mode} $mode';
+        }
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final sleepTimer = SleepTimerService();
+    final isShaderActive = widget.shaderService != null && widget.shaderService!.currentPreset.isEnabled;
     final isIconActive =
         _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0);
+        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive);
 
     return FocusableBottomSheet(
       initialFocusNode: _initialFocusNode,
       child: BaseVideoControlSheet(
         title: _getTitle(),
         icon: _getIcon(),
-        iconColor: isIconActive ? Colors.amber : Colors.white,
+        iconColor: isIconActive ? Colors.amber : (_currentView == _SettingsView.shader && isShaderActive ? Colors.amber : Colors.white),
         onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
         child: () {
           switch (_currentView) {
@@ -483,6 +567,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               return _buildSubtitleSyncView();
             case _SettingsView.audioDevice:
               return _buildAudioDeviceView();
+            case _SettingsView.shader:
+              return _buildShaderView();
           }
         }(),
       ),

@@ -200,7 +200,8 @@
       "speedDecrease": "Snelheid verlagen",
       "speedReset": "Snelheid resetten",
       "subSeekNext": "Naar volgende ondertitel",
-      "subSeekPrev": "Naar vorige ondertitel"
+      "subSeekPrev": "Naar vorige ondertitel",
+      "shaderToggle": "Shaders aan/uit"
     }
   },
   "pinEntry": {
@@ -628,5 +629,16 @@
     "failedToCreate": "Sessie maken mislukt",
     "failedToJoin": "Sessie deelnemen mislukt",
     "sessionCodeCopied": "Sessiecode gekopieerd naar klembord"
+  },
+  "shaders": {
+    "title": "Shaders",
+    "noShaderDescription": "Geen videoverbetering",
+    "nvscalerDescription": "NVIDIA-beeldschaling voor scherpere video",
+    "qualityFast": "Snel",
+    "qualityHQ": "Hoge kwaliteit",
+    "mode": "Modus",
+    "presetChanged": "Shader-voorinstelling gewijzigd",
+    "hdrDetected": "HDR gedetecteerd - shader overgeslagen",
+    "mpvOnly": "Shaders zijn alleen beschikbaar met de MPV-speler"
   }
 }

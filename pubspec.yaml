@@ -69,6 +69,8 @@ flutter:
     - lib/data/iso_639_codes.json
     - assets/plezy.png
     - assets/go-noto-current-regular.ttf
+    - assets/shaders/nvscaler/
+    - assets/shaders/anime4k/
 
 flutter_launcher_icons:
   android: true

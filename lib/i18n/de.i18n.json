@@ -200,7 +200,8 @@
       "speedDecrease": "Geschwindigkeit verringern",
       "speedReset": "Geschwindigkeit zurücksetzen",
       "subSeekNext": "Zum nächsten Untertitel springen",
-      "subSeekPrev": "Zum vorherigen Untertitel springen"
+      "subSeekPrev": "Zum vorherigen Untertitel springen",
+      "shaderToggle": "Shader umschalten"
     }
   },
   "pinEntry": {
@@ -628,5 +629,16 @@
     "failedToCreate": "Sitzung konnte nicht erstellt werden",
     "failedToJoin": "Sitzung konnte nicht beigetreten werden",
     "sessionCodeCopied": "Sitzungscode in Zwischenablage kopiert"
+  },
+  "shaders": {
+    "title": "Shader",
+    "noShaderDescription": "Keine Videoverbesserung",
+    "nvscalerDescription": "NVIDIA-Bildskalierung für schärferes Video",
+    "qualityFast": "Schnell",
+    "qualityHQ": "Hohe Qualität",
+    "mode": "Modus",
+    "presetChanged": "Shader-Voreinstellung geändert",
+    "hdrDetected": "HDR erkannt – Shader übersprungen",
+    "mpvOnly": "Shader sind nur mit dem MPV-Player verfügbar"
   }
 }

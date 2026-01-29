@@ -72,6 +72,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsPlaylistsEn playlists = TranslationsPlaylistsEn._(_root);
 	late final TranslationsWatchTogetherEn watchTogether = TranslationsWatchTogetherEn._(_root);
 	late final TranslationsDownloadsEn downloads = TranslationsDownloadsEn._(_root);
+	late final TranslationsShadersEn shaders = TranslationsShadersEn._(_root);
 }
 
 // Path: app
@@ -1941,6 +1942,42 @@ class TranslationsDownloadsEn {
 	String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})';
 }
 
+// Path: shaders
+class TranslationsShadersEn {
+	TranslationsShadersEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Shaders'
+	String get title => 'Shaders';
+
+	/// en: 'No video enhancement'
+	String get noShaderDescription => 'No video enhancement';
+
+	/// en: 'NVIDIA image scaling for sharper video'
+	String get nvscalerDescription => 'NVIDIA image scaling for sharper video';
+
+	/// en: 'Fast'
+	String get qualityFast => 'Fast';
+
+	/// en: 'High Quality'
+	String get qualityHQ => 'High Quality';
+
+	/// en: 'Mode'
+	String get mode => 'Mode';
+
+	/// en: 'Shader preset changed'
+	String get presetChanged => 'Shader preset changed';
+
+	/// en: 'HDR detected - shader skipped'
+	String get hdrDetected => 'HDR detected - shader skipped';
+
+	/// en: 'Shaders are only available with MPV player'
+	String get mpvOnly => 'Shaders are only available with MPV player';
+}
+
 // Path: hotkeys.actions
 class TranslationsHotkeysActionsEn {
 	TranslationsHotkeysActionsEn._(this._root);
@@ -1999,6 +2036,9 @@ class TranslationsHotkeysActionsEn {
 
 	/// en: 'Seek to Previous Subtitle'
 	String get subSeekPrev => 'Seek to Previous Subtitle';
+
+	/// en: 'Toggle Shaders'
+	String get shaderToggle => 'Toggle Shaders';
 }
 
 // Path: videoControls.pipErrors
@@ -2266,6 +2306,7 @@ extension on Translations {
 			'hotkeys.actions.speedReset' => 'Reset Speed',
 			'hotkeys.actions.subSeekNext' => 'Seek to Next Subtitle',
 			'hotkeys.actions.subSeekPrev' => 'Seek to Previous Subtitle',
+			'hotkeys.actions.shaderToggle' => 'Toggle Shaders',
 			'pinEntry.enterPin' => 'Enter PIN',
 			'pinEntry.showPin' => 'Show PIN',
 			'pinEntry.hidePin' => 'Hide PIN',
@@ -2592,9 +2633,9 @@ extension on Translations {
 			'watchTogether.anyone' => 'Anyone',
 			'watchTogether.hostingSession' => 'Hosting Session',
 			'watchTogether.inSession' => 'In Session',
-			'watchTogether.sessionCode' => 'Session Code',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.sessionCode' => 'Session Code',
 			'watchTogether.hostControlsPlayback' => 'Host controls playback',
 			'watchTogether.anyoneCanControl' => 'Anyone can control playback',
 			'watchTogether.hostControls' => 'Host controls',
@@ -2639,6 +2680,15 @@ extension on Translations {
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This will remove the downloaded file from your device.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
+			'shaders.title' => 'Shaders',
+			'shaders.noShaderDescription' => 'No video enhancement',
+			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
+			'shaders.qualityFast' => 'Fast',
+			'shaders.qualityHQ' => 'High Quality',
+			'shaders.mode' => 'Mode',
+			'shaders.presetChanged' => 'Shader preset changed',
+			'shaders.hdrDetected' => 'HDR detected - shader skipped',
+			'shaders.mpvOnly' => 'Shaders are only available with MPV player',
 			_ => null,
 		};
 	}

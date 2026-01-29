@@ -69,6 +69,7 @@ class TranslationsFr with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsPlaylistsFr playlists = _TranslationsPlaylistsFr._(_root);
 	@override late final _TranslationsWatchTogetherFr watchTogether = _TranslationsWatchTogetherFr._(_root);
 	@override late final _TranslationsDownloadsFr downloads = _TranslationsDownloadsFr._(_root);
+	@override late final _TranslationsShadersFr shaders = _TranslationsShadersFr._(_root);
 }
 
 // Path: app
@@ -887,6 +888,24 @@ class _TranslationsDownloadsFr implements TranslationsDownloadsEn {
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Suppression de ${title}... (${current} sur ${total})';
 }
 
+// Path: shaders
+class _TranslationsShadersFr implements TranslationsShadersEn {
+	_TranslationsShadersFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Shaders';
+	@override String get noShaderDescription => 'Aucune amélioration vidéo';
+	@override String get nvscalerDescription => 'Mise à l\'échelle NVIDIA pour une vidéo plus nette';
+	@override String get qualityFast => 'Rapide';
+	@override String get qualityHQ => 'Haute qualité';
+	@override String get mode => 'Mode';
+	@override String get presetChanged => 'Préréglage de shader modifié';
+	@override String get hdrDetected => 'HDR détecté - shader ignoré';
+	@override String get mpvOnly => 'Les shaders ne sont disponibles qu\'avec le lecteur MPV';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsFr implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsFr._(this._root);
@@ -911,6 +930,7 @@ class _TranslationsHotkeysActionsFr implements TranslationsHotkeysActionsEn {
 	@override String get speedReset => 'Réinitialiser la vitesse';
 	@override String get subSeekNext => 'Rechercher le sous-titre suivant';
 	@override String get subSeekPrev => 'Rechercher le sous-titre précédent';
+	@override String get shaderToggle => 'Activer/désactiver les shaders';
 }
 
 // Path: videoControls.pipErrors
@@ -1148,6 +1168,7 @@ extension on TranslationsFr {
 			'hotkeys.actions.speedReset' => 'Réinitialiser la vitesse',
 			'hotkeys.actions.subSeekNext' => 'Rechercher le sous-titre suivant',
 			'hotkeys.actions.subSeekPrev' => 'Rechercher le sous-titre précédent',
+			'hotkeys.actions.shaderToggle' => 'Activer/désactiver les shaders',
 			'pinEntry.enterPin' => 'Entrer le code PIN',
 			'pinEntry.showPin' => 'Afficher le code PIN',
 			'pinEntry.hidePin' => 'Masquer le code PIN',
@@ -1474,9 +1495,9 @@ extension on TranslationsFr {
 			'watchTogether.anyone' => 'N\'importe qui',
 			'watchTogether.hostingSession' => 'Session d\'hébergement',
 			'watchTogether.inSession' => 'En session',
-			'watchTogether.sessionCode' => 'Code de session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.sessionCode' => 'Code de session',
 			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',
 			'watchTogether.anyoneCanControl' => 'Tout le monde peut contrôler la lecture',
 			'watchTogether.hostControls' => 'Commandes de l\'hôte',
@@ -1521,6 +1542,15 @@ extension on TranslationsFr {
 			'downloads.downloadDeleted' => 'Télécharger supprimé',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Suppression de ${title}... (${current} sur ${total})',
+			'shaders.title' => 'Shaders',
+			'shaders.noShaderDescription' => 'Aucune amélioration vidéo',
+			'shaders.nvscalerDescription' => 'Mise à l\'échelle NVIDIA pour une vidéo plus nette',
+			'shaders.qualityFast' => 'Rapide',
+			'shaders.qualityHQ' => 'Haute qualité',
+			'shaders.mode' => 'Mode',
+			'shaders.presetChanged' => 'Préréglage de shader modifié',
+			'shaders.hdrDetected' => 'HDR détecté - shader ignoré',
+			'shaders.mpvOnly' => 'Les shaders ne sont disponibles qu\'avec le lecteur MPV',
 			_ => null,
 		};
 	}

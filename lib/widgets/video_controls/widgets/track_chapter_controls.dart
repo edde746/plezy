@@ -16,9 +16,9 @@ import '../sheets/chapter_sheet.dart';
 import '../sheets/subtitle_track_sheet.dart';
 import '../sheets/version_sheet.dart';
 import '../sheets/video_settings_sheet.dart';
+import '../../../services/shader_service.dart';
 import '../helpers/track_filter_helper.dart';
 import '../video_control_button.dart';
-
 /// Row of track and chapter control buttons for the video player
 class TrackChapterControls extends StatelessWidget {
   final Player player;
@@ -44,6 +44,8 @@ class TrackChapterControls extends StatelessWidget {
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
   final String serverId;
+  final ShaderService? shaderService;
+  final VoidCallback? onShaderChanged;
 
   /// List of FocusNodes for the buttons (passed from parent for navigation)
   final List<FocusNode>? focusNodes;
@@ -86,6 +88,8 @@ class TrackChapterControls extends StatelessWidget {
     this.onFocusChange,
     this.onNavigateLeft,
     this.canControl = true,
+    this.shaderService,
+    this.onShaderChanged,
   });
 
   /// Handle key event for button navigation
@@ -168,7 +172,8 @@ class TrackChapterControls extends StatelessWidget {
             listenable: SleepTimerService(),
             builder: (context, _) {
               final sleepTimer = SleepTimerService();
-              final isActive = sleepTimer.isActive || audioSyncOffset != 0 || subtitleSyncOffset != 0;
+              final isShaderActive = shaderService != null && shaderService!.isSupported && shaderService!.currentPreset.isEnabled;
+              final isActive = sleepTimer.isActive || audioSyncOffset != 0 || subtitleSyncOffset != 0 || isShaderActive;
               return _buildTrackButton(
                 buttonIndex: 0,
                 icon: Symbols.tune_rounded,
@@ -186,6 +191,8 @@ class TrackChapterControls extends StatelessWidget {
                     onOpen: onCancelAutoHide,
                     onClose: onStartAutoHide,
                     canControl: canControl,
+                    shaderService: shaderService,
+                    onShaderChanged: onShaderChanged,
                   );
                   onLoadSeekTimes?.call();
                 },

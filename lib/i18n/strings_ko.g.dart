@@ -69,6 +69,7 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsPlaylistsKo playlists = _TranslationsPlaylistsKo._(_root);
 	@override late final _TranslationsWatchTogetherKo watchTogether = _TranslationsWatchTogetherKo._(_root);
 	@override late final _TranslationsDownloadsKo downloads = _TranslationsDownloadsKo._(_root);
+	@override late final _TranslationsShadersKo shaders = _TranslationsShadersKo._(_root);
 }
 
 // Path: app
@@ -889,6 +890,24 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => '${title} 삭제 중... (${current}/${total})';
 }
 
+// Path: shaders
+class _TranslationsShadersKo implements TranslationsShadersEn {
+	_TranslationsShadersKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '셰이더';
+	@override String get noShaderDescription => '비디오 향상 없음';
+	@override String get nvscalerDescription => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링';
+	@override String get qualityFast => '빠름';
+	@override String get qualityHQ => '고품질';
+	@override String get mode => '모드';
+	@override String get presetChanged => '셰이더 프리셋 변경됨';
+	@override String get hdrDetected => 'HDR 감지됨 - 셰이더 건너뜀';
+	@override String get mpvOnly => '셰이더는 MPV 플레이어에서만 사용 가능합니다';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsKo._(this._root);
@@ -913,6 +932,7 @@ class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 	@override String get speedReset => '속도 초기화';
 	@override String get subSeekNext => '다음 자막으로 이동';
 	@override String get subSeekPrev => '이전 자막으로 이동';
+	@override String get shaderToggle => '셰이더 전환';
 }
 
 // Path: videoControls.pipErrors
@@ -1151,6 +1171,7 @@ extension on TranslationsKo {
 			'hotkeys.actions.speedReset' => '속도 초기화',
 			'hotkeys.actions.subSeekNext' => '다음 자막으로 이동',
 			'hotkeys.actions.subSeekPrev' => '이전 자막으로 이동',
+			'hotkeys.actions.shaderToggle' => '셰이더 전환',
 			'pinEntry.enterPin' => 'PIN 입력',
 			'pinEntry.showPin' => 'PIN 표시',
 			'pinEntry.hidePin' => 'PIN 숨기기',
@@ -1476,9 +1497,9 @@ extension on TranslationsKo {
 			'watchTogether.controlModeQuestion' => '누가 재생을 제어할 수 있나요?',
 			'watchTogether.hostOnly' => '호스트만',
 			'watchTogether.anyone' => '누구나',
-			'watchTogether.hostingSession' => '세션 호스팅',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.hostingSession' => '세션 호스팅',
 			'watchTogether.inSession' => '세션 중',
 			'watchTogether.sessionCode' => '세션 코드',
 			'watchTogether.hostControlsPlayback' => '호스트 재생 제어',
@@ -1525,6 +1546,15 @@ extension on TranslationsKo {
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => '${title} 삭제 중... (${current}/${total})',
+			'shaders.title' => '셰이더',
+			'shaders.noShaderDescription' => '비디오 향상 없음',
+			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',
+			'shaders.qualityFast' => '빠름',
+			'shaders.qualityHQ' => '고품질',
+			'shaders.mode' => '모드',
+			'shaders.presetChanged' => '셰이더 프리셋 변경됨',
+			'shaders.hdrDetected' => 'HDR 감지됨 - 셰이더 건너뜀',
+			'shaders.mpvOnly' => '셰이더는 MPV 플레이어에서만 사용 가능합니다',
 			_ => null,
 		};
 	}

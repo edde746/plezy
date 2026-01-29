@@ -69,6 +69,7 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsPlaylistsSv playlists = _TranslationsPlaylistsSv._(_root);
 	@override late final _TranslationsCollectionsSv collections = _TranslationsCollectionsSv._(_root);
 	@override late final _TranslationsWatchTogetherSv watchTogether = _TranslationsWatchTogetherSv._(_root);
+	@override late final _TranslationsShadersSv shaders = _TranslationsShadersSv._(_root);
 }
 
 // Path: app
@@ -889,6 +890,24 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Sessionskod kopierad till urklipp';
 }
 
+// Path: shaders
+class _TranslationsShadersSv implements TranslationsShadersEn {
+	_TranslationsShadersSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Shaders';
+	@override String get noShaderDescription => 'Ingen videoförbättring';
+	@override String get nvscalerDescription => 'NVIDIA-bildskalning för skarpare video';
+	@override String get qualityFast => 'Snabb';
+	@override String get qualityHQ => 'Hög kvalitet';
+	@override String get mode => 'Läge';
+	@override String get presetChanged => 'Shader-förinställning ändrad';
+	@override String get hdrDetected => 'HDR upptäckt - shader hoppades över';
+	@override String get mpvOnly => 'Shaders är bara tillgängliga med MPV-spelaren';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsSv implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsSv._(this._root);
@@ -913,6 +932,7 @@ class _TranslationsHotkeysActionsSv implements TranslationsHotkeysActionsEn {
 	@override String get speedReset => 'Återställ hastighet';
 	@override String get subSeekNext => 'Hoppa till nästa undertext';
 	@override String get subSeekPrev => 'Hoppa till föregående undertext';
+	@override String get shaderToggle => 'Växla shaders';
 }
 
 // Path: videoControls.pipErrors
@@ -1151,6 +1171,7 @@ extension on TranslationsSv {
 			'hotkeys.actions.speedReset' => 'Återställ hastighet',
 			'hotkeys.actions.subSeekNext' => 'Hoppa till nästa undertext',
 			'hotkeys.actions.subSeekPrev' => 'Hoppa till föregående undertext',
+			'hotkeys.actions.shaderToggle' => 'Växla shaders',
 			'pinEntry.enterPin' => 'Ange PIN',
 			'pinEntry.showPin' => 'Visa PIN',
 			'pinEntry.hidePin' => 'Dölj PIN',
@@ -1476,9 +1497,9 @@ extension on TranslationsSv {
 			'collections.errorAddingToCollection' => 'Fel vid tillägg i samling',
 			'collections.created' => 'Samling skapad',
 			'collections.removeFromCollection' => 'Ta bort från samling',
-			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
 			'collections.removedFromCollection' => 'Borttagen från samling',
 			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
@@ -1525,6 +1546,15 @@ extension on TranslationsSv {
 			'watchTogether.failedToCreate' => 'Det gick inte att skapa session',
 			'watchTogether.failedToJoin' => 'Det gick inte att gå med i session',
 			'watchTogether.sessionCodeCopied' => 'Sessionskod kopierad till urklipp',
+			'shaders.title' => 'Shaders',
+			'shaders.noShaderDescription' => 'Ingen videoförbättring',
+			'shaders.nvscalerDescription' => 'NVIDIA-bildskalning för skarpare video',
+			'shaders.qualityFast' => 'Snabb',
+			'shaders.qualityHQ' => 'Hög kvalitet',
+			'shaders.mode' => 'Läge',
+			'shaders.presetChanged' => 'Shader-förinställning ändrad',
+			'shaders.hdrDetected' => 'HDR upptäckt - shader hoppades över',
+			'shaders.mpvOnly' => 'Shaders är bara tillgängliga med MPV-spelaren',
 			_ => null,
 		};
 	}

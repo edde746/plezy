@@ -69,6 +69,7 @@ class TranslationsIt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsPlaylistsIt playlists = _TranslationsPlaylistsIt._(_root);
 	@override late final _TranslationsCollectionsIt collections = _TranslationsCollectionsIt._(_root);
 	@override late final _TranslationsWatchTogetherIt watchTogether = _TranslationsWatchTogetherIt._(_root);
+	@override late final _TranslationsShadersIt shaders = _TranslationsShadersIt._(_root);
 }
 
 // Path: app
@@ -889,6 +890,24 @@ class _TranslationsWatchTogetherIt implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => 'Codice sessione copiato negli appunti';
 }
 
+// Path: shaders
+class _TranslationsShadersIt implements TranslationsShadersEn {
+	_TranslationsShadersIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Shader';
+	@override String get noShaderDescription => 'Nessun miglioramento video';
+	@override String get nvscalerDescription => 'Ridimensionamento NVIDIA per video più nitido';
+	@override String get qualityFast => 'Veloce';
+	@override String get qualityHQ => 'Alta qualità';
+	@override String get mode => 'Modalità';
+	@override String get presetChanged => 'Preset shader cambiato';
+	@override String get hdrDetected => 'HDR rilevato - shader saltato';
+	@override String get mpvOnly => 'Gli shader sono disponibili solo con il lettore MPV';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsIt implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsIt._(this._root);
@@ -913,6 +932,7 @@ class _TranslationsHotkeysActionsIt implements TranslationsHotkeysActionsEn {
 	@override String get speedReset => 'Ripristina velocità';
 	@override String get subSeekNext => 'Vai al sottotitolo successivo';
 	@override String get subSeekPrev => 'Vai al sottotitolo precedente';
+	@override String get shaderToggle => 'Attiva/disattiva shader';
 }
 
 // Path: videoControls.pipErrors
@@ -1151,6 +1171,7 @@ extension on TranslationsIt {
 			'hotkeys.actions.speedReset' => 'Ripristina velocità',
 			'hotkeys.actions.subSeekNext' => 'Vai al sottotitolo successivo',
 			'hotkeys.actions.subSeekPrev' => 'Vai al sottotitolo precedente',
+			'hotkeys.actions.shaderToggle' => 'Attiva/disattiva shader',
 			'pinEntry.enterPin' => 'Inserisci PIN',
 			'pinEntry.showPin' => 'Mostra PIN',
 			'pinEntry.hidePin' => 'Nascondi PIN',
@@ -1476,9 +1497,9 @@ extension on TranslationsIt {
 			'collections.errorAddingToCollection' => 'Errore nell\'aggiunta alla raccolta',
 			'collections.created' => 'Raccolta creata',
 			'collections.removeFromCollection' => 'Rimuovi dalla raccolta',
-			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Rimuovere "${title}" da questa raccolta?',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Rimuovere "${title}" da questa raccolta?',
 			'collections.removedFromCollection' => 'Rimosso dalla raccolta',
 			'collections.removeFromCollectionFailed' => 'Impossibile rimuovere dalla raccolta',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Errore durante la rimozione dalla raccolta: ${error}',
@@ -1525,6 +1546,15 @@ extension on TranslationsIt {
 			'watchTogether.failedToCreate' => 'Impossibile creare la sessione',
 			'watchTogether.failedToJoin' => 'Impossibile unirsi alla sessione',
 			'watchTogether.sessionCodeCopied' => 'Codice sessione copiato negli appunti',
+			'shaders.title' => 'Shader',
+			'shaders.noShaderDescription' => 'Nessun miglioramento video',
+			'shaders.nvscalerDescription' => 'Ridimensionamento NVIDIA per video più nitido',
+			'shaders.qualityFast' => 'Veloce',
+			'shaders.qualityHQ' => 'Alta qualità',
+			'shaders.mode' => 'Modalità',
+			'shaders.presetChanged' => 'Preset shader cambiato',
+			'shaders.hdrDetected' => 'HDR rilevato - shader saltato',
+			'shaders.mpvOnly' => 'Gli shader sono disponibili solo con il lettore MPV',
 			_ => null,
 		};
 	}

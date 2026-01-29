@@ -69,6 +69,7 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsPlaylistsZh playlists = _TranslationsPlaylistsZh._(_root);
 	@override late final _TranslationsCollectionsZh collections = _TranslationsCollectionsZh._(_root);
 	@override late final _TranslationsWatchTogetherZh watchTogether = _TranslationsWatchTogetherZh._(_root);
+	@override late final _TranslationsShadersZh shaders = _TranslationsShadersZh._(_root);
 }
 
 // Path: app
@@ -889,6 +890,24 @@ class _TranslationsWatchTogetherZh implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => '会话代码已复制到剪贴板';
 }
 
+// Path: shaders
+class _TranslationsShadersZh implements TranslationsShadersEn {
+	_TranslationsShadersZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '着色器';
+	@override String get noShaderDescription => '无视频增强';
+	@override String get nvscalerDescription => 'NVIDIA 图像缩放，使视频更清晰';
+	@override String get qualityFast => '快速';
+	@override String get qualityHQ => '高质量';
+	@override String get mode => '模式';
+	@override String get presetChanged => '着色器预设已更改';
+	@override String get hdrDetected => '检测到 HDR - 已跳过着色器';
+	@override String get mpvOnly => '着色器仅在使用 MPV 播放器时可用';
+}
+
 // Path: hotkeys.actions
 class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	_TranslationsHotkeysActionsZh._(this._root);
@@ -913,6 +932,7 @@ class _TranslationsHotkeysActionsZh implements TranslationsHotkeysActionsEn {
 	@override String get speedReset => '重置速度';
 	@override String get subSeekNext => '跳转到下一字幕';
 	@override String get subSeekPrev => '跳转到上一字幕';
+	@override String get shaderToggle => '切换着色器';
 }
 
 // Path: videoControls.pipErrors
@@ -1151,6 +1171,7 @@ extension on TranslationsZh {
 			'hotkeys.actions.speedReset' => '重置速度',
 			'hotkeys.actions.subSeekNext' => '跳转到下一字幕',
 			'hotkeys.actions.subSeekPrev' => '跳转到上一字幕',
+			'hotkeys.actions.shaderToggle' => '切换着色器',
 			'pinEntry.enterPin' => '输入 PIN',
 			'pinEntry.showPin' => '显示 PIN',
 			'pinEntry.hidePin' => '隐藏 PIN',
@@ -1476,9 +1497,9 @@ extension on TranslationsZh {
 			'collections.errorAddingToCollection' => '添加到合集失败',
 			'collections.created' => '已创建合集',
 			'collections.removeFromCollection' => '从合集移除',
-			'collections.removeFromCollectionConfirm' => ({required Object title}) => '将“${title}”从此合集移除？',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollectionConfirm' => ({required Object title}) => '将“${title}”从此合集移除？',
 			'collections.removedFromCollection' => '已从合集移除',
 			'collections.removeFromCollectionFailed' => '从合集移除失败',
 			'collections.removeFromCollectionError' => ({required Object error}) => '从合集移除时出错：${error}',
@@ -1525,6 +1546,15 @@ extension on TranslationsZh {
 			'watchTogether.failedToCreate' => '创建会话失败',
 			'watchTogether.failedToJoin' => '加入会话失败',
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
+			'shaders.title' => '着色器',
+			'shaders.noShaderDescription' => '无视频增强',
+			'shaders.nvscalerDescription' => 'NVIDIA 图像缩放，使视频更清晰',
+			'shaders.qualityFast' => '快速',
+			'shaders.qualityHQ' => '高质量',
+			'shaders.mode' => '模式',
+			'shaders.presetChanged' => '着色器预设已更改',
+			'shaders.hdrDetected' => '检测到 HDR - 已跳过着色器',
+			'shaders.mpvOnly' => '着色器仅在使用 MPV 播放器时可用',
 			_ => null,
 		};
 	}

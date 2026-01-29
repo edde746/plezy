@@ -66,6 +66,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
   static const String _keyUseExoPlayer = 'use_exoplayer';
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
+  static const String _keyGlobalShaderPreset = 'global_shader_preset';
 
   SettingsService._();
 
@@ -389,6 +390,7 @@ class SettingsService extends BaseSharedPreferencesService {
       'speed_reset': HotKey(key: PhysicalKeyboardKey.keyR),
       'sub_seek_next': HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
       'sub_seek_prev': HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
+      'shader_toggle': HotKey(key: PhysicalKeyboardKey.keyG),
     };
   }
 
@@ -1007,6 +1009,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyAlwaysKeepSidebarOpen) ?? false; // Default: collapsed
   }
 
+  // Global Shader Preset (for MPV video enhancement)
+  Future<void> setGlobalShaderPreset(String presetId) async {
+    await prefs.setString(_keyGlobalShaderPreset, presetId);
+  }
+
+  String getGlobalShaderPreset() {
+    return prefs.getString(_keyGlobalShaderPreset) ?? 'none'; // Default: no shader
+  }
+
   // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
@@ -1053,6 +1064,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyAutoPlayNextEpisode),
       prefs.remove(_keyUseExoPlayer),
       prefs.remove(_keyAlwaysKeepSidebarOpen),
+      prefs.remove(_keyGlobalShaderPreset),
     ]);
   }
 

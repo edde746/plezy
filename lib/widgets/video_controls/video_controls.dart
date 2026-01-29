@@ -45,6 +45,11 @@ import 'widgets/track_chapter_controls.dart';
 import 'widgets/performance_overlay/performance_overlay.dart';
 import 'mobile_video_controls.dart';
 import 'desktop_video_controls.dart';
+import 'package:provider/provider.dart';
+
+import '../../models/shader_preset.dart';
+import '../../providers/shader_provider.dart';
+import '../../services/shader_service.dart';
 
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
@@ -65,6 +70,8 @@ Widget plexVideoControlsBuilder(
   ValueNotifier<bool>? hasFirstFrame,
   FocusNode? playNextFocusNode,
   ValueNotifier<bool>? controlsVisible,
+  ShaderService? shaderService,
+  VoidCallback? onShaderChanged,
 }) {
   return PlexVideoControls(
     player: player,
@@ -84,6 +91,8 @@ Widget plexVideoControlsBuilder(
     hasFirstFrame: hasFirstFrame,
     playNextFocusNode: playNextFocusNode,
     controlsVisible: controlsVisible,
+    shaderService: shaderService,
+    onShaderChanged: onShaderChanged,
   );
 }
 
@@ -118,6 +127,12 @@ class PlexVideoControls extends StatefulWidget {
   /// Notifier to report controls visibility to parent (for popup positioning)
   final ValueNotifier<bool>? controlsVisible;
 
+  /// Optional shader service for MPV shader control
+  final ShaderService? shaderService;
+
+  /// Called when shader preset changes
+  final VoidCallback? onShaderChanged;
+
   const PlexVideoControls({
     super.key,
     required this.player,
@@ -137,6 +152,8 @@ class PlexVideoControls extends StatefulWidget {
     this.hasFirstFrame,
     this.playNextFocusNode,
     this.controlsVisible,
+    this.shaderService,
+    this.onShaderChanged,
   });
 
   @override
@@ -444,6 +461,29 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   void _toggleSubtitles() {
     // Toggle subtitle visibility - this would need to be implemented based on your subtitle system
     // For now, this is a placeholder
+  }
+
+  void _toggleShader() {
+    final shaderService = widget.shaderService;
+    if (shaderService == null || !shaderService.isSupported) return;
+
+    if (shaderService.currentPreset.isEnabled) {
+      // Currently active - disable temporarily
+      shaderService.applyPreset(ShaderPreset.none).then((_) {
+        if (mounted) setState(() {});
+        widget.onShaderChanged?.call();
+      });
+    } else {
+      // Currently off - restore saved preset
+      final shaderProvider = context.read<ShaderProvider>();
+      final saved = shaderProvider.savedPreset;
+      final targetPreset = saved.isEnabled ? saved : ShaderPreset.allPresets.firstWhere((p) => p.isEnabled, orElse: () => ShaderPreset.allPresets[1]);
+      shaderService.applyPreset(targetPreset).then((_) {
+        shaderProvider.setCurrentPreset(targetPreset);
+        if (mounted) setState(() {});
+        widget.onShaderChanged?.call();
+      });
+    }
   }
 
   void _nextAudioTrack() {
@@ -775,6 +815,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       onStartAutoHide: _startHideTimer,
       serverId: widget.metadata.serverId ?? '',
       canControl: widget.canControl,
+      shaderService: widget.shaderService,
+      onShaderChanged: widget.onShaderChanged,
     );
   }
 
@@ -1245,6 +1287,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _nextChapter,
         _previousChapter,
         onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
+        onToggleShader: _toggleShader,
       );
       if (result == KeyEventResult.handled) {
         _focusNode.requestFocus(); // self-heal focus
@@ -1451,6 +1494,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               _nextChapter,
               _previousChapter,
               onBack: widget.onBack ?? () => Navigator.of(context).pop(true),
+              onToggleShader: _toggleShader,
             );
             // Never return .ignored from fullscreen video — prevent leaking to previous routes
             return result == KeyEventResult.ignored ? KeyEventResult.handled : result;
@@ -1675,6 +1719,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             onBack: widget.onBack,
                                             canControl: widget.canControl,
                                             hasFirstFrame: widget.hasFirstFrame,
+                                            shaderService: widget.shaderService,
+                                            onShaderChanged: widget.onShaderChanged,
                                           ),
                                         ),
                                 ),

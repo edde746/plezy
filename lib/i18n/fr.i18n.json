@@ -199,7 +199,8 @@
       "speedDecrease": "Réduire la vitesse",
       "speedReset": "Réinitialiser la vitesse",
       "subSeekNext": "Rechercher le sous-titre suivant",
-      "subSeekPrev": "Rechercher le sous-titre précédent"
+      "subSeekPrev": "Rechercher le sous-titre précédent",
+      "shaderToggle": "Activer/désactiver les shaders"
     }
   },
   "pinEntry": {
@@ -626,5 +627,16 @@
     "downloadDeleted": "Télécharger supprimé",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer \"${title}\" ? Cela supprimera le fichier téléchargé de votre appareil.",
     "deletingWithProgress": "Suppression de ${title}... (${current} sur ${total})"
+  },
+  "shaders": {
+    "title": "Shaders",
+    "noShaderDescription": "Aucune amélioration vidéo",
+    "nvscalerDescription": "Mise à l'échelle NVIDIA pour une vidéo plus nette",
+    "qualityFast": "Rapide",
+    "qualityHQ": "Haute qualité",
+    "mode": "Mode",
+    "presetChanged": "Préréglage de shader modifié",
+    "hdrDetected": "HDR détecté - shader ignoré",
+    "mpvOnly": "Les shaders ne sont disponibles qu'avec le lecteur MPV"
   }
 }

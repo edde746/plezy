@@ -27,7 +27,6 @@ class StorageService extends BaseSharedPreferencesService {
   static const String _prefixLibrarySort = 'library_sort_';
   static const String _prefixLibraryGrouping = 'library_grouping_';
   static const String _prefixLibraryTab = 'library_tab_';
-
   // Key groups for bulk clearing
   static const List<String> _credentialKeys = [
     _keyServerUrl,
