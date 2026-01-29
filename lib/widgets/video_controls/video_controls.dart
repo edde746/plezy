@@ -800,7 +800,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       isRotationLocked: _isRotationLocked,
       isFullscreen: _isFullscreen,
       onTogglePIPMode: (_isPipSupported && Platform.isAndroid) ? widget.onTogglePIPMode : null,
-      onCycleBoxFitMode: widget.onCycleBoxFitMode,
+      onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
       onToggleRotationLock: _toggleRotationLock,
       onToggleFullscreen: _toggleFullscreen,
       onSwitchVersion: _switchMediaVersion,
@@ -1702,7 +1702,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             onTogglePIPMode: (_isPipSupported && Platform.isAndroid)
                                                 ? widget.onTogglePIPMode
                                                 : null,
-                                            onCycleBoxFitMode: widget.onCycleBoxFitMode,
+                                            onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
                                             onToggleFullscreen: _toggleFullscreen,
                                             onToggleAlwaysOnTop: _toggleAlwaysOnTop,
                                             onSwitchVersion: _switchMediaVersion,
