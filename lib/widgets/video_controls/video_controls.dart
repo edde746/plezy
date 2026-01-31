@@ -205,8 +205,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   // Completed subscription to show controls when video ends
   StreamSubscription<bool>? _completedSubscription;
   // Auto-skip state
-  bool _autoSkipIntro = true;
-  bool _autoSkipCredits = true;
+  bool _autoSkipIntro = false;
+  bool _autoSkipCredits = false;
   int _autoSkipDelay = 5;
   Timer? _autoSkipTimer;
   double _autoSkipProgress = 0.0;

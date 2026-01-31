@@ -99,8 +99,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   int _sleepTimerDuration = 30;
   bool _rememberTrackSelections = true;
   bool _clickVideoTogglesPlayback = false;
-  bool _autoSkipIntro = true;
-  bool _autoSkipCredits = true;
+  bool _autoSkipIntro = false;
+  bool _autoSkipCredits = false;
   int _autoSkipDelay = 5;
   bool _downloadOnWifiOnly = false;
   bool _videoPlayerNavigationEnabled = false;

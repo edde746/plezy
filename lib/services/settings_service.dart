@@ -829,7 +829,7 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   bool getAutoSkipIntro() {
-    return prefs.getBool(_keyAutoSkipIntro) ?? true; // Default: enabled
+    return prefs.getBool(_keyAutoSkipIntro) ?? false; // Default: disabled
   }
 
   // Auto Skip Credits
@@ -838,7 +838,7 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   bool getAutoSkipCredits() {
-    return prefs.getBool(_keyAutoSkipCredits) ?? true; // Default: enabled
+    return prefs.getBool(_keyAutoSkipCredits) ?? false; // Default: disabled
   }
 
   // Auto Skip Delay (in seconds)
