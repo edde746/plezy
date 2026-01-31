@@ -1370,6 +1370,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           _movingIndex = _movingIndex! - 1;
           _focusedIndex = _movingIndex!;
         });
+        _ensureFocusedVisible();
         return KeyEventResult.handled;
       }
       if (key.isDownKey && _movingIndex! < _tempLibraries.length - 1) {
@@ -1379,6 +1380,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           _movingIndex = _movingIndex! + 1;
           _focusedIndex = _movingIndex!;
         });
+        _ensureFocusedVisible();
         return KeyEventResult.handled;
       }
       if (key.isSelectKey) {
@@ -1436,6 +1438,11 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         }
         return KeyEventResult.handled;
       }
+    }
+
+    // Block d-pad keys at boundaries so focus doesn't escape the dialog
+    if (key.isDpadDirection) {
+      return KeyEventResult.handled;
     }
 
     return KeyEventResult.ignored;
