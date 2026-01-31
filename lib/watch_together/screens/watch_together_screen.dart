@@ -96,6 +96,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
+                  autofocus: true,
                   onPressed: _isCreating || _isJoining ? null : _createSession,
                   icon: _isCreating
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
@@ -320,6 +321,7 @@ class _ActiveSessionContent extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
+            autofocus: true,
             onPressed: () => _leaveSession(context),
             style: OutlinedButton.styleFrom(
               foregroundColor: theme.colorScheme.error,

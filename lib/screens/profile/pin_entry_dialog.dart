@@ -91,7 +91,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
               controller: _pinController,
               focusNode: _focusNode,
               obscureText: _obscureText,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.phone,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
               decoration: InputDecoration(
                 hintText: t.pinEntry.enterPin,

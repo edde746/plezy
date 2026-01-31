@@ -1,6 +1,7 @@
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
@@ -419,14 +420,13 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   KeyEventResult _handleBackKey(KeyEvent event) {
-    // Toggle focus between sidebar and content on BACK key
-    return handleBackKeyAction(event, () {
-      if (_isSidebarFocused) {
-        _focusContent();
-      } else {
-        _focusSidebar();
-      }
-    });
+    if (!_isSidebarFocused) {
+      // Content focused → move to sidebar
+      return handleBackKeyAction(event, _focusSidebar);
+    }
+
+    // Sidebar focused → exit app
+    return handleBackKeyAction(event, () => SystemNavigator.pop());
   }
 
   @override
