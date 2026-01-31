@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+import '../../../focus/dpad_navigator.dart';
 import '../../../../services/plex_client.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../models/plex_filter.dart';
@@ -402,40 +403,50 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   void _showGroupingBottomSheet() {
+    SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+    var pendingGrouping = _selectedGrouping;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) {
         final options = _getGroupingOptions();
-        return RadioGroup<String>(
-          groupValue: _selectedGrouping,
-          onChanged: (value) async {
-            if (value == null) return;
-            setState(() {
-              _selectedGrouping = value;
-            });
-
-            final storage = await StorageService.getInstance();
-            await storage.saveLibraryGrouping(widget.library.globalKey, value);
-
-            if (!sheetContext.mounted || !mounted) return;
-
-            Navigator.pop(sheetContext);
-            _loadItems();
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return ListView.builder(
+              shrinkWrap: true,
+              itemCount: options.length,
+              itemBuilder: (context, index) {
+                final grouping = options[index];
+                return RadioListTile<String>(
+                  title: Text(_getGroupingLabel(grouping)),
+                  value: grouping,
+                  groupValue: pendingGrouping,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setSheetState(() {
+                      pendingGrouping = value;
+                    });
+                  },
+                );
+              },
+            );
           },
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: options.length,
-            itemBuilder: (context, index) {
-              final grouping = options[index];
-              return RadioListTile<String>(title: Text(_getGroupingLabel(grouping)), value: grouping);
-            },
-          ),
         );
       },
-    );
+    ).then((_) {
+      if (!mounted) return;
+      if (pendingGrouping == _selectedGrouping) return;
+      setState(() {
+        _selectedGrouping = pendingGrouping;
+      });
+      StorageService.getInstance().then((storage) {
+        storage.saveLibraryGrouping(widget.library.globalKey, pendingGrouping);
+      });
+      _loadItems();
+    });
   }
 
   void _showFiltersBottomSheet() {
+    SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -460,6 +471,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   void _showSortBottomSheet() {
+    SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+    // Track pending state in local variables so the callbacks don't trigger
+    // setState/_loadItems while the sheet is open (which would steal focus).
+    PlexSort? pendingSort = _selectedSort;
+    bool pendingDescending = _isSortDescending;
+    bool pendingCleared = false;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -468,19 +485,36 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         selectedSort: _selectedSort,
         isSortDescending: _isSortDescending,
         onSortChanged: (sort, descending) {
-          setState(() {
-            _selectedSort = sort;
-            _isSortDescending = descending;
-          });
-
-          StorageService.getInstance().then((storage) {
-            storage.saveLibrarySort(widget.library.globalKey, sort.key, descending: descending);
-          });
-
-          _loadItems();
+          pendingSort = sort;
+          pendingDescending = descending;
+          pendingCleared = false;
+        },
+        onClear: () {
+          pendingSort = null;
+          pendingDescending = false;
+          pendingCleared = true;
         },
       ),
-    );
+    ).then((_) {
+      if (!mounted) return;
+      if (pendingCleared) {
+        setState(() {
+          _selectedSort = null;
+          _isSortDescending = false;
+        });
+        _loadItems();
+      } else if (pendingSort != null &&
+          (pendingSort!.key != _selectedSort?.key || pendingDescending != _isSortDescending)) {
+        setState(() {
+          _selectedSort = pendingSort;
+          _isSortDescending = pendingDescending;
+        });
+        StorageService.getInstance().then((storage) {
+          storage.saveLibrarySort(widget.library.globalKey, pendingSort!.key, descending: pendingDescending);
+        });
+        _loadItems();
+      }
+    });
   }
 
   /// Navigate focus from chips down to the grid item.
