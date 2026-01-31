@@ -1295,7 +1295,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       }
     }
 
-    return false; // Let event continue to other handlers
+    return true; // Consume all events while video player is active
   }
 
   /// Show controls and optionally focus play/pause on keyboard input (desktop only)

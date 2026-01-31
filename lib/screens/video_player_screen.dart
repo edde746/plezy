@@ -109,6 +109,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late final FocusNode _playNextCancelFocusNode;
   late final FocusNode _playNextConfirmFocusNode;
 
+  // Screen-level focus node: persists across loading/initialized phases so
+  // key events never escape the video player route.
+  late final FocusNode _screenFocusNode;
+
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
 
@@ -145,6 +149,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Initialize Play Next dialog focus nodes
     _playNextCancelFocusNode = FocusNode(debugLabel: 'PlayNextCancel');
     _playNextConfirmFocusNode = FocusNode(debugLabel: 'PlayNextConfirm');
+
+    // Screen-level focus node that wraps the entire build output.
+    // Ensures a single stable focus target across loading → initialized phases.
+    _screenFocusNode = FocusNode(debugLabel: 'VideoPlayerScreen');
+    _screenFocusNode.addListener(_onScreenFocusChanged);
 
     appLogger.d('VideoPlayerScreen initialized for: ${widget.metadata.title}');
     if (widget.preferredAudioTrack != null) {
@@ -1138,6 +1147,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playNextCancelFocusNode.dispose();
     _playNextConfirmFocusNode.dispose();
 
+    // Dispose screen-level focus node
+    _screenFocusNode.removeListener(_onScreenFocusChanged);
+    _screenFocusNode.dispose();
+
     // Clear media controls and dispose manager
     _mediaControlsManager?.clear();
     _mediaControlsManager?.dispose();
@@ -1184,6 +1197,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _activeMediaIndex = null;
     }
     super.dispose();
+  }
+
+  /// When focus leaves the entire video player subtree, reclaim it.
+  /// `_screenFocusNode.hasFocus` is true when the node itself OR any
+  /// descendant has focus, so internal movement between child controls
+  /// does NOT trigger this.
+  void _onScreenFocusChanged() {
+    if (!_screenFocusNode.hasFocus && mounted && !_isExiting.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isExiting.value && !_screenFocusNode.hasFocus) {
+          _screenFocusNode.requestFocus();
+        }
+      });
+    }
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
@@ -1606,20 +1633,30 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
+  Widget _buildLoadingSpinner() {
+    return const Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(child: CircularProgressIndicator(color: Colors.white)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Show loading indicator while player initializes
-    if (!_isPlayerInitialized || player == null) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: Focus(
-          autofocus: true,
-          onKeyEvent: (node, event) => KeyEventResult.handled,
-          child: const Center(child: CircularProgressIndicator(color: Colors.white)),
-        ),
-      );
-    }
+    // Screen-level Focus wraps ALL phases (loading + initialized).
+    // - autofocus: grabs focus when no deeper child claims it.
+    // - onKeyEvent: catch-all that consumes any event children didn't handle,
+    //   preventing leaks to previous routes.
+    return Focus(
+      focusNode: _screenFocusNode,
+      autofocus: true,
+      onKeyEvent: (node, event) => KeyEventResult.handled,
+      child: _isPlayerInitialized && player != null
+          ? _buildVideoPlayer(context)
+          : _buildLoadingSpinner(),
+    );
+  }
 
+  Widget _buildVideoPlayer(BuildContext context) {
     // Cache platform detection to avoid multiple calls
     final isMobile = PlatformDetector.isMobile(context);
 
