@@ -593,16 +593,20 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
         borderRadius: 8.0,
         disableScale: true,
         useBackgroundFocus: true,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              // Row content
-              Expanded(child: _buildRowContent(theme, canExpand)),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: canExpand ? widget.onToggleExpansion : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                // Row content
+                Expanded(child: _buildRowContent(theme, canExpand)),
 
-              // Action buttons
-              if (hasActions) _buildActions(),
-            ],
+                // Action buttons
+                if (hasActions) _buildActions(),
+              ],
+            ),
           ),
         ),
       ),
