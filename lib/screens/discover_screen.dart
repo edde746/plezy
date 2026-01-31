@@ -32,6 +32,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
+import '../services/watch_next_service.dart';
 import 'auth_screen.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
@@ -553,6 +554,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         }
       });
 
+      // Sync to Android TV Watch Next row
+      if (Platform.isAndroid) {
+        _syncWatchNext(onDeck);
+      }
+
       // Sync PageController to first page after OnDeck loads
       if (_heroController.hasClients && onDeck.isNotEmpty) {
         _heroController.jumpToPage(0);
@@ -621,11 +627,26 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             }
           }
         });
+
+        // Sync to Android TV Watch Next row
+        if (Platform.isAndroid) {
+          _syncWatchNext(onDeck);
+        }
+
         appLogger.d('Continue Watching refreshed successfully');
       }
     } catch (e) {
       appLogger.w('Failed to refresh Continue Watching', error: e);
       // Silently fail - don't show error to user for background refresh
+    }
+  }
+
+  /// Sync On Deck items to Android TV Watch Next row
+  Future<void> _syncWatchNext(List<PlexMetadata> onDeck) async {
+    try {
+      await WatchNextService().syncFromOnDeck(onDeck, (serverId) => context.getClientForServer(serverId));
+    } catch (e) {
+      appLogger.w('Failed to sync Watch Next', error: e);
     }
   }
 

@@ -73,6 +73,9 @@ flutter {
 dependencies {
     implementation("dev.jdtech.mpv:libmpv:0.5.1")
 
+    // Android TV Watch Next integration
+    implementation("androidx.tvprovider:tvprovider:1.0.0")
+
     // Media3 ExoPlayer for Android
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-ui:1.5.1")

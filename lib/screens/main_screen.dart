@@ -34,6 +34,7 @@ import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
 import 'video_player_screen.dart';
+import '../services/watch_next_service.dart';
 import '../watch_together/watch_together.dart';
 
 /// Provides access to the main screen's focus control.
@@ -120,6 +121,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     // Set up Watch Together callbacks immediately (must be synchronous to catch early messages)
     if (!_isOffline) {
       _setupWatchTogetherCallback();
+      _setupWatchNextDeepLink();
     }
 
     // Set up data invalidation callback for profile switching (skip in offline mode)
@@ -232,6 +234,59 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       };
     } catch (e) {
       appLogger.w('Could not set up Watch Together callback', error: e);
+    }
+  }
+
+  /// Set up Watch Next deep link handling for Android TV launcher taps
+  void _setupWatchNextDeepLink() {
+    if (!Platform.isAndroid) return;
+
+    final watchNext = WatchNextService();
+
+    // Listen for deep links when app is already running (warm start)
+    watchNext.onWatchNextTap = (contentId) {
+      appLogger.d('Watch Next tap: $contentId');
+      _handleWatchNextContentId(contentId);
+    };
+
+    // Check for pending deep link from cold start
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final contentId = await watchNext.getInitialDeepLink();
+      if (contentId != null && mounted) {
+        appLogger.d('Watch Next initial deep link: $contentId');
+        _handleWatchNextContentId(contentId);
+      }
+    });
+  }
+
+  /// Handle a Watch Next content ID by fetching metadata and starting playback
+  Future<void> _handleWatchNextContentId(String contentId) async {
+    if (!mounted) return;
+
+    final parsed = WatchNextService.parseContentId(contentId);
+    if (parsed == null) {
+      appLogger.w('Watch Next: invalid content ID: $contentId');
+      return;
+    }
+
+    final (serverId, ratingKey) = parsed;
+
+    try {
+      final multiServer = context.read<MultiServerProvider>();
+      final client = multiServer.getClientForServer(serverId);
+
+      if (client == null) {
+        appLogger.w('Watch Next: server $serverId not available');
+        return;
+      }
+
+      final metadata = await client.getMetadataWithImages(ratingKey);
+
+      if (metadata == null || !mounted) return;
+
+      navigateToVideoPlayer(context, metadata: metadata);
+    } catch (e) {
+      appLogger.e('Watch Next: failed to navigate to media', error: e);
     }
   }
 

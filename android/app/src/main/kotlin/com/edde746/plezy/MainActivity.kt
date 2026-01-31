@@ -1,5 +1,6 @@
 package com.edde746.plezy
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.app.AppOpsManager
@@ -14,10 +15,12 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
+import com.edde746.plezy.watchnext.WatchNextPlugin
 
 class MainActivity : FlutterActivity() {
 
     private val PIP_CHANNEL = "app.plezy/pip"
+    private var watchNextPlugin: WatchNextPlugin? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,6 +29,23 @@ class MainActivity : FlutterActivity() {
         // D-pad navigation so the Flutter UI can render its own focus state.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             window.decorView.defaultFocusHighlightEnabled = false
+        }
+
+        // Handle Watch Next deep link from initial launch
+        handleWatchNextIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Handle Watch Next deep link when app is already running
+        handleWatchNextIntent(intent)
+    }
+
+    private fun handleWatchNextIntent(intent: Intent?) {
+        val contentId = WatchNextPlugin.handleIntent(intent)
+        if (contentId != null) {
+            // Notify the plugin to send event to Flutter
+            watchNextPlugin?.notifyDeepLink(contentId)
         }
     }
 
@@ -44,6 +64,10 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         flutterEngine.plugins.add(MpvPlayerPlugin())
         flutterEngine.plugins.add(ExoPlayerPlugin())
+
+        // Register Watch Next plugin and keep reference for deep link handling
+        watchNextPlugin = WatchNextPlugin()
+        flutterEngine.plugins.add(watchNextPlugin!!)
 
         MethodChannel( flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL ).setMethodCallHandler { call, result ->
             when (call.method) {
