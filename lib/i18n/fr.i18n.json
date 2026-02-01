@@ -300,6 +300,7 @@
     "rotationLockButton": "Verrouillage de rotation",
     "timelineSlider": "Timeline vidéo",
     "volumeSlider": "Niveau sonore",
+    "endsAt": "Fin à ${time}",
     "backButton": "Retour",
     "pipFailed": "Échec du démarrage du mode image dans l'image",
     "pipErrors": {

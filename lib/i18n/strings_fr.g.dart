@@ -451,6 +451,7 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get rotationLockButton => 'Verrouillage de rotation';
 	@override String get timelineSlider => 'Timeline vidéo';
 	@override String get volumeSlider => 'Niveau sonore';
+	@override String endsAt({required Object time}) => 'Fin à ${time}';
 	@override String get backButton => 'Retour';
 	@override String get pipFailed => 'Échec du démarrage du mode image dans l\'image';
 	@override late final _TranslationsVideoControlsPipErrorsFr pipErrors = _TranslationsVideoControlsPipErrorsFr._(_root);
@@ -1255,6 +1256,7 @@ extension on TranslationsFr {
 			'videoControls.rotationLockButton' => 'Verrouillage de rotation',
 			'videoControls.timelineSlider' => 'Timeline vidéo',
 			'videoControls.volumeSlider' => 'Niveau sonore',
+			'videoControls.endsAt' => ({required Object time}) => 'Fin à ${time}',
 			'videoControls.backButton' => 'Retour',
 			'videoControls.pipFailed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.pipErrors.androidVersion' => 'Nécessite Android 8.0 ou plus récent',
@@ -1494,9 +1496,9 @@ extension on TranslationsFr {
 			'watchTogether.hostOnly' => 'Hôte uniquement',
 			'watchTogether.anyone' => 'N\'importe qui',
 			'watchTogether.hostingSession' => 'Session d\'hébergement',
-			'watchTogether.inSession' => 'En session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inSession' => 'En session',
 			'watchTogether.sessionCode' => 'Code de session',
 			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',
 			'watchTogether.anyoneCanControl' => 'Tout le monde peut contrôler la lecture',

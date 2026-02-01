@@ -166,6 +166,7 @@ class MobileVideoControls extends StatelessWidget {
           onSeekEnd: onSeekEnd,
           horizontalLayout: false,
           enabled: canControl,
+          showFinishTime: true,
         ),
       ),
     );

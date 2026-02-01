@@ -301,6 +301,7 @@
     "rotationLockButton": "Rotationslås",
     "timelineSlider": "Videotidslinje",
     "volumeSlider": "Volymnivå",
+    "endsAt": "Slutar ${time}",
     "backButton": "Tillbaka",
     "pipFailed": "Bild-i-bild kunde inte starta",
     "pipErrors": {

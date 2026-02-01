@@ -301,6 +301,7 @@
     "rotationLockButton": "Dreh­sperre",
     "timelineSlider": "Video-Zeitleiste",
     "volumeSlider": "Lautstärkepegel",
+    "endsAt": "Endet um ${time}",
     "backButton": "Zurück",
     "pipFailed": "Bild-in-Bild konnte nicht gestartet werden",
     "pipErrors": {

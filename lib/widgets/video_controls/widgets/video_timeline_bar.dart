@@ -33,6 +33,9 @@ class VideoTimelineBar extends StatelessWidget {
   /// Whether the timeline is enabled for interaction.
   final bool enabled;
 
+  /// Whether to show the estimated finish time next to the remaining timestamp (mobile).
+  final bool showFinishTime;
+
   const VideoTimelineBar({
     super.key,
     required this.player,
@@ -45,6 +48,7 @@ class VideoTimelineBar extends StatelessWidget {
     this.onKeyEvent,
     this.onFocusChange,
     this.enabled = true,
+    this.showFinishTime = false,
   });
 
   @override
@@ -92,7 +96,7 @@ class VideoTimelineBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [_buildTimestamp(position), _buildTimestamp(remaining)],
+            children: [_buildTimestamp(position), _buildRemainingTimestamp(remaining)],
           ),
         ),
       ],
@@ -101,6 +105,14 @@ class VideoTimelineBar extends StatelessWidget {
 
   Widget _buildTimestamp(Duration time) {
     return Text(formatDurationTimestamp(time), style: const TextStyle(color: Colors.white, fontSize: 14));
+  }
+
+  Widget _buildRemainingTimestamp(Duration remaining) {
+    if (!showFinishTime || remaining.inSeconds >= 0) {
+      return _buildTimestamp(remaining);
+    }
+    final text = '${formatDurationTimestamp(remaining)} · ${formatFinishTime(remaining.abs())}';
+    return Text(text, style: const TextStyle(color: Colors.white, fontSize: 14));
   }
 
   Widget _buildSlider(Duration position, Duration duration) {

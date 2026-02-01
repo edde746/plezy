@@ -180,6 +180,14 @@ DurationLocale _getDurationLocale() {
   }
 }
 
+/// Formats the clock time at which media will finish playing, given the remaining duration.
+/// Returns a localized time string like "6:12 PM" or "18:12" depending on locale.
+String formatFinishTime(Duration remaining) {
+  final finishTime = DateTime.now().add(remaining);
+  final formatter = DateFormat.jm(LocaleSettings.currentLocale.languageCode);
+  return formatter.format(finishTime);
+}
+
 /// Takes a list of strings and returns one long string with each item in the list concatenated by a bullet
 String toBulletedString(List<String> parts) {
   return parts.join(' · ');

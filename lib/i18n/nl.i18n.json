@@ -301,6 +301,7 @@
     "rotationLockButton": "Rotatievergrendeling",
     "timelineSlider": "Videotijdlijn",
     "volumeSlider": "Volumeniveau",
+    "endsAt": "Eindigt om ${time}",
     "backButton": "Terug",
     "pipFailed": "Beeld-in-beeld kon niet worden gestart",
     "pipErrors": {

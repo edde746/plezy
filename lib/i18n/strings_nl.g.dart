@@ -452,6 +452,7 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get rotationLockButton => 'Rotatievergrendeling';
 	@override String get timelineSlider => 'Videotijdlijn';
 	@override String get volumeSlider => 'Volumeniveau';
+	@override String endsAt({required Object time}) => 'Eindigt om ${time}';
 	@override String get backButton => 'Terug';
 	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
 	@override late final _TranslationsVideoControlsPipErrorsNl pipErrors = _TranslationsVideoControlsPipErrorsNl._(_root);
@@ -1258,6 +1259,7 @@ extension on TranslationsNl {
 			'videoControls.rotationLockButton' => 'Rotatievergrendeling',
 			'videoControls.timelineSlider' => 'Videotijdlijn',
 			'videoControls.volumeSlider' => 'Volumeniveau',
+			'videoControls.endsAt' => ({required Object time}) => 'Eindigt om ${time}',
 			'videoControls.backButton' => 'Terug',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
@@ -1496,9 +1498,9 @@ extension on TranslationsNl {
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
 			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
 			'collections.created' => 'Collectie gemaakt',
-			'collections.removeFromCollection' => 'Verwijderen uit collectie',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollection' => 'Verwijderen uit collectie',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
 			'collections.removedFromCollection' => 'Uit collectie verwijderd',
 			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',

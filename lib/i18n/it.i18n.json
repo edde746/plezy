@@ -301,6 +301,7 @@
     "rotationLockButton": "Blocco rotazione",
     "timelineSlider": "Timeline video",
     "volumeSlider": "Livello volume",
+    "endsAt": "Finisce alle ${time}",
     "backButton": "Indietro",
     "pipFailed": "Impossibile avviare la modalità Picture-in-Picture",
     "pipErrors": {

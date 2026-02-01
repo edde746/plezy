@@ -301,6 +301,7 @@
     "rotationLockButton": "회전 잠금",
     "timelineSlider": "타임라인",
     "volumeSlider": "볼륨 조절",
+    "endsAt": "${time}에 종료",
     "backButton": "뒤로 가기",
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
     "pipErrors": {

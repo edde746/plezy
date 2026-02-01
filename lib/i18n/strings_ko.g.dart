@@ -452,6 +452,7 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get rotationLockButton => '회전 잠금';
 	@override String get timelineSlider => '타임라인';
 	@override String get volumeSlider => '볼륨 조절';
+	@override String endsAt({required Object time}) => '${time}에 종료';
 	@override String get backButton => '뒤로 가기';
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
@@ -1258,6 +1259,7 @@ extension on TranslationsKo {
 			'videoControls.rotationLockButton' => '회전 잠금',
 			'videoControls.timelineSlider' => '타임라인',
 			'videoControls.volumeSlider' => '볼륨 조절',
+			'videoControls.endsAt' => ({required Object time}) => '${time}에 종료',
 			'videoControls.backButton' => '뒤로 가기',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
@@ -1496,9 +1498,9 @@ extension on TranslationsKo {
 			'watchTogether.controlMode' => '제어 모드',
 			'watchTogether.controlModeQuestion' => '누가 재생을 제어할 수 있나요?',
 			'watchTogether.hostOnly' => '호스트만',
-			'watchTogether.anyone' => '누구나',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.anyone' => '누구나',
 			'watchTogether.hostingSession' => '세션 호스팅',
 			'watchTogether.inSession' => '세션 중',
 			'watchTogether.sessionCode' => '세션 코드',

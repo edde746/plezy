@@ -12,6 +12,7 @@ import '../../models/plex_media_version.dart';
 import '../../models/plex_metadata.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../utils/desktop_window_padding.dart';
+import '../../utils/formatters.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../services/shader_service.dart';
@@ -505,6 +506,30 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   onPressed: widget.canControl ? widget.onNext : null,
                   semanticLabel: t.videoControls.nextButton,
                 ),
+              ),
+              // Finish time
+              StreamBuilder<Duration>(
+                stream: widget.player.streams.position,
+                initialData: widget.player.state.position,
+                builder: (context, posSnap) {
+                  return StreamBuilder<Duration>(
+                    stream: widget.player.streams.duration,
+                    initialData: widget.player.state.duration,
+                    builder: (context, durSnap) {
+                      final position = posSnap.data ?? Duration.zero;
+                      final duration = durSnap.data ?? Duration.zero;
+                      final remaining = duration - position;
+                      if (remaining.inSeconds <= 0) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          t.videoControls.endsAt(time: formatFinishTime(remaining)),
+                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
               const Spacer(),
               // Volume control

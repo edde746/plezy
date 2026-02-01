@@ -452,6 +452,7 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get rotationLockButton => '旋转锁定';
 	@override String get timelineSlider => '视频时间轴';
 	@override String get volumeSlider => '音量调节';
+	@override String endsAt({required Object time}) => '${time} 结束';
 	@override String get backButton => '返回';
 	@override String get pipFailed => '画中画启动失败';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
@@ -1258,6 +1259,7 @@ extension on TranslationsZh {
 			'videoControls.rotationLockButton' => '旋转锁定',
 			'videoControls.timelineSlider' => '视频时间轴',
 			'videoControls.volumeSlider' => '音量调节',
+			'videoControls.endsAt' => ({required Object time}) => '${time} 结束',
 			'videoControls.backButton' => '返回',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
@@ -1496,9 +1498,9 @@ extension on TranslationsZh {
 			'collections.addedToCollection' => '已添加到合集',
 			'collections.errorAddingToCollection' => '添加到合集失败',
 			'collections.created' => '已创建合集',
-			'collections.removeFromCollection' => '从合集移除',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollection' => '从合集移除',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '将“${title}”从此合集移除？',
 			'collections.removedFromCollection' => '已从合集移除',
 			'collections.removeFromCollectionFailed' => '从合集移除失败',

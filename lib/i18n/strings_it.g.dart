@@ -452,6 +452,7 @@ class _TranslationsVideoControlsIt implements TranslationsVideoControlsEn {
 	@override String get rotationLockButton => 'Blocco rotazione';
 	@override String get timelineSlider => 'Timeline video';
 	@override String get volumeSlider => 'Livello volume';
+	@override String endsAt({required Object time}) => 'Finisce alle ${time}';
 	@override String get backButton => 'Indietro';
 	@override String get pipFailed => 'Impossibile avviare la modalità Picture-in-Picture';
 	@override late final _TranslationsVideoControlsPipErrorsIt pipErrors = _TranslationsVideoControlsPipErrorsIt._(_root);
@@ -1258,6 +1259,7 @@ extension on TranslationsIt {
 			'videoControls.rotationLockButton' => 'Blocco rotazione',
 			'videoControls.timelineSlider' => 'Timeline video',
 			'videoControls.volumeSlider' => 'Livello volume',
+			'videoControls.endsAt' => ({required Object time}) => 'Finisce alle ${time}',
 			'videoControls.backButton' => 'Indietro',
 			'videoControls.pipFailed' => 'Impossibile avviare la modalità Picture-in-Picture',
 			'videoControls.pipErrors.androidVersion' => 'Richiede Android 8.0 o versioni successive',
@@ -1496,9 +1498,9 @@ extension on TranslationsIt {
 			'collections.addedToCollection' => 'Aggiunto alla raccolta',
 			'collections.errorAddingToCollection' => 'Errore nell\'aggiunta alla raccolta',
 			'collections.created' => 'Raccolta creata',
-			'collections.removeFromCollection' => 'Rimuovi dalla raccolta',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollection' => 'Rimuovi dalla raccolta',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Rimuovere "${title}" da questa raccolta?',
 			'collections.removedFromCollection' => 'Rimosso dalla raccolta',
 			'collections.removeFromCollectionFailed' => 'Impossibile rimuovere dalla raccolta',

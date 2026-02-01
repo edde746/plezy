@@ -301,6 +301,7 @@
     "rotationLockButton": "旋转锁定",
     "timelineSlider": "视频时间轴",
     "volumeSlider": "音量调节",
+    "endsAt": "${time} 结束",
     "backButton": "返回",
     "pipFailed": "画中画启动失败",
     "pipErrors": {

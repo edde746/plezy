@@ -964,6 +964,9 @@ class TranslationsVideoControlsEn {
 	/// en: 'Volume level'
 	String get volumeSlider => 'Volume level';
 
+	/// en: 'Ends at ${time}'
+	String endsAt({required Object time}) => 'Ends at ${time}';
+
 	/// en: 'Back'
 	String get backButton => 'Back';
 
@@ -2393,6 +2396,7 @@ extension on Translations {
 			'videoControls.rotationLockButton' => 'Rotation lock',
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
+			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
 			'videoControls.backButton' => 'Back',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
@@ -2632,9 +2636,9 @@ extension on Translations {
 			'watchTogether.hostOnly' => 'Host Only',
 			'watchTogether.anyone' => 'Anyone',
 			'watchTogether.hostingSession' => 'Hosting Session',
-			'watchTogether.inSession' => 'In Session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.inSession' => 'In Session',
 			'watchTogether.sessionCode' => 'Session Code',
 			'watchTogether.hostControlsPlayback' => 'Host controls playback',
 			'watchTogether.anyoneCanControl' => 'Anyone can control playback',

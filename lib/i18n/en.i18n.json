@@ -300,6 +300,7 @@
     "rotationLockButton": "Rotation lock",
     "timelineSlider": "Video timeline",
     "volumeSlider": "Volume level",
+    "endsAt": "Ends at ${time}",
     "backButton": "Back",
     "pipFailed": "Picture-in-picture failed to start",
     "pipErrors": {

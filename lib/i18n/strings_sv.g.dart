@@ -452,6 +452,7 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get rotationLockButton => 'Rotationslås';
 	@override String get timelineSlider => 'Videotidslinje';
 	@override String get volumeSlider => 'Volymnivå';
+	@override String endsAt({required Object time}) => 'Slutar ${time}';
 	@override String get backButton => 'Tillbaka';
 	@override String get pipFailed => 'Bild-i-bild kunde inte starta';
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
@@ -1258,6 +1259,7 @@ extension on TranslationsSv {
 			'videoControls.rotationLockButton' => 'Rotationslås',
 			'videoControls.timelineSlider' => 'Videotidslinje',
 			'videoControls.volumeSlider' => 'Volymnivå',
+			'videoControls.endsAt' => ({required Object time}) => 'Slutar ${time}',
 			'videoControls.backButton' => 'Tillbaka',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
@@ -1496,9 +1498,9 @@ extension on TranslationsSv {
 			'collections.addedToCollection' => 'Tillagd i samling',
 			'collections.errorAddingToCollection' => 'Fel vid tillägg i samling',
 			'collections.created' => 'Samling skapad',
-			'collections.removeFromCollection' => 'Ta bort från samling',
 			_ => null,
 		} ?? switch (path) {
+			'collections.removeFromCollection' => 'Ta bort från samling',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
 			'collections.removedFromCollection' => 'Borttagen från samling',
 			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
