@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import '../../focus/dpad_navigator.dart';
+import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import '../../services/gamepad_service.dart';
@@ -1310,7 +1311,8 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   int? _originalIndex; // Original position before move (for cancel)
   List<PlexLibrary>? _originalOrder; // Original order before move (for cancel)
   final FocusNode _listFocusNode = FocusNode();
-  final Map<int, GlobalKey> _tileKeys = {}; // For dialog mode scroll-into-view
+  final ScrollController _dialogScrollController = ScrollController();
+  bool _backKeyDownSeen = false;
 
   @override
   void initState() {
@@ -1321,23 +1323,53 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
   @override
   void dispose() {
     _listFocusNode.dispose();
+    _dialogScrollController.dispose();
     super.dispose();
   }
 
   void _ensureFocusedVisible() {
     if (!widget.isDialog) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final key = _tileKeys[_focusedIndex];
-      final context = key?.currentContext;
-      if (context != null) {
-        Scrollable.ensureVisible(context, alignment: 0.25, duration: const Duration(milliseconds: 200));
-      }
-    });
+    if (!_dialogScrollController.hasClients) return;
+
+    const double itemHeight = 72.0; // Material ListTile with subtitle
+    const double listTopPadding = 8.0;
+    final double targetTop = listTopPadding + (_focusedIndex * itemHeight);
+    final double targetBottom = targetTop + itemHeight;
+
+    final double viewportTop = _dialogScrollController.offset;
+    final double viewportHeight = _dialogScrollController.position.viewportDimension;
+    final double viewportBottom = viewportTop + viewportHeight;
+
+    // Already fully visible — skip
+    if (targetTop >= viewportTop && targetBottom <= viewportBottom) return;
+
+    // Place item at ~25% from top of viewport
+    final double destination = (targetTop - viewportHeight * 0.25)
+        .clamp(0.0, _dialogScrollController.position.maxScrollExtent);
+
+    _dialogScrollController.animateTo(
+      destination,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+    );
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
+
+    // Track back key down/up pairing. If focus was elsewhere during KeyDown
+    // (e.g., on a bottom sheet) and returns here before KeyUp, we get a stray
+    // KeyUp that would incorrectly pop the dialog. Consume it instead.
+    if (key.isBackKey) {
+      if (event is KeyDownEvent) {
+        _backKeyDownSeen = true;
+      } else if (event is KeyUpEvent && !_backKeyDownSeen) {
+        return KeyEventResult.handled;
+      }
+      if (event is KeyUpEvent) {
+        _backKeyDownSeen = false;
+      }
+    }
 
     final backResult = handleBackKeyAction(event, () {
       if (_movingIndex != null) {
@@ -1359,7 +1391,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       return backResult;
     }
 
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (!event.isActionable) return KeyEventResult.ignored;
 
     if (_movingIndex != null) {
       // Move mode - arrows reorder the item
@@ -1455,9 +1487,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       }
       final library = _tempLibraries.removeAt(oldIndex);
       _tempLibraries.insert(newIndex, library);
-      if (widget.isDialog) {
-        _tileKeys.clear();
-      }
     });
     // Apply immediately
     widget.onReorder(_tempLibraries);
@@ -1533,25 +1562,29 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
     if (widget.isDialog) {
       return Dialog(
-        child: Scaffold(
-          appBar: AppBar(
-            title: Row(
-              children: [
-                const AppIcon(Symbols.edit_rounded, fill: 1),
-                const SizedBox(width: 12),
-                Text(t.libraries.manageLibraries),
+        child: PopScope(
+          canPop: false, // Prevent system back from double-popping; handled by _handleKeyEvent
+          onPopInvokedWithResult: (didPop, result) {},
+          child: Scaffold(
+            appBar: AppBar(
+              title: Row(
+                children: [
+                  const AppIcon(Symbols.edit_rounded, fill: 1),
+                  const SizedBox(width: 12),
+                  Text(t.libraries.manageLibraries),
+                ],
+              ),
+              automaticallyImplyLeading: false,
+              actions: [
+                IconButton(icon: const AppIcon(Symbols.close_rounded, fill: 1), onPressed: () => Navigator.pop(context)),
               ],
             ),
-            automaticallyImplyLeading: false,
-            actions: [
-              IconButton(icon: const AppIcon(Symbols.close_rounded, fill: 1), onPressed: () => Navigator.pop(context)),
-            ],
-          ),
-          body: Focus(
-            focusNode: _listFocusNode,
-            autofocus: InputModeTracker.isKeyboardMode(context),
-            onKeyEvent: _handleKeyEvent,
-            child: _buildFlatLibraryListDialog(hiddenLibraryKeys),
+            body: Focus(
+              focusNode: _listFocusNode,
+              autofocus: InputModeTracker.isKeyboardMode(context),
+              onKeyEvent: _handleKeyEvent,
+              child: _buildFlatLibraryListDialog(hiddenLibraryKeys),
+            ),
           ),
         ),
       );
@@ -1610,6 +1643,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
     return ReorderableListView.builder(
+      scrollController: _dialogScrollController,
       onReorder: _reorderLibraries,
       itemCount: _tempLibraries.length,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1620,8 +1654,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
         final isFocused = isKeyboardMode && index == _focusedIndex;
         final isMoving = index == _movingIndex;
 
-        _tileKeys.putIfAbsent(index, () => GlobalKey());
-
         return _buildLibraryTile(
           library,
           index,
@@ -1630,7 +1662,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
           isFocused: isFocused,
           isMoving: isMoving,
           focusedColumn: isFocused ? _focusedColumn : null,
-          tileKey: _tileKeys[index],
         );
       },
     );
@@ -1674,7 +1705,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     bool isFocused = false,
     bool isMoving = false,
     int? focusedColumn,
-    Key? tileKey,
   }) {
     final isHidden = hiddenLibraryKeys.contains(library.globalKey);
     final colorScheme = Theme.of(context).colorScheme;
@@ -1693,7 +1723,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     final isOptionsButtonFocused = isFocused && focusedColumn == 2;
 
     return Opacity(
-      key: tileKey ?? ValueKey(library.globalKey),
+      key: ValueKey(library.globalKey),
       opacity: isHidden ? 0.5 : 1.0,
       child: Container(
         decoration: BoxDecoration(color: tileColor),
@@ -1727,9 +1757,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                decoration: isVisibilityButtonFocused
-                    ? BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(20))
-                    : null,
+                decoration: FocusTheme.focusBackgroundDecoration(isFocused: isVisibilityButtonFocused, borderRadius: 20),
                 child: IconButton(
                   icon: AppIcon(isHidden ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1),
                   tooltip: isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,
@@ -1737,9 +1765,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                 ),
               ),
               Container(
-                decoration: isOptionsButtonFocused
-                    ? BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(20))
-                    : null,
+                decoration: FocusTheme.focusBackgroundDecoration(isFocused: isOptionsButtonFocused, borderRadius: 20),
                 child: IconButton(
                   icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
                   tooltip: t.libraries.libraryOptions,
