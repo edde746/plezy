@@ -1589,6 +1589,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                     ),
                   ),
                 ),
+                SliverPadding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.bottom,
+                  ),
+                ),
               ],
             ),
             // Sticky top bar with fading background

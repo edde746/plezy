@@ -237,6 +237,11 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
                   );
                 }, childCount: _episodes.length),
               ),
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom,
+                ),
+              ),
           ],
         ),
       ),
