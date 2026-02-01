@@ -1,6 +1,7 @@
 package com.edde746.plezy.exoplayer
 
 import android.app.Activity
+import android.net.Uri
 import android.util.Log
 import com.edde746.plezy.mpv.MpvPlayerCore
 import com.edde746.plezy.mpv.MpvPlayerDelegate
@@ -190,7 +191,9 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     options.add("http-header-fields-append=$key: $value")
                 }
                 val optionsStr = options.joinToString(",")
-                mpvCore?.command(arrayOf("loadfile", uri, "replace", "-1", optionsStr))
+                // Convert content:// URIs to fdclose:// for MPV (SAF SD card downloads)
+                val mpvUri = openContentFd(uri)?.let { "fdclose://$it" } ?: uri
+                mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
             } else {
                 playerCore?.open(uri, headers, startPositionMs, autoPlay)
             }
@@ -502,6 +505,25 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         eventSink?.success(event)
     }
 
+    /**
+     * Opens a content:// URI via ContentResolver and returns the raw FD number,
+     * or null if the URI is not a content:// scheme or opening fails.
+     * The returned FD is detached so MPV can own and close it via fdclose://.
+     */
+    private fun openContentFd(uriString: String): Int? {
+        if (!uriString.startsWith("content://")) return null
+        return try {
+            val uri = Uri.parse(uriString)
+            val pfd = activity?.contentResolver?.openFileDescriptor(uri, "r") ?: return null
+            val fd = pfd.detachFd()
+            Log.d(TAG, "Opened content FD $fd for $uriString")
+            fd
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open content FD: ${e.message}", e)
+            null
+        }
+    }
+
     override fun onFormatUnsupported(
         uri: String,
         headers: Map<String, String>?,
@@ -561,7 +583,9 @@ class ExoPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     options.add("http-header-fields-append=$key: $value")
                 }
                 val optionsStr = options.joinToString(",")
-                mpvCore?.command(arrayOf("loadfile", uri, "replace", "-1", optionsStr))
+                // Convert content:// URIs to fdclose:// for MPV (SAF SD card downloads)
+                val mpvUri = openContentFd(uri)?.let { "fdclose://$it" } ?: uri
+                mpvCore?.command(arrayOf("loadfile", mpvUri, "replace", "-1", optionsStr))
 
                 // Request audio focus
                 mpvCore?.requestAudioFocus()

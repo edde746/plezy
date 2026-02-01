@@ -84,6 +84,17 @@ class PlayerNative extends PlayerBase {
   // Playback Control
   // ============================================
 
+  /// Opens a content:// URI via the platform channel and returns the raw FD number.
+  /// Returns null if the call fails.
+  Future<int?> _openContentFd(String contentUri) async {
+    try {
+      final fd = await methodChannel.invokeMethod<int>('openContentFd', {'uri': contentUri});
+      return fd;
+    } catch (e) {
+      return null;
+    }
+  }
+
   @override
   Future<void> open(Media media, {bool play = true}) async {
     checkDisposed();
@@ -113,7 +124,16 @@ class PlayerNative extends PlayerBase {
       await setProperty('pause', 'yes');
     }
 
-    await command(['loadfile', media.uri, 'replace']);
+    // Convert content:// URIs to fdclose:// for MPV on Android (SAF SD card downloads)
+    var uri = media.uri;
+    if (Platform.isAndroid && uri.startsWith('content://')) {
+      final fd = await _openContentFd(uri);
+      if (fd != null) {
+        uri = 'fdclose://$fd';
+      }
+    }
+
+    await command(['loadfile', uri, 'replace']);
   }
 
   @override

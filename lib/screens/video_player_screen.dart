@@ -885,7 +885,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     return PlaybackInitializationResult(
       availableVersions: [],
-      videoUrl: 'file://$videoPath',
+      videoUrl: videoPath.contains('://') ? videoPath : 'file://$videoPath',
       mediaInfo: null,
       externalSubtitles: const [],
       isOffline: true,
