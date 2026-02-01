@@ -10,6 +10,7 @@ import '../services/server_registry.dart';
 import '../services/server_connection_orchestrator.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/libraries_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
@@ -83,6 +84,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (!mounted) return;
 
+      // Start profile initialization in parallel with server connection.
+      // The home users API (clients.plex.tv) is independent of server connections.
+      final profileFuture = context.read<UserProfileProvider>().initialize();
+
       final result = await ServerConnectionOrchestrator.connectAndInitialize(
         servers: servers,
         multiServerProvider: context.read<MultiServerProvider>(),
@@ -97,6 +102,10 @@ class _AuthScreenState extends State<AuthScreen> {
         });
         return;
       }
+
+      // Wait for profile init to finish before navigating so MainScreen
+      // has home user data available immediately.
+      await profileFuture;
 
       if (!mounted) return;
       Navigator.pushReplacement(
