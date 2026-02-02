@@ -372,6 +372,10 @@ class _TranslationsMediaMenuKo implements TranslationsMediaMenuEn {
 	@override String get goToSeason => '시즌으로 이동';
 	@override String get shufflePlay => '무작위 재생';
 	@override String get fileInfo => '파일 정보';
+	@override String get confirmDelete => '파일 시스템에서 이 항목을 삭제하시겠습니까?';
+	@override String get deleteMultipleWarning => '여러 항목이 삭제될 수 있습니다.';
+	@override String get mediaDeletedSuccessfully => '미디어 항목이 성공적으로 삭제되었습니다';
+	@override String get mediaFailedToDelete => '미디어 항목 삭제 실패';
 }
 
 // Path: accessibility
@@ -1206,6 +1210,10 @@ extension on TranslationsKo {
 			'mediaMenu.goToSeason' => '시즌으로 이동',
 			'mediaMenu.shufflePlay' => '무작위 재생',
 			'mediaMenu.fileInfo' => '파일 정보',
+			'mediaMenu.confirmDelete' => '파일 시스템에서 이 항목을 삭제하시겠습니까?',
+			'mediaMenu.deleteMultipleWarning' => '여러 항목이 삭제될 수 있습니다.',
+			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
+			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 영화',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV 프로그램',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1494,12 +1502,12 @@ extension on TranslationsKo {
 			'watchTogether.createSession' => '세션 생성',
 			'watchTogether.creating' => '생성 중...',
 			'watchTogether.joinSession' => '세션 참여',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joining' => '참가 중...',
 			'watchTogether.controlMode' => '제어 모드',
 			'watchTogether.controlModeQuestion' => '누가 재생을 제어할 수 있나요?',
 			'watchTogether.hostOnly' => '호스트만',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.anyone' => '누구나',
 			'watchTogether.hostingSession' => '세션 호스팅',
 			'watchTogether.inSession' => '세션 중',

@@ -241,7 +241,11 @@
     "goToSeries": "Gå till serie",
     "goToSeason": "Gå till säsong",
     "shufflePlay": "Blanda uppspelning",
-    "fileInfo": "Filinformation"
+    "fileInfo": "Filinformation",
+    "confirmDelete": "Är du säker på att du vill ta bort detta objekt från ditt filsystem?",
+    "deleteMultipleWarning": "Flera objekt kan komma att tas bort.",
+    "mediaDeletedSuccessfully": "Mediaobjekt borttaget",
+    "mediaFailedToDelete": "Kunde inte ta bort mediaobjekt"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

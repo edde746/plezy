@@ -372,6 +372,10 @@ class _TranslationsMediaMenuNl implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Ga naar seizoen';
 	@override String get shufflePlay => 'Willekeurig afspelen';
 	@override String get fileInfo => 'Bestand info';
+	@override String get confirmDelete => 'Weet je zeker dat je dit item van je bestandssysteem wilt verwijderen?';
+	@override String get deleteMultipleWarning => 'Meerdere items kunnen worden verwijderd.';
+	@override String get mediaDeletedSuccessfully => 'Media-item succesvol verwijderd';
+	@override String get mediaFailedToDelete => 'Verwijderen van media-item mislukt';
 }
 
 // Path: accessibility
@@ -1206,6 +1210,10 @@ extension on TranslationsNl {
 			'mediaMenu.goToSeason' => 'Ga naar seizoen',
 			'mediaMenu.shufflePlay' => 'Willekeurig afspelen',
 			'mediaMenu.fileInfo' => 'Bestand info',
+			'mediaMenu.confirmDelete' => 'Weet je zeker dat je dit item van je bestandssysteem wilt verwijderen?',
+			'mediaMenu.deleteMultipleWarning' => 'Meerdere items kunnen worden verwijderd.',
+			'mediaMenu.mediaDeletedSuccessfully' => 'Media-item succesvol verwijderd',
+			'mediaMenu.mediaFailedToDelete' => 'Verwijderen van media-item mislukt',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1494,12 +1502,12 @@ extension on TranslationsNl {
 			'collections.selectCollection' => 'Selecteer collectie',
 			'collections.createNewCollection' => 'Nieuwe collectie maken',
 			'collections.collectionName' => 'Collectienaam',
+			_ => null,
+		} ?? switch (path) {
 			'collections.enterCollectionName' => 'Voer collectienaam in',
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
 			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
 			'collections.created' => 'Collectie gemaakt',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removeFromCollection' => 'Verwijderen uit collectie',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
 			'collections.removedFromCollection' => 'Uit collectie verwijderd',

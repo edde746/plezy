@@ -372,6 +372,10 @@ class _TranslationsMediaMenuIt implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Vai alla stagione';
 	@override String get shufflePlay => 'Riproduzione casuale';
 	@override String get fileInfo => 'Info sul file';
+	@override String get confirmDelete => 'Sei sicuro di voler eliminare questo elemento dal tuo filesystem?';
+	@override String get deleteMultipleWarning => 'Potrebbero essere eliminati più elementi.';
+	@override String get mediaDeletedSuccessfully => 'Elemento multimediale eliminato con successo';
+	@override String get mediaFailedToDelete => 'Impossibile eliminare l\'elemento multimediale';
 }
 
 // Path: accessibility
@@ -1206,6 +1210,10 @@ extension on TranslationsIt {
 			'mediaMenu.goToSeason' => 'Vai alla stagione',
 			'mediaMenu.shufflePlay' => 'Riproduzione casuale',
 			'mediaMenu.fileInfo' => 'Info sul file',
+			'mediaMenu.confirmDelete' => 'Sei sicuro di voler eliminare questo elemento dal tuo filesystem?',
+			'mediaMenu.deleteMultipleWarning' => 'Potrebbero essere eliminati più elementi.',
+			'mediaMenu.mediaDeletedSuccessfully' => 'Elemento multimediale eliminato con successo',
+			'mediaMenu.mediaFailedToDelete' => 'Impossibile eliminare l\'elemento multimediale',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, serie TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1494,12 +1502,12 @@ extension on TranslationsIt {
 			'collections.selectCollection' => 'Seleziona raccolta',
 			'collections.createNewCollection' => 'Crea nuova raccolta',
 			'collections.collectionName' => 'Nome raccolta',
+			_ => null,
+		} ?? switch (path) {
 			'collections.enterCollectionName' => 'Inserisci nome raccolta',
 			'collections.addedToCollection' => 'Aggiunto alla raccolta',
 			'collections.errorAddingToCollection' => 'Errore nell\'aggiunta alla raccolta',
 			'collections.created' => 'Raccolta creata',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removeFromCollection' => 'Rimuovi dalla raccolta',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Rimuovere "${title}" da questa raccolta?',
 			'collections.removedFromCollection' => 'Rimosso dalla raccolta',

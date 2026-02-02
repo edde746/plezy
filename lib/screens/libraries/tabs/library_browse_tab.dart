@@ -774,6 +774,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           _lastFocusedContentVersion = _contentVersion;
         }
       },
+      onListRefresh: _loadItems,
     );
   }
 }

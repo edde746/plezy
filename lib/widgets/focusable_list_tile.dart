@@ -45,6 +45,9 @@ class FocusableListTile extends StatefulWidget {
   /// If true, consumes the first select key event to avoid accidental activation.
   final bool suppressInitialSelect;
 
+  /// An optional color to display behind the menu item when being hovered.
+  final Color? hoverColor;
+
   const FocusableListTile({
     super.key,
     this.title,
@@ -60,6 +63,7 @@ class FocusableListTile extends StatefulWidget {
     this.autofocus = false,
     this.contentPadding,
     this.suppressInitialSelect = false,
+    this.hoverColor,
   });
 
   @override
@@ -84,6 +88,7 @@ class _FocusableListTileState extends State<FocusableListTile> {
       contentPadding: widget.contentPadding,
       focusNode: widget.suppressInitialSelect ? null : widget.focusNode,
       autofocus: widget.suppressInitialSelect ? false : widget.autofocus,
+      hoverColor: widget.hoverColor,
     );
 
     if (!widget.suppressInitialSelect) {

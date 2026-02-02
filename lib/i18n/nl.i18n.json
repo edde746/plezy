@@ -241,7 +241,11 @@
     "goToSeries": "Ga naar serie",
     "goToSeason": "Ga naar seizoen",
     "shufflePlay": "Willekeurig afspelen",
-    "fileInfo": "Bestand info"
+    "fileInfo": "Bestand info",
+    "confirmDelete": "Weet je zeker dat je dit item van je bestandssysteem wilt verwijderen?",
+    "deleteMultipleWarning": "Meerdere items kunnen worden verwijderd.",
+    "mediaDeletedSuccessfully": "Media-item succesvol verwijderd",
+    "mediaFailedToDelete": "Verwijderen van media-item mislukt"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

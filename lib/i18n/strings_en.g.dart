@@ -777,6 +777,18 @@ class TranslationsMediaMenuEn {
 
 	/// en: 'File Info'
 	String get fileInfo => 'File Info';
+
+	/// en: 'Are you sure you want to delete this item from your filesystem?'
+	String get confirmDelete => 'Are you sure you want to delete this item from your filesystem?';
+
+	/// en: 'Multiple items may be deleted.'
+	String get deleteMultipleWarning => 'Multiple items may be deleted.';
+
+	/// en: 'Media item deleted successfully'
+	String get mediaDeletedSuccessfully => 'Media item deleted successfully';
+
+	/// en: 'Failed to delete media item'
+	String get mediaFailedToDelete => 'Failed to delete media item';
 }
 
 // Path: accessibility
@@ -2343,6 +2355,10 @@ extension on Translations {
 			'mediaMenu.goToSeason' => 'Go to season',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
 			'mediaMenu.fileInfo' => 'File Info',
+			'mediaMenu.confirmDelete' => 'Are you sure you want to delete this item from your filesystem?',
+			'mediaMenu.deleteMultipleWarning' => 'Multiple items may be deleted.',
+			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
+			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -2632,12 +2648,12 @@ extension on Translations {
 			'watchTogether.joinSession' => 'Join Session',
 			'watchTogether.joining' => 'Joining...',
 			'watchTogether.controlMode' => 'Control Mode',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.controlModeQuestion' => 'Who can control playback?',
 			'watchTogether.hostOnly' => 'Host Only',
 			'watchTogether.anyone' => 'Anyone',
 			'watchTogether.hostingSession' => 'Hosting Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.inSession' => 'In Session',
 			'watchTogether.sessionCode' => 'Session Code',
 			'watchTogether.hostControlsPlayback' => 'Host controls playback',

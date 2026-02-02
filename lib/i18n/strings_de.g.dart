@@ -372,6 +372,10 @@ class _TranslationsMediaMenuDe implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Zur Staffel';
 	@override String get shufflePlay => 'Zufallswiedergabe';
 	@override String get fileInfo => 'Dateiinfo';
+	@override String get confirmDelete => 'Sind Sie sicher, dass Sie dieses Element aus Ihrem Dateisystem löschen möchten?';
+	@override String get deleteMultipleWarning => 'Mehrere Elemente können gelöscht werden.';
+	@override String get mediaDeletedSuccessfully => 'Medienelement erfolgreich gelöscht';
+	@override String get mediaFailedToDelete => 'Löschen des Medienelements fehlgeschlagen';
 }
 
 // Path: accessibility
@@ -1206,6 +1210,10 @@ extension on TranslationsDe {
 			'mediaMenu.goToSeason' => 'Zur Staffel',
 			'mediaMenu.shufflePlay' => 'Zufallswiedergabe',
 			'mediaMenu.fileInfo' => 'Dateiinfo',
+			'mediaMenu.confirmDelete' => 'Sind Sie sicher, dass Sie dieses Element aus Ihrem Dateisystem löschen möchten?',
+			'mediaMenu.deleteMultipleWarning' => 'Mehrere Elemente können gelöscht werden.',
+			'mediaMenu.mediaDeletedSuccessfully' => 'Medienelement erfolgreich gelöscht',
+			'mediaMenu.mediaFailedToDelete' => 'Löschen des Medienelements fehlgeschlagen',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, Film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, Serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1494,12 +1502,12 @@ extension on TranslationsDe {
 			'collections.selectCollection' => 'Sammlung auswählen',
 			'collections.createNewCollection' => 'Neue Sammlung erstellen',
 			'collections.collectionName' => 'Sammlungsname',
+			_ => null,
+		} ?? switch (path) {
 			'collections.enterCollectionName' => 'Sammlungsnamen eingeben',
 			'collections.addedToCollection' => 'Zur Sammlung hinzugefügt',
 			'collections.errorAddingToCollection' => 'Fehler beim Hinzufügen zur Sammlung',
 			'collections.created' => 'Sammlung erstellt',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removeFromCollection' => 'Aus Sammlung entfernen',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?',
 			'collections.removedFromCollection' => 'Aus Sammlung entfernt',

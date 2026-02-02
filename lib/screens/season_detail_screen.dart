@@ -234,14 +234,11 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen> with ItemUpdata
                       );
                     },
                     onRefresh: widget.isOffline ? null : updateItem,
+                    onListRefresh: widget.isOffline ? null : _loadEpisodes,
                   );
                 }, childCount: _episodes.length),
               ),
-              SliverPadding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).padding.bottom,
-                ),
-              ),
+            SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom)),
           ],
         ),
       ),
@@ -266,6 +263,7 @@ class _EpisodeCard extends StatefulWidget {
   final PlexClient? client;
   final VoidCallback onTap;
   final Future<void> Function(String)? onRefresh;
+  final Future<void> Function()? onListRefresh;
   final bool autofocus;
   final bool isOffline;
   final String? localPosterPath;
@@ -275,6 +273,7 @@ class _EpisodeCard extends StatefulWidget {
     this.client,
     required this.onTap,
     this.onRefresh,
+    this.onListRefresh,
     this.autofocus = false,
     this.isOffline = false,
     this.localPosterPath,
@@ -338,6 +337,7 @@ class _EpisodeCardState extends State<_EpisodeCard> {
         key: _contextMenuKey,
         item: widget.episode,
         onRefresh: widget.onRefresh,
+        onListRefresh: widget.onListRefresh,
         onTap: widget.onTap,
         child: InkWell(
           key: Key(widget.episode.ratingKey),

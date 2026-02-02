@@ -241,7 +241,11 @@
     "goToSeries": "Vai alle serie",
     "goToSeason": "Vai alla stagione",
     "shufflePlay": "Riproduzione casuale",
-    "fileInfo": "Info sul file"
+    "fileInfo": "Info sul file",
+    "confirmDelete": "Sei sicuro di voler eliminare questo elemento dal tuo filesystem?",
+    "deleteMultipleWarning": "Potrebbero essere eliminati più elementi.",
+    "mediaDeletedSuccessfully": "Elemento multimediale eliminato con successo",
+    "mediaFailedToDelete": "Impossibile eliminare l'elemento multimediale"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",
