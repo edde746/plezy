@@ -731,6 +731,27 @@ class _MediaCardHelpers {
               child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 16),
             ),
           ),
+        if (!metadata.isWatched &&
+            (metadata.mediaType == PlexMediaType.show || metadata.mediaType == PlexMediaType.season) &&
+            (metadata.leafCount != null && metadata.leafCount! > 0 && metadata.viewedLeafCount != null))
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: tokens(context).text,
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '${metadata.leafCount! - metadata.viewedLeafCount!}',
+                style: TextStyle(color: tokens(context).bg, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
         // Progress bar for partially watched content (episodes/movies)
         if (metadata.viewOffset != null && metadata.duration != null && metadata.viewOffset! > 0 && !metadata.isWatched)
           Positioned(
