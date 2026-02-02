@@ -359,13 +359,13 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          packages: clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libsdl3-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libasound2-dev libmpv-dev mpv libsdl3-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick
 
       - name: Install fpm
         run: sudo gem install fpm
