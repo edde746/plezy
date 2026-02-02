@@ -4,14 +4,14 @@ import 'dart:io';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
-import 'package:gamepads/gamepads.dart';
+import 'package:universal_gamepad/universal_gamepad.dart';
 
 import '../utils/app_logger.dart';
 
 /// Service that bridges gamepad input to Flutter's focus navigation system.
 ///
-/// Listens to gamepad events from the `gamepads` package and translates them
-/// into focus navigation actions and key events that integrate with the
+/// Listens to gamepad events from the `universal_gamepad` package and translates
+/// them into focus navigation actions and key events that integrate with the
 /// existing keyboard navigation system.
 class GamepadService {
   static GamepadService? _instance;
@@ -32,20 +32,20 @@ class GamepadService {
   // Deadzone for analog sticks (0.0 to 1.0)
   static const double _stickDeadzone = 0.5;
 
-  // Track D-pad state to avoid repeated navigation events
-  bool _dpadUp = false;
-  bool _dpadDown = false;
-  bool _dpadLeft = false;
-  bool _dpadRight = false;
+  // Auto-repeat timing for held directional inputs (D-pad / stick)
+  static const Duration _repeatInitialDelay = Duration(milliseconds: 400);
+  static const Duration _repeatInterval = Duration(milliseconds: 80);
 
-  // Track stick state to avoid repeated navigation events
+  Timer? _repeatTimer;
+
+  // Track stick state to detect deadzone crossings
   bool _leftStickUp = false;
   bool _leftStickDown = false;
   bool _leftStickLeft = false;
   bool _leftStickRight = false;
 
   // Track button states to prevent repeated events from button holds
-  final Set<String> _pressedButtons = {};
+  final Set<GamepadButton> _pressedButtons = {};
 
   GamepadService._();
 
@@ -65,7 +65,7 @@ class GamepadService {
 
     // List connected gamepads
     try {
-      final gamepads = await Gamepads.list();
+      final gamepads = await Gamepad.instance.listGamepads();
       appLogger.i('GamepadService: Found ${gamepads.length} gamepad(s)');
       for (final gamepad in gamepads) {
         appLogger.i('  - ${gamepad.name} (id: ${gamepad.id})');
@@ -75,7 +75,7 @@ class GamepadService {
     }
 
     _subscription?.cancel();
-    _subscription = Gamepads.events.listen(
+    _subscription = Gamepad.instance.events.listen(
       _handleGamepadEvent,
       onError: (e) => appLogger.e('GamepadService: Stream error', error: e),
     );
@@ -84,65 +84,104 @@ class GamepadService {
 
   /// Stop listening to gamepad events.
   void stop() {
+    _stopDirectionRepeat();
     _subscription?.cancel();
     _subscription = null;
+    Gamepad.instance.dispose();
   }
 
   void _handleGamepadEvent(GamepadEvent event) {
-    final key = event.key.toLowerCase();
-    final value = event.value;
+    switch (event) {
+      case GamepadConnectionEvent e:
+        appLogger.i(
+          'GamepadService: Gamepad ${e.connected ? "connected" : "disconnected"}: ${e.info.name}',
+        );
+      case GamepadButtonEvent e:
+        _handleButton(e);
+      case GamepadAxisEvent e:
+        _handleAxis(e);
+    }
+  }
 
-    // Switch to keyboard mode on any significant gamepad input
-    if (value.abs() > 0.3) {
+  void _handleButton(GamepadButtonEvent event) {
+    // Switch to keyboard mode on any button press
+    if (event.pressed) {
       onGamepadInput?.call();
       _setTraditionalFocusHighlight();
       _scheduleFrameIfIdle();
     }
 
-    // Handle D-pad (reported as axes on macOS)
-    if (_isDpadYAxis(key)) {
-      _handleDpadY(value);
-      return;
-    }
-    if (_isDpadXAxis(key)) {
-      _handleDpadX(value);
-      return;
-    }
+    final wasPressed = _pressedButtons.contains(event.button);
 
-    // Handle face buttons
-    final isPressed = value > 0.5;
-    final wasPressed = _pressedButtons.contains(key);
+    if (event.pressed && !wasPressed) {
+      _pressedButtons.add(event.button);
 
-    if (isPressed && !wasPressed) {
-      _pressedButtons.add(key);
-
-      if (_isButtonA(key)) {
-        // Use enter instead of gameButtonA so it works with Flutter's built-in
-        // widgets (buttons, list tiles, etc.) which listen for enter
-        _simulateKeyPress(LogicalKeyboardKey.enter);
-      } else if (_isButtonB(key)) {
-        // Use escape instead of gameButtonB so it works with Flutter's built-in
-        // widgets (bottom sheets, dialogs, menus) which only listen for escape
-        _simulateKeyPress(LogicalKeyboardKey.escape);
-      } else if (_isButtonX(key)) {
-        _simulateKeyPress(LogicalKeyboardKey.gameButtonX);
-      } else if (_isL1(key)) {
-        onL1Pressed?.call();
-      } else if (_isR1(key)) {
-        onR1Pressed?.call();
+      // D-pad — navigate with auto-repeat while held
+      switch (event.button) {
+        case GamepadButton.dpadUp:
+          _startDirectionRepeat(TraversalDirection.up);
+          return;
+        case GamepadButton.dpadDown:
+          _startDirectionRepeat(TraversalDirection.down);
+          return;
+        case GamepadButton.dpadLeft:
+          _startDirectionRepeat(TraversalDirection.left);
+          return;
+        case GamepadButton.dpadRight:
+          _startDirectionRepeat(TraversalDirection.right);
+          return;
+        // Face buttons — send KeyDown on press, KeyUp on release
+        // so widget-level long-press timers work naturally
+        case GamepadButton.a:
+          _simulateKeyDown(LogicalKeyboardKey.enter);
+        case GamepadButton.x:
+          _simulateKeyDown(LogicalKeyboardKey.gameButtonX);
+        // Immediate actions on press
+        case GamepadButton.b:
+          _simulateKeyPress(LogicalKeyboardKey.escape);
+        case GamepadButton.leftShoulder:
+          onL1Pressed?.call();
+        case GamepadButton.rightShoulder:
+          onR1Pressed?.call();
+        default:
+          break;
       }
-    } else if (!isPressed && wasPressed) {
-      _pressedButtons.remove(key);
+    } else if (!event.pressed && wasPressed) {
+      _pressedButtons.remove(event.button);
+
+      switch (event.button) {
+        // D-pad release — stop repeat
+        case GamepadButton.dpadUp:
+        case GamepadButton.dpadDown:
+        case GamepadButton.dpadLeft:
+        case GamepadButton.dpadRight:
+          _stopDirectionRepeat();
+        // Face button release — send KeyUp
+        case GamepadButton.a:
+          _simulateKeyUp(LogicalKeyboardKey.enter);
+        case GamepadButton.x:
+          _simulateKeyUp(LogicalKeyboardKey.gameButtonX);
+        default:
+          break;
+      }
+    }
+  }
+
+  void _handleAxis(GamepadAxisEvent event) {
+    // Switch to keyboard mode on significant axis input
+    if (event.value.abs() > 0.3) {
+      onGamepadInput?.call();
+      _setTraditionalFocusHighlight();
+      _scheduleFrameIfIdle();
     }
 
-    // Handle left analog stick
-    if (_isLeftStickY(key)) {
-      _handleLeftStickY(value);
-      return;
-    }
-    if (_isLeftStickX(key)) {
-      _handleLeftStickX(value);
-      return;
+    switch (event.axis) {
+      case GamepadAxis.leftStickY:
+        _handleLeftStickY(event.value);
+      case GamepadAxis.leftStickX:
+        _handleLeftStickX(event.value);
+      default:
+        break;
     }
   }
 
@@ -151,6 +190,22 @@ class GamepadService {
     // This allows widgets like HubSection that intercept key events to handle navigation
     final logicalKey = _directionToKey(direction);
     _simulateKeyPress(logicalKey);
+  }
+
+  /// Fire [direction] immediately, then auto-repeat after an initial delay.
+  void _startDirectionRepeat(TraversalDirection direction) {
+    _stopDirectionRepeat();
+    _moveFocus(direction);
+    _repeatTimer = Timer(_repeatInitialDelay, () {
+      _repeatTimer = Timer.periodic(_repeatInterval, (_) {
+        _moveFocus(direction);
+      });
+    });
+  }
+
+  void _stopDirectionRepeat() {
+    _repeatTimer?.cancel();
+    _repeatTimer = null;
   }
 
   LogicalKeyboardKey _directionToKey(TraversalDirection direction) {
@@ -166,48 +221,65 @@ class GamepadService {
     }
   }
 
+  /// Simulate a full key press (down + up) in a single frame.
   void _simulateKeyPress(LogicalKeyboardKey logicalKey) {
-    // Schedule on next frame to ensure we're on the main thread
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      final focusNode = FocusManager.instance.primaryFocus;
-      if (focusNode == null) return;
-
-      // Create a synthetic key down event
-      final keyDownEvent = KeyDownEvent(
-        physicalKey: _getPhysicalKey(logicalKey),
-        logicalKey: logicalKey,
-        timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
-      );
-
-      // Dispatch through the focus system by walking up the focus tree
-      // and calling each node's onKeyEvent handler
-      FocusNode? node = focusNode;
-      KeyEventResult result = KeyEventResult.ignored;
-
-      while (node != null && result != KeyEventResult.handled) {
-        // The Focus widget stores its handler in onKeyEvent
-        if (node.onKeyEvent != null) {
-          result = node.onKeyEvent!(node, keyDownEvent);
-        }
-        node = node.parent;
-      }
-
-      // Send key up event
-      final keyUpEvent = KeyUpEvent(
-        physicalKey: _getPhysicalKey(logicalKey),
-        logicalKey: logicalKey,
-        timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
-      );
-
-      node = focusNode;
-      while (node != null) {
-        if (node.onKeyEvent != null) {
-          final upResult = node.onKeyEvent!(node, keyUpEvent);
-          if (upResult == KeyEventResult.handled) break;
-        }
-        node = node.parent;
-      }
+      _dispatchKeyDown(logicalKey);
+      _dispatchKeyUp(logicalKey);
     });
+  }
+
+  /// Simulate only key down — pair with [_simulateKeyUp] on release
+  /// so widget-level long-press timers see real hold duration.
+  void _simulateKeyDown(LogicalKeyboardKey logicalKey) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _dispatchKeyDown(logicalKey);
+    });
+  }
+
+  /// Simulate only key up — the release half of [_simulateKeyDown].
+  void _simulateKeyUp(LogicalKeyboardKey logicalKey) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _dispatchKeyUp(logicalKey);
+    });
+  }
+
+  void _dispatchKeyDown(LogicalKeyboardKey logicalKey) {
+    final focusNode = FocusManager.instance.primaryFocus;
+    if (focusNode == null) return;
+
+    final event = KeyDownEvent(
+      physicalKey: _getPhysicalKey(logicalKey),
+      logicalKey: logicalKey,
+      timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+    );
+
+    FocusNode? node = focusNode;
+    while (node != null) {
+      if (node.onKeyEvent != null) {
+        if (node.onKeyEvent!(node, event) == KeyEventResult.handled) break;
+      }
+      node = node.parent;
+    }
+  }
+
+  void _dispatchKeyUp(LogicalKeyboardKey logicalKey) {
+    final focusNode = FocusManager.instance.primaryFocus;
+    if (focusNode == null) return;
+
+    final event = KeyUpEvent(
+      physicalKey: _getPhysicalKey(logicalKey),
+      logicalKey: logicalKey,
+      timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+    );
+
+    FocusNode? node = focusNode;
+    while (node != null) {
+      if (node.onKeyEvent != null) {
+        if (node.onKeyEvent!(node, event) == KeyEventResult.handled) break;
+      }
+      node = node.parent;
+    }
   }
 
   PhysicalKeyboardKey _getPhysicalKey(LogicalKeyboardKey logicalKey) {
@@ -231,68 +303,18 @@ class GamepadService {
     return PhysicalKeyboardKey.enter;
   }
 
-  // macOS DualSense key matching
-  // D-pad reports as axes: dpad - xaxis, dpad - yaxis
-  bool _isDpadYAxis(String key) => key == 'dpad - yaxis';
-  bool _isDpadXAxis(String key) => key == 'dpad - xaxis';
-
-  // Face buttons - macOS uses SF Symbol names for PlayStation controllers
-  bool _isButtonA(String key) => key == 'xmark.circle'; // Cross/X button (bottom)
-  bool _isButtonB(String key) => key == 'circle.circle'; // Circle/O button (right)
-  bool _isButtonX(String key) => key == 'square.circle'; // Square button (left)
-
-  // Analog sticks
-  bool _isLeftStickX(String key) => key == 'l.joystick - xaxis';
-  bool _isLeftStickY(String key) => key == 'l.joystick - yaxis';
-
-  // Bumper buttons
-  bool _isL1(String key) => key == 'l1.rectangle.roundedbottom';
-  bool _isR1(String key) => key == 'r1.rectangle.roundedbottom';
-
-  // D-pad Y axis: -1 = down (visually up on controller), 1 = up (visually down)
-  // Inverted because macOS reports opposite of expected
-  void _handleDpadY(double value) {
-    if (value < -0.5 && !_dpadDown) {
-      _dpadDown = true;
-      _dpadUp = false;
-      _moveFocus(TraversalDirection.down);
-    } else if (value > 0.5 && !_dpadUp) {
-      _dpadUp = true;
-      _dpadDown = false;
-      _moveFocus(TraversalDirection.up);
-    } else if (value == 0) {
-      _dpadUp = false;
-      _dpadDown = false;
-    }
-  }
-
-  // D-pad X axis: -1 = left, 1 = right, 0 = released
-  void _handleDpadX(double value) {
-    if (value < -0.5 && !_dpadLeft) {
-      _dpadLeft = true;
-      _dpadRight = false;
-      _moveFocus(TraversalDirection.left);
-    } else if (value > 0.5 && !_dpadRight) {
-      _dpadRight = true;
-      _dpadLeft = false;
-      _moveFocus(TraversalDirection.right);
-    } else if (value == 0) {
-      _dpadLeft = false;
-      _dpadRight = false;
-    }
-  }
-
-  // Left stick Y axis - inverted like D-pad
+  // W3C: leftStickY -1.0 = up, 1.0 = down
   void _handleLeftStickY(double value) {
-    if (value < -_stickDeadzone && !_leftStickDown) {
+    if (value > _stickDeadzone && !_leftStickDown) {
       _leftStickDown = true;
       _leftStickUp = false;
-      _moveFocus(TraversalDirection.down);
-    } else if (value > _stickDeadzone && !_leftStickUp) {
+      _startDirectionRepeat(TraversalDirection.down);
+    } else if (value < -_stickDeadzone && !_leftStickUp) {
       _leftStickUp = true;
       _leftStickDown = false;
-      _moveFocus(TraversalDirection.up);
+      _startDirectionRepeat(TraversalDirection.up);
     } else if (value.abs() <= _stickDeadzone) {
+      if (_leftStickUp || _leftStickDown) _stopDirectionRepeat();
       _leftStickUp = false;
       _leftStickDown = false;
     }
@@ -302,12 +324,13 @@ class GamepadService {
     if (value < -_stickDeadzone && !_leftStickLeft) {
       _leftStickLeft = true;
       _leftStickRight = false;
-      _moveFocus(TraversalDirection.left);
+      _startDirectionRepeat(TraversalDirection.left);
     } else if (value > _stickDeadzone && !_leftStickRight) {
       _leftStickRight = true;
       _leftStickLeft = false;
-      _moveFocus(TraversalDirection.right);
+      _startDirectionRepeat(TraversalDirection.right);
     } else if (value.abs() <= _stickDeadzone) {
+      if (_leftStickLeft || _leftStickRight) _stopDirectionRepeat();
       _leftStickLeft = false;
       _leftStickRight = false;
     }
