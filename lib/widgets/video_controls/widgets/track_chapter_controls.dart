@@ -19,6 +19,7 @@ import '../sheets/video_settings_sheet.dart';
 import '../../../services/shader_service.dart';
 import '../helpers/track_filter_helper.dart';
 import '../video_control_button.dart';
+
 /// Row of track and chapter control buttons for the video player
 class TrackChapterControls extends StatelessWidget {
   final Player player;
@@ -172,12 +173,14 @@ class TrackChapterControls extends StatelessWidget {
             listenable: SleepTimerService(),
             builder: (context, _) {
               final sleepTimer = SleepTimerService();
-              final isShaderActive = shaderService != null && shaderService!.isSupported && shaderService!.currentPreset.isEnabled;
+              final isShaderActive =
+                  shaderService != null && shaderService!.isSupported && shaderService!.currentPreset.isEnabled;
               final isActive = sleepTimer.isActive || audioSyncOffset != 0 || subtitleSyncOffset != 0 || isShaderActive;
               return _buildTrackButton(
                 buttonIndex: 0,
                 icon: Symbols.tune_rounded,
                 isActive: isActive,
+                tooltip: t.videoControls.settingsButton,
                 semanticLabel: t.videoControls.settingsButton,
                 tracks: tracks,
                 isMobile: isMobile,
@@ -209,6 +212,7 @@ class TrackChapterControls extends StatelessWidget {
             _buildTrackButton(
               buttonIndex: currentIndex,
               icon: Symbols.audiotrack_rounded,
+              tooltip: t.videoControls.audioTrackButton,
               semanticLabel: t.videoControls.audioTrackButton,
               tracks: tracks,
               isMobile: isMobile,
@@ -232,6 +236,7 @@ class TrackChapterControls extends StatelessWidget {
             _buildTrackButton(
               buttonIndex: currentIndex,
               icon: Symbols.subtitles_rounded,
+              tooltip: t.videoControls.subtitlesButton,
               semanticLabel: t.videoControls.subtitlesButton,
               tracks: tracks,
               isMobile: isMobile,
@@ -255,6 +260,7 @@ class TrackChapterControls extends StatelessWidget {
             _buildTrackButton(
               buttonIndex: currentIndex,
               icon: Symbols.video_library_rounded,
+              tooltip: t.videoControls.chaptersButton,
               semanticLabel: t.videoControls.chaptersButton,
               tracks: tracks,
               isMobile: isMobile,
@@ -280,6 +286,7 @@ class TrackChapterControls extends StatelessWidget {
             _buildTrackButton(
               buttonIndex: currentIndex,
               icon: Symbols.video_file_rounded,
+              tooltip: t.videoControls.versionsButton,
               semanticLabel: t.videoControls.versionsButton,
               tracks: tracks,
               isMobile: isMobile,
@@ -351,23 +358,6 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
-        // Fullscreen button (desktop only)
-        if (isDesktop) {
-          final currentIndex = buttonIndex;
-          buttons.add(
-            _buildTrackButton(
-              buttonIndex: currentIndex,
-              icon: isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
-              semanticLabel: isFullscreen ? t.videoControls.exitFullscreenButton : t.videoControls.fullscreenButton,
-              tracks: tracks,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
-              onPressed: onToggleFullscreen,
-            ),
-          );
-          buttonIndex++;
-        }
-
         // Always on top button (desktop only, not TV)
         if (isDesktop && onToggleAlwaysOnTop != null) {
           final currentIndex = buttonIndex;
@@ -375,12 +365,31 @@ class TrackChapterControls extends StatelessWidget {
             _buildTrackButton(
               buttonIndex: currentIndex,
               icon: Symbols.layers_rounded,
+              tooltip: t.videoControls.alwaysOnTopButton,
               semanticLabel: t.videoControls.alwaysOnTopButton,
               isActive: isAlwaysOnTop,
               tracks: tracks,
               isMobile: isMobile,
               isDesktop: isDesktop,
               onPressed: onToggleAlwaysOnTop,
+            ),
+          );
+          buttonIndex++;
+        }
+
+        // Fullscreen button (desktop only)
+        if (isDesktop) {
+          final currentIndex = buttonIndex;
+          buttons.add(
+            _buildTrackButton(
+              buttonIndex: currentIndex,
+              icon: isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
+              tooltip: isFullscreen ? t.videoControls.exitFullscreenButton : t.videoControls.fullscreenButton,
+              semanticLabel: isFullscreen ? t.videoControls.exitFullscreenButton : t.videoControls.fullscreenButton,
+              tracks: tracks,
+              isMobile: isMobile,
+              isDesktop: isDesktop,
+              onPressed: onToggleFullscreen,
             ),
           );
         }
@@ -402,8 +411,8 @@ class TrackChapterControls extends StatelessWidget {
     if (onTogglePIPMode != null) count++;
     if (onCycleBoxFitMode != null) count++;
     if (isMobile && !PlatformDetector.isTV()) count++; // Rotation lock (not on TV)
-    if (isDesktop) count++; // Fullscreen
     if (isDesktop && onToggleAlwaysOnTop != null) count++; // Always on top
+    if (isDesktop) count++; // Fullscreen
     return count;
   }
 
