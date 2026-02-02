@@ -5,7 +5,6 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   flutter_webrtc
-  hotkey_manager_windows
   os_media_controls
   screen_retriever_windows
   sqlite3_flutter_libs

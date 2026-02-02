@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hotkey_manager/hotkey_manager.dart';
+import '../models/hotkey_model.dart';
 import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 import 'settings_service.dart';
@@ -91,64 +91,36 @@ class KeyboardShortcutsService {
   String formatHotkey(HotKey? hotKey) {
     if (hotKey == null) return 'No shortcut set';
 
-    final modifiers = <String>[];
-    for (final modifier in hotKey.modifiers ?? []) {
-      switch (modifier) {
-        case HotKeyModifier.alt:
-          modifiers.add('Alt');
-          break;
-        case HotKeyModifier.control:
-          modifiers.add('Ctrl');
-          break;
-        case HotKeyModifier.shift:
-          modifiers.add('Shift');
-          break;
-        case HotKeyModifier.meta:
-          modifiers.add('Meta');
-          break;
-        case HotKeyModifier.capsLock:
-          modifiers.add('CapsLock');
-          break;
-        case HotKeyModifier.fn:
-          modifiers.add('Fn');
-          break;
-      }
-    }
+    final isMac = Platform.isMacOS;
 
-    // Format the key name
-    String keyName = hotKey.key.keyLabel;
-    if (keyName.startsWith('PhysicalKeyboardKey#')) {
-      keyName = keyName.substring(20, keyName.length - 1);
-    }
-    if (keyName.startsWith('key')) {
-      keyName = keyName.substring(3).toUpperCase();
-    }
+    // macOS standard modifier order: ⌃ ⌥ ⇧ ⌘
+    const macModifierLabels = <HotKeyModifier, String>{
+      HotKeyModifier.control: '\u2303',
+      HotKeyModifier.alt: '\u2325',
+      HotKeyModifier.shift: '\u21e7',
+      HotKeyModifier.meta: '\u2318',
+      HotKeyModifier.capsLock: '\u21ea',
+      HotKeyModifier.fn: 'fn',
+    };
 
-    // Special cases for common keys
-    switch (keyName.toLowerCase()) {
-      case 'space':
-        keyName = 'Space';
-        break;
-      case 'arrowup':
-        keyName = 'Arrow Up';
-        break;
-      case 'arrowdown':
-        keyName = 'Arrow Down';
-        break;
-      case 'arrowleft':
-        keyName = 'Arrow Left';
-        break;
-      case 'arrowright':
-        keyName = 'Arrow Right';
-        break;
-      case 'equal':
-        keyName = 'Plus';
-        break;
-      case 'minus':
-        keyName = 'Minus';
-        break;
-    }
+    const defaultModifierLabels = <HotKeyModifier, String>{
+      HotKeyModifier.alt: 'Alt',
+      HotKeyModifier.control: 'Ctrl',
+      HotKeyModifier.shift: 'Shift',
+      HotKeyModifier.meta: 'Meta',
+      HotKeyModifier.capsLock: 'CapsLock',
+      HotKeyModifier.fn: 'Fn',
+    };
 
+    final labels = isMac ? macModifierLabels : defaultModifierLabels;
+    final modifiers = (hotKey.modifiers ?? []).map((m) => labels[m] ?? m.name).toList();
+
+    // The key label already uses macOS symbols via physicalKeyLabel()
+    final keyName = physicalKeyLabel(hotKey.key);
+
+    if (isMac) {
+      return [...modifiers, keyName].join();
+    }
     return modifiers.isEmpty ? keyName : '${modifiers.join(' + ')} + $keyName';
   }
 

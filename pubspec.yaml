@@ -21,7 +21,6 @@ dependencies:
   package_info_plus: ^9.0.0
   device_info_plus: ^11.0.0
   provider: ^6.1.2
-  hotkey_manager: ^0.2.3
   flex_color_picker: ^3.6.0
   qr_flutter: ^4.1.0
   slang: ^4.12.0

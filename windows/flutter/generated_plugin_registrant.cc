@@ -8,7 +8,6 @@
 
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
 #include <flutter_webrtc/flutter_web_r_t_c_plugin.h>
-#include <hotkey_manager_windows/hotkey_manager_windows_plugin_c_api.h>
 #include <os_media_controls/os_media_controls_plugin_c_api.h>
 #include <screen_retriever_windows/screen_retriever_windows_plugin_c_api.h>
 #include <sqlite3_flutter_libs/sqlite3_flutter_libs_plugin.h>
@@ -21,8 +20,6 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("ConnectivityPlusWindowsPlugin"));
   FlutterWebRTCPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterWebRTCPlugin"));
-  HotkeyManagerWindowsPluginCApiRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("HotkeyManagerWindowsPluginCApi"));
   OsMediaControlsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("OsMediaControlsPluginCApi"));
   ScreenRetrieverWindowsPluginCApiRegisterWithRegistrar(

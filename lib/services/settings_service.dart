@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:hotkey_manager/hotkey_manager.dart';
+import '../models/hotkey_model.dart';
 import 'package:plezy/utils/app_logger.dart';
 import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
@@ -517,8 +517,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   Map<String, dynamic> _serializeHotKey(HotKey hotKey) {
     // Use USB HID code for reliable serialization across debug/release modes
-    final physicalKey = hotKey.key as PhysicalKeyboardKey;
-    final usbHidCode = physicalKey.usbHidUsage.toRadixString(16).padLeft(8, '0');
+    final usbHidCode = hotKey.key.usbHidUsage.toRadixString(16).padLeft(8, '0');
     return {'key': usbHidCode, 'modifiers': hotKey.modifiers?.map((m) => m.name).toList() ?? []};
   }
 
