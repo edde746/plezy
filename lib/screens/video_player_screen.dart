@@ -708,8 +708,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _loadAdjacentEpisodes() async {
     if (!mounted) return;
 
-    // Skip loading adjacent episodes in offline mode (requires server connection)
-    if (widget.isOffline) return;
+    if (widget.isOffline) {
+      // Offline mode: find next/previous from downloaded episodes
+      _loadAdjacentEpisodesOffline();
+      return;
+    }
 
     try {
       // Use server-specific client for this metadata
@@ -731,6 +734,45 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     } catch (e) {
       // Non-critical: Failed to load next/previous episode metadata
       appLogger.d('Could not load adjacent episodes', error: e);
+    }
+  }
+
+  /// Load next/previous episodes from locally downloaded content
+  void _loadAdjacentEpisodesOffline() {
+    if (!widget.metadata.isEpisode) return;
+
+    final showKey = widget.metadata.grandparentRatingKey;
+    if (showKey == null) return;
+
+    try {
+      final downloadProvider = context.read<DownloadProvider>();
+      final episodes = downloadProvider.getDownloadedEpisodesForShow(showKey);
+
+      if (episodes.isEmpty) return;
+
+      // Sort by season then episode number
+      final sorted = List<PlexMetadata>.from(episodes)
+        ..sort((a, b) {
+          final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
+          if (seasonCmp != 0) return seasonCmp;
+          return (a.index ?? 0).compareTo(b.index ?? 0);
+        });
+
+      // Find current episode in the sorted list
+      final currentIdx = sorted.indexWhere(
+        (ep) => ep.ratingKey == widget.metadata.ratingKey,
+      );
+
+      if (currentIdx == -1) return;
+
+      if (mounted) {
+        setState(() {
+          _previousEpisode = currentIdx > 0 ? sorted[currentIdx - 1] : null;
+          _nextEpisode = currentIdx < sorted.length - 1 ? sorted[currentIdx + 1] : null;
+        });
+      }
+    } catch (e) {
+      appLogger.d('Could not load offline adjacent episodes', error: e);
     }
   }
 
@@ -765,8 +807,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // This causes other media apps (Spotify, podcasts, etc.) to pause
         await player!.requestAudioFocus();
 
-        // Pass resume position if available
-        final resumePosition = widget.metadata.viewOffset != null
+        // Pass resume position if available.
+        // In offline mode, prefer locally tracked progress over the cached server value
+        // since the user may have watched further since downloading.
+        Duration? resumePosition;
+        if (widget.isOffline) {
+          final offlineWatchService = context.read<OfflineWatchSyncService>();
+          final globalKey = '${widget.metadata.serverId}:${widget.metadata.ratingKey}';
+          final localOffset = await offlineWatchService.getLocalViewOffset(globalKey);
+          if (localOffset != null && localOffset > 0) {
+            resumePosition = Duration(milliseconds: localOffset);
+            appLogger.d('Resuming offline playback from local progress: ${localOffset}ms');
+          }
+        }
+        resumePosition ??= widget.metadata.viewOffset != null
             ? Duration(milliseconds: widget.metadata.viewOffset!)
             : null;
 
@@ -1119,7 +1173,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _isExiting.dispose();
     _controlsVisible.dispose();
 
-    // Stop progress tracking and send final state
+    // Stop progress tracking and send final state.
+    // Fire-and-forget: dispose() is synchronous so we can't await, but the
+    // database write is app-level and will typically complete before teardown.
     _progressTracker?.sendProgress('stopped');
     _progressTracker?.stopTracking();
     _progressTracker?.dispose();
@@ -1574,7 +1630,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // If player isn't available, navigate without preserving settings
     if (player == null) {
       if (mounted) {
-        navigateToVideoPlayer(context, metadata: episodeMetadata, usePushReplacement: true);
+        navigateToVideoPlayer(context, metadata: episodeMetadata, usePushReplacement: true, isOffline: widget.isOffline);
       }
       return;
     }
@@ -1584,7 +1640,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (currentPlayer == null) {
       // Player already disposed, navigate without preserving settings
       if (mounted) {
-        navigateToVideoPlayer(context, metadata: episodeMetadata, usePushReplacement: true);
+        navigateToVideoPlayer(context, metadata: episodeMetadata, usePushReplacement: true, isOffline: widget.isOffline);
       }
       return;
     }
@@ -1594,7 +1650,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Pause and stop current playback
     currentPlayer.pause();
-    _progressTracker?.sendProgress('stopped');
+    await _progressTracker?.sendProgress('stopped');
     _progressTracker?.stopTracking();
 
     // Ensure the native player is fully disposed before creating the next one
@@ -1608,6 +1664,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         preferredAudioTrack: currentAudioTrack,
         preferredSubtitleTrack: currentSubtitleTrack,
         usePushReplacement: true,
+        isOffline: widget.isOffline,
       );
     }
   }
@@ -1620,7 +1677,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     try {
       _detachFromWatchTogetherSession();
-      _progressTracker?.sendProgress('stopped');
+      await _progressTracker?.sendProgress('stopped');
       _progressTracker?.stopTracking();
       // Clear frame rate matching before disposing (Android only)
       await _clearFrameRateMatching();
