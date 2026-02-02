@@ -1345,6 +1345,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         return '中文';
       case AppLocale.ko:
         return '한국어';
+      case AppLocale.es:
+        return 'Español';
     }
   }
 
