@@ -372,6 +372,10 @@ class _TranslationsMediaMenuSv implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Gå till säsong';
 	@override String get shufflePlay => 'Blanda uppspelning';
 	@override String get fileInfo => 'Filinformation';
+	@override String get confirmDelete => 'Är du säker på att du vill ta bort detta objekt från ditt filsystem?';
+	@override String get deleteMultipleWarning => 'Flera objekt kan komma att tas bort.';
+	@override String get mediaDeletedSuccessfully => 'Mediaobjekt borttaget';
+	@override String get mediaFailedToDelete => 'Kunde inte ta bort mediaobjekt';
 }
 
 // Path: accessibility
@@ -1206,6 +1210,10 @@ extension on TranslationsSv {
 			'mediaMenu.goToSeason' => 'Gå till säsong',
 			'mediaMenu.shufflePlay' => 'Blanda uppspelning',
 			'mediaMenu.fileInfo' => 'Filinformation',
+			'mediaMenu.confirmDelete' => 'Är du säker på att du vill ta bort detta objekt från ditt filsystem?',
+			'mediaMenu.deleteMultipleWarning' => 'Flera objekt kan komma att tas bort.',
+			'mediaMenu.mediaDeletedSuccessfully' => 'Mediaobjekt borttaget',
+			'mediaMenu.mediaFailedToDelete' => 'Kunde inte ta bort mediaobjekt',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1494,12 +1502,12 @@ extension on TranslationsSv {
 			'collections.selectCollection' => 'Välj samling',
 			'collections.createNewCollection' => 'Skapa ny samling',
 			'collections.collectionName' => 'Samlingsnamn',
+			_ => null,
+		} ?? switch (path) {
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
 			'collections.addedToCollection' => 'Tillagd i samling',
 			'collections.errorAddingToCollection' => 'Fel vid tillägg i samling',
 			'collections.created' => 'Samling skapad',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removeFromCollection' => 'Ta bort från samling',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
 			'collections.removedFromCollection' => 'Borttagen från samling',

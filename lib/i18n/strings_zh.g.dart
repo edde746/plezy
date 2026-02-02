@@ -372,6 +372,10 @@ class _TranslationsMediaMenuZh implements TranslationsMediaMenuEn {
 	@override String get goToSeason => '转到季';
 	@override String get shufflePlay => '随机播放';
 	@override String get fileInfo => '文件信息';
+	@override String get confirmDelete => '确定要从文件系统中删除此项吗？';
+	@override String get deleteMultipleWarning => '可能会删除多个项目。';
+	@override String get mediaDeletedSuccessfully => '媒体项已成功删除';
+	@override String get mediaFailedToDelete => '删除媒体项失败';
 }
 
 // Path: accessibility
@@ -1206,6 +1210,10 @@ extension on TranslationsZh {
 			'mediaMenu.goToSeason' => '转到季',
 			'mediaMenu.shufflePlay' => '随机播放',
 			'mediaMenu.fileInfo' => '文件信息',
+			'mediaMenu.confirmDelete' => '确定要从文件系统中删除此项吗？',
+			'mediaMenu.deleteMultipleWarning' => '可能会删除多个项目。',
+			'mediaMenu.mediaDeletedSuccessfully' => '媒体项已成功删除',
+			'mediaMenu.mediaFailedToDelete' => '删除媒体项失败',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1494,12 +1502,12 @@ extension on TranslationsZh {
 			'collections.selectCollection' => '选择合集',
 			'collections.createNewCollection' => '创建新合集',
 			'collections.collectionName' => '合集名称',
+			_ => null,
+		} ?? switch (path) {
 			'collections.enterCollectionName' => '输入合集名称',
 			'collections.addedToCollection' => '已添加到合集',
 			'collections.errorAddingToCollection' => '添加到合集失败',
 			'collections.created' => '已创建合集',
-			_ => null,
-		} ?? switch (path) {
 			'collections.removeFromCollection' => '从合集移除',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '将“${title}”从此合集移除？',
 			'collections.removedFromCollection' => '已从合集移除',

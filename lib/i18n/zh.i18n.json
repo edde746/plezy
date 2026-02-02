@@ -241,7 +241,11 @@
     "goToSeries": "转到系列",
     "goToSeason": "转到季",
     "shufflePlay": "随机播放",
-    "fileInfo": "文件信息"
+    "fileInfo": "文件信息",
+    "confirmDelete": "确定要从文件系统中删除此项吗？",
+    "deleteMultipleWarning": "可能会删除多个项目。",
+    "mediaDeletedSuccessfully": "媒体项已成功删除",
+    "mediaFailedToDelete": "删除媒体项失败"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, 电影",

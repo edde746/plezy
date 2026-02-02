@@ -240,7 +240,11 @@
     "goToSeries": "Aller à la série",
     "goToSeason": "Aller à la saison",
     "shufflePlay": "Lecture aléatoire",
-    "fileInfo": "Informations sur le fichier"
+    "fileInfo": "Informations sur le fichier",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet élément de votre système de fichiers?",
+    "deleteMultipleWarning": "Plusieurs éléments peuvent être supprimés.",
+    "mediaDeletedSuccessfully": "Élément média supprimé avec succès",
+    "mediaFailedToDelete": "Échec de la suppression de l'élément média"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, film",

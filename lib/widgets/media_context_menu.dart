@@ -31,8 +31,9 @@ class _MenuAction {
   final String value;
   final IconData icon;
   final String label;
+  final Color? hoverColor;
 
-  _MenuAction({required this.value, required this.icon, required this.label});
+  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor});
 }
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
@@ -244,6 +245,21 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           mediaType == PlexMediaType.season) {
         menuActions.add(_MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo));
       }
+
+      // Delete media item (for episodes, movies, shows, and seasons)
+      if (mediaType == PlexMediaType.episode ||
+          mediaType == PlexMediaType.movie ||
+          mediaType == PlexMediaType.show ||
+          mediaType == PlexMediaType.season) {
+        menuActions.add(
+          _MenuAction(
+            value: 'delete_media',
+            icon: Symbols.delete_rounded,
+            label: t.common.delete,
+            hoverColor: Colors.red,
+          ),
+        );
+      }
     } // End of regular menu items else block
 
     String? selected;
@@ -410,6 +426,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'delete_download':
           await _handleDeleteDownload(context);
+          break;
+
+        case 'delete_media':
+          await _handleDeleteMediaItem(context, mediaType);
           break;
       }
     } finally {
@@ -1028,6 +1048,42 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
+  /// Handle delete media item action
+  /// This permanently removes the media item and its associated files from the server
+  Future<void> _handleDeleteMediaItem(BuildContext context, PlexMediaType? mediaType) async {
+    final metadata = widget.item as PlexMetadata;
+    final isMultipleMediaItems = mediaType == PlexMediaType.show || mediaType == PlexMediaType.season;
+
+    // Show confirmation dialog
+    final confirmed = await showDeleteConfirmation(
+      context,
+      title: t.common.delete,
+      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? "\n${t.mediaMenu.deleteMultipleWarning}" : ""}",
+    );
+
+    if (!confirmed || !context.mounted) return;
+
+    try {
+      final client = _getClientForItem();
+      final success = await client.deleteMediaItem(metadata.ratingKey);
+
+      if (context.mounted) {
+        if (success) {
+          showSuccessSnackBar(context, t.mediaMenu.mediaDeletedSuccessfully);
+          // Trigger list refresh to remove the item from the view
+          widget.onListRefresh?.call();
+        } else {
+          showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
+        }
+      }
+    } catch (e) {
+      appLogger.e(t.mediaMenu.mediaFailedToDelete, error: e);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -1187,6 +1243,7 @@ class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> 
                         leading: AppIcon(action.icon, fill: 1),
                         title: Text(action.label),
                         onTap: () => Navigator.pop(context, action.value),
+                        hoverColor: action.hoverColor,
                       );
                     }),
                   ],
@@ -1293,6 +1350,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
                       leading: AppIcon(action.icon, fill: 1, size: 20),
                       title: Text(action.label),
                       onTap: () => Navigator.pop(context, action.value),
+                      hoverColor: action.hoverColor,
                     );
                   }).toList(),
                 ),

@@ -371,6 +371,10 @@ class _TranslationsMediaMenuFr implements TranslationsMediaMenuEn {
 	@override String get goToSeason => 'Aller à la saison';
 	@override String get shufflePlay => 'Lecture aléatoire';
 	@override String get fileInfo => 'Informations sur le fichier';
+	@override String get confirmDelete => 'Êtes-vous sûr de vouloir supprimer cet élément de votre système de fichiers?';
+	@override String get deleteMultipleWarning => 'Plusieurs éléments peuvent être supprimés.';
+	@override String get mediaDeletedSuccessfully => 'Élément média supprimé avec succès';
+	@override String get mediaFailedToDelete => 'Échec de la suppression de l\'élément média';
 }
 
 // Path: accessibility
@@ -1203,6 +1207,10 @@ extension on TranslationsFr {
 			'mediaMenu.goToSeason' => 'Aller à la saison',
 			'mediaMenu.shufflePlay' => 'Lecture aléatoire',
 			'mediaMenu.fileInfo' => 'Informations sur le fichier',
+			'mediaMenu.confirmDelete' => 'Êtes-vous sûr de vouloir supprimer cet élément de votre système de fichiers?',
+			'mediaMenu.deleteMultipleWarning' => 'Plusieurs éléments peuvent être supprimés.',
+			'mediaMenu.mediaDeletedSuccessfully' => 'Élément média supprimé avec succès',
+			'mediaMenu.mediaFailedToDelete' => 'Échec de la suppression de l\'élément média',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, show TV',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -1492,12 +1500,12 @@ extension on TranslationsFr {
 			'watchTogether.joinSession' => 'Rejoindre la session',
 			'watchTogether.joining' => 'Rejoindre...',
 			'watchTogether.controlMode' => 'Mode de contrôle',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.controlModeQuestion' => 'Qui peut contrôler la lecture ?',
 			'watchTogether.hostOnly' => 'Hôte uniquement',
 			'watchTogether.anyone' => 'N\'importe qui',
 			'watchTogether.hostingSession' => 'Session d\'hébergement',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.inSession' => 'En session',
 			'watchTogether.sessionCode' => 'Code de session',
 			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',

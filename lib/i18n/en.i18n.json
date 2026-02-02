@@ -240,7 +240,11 @@
     "goToSeries": "Go to series",
     "goToSeason": "Go to season",
     "shufflePlay": "Shuffle Play",
-    "fileInfo": "File Info"
+    "fileInfo": "File Info",
+    "confirmDelete": "Are you sure you want to delete this item from your filesystem?",
+    "deleteMultipleWarning": "Multiple items may be deleted.",
+    "mediaDeletedSuccessfully": "Media item deleted successfully",
+    "mediaFailedToDelete": "Failed to delete media item"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, movie",

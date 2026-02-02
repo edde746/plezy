@@ -241,7 +241,11 @@
     "goToSeries": "Zur Serie",
     "goToSeason": "Zur Staffel",
     "shufflePlay": "Zufallswiedergabe",
-    "fileInfo": "Dateiinfo"
+    "fileInfo": "Dateiinfo",
+    "confirmDelete": "Sind Sie sicher, dass Sie dieses Element aus Ihrem Dateisystem löschen möchten?",
+    "deleteMultipleWarning": "Mehrere Elemente können gelöscht werden.",
+    "mediaDeletedSuccessfully": "Medienelement erfolgreich gelöscht",
+    "mediaFailedToDelete": "Löschen des Medienelements fehlgeschlagen"
   },
   "accessibility": {
     "mediaCardMovie": "${title}, Film",

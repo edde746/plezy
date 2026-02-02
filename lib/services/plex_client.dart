@@ -1095,6 +1095,13 @@ class PlexClient {
     await _dio.put('/actions/removeFromContinueWatching', queryParameters: {'ratingKey': ratingKey});
   }
 
+  /// Delete a media item from the library
+  /// This permanently removes the item and its associated files from the server
+  /// Returns true if deletion was successful, false otherwise
+  Future<bool> deleteMediaItem(String ratingKey) async {
+    return _wrapBoolApiCall(() => _dio.delete('/library/metadata/$ratingKey'), 'Failed to delete media item');
+  }
+
   /// Get server preferences
   Future<Map<String, dynamic>> getServerPreferences() async {
     final response = await _dio.get('/:/prefs');

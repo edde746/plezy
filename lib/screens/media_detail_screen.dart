@@ -934,6 +934,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                       _watchStateChanged = true;
                       _updateWatchState();
                     },
+                    onListRefresh: () {
+                      if (widget.isOffline) {
+                        _loadSeasonsFromDownloads();
+                      } else {
+                        _loadSeasons();
+                      }
+                    },
                   ),
                 ),
               );
@@ -968,6 +975,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
           onRefresh: () {
             _watchStateChanged = true;
             _updateWatchState();
+          },
+          onListRefresh: () {
+            if (widget.isOffline) {
+              _loadSeasonsFromDownloads();
+            } else {
+              _loadSeasons();
+            }
           },
         );
       },
@@ -1589,11 +1603,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                     ),
                   ),
                 ),
-                SliverPadding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).padding.bottom,
-                  ),
-                ),
+                SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom)),
               ],
             ),
             // Sticky top bar with fading background
@@ -1717,6 +1727,7 @@ class _SeasonCard extends StatefulWidget {
   final PlexClient? client;
   final VoidCallback onTap;
   final VoidCallback onRefresh;
+  final VoidCallback? onListRefresh;
   final bool isOffline;
   final String? localPosterPath;
 
@@ -1725,6 +1736,7 @@ class _SeasonCard extends StatefulWidget {
     this.client,
     required this.onTap,
     required this.onRefresh,
+    this.onListRefresh,
     this.isOffline = false,
     this.localPosterPath,
   });
@@ -1753,6 +1765,7 @@ class _SeasonCardState extends State<_SeasonCard> {
           key: _contextMenuKey,
           item: widget.season,
           onRefresh: (ratingKey) => widget.onRefresh(),
+          onListRefresh: widget.onListRefresh,
           onTap: widget.onTap,
           child: Semantics(
             label: "media-season-${widget.season.ratingKey}",
