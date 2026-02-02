@@ -31,10 +31,9 @@ class _MenuAction {
   final String value;
   final IconData icon;
   final String label;
-  final PlexMediaType? mediaType;
   final Color? hoverColor;
 
-  _MenuAction({required this.value, required this.icon, required this.label, this.mediaType, this.hoverColor});
+  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor});
 }
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
@@ -257,7 +256,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             value: 'delete_media',
             icon: Symbols.delete_rounded,
             label: t.common.delete,
-            mediaType: mediaType,
             hoverColor: Colors.red,
           ),
         );
@@ -1053,7 +1051,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Handle delete media item action
   /// This permanently removes the media item and its associated files from the server
   Future<void> _handleDeleteMediaItem(BuildContext context, PlexMediaType? mediaType) async {
-    final client = _getClientForItem();
     final metadata = widget.item as PlexMetadata;
     final isMultipleMediaItems = mediaType == PlexMediaType.show || mediaType == PlexMediaType.season;
 
@@ -1061,12 +1058,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.common.delete,
-      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? " ${t.mediaMenu.deleteMultipleWarning}" : ""}",
+      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? "\n${t.mediaMenu.deleteMultipleWarning}" : ""}",
     );
 
     if (!confirmed || !context.mounted) return;
 
     try {
+      final client = _getClientForItem();
       final success = await client.deleteMediaItem(metadata.ratingKey);
 
       if (context.mounted) {
@@ -1081,7 +1079,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       appLogger.e(t.mediaMenu.mediaFailedToDelete, error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+        showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
       }
     }
   }
