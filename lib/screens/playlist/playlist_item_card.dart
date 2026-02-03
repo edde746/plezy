@@ -85,15 +85,20 @@ class PlaylistItemCard extends StatelessWidget {
                     child: ReorderableDragStartListener(
                       index: index,
                       child: Container(
-                        padding: const EdgeInsets.all(8),
-                        margin: const EdgeInsets.only(right: 4),
-                        decoration: isDragHandleFocused
-                            ? BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(8))
-                            : null,
-                        child: AppIcon(
-                          isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
-                          fill: 1,
-                          color: (isMoving || isDragHandleFocused) ? colorScheme.primary : Colors.grey,
+                        color: Colors.transparent,
+                        height: 90,
+                        padding: const EdgeInsets.only(right: 4),
+                        alignment: Alignment.center,
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(2, 8, 6, 8),
+                          decoration: isDragHandleFocused
+                              ? BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(8))
+                              : null,
+                          child: AppIcon(
+                            isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
+                            fill: 1,
+                            color: (isMoving || isDragHandleFocused) ? colorScheme.primary : Colors.grey,
+                          ),
                         ),
                       ),
                     ),
