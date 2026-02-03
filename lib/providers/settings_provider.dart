@@ -11,6 +11,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _useGlobalHubs = true;
   bool _showServerNameOnHubs = false;
   bool _alwaysKeepSidebarOpen = false;
+  bool _showUnwatchedCount = true;
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
@@ -34,6 +35,7 @@ class SettingsProvider extends ChangeNotifier {
     _useGlobalHubs = _settingsService!.getUseGlobalHubs();
     _showServerNameOnHubs = _settingsService!.getShowServerNameOnHubs();
     _alwaysKeepSidebarOpen = _settingsService!.getAlwaysKeepSidebarOpen();
+    _showUnwatchedCount = _settingsService!.getShowUnwatchedCount();
     _isInitialized = true;
     notifyListeners();
   }
@@ -54,6 +56,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get showServerNameOnHubs => _showServerNameOnHubs;
 
   bool get alwaysKeepSidebarOpen => _alwaysKeepSidebarOpen;
+
+  bool get showUnwatchedCount => _showUnwatchedCount;
 
   Future<void> setLibraryDensity(LibraryDensity density) async {
     if (!_isInitialized) await _initializeSettings();
@@ -114,6 +118,15 @@ class SettingsProvider extends ChangeNotifier {
     if (_alwaysKeepSidebarOpen != value) {
       _alwaysKeepSidebarOpen = value;
       await _settingsService!.setAlwaysKeepSidebarOpen(value);
+      notifyListeners();
+    }
+  }
+
+  Future<void> setShowUnwatchedCount(bool value) async {
+    if (!_isInitialized) await _initializeSettings();
+    if (_showUnwatchedCount != value) {
+      _showUnwatchedCount = value;
+      await _settingsService!.setShowUnwatchedCount(value);
       notifyListeners();
     }
   }

@@ -99,6 +99,8 @@
     "showServerNameOnHubsDescription": "Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.",
     "alwaysKeepSidebarOpen": "Håll sidofältet alltid öppet",
     "alwaysKeepSidebarOpenDescription": "Sidofältet förblir expanderat och innehållsytan anpassas",
+    "showUnwatchedCount": "Visa antal osedda",
+    "showUnwatchedCountDescription": "Visa antal osedda avsnitt för serier och säsonger",
     "playerBackend": "Spelarmotor",
     "exoPlayer": "ExoPlayer (Rekommenderad)",
     "exoPlayerDescription": "Android-nativ spelare med bättre hårdvarustöd",

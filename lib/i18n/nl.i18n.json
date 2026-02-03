@@ -99,6 +99,8 @@
     "showServerNameOnHubsDescription": "Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.",
     "alwaysKeepSidebarOpen": "Zijbalk altijd open houden",
     "alwaysKeepSidebarOpenDescription": "Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan",
+    "showUnwatchedCount": "Aantal ongekeken tonen",
+    "showUnwatchedCountDescription": "Toon aantal ongekeken afleveringen bij series en seizoenen",
     "playerBackend": "Speler backend",
     "exoPlayer": "ExoPlayer (Aanbevolen)",
     "exoPlayerDescription": "Android-native speler met betere hardware-ondersteuning",

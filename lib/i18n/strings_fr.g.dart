@@ -212,6 +212,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get showServerNameOnHubsDescription => 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.';
 	@override String get alwaysKeepSidebarOpen => 'Toujours garder la barre latérale ouverte';
 	@override String get alwaysKeepSidebarOpenDescription => 'La barre latérale reste étendue et la zone de contenu s\'adapte';
+	@override String get showUnwatchedCount => 'Afficher le nombre non visionné';
+	@override String get showUnwatchedCountDescription => 'Afficher le nombre d\'épisodes non visionnés pour les séries et saisons';
 	@override String get playerBackend => 'Moteur de lecture';
 	@override String get exoPlayer => 'ExoPlayer (Recommandé)';
 	@override String get exoPlayerDescription => 'Lecteur natif Android avec meilleur support matériel';
@@ -1076,6 +1078,8 @@ extension on TranslationsFr {
 			'settings.showServerNameOnHubsDescription' => 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.',
 			'settings.alwaysKeepSidebarOpen' => 'Toujours garder la barre latérale ouverte',
 			'settings.alwaysKeepSidebarOpenDescription' => 'La barre latérale reste étendue et la zone de contenu s\'adapte',
+			'settings.showUnwatchedCount' => 'Afficher le nombre non visionné',
+			'settings.showUnwatchedCountDescription' => 'Afficher le nombre d\'épisodes non visionnés pour les séries et saisons',
 			'settings.playerBackend' => 'Moteur de lecture',
 			'settings.exoPlayer' => 'ExoPlayer (Recommandé)',
 			'settings.exoPlayerDescription' => 'Lecteur natif Android avec meilleur support matériel',
@@ -1498,10 +1502,10 @@ extension on TranslationsFr {
 			'watchTogether.createSession' => 'Créer une session',
 			'watchTogether.creating' => 'Création...',
 			'watchTogether.joinSession' => 'Rejoindre la session',
-			'watchTogether.joining' => 'Rejoindre...',
-			'watchTogether.controlMode' => 'Mode de contrôle',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joining' => 'Rejoindre...',
+			'watchTogether.controlMode' => 'Mode de contrôle',
 			'watchTogether.controlModeQuestion' => 'Qui peut contrôler la lecture ?',
 			'watchTogether.hostOnly' => 'Hôte uniquement',
 			'watchTogether.anyone' => 'N\'importe qui',

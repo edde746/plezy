@@ -212,6 +212,8 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get showServerNameOnHubsDescription => 'Mostrar siempre el nombre del servidor en los títulos de los hubs. Cuando está desactivado, solo se muestra para nombres de hubs duplicados.';
 	@override String get alwaysKeepSidebarOpen => 'Mantener siempre la barra lateral abierta';
 	@override String get alwaysKeepSidebarOpenDescription => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse';
+	@override String get showUnwatchedCount => 'Mostrar conteo de no vistos';
+	@override String get showUnwatchedCountDescription => 'Mostrar el conteo de episodios no vistos en series y temporadas';
 	@override String get playerBackend => 'Reproductor';
 	@override String get exoPlayer => 'ExoPlayer (Recomendado)';
 	@override String get exoPlayerDescription => 'Reproductor nativo de Android con mejor soporte de hardware';
@@ -1076,6 +1078,8 @@ extension on TranslationsEs {
 			'settings.showServerNameOnHubsDescription' => 'Mostrar siempre el nombre del servidor en los títulos de los hubs. Cuando está desactivado, solo se muestra para nombres de hubs duplicados.',
 			'settings.alwaysKeepSidebarOpen' => 'Mantener siempre la barra lateral abierta',
 			'settings.alwaysKeepSidebarOpenDescription' => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse',
+			'settings.showUnwatchedCount' => 'Mostrar conteo de no vistos',
+			'settings.showUnwatchedCountDescription' => 'Mostrar el conteo de episodios no vistos en series y temporadas',
 			'settings.playerBackend' => 'Reproductor',
 			'settings.exoPlayer' => 'ExoPlayer (Recomendado)',
 			'settings.exoPlayerDescription' => 'Reproductor nativo de Android con mejor soporte de hardware',
@@ -1498,10 +1502,10 @@ extension on TranslationsEs {
 			'watchTogether.createSession' => 'Crear Sesión',
 			'watchTogether.creating' => 'Creando...',
 			'watchTogether.joinSession' => 'Unirse a Sesión',
-			'watchTogether.joining' => 'Uniendo...',
-			'watchTogether.controlMode' => 'Modo de Control',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joining' => 'Uniendo...',
+			'watchTogether.controlMode' => 'Modo de Control',
 			'watchTogether.controlModeQuestion' => '¿Quién puede controlar la reproducción?',
 			'watchTogether.hostOnly' => 'Solo el Anfitrión',
 			'watchTogether.anyone' => 'Cualquiera',

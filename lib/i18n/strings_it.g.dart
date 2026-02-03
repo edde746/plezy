@@ -213,6 +213,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get showServerNameOnHubsDescription => 'Mostra sempre il nome del server nei titoli degli hub. Se disattivato, solo per nomi hub duplicati.';
 	@override String get alwaysKeepSidebarOpen => 'Mantieni sempre aperta la barra laterale';
 	@override String get alwaysKeepSidebarOpenDescription => 'La barra laterale rimane espansa e l\'area del contenuto si adatta';
+	@override String get showUnwatchedCount => 'Mostra conteggio non visti';
+	@override String get showUnwatchedCountDescription => 'Mostra il numero di episodi non visti per serie e stagioni';
 	@override String get playerBackend => 'Motore di riproduzione';
 	@override String get exoPlayer => 'ExoPlayer (Consigliato)';
 	@override String get exoPlayerDescription => 'Lettore nativo Android con migliore supporto hardware';
@@ -1079,6 +1081,8 @@ extension on TranslationsIt {
 			'settings.showServerNameOnHubsDescription' => 'Mostra sempre il nome del server nei titoli degli hub. Se disattivato, solo per nomi hub duplicati.',
 			'settings.alwaysKeepSidebarOpen' => 'Mantieni sempre aperta la barra laterale',
 			'settings.alwaysKeepSidebarOpenDescription' => 'La barra laterale rimane espansa e l\'area del contenuto si adatta',
+			'settings.showUnwatchedCount' => 'Mostra conteggio non visti',
+			'settings.showUnwatchedCountDescription' => 'Mostra il numero di episodi non visti per serie e stagioni',
 			'settings.playerBackend' => 'Motore di riproduzione',
 			'settings.exoPlayer' => 'ExoPlayer (Consigliato)',
 			'settings.exoPlayerDescription' => 'Lettore nativo Android con migliore supporto hardware',
@@ -1500,10 +1504,10 @@ extension on TranslationsIt {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Impossibile eliminare la raccolta: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Impossibile caricare gli elementi della raccolta: ${error}',
 			'collections.selectCollection' => 'Seleziona raccolta',
-			'collections.createNewCollection' => 'Crea nuova raccolta',
-			'collections.collectionName' => 'Nome raccolta',
 			_ => null,
 		} ?? switch (path) {
+			'collections.createNewCollection' => 'Crea nuova raccolta',
+			'collections.collectionName' => 'Nome raccolta',
 			'collections.enterCollectionName' => 'Inserisci nome raccolta',
 			'collections.addedToCollection' => 'Aggiunto alla raccolta',
 			'collections.errorAddingToCollection' => 'Errore nell\'aggiunta alla raccolta',

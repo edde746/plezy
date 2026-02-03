@@ -66,6 +66,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
   static const String _keyUseExoPlayer = 'use_exoplayer';
   static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
+  static const String _keyShowUnwatchedCount = 'show_unwatched_count';
   static const String _keyGlobalShaderPreset = 'global_shader_preset';
 
   SettingsService._();
@@ -1008,6 +1009,15 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyAlwaysKeepSidebarOpen) ?? false; // Default: collapsed
   }
 
+  // Show Unwatched Count (show unwatched episode count on shows/seasons)
+  Future<void> setShowUnwatchedCount(bool enabled) async {
+    await prefs.setBool(_keyShowUnwatchedCount, enabled);
+  }
+
+  bool getShowUnwatchedCount() {
+    return prefs.getBool(_keyShowUnwatchedCount) ?? true; // Default: enabled (show counts)
+  }
+
   // Global Shader Preset (for MPV video enhancement)
   Future<void> setGlobalShaderPreset(String presetId) async {
     await prefs.setString(_keyGlobalShaderPreset, presetId);
@@ -1063,6 +1073,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyAutoPlayNextEpisode),
       prefs.remove(_keyUseExoPlayer),
       prefs.remove(_keyAlwaysKeepSidebarOpen),
+      prefs.remove(_keyShowUnwatchedCount),
       prefs.remove(_keyGlobalShaderPreset),
     ]);
   }

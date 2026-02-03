@@ -213,6 +213,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get showServerNameOnHubsDescription => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.';
 	@override String get alwaysKeepSidebarOpen => '사이드바 항상 열어두기';
 	@override String get alwaysKeepSidebarOpenDescription => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다';
+	@override String get showUnwatchedCount => '미시청 수 표시';
+	@override String get showUnwatchedCountDescription => '시리즈 및 시즌에 미시청 에피소드 수 표시';
 	@override String get playerBackend => '플레이어 백엔드';
 	@override String get exoPlayer => 'ExoPlayer (권장)';
 	@override String get exoPlayerDescription => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어';
@@ -1079,6 +1081,8 @@ extension on TranslationsKo {
 			'settings.showServerNameOnHubsDescription' => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.',
 			'settings.alwaysKeepSidebarOpen' => '사이드바 항상 열어두기',
 			'settings.alwaysKeepSidebarOpenDescription' => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다',
+			'settings.showUnwatchedCount' => '미시청 수 표시',
+			'settings.showUnwatchedCountDescription' => '시리즈 및 시즌에 미시청 에피소드 수 표시',
 			'settings.playerBackend' => '플레이어 백엔드',
 			'settings.exoPlayer' => 'ExoPlayer (권장)',
 			'settings.exoPlayerDescription' => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어',
@@ -1500,10 +1504,10 @@ extension on TranslationsKo {
 			'watchTogether.title' => '함께 보기',
 			'watchTogether.description' => '친구 및 가족과 콘텐츠를 동시에 시청하세요',
 			'watchTogether.createSession' => '세션 생성',
-			'watchTogether.creating' => '생성 중...',
-			'watchTogether.joinSession' => '세션 참여',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.creating' => '생성 중...',
+			'watchTogether.joinSession' => '세션 참여',
 			'watchTogether.joining' => '참가 중...',
 			'watchTogether.controlMode' => '제어 모드',
 			'watchTogether.controlModeQuestion' => '누가 재생을 제어할 수 있나요?',

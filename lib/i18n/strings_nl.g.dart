@@ -213,6 +213,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get showServerNameOnHubsDescription => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.';
 	@override String get alwaysKeepSidebarOpen => 'Zijbalk altijd open houden';
 	@override String get alwaysKeepSidebarOpenDescription => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan';
+	@override String get showUnwatchedCount => 'Aantal ongekeken tonen';
+	@override String get showUnwatchedCountDescription => 'Toon aantal ongekeken afleveringen bij series en seizoenen';
 	@override String get playerBackend => 'Speler backend';
 	@override String get exoPlayer => 'ExoPlayer (Aanbevolen)';
 	@override String get exoPlayerDescription => 'Android-native speler met betere hardware-ondersteuning';
@@ -1079,6 +1081,8 @@ extension on TranslationsNl {
 			'settings.showServerNameOnHubsDescription' => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.',
 			'settings.alwaysKeepSidebarOpen' => 'Zijbalk altijd open houden',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan',
+			'settings.showUnwatchedCount' => 'Aantal ongekeken tonen',
+			'settings.showUnwatchedCountDescription' => 'Toon aantal ongekeken afleveringen bij series en seizoenen',
 			'settings.playerBackend' => 'Speler backend',
 			'settings.exoPlayer' => 'ExoPlayer (Aanbevolen)',
 			'settings.exoPlayerDescription' => 'Android-native speler met betere hardware-ondersteuning',
@@ -1500,10 +1504,10 @@ extension on TranslationsNl {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
 			'collections.selectCollection' => 'Selecteer collectie',
-			'collections.createNewCollection' => 'Nieuwe collectie maken',
-			'collections.collectionName' => 'Collectienaam',
 			_ => null,
 		} ?? switch (path) {
+			'collections.createNewCollection' => 'Nieuwe collectie maken',
+			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer collectienaam in',
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
 			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
