@@ -64,8 +64,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   int? _originalIndex;
   List<PlexMetadata>? _originalOrder;
 
-  // Scroll-into-view keys
-  final Map<int, GlobalKey> _itemKeys = {};
+  // Estimated item height for scroll-into-view (card + vertical margins)
+  static const double _estimatedItemHeight = 114.0;
 
   // App bar focus state
   bool _isAppBarFocused = false;
@@ -356,14 +356,23 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     );
   }
 
-  /// Ensure the focused item is visible in the list
+  /// Ensure the focused item is visible in the list using scroll arithmetic.
+  /// Uses estimated item height instead of per-item GlobalKeys.
   void _ensureFocusedVisible() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final key = _itemKeys[_focusedIndex];
-      final context = key?.currentContext;
-      if (context != null) {
-        Scrollable.ensureVisible(context, alignment: 0.25, duration: const Duration(milliseconds: 200));
+      if (!mounted || !_scrollController.hasClients) return;
+      final targetOffset = _focusedIndex * _estimatedItemHeight;
+      final viewportHeight = _scrollController.position.viewportDimension;
+      final currentOffset = _scrollController.offset;
+
+      // Check if the item is outside the visible area (with some padding)
+      if (targetOffset < currentOffset || targetOffset > currentOffset + viewportHeight - _estimatedItemHeight) {
+        // Scroll so the item sits ~25% from the top of the viewport
+        final scrollTo = (targetOffset - viewportHeight * 0.25).clamp(
+          _scrollController.position.minScrollExtent,
+          _scrollController.position.maxScrollExtent,
+        );
+        _scrollController.animateTo(scrollTo, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
       }
     });
   }
@@ -702,6 +711,61 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   Widget build(BuildContext context) {
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
+    // For regular playlists, wrap the scroll view with the Focus widget
+    // (Focus is a RenderObject widget and cannot directly wrap a sliver)
+    final needsListFocus = !widget.playlist.smart && items.isNotEmpty;
+
+    Widget scrollView = CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        CustomAppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.playlist.title, style: const TextStyle(fontSize: 16)),
+              if (widget.playlist.smart)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Colors.blue[300]),
+                    const SizedBox(width: 4),
+                    Text(
+                      t.playlists.smartPlaylist,
+                      style: TextStyle(fontSize: 11, color: Colors.blue[300], fontWeight: FontWeight.normal),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          actions: _buildFocusableAppBarActions(),
+        ),
+        ...buildStateSlivers(),
+        if (items.isNotEmpty)
+          if (widget.playlist.smart)
+            // Smart playlists: Use focusable grid view (cannot be reordered)
+            _buildSmartPlaylistGrid(isKeyboardMode)
+          else
+            // Regular playlists: Use sliver reorderable list
+            _buildReorderableList(isKeyboardMode),
+      ],
+    );
+
+    if (needsListFocus) {
+      scrollView = Focus(
+        autofocus: isKeyboardMode && !_isAppBarFocused,
+        focusNode: _listFocusNode,
+        onKeyEvent: _handleListKeyEvent,
+        onFocusChange: (hasFocus) {
+          if (hasFocus && mounted) {
+            setState(() {
+              _isAppBarFocused = false;
+            });
+          }
+        },
+        child: scrollView,
+      );
+    }
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -712,42 +776,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           Navigator.pop(context);
         }
       },
-      child: Scaffold(
-        body: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            CustomAppBar(
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.playlist.title, style: const TextStyle(fontSize: 16)),
-                  if (widget.playlist.smart)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Colors.blue[300]),
-                        const SizedBox(width: 4),
-                        Text(
-                          t.playlists.smartPlaylist,
-                          style: TextStyle(fontSize: 11, color: Colors.blue[300], fontWeight: FontWeight.normal),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-              actions: _buildFocusableAppBarActions(),
-            ),
-            ...buildStateSlivers(),
-            if (items.isNotEmpty)
-              if (widget.playlist.smart)
-                // Smart playlists: Use focusable grid view (cannot be reordered)
-                _buildSmartPlaylistGrid(isKeyboardMode)
-              else
-                // Regular playlists: Use reorderable list view with focus
-                _buildReorderableList(isKeyboardMode),
-          ],
-        ),
-      ),
+      child: Scaffold(body: scrollView),
     );
   }
 
@@ -789,49 +818,31 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   /// Build a reorderable list for regular playlists with focus support
   Widget _buildReorderableList(bool isKeyboardMode) {
-    return SliverToBoxAdapter(
-      child: Focus(
-        autofocus: isKeyboardMode && items.isNotEmpty && !_isAppBarFocused,
-        focusNode: _listFocusNode,
-        onKeyEvent: _handleListKeyEvent,
-        onFocusChange: (hasFocus) {
-          // Rebuild when focus changes to update visual indicators
-          if (hasFocus && mounted) {
-            setState(() {
-              _isAppBarFocused = false;
-            });
-          }
-        },
-        child: ReorderableListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          onReorder: _onReorder,
-          buildDefaultDragHandles: false,
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final item = items[index];
-            // Check keyboard mode directly to ensure we get latest value
-            final inKeyboardMode = InputModeTracker.isKeyboardMode(context);
-            final isFocused = inKeyboardMode && index == _focusedIndex && !_isAppBarFocused;
-            final isMoving = index == _movingIndex;
+    return SliverReorderableList(
+      onReorder: _onReorder,
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        // Check keyboard mode directly to ensure we get latest value
+        final inKeyboardMode = InputModeTracker.isKeyboardMode(context);
+        final isFocused = inKeyboardMode && index == _focusedIndex && !_isAppBarFocused;
+        final isMoving = index == _movingIndex;
 
-            _itemKeys.putIfAbsent(index, () => GlobalKey());
-
-            return PlaylistItemCard(
-              key: _itemKeys[index] ?? ValueKey(item.playlistItemID ?? item.ratingKey),
-              item: item,
-              index: index,
-              onRemove: () => _removeItem(index),
-              onTap: () => _playFromItem(index),
-              onRefresh: updateItem,
-              canReorder: !widget.playlist.smart,
-              isFocused: isFocused,
-              focusedColumn: isFocused ? _focusedColumn : null,
-              isMoving: isMoving,
-            );
-          },
-        ),
-      ),
+        return RepaintBoundary(
+          key: ValueKey(item.playlistItemID ?? item.ratingKey),
+          child: PlaylistItemCard(
+            item: item,
+            index: index,
+            onRemove: () => _removeItem(index),
+            onTap: () => _playFromItem(index),
+            onRefresh: updateItem,
+            canReorder: !widget.playlist.smart,
+            isFocused: isFocused,
+            focusedColumn: isFocused ? _focusedColumn : null,
+            isMoving: isMoving,
+          ),
+        );
+      },
     );
   }
 }

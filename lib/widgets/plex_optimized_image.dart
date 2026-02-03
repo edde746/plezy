@@ -219,6 +219,11 @@ class PlexOptimizedImage extends StatelessWidget {
          localFilePath: localFilePath,
        );
 
+  /// Whether both width and height are explicitly set to finite positive values,
+  /// meaning we can skip the LayoutBuilder.
+  bool get _hasKnownDimensions =>
+      width != null && width!.isFinite && width! > 0 && height != null && height!.isFinite && height! > 0;
+
   @override
   Widget build(BuildContext context) {
     // Check for local file first
@@ -237,74 +242,80 @@ class PlexOptimizedImage extends StatelessWidget {
       }
     }
 
-    double resolvedDimension(double? explicit, double constraintMax, double fallback) {
-      // Pick the explicit size when it's a finite positive number, otherwise
-      // fall back to the constraint or a sensible default so we don't end up
-      // with NaN/Infinity when rounding to ints for caching.
-      // When explicit is infinite (double.infinity), prefer the constraint over fallback.
-      if (explicit == null || explicit.isNaN || explicit.isInfinite || explicit <= 0) {
-        if (constraintMax.isFinite && constraintMax > 0) {
-          return constraintMax;
-        }
-        return fallback;
-      }
-      return explicit;
-    }
-
     // Return empty container if no image path
     if (imagePath == null || imagePath!.isEmpty) {
       return _buildFallback(context);
     }
 
+    // Fast path: skip LayoutBuilder when both dimensions are explicitly known
+    if (_hasKnownDimensions) {
+      return _buildCachedImage(context, width!, height!);
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final devicePixelRatio = PlexImageHelper.effectiveDevicePixelRatio(context);
-
-        // Calculate effective constraints with safe fallbacks
-        final effectiveWidth = resolvedDimension(width, constraints.maxWidth, 300.0);
-        final effectiveHeight = resolvedDimension(height, constraints.maxHeight, 450.0);
-
-        // Get optimized image URL
-        final imageUrl = PlexImageHelper.getOptimizedImageUrl(
-          client: client,
-          thumbPath: imagePath,
-          maxWidth: effectiveWidth,
-          maxHeight: effectiveHeight,
-          devicePixelRatio: devicePixelRatio,
-          enableTranscoding: enableTranscoding && PlexImageHelper.shouldTranscode(imagePath),
-          imageType: imageType,
-        );
-
-        if (imageUrl.isEmpty) {
-          return _buildFallback(context);
-        }
-
-        // Calculate memory cache dimensions
-        final scaledWidth = effectiveWidth * devicePixelRatio;
-        final scaledHeight = effectiveHeight * devicePixelRatio;
-        final (memWidth, memHeight) = PlexImageHelper.getMemCacheDimensions(
-          displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
-          displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
-        );
-
-        // Generate cache key if not provided
-        final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl, memWidth, memHeight);
-
-        return CachedNetworkImage(
-          imageUrl: imageUrl,
-          width: width,
-          height: height,
-          fit: fit,
-          filterQuality: filterQuality,
-          alignment: alignment,
-          fadeInDuration: fadeInDuration,
-          memCacheHeight: memHeight,
-          cacheKey: effectiveCacheKey,
-          placeholder: placeholder != null ? placeholder! : (context, url) => _buildPlaceholder(context),
-          errorWidget: errorWidget != null ? errorWidget! : (context, url, error) => _buildErrorWidget(context, error),
-          httpHeaders: {'User-Agent': 'Plezy Flutter Client'},
-        );
+        final effectiveWidth = _resolvedDimension(width, constraints.maxWidth, 300.0);
+        final effectiveHeight = _resolvedDimension(height, constraints.maxHeight, 450.0);
+        return _buildCachedImage(context, effectiveWidth, effectiveHeight);
       },
+    );
+  }
+
+  static double _resolvedDimension(double? explicit, double constraintMax, double fallback) {
+    // Pick the explicit size when it's a finite positive number, otherwise
+    // fall back to the constraint or a sensible default so we don't end up
+    // with NaN/Infinity when rounding to ints for caching.
+    if (explicit == null || explicit.isNaN || explicit.isInfinite || explicit <= 0) {
+      if (constraintMax.isFinite && constraintMax > 0) {
+        return constraintMax;
+      }
+      return fallback;
+    }
+    return explicit;
+  }
+
+  Widget _buildCachedImage(BuildContext context, double effectiveWidth, double effectiveHeight) {
+    final devicePixelRatio = PlexImageHelper.effectiveDevicePixelRatio(context);
+
+    // Get optimized image URL
+    final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+      client: client,
+      thumbPath: imagePath,
+      maxWidth: effectiveWidth,
+      maxHeight: effectiveHeight,
+      devicePixelRatio: devicePixelRatio,
+      enableTranscoding: enableTranscoding && PlexImageHelper.shouldTranscode(imagePath),
+      imageType: imageType,
+    );
+
+    if (imageUrl.isEmpty) {
+      return _buildFallback(context);
+    }
+
+    // Calculate memory cache dimensions
+    final scaledWidth = effectiveWidth * devicePixelRatio;
+    final scaledHeight = effectiveHeight * devicePixelRatio;
+    final (memWidth, memHeight) = PlexImageHelper.getMemCacheDimensions(
+      displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
+      displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
+    );
+
+    // Generate cache key if not provided
+    final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl, memWidth, memHeight);
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      width: width,
+      height: height,
+      fit: fit,
+      filterQuality: filterQuality,
+      alignment: alignment,
+      fadeInDuration: fadeInDuration,
+      memCacheHeight: memHeight,
+      cacheKey: effectiveCacheKey,
+      placeholder: placeholder != null ? placeholder! : (context, url) => _buildPlaceholder(context),
+      errorWidget: errorWidget != null ? errorWidget! : (context, url, error) => _buildErrorWidget(context, error),
+      httpHeaders: {'User-Agent': 'Plezy Flutter Client'},
     );
   }
 
