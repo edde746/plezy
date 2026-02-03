@@ -154,12 +154,6 @@ class PlexImageHelper {
       return '';
     }
 
-    // For art/backgrounds, clear logos, and episode thumbnails, prefer the
-    // original image to avoid any aspect ratio changes from Plex photo transcoding.
-    if (imageType == ImageType.art || imageType == ImageType.logo || imageType == ImageType.thumb) {
-      return client.getThumbnailUrl(basePath);
-    }
-
     final canTranscode = enableTranscoding && shouldTranscode(basePath);
 
     // If marked non-transcodable or transcoding disabled, use the direct thumbnail URL.
@@ -180,9 +174,6 @@ class PlexImageHelper {
       imageType: imageType,
     );
 
-    // For art and logos we only constrain width to preserve native aspect.
-    final useWidthOnly = imageType == ImageType.art || imageType == ImageType.logo;
-
     // For dimensions close to minimum, use original to avoid unnecessary processing
     if (width <= _minTranscodedWidth * 1.2 && height <= _minTranscodedHeight * 1.2) {
       return client.getThumbnailUrl(basePath);
@@ -193,7 +184,7 @@ class PlexImageHelper {
         client: client,
         originalPath: basePath,
         width: width,
-        height: useWidthOnly ? null : height,
+        height: height,
       );
     } catch (e) {
       // Fallback to original URL on any error
