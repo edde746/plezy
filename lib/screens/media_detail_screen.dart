@@ -1283,12 +1283,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                                   // Online - use network image
                                   final client = _getClientForMetadata(context);
                                   final mediaQuery = MediaQuery.of(context);
+                                  final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
                                   final imageUrl = PlexImageHelper.getOptimizedImageUrl(
                                     client: client,
                                     thumbPath: metadata.art,
                                     maxWidth: mediaQuery.size.width,
                                     maxHeight: mediaQuery.size.height * 0.6,
-                                    devicePixelRatio: mediaQuery.devicePixelRatio,
+                                    devicePixelRatio: dpr,
                                     imageType: ImageType.art,
                                   );
 
@@ -1366,7 +1367,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
 
                                         // Online - use network image
                                         final client = _getClientForMetadata(context);
-                                        final dpr = MediaQuery.of(context).devicePixelRatio;
+                                        final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
                                         final logoUrl = PlexImageHelper.getOptimizedImageUrl(
                                           client: client,
                                           thumbPath: metadata.clearLogo,

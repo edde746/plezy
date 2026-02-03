@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'dart:ui';
+import 'package:flutter/widgets.dart';
 import '../services/plex_client.dart';
 import 'plex_url_helper.dart';
 
@@ -30,6 +32,21 @@ class PlexImageHelper {
       roundedWidth.clamp(_minTranscodedWidth, _maxTranscodedWidth),
       roundedHeight.clamp(_minTranscodedHeight, _maxTranscodedHeight),
     );
+  }
+
+  /// Computes an effective device pixel ratio that accounts for displays where
+  /// the platform-reported DPR doesn't reflect the true physical density
+  /// (common on Linux X11 with compositor scaling).
+  static double effectiveDevicePixelRatio(BuildContext context) {
+    final reportedDpr = MediaQuery.of(context).devicePixelRatio;
+    try {
+      final displayWidth = View.of(context).display.size.width;
+      // Scale quality with display resolution: 1920px = baseline (1.0x)
+      final displayBasedDpr = (displayWidth / 1920).clamp(1.0, 3.0);
+      return max(reportedDpr, displayBasedDpr);
+    } catch (_) {
+      return reportedDpr;
+    }
   }
 
   /// Calculates optimal image dimensions based on image type and constraints
@@ -74,9 +91,9 @@ class PlexImageHelper {
         return roundDimensions(size, size);
 
       case ImageType.poster:
-        // For posters, maintain 2:3 aspect ratio
-        final calculatedWidth = min(targetWidth, targetHeight / (2 / 3));
-        final calculatedHeight = calculatedWidth * (2 / 3);
+        // For posters, maintain 2:3 aspect ratio (width:height)
+        final calculatedWidth = min(targetWidth, targetHeight * (2 / 3));
+        final calculatedHeight = calculatedWidth * (3 / 2);
         return roundDimensions(calculatedWidth, calculatedHeight);
     }
   }

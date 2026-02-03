@@ -1375,12 +1375,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       builder: (context) {
                         final client = _getClientForItem(heroItem);
                         final mediaQuery = MediaQuery.of(context);
+                        final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
                         final imageUrl = PlexImageHelper.getOptimizedImageUrl(
                           client: client,
                           thumbPath: heroItem.art ?? heroItem.grandparentArt,
                           maxWidth: mediaQuery.size.width,
                           maxHeight: mediaQuery.size.height * 0.7,
-                          devicePixelRatio: mediaQuery.devicePixelRatio,
+                          devicePixelRatio: dpr,
                           imageType: ImageType.art,
                         );
 
@@ -1442,7 +1443,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         child: Builder(
                           builder: (context) {
                             final client = _getClientForItem(heroItem);
-                            final dpr = MediaQuery.of(context).devicePixelRatio;
+                            final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
                             final logoUrl = PlexImageHelper.getOptimizedImageUrl(
                               client: client,
                               thumbPath: heroItem.clearLogo,
