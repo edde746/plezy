@@ -144,14 +144,22 @@ class WatchTogetherSyncManager {
   void initializeParticipants(List<String> peerIds) {
     for (final peerId in peerIds) {
       if (peerId != _peerService.myPeerId) {
-        // Assume they're buffering until they tell us otherwise
-        _participantBuffering[peerId] = true;
-        // They're not ready until they send playerReady
-        _participantReady[peerId] = false;
+        if (_session.isHost) {
+          // Host waits for each peer to load their video before allowing play.
+          _participantBuffering[peerId] = true;
+          _participantReady[peerId] = false;
+        } else {
+          // Guests use optimistic defaults — the host coordinates readiness
+          // and will broadcast pause/play as needed. Pessimistic defaults
+          // cause a deadlock because the host's playerReady/buffering
+          // messages arrive before the sync manager subscribes.
+          _participantBuffering[peerId] = false;
+          _participantReady[peerId] = true;
+        }
       }
     }
     final otherCount = peerIds.where((id) => id != _peerService.myPeerId).length;
-    appLogger.d('WatchTogether: Initialized $otherCount existing participants');
+    appLogger.d('WatchTogether: Initialized $otherCount existing participants (host=${_session.isHost})');
   }
 
   /// Detach the player and stop sync
@@ -637,10 +645,16 @@ class WatchTogetherSyncManager {
   void _handlePeerJoin(SyncMessage message) {
     appLogger.d('WatchTogether: Peer joined: ${message.displayName}');
 
-    // Assume new peer is buffering and not ready until they explicitly signal
     if (message.peerId != null) {
-      _participantBuffering[message.peerId!] = true;
-      _participantReady[message.peerId!] = false;
+      if (_session.isHost) {
+        // Host waits for new peer to load their video before allowing play.
+        _participantBuffering[message.peerId!] = true;
+        _participantReady[message.peerId!] = false;
+      } else if (!_participantBuffering.containsKey(message.peerId!)) {
+        // Guests use optimistic defaults for peers they haven't seen yet.
+        _participantBuffering[message.peerId!] = false;
+        _participantReady[message.peerId!] = true;
+      }
     }
 
     // If we're the host, send session config AND our own join info to the new peer
@@ -648,6 +662,16 @@ class WatchTogetherSyncManager {
       // Only send config if our video is loaded (we know the correct position)
       if (_hasAnnouncedReady) {
         _sendSessionConfig(toPeerId: message.peerId);
+
+        // Re-send our ready and buffering state so the new peer doesn't
+        // get stuck waiting for updates that were broadcast before it joined.
+        _peerService.sendTo(message.peerId!, SyncMessage.playerReady(peerId: _peerService.myPeerId!, ready: true));
+      }
+      if (_player != null) {
+        _peerService.sendTo(
+          message.peerId!,
+          SyncMessage.buffering(_player!.state.buffering, peerId: _peerService.myPeerId),
+        );
       }
       // Send host's join info so guest adds host to their participants list
       _peerService.sendTo(
@@ -662,6 +686,15 @@ class WatchTogetherSyncManager {
     if (_session.isHost) return; // Host doesn't need to process config
 
     appLogger.d('WatchTogether: Received session config');
+
+    // The host only sends sessionConfig after its player is ready, so we
+    // can safely mark it as ready and not buffering. This prevents the
+    // guest from being permanently stuck waiting for ready/buffering
+    // messages that were broadcast before it joined.
+    if (message.peerId != null) {
+      _participantReady[message.peerId!] = true;
+      _participantBuffering[message.peerId!] = false;
+    }
 
     // Update control mode
     if (message.controlMode != null) {

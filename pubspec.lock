@@ -297,14 +297,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.1"
-  dart_webrtc:
-    dependency: transitive
-    description:
-      name: dart_webrtc
-      sha256: "51bcda4ba5d7dd9e65a309244ce3ac0b58025e6e1f6d7442cee4cd02134ef65f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.6.0"
   dbus:
     dependency: transitive
     description:
@@ -369,14 +361,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.3"
-  events_emitter:
-    dependency: transitive
-    description:
-      name: events_emitter
-      sha256: a075477bdf9c8c0c31bb7c7b7bdd357b4486c34f30163119f96de4e7f54abeff
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.2"
   fake_async:
     dependency: transitive
     description:
@@ -485,14 +469,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_webrtc:
-    dependency: "direct overridden"
-    description:
-      name: flutter_webrtc
-      sha256: "71a38363a5b50603e405c275f30de2eb90f980b0cc94b0e1e9d8b9d6a6b03bf0"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.1"
   frontend_server_client:
     dependency: transitive
     description:
@@ -814,14 +790,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
-  peerdart:
-    dependency: "direct main"
-    description:
-      name: peerdart
-      sha256: "1d0db041d42194f42e57d8889d029fb8d107610bf1062b39f43f4651de547e3c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.6"
   petitparser:
     dependency: transitive
     description:
@@ -1396,21 +1364,13 @@ packages:
     source: hosted
     version: "1.0.1"
   web_socket_channel:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: web_socket_channel
       sha256: d645757fb0f4773d602444000a8131ff5d48c9e47adfe9772652dd1a4f2d45c8
       url: "https://pub.dev"
     source: hosted
     version: "3.0.3"
-  webrtc_interface:
-    dependency: transitive
-    description:
-      name: webrtc_interface
-      sha256: "2e604a31703ad26781782fb14fa8a4ee621154ee2c513d2b9938e486fa695233"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.3.0"
   win32:
     dependency: transitive
     description:

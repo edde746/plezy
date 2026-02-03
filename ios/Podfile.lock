@@ -9,8 +9,6 @@ PODS:
   - flutter_webrtc (1.2.0):
     - Flutter
     - WebRTC-SDK (= 137.7151.04)
-  - gamepads_ios (0.1.1):
-    - Flutter
   - in_app_review (2.0.0):
     - Flutter
   - os_media_controls (0.0.1):
@@ -51,6 +49,8 @@ PODS:
     - sqlite3/perf-threadsafe
     - sqlite3/rtree
     - sqlite3/session
+  - universal_gamepad (0.1.0):
+    - Flutter
   - url_launcher_ios (0.0.1):
     - Flutter
   - wakelock_plus (0.0.1):
@@ -65,7 +65,6 @@ DEPENDENCIES:
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - Flutter (from `Flutter`)
   - flutter_webrtc (from `.symlinks/plugins/flutter_webrtc/ios`)
-  - gamepads_ios (from `.symlinks/plugins/gamepads_ios/ios`)
   - in_app_review (from `.symlinks/plugins/in_app_review/ios`)
   - os_media_controls (from `.symlinks/plugins/os_media_controls/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
@@ -73,6 +72,7 @@ DEPENDENCIES:
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/darwin`)
+  - universal_gamepad (from `.symlinks/plugins/universal_gamepad/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
   - workmanager_apple (from `.symlinks/plugins/workmanager_apple/ios`)
@@ -93,8 +93,6 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_webrtc:
     :path: ".symlinks/plugins/flutter_webrtc/ios"
-  gamepads_ios:
-    :path: ".symlinks/plugins/gamepads_ios/ios"
   in_app_review:
     :path: ".symlinks/plugins/in_app_review/ios"
   os_media_controls:
@@ -109,6 +107,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/sqflite_darwin/darwin"
   sqlite3_flutter_libs:
     :path: ".symlinks/plugins/sqlite3_flutter_libs/darwin"
+  universal_gamepad:
+    :path: ".symlinks/plugins/universal_gamepad/ios"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
   wakelock_plus:
@@ -122,7 +122,6 @@ SPEC CHECKSUMS:
   file_picker: 8fc6fe5e42585a217d44d22f79ec046cb8d81140
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_webrtc: c3e21fc0dcd9d8eb246ae4d5256fcbeb2f5ecd22
-  gamepads_ios: c75c6d31377d275b0effb9174c619e2705678c09
   in_app_review: 7dd1ea365263f834b8464673f9df72c80c17c937
   os_media_controls: 86dceab6245a5325af90fc0fdebe243c42d789b4
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
@@ -131,6 +130,7 @@ SPEC CHECKSUMS:
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   sqlite3: 8d708bc63e9f4ce48f0ad9d6269e478c5ced1d9b
   sqlite3_flutter_libs: d13b8b3003f18f596e542bcb9482d105577eff41
+  universal_gamepad: e10172778a8a399cce234494968f38724974919e
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
   wakelock_plus: e29112ab3ef0b318e58cfa5c32326458be66b556
   WebRTC-SDK: 40d4f5ba05cadff14e4db5614aec402a633f007e
