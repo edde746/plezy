@@ -128,6 +128,8 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get delete => 'Elimina';
 	@override String get shuffle => 'Casuale';
 	@override String get addTo => 'Aggiungi a...';
+	@override String get showMore => 'Mostra di più';
+	@override String get showLess => 'Mostra meno';
 }
 
 // Path: screens
@@ -1023,6 +1025,8 @@ extension on TranslationsIt {
 			'common.delete' => 'Elimina',
 			'common.shuffle' => 'Casuale',
 			'common.addTo' => 'Aggiungi a...',
+			'common.showMore' => 'Mostra di più',
+			'common.showLess' => 'Mostra meno',
 			'screens.licenses' => 'Licenze',
 			'screens.selectServer' => 'Seleziona server',
 			'screens.switchProfile' => 'Cambia profilo',
@@ -1502,10 +1506,10 @@ extension on TranslationsIt {
 			'collections.deleted' => 'Raccolta eliminata',
 			'collections.deleteFailed' => 'Impossibile eliminare la raccolta',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Impossibile eliminare la raccolta: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Impossibile caricare gli elementi della raccolta: ${error}',
-			'collections.selectCollection' => 'Seleziona raccolta',
 			_ => null,
 		} ?? switch (path) {
+			'collections.failedToLoadItems' => ({required Object error}) => 'Impossibile caricare gli elementi della raccolta: ${error}',
+			'collections.selectCollection' => 'Seleziona raccolta',
 			'collections.createNewCollection' => 'Crea nuova raccolta',
 			'collections.collectionName' => 'Nome raccolta',
 			'collections.enterCollectionName' => 'Inserisci nome raccolta',

@@ -34,7 +34,9 @@
     "no": "Nej",
     "delete": "Ta bort",
     "shuffle": "Blanda",
-    "addTo": "Lägg till i..."
+    "addTo": "Lägg till i...",
+    "showMore": "Visa mer",
+    "showLess": "Visa mindre"
   },
   "screens": {
     "licenses": "Licenser",

@@ -4,9 +4,11 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import 'package:readmore/readmore.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focusable_wrapper.dart';
@@ -1216,6 +1218,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     // Use full metadata if loaded, otherwise use passed metadata
     final metadata = _fullMetadata ?? widget.metadata;
     final isShow = metadata.isShow;
+    final isMobile = PlatformDetector.isMobile(context);
 
     KeyEventResult handleBack(FocusNode _, KeyEvent event) =>
         handleBackKeyNavigation(context, event, result: _watchStateChanged);
@@ -1466,7 +1469,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 12),
-                          Text(metadata.summary!, style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6)),
+                          ReadMoreText(
+                            metadata.summary!,
+                            trimMode: TrimMode.Line,
+                            trimLines: isMobile ? 6 : 4,
+                            trimCollapsedText: t.common.showMore,
+                            trimExpandedText: '${metadata.summary!.endsWith('\n') ? '' : '\n'}${t.common.showLess}',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
+                            moreStyle: TextStyle(
+                              color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.4),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            lessStyle: TextStyle(
+                              color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.4),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           const SizedBox(height: 24),
                         ],
 

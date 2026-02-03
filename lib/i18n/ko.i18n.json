@@ -34,7 +34,9 @@
     "no": "아니오",
     "delete": "삭제",
     "shuffle": "무작위 재생",
-    "addTo": "추가하기..."
+    "addTo": "추가하기...",
+    "showMore": "더 보기",
+    "showLess": "접기"
   },
   "screens": {
     "licenses": "라이선스",

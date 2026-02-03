@@ -128,6 +128,8 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get delete => '删除';
 	@override String get shuffle => '随机播放';
 	@override String get addTo => '添加到...';
+	@override String get showMore => '展开';
+	@override String get showLess => '收起';
 }
 
 // Path: screens
@@ -1023,6 +1025,8 @@ extension on TranslationsZh {
 			'common.delete' => '删除',
 			'common.shuffle' => '随机播放',
 			'common.addTo' => '添加到...',
+			'common.showMore' => '展开',
+			'common.showLess' => '收起',
 			'screens.licenses' => '许可证',
 			'screens.selectServer' => '选择服务器',
 			'screens.switchProfile' => '切换用户',
@@ -1502,10 +1506,10 @@ extension on TranslationsZh {
 			'collections.deleted' => '已删除合集',
 			'collections.deleteFailed' => '删除合集失败',
 			'collections.deleteFailedWithError' => ({required Object error}) => '删除合集失败：${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => '加载合集项目失败：${error}',
-			'collections.selectCollection' => '选择合集',
 			_ => null,
 		} ?? switch (path) {
+			'collections.failedToLoadItems' => ({required Object error}) => '加载合集项目失败：${error}',
+			'collections.selectCollection' => '选择合集',
 			'collections.createNewCollection' => '创建新合集',
 			'collections.collectionName' => '合集名称',
 			'collections.enterCollectionName' => '输入合集名称',

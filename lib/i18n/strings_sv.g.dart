@@ -128,6 +128,8 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get delete => 'Ta bort';
 	@override String get shuffle => 'Blanda';
 	@override String get addTo => 'Lägg till i...';
+	@override String get showMore => 'Visa mer';
+	@override String get showLess => 'Visa mindre';
 }
 
 // Path: screens
@@ -1023,6 +1025,8 @@ extension on TranslationsSv {
 			'common.delete' => 'Ta bort',
 			'common.shuffle' => 'Blanda',
 			'common.addTo' => 'Lägg till i...',
+			'common.showMore' => 'Visa mer',
+			'common.showLess' => 'Visa mindre',
 			'screens.licenses' => 'Licenser',
 			'screens.selectServer' => 'Välj server',
 			'screens.switchProfile' => 'Byt profil',
@@ -1502,10 +1506,10 @@ extension on TranslationsSv {
 			'collections.deleted' => 'Samling borttagen',
 			'collections.deleteFailed' => 'Det gick inte att ta bort samlingen',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
-			'collections.selectCollection' => 'Välj samling',
 			_ => null,
 		} ?? switch (path) {
+			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
+			'collections.selectCollection' => 'Välj samling',
 			'collections.createNewCollection' => 'Skapa ny samling',
 			'collections.collectionName' => 'Samlingsnamn',
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
