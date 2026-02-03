@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/widgets.dart';
 import '../services/plex_client.dart';
 import 'plex_url_helper.dart';

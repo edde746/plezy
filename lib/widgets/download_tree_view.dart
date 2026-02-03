@@ -551,8 +551,9 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     if ((status == DownloadStatus.downloading || status == DownloadStatus.queued) && widget.onCancel != null) count++;
     if (status == DownloadStatus.failed && widget.onRetry != null) count++;
     if ((status == DownloadStatus.completed || status == DownloadStatus.failed || status == DownloadStatus.cancelled) &&
-        widget.onDelete != null)
+        widget.onDelete != null) {
       count++;
+    }
     return count;
   }
 
