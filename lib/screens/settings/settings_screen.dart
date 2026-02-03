@@ -61,6 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kUseGlobalHubs = 'use_global_hubs';
   static const _kShowServerNameOnHubs = 'show_server_name_on_hubs';
   static const _kAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
+  static const _kShowUnwatchedCount = 'show_unwatched_count';
   static const _kPlayerBackend = 'player_backend';
   static const _kHardwareDecoding = 'hardware_decoding';
   static const _kMatchContentFrameRate = 'match_content_frame_rate';
@@ -342,6 +343,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 );
               },
             ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                focusNode: _focusTracker.get(_kShowUnwatchedCount),
+                secondary: const AppIcon(Symbols.counter_1_rounded, fill: 1),
+                title: Text(t.settings.showUnwatchedCount),
+                subtitle: Text(t.settings.showUnwatchedCountDescription),
+                value: settingsProvider.showUnwatchedCount,
+                onChanged: (value) async {
+                  await settingsProvider.setShowUnwatchedCount(value);
+                },
+              );
+            },
+          ),
         ],
       ),
     );

@@ -213,6 +213,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get showServerNameOnHubsDescription => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.';
 	@override String get alwaysKeepSidebarOpen => 'Håll sidofältet alltid öppet';
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidofältet förblir expanderat och innehållsytan anpassas';
+	@override String get showUnwatchedCount => 'Visa antal osedda';
+	@override String get showUnwatchedCountDescription => 'Visa antal osedda avsnitt för serier och säsonger';
 	@override String get playerBackend => 'Spelarmotor';
 	@override String get exoPlayer => 'ExoPlayer (Rekommenderad)';
 	@override String get exoPlayerDescription => 'Android-nativ spelare med bättre hårdvarustöd';
@@ -1079,6 +1081,8 @@ extension on TranslationsSv {
 			'settings.showServerNameOnHubsDescription' => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.',
 			'settings.alwaysKeepSidebarOpen' => 'Håll sidofältet alltid öppet',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidofältet förblir expanderat och innehållsytan anpassas',
+			'settings.showUnwatchedCount' => 'Visa antal osedda',
+			'settings.showUnwatchedCountDescription' => 'Visa antal osedda avsnitt för serier och säsonger',
 			'settings.playerBackend' => 'Spelarmotor',
 			'settings.exoPlayer' => 'ExoPlayer (Rekommenderad)',
 			'settings.exoPlayerDescription' => 'Android-nativ spelare med bättre hårdvarustöd',
@@ -1500,10 +1504,10 @@ extension on TranslationsSv {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
 			'collections.selectCollection' => 'Välj samling',
-			'collections.createNewCollection' => 'Skapa ny samling',
-			'collections.collectionName' => 'Samlingsnamn',
 			_ => null,
 		} ?? switch (path) {
+			'collections.createNewCollection' => 'Skapa ny samling',
+			'collections.collectionName' => 'Samlingsnamn',
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
 			'collections.addedToCollection' => 'Tillagd i samling',
 			'collections.errorAddingToCollection' => 'Fel vid tillägg i samling',

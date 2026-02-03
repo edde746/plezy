@@ -99,6 +99,8 @@
     "showServerNameOnHubsDescription": "Mostra sempre il nome del server nei titoli degli hub. Se disattivato, solo per nomi hub duplicati.",
     "alwaysKeepSidebarOpen": "Mantieni sempre aperta la barra laterale",
     "alwaysKeepSidebarOpenDescription": "La barra laterale rimane espansa e l'area del contenuto si adatta",
+    "showUnwatchedCount": "Mostra conteggio non visti",
+    "showUnwatchedCountDescription": "Mostra il numero di episodi non visti per serie e stagioni",
     "playerBackend": "Motore di riproduzione",
     "exoPlayer": "ExoPlayer (Consigliato)",
     "exoPlayerDescription": "Lettore nativo Android con migliore supporto hardware",

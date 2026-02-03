@@ -213,6 +213,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get showServerNameOnHubsDescription => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。';
 	@override String get alwaysKeepSidebarOpen => '始终保持侧边栏展开';
 	@override String get alwaysKeepSidebarOpenDescription => '侧边栏保持展开状态，内容区域自动调整';
+	@override String get showUnwatchedCount => '显示未观看数量';
+	@override String get showUnwatchedCountDescription => '在剧集和季上显示未观看的集数';
 	@override String get playerBackend => '播放器引擎';
 	@override String get exoPlayer => 'ExoPlayer（推荐）';
 	@override String get exoPlayerDescription => 'Android 原生播放器，硬件支持更好';
@@ -1079,6 +1081,8 @@ extension on TranslationsZh {
 			'settings.showServerNameOnHubsDescription' => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。',
 			'settings.alwaysKeepSidebarOpen' => '始终保持侧边栏展开',
 			'settings.alwaysKeepSidebarOpenDescription' => '侧边栏保持展开状态，内容区域自动调整',
+			'settings.showUnwatchedCount' => '显示未观看数量',
+			'settings.showUnwatchedCountDescription' => '在剧集和季上显示未观看的集数',
 			'settings.playerBackend' => '播放器引擎',
 			'settings.exoPlayer' => 'ExoPlayer（推荐）',
 			'settings.exoPlayerDescription' => 'Android 原生播放器，硬件支持更好',
@@ -1500,10 +1504,10 @@ extension on TranslationsZh {
 			'collections.deleteFailedWithError' => ({required Object error}) => '删除合集失败：${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => '加载合集项目失败：${error}',
 			'collections.selectCollection' => '选择合集',
-			'collections.createNewCollection' => '创建新合集',
-			'collections.collectionName' => '合集名称',
 			_ => null,
 		} ?? switch (path) {
+			'collections.createNewCollection' => '创建新合集',
+			'collections.collectionName' => '合集名称',
 			'collections.enterCollectionName' => '输入合集名称',
 			'collections.addedToCollection' => '已添加到合集',
 			'collections.errorAddingToCollection' => '添加到合集失败',

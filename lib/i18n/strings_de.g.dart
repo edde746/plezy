@@ -213,6 +213,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get showServerNameOnHubsDescription => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.';
 	@override String get alwaysKeepSidebarOpen => 'Seitenleiste immer geöffnet halten';
 	@override String get alwaysKeepSidebarOpenDescription => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an';
+	@override String get showUnwatchedCount => 'Anzahl nicht gesehener Folgen anzeigen';
+	@override String get showUnwatchedCountDescription => 'Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an';
 	@override String get playerBackend => 'Player-Backend';
 	@override String get exoPlayer => 'ExoPlayer (Empfohlen)';
 	@override String get exoPlayerDescription => 'Android-nativer Player mit besserer Hardware-Unterstützung';
@@ -1079,6 +1081,8 @@ extension on TranslationsDe {
 			'settings.showServerNameOnHubsDescription' => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.',
 			'settings.alwaysKeepSidebarOpen' => 'Seitenleiste immer geöffnet halten',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an',
+			'settings.showUnwatchedCount' => 'Anzahl nicht gesehener Folgen anzeigen',
+			'settings.showUnwatchedCountDescription' => 'Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an',
 			'settings.playerBackend' => 'Player-Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Empfohlen)',
 			'settings.exoPlayerDescription' => 'Android-nativer Player mit besserer Hardware-Unterstützung',
@@ -1500,10 +1504,10 @@ extension on TranslationsDe {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Sammlung konnte nicht gelöscht werden: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}',
 			'collections.selectCollection' => 'Sammlung auswählen',
-			'collections.createNewCollection' => 'Neue Sammlung erstellen',
-			'collections.collectionName' => 'Sammlungsname',
 			_ => null,
 		} ?? switch (path) {
+			'collections.createNewCollection' => 'Neue Sammlung erstellen',
+			'collections.collectionName' => 'Sammlungsname',
 			'collections.enterCollectionName' => 'Sammlungsnamen eingeben',
 			'collections.addedToCollection' => 'Zur Sammlung hinzugefügt',
 			'collections.errorAddingToCollection' => 'Fehler beim Hinzufügen zur Sammlung',

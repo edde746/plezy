@@ -392,6 +392,12 @@ class TranslationsSettingsEn {
 	/// en: 'Sidebar stays expanded and content area adjusts to fit'
 	String get alwaysKeepSidebarOpenDescription => 'Sidebar stays expanded and content area adjusts to fit';
 
+	/// en: 'Show Unwatched Count'
+	String get showUnwatchedCount => 'Show Unwatched Count';
+
+	/// en: 'Display unwatched episode count on shows and seasons'
+	String get showUnwatchedCountDescription => 'Display unwatched episode count on shows and seasons';
+
 	/// en: 'Player Backend'
 	String get playerBackend => 'Player Backend';
 
@@ -2224,6 +2230,8 @@ extension on Translations {
 			'settings.showServerNameOnHubsDescription' => 'Always display the server name in hub titles. When off, only shows for duplicate hub names.',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
+			'settings.showUnwatchedCount' => 'Show Unwatched Count',
+			'settings.showUnwatchedCountDescription' => 'Display unwatched episode count on shows and seasons',
 			'settings.playerBackend' => 'Player Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Recommended)',
 			'settings.exoPlayerDescription' => 'Android native player with better hardware support',
@@ -2646,10 +2654,10 @@ extension on Translations {
 			'watchTogether.createSession' => 'Create Session',
 			'watchTogether.creating' => 'Creating...',
 			'watchTogether.joinSession' => 'Join Session',
-			'watchTogether.joining' => 'Joining...',
-			'watchTogether.controlMode' => 'Control Mode',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joining' => 'Joining...',
+			'watchTogether.controlMode' => 'Control Mode',
 			'watchTogether.controlModeQuestion' => 'Who can control playback?',
 			'watchTogether.hostOnly' => 'Host Only',
 			'watchTogether.anyone' => 'Anyone',

@@ -99,6 +99,8 @@
     "showServerNameOnHubsDescription": "Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.",
     "alwaysKeepSidebarOpen": "Seitenleiste immer geöffnet halten",
     "alwaysKeepSidebarOpenDescription": "Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an",
+    "showUnwatchedCount": "Anzahl nicht gesehener Folgen anzeigen",
+    "showUnwatchedCountDescription": "Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an",
     "playerBackend": "Player-Backend",
     "exoPlayer": "ExoPlayer (Empfohlen)",
     "exoPlayerDescription": "Android-nativer Player mit besserer Hardware-Unterstützung",

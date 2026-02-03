@@ -714,6 +714,8 @@ class _MediaCardHelpers {
 
   /// Builds watch progress overlay (checkmark for watched, progress bar for in-progress)
   static Widget buildWatchProgress(BuildContext context, PlexMetadata metadata) {
+    final showUnwatchedCount = context.watch<SettingsProvider>().showUnwatchedCount;
+
     return Stack(
       children: [
         // Watched indicator (checkmark)
@@ -731,7 +733,8 @@ class _MediaCardHelpers {
               child: AppIcon(Symbols.check_rounded, fill: 1, color: tokens(context).bg, size: 16),
             ),
           ),
-        if (!metadata.isWatched &&
+        if (showUnwatchedCount &&
+            !metadata.isWatched &&
             (metadata.mediaType == PlexMediaType.show || metadata.mediaType == PlexMediaType.season) &&
             (metadata.leafCount != null && metadata.leafCount! > 0 && metadata.viewedLeafCount != null))
           Positioned(
