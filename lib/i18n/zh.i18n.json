@@ -34,13 +34,10 @@
     "no": "否",
     "delete": "删除",
     "shuffle": "随机播放",
-    "addTo": "添加到...",
-    "showMore": "展开",
-    "showLess": "收起"
+    "addTo": "添加到..."
   },
   "screens": {
     "licenses": "许可证",
-    "selectServer": "选择服务器",
     "switchProfile": "切换用户",
     "subtitleStyling": "字幕样式",
     "mpvConfig": "MPV 配置",
@@ -172,7 +169,6 @@
     "maxVolume": "最大音量",
     "maxVolumeDescription": "允许音量超过 100% 以适应安静的媒体",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "输入最大音量 (100-300)",
     "discordRichPresence": "Discord 动态状态",
     "discordRichPresenceDescription": "在 Discord 上显示您正在观看的内容",
     "matchContentFrameRate": "匹配内容帧率",
@@ -280,7 +276,6 @@
     "stretch": "拉伸",
     "lockRotation": "锁定旋转",
     "unlockRotation": "解锁旋转",
-    "sleepTimer": "睡眠定时器",
     "timerActive": "定时器已激活",
     "playbackWillPauseIn": "播放将在 ${duration} 后暂停",
     "sleepTimerCompleted": "睡眠定时器已完成 - 播放已暂停",
@@ -354,7 +349,6 @@
     "noResultsFound": "未找到结果",
     "sleepTimerSet": "睡眠定时器已设置为 ${label}",
     "noItemsAvailable": "没有可用的项目",
-    "failedToCreatePlayQueue": "创建播放队列失败",
     "failedToCreatePlayQueueNoItems": "创建播放队列失败 - 没有项目",
     "failedPlayback": "无法${action}: ${error}",
     "switchingToCompatiblePlayer": "正在切换到兼容的播放器..."
@@ -396,13 +390,11 @@
   },
   "dialog": {
     "confirmAction": "确认操作",
-    "cancel": "取消",
-    "playNow": "立即播放"
+    "cancel": "取消"
   },
   "discover": {
     "title": "发现",
     "switchProfile": "切换用户",
-    "switchServer": "切换服务器",
     "logout": "登出",
     "noContentAvailable": "没有可用内容",
     "addMediaToLibraries": "请向你的媒体库添加一些媒体",
@@ -415,7 +407,6 @@
     "seasons": "季数",
     "studio": "制作公司",
     "rating": "年龄分级",
-    "watched": "已观看",
     "episodeCount": "${count} 集",
     "watchedProgress": "已观看 ${watched}/${total} 集",
     "movie": "电影",
@@ -496,7 +487,6 @@
   },
   "serverSelection": {
     "allServerConnectionsFailed": "无法连接到任何服务器。请检查你的网络并重试。",
-    "noServersFound": "未找到服务器",
     "noServersFoundForAccount": "未找到 ${username} (${email}) 的服务器",
     "failedToLoadServers": "无法加载服务器: ${error}"
   },
@@ -628,7 +618,6 @@
     "end": "结束",
     "leave": "离开",
     "syncing": "同步中...",
-    "participant": "参与者",
     "joinWatchSession": "加入观看会话",
     "enterCodeHint": "输入8位代码",
     "pasteFromClipboard": "从剪贴板粘贴",
@@ -645,9 +634,6 @@
     "nvscalerDescription": "NVIDIA 图像缩放，使视频更清晰",
     "qualityFast": "快速",
     "qualityHQ": "高质量",
-    "mode": "模式",
-    "presetChanged": "着色器预设已更改",
-    "hdrDetected": "检测到 HDR - 已跳过着色器",
-    "mpvOnly": "着色器仅在使用 MPV 播放器时可用"
+    "mode": "模式"
   }
 }

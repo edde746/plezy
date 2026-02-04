@@ -34,13 +34,10 @@
     "no": "아니오",
     "delete": "삭제",
     "shuffle": "무작위 재생",
-    "addTo": "추가하기...",
-    "showMore": "더 보기",
-    "showLess": "접기"
+    "addTo": "추가하기..."
   },
   "screens": {
     "licenses": "라이선스",
-    "selectServer": "서버 선택",
     "switchProfile": "프로필 전환",
     "subtitleStyling": "자막 스타일 설정",
     "mpvConfig": "MPV 설정",
@@ -172,7 +169,6 @@
     "maxVolume": "최대 볼륨",
     "maxVolumeDescription": "조용한 미디어를 위해 100% 이상의 볼륨 허용",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "최대 볼륨 입력 (100-300)",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Discord에서 시청 중인 콘텐츠 표시",
     "matchContentFrameRate": "콘텐츠 프레임 레이트 맞춤",
@@ -280,7 +276,6 @@
     "stretch": "확장",
     "lockRotation": "회전 잠금",
     "unlockRotation": "회전 잠금 해제",
-    "sleepTimer": "수면 타이머",
     "timerActive": "타이머 활성화됨",
     "playbackWillPauseIn": "재생이 ${duration} 후에 일시 중지 됩니다",
     "sleepTimerCompleted": "수면 타이머 완료됨 - 재생이 일시 중지되었습니다",
@@ -354,7 +349,6 @@
     "noResultsFound": "결과를 찾을 수 없습니다",
     "sleepTimerSet": "수면 타이머가 ${label}로 설정 되었습니다",
     "noItemsAvailable": "사용 가능한 항목이 없습니다",
-    "failedToCreatePlayQueue": "재생 대기열 생성 실패",
     "failedToCreatePlayQueueNoItems": "재생 대기열 생성 실패 - 항목 없음",
     "failedPlayback": "${action}을(를) 수행할 수 없습니다: ${error}",
     "switchingToCompatiblePlayer": "호환되는 플레이어로 전환 중..."
@@ -396,13 +390,11 @@
   },
   "dialog": {
     "confirmAction": "확인",
-    "cancel": "취소",
-    "playNow": "지금 재생"
+    "cancel": "취소"
   },
   "discover": {
     "title": "발견",
     "switchProfile": "사용자 전환",
-    "switchServer": "서버 전환",
     "logout": "로그아웃",
     "noContentAvailable": "사용 가능한 콘텐츠가 없습니다",
     "addMediaToLibraries": "미디어 라이브러리에 미디어를 추가해 주세요",
@@ -415,7 +407,6 @@
     "seasons": "시즌 수",
     "studio": "제작사",
     "rating": "연령 등급",
-    "watched": "시청 완료",
     "episodeCount": "${count} 편",
     "watchedProgress": "${watched}/${total} 편 시청 완료",
     "movie": "영화",
@@ -496,7 +487,6 @@
   },
   "serverSelection": {
     "allServerConnectionsFailed": "어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.",
-    "noServersFound": "서버를 찾을 수 없습니다.",
     "noServersFoundForAccount": "${username} (${email})의 서버를 찾을 수 없습니다.",
     "failedToLoadServers": "서버를 로드할 수 없습니다: ${error}"
   },
@@ -612,7 +602,6 @@
     "end": "종료",
     "leave": "이탈",
     "syncing": "동기화 중...",
-    "participant": "참여자",
     "joinWatchSession": "시청 세션에 참여",
     "enterCodeHint": "8자리 코드 입력",
     "pasteFromClipboard": "클립보드에서 붙여넣기",
@@ -645,9 +634,6 @@
     "nvscalerDescription": "더 선명한 비디오를 위한 NVIDIA 이미지 스케일링",
     "qualityFast": "빠름",
     "qualityHQ": "고품질",
-    "mode": "모드",
-    "presetChanged": "셰이더 프리셋 변경됨",
-    "hdrDetected": "HDR 감지됨 - 셰이더 건너뜀",
-    "mpvOnly": "셰이더는 MPV 플레이어에서만 사용 가능합니다"
+    "mode": "모드"
   }
 }

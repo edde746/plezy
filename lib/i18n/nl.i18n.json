@@ -34,13 +34,10 @@
     "no": "Nee",
     "delete": "Verwijderen",
     "shuffle": "Willekeurig",
-    "addTo": "Toevoegen aan...",
-    "showMore": "Meer tonen",
-    "showLess": "Minder tonen"
+    "addTo": "Toevoegen aan..."
   },
   "screens": {
     "licenses": "Licenties",
-    "selectServer": "Selecteer server",
     "switchProfile": "Wissel van profiel",
     "subtitleStyling": "Ondertitel opmaak",
     "mpvConfig": "MPV-configuratie",
@@ -172,7 +169,6 @@
     "maxVolume": "Maximaal volume",
     "maxVolumeDescription": "Volume boven 100% toestaan voor stille media",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Voer maximaal volume in (100-300)",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent",
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
@@ -280,7 +276,6 @@
     "stretch": "Uitrekken",
     "lockRotation": "Vergrendel rotatie",
     "unlockRotation": "Ontgrendel rotatie",
-    "sleepTimer": "Slaaptimer",
     "timerActive": "Timer actief",
     "playbackWillPauseIn": "Afspelen wordt gepauzeerd over ${duration}",
     "sleepTimerCompleted": "Slaaptimer voltooid - afspelen gepauzeerd",
@@ -354,7 +349,6 @@
     "noResultsFound": "Geen resultaten gevonden",
     "sleepTimerSet": "Slaap timer ingesteld voor ${label}",
     "noItemsAvailable": "Geen items beschikbaar",
-    "failedToCreatePlayQueue": "Kan afspeelwachtrij niet maken",
     "failedToCreatePlayQueueNoItems": "Kan afspeelwachtrij niet maken - geen items",
     "failedPlayback": "Afspelen van ${action} mislukt: ${error}",
     "switchingToCompatiblePlayer": "Overschakelen naar compatibele speler..."
@@ -396,13 +390,11 @@
   },
   "dialog": {
     "confirmAction": "Bevestig actie",
-    "cancel": "Annuleren",
-    "playNow": "Nu afspelen"
+    "cancel": "Annuleren"
   },
   "discover": {
     "title": "Ontdekken",
     "switchProfile": "Wissel van profiel",
-    "switchServer": "Wissel van server",
     "logout": "Uitloggen",
     "noContentAvailable": "Geen inhoud beschikbaar",
     "addMediaToLibraries": "Voeg wat media toe aan je bibliotheken",
@@ -415,7 +407,6 @@
     "seasons": "Seizoenen",
     "studio": "Studio",
     "rating": "Leeftijd",
-    "watched": "Bekeken",
     "episodeCount": "${count} afleveringen",
     "watchedProgress": "${watched}/${total} gekeken",
     "movie": "Film",
@@ -496,7 +487,6 @@
   },
   "serverSelection": {
     "allServerConnectionsFailed": "Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.",
-    "noServersFound": "Geen servers gevonden",
     "noServersFoundForAccount": "Geen servers gevonden voor ${username} (${email})",
     "failedToLoadServers": "Kon servers niet laden: ${error}"
   },
@@ -628,7 +618,6 @@
     "end": "Beëindigen",
     "leave": "Verlaten",
     "syncing": "Synchroniseren...",
-    "participant": "deelnemer",
     "joinWatchSession": "Kijksessie Deelnemen",
     "enterCodeHint": "Voer 8-teken code in",
     "pasteFromClipboard": "Plakken van klembord",
@@ -645,9 +634,6 @@
     "nvscalerDescription": "NVIDIA-beeldschaling voor scherpere video",
     "qualityFast": "Snel",
     "qualityHQ": "Hoge kwaliteit",
-    "mode": "Modus",
-    "presetChanged": "Shader-voorinstelling gewijzigd",
-    "hdrDetected": "HDR gedetecteerd - shader overgeslagen",
-    "mpvOnly": "Shaders zijn alleen beschikbaar met de MPV-speler"
+    "mode": "Modus"
   }
 }

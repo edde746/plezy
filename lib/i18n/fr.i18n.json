@@ -34,9 +34,7 @@
     "no": "Non",
     "delete": "Supprimer",
     "shuffle": "Mélanger",
-    "addTo": "Ajouter à...",
-    "showMore": "Voir plus",
-    "showLess": "Voir moins"
+    "addTo": "Ajouter à..."
   },
   "screens": {
     "licenses": "Licenses",
@@ -171,7 +169,6 @@
     "maxVolume": "Volume maximal",
     "maxVolumeDescription": "Autoriser l'augmentation du volume au-delà de 100 % pour les médias silencieux",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Entrez le volume maximal (100-300)",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Montrez ce que vous regardez sur Discord",
     "matchContentFrameRate": "Fréquence d'images du contenu correspondant",
@@ -279,7 +276,6 @@
     "stretch": "Etirer",
     "lockRotation": "Verrouillage de la rotation",
     "unlockRotation": "Déverrouiller la rotation",
-    "sleepTimer": "Minuterie de mise en veille",
     "timerActive": "Minuterie active",
     "playbackWillPauseIn": "La lecture sera mise en pause dans ${duration}",
     "sleepTimerCompleted": "Minuterie de mise en veille terminée - lecture en pause",
@@ -353,7 +349,6 @@
     "noResultsFound": "Aucun résultat trouvé",
     "sleepTimerSet": "Minuterie de mise en veille réglée sur ${label}",
     "noItemsAvailable": "Aucun élément disponible",
-    "failedToCreatePlayQueue": "Échec de la création de la file d'attente de lecture",
     "failedToCreatePlayQueueNoItems": "Échec de la création de la file d'attente de lecture - aucun élément",
     "failedPlayback": "Echec de ${action}: ${error}",
     "switchingToCompatiblePlayer": "Passage au lecteur compatible..."
@@ -395,8 +390,7 @@
   },
   "dialog": {
     "confirmAction": "Confirmer l'action",
-    "cancel": "Annuler",
-    "playNow": "Lire maintenant"
+    "cancel": "Annuler"
   },
   "discover": {
     "title": "Découvrez",
@@ -413,7 +407,6 @@
     "seasons": "Saisons",
     "studio": "Studio",
     "rating": "Évaluation",
-    "watched": "Vu",
     "episodeCount": "${count} épisodes",
     "watchedProgress": "${watched}/${total} vu",
     "movie": "Film",
@@ -494,7 +487,6 @@
   },
   "serverSelection": {
     "allServerConnectionsFailed": "Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.",
-    "noServersFound": "Aucun serveur trouvé",
     "noServersFoundForAccount": "Aucun serveur trouvé pour ${username} (${email})",
     "failedToLoadServers": "Échec du chargement des serveurs: ${error}"
   },
@@ -610,7 +602,6 @@
     "end": "Terminer",
     "leave": "Fin",
     "syncing": "Synchronisation...",
-    "participant": "participant",
     "joinWatchSession": "Rejoindre la session de visionnage",
     "enterCodeHint": "Entrez le code à 8 caractères",
     "pasteFromClipboard": "Coller depuis le presse-papiers",
@@ -643,9 +634,6 @@
     "nvscalerDescription": "Mise à l'échelle NVIDIA pour une vidéo plus nette",
     "qualityFast": "Rapide",
     "qualityHQ": "Haute qualité",
-    "mode": "Mode",
-    "presetChanged": "Préréglage de shader modifié",
-    "hdrDetected": "HDR détecté - shader ignoré",
-    "mpvOnly": "Les shaders ne sont disponibles qu'avec le lecteur MPV"
+    "mode": "Mode"
   }
 }

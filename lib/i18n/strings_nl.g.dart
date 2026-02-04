@@ -128,8 +128,6 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get delete => 'Verwijderen';
 	@override String get shuffle => 'Willekeurig';
 	@override String get addTo => 'Toevoegen aan...';
-	@override String get showMore => 'Meer tonen';
-	@override String get showLess => 'Minder tonen';
 }
 
 // Path: screens
@@ -140,7 +138,6 @@ class _TranslationsScreensNl implements TranslationsScreensEn {
 
 	// Translations
 	@override String get licenses => 'Licenties';
-	@override String get selectServer => 'Selecteer server';
 	@override String get switchProfile => 'Wissel van profiel';
 	@override String get subtitleStyling => 'Ondertitel opmaak';
 	@override String get mpvConfig => 'MPV-configuratie';
@@ -286,7 +283,6 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get maxVolume => 'Maximaal volume';
 	@override String get maxVolumeDescription => 'Volume boven 100% toestaan voor stille media';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get maxVolumeHint => 'Voer maximaal volume in (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Toon op Discord wat je aan het kijken bent';
 	@override String get matchContentFrameRate => 'Inhoudsframesnelheid afstemmen';
@@ -431,7 +427,6 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get stretch => 'Uitrekken';
 	@override String get lockRotation => 'Vergrendel rotatie';
 	@override String get unlockRotation => 'Ontgrendel rotatie';
-	@override String get sleepTimer => 'Slaaptimer';
 	@override String get timerActive => 'Timer actief';
 	@override String playbackWillPauseIn({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
 	@override String get sleepTimerCompleted => 'Slaaptimer voltooid - afspelen gepauzeerd';
@@ -513,7 +508,6 @@ class _TranslationsMessagesNl implements TranslationsMessagesEn {
 	@override String get noResultsFound => 'Geen resultaten gevonden';
 	@override String sleepTimerSet({required Object label}) => 'Slaap timer ingesteld voor ${label}';
 	@override String get noItemsAvailable => 'Geen items beschikbaar';
-	@override String get failedToCreatePlayQueue => 'Kan afspeelwachtrij niet maken';
 	@override String get failedToCreatePlayQueueNoItems => 'Kan afspeelwachtrij niet maken - geen items';
 	@override String failedPlayback({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Overschakelen naar compatibele speler...';
@@ -577,7 +571,6 @@ class _TranslationsDialogNl implements TranslationsDialogEn {
 	// Translations
 	@override String get confirmAction => 'Bevestig actie';
 	@override String get cancel => 'Annuleren';
-	@override String get playNow => 'Nu afspelen';
 }
 
 // Path: discover
@@ -589,7 +582,6 @@ class _TranslationsDiscoverNl implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => 'Ontdekken';
 	@override String get switchProfile => 'Wissel van profiel';
-	@override String get switchServer => 'Wissel van server';
 	@override String get logout => 'Uitloggen';
 	@override String get noContentAvailable => 'Geen inhoud beschikbaar';
 	@override String get addMediaToLibraries => 'Voeg wat media toe aan je bibliotheken';
@@ -602,7 +594,6 @@ class _TranslationsDiscoverNl implements TranslationsDiscoverEn {
 	@override String get seasons => 'Seizoenen';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Leeftijd';
-	@override String get watched => 'Bekeken';
 	@override String episodeCount({required Object count}) => '${count} afleveringen';
 	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} gekeken';
 	@override String get movie => 'Film';
@@ -699,7 +690,6 @@ class _TranslationsServerSelectionNl implements TranslationsServerSelectionEn {
 
 	// Translations
 	@override String get allServerConnectionsFailed => 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.';
-	@override String get noServersFound => 'Geen servers gevonden';
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Kon servers niet laden: ${error}';
 }
@@ -887,7 +877,6 @@ class _TranslationsWatchTogetherNl implements TranslationsWatchTogetherEn {
 	@override String get end => 'Beëindigen';
 	@override String get leave => 'Verlaten';
 	@override String get syncing => 'Synchroniseren...';
-	@override String get participant => 'deelnemer';
 	@override String get joinWatchSession => 'Kijksessie Deelnemen';
 	@override String get enterCodeHint => 'Voer 8-teken code in';
 	@override String get pasteFromClipboard => 'Plakken van klembord';
@@ -912,9 +901,6 @@ class _TranslationsShadersNl implements TranslationsShadersEn {
 	@override String get qualityFast => 'Snel';
 	@override String get qualityHQ => 'Hoge kwaliteit';
 	@override String get mode => 'Modus';
-	@override String get presetChanged => 'Shader-voorinstelling gewijzigd';
-	@override String get hdrDetected => 'HDR gedetecteerd - shader overgeslagen';
-	@override String get mpvOnly => 'Shaders zijn alleen beschikbaar met de MPV-speler';
 }
 
 // Path: hotkeys.actions
@@ -1025,10 +1011,7 @@ extension on TranslationsNl {
 			'common.delete' => 'Verwijderen',
 			'common.shuffle' => 'Willekeurig',
 			'common.addTo' => 'Toevoegen aan...',
-			'common.showMore' => 'Meer tonen',
-			'common.showLess' => 'Minder tonen',
 			'screens.licenses' => 'Licenties',
-			'screens.selectServer' => 'Selecteer server',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
 			'screens.mpvConfig' => 'MPV-configuratie',
@@ -1156,7 +1139,6 @@ extension on TranslationsNl {
 			'settings.maxVolume' => 'Maximaal volume',
 			'settings.maxVolumeDescription' => 'Volume boven 100% toestaan voor stille media',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.maxVolumeHint' => 'Voer maximaal volume in (100-300)',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Toon op Discord wat je aan het kijken bent',
 			'settings.matchContentFrameRate' => 'Inhoudsframesnelheid afstemmen',
@@ -1246,7 +1228,6 @@ extension on TranslationsNl {
 			'videoControls.stretch' => 'Uitrekken',
 			'videoControls.lockRotation' => 'Vergrendel rotatie',
 			'videoControls.unlockRotation' => 'Ontgrendel rotatie',
-			'videoControls.sleepTimer' => 'Slaaptimer',
 			'videoControls.timerActive' => 'Timer actief',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Slaaptimer voltooid - afspelen gepauzeerd',
@@ -1314,7 +1295,6 @@ extension on TranslationsNl {
 			'messages.noResultsFound' => 'Geen resultaten gevonden',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Slaap timer ingesteld voor ${label}',
 			'messages.noItemsAvailable' => 'Geen items beschikbaar',
-			'messages.failedToCreatePlayQueue' => 'Kan afspeelwachtrij niet maken',
 			'messages.failedToCreatePlayQueueNoItems' => 'Kan afspeelwachtrij niet maken - geen items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Afspelen van ${action} mislukt: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Overschakelen naar compatibele speler...',
@@ -1351,10 +1331,8 @@ extension on TranslationsNl {
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} items',
 			'dialog.confirmAction' => 'Bevestig actie',
 			'dialog.cancel' => 'Annuleren',
-			'dialog.playNow' => 'Nu afspelen',
 			'discover.title' => 'Ontdekken',
 			'discover.switchProfile' => 'Wissel van profiel',
-			'discover.switchServer' => 'Wissel van server',
 			'discover.logout' => 'Uitloggen',
 			'discover.noContentAvailable' => 'Geen inhoud beschikbaar',
 			'discover.addMediaToLibraries' => 'Voeg wat media toe aan je bibliotheken',
@@ -1367,7 +1345,6 @@ extension on TranslationsNl {
 			'discover.seasons' => 'Seizoenen',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Leeftijd',
-			'discover.watched' => 'Bekeken',
 			'discover.episodeCount' => ({required Object count}) => '${count} afleveringen',
 			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} gekeken',
 			'discover.movie' => 'Film',
@@ -1436,7 +1413,6 @@ extension on TranslationsNl {
 			'about.appDescription' => 'Een mooie Plex client voor Flutter',
 			'about.viewLicensesDescription' => 'Bekijk licenties van third-party bibliotheken',
 			'serverSelection.allServerConnectionsFailed' => 'Kon niet verbinden met servers. Controleer je netwerk en probeer opnieuw.',
-			'serverSelection.noServersFound' => 'Geen servers gevonden',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Geen servers gevonden voor ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Kon servers niet laden: ${error}',
 			'hubDetail.title' => 'Titel',
@@ -1506,8 +1482,6 @@ extension on TranslationsNl {
 			'collections.deleted' => 'Collectie verwijderd',
 			'collections.deleteFailed' => 'Collectie verwijderen mislukt',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
 			'collections.selectCollection' => 'Selecteer collectie',
 			'collections.createNewCollection' => 'Nieuwe collectie maken',
@@ -1518,6 +1492,8 @@ extension on TranslationsNl {
 			'collections.created' => 'Collectie gemaakt',
 			'collections.removeFromCollection' => 'Verwijderen uit collectie',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" uit deze collectie verwijderen?',
+			_ => null,
+		} ?? switch (path) {
 			'collections.removedFromCollection' => 'Uit collectie verwijderd',
 			'collections.removeFromCollectionFailed' => 'Verwijderen uit collectie mislukt',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fout bij verwijderen uit collectie: ${error}',
@@ -1554,7 +1530,6 @@ extension on TranslationsNl {
 			'watchTogether.end' => 'Beëindigen',
 			'watchTogether.leave' => 'Verlaten',
 			'watchTogether.syncing' => 'Synchroniseren...',
-			'watchTogether.participant' => 'deelnemer',
 			'watchTogether.joinWatchSession' => 'Kijksessie Deelnemen',
 			'watchTogether.enterCodeHint' => 'Voer 8-teken code in',
 			'watchTogether.pasteFromClipboard' => 'Plakken van klembord',
@@ -1570,9 +1545,6 @@ extension on TranslationsNl {
 			'shaders.qualityFast' => 'Snel',
 			'shaders.qualityHQ' => 'Hoge kwaliteit',
 			'shaders.mode' => 'Modus',
-			'shaders.presetChanged' => 'Shader-voorinstelling gewijzigd',
-			'shaders.hdrDetected' => 'HDR gedetecteerd - shader overgeslagen',
-			'shaders.mpvOnly' => 'Shaders zijn alleen beschikbaar met de MPV-speler',
 			_ => null,
 		};
 	}

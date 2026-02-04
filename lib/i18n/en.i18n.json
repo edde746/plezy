@@ -34,9 +34,7 @@
     "no": "No",
     "delete": "Delete",
     "shuffle": "Shuffle",
-    "addTo": "Add to...",
-    "showMore": "Show more",
-    "showLess": "Show less"
+    "addTo": "Add to..."
   },
   "screens": {
     "licenses": "Licenses",
@@ -171,7 +169,6 @@
     "maxVolume": "Maximum Volume",
     "maxVolumeDescription": "Allow volume boost above 100% for quiet media",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Enter max volume (100-300)",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Show what you're watching on Discord",
     "matchContentFrameRate": "Match Content Frame Rate",
@@ -279,7 +276,6 @@
     "stretch": "Stretch",
     "lockRotation": "Lock rotation",
     "unlockRotation": "Unlock rotation",
-    "sleepTimer": "Sleep Timer",
     "timerActive": "Timer Active",
     "playbackWillPauseIn": "Playback will pause in ${duration}",
     "sleepTimerCompleted": "Sleep timer completed - playback paused",
@@ -353,7 +349,6 @@
     "noResultsFound": "No results found",
     "sleepTimerSet": "Sleep timer set for ${label}",
     "noItemsAvailable": "No items available",
-    "failedToCreatePlayQueue": "Failed to create play queue",
     "failedToCreatePlayQueueNoItems": "Failed to create play queue - no items",
     "failedPlayback": "Failed to ${action}: ${error}",
     "switchingToCompatiblePlayer": "Switching to compatible player..."
@@ -395,8 +390,7 @@
   },
   "dialog": {
     "confirmAction": "Confirm Action",
-    "cancel": "Cancel",
-    "playNow": "Play Now"
+    "cancel": "Cancel"
   },
   "discover": {
     "title": "Discover",
@@ -413,7 +407,6 @@
     "seasons": "Seasons",
     "studio": "Studio",
     "rating": "Rating",
-    "watched": "Watched",
     "episodeCount": "${count} episodes",
     "watchedProgress": "${watched}/${total} watched",
     "movie": "Movie",
@@ -494,7 +487,6 @@
   },
   "serverSelection": {
     "allServerConnectionsFailed": "Failed to connect to any servers. Please check your network and try again.",
-    "noServersFound": "No servers found",
     "noServersFoundForAccount": "No servers found for ${username} (${email})",
     "failedToLoadServers": "Failed to load servers: ${error}"
   },
@@ -610,7 +602,6 @@
     "end": "End",
     "leave": "Leave",
     "syncing": "Syncing...",
-    "participant": "participant",
     "joinWatchSession": "Join Watch Session",
     "enterCodeHint": "Enter 8-character code",
     "pasteFromClipboard": "Paste from clipboard",
@@ -643,9 +634,6 @@
     "nvscalerDescription": "NVIDIA image scaling for sharper video",
     "qualityFast": "Fast",
     "qualityHQ": "High Quality",
-    "mode": "Mode",
-    "presetChanged": "Shader preset changed",
-    "hdrDetected": "HDR detected - shader skipped",
-    "mpvOnly": "Shaders are only available with MPV player"
+    "mode": "Mode"
   }
 }

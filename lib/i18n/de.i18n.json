@@ -34,13 +34,10 @@
     "no": "Nein",
     "delete": "Löschen",
     "shuffle": "Zufall",
-    "addTo": "Hinzufügen zu...",
-    "showMore": "Mehr anzeigen",
-    "showLess": "Weniger anzeigen"
+    "addTo": "Hinzufügen zu..."
   },
   "screens": {
     "licenses": "Lizenzen",
-    "selectServer": "Server auswählen",
     "switchProfile": "Profil wechseln",
     "subtitleStyling": "Untertitel-Stil",
     "mpvConfig": "MPV-Konfiguration",
@@ -172,7 +169,6 @@
     "maxVolume": "Maximale Lautstärke",
     "maxVolumeDescription": "Lautstärke über 100% für leise Medien erlauben",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Maximale Lautstärke eingeben (100-300)",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Zeige auf Discord, was du gerade schaust",
     "matchContentFrameRate": "Inhalts-Bildrate anpassen",
@@ -280,7 +276,6 @@
     "stretch": "Strecken",
     "lockRotation": "Rotation sperren",
     "unlockRotation": "Rotation entsperren",
-    "sleepTimer": "Schlaftimer",
     "timerActive": "Schlaftimer aktiv",
     "playbackWillPauseIn": "Wiedergabe wird in ${duration} pausiert",
     "sleepTimerCompleted": "Schlaftimer abgelaufen – Wiedergabe pausiert",
@@ -354,7 +349,6 @@
     "noResultsFound": "Keine Ergebnisse gefunden",
     "sleepTimerSet": "Sleep-Timer gesetzt auf ${label}",
     "noItemsAvailable": "Keine Elemente verfügbar",
-    "failedToCreatePlayQueue": "Wiedergabewarteschlange konnte nicht erstellt werden",
     "failedToCreatePlayQueueNoItems": "Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente",
     "failedPlayback": "Wiedergabe für ${action} fehlgeschlagen: ${error}",
     "switchingToCompatiblePlayer": "Wechsle zu kompatiblem Player..."
@@ -396,13 +390,11 @@
   },
   "dialog": {
     "confirmAction": "Aktion bestätigen",
-    "cancel": "Abbrechen",
-    "playNow": "Jetzt abspielen"
+    "cancel": "Abbrechen"
   },
   "discover": {
     "title": "Entdecken",
     "switchProfile": "Profil wechseln",
-    "switchServer": "Server wechseln",
     "logout": "Abmelden",
     "noContentAvailable": "Kein Inhalt verfügbar",
     "addMediaToLibraries": "Medien zur Mediathek hinzufügen",
@@ -415,7 +407,6 @@
     "seasons": "Staffeln",
     "studio": "Studio",
     "rating": "Altersfreigabe",
-    "watched": "Gesehen",
     "episodeCount": "${count} Episoden",
     "watchedProgress": "${watched} von ${total} gesehen",
     "movie": "Film",
@@ -496,7 +487,6 @@
   },
   "serverSelection": {
     "allServerConnectionsFailed": "Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.",
-    "noServersFound": "Keine Server gefunden",
     "noServersFoundForAccount": "Keine Server gefunden für ${username} (${email})",
     "failedToLoadServers": "Server konnten nicht geladen werden: ${error}"
   },
@@ -628,7 +618,6 @@
     "end": "Beenden",
     "leave": "Verlassen",
     "syncing": "Synchronisieren...",
-    "participant": "Teilnehmer",
     "joinWatchSession": "Schausitzung Beitreten",
     "enterCodeHint": "8-stelligen Code eingeben",
     "pasteFromClipboard": "Aus Zwischenablage einfügen",
@@ -645,9 +634,6 @@
     "nvscalerDescription": "NVIDIA-Bildskalierung für schärferes Video",
     "qualityFast": "Schnell",
     "qualityHQ": "Hohe Qualität",
-    "mode": "Modus",
-    "presetChanged": "Shader-Voreinstellung geändert",
-    "hdrDetected": "HDR erkannt – Shader übersprungen",
-    "mpvOnly": "Shader sind nur mit dem MPV-Player verfügbar"
+    "mode": "Modus"
   }
 }

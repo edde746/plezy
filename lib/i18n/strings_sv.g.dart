@@ -128,8 +128,6 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get delete => 'Ta bort';
 	@override String get shuffle => 'Blanda';
 	@override String get addTo => 'Lägg till i...';
-	@override String get showMore => 'Visa mer';
-	@override String get showLess => 'Visa mindre';
 }
 
 // Path: screens
@@ -140,7 +138,6 @@ class _TranslationsScreensSv implements TranslationsScreensEn {
 
 	// Translations
 	@override String get licenses => 'Licenser';
-	@override String get selectServer => 'Välj server';
 	@override String get switchProfile => 'Byt profil';
 	@override String get subtitleStyling => 'Undertext-styling';
 	@override String get mpvConfig => 'MPV-konfiguration';
@@ -286,7 +283,6 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get maxVolume => 'Maximal volym';
 	@override String get maxVolumeDescription => 'Tillåt volym över 100% för tyst media';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get maxVolumeHint => 'Ange maximal volym (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Visa vad du tittar på i Discord';
 	@override String get matchContentFrameRate => 'Matcha innehållets bildfrekvens';
@@ -431,7 +427,6 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get stretch => 'Sträck';
 	@override String get lockRotation => 'Lås rotation';
 	@override String get unlockRotation => 'Lås upp rotation';
-	@override String get sleepTimer => 'Sovtimer';
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
 	@override String get sleepTimerCompleted => 'Sovtimer slutförd - uppspelning pausad';
@@ -513,7 +508,6 @@ class _TranslationsMessagesSv implements TranslationsMessagesEn {
 	@override String get noResultsFound => 'Inga resultat hittades';
 	@override String sleepTimerSet({required Object label}) => 'Sovtimer inställd för ${label}';
 	@override String get noItemsAvailable => 'Inga objekt tillgängliga';
-	@override String get failedToCreatePlayQueue => 'Det gick inte att skapa uppspelningskö';
 	@override String get failedToCreatePlayQueueNoItems => 'Det gick inte att skapa uppspelningskö – inga objekt';
 	@override String failedPlayback({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Byter till kompatibel spelare...';
@@ -577,7 +571,6 @@ class _TranslationsDialogSv implements TranslationsDialogEn {
 	// Translations
 	@override String get confirmAction => 'Bekräfta åtgärd';
 	@override String get cancel => 'Avbryt';
-	@override String get playNow => 'Spela nu';
 }
 
 // Path: discover
@@ -589,7 +582,6 @@ class _TranslationsDiscoverSv implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => 'Upptäck';
 	@override String get switchProfile => 'Byt profil';
-	@override String get switchServer => 'Byt server';
 	@override String get logout => 'Logga ut';
 	@override String get noContentAvailable => 'Inget innehåll tillgängligt';
 	@override String get addMediaToLibraries => 'Lägg till media till dina bibliotek';
@@ -602,7 +594,6 @@ class _TranslationsDiscoverSv implements TranslationsDiscoverEn {
 	@override String get seasons => 'Säsonger';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Åldersgräns';
-	@override String get watched => 'Tittad';
 	@override String episodeCount({required Object count}) => '${count} avsnitt';
 	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} sedda';
 	@override String get movie => 'Film';
@@ -699,7 +690,6 @@ class _TranslationsServerSelectionSv implements TranslationsServerSelectionEn {
 
 	// Translations
 	@override String get allServerConnectionsFailed => 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.';
-	@override String get noServersFound => 'Inga servrar hittades';
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Misslyckades att ladda servrar: ${error}';
 }
@@ -887,7 +877,6 @@ class _TranslationsWatchTogetherSv implements TranslationsWatchTogetherEn {
 	@override String get end => 'Avsluta';
 	@override String get leave => 'Lämna';
 	@override String get syncing => 'Synkroniserar...';
-	@override String get participant => 'deltagare';
 	@override String get joinWatchSession => 'Gå med i Tittarsession';
 	@override String get enterCodeHint => 'Ange 8-teckens kod';
 	@override String get pasteFromClipboard => 'Klistra in från urklipp';
@@ -912,9 +901,6 @@ class _TranslationsShadersSv implements TranslationsShadersEn {
 	@override String get qualityFast => 'Snabb';
 	@override String get qualityHQ => 'Hög kvalitet';
 	@override String get mode => 'Läge';
-	@override String get presetChanged => 'Shader-förinställning ändrad';
-	@override String get hdrDetected => 'HDR upptäckt - shader hoppades över';
-	@override String get mpvOnly => 'Shaders är bara tillgängliga med MPV-spelaren';
 }
 
 // Path: hotkeys.actions
@@ -1025,10 +1011,7 @@ extension on TranslationsSv {
 			'common.delete' => 'Ta bort',
 			'common.shuffle' => 'Blanda',
 			'common.addTo' => 'Lägg till i...',
-			'common.showMore' => 'Visa mer',
-			'common.showLess' => 'Visa mindre',
 			'screens.licenses' => 'Licenser',
-			'screens.selectServer' => 'Välj server',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
 			'screens.mpvConfig' => 'MPV-konfiguration',
@@ -1156,7 +1139,6 @@ extension on TranslationsSv {
 			'settings.maxVolume' => 'Maximal volym',
 			'settings.maxVolumeDescription' => 'Tillåt volym över 100% för tyst media',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.maxVolumeHint' => 'Ange maximal volym (100-300)',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Visa vad du tittar på i Discord',
 			'settings.matchContentFrameRate' => 'Matcha innehållets bildfrekvens',
@@ -1246,7 +1228,6 @@ extension on TranslationsSv {
 			'videoControls.stretch' => 'Sträck',
 			'videoControls.lockRotation' => 'Lås rotation',
 			'videoControls.unlockRotation' => 'Lås upp rotation',
-			'videoControls.sleepTimer' => 'Sovtimer',
 			'videoControls.timerActive' => 'Timer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Uppspelningen pausas om ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Sovtimer slutförd - uppspelning pausad',
@@ -1314,7 +1295,6 @@ extension on TranslationsSv {
 			'messages.noResultsFound' => 'Inga resultat hittades',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sovtimer inställd för ${label}',
 			'messages.noItemsAvailable' => 'Inga objekt tillgängliga',
-			'messages.failedToCreatePlayQueue' => 'Det gick inte att skapa uppspelningskö',
 			'messages.failedToCreatePlayQueueNoItems' => 'Det gick inte att skapa uppspelningskö – inga objekt',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Byter till kompatibel spelare...',
@@ -1351,10 +1331,8 @@ extension on TranslationsSv {
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} poster',
 			'dialog.confirmAction' => 'Bekräfta åtgärd',
 			'dialog.cancel' => 'Avbryt',
-			'dialog.playNow' => 'Spela nu',
 			'discover.title' => 'Upptäck',
 			'discover.switchProfile' => 'Byt profil',
-			'discover.switchServer' => 'Byt server',
 			'discover.logout' => 'Logga ut',
 			'discover.noContentAvailable' => 'Inget innehåll tillgängligt',
 			'discover.addMediaToLibraries' => 'Lägg till media till dina bibliotek',
@@ -1367,7 +1345,6 @@ extension on TranslationsSv {
 			'discover.seasons' => 'Säsonger',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Åldersgräns',
-			'discover.watched' => 'Tittad',
 			'discover.episodeCount' => ({required Object count}) => '${count} avsnitt',
 			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} sedda',
 			'discover.movie' => 'Film',
@@ -1436,7 +1413,6 @@ extension on TranslationsSv {
 			'about.appDescription' => 'En vacker Plex-klient för Flutter',
 			'about.viewLicensesDescription' => 'Visa licenser för tredjepartsbibliotek',
 			'serverSelection.allServerConnectionsFailed' => 'Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.',
-			'serverSelection.noServersFound' => 'Inga servrar hittades',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Inga servrar hittades för ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Misslyckades att ladda servrar: ${error}',
 			'hubDetail.title' => 'Titel',
@@ -1506,8 +1482,6 @@ extension on TranslationsSv {
 			'collections.deleted' => 'Samling borttagen',
 			'collections.deleteFailed' => 'Det gick inte att ta bort samlingen',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Det gick inte att läsa in samlingsobjekt: ${error}',
 			'collections.selectCollection' => 'Välj samling',
 			'collections.createNewCollection' => 'Skapa ny samling',
@@ -1518,6 +1492,8 @@ extension on TranslationsSv {
 			'collections.created' => 'Samling skapad',
 			'collections.removeFromCollection' => 'Ta bort från samling',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Ta bort "${title}" från denna samling?',
+			_ => null,
+		} ?? switch (path) {
 			'collections.removedFromCollection' => 'Borttagen från samling',
 			'collections.removeFromCollectionFailed' => 'Misslyckades med att ta bort från samling',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fel vid borttagning från samling: ${error}',
@@ -1554,7 +1530,6 @@ extension on TranslationsSv {
 			'watchTogether.end' => 'Avsluta',
 			'watchTogether.leave' => 'Lämna',
 			'watchTogether.syncing' => 'Synkroniserar...',
-			'watchTogether.participant' => 'deltagare',
 			'watchTogether.joinWatchSession' => 'Gå med i Tittarsession',
 			'watchTogether.enterCodeHint' => 'Ange 8-teckens kod',
 			'watchTogether.pasteFromClipboard' => 'Klistra in från urklipp',
@@ -1570,9 +1545,6 @@ extension on TranslationsSv {
 			'shaders.qualityFast' => 'Snabb',
 			'shaders.qualityHQ' => 'Hög kvalitet',
 			'shaders.mode' => 'Läge',
-			'shaders.presetChanged' => 'Shader-förinställning ändrad',
-			'shaders.hdrDetected' => 'HDR upptäckt - shader hoppades över',
-			'shaders.mpvOnly' => 'Shaders är bara tillgängliga med MPV-spelaren',
 			_ => null,
 		};
 	}

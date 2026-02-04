@@ -34,13 +34,10 @@
     "no": "Nej",
     "delete": "Ta bort",
     "shuffle": "Blanda",
-    "addTo": "Lägg till i...",
-    "showMore": "Visa mer",
-    "showLess": "Visa mindre"
+    "addTo": "Lägg till i..."
   },
   "screens": {
     "licenses": "Licenser",
-    "selectServer": "Välj server",
     "switchProfile": "Byt profil",
     "subtitleStyling": "Undertext-styling",
     "mpvConfig": "MPV-konfiguration",
@@ -172,7 +169,6 @@
     "maxVolume": "Maximal volym",
     "maxVolumeDescription": "Tillåt volym över 100% för tyst media",
     "maxVolumePercent": "${percent}%",
-    "maxVolumeHint": "Ange maximal volym (100-300)",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
@@ -280,7 +276,6 @@
     "stretch": "Sträck",
     "lockRotation": "Lås rotation",
     "unlockRotation": "Lås upp rotation",
-    "sleepTimer": "Sovtimer",
     "timerActive": "Timer aktiv",
     "playbackWillPauseIn": "Uppspelningen pausas om ${duration}",
     "sleepTimerCompleted": "Sovtimer slutförd - uppspelning pausad",
@@ -354,7 +349,6 @@
     "noResultsFound": "Inga resultat hittades",
     "sleepTimerSet": "Sovtimer inställd för ${label}",
     "noItemsAvailable": "Inga objekt tillgängliga",
-    "failedToCreatePlayQueue": "Det gick inte att skapa uppspelningskö",
     "failedToCreatePlayQueueNoItems": "Det gick inte att skapa uppspelningskö – inga objekt",
     "failedPlayback": "Kunde inte ${action}: ${error}",
     "switchingToCompatiblePlayer": "Byter till kompatibel spelare..."
@@ -396,13 +390,11 @@
   },
   "dialog": {
     "confirmAction": "Bekräfta åtgärd",
-    "cancel": "Avbryt",
-    "playNow": "Spela nu"
+    "cancel": "Avbryt"
   },
   "discover": {
     "title": "Upptäck",
     "switchProfile": "Byt profil",
-    "switchServer": "Byt server",
     "logout": "Logga ut",
     "noContentAvailable": "Inget innehåll tillgängligt",
     "addMediaToLibraries": "Lägg till media till dina bibliotek",
@@ -415,7 +407,6 @@
     "seasons": "Säsonger",
     "studio": "Studio",
     "rating": "Åldersgräns",
-    "watched": "Tittad",
     "episodeCount": "${count} avsnitt",
     "watchedProgress": "${watched}/${total} sedda",
     "movie": "Film",
@@ -496,7 +487,6 @@
   },
   "serverSelection": {
     "allServerConnectionsFailed": "Misslyckades att ansluta till servrar. Kontrollera ditt nätverk och försök igen.",
-    "noServersFound": "Inga servrar hittades",
     "noServersFoundForAccount": "Inga servrar hittades för ${username} (${email})",
     "failedToLoadServers": "Misslyckades att ladda servrar: ${error}"
   },
@@ -628,7 +618,6 @@
     "end": "Avsluta",
     "leave": "Lämna",
     "syncing": "Synkroniserar...",
-    "participant": "deltagare",
     "joinWatchSession": "Gå med i Tittarsession",
     "enterCodeHint": "Ange 8-teckens kod",
     "pasteFromClipboard": "Klistra in från urklipp",
@@ -645,9 +634,6 @@
     "nvscalerDescription": "NVIDIA-bildskalning för skarpare video",
     "qualityFast": "Snabb",
     "qualityHQ": "Hög kvalitet",
-    "mode": "Läge",
-    "presetChanged": "Shader-förinställning ändrad",
-    "hdrDetected": "HDR upptäckt - shader hoppades över",
-    "mpvOnly": "Shaders är bara tillgängliga med MPV-spelaren"
+    "mode": "Läge"
   }
 }

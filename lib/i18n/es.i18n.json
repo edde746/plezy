@@ -34,9 +34,7 @@
         "no": "No",
         "delete": "Eliminar",
         "shuffle": "Aleatorio",
-        "addTo": "Añadir a...",
-        "showMore": "Ver más",
-        "showLess": "Ver menos"
+        "addTo": "Añadir a..."
     },
     "screens": {
         "licenses": "Licencias",
@@ -171,7 +169,6 @@
         "maxVolume": "Volumen Máximo",
         "maxVolumeDescription": "Permitir aumento de volumen por encima del 100% para medios con sonido bajo",
         "maxVolumePercent": "${percent}%",
-        "maxVolumeHint": "Introduce el volumen máximo (100-300)",
         "discordRichPresence": "Presencia de Discord",
         "discordRichPresenceDescription": "Mostrar lo que estás viendo en Discord",
         "matchContentFrameRate": "Ajustar frecuencia de actualización",
@@ -279,7 +276,6 @@
         "stretch": "Estirar",
         "lockRotation": "Bloquear rotación",
         "unlockRotation": "Desbloquear rotación",
-        "sleepTimer": "Temporizador",
         "timerActive": "Temporizador Activo",
         "playbackWillPauseIn": "La reproducción se pausará en ${duration}",
         "sleepTimerCompleted": "Temporizador completado - reproducción pausada",
@@ -353,7 +349,6 @@
         "noResultsFound": "No se encontraron resultados",
         "sleepTimerSet": "Temporizador establecido en ${label}",
         "noItemsAvailable": "No hay elementos disponibles",
-        "failedToCreatePlayQueue": "Error al crear la cola de reproducción",
         "failedToCreatePlayQueueNoItems": "Error al crear la cola de reproducción - no hay elementos",
         "failedPlayback": "Error al ${action}: ${error}",
         "switchingToCompatiblePlayer": "Cambiando a reproductor compatible..."
@@ -395,8 +390,7 @@
     },
     "dialog": {
         "confirmAction": "Confirmar Acción",
-        "cancel": "Cancelar",
-        "playNow": "Reproducir Ahora"
+        "cancel": "Cancelar"
     },
     "discover": {
         "title": "Descubrir",
@@ -413,7 +407,6 @@
         "seasons": "Temporadas",
         "studio": "Estudio",
         "rating": "Calificación",
-        "watched": "Visto",
         "episodeCount": "${count} episodios",
         "watchedProgress": "${watched}/${total} vistos",
         "movie": "Película",
@@ -494,7 +487,6 @@
     },
     "serverSelection": {
         "allServerConnectionsFailed": "No se pudo conectar con ningún servidor. Por favor, comprueba tu conexión e inténtalo de nuevo.",
-        "noServersFound": "No se encontraron servidores",
         "noServersFoundForAccount": "No se encontraron servidores para ${username} (${email})",
         "failedToLoadServers": "Error al cargar servidores: ${error}"
     },
@@ -610,7 +602,6 @@
         "end": "Finalizar",
         "leave": "Salir",
         "syncing": "Sincronizando...",
-        "participant": "participante",
         "joinWatchSession": "Unirse a Sesión de Visualización",
         "enterCodeHint": "Introduce el código de 8 caracteres",
         "pasteFromClipboard": "Pegar desde el portapapeles",
@@ -643,9 +634,6 @@
         "nvscalerDescription": "Escalado de imagen NVIDIA para un video más nítido",
         "qualityFast": "Rápido",
         "qualityHQ": "Alta Calidad",
-        "mode": "Modo",
-        "presetChanged": "Ajuste de shader cambiado",
-        "hdrDetected": "HDR detectado - shader omitido",
-        "mpvOnly": "Los shaders solo están disponibles con el reproductor MPV"
+        "mode": "Modo"
     }
 }

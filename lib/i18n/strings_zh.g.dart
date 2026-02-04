@@ -128,8 +128,6 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get delete => '删除';
 	@override String get shuffle => '随机播放';
 	@override String get addTo => '添加到...';
-	@override String get showMore => '展开';
-	@override String get showLess => '收起';
 }
 
 // Path: screens
@@ -140,7 +138,6 @@ class _TranslationsScreensZh implements TranslationsScreensEn {
 
 	// Translations
 	@override String get licenses => '许可证';
-	@override String get selectServer => '选择服务器';
 	@override String get switchProfile => '切换用户';
 	@override String get subtitleStyling => '字幕样式';
 	@override String get mpvConfig => 'MPV 配置';
@@ -286,7 +283,6 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get maxVolume => '最大音量';
 	@override String get maxVolumeDescription => '允许音量超过 100% 以适应安静的媒体';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get maxVolumeHint => '输入最大音量 (100-300)';
 	@override String get discordRichPresence => 'Discord 动态状态';
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
 	@override String get matchContentFrameRate => '匹配内容帧率';
@@ -431,7 +427,6 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override String get stretch => '拉伸';
 	@override String get lockRotation => '锁定旋转';
 	@override String get unlockRotation => '解锁旋转';
-	@override String get sleepTimer => '睡眠定时器';
 	@override String get timerActive => '定时器已激活';
 	@override String playbackWillPauseIn({required Object duration}) => '播放将在 ${duration} 后暂停';
 	@override String get sleepTimerCompleted => '睡眠定时器已完成 - 播放已暂停';
@@ -513,7 +508,6 @@ class _TranslationsMessagesZh implements TranslationsMessagesEn {
 	@override String get noResultsFound => '未找到结果';
 	@override String sleepTimerSet({required Object label}) => '睡眠定时器已设置为 ${label}';
 	@override String get noItemsAvailable => '没有可用的项目';
-	@override String get failedToCreatePlayQueue => '创建播放队列失败';
 	@override String get failedToCreatePlayQueueNoItems => '创建播放队列失败 - 没有项目';
 	@override String failedPlayback({required Object action, required Object error}) => '无法${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => '正在切换到兼容的播放器...';
@@ -577,7 +571,6 @@ class _TranslationsDialogZh implements TranslationsDialogEn {
 	// Translations
 	@override String get confirmAction => '确认操作';
 	@override String get cancel => '取消';
-	@override String get playNow => '立即播放';
 }
 
 // Path: discover
@@ -589,7 +582,6 @@ class _TranslationsDiscoverZh implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => '发现';
 	@override String get switchProfile => '切换用户';
-	@override String get switchServer => '切换服务器';
 	@override String get logout => '登出';
 	@override String get noContentAvailable => '没有可用内容';
 	@override String get addMediaToLibraries => '请向你的媒体库添加一些媒体';
@@ -602,7 +594,6 @@ class _TranslationsDiscoverZh implements TranslationsDiscoverEn {
 	@override String get seasons => '季数';
 	@override String get studio => '制作公司';
 	@override String get rating => '年龄分级';
-	@override String get watched => '已观看';
 	@override String episodeCount({required Object count}) => '${count} 集';
 	@override String watchedProgress({required Object watched, required Object total}) => '已观看 ${watched}/${total} 集';
 	@override String get movie => '电影';
@@ -699,7 +690,6 @@ class _TranslationsServerSelectionZh implements TranslationsServerSelectionEn {
 
 	// Translations
 	@override String get allServerConnectionsFailed => '无法连接到任何服务器。请检查你的网络并重试。';
-	@override String get noServersFound => '未找到服务器';
 	@override String noServersFoundForAccount({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器';
 	@override String failedToLoadServers({required Object error}) => '无法加载服务器: ${error}';
 }
@@ -887,7 +877,6 @@ class _TranslationsWatchTogetherZh implements TranslationsWatchTogetherEn {
 	@override String get end => '结束';
 	@override String get leave => '离开';
 	@override String get syncing => '同步中...';
-	@override String get participant => '参与者';
 	@override String get joinWatchSession => '加入观看会话';
 	@override String get enterCodeHint => '输入8位代码';
 	@override String get pasteFromClipboard => '从剪贴板粘贴';
@@ -912,9 +901,6 @@ class _TranslationsShadersZh implements TranslationsShadersEn {
 	@override String get qualityFast => '快速';
 	@override String get qualityHQ => '高质量';
 	@override String get mode => '模式';
-	@override String get presetChanged => '着色器预设已更改';
-	@override String get hdrDetected => '检测到 HDR - 已跳过着色器';
-	@override String get mpvOnly => '着色器仅在使用 MPV 播放器时可用';
 }
 
 // Path: hotkeys.actions
@@ -1025,10 +1011,7 @@ extension on TranslationsZh {
 			'common.delete' => '删除',
 			'common.shuffle' => '随机播放',
 			'common.addTo' => '添加到...',
-			'common.showMore' => '展开',
-			'common.showLess' => '收起',
 			'screens.licenses' => '许可证',
-			'screens.selectServer' => '选择服务器',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
 			'screens.mpvConfig' => 'MPV 配置',
@@ -1156,7 +1139,6 @@ extension on TranslationsZh {
 			'settings.maxVolume' => '最大音量',
 			'settings.maxVolumeDescription' => '允许音量超过 100% 以适应安静的媒体',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.maxVolumeHint' => '输入最大音量 (100-300)',
 			'settings.discordRichPresence' => 'Discord 动态状态',
 			'settings.discordRichPresenceDescription' => '在 Discord 上显示您正在观看的内容',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
@@ -1246,7 +1228,6 @@ extension on TranslationsZh {
 			'videoControls.stretch' => '拉伸',
 			'videoControls.lockRotation' => '锁定旋转',
 			'videoControls.unlockRotation' => '解锁旋转',
-			'videoControls.sleepTimer' => '睡眠定时器',
 			'videoControls.timerActive' => '定时器已激活',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '播放将在 ${duration} 后暂停',
 			'videoControls.sleepTimerCompleted' => '睡眠定时器已完成 - 播放已暂停',
@@ -1314,7 +1295,6 @@ extension on TranslationsZh {
 			'messages.noResultsFound' => '未找到结果',
 			'messages.sleepTimerSet' => ({required Object label}) => '睡眠定时器已设置为 ${label}',
 			'messages.noItemsAvailable' => '没有可用的项目',
-			'messages.failedToCreatePlayQueue' => '创建播放队列失败',
 			'messages.failedToCreatePlayQueueNoItems' => '创建播放队列失败 - 没有项目',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '无法${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => '正在切换到兼容的播放器...',
@@ -1351,10 +1331,8 @@ extension on TranslationsZh {
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} 条目',
 			'dialog.confirmAction' => '确认操作',
 			'dialog.cancel' => '取消',
-			'dialog.playNow' => '立即播放',
 			'discover.title' => '发现',
 			'discover.switchProfile' => '切换用户',
-			'discover.switchServer' => '切换服务器',
 			'discover.logout' => '登出',
 			'discover.noContentAvailable' => '没有可用内容',
 			'discover.addMediaToLibraries' => '请向你的媒体库添加一些媒体',
@@ -1367,7 +1345,6 @@ extension on TranslationsZh {
 			'discover.seasons' => '季数',
 			'discover.studio' => '制作公司',
 			'discover.rating' => '年龄分级',
-			'discover.watched' => '已观看',
 			'discover.episodeCount' => ({required Object count}) => '${count} 集',
 			'discover.watchedProgress' => ({required Object watched, required Object total}) => '已观看 ${watched}/${total} 集',
 			'discover.movie' => '电影',
@@ -1436,7 +1413,6 @@ extension on TranslationsZh {
 			'about.appDescription' => '一款精美的 Flutter Plex 客户端',
 			'about.viewLicensesDescription' => '查看第三方库的许可证',
 			'serverSelection.allServerConnectionsFailed' => '无法连接到任何服务器。请检查你的网络并重试。',
-			'serverSelection.noServersFound' => '未找到服务器',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '未找到 ${username} (${email}) 的服务器',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '无法加载服务器: ${error}',
 			'hubDetail.title' => '标题',
@@ -1506,8 +1482,6 @@ extension on TranslationsZh {
 			'collections.deleted' => '已删除合集',
 			'collections.deleteFailed' => '删除合集失败',
 			'collections.deleteFailedWithError' => ({required Object error}) => '删除合集失败：${error}',
-			_ => null,
-		} ?? switch (path) {
 			'collections.failedToLoadItems' => ({required Object error}) => '加载合集项目失败：${error}',
 			'collections.selectCollection' => '选择合集',
 			'collections.createNewCollection' => '创建新合集',
@@ -1518,6 +1492,8 @@ extension on TranslationsZh {
 			'collections.created' => '已创建合集',
 			'collections.removeFromCollection' => '从合集移除',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '将“${title}”从此合集移除？',
+			_ => null,
+		} ?? switch (path) {
 			'collections.removedFromCollection' => '已从合集移除',
 			'collections.removeFromCollectionFailed' => '从合集移除失败',
 			'collections.removeFromCollectionError' => ({required Object error}) => '从合集移除时出错：${error}',
@@ -1554,7 +1530,6 @@ extension on TranslationsZh {
 			'watchTogether.end' => '结束',
 			'watchTogether.leave' => '离开',
 			'watchTogether.syncing' => '同步中...',
-			'watchTogether.participant' => '参与者',
 			'watchTogether.joinWatchSession' => '加入观看会话',
 			'watchTogether.enterCodeHint' => '输入8位代码',
 			'watchTogether.pasteFromClipboard' => '从剪贴板粘贴',
@@ -1570,9 +1545,6 @@ extension on TranslationsZh {
 			'shaders.qualityFast' => '快速',
 			'shaders.qualityHQ' => '高质量',
 			'shaders.mode' => '模式',
-			'shaders.presetChanged' => '着色器预设已更改',
-			'shaders.hdrDetected' => '检测到 HDR - 已跳过着色器',
-			'shaders.mpvOnly' => '着色器仅在使用 MPV 播放器时可用',
 			_ => null,
 		};
 	}

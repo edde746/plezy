@@ -128,8 +128,6 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get delete => '삭제';
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
-	@override String get showMore => '더 보기';
-	@override String get showLess => '접기';
 }
 
 // Path: screens
@@ -140,7 +138,6 @@ class _TranslationsScreensKo implements TranslationsScreensEn {
 
 	// Translations
 	@override String get licenses => '라이선스';
-	@override String get selectServer => '서버 선택';
 	@override String get switchProfile => '프로필 전환';
 	@override String get subtitleStyling => '자막 스타일 설정';
 	@override String get mpvConfig => 'MPV 설정';
@@ -286,7 +283,6 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get maxVolume => '최대 볼륨';
 	@override String get maxVolumeDescription => '조용한 미디어를 위해 100% 이상의 볼륨 허용';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get maxVolumeHint => '최대 볼륨 입력 (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
@@ -431,7 +427,6 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get stretch => '확장';
 	@override String get lockRotation => '회전 잠금';
 	@override String get unlockRotation => '회전 잠금 해제';
-	@override String get sleepTimer => '수면 타이머';
 	@override String get timerActive => '타이머 활성화됨';
 	@override String playbackWillPauseIn({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다';
 	@override String get sleepTimerCompleted => '수면 타이머 완료됨 - 재생이 일시 중지되었습니다';
@@ -513,7 +508,6 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 	@override String get noResultsFound => '결과를 찾을 수 없습니다';
 	@override String sleepTimerSet({required Object label}) => '수면 타이머가 ${label}로 설정 되었습니다';
 	@override String get noItemsAvailable => '사용 가능한 항목이 없습니다';
-	@override String get failedToCreatePlayQueue => '재생 대기열 생성 실패';
 	@override String get failedToCreatePlayQueueNoItems => '재생 대기열 생성 실패 - 항목 없음';
 	@override String failedPlayback({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}';
 	@override String get switchingToCompatiblePlayer => '호환되는 플레이어로 전환 중...';
@@ -577,7 +571,6 @@ class _TranslationsDialogKo implements TranslationsDialogEn {
 	// Translations
 	@override String get confirmAction => '확인';
 	@override String get cancel => '취소';
-	@override String get playNow => '지금 재생';
 }
 
 // Path: discover
@@ -589,7 +582,6 @@ class _TranslationsDiscoverKo implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => '발견';
 	@override String get switchProfile => '사용자 전환';
-	@override String get switchServer => '서버 전환';
 	@override String get logout => '로그아웃';
 	@override String get noContentAvailable => '사용 가능한 콘텐츠가 없습니다';
 	@override String get addMediaToLibraries => '미디어 라이브러리에 미디어를 추가해 주세요';
@@ -602,7 +594,6 @@ class _TranslationsDiscoverKo implements TranslationsDiscoverEn {
 	@override String get seasons => '시즌 수';
 	@override String get studio => '제작사';
 	@override String get rating => '연령 등급';
-	@override String get watched => '시청 완료';
 	@override String episodeCount({required Object count}) => '${count} 편';
 	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} 편 시청 완료';
 	@override String get movie => '영화';
@@ -699,7 +690,6 @@ class _TranslationsServerSelectionKo implements TranslationsServerSelectionEn {
 
 	// Translations
 	@override String get allServerConnectionsFailed => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.';
-	@override String get noServersFound => '서버를 찾을 수 없습니다.';
 	@override String noServersFoundForAccount({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.';
 	@override String failedToLoadServers({required Object error}) => '서버를 로드할 수 없습니다: ${error}';
 }
@@ -864,7 +854,6 @@ class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
 	@override String get end => '종료';
 	@override String get leave => '이탈';
 	@override String get syncing => '동기화 중...';
-	@override String get participant => '참여자';
 	@override String get joinWatchSession => '시청 세션에 참여';
 	@override String get enterCodeHint => '8자리 코드 입력';
 	@override String get pasteFromClipboard => '클립보드에서 붙여넣기';
@@ -912,9 +901,6 @@ class _TranslationsShadersKo implements TranslationsShadersEn {
 	@override String get qualityFast => '빠름';
 	@override String get qualityHQ => '고품질';
 	@override String get mode => '모드';
-	@override String get presetChanged => '셰이더 프리셋 변경됨';
-	@override String get hdrDetected => 'HDR 감지됨 - 셰이더 건너뜀';
-	@override String get mpvOnly => '셰이더는 MPV 플레이어에서만 사용 가능합니다';
 }
 
 // Path: hotkeys.actions
@@ -1025,10 +1011,7 @@ extension on TranslationsKo {
 			'common.delete' => '삭제',
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
-			'common.showMore' => '더 보기',
-			'common.showLess' => '접기',
 			'screens.licenses' => '라이선스',
-			'screens.selectServer' => '서버 선택',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
 			'screens.mpvConfig' => 'MPV 설정',
@@ -1156,7 +1139,6 @@ extension on TranslationsKo {
 			'settings.maxVolume' => '최대 볼륨',
 			'settings.maxVolumeDescription' => '조용한 미디어를 위해 100% 이상의 볼륨 허용',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.maxVolumeHint' => '최대 볼륨 입력 (100-300)',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Discord에서 시청 중인 콘텐츠 표시',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
@@ -1246,7 +1228,6 @@ extension on TranslationsKo {
 			'videoControls.stretch' => '확장',
 			'videoControls.lockRotation' => '회전 잠금',
 			'videoControls.unlockRotation' => '회전 잠금 해제',
-			'videoControls.sleepTimer' => '수면 타이머',
 			'videoControls.timerActive' => '타이머 활성화됨',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다',
 			'videoControls.sleepTimerCompleted' => '수면 타이머 완료됨 - 재생이 일시 중지되었습니다',
@@ -1314,7 +1295,6 @@ extension on TranslationsKo {
 			'messages.noResultsFound' => '결과를 찾을 수 없습니다',
 			'messages.sleepTimerSet' => ({required Object label}) => '수면 타이머가 ${label}로 설정 되었습니다',
 			'messages.noItemsAvailable' => '사용 가능한 항목이 없습니다',
-			'messages.failedToCreatePlayQueue' => '재생 대기열 생성 실패',
 			'messages.failedToCreatePlayQueueNoItems' => '재생 대기열 생성 실패 - 항목 없음',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '${action}을(를) 수행할 수 없습니다: ${error}',
 			'messages.switchingToCompatiblePlayer' => '호환되는 플레이어로 전환 중...',
@@ -1351,10 +1331,8 @@ extension on TranslationsKo {
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} 항목',
 			'dialog.confirmAction' => '확인',
 			'dialog.cancel' => '취소',
-			'dialog.playNow' => '지금 재생',
 			'discover.title' => '발견',
 			'discover.switchProfile' => '사용자 전환',
-			'discover.switchServer' => '서버 전환',
 			'discover.logout' => '로그아웃',
 			'discover.noContentAvailable' => '사용 가능한 콘텐츠가 없습니다',
 			'discover.addMediaToLibraries' => '미디어 라이브러리에 미디어를 추가해 주세요',
@@ -1367,7 +1345,6 @@ extension on TranslationsKo {
 			'discover.seasons' => '시즌 수',
 			'discover.studio' => '제작사',
 			'discover.rating' => '연령 등급',
-			'discover.watched' => '시청 완료',
 			'discover.episodeCount' => ({required Object count}) => '${count} 편',
 			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} 편 시청 완료',
 			'discover.movie' => '영화',
@@ -1436,7 +1413,6 @@ extension on TranslationsKo {
 			'about.appDescription' => '아름다운 Flutter Plex 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
 			'serverSelection.allServerConnectionsFailed' => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.',
-			'serverSelection.noServersFound' => '서버를 찾을 수 없습니다.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => '서버를 로드할 수 없습니다: ${error}',
 			'hubDetail.title' => '제목',
@@ -1506,8 +1482,6 @@ extension on TranslationsKo {
 			'playlists.errorReordering' => '재생 목록 항목 재정렬 실패',
 			'playlists.errorRemoving' => '재생 목록에서 제거 실패',
 			'watchTogether.title' => '함께 보기',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.description' => '친구 및 가족과 콘텐츠를 동시에 시청하세요',
 			'watchTogether.createSession' => '세션 생성',
 			'watchTogether.creating' => '생성 중...',
@@ -1518,6 +1492,8 @@ extension on TranslationsKo {
 			'watchTogether.hostOnly' => '호스트만',
 			'watchTogether.anyone' => '누구나',
 			'watchTogether.hostingSession' => '세션 호스팅',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inSession' => '세션 중',
 			'watchTogether.sessionCode' => '세션 코드',
 			'watchTogether.hostControlsPlayback' => '호스트 재생 제어',
@@ -1540,7 +1516,6 @@ extension on TranslationsKo {
 			'watchTogether.end' => '종료',
 			'watchTogether.leave' => '이탈',
 			'watchTogether.syncing' => '동기화 중...',
-			'watchTogether.participant' => '참여자',
 			'watchTogether.joinWatchSession' => '시청 세션에 참여',
 			'watchTogether.enterCodeHint' => '8자리 코드 입력',
 			'watchTogether.pasteFromClipboard' => '클립보드에서 붙여넣기',
@@ -1570,9 +1545,6 @@ extension on TranslationsKo {
 			'shaders.qualityFast' => '빠름',
 			'shaders.qualityHQ' => '고품질',
 			'shaders.mode' => '모드',
-			'shaders.presetChanged' => '셰이더 프리셋 변경됨',
-			'shaders.hdrDetected' => 'HDR 감지됨 - 셰이더 건너뜀',
-			'shaders.mpvOnly' => '셰이더는 MPV 플레이어에서만 사용 가능합니다',
 			_ => null,
 		};
 	}

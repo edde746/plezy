@@ -128,8 +128,6 @@ class _TranslationsCommonEs implements TranslationsCommonEn {
 	@override String get delete => 'Eliminar';
 	@override String get shuffle => 'Aleatorio';
 	@override String get addTo => 'Añadir a...';
-	@override String get showMore => 'Ver más';
-	@override String get showLess => 'Ver menos';
 }
 
 // Path: screens
@@ -285,7 +283,6 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get maxVolume => 'Volumen Máximo';
 	@override String get maxVolumeDescription => 'Permitir aumento de volumen por encima del 100% para medios con sonido bajo';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get maxVolumeHint => 'Introduce el volumen máximo (100-300)';
 	@override String get discordRichPresence => 'Presencia de Discord';
 	@override String get discordRichPresenceDescription => 'Mostrar lo que estás viendo en Discord';
 	@override String get matchContentFrameRate => 'Ajustar frecuencia de actualización';
@@ -430,7 +427,6 @@ class _TranslationsVideoControlsEs implements TranslationsVideoControlsEn {
 	@override String get stretch => 'Estirar';
 	@override String get lockRotation => 'Bloquear rotación';
 	@override String get unlockRotation => 'Desbloquear rotación';
-	@override String get sleepTimer => 'Temporizador';
 	@override String get timerActive => 'Temporizador Activo';
 	@override String playbackWillPauseIn({required Object duration}) => 'La reproducción se pausará en ${duration}';
 	@override String get sleepTimerCompleted => 'Temporizador completado - reproducción pausada';
@@ -512,7 +508,6 @@ class _TranslationsMessagesEs implements TranslationsMessagesEn {
 	@override String get noResultsFound => 'No se encontraron resultados';
 	@override String sleepTimerSet({required Object label}) => 'Temporizador establecido en ${label}';
 	@override String get noItemsAvailable => 'No hay elementos disponibles';
-	@override String get failedToCreatePlayQueue => 'Error al crear la cola de reproducción';
 	@override String get failedToCreatePlayQueueNoItems => 'Error al crear la cola de reproducción - no hay elementos';
 	@override String failedPlayback({required Object action, required Object error}) => 'Error al ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Cambiando a reproductor compatible...';
@@ -576,7 +571,6 @@ class _TranslationsDialogEs implements TranslationsDialogEn {
 	// Translations
 	@override String get confirmAction => 'Confirmar Acción';
 	@override String get cancel => 'Cancelar';
-	@override String get playNow => 'Reproducir Ahora';
 }
 
 // Path: discover
@@ -600,7 +594,6 @@ class _TranslationsDiscoverEs implements TranslationsDiscoverEn {
 	@override String get seasons => 'Temporadas';
 	@override String get studio => 'Estudio';
 	@override String get rating => 'Calificación';
-	@override String get watched => 'Visto';
 	@override String episodeCount({required Object count}) => '${count} episodios';
 	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} vistos';
 	@override String get movie => 'Película';
@@ -697,7 +690,6 @@ class _TranslationsServerSelectionEs implements TranslationsServerSelectionEn {
 
 	// Translations
 	@override String get allServerConnectionsFailed => 'No se pudo conectar con ningún servidor. Por favor, comprueba tu conexión e inténtalo de nuevo.';
-	@override String get noServersFound => 'No se encontraron servidores';
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'No se encontraron servidores para ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Error al cargar servidores: ${error}';
 }
@@ -862,7 +854,6 @@ class _TranslationsWatchTogetherEs implements TranslationsWatchTogetherEn {
 	@override String get end => 'Finalizar';
 	@override String get leave => 'Salir';
 	@override String get syncing => 'Sincronizando...';
-	@override String get participant => 'participante';
 	@override String get joinWatchSession => 'Unirse a Sesión de Visualización';
 	@override String get enterCodeHint => 'Introduce el código de 8 caracteres';
 	@override String get pasteFromClipboard => 'Pegar desde el portapapeles';
@@ -910,9 +901,6 @@ class _TranslationsShadersEs implements TranslationsShadersEn {
 	@override String get qualityFast => 'Rápido';
 	@override String get qualityHQ => 'Alta Calidad';
 	@override String get mode => 'Modo';
-	@override String get presetChanged => 'Ajuste de shader cambiado';
-	@override String get hdrDetected => 'HDR detectado - shader omitido';
-	@override String get mpvOnly => 'Los shaders solo están disponibles con el reproductor MPV';
 }
 
 // Path: hotkeys.actions
@@ -1023,8 +1011,6 @@ extension on TranslationsEs {
 			'common.delete' => 'Eliminar',
 			'common.shuffle' => 'Aleatorio',
 			'common.addTo' => 'Añadir a...',
-			'common.showMore' => 'Ver más',
-			'common.showLess' => 'Ver menos',
 			'screens.licenses' => 'Licencias',
 			'screens.switchProfile' => 'Cambiar Perfil',
 			'screens.subtitleStyling' => 'Estilo de Subtítulos',
@@ -1153,7 +1139,6 @@ extension on TranslationsEs {
 			'settings.maxVolume' => 'Volumen Máximo',
 			'settings.maxVolumeDescription' => 'Permitir aumento de volumen por encima del 100% para medios con sonido bajo',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.maxVolumeHint' => 'Introduce el volumen máximo (100-300)',
 			'settings.discordRichPresence' => 'Presencia de Discord',
 			'settings.discordRichPresenceDescription' => 'Mostrar lo que estás viendo en Discord',
 			'settings.matchContentFrameRate' => 'Ajustar frecuencia de actualización',
@@ -1243,7 +1228,6 @@ extension on TranslationsEs {
 			'videoControls.stretch' => 'Estirar',
 			'videoControls.lockRotation' => 'Bloquear rotación',
 			'videoControls.unlockRotation' => 'Desbloquear rotación',
-			'videoControls.sleepTimer' => 'Temporizador',
 			'videoControls.timerActive' => 'Temporizador Activo',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'La reproducción se pausará en ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Temporizador completado - reproducción pausada',
@@ -1311,7 +1295,6 @@ extension on TranslationsEs {
 			'messages.noResultsFound' => 'No se encontraron resultados',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Temporizador establecido en ${label}',
 			'messages.noItemsAvailable' => 'No hay elementos disponibles',
-			'messages.failedToCreatePlayQueue' => 'Error al crear la cola de reproducción',
 			'messages.failedToCreatePlayQueueNoItems' => 'Error al crear la cola de reproducción - no hay elementos',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Error al ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Cambiando a reproductor compatible...',
@@ -1348,7 +1331,6 @@ extension on TranslationsEs {
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entradas',
 			'dialog.confirmAction' => 'Confirmar Acción',
 			'dialog.cancel' => 'Cancelar',
-			'dialog.playNow' => 'Reproducir Ahora',
 			'discover.title' => 'Descubrir',
 			'discover.switchProfile' => 'Cambiar Perfil',
 			'discover.logout' => 'Cerrar sesión',
@@ -1363,7 +1345,6 @@ extension on TranslationsEs {
 			'discover.seasons' => 'Temporadas',
 			'discover.studio' => 'Estudio',
 			'discover.rating' => 'Calificación',
-			'discover.watched' => 'Visto',
 			'discover.episodeCount' => ({required Object count}) => '${count} episodios',
 			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} vistos',
 			'discover.movie' => 'Película',
@@ -1432,7 +1413,6 @@ extension on TranslationsEs {
 			'about.appDescription' => 'Un cliente de Plex para Flutter',
 			'about.viewLicensesDescription' => 'Ver licencias de librerías de terceros',
 			'serverSelection.allServerConnectionsFailed' => 'No se pudo conectar con ningún servidor. Por favor, comprueba tu conexión e inténtalo de nuevo.',
-			'serverSelection.noServersFound' => 'No se encontraron servidores',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No se encontraron servidores para ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Error al cargar servidores: ${error}',
 			'hubDetail.title' => 'Título',
@@ -1504,8 +1484,6 @@ extension on TranslationsEs {
 			'watchTogether.title' => 'Ver Juntos',
 			'watchTogether.description' => 'Mira contenido en sincronía con amigos y familiares',
 			'watchTogether.createSession' => 'Crear Sesión',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.creating' => 'Creando...',
 			'watchTogether.joinSession' => 'Unirse a Sesión',
 			'watchTogether.joining' => 'Uniendo...',
@@ -1514,6 +1492,8 @@ extension on TranslationsEs {
 			'watchTogether.hostOnly' => 'Solo el Anfitrión',
 			'watchTogether.anyone' => 'Cualquiera',
 			'watchTogether.hostingSession' => 'Anfitrión de la Sesión',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inSession' => 'En Sesión',
 			'watchTogether.sessionCode' => 'Código de Sesión',
 			'watchTogether.hostControlsPlayback' => 'El anfitrión controla la reproducción',
@@ -1536,7 +1516,6 @@ extension on TranslationsEs {
 			'watchTogether.end' => 'Finalizar',
 			'watchTogether.leave' => 'Salir',
 			'watchTogether.syncing' => 'Sincronizando...',
-			'watchTogether.participant' => 'participante',
 			'watchTogether.joinWatchSession' => 'Unirse a Sesión de Visualización',
 			'watchTogether.enterCodeHint' => 'Introduce el código de 8 caracteres',
 			'watchTogether.pasteFromClipboard' => 'Pegar desde el portapapeles',
@@ -1566,9 +1545,6 @@ extension on TranslationsEs {
 			'shaders.qualityFast' => 'Rápido',
 			'shaders.qualityHQ' => 'Alta Calidad',
 			'shaders.mode' => 'Modo',
-			'shaders.presetChanged' => 'Ajuste de shader cambiado',
-			'shaders.hdrDetected' => 'HDR detectado - shader omitido',
-			'shaders.mpvOnly' => 'Los shaders solo están disponibles con el reproductor MPV',
 			_ => null,
 		};
 	}

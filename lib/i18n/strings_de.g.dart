@@ -128,8 +128,6 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get delete => 'Löschen';
 	@override String get shuffle => 'Zufall';
 	@override String get addTo => 'Hinzufügen zu...';
-	@override String get showMore => 'Mehr anzeigen';
-	@override String get showLess => 'Weniger anzeigen';
 }
 
 // Path: screens
@@ -140,7 +138,6 @@ class _TranslationsScreensDe implements TranslationsScreensEn {
 
 	// Translations
 	@override String get licenses => 'Lizenzen';
-	@override String get selectServer => 'Server auswählen';
 	@override String get switchProfile => 'Profil wechseln';
 	@override String get subtitleStyling => 'Untertitel-Stil';
 	@override String get mpvConfig => 'MPV-Konfiguration';
@@ -286,7 +283,6 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get maxVolume => 'Maximale Lautstärke';
 	@override String get maxVolumeDescription => 'Lautstärke über 100% für leise Medien erlauben';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get maxVolumeHint => 'Maximale Lautstärke eingeben (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Zeige auf Discord, was du gerade schaust';
 	@override String get matchContentFrameRate => 'Inhalts-Bildrate anpassen';
@@ -431,7 +427,6 @@ class _TranslationsVideoControlsDe implements TranslationsVideoControlsEn {
 	@override String get stretch => 'Strecken';
 	@override String get lockRotation => 'Rotation sperren';
 	@override String get unlockRotation => 'Rotation entsperren';
-	@override String get sleepTimer => 'Schlaftimer';
 	@override String get timerActive => 'Schlaftimer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert';
 	@override String get sleepTimerCompleted => 'Schlaftimer abgelaufen – Wiedergabe pausiert';
@@ -513,7 +508,6 @@ class _TranslationsMessagesDe implements TranslationsMessagesEn {
 	@override String get noResultsFound => 'Keine Ergebnisse gefunden';
 	@override String sleepTimerSet({required Object label}) => 'Sleep-Timer gesetzt auf ${label}';
 	@override String get noItemsAvailable => 'Keine Elemente verfügbar';
-	@override String get failedToCreatePlayQueue => 'Wiedergabewarteschlange konnte nicht erstellt werden';
 	@override String get failedToCreatePlayQueueNoItems => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente';
 	@override String failedPlayback({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Wechsle zu kompatiblem Player...';
@@ -577,7 +571,6 @@ class _TranslationsDialogDe implements TranslationsDialogEn {
 	// Translations
 	@override String get confirmAction => 'Aktion bestätigen';
 	@override String get cancel => 'Abbrechen';
-	@override String get playNow => 'Jetzt abspielen';
 }
 
 // Path: discover
@@ -589,7 +582,6 @@ class _TranslationsDiscoverDe implements TranslationsDiscoverEn {
 	// Translations
 	@override String get title => 'Entdecken';
 	@override String get switchProfile => 'Profil wechseln';
-	@override String get switchServer => 'Server wechseln';
 	@override String get logout => 'Abmelden';
 	@override String get noContentAvailable => 'Kein Inhalt verfügbar';
 	@override String get addMediaToLibraries => 'Medien zur Mediathek hinzufügen';
@@ -602,7 +594,6 @@ class _TranslationsDiscoverDe implements TranslationsDiscoverEn {
 	@override String get seasons => 'Staffeln';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Altersfreigabe';
-	@override String get watched => 'Gesehen';
 	@override String episodeCount({required Object count}) => '${count} Episoden';
 	@override String watchedProgress({required Object watched, required Object total}) => '${watched} von ${total} gesehen';
 	@override String get movie => 'Film';
@@ -699,7 +690,6 @@ class _TranslationsServerSelectionDe implements TranslationsServerSelectionEn {
 
 	// Translations
 	@override String get allServerConnectionsFailed => 'Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.';
-	@override String get noServersFound => 'Keine Server gefunden';
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Keine Server gefunden für ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Server konnten nicht geladen werden: ${error}';
 }
@@ -887,7 +877,6 @@ class _TranslationsWatchTogetherDe implements TranslationsWatchTogetherEn {
 	@override String get end => 'Beenden';
 	@override String get leave => 'Verlassen';
 	@override String get syncing => 'Synchronisieren...';
-	@override String get participant => 'Teilnehmer';
 	@override String get joinWatchSession => 'Schausitzung Beitreten';
 	@override String get enterCodeHint => '8-stelligen Code eingeben';
 	@override String get pasteFromClipboard => 'Aus Zwischenablage einfügen';
@@ -912,9 +901,6 @@ class _TranslationsShadersDe implements TranslationsShadersEn {
 	@override String get qualityFast => 'Schnell';
 	@override String get qualityHQ => 'Hohe Qualität';
 	@override String get mode => 'Modus';
-	@override String get presetChanged => 'Shader-Voreinstellung geändert';
-	@override String get hdrDetected => 'HDR erkannt – Shader übersprungen';
-	@override String get mpvOnly => 'Shader sind nur mit dem MPV-Player verfügbar';
 }
 
 // Path: hotkeys.actions
@@ -1025,10 +1011,7 @@ extension on TranslationsDe {
 			'common.delete' => 'Löschen',
 			'common.shuffle' => 'Zufall',
 			'common.addTo' => 'Hinzufügen zu...',
-			'common.showMore' => 'Mehr anzeigen',
-			'common.showLess' => 'Weniger anzeigen',
 			'screens.licenses' => 'Lizenzen',
-			'screens.selectServer' => 'Server auswählen',
 			'screens.switchProfile' => 'Profil wechseln',
 			'screens.subtitleStyling' => 'Untertitel-Stil',
 			'screens.mpvConfig' => 'MPV-Konfiguration',
@@ -1156,7 +1139,6 @@ extension on TranslationsDe {
 			'settings.maxVolume' => 'Maximale Lautstärke',
 			'settings.maxVolumeDescription' => 'Lautstärke über 100% für leise Medien erlauben',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.maxVolumeHint' => 'Maximale Lautstärke eingeben (100-300)',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Zeige auf Discord, was du gerade schaust',
 			'settings.matchContentFrameRate' => 'Inhalts-Bildrate anpassen',
@@ -1246,7 +1228,6 @@ extension on TranslationsDe {
 			'videoControls.stretch' => 'Strecken',
 			'videoControls.lockRotation' => 'Rotation sperren',
 			'videoControls.unlockRotation' => 'Rotation entsperren',
-			'videoControls.sleepTimer' => 'Schlaftimer',
 			'videoControls.timerActive' => 'Schlaftimer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert',
 			'videoControls.sleepTimerCompleted' => 'Schlaftimer abgelaufen – Wiedergabe pausiert',
@@ -1314,7 +1295,6 @@ extension on TranslationsDe {
 			'messages.noResultsFound' => 'Keine Ergebnisse gefunden',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep-Timer gesetzt auf ${label}',
 			'messages.noItemsAvailable' => 'Keine Elemente verfügbar',
-			'messages.failedToCreatePlayQueue' => 'Wiedergabewarteschlange konnte nicht erstellt werden',
 			'messages.failedToCreatePlayQueueNoItems' => 'Wiedergabewarteschlange konnte nicht erstellt werden – keine Elemente',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Wiedergabe für ${action} fehlgeschlagen: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Wechsle zu kompatiblem Player...',
@@ -1351,10 +1331,8 @@ extension on TranslationsDe {
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} Einträge',
 			'dialog.confirmAction' => 'Aktion bestätigen',
 			'dialog.cancel' => 'Abbrechen',
-			'dialog.playNow' => 'Jetzt abspielen',
 			'discover.title' => 'Entdecken',
 			'discover.switchProfile' => 'Profil wechseln',
-			'discover.switchServer' => 'Server wechseln',
 			'discover.logout' => 'Abmelden',
 			'discover.noContentAvailable' => 'Kein Inhalt verfügbar',
 			'discover.addMediaToLibraries' => 'Medien zur Mediathek hinzufügen',
@@ -1367,7 +1345,6 @@ extension on TranslationsDe {
 			'discover.seasons' => 'Staffeln',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Altersfreigabe',
-			'discover.watched' => 'Gesehen',
 			'discover.episodeCount' => ({required Object count}) => '${count} Episoden',
 			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched} von ${total} gesehen',
 			'discover.movie' => 'Film',
@@ -1436,7 +1413,6 @@ extension on TranslationsDe {
 			'about.appDescription' => 'Ein schöner Plex-Client für Flutter',
 			'about.viewLicensesDescription' => 'Lizenzen von Drittanbieter-Bibliotheken anzeigen',
 			'serverSelection.allServerConnectionsFailed' => 'Verbindung zu allen Servern fehlgeschlagen. Bitte Netzwerk prüfen und erneut versuchen.',
-			'serverSelection.noServersFound' => 'Keine Server gefunden',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Keine Server gefunden für ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Server konnten nicht geladen werden: ${error}',
 			'hubDetail.title' => 'Titel',
@@ -1506,8 +1482,6 @@ extension on TranslationsDe {
 			'collections.deleted' => 'Sammlung gelöscht',
 			'collections.deleteFailed' => 'Sammlung konnte nicht gelöscht werden',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Sammlung konnte nicht gelöscht werden: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'collections.failedToLoadItems' => ({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}',
 			'collections.selectCollection' => 'Sammlung auswählen',
 			'collections.createNewCollection' => 'Neue Sammlung erstellen',
@@ -1518,6 +1492,8 @@ extension on TranslationsDe {
 			'collections.created' => 'Sammlung erstellt',
 			'collections.removeFromCollection' => 'Aus Sammlung entfernen',
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => '"${title}" aus dieser Sammlung entfernen?',
+			_ => null,
+		} ?? switch (path) {
 			'collections.removedFromCollection' => 'Aus Sammlung entfernt',
 			'collections.removeFromCollectionFailed' => 'Entfernen aus Sammlung fehlgeschlagen',
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Fehler beim Entfernen aus der Sammlung: ${error}',
@@ -1554,7 +1530,6 @@ extension on TranslationsDe {
 			'watchTogether.end' => 'Beenden',
 			'watchTogether.leave' => 'Verlassen',
 			'watchTogether.syncing' => 'Synchronisieren...',
-			'watchTogether.participant' => 'Teilnehmer',
 			'watchTogether.joinWatchSession' => 'Schausitzung Beitreten',
 			'watchTogether.enterCodeHint' => '8-stelligen Code eingeben',
 			'watchTogether.pasteFromClipboard' => 'Aus Zwischenablage einfügen',
@@ -1570,9 +1545,6 @@ extension on TranslationsDe {
 			'shaders.qualityFast' => 'Schnell',
 			'shaders.qualityHQ' => 'Hohe Qualität',
 			'shaders.mode' => 'Modus',
-			'shaders.presetChanged' => 'Shader-Voreinstellung geändert',
-			'shaders.hdrDetected' => 'HDR erkannt – Shader übersprungen',
-			'shaders.mpvOnly' => 'Shader sind nur mit dem MPV-Player verfügbar',
 			_ => null,
 		};
 	}

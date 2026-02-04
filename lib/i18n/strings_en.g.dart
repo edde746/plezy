@@ -193,12 +193,6 @@ class TranslationsCommonEn {
 
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
-
-	/// en: 'Show more'
-	String get showMore => 'Show more';
-
-	/// en: 'Show less'
-	String get showLess => 'Show less';
 }
 
 // Path: screens
@@ -611,9 +605,6 @@ class TranslationsSettingsEn {
 	/// en: '${percent}%'
 	String maxVolumePercent({required Object percent}) => '${percent}%';
 
-	/// en: 'Enter max volume (100-300)'
-	String get maxVolumeHint => 'Enter max volume (100-300)';
-
 	/// en: 'Discord Rich Presence'
 	String get discordRichPresence => 'Discord Rich Presence';
 
@@ -901,9 +892,6 @@ class TranslationsVideoControlsEn {
 	/// en: 'Unlock rotation'
 	String get unlockRotation => 'Unlock rotation';
 
-	/// en: 'Sleep Timer'
-	String get sleepTimer => 'Sleep Timer';
-
 	/// en: 'Timer Active'
 	String get timerActive => 'Timer Active';
 
@@ -1110,9 +1098,6 @@ class TranslationsMessagesEn {
 	/// en: 'No items available'
 	String get noItemsAvailable => 'No items available';
 
-	/// en: 'Failed to create play queue'
-	String get failedToCreatePlayQueue => 'Failed to create play queue';
-
 	/// en: 'Failed to create play queue - no items'
 	String get failedToCreatePlayQueueNoItems => 'Failed to create play queue - no items';
 
@@ -1247,9 +1232,6 @@ class TranslationsDialogEn {
 
 	/// en: 'Cancel'
 	String get cancel => 'Cancel';
-
-	/// en: 'Play Now'
-	String get playNow => 'Play Now';
 }
 
 // Path: discover
@@ -1301,9 +1283,6 @@ class TranslationsDiscoverEn {
 
 	/// en: 'Rating'
 	String get rating => 'Rating';
-
-	/// en: 'Watched'
-	String get watched => 'Watched';
 
 	/// en: '${count} episodes'
 	String episodeCount({required Object count}) => '${count} episodes';
@@ -1517,9 +1496,6 @@ class TranslationsServerSelectionEn {
 
 	/// en: 'Failed to connect to any servers. Please check your network and try again.'
 	String get allServerConnectionsFailed => 'Failed to connect to any servers. Please check your network and try again.';
-
-	/// en: 'No servers found'
-	String get noServersFound => 'No servers found';
 
 	/// en: 'No servers found for ${username} (${email})'
 	String noServersFoundForAccount({required Object username, required Object email}) => 'No servers found for ${username} (${email})';
@@ -1887,9 +1863,6 @@ class TranslationsWatchTogetherEn {
 	/// en: 'Syncing...'
 	String get syncing => 'Syncing...';
 
-	/// en: 'participant'
-	String get participant => 'participant';
-
 	/// en: 'Join Watch Session'
 	String get joinWatchSession => 'Join Watch Session';
 
@@ -1994,15 +1967,6 @@ class TranslationsShadersEn {
 
 	/// en: 'Mode'
 	String get mode => 'Mode';
-
-	/// en: 'Shader preset changed'
-	String get presetChanged => 'Shader preset changed';
-
-	/// en: 'HDR detected - shader skipped'
-	String get hdrDetected => 'HDR detected - shader skipped';
-
-	/// en: 'Shaders are only available with MPV player'
-	String get mpvOnly => 'Shaders are only available with MPV player';
 }
 
 // Path: hotkeys.actions
@@ -2179,8 +2143,6 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.shuffle' => 'Shuffle',
 			'common.addTo' => 'Add to...',
-			'common.showMore' => 'Show more',
-			'common.showLess' => 'Show less',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -2309,7 +2271,6 @@ extension on Translations {
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.maxVolumeHint' => 'Enter max volume (100-300)',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
@@ -2399,7 +2360,6 @@ extension on Translations {
 			'videoControls.stretch' => 'Stretch',
 			'videoControls.lockRotation' => 'Lock rotation',
 			'videoControls.unlockRotation' => 'Unlock rotation',
-			'videoControls.sleepTimer' => 'Sleep Timer',
 			'videoControls.timerActive' => 'Timer Active',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Playback will pause in ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Sleep timer completed - playback paused',
@@ -2467,7 +2427,6 @@ extension on Translations {
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
-			'messages.failedToCreatePlayQueue' => 'Failed to create play queue',
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
@@ -2504,7 +2463,6 @@ extension on Translations {
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entries',
 			'dialog.confirmAction' => 'Confirm Action',
 			'dialog.cancel' => 'Cancel',
-			'dialog.playNow' => 'Play Now',
 			'discover.title' => 'Discover',
 			'discover.switchProfile' => 'Switch Profile',
 			'discover.logout' => 'Logout',
@@ -2519,7 +2477,6 @@ extension on Translations {
 			'discover.seasons' => 'Seasons',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
-			'discover.watched' => 'Watched',
 			'discover.episodeCount' => ({required Object count}) => '${count} episodes',
 			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} watched',
 			'discover.movie' => 'Movie',
@@ -2588,7 +2545,6 @@ extension on Translations {
 			'about.appDescription' => 'A beautiful Plex client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
 			'serverSelection.allServerConnectionsFailed' => 'Failed to connect to any servers. Please check your network and try again.',
-			'serverSelection.noServersFound' => 'No servers found',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
 			'hubDetail.title' => 'Title',
@@ -2660,8 +2616,6 @@ extension on Translations {
 			'watchTogether.title' => 'Watch Together',
 			'watchTogether.description' => 'Watch content in sync with friends and family',
 			'watchTogether.createSession' => 'Create Session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.creating' => 'Creating...',
 			'watchTogether.joinSession' => 'Join Session',
 			'watchTogether.joining' => 'Joining...',
@@ -2670,6 +2624,8 @@ extension on Translations {
 			'watchTogether.hostOnly' => 'Host Only',
 			'watchTogether.anyone' => 'Anyone',
 			'watchTogether.hostingSession' => 'Hosting Session',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inSession' => 'In Session',
 			'watchTogether.sessionCode' => 'Session Code',
 			'watchTogether.hostControlsPlayback' => 'Host controls playback',
@@ -2692,7 +2648,6 @@ extension on Translations {
 			'watchTogether.end' => 'End',
 			'watchTogether.leave' => 'Leave',
 			'watchTogether.syncing' => 'Syncing...',
-			'watchTogether.participant' => 'participant',
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
 			'watchTogether.enterCodeHint' => 'Enter 8-character code',
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
@@ -2722,9 +2677,6 @@ extension on Translations {
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
 			'shaders.mode' => 'Mode',
-			'shaders.presetChanged' => 'Shader preset changed',
-			'shaders.hdrDetected' => 'HDR detected - shader skipped',
-			'shaders.mpvOnly' => 'Shaders are only available with MPV player',
 			_ => null,
 		};
 	}

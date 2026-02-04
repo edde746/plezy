@@ -128,8 +128,6 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get delete => 'Supprimer';
 	@override String get shuffle => 'Mélanger';
 	@override String get addTo => 'Ajouter à...';
-	@override String get showMore => 'Voir plus';
-	@override String get showLess => 'Voir moins';
 }
 
 // Path: screens
@@ -285,7 +283,6 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get maxVolume => 'Volume maximal';
 	@override String get maxVolumeDescription => 'Autoriser l\'augmentation du volume au-delà de 100 % pour les médias silencieux';
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
-	@override String get maxVolumeHint => 'Entrez le volume maximal (100-300)';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Montrez ce que vous regardez sur Discord';
 	@override String get matchContentFrameRate => 'Fréquence d\'images du contenu correspondant';
@@ -430,7 +427,6 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get stretch => 'Etirer';
 	@override String get lockRotation => 'Verrouillage de la rotation';
 	@override String get unlockRotation => 'Déverrouiller la rotation';
-	@override String get sleepTimer => 'Minuterie de mise en veille';
 	@override String get timerActive => 'Minuterie active';
 	@override String playbackWillPauseIn({required Object duration}) => 'La lecture sera mise en pause dans ${duration}';
 	@override String get sleepTimerCompleted => 'Minuterie de mise en veille terminée - lecture en pause';
@@ -512,7 +508,6 @@ class _TranslationsMessagesFr implements TranslationsMessagesEn {
 	@override String get noResultsFound => 'Aucun résultat trouvé';
 	@override String sleepTimerSet({required Object label}) => 'Minuterie de mise en veille réglée sur ${label}';
 	@override String get noItemsAvailable => 'Aucun élément disponible';
-	@override String get failedToCreatePlayQueue => 'Échec de la création de la file d\'attente de lecture';
 	@override String get failedToCreatePlayQueueNoItems => 'Échec de la création de la file d\'attente de lecture - aucun élément';
 	@override String failedPlayback({required Object action, required Object error}) => 'Echec de ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Passage au lecteur compatible...';
@@ -576,7 +571,6 @@ class _TranslationsDialogFr implements TranslationsDialogEn {
 	// Translations
 	@override String get confirmAction => 'Confirmer l\'action';
 	@override String get cancel => 'Annuler';
-	@override String get playNow => 'Lire maintenant';
 }
 
 // Path: discover
@@ -600,7 +594,6 @@ class _TranslationsDiscoverFr implements TranslationsDiscoverEn {
 	@override String get seasons => 'Saisons';
 	@override String get studio => 'Studio';
 	@override String get rating => 'Évaluation';
-	@override String get watched => 'Vu';
 	@override String episodeCount({required Object count}) => '${count} épisodes';
 	@override String watchedProgress({required Object watched, required Object total}) => '${watched}/${total} vu';
 	@override String get movie => 'Film';
@@ -697,7 +690,6 @@ class _TranslationsServerSelectionFr implements TranslationsServerSelectionEn {
 
 	// Translations
 	@override String get allServerConnectionsFailed => 'Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.';
-	@override String get noServersFound => 'Aucun serveur trouvé';
 	@override String noServersFoundForAccount({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})';
 	@override String failedToLoadServers({required Object error}) => 'Échec du chargement des serveurs: ${error}';
 }
@@ -862,7 +854,6 @@ class _TranslationsWatchTogetherFr implements TranslationsWatchTogetherEn {
 	@override String get end => 'Terminer';
 	@override String get leave => 'Fin';
 	@override String get syncing => 'Synchronisation...';
-	@override String get participant => 'participant';
 	@override String get joinWatchSession => 'Rejoindre la session de visionnage';
 	@override String get enterCodeHint => 'Entrez le code à 8 caractères';
 	@override String get pasteFromClipboard => 'Coller depuis le presse-papiers';
@@ -910,9 +901,6 @@ class _TranslationsShadersFr implements TranslationsShadersEn {
 	@override String get qualityFast => 'Rapide';
 	@override String get qualityHQ => 'Haute qualité';
 	@override String get mode => 'Mode';
-	@override String get presetChanged => 'Préréglage de shader modifié';
-	@override String get hdrDetected => 'HDR détecté - shader ignoré';
-	@override String get mpvOnly => 'Les shaders ne sont disponibles qu\'avec le lecteur MPV';
 }
 
 // Path: hotkeys.actions
@@ -1023,8 +1011,6 @@ extension on TranslationsFr {
 			'common.delete' => 'Supprimer',
 			'common.shuffle' => 'Mélanger',
 			'common.addTo' => 'Ajouter à...',
-			'common.showMore' => 'Voir plus',
-			'common.showLess' => 'Voir moins',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
@@ -1153,7 +1139,6 @@ extension on TranslationsFr {
 			'settings.maxVolume' => 'Volume maximal',
 			'settings.maxVolumeDescription' => 'Autoriser l\'augmentation du volume au-delà de 100 % pour les médias silencieux',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
-			'settings.maxVolumeHint' => 'Entrez le volume maximal (100-300)',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Montrez ce que vous regardez sur Discord',
 			'settings.matchContentFrameRate' => 'Fréquence d\'images du contenu correspondant',
@@ -1243,7 +1228,6 @@ extension on TranslationsFr {
 			'videoControls.stretch' => 'Etirer',
 			'videoControls.lockRotation' => 'Verrouillage de la rotation',
 			'videoControls.unlockRotation' => 'Déverrouiller la rotation',
-			'videoControls.sleepTimer' => 'Minuterie de mise en veille',
 			'videoControls.timerActive' => 'Minuterie active',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'La lecture sera mise en pause dans ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Minuterie de mise en veille terminée - lecture en pause',
@@ -1311,7 +1295,6 @@ extension on TranslationsFr {
 			'messages.noResultsFound' => 'Aucun résultat trouvé',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Minuterie de mise en veille réglée sur ${label}',
 			'messages.noItemsAvailable' => 'Aucun élément disponible',
-			'messages.failedToCreatePlayQueue' => 'Échec de la création de la file d\'attente de lecture',
 			'messages.failedToCreatePlayQueueNoItems' => 'Échec de la création de la file d\'attente de lecture - aucun élément',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Echec de ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Passage au lecteur compatible...',
@@ -1348,7 +1331,6 @@ extension on TranslationsFr {
 			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entrées',
 			'dialog.confirmAction' => 'Confirmer l\'action',
 			'dialog.cancel' => 'Annuler',
-			'dialog.playNow' => 'Lire maintenant',
 			'discover.title' => 'Découvrez',
 			'discover.switchProfile' => 'Changer de profil',
 			'discover.logout' => 'Déconnexion',
@@ -1363,7 +1345,6 @@ extension on TranslationsFr {
 			'discover.seasons' => 'Saisons',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Évaluation',
-			'discover.watched' => 'Vu',
 			'discover.episodeCount' => ({required Object count}) => '${count} épisodes',
 			'discover.watchedProgress' => ({required Object watched, required Object total}) => '${watched}/${total} vu',
 			'discover.movie' => 'Film',
@@ -1432,7 +1413,6 @@ extension on TranslationsFr {
 			'about.appDescription' => 'Un magnifique client Plex pour Flutter',
 			'about.viewLicensesDescription' => 'Afficher les licences des bibliothèques tierces',
 			'serverSelection.allServerConnectionsFailed' => 'Impossible de se connecter à un serveur. Veuillez vérifier votre connexion réseau et réessayer.',
-			'serverSelection.noServersFound' => 'Aucun serveur trouvé',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Aucun serveur trouvé pour ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Échec du chargement des serveurs: ${error}',
 			'hubDetail.title' => 'Titre',
@@ -1504,8 +1484,6 @@ extension on TranslationsFr {
 			'watchTogether.title' => 'Regarder ensemble',
 			'watchTogether.description' => 'Regardez du contenu en synchronisation avec vos amis et votre famille',
 			'watchTogether.createSession' => 'Créer une session',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.creating' => 'Création...',
 			'watchTogether.joinSession' => 'Rejoindre la session',
 			'watchTogether.joining' => 'Rejoindre...',
@@ -1514,6 +1492,8 @@ extension on TranslationsFr {
 			'watchTogether.hostOnly' => 'Hôte uniquement',
 			'watchTogether.anyone' => 'N\'importe qui',
 			'watchTogether.hostingSession' => 'Session d\'hébergement',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.inSession' => 'En session',
 			'watchTogether.sessionCode' => 'Code de session',
 			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',
@@ -1536,7 +1516,6 @@ extension on TranslationsFr {
 			'watchTogether.end' => 'Terminer',
 			'watchTogether.leave' => 'Fin',
 			'watchTogether.syncing' => 'Synchronisation...',
-			'watchTogether.participant' => 'participant',
 			'watchTogether.joinWatchSession' => 'Rejoindre la session de visionnage',
 			'watchTogether.enterCodeHint' => 'Entrez le code à 8 caractères',
 			'watchTogether.pasteFromClipboard' => 'Coller depuis le presse-papiers',
@@ -1566,9 +1545,6 @@ extension on TranslationsFr {
 			'shaders.qualityFast' => 'Rapide',
 			'shaders.qualityHQ' => 'Haute qualité',
 			'shaders.mode' => 'Mode',
-			'shaders.presetChanged' => 'Préréglage de shader modifié',
-			'shaders.hdrDetected' => 'HDR détecté - shader ignoré',
-			'shaders.mpvOnly' => 'Les shaders ne sont disponibles qu\'avec le lecteur MPV',
 			_ => null,
 		};
 	}
