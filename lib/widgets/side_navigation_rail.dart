@@ -218,8 +218,20 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     });
   }
 
-  /// Focus the last focused nav item, or Home as fallback
-  void focusActiveItem() {
+  /// The key of the last focused sidebar item (for pre-capture before focus shifts).
+  String? get lastFocusedKey => _focusTracker.lastFocusedKey;
+
+  /// Focus the last focused nav item, or Home as fallback.
+  /// If [targetKey] is provided, try it first (used when the caller captured
+  /// the intended target before a focus-scope switch overwrote it).
+  void focusActiveItem({String? targetKey}) {
+    if (targetKey != null) {
+      final node = _focusTracker.nodeFor(targetKey);
+      if (node != null) {
+        node.requestFocus();
+        return;
+      }
+    }
     _focusTracker.restoreFocus(fallbackKey: _kHome);
   }
 

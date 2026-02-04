@@ -444,11 +444,14 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   void _focusSidebar() {
+    // Capture target before requestFocus() auto-focuses a sidebar descendant
+    // and overwrites lastFocusedKey (e.g. to the Libraries toggle button).
+    final targetKey = _sideNavKey.currentState?.lastFocusedKey;
     setState(() => _isSidebarFocused = true);
     _sidebarFocusScope.requestFocus();
     // Focus the active item after the focus scope has focus
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _sideNavKey.currentState?.focusActiveItem();
+      _sideNavKey.currentState?.focusActiveItem(targetKey: targetKey);
     });
   }
 
