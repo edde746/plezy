@@ -1344,14 +1344,12 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     if (targetTop >= viewportTop && targetBottom <= viewportBottom) return;
 
     // Place item at ~25% from top of viewport
-    final double destination = (targetTop - viewportHeight * 0.25)
-        .clamp(0.0, _dialogScrollController.position.maxScrollExtent);
-
-    _dialogScrollController.animateTo(
-      destination,
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.easeOut,
+    final double destination = (targetTop - viewportHeight * 0.25).clamp(
+      0.0,
+      _dialogScrollController.position.maxScrollExtent,
     );
+
+    _dialogScrollController.animateTo(destination, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
@@ -1576,7 +1574,10 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
               ),
               automaticallyImplyLeading: false,
               actions: [
-                IconButton(icon: const AppIcon(Symbols.close_rounded, fill: 1), onPressed: () => Navigator.pop(context)),
+                IconButton(
+                  icon: const AppIcon(Symbols.close_rounded, fill: 1),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ],
             ),
             body: Focus(
@@ -1757,7 +1758,10 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                decoration: FocusTheme.focusBackgroundDecoration(isFocused: isVisibilityButtonFocused, borderRadius: 20),
+                decoration: FocusTheme.focusBackgroundDecoration(
+                  isFocused: isVisibilityButtonFocused,
+                  borderRadius: 20,
+                ),
                 child: IconButton(
                   icon: AppIcon(isHidden ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1),
                   tooltip: isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,

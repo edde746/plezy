@@ -92,7 +92,10 @@ class PlaylistItemCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.fromLTRB(2, 8, 6, 8),
                           decoration: isDragHandleFocused
-                              ? BoxDecoration(color: colorScheme.primaryContainer, borderRadius: BorderRadius.circular(8))
+                              ? BoxDecoration(
+                                  color: colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                )
                               : null,
                           child: AppIcon(
                             isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,

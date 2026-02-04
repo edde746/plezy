@@ -58,32 +58,24 @@ class ProfileSwitchScreen extends StatelessWidget {
               )
             else
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final user = users[index];
-                    final isCurrentUser = user.uuid == userProvider.currentUser?.uuid;
-                    final isFirstSelectable = !isCurrentUser &&
-                        !users.take(index).any((u) => u.uuid != userProvider.currentUser?.uuid);
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final user = users[index];
+                  final isCurrentUser = user.uuid == userProvider.currentUser?.uuid;
+                  final isFirstSelectable =
+                      !isCurrentUser && !users.take(index).any((u) => u.uuid != userProvider.currentUser?.uuid);
 
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        top: index == 0 ? 16 : 0,
-                        bottom: 8,
+                  return Padding(
+                    padding: EdgeInsets.only(left: 16, right: 16, top: index == 0 ? 16 : 0, bottom: 8),
+                    child: Card(
+                      child: ProfileListTile(
+                        user: user,
+                        isCurrentUser: isCurrentUser,
+                        autofocus: isFirstSelectable,
+                        onTap: () => _switchToUser(context, user),
                       ),
-                      child: Card(
-                        child: ProfileListTile(
-                          user: user,
-                          isCurrentUser: isCurrentUser,
-                          autofocus: isFirstSelectable,
-                          onTap: () => _switchToUser(context, user),
-                        ),
-                      ),
-                    );
-                  },
-                  childCount: users.length,
-                ),
+                    ),
+                  );
+                }, childCount: users.length),
               ),
           ],
         );

@@ -93,9 +93,7 @@ class GamepadService {
   void _handleGamepadEvent(GamepadEvent event) {
     switch (event) {
       case GamepadConnectionEvent e:
-        appLogger.i(
-          'GamepadService: Gamepad ${e.connected ? "connected" : "disconnected"}: ${e.info.name}',
-        );
+        appLogger.i('GamepadService: Gamepad ${e.connected ? "connected" : "disconnected"}: ${e.info.name}');
       case GamepadButtonEvent e:
         _handleButton(e);
       case GamepadAxisEvent e:

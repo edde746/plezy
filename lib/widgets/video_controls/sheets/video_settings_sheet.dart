@@ -501,10 +501,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final isSelected = preset.id == currentPreset.id;
 
             return FocusableListTile(
-              title: Text(
-                preset.name,
-                style: TextStyle(color: isSelected ? Colors.amber : Colors.white),
-              ),
+              title: Text(preset.name, style: TextStyle(color: isSelected ? Colors.amber : Colors.white)),
               subtitle: _getShaderSubtitle(preset) != null
                   ? Text(_getShaderSubtitle(preset)!, style: const TextStyle(color: Colors.white54, fontSize: 12))
                   : null,
@@ -530,7 +527,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.shaders.nvscalerDescription;
       case ShaderPresetType.anime4k:
         if (preset.anime4kConfig != null) {
-          final quality = preset.anime4kConfig!.quality == Anime4KQuality.fast ? t.shaders.qualityFast : t.shaders.qualityHQ;
+          final quality = preset.anime4kConfig!.quality == Anime4KQuality.fast
+              ? t.shaders.qualityFast
+              : t.shaders.qualityHQ;
           final mode = preset.modeDisplayName;
           return '$quality - ${t.shaders.mode} $mode';
         }
@@ -551,7 +550,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       child: BaseVideoControlSheet(
         title: _getTitle(),
         icon: _getIcon(),
-        iconColor: isIconActive ? Colors.amber : (_currentView == _SettingsView.shader && isShaderActive ? Colors.amber : Colors.white),
+        iconColor: isIconActive
+            ? Colors.amber
+            : (_currentView == _SettingsView.shader && isShaderActive ? Colors.amber : Colors.white),
         onBack: _currentView != _SettingsView.menu ? _navigateBack : null,
         child: () {
           switch (_currentView) {

@@ -180,12 +180,7 @@ class PlexImageHelper {
     }
 
     try {
-      return buildTranscodeUrl(
-        client: client,
-        originalPath: basePath,
-        width: width,
-        height: height,
-      );
+      return buildTranscodeUrl(client: client, originalPath: basePath, width: width, height: height);
     } catch (e) {
       // Fallback to original URL on any error
       return client.getThumbnailUrl(basePath);

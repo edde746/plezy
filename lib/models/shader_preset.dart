@@ -1,9 +1,5 @@
 /// Shader preset types available in the app
-enum ShaderPresetType {
-  none,
-  nvscaler,
-  anime4k,
-}
+enum ShaderPresetType { none, nvscaler, anime4k }
 
 /// Quality tiers for Anime4K presets
 enum Anime4KQuality {
@@ -40,10 +36,7 @@ class Anime4KConfig {
   final Anime4KQuality quality;
   final Anime4KMode mode;
 
-  const Anime4KConfig({
-    required this.quality,
-    required this.mode,
-  });
+  const Anime4KConfig({required this.quality, required this.mode});
 
   @override
   bool operator ==(Object other) {
@@ -54,21 +47,12 @@ class Anime4KConfig {
   @override
   int get hashCode => quality.hashCode ^ mode.hashCode;
 
-  Map<String, dynamic> toJson() => {
-        'quality': quality.name,
-        'mode': mode.name,
-      };
+  Map<String, dynamic> toJson() => {'quality': quality.name, 'mode': mode.name};
 
   factory Anime4KConfig.fromJson(Map<String, dynamic> json) {
     return Anime4KConfig(
-      quality: Anime4KQuality.values.firstWhere(
-        (e) => e.name == json['quality'],
-        orElse: () => Anime4KQuality.fast,
-      ),
-      mode: Anime4KMode.values.firstWhere(
-        (e) => e.name == json['mode'],
-        orElse: () => Anime4KMode.modeA,
-      ),
+      quality: Anime4KQuality.values.firstWhere((e) => e.name == json['quality'], orElse: () => Anime4KQuality.fast),
+      mode: Anime4KMode.values.firstWhere((e) => e.name == json['mode'], orElse: () => Anime4KMode.modeA),
     );
   }
 }
@@ -78,9 +62,7 @@ class NVScalerConfig {
   /// Whether to automatically skip NVScaler on HDR content
   final bool autoHdrSkip;
 
-  const NVScalerConfig({
-    this.autoHdrSkip = true,
-  });
+  const NVScalerConfig({this.autoHdrSkip = true});
 
   @override
   bool operator ==(Object other) {
@@ -91,14 +73,10 @@ class NVScalerConfig {
   @override
   int get hashCode => autoHdrSkip.hashCode;
 
-  Map<String, dynamic> toJson() => {
-        'autoHdrSkip': autoHdrSkip,
-      };
+  Map<String, dynamic> toJson() => {'autoHdrSkip': autoHdrSkip};
 
   factory NVScalerConfig.fromJson(Map<String, dynamic> json) {
-    return NVScalerConfig(
-      autoHdrSkip: json['autoHdrSkip'] as bool? ?? true,
-    );
+    return NVScalerConfig(autoHdrSkip: json['autoHdrSkip'] as bool? ?? true);
   }
 }
 
@@ -119,11 +97,7 @@ class ShaderPreset {
   });
 
   /// No shader preset (off)
-  static const none = ShaderPreset(
-    id: 'none',
-    name: 'Off',
-    type: ShaderPresetType.none,
-  );
+  static const none = ShaderPreset(id: 'none', name: 'Off', type: ShaderPresetType.none);
 
   /// NVScaler default preset with auto HDR skip
   static const nvscalerDefault = ShaderPreset(
@@ -214,12 +188,12 @@ class ShaderPreset {
   int get hashCode => id.hashCode;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'type': type.name,
-        if (anime4kConfig != null) 'anime4kConfig': anime4kConfig!.toJson(),
-        if (nvscalerConfig != null) 'nvscalerConfig': nvscalerConfig!.toJson(),
-      };
+    'id': id,
+    'name': name,
+    'type': type.name,
+    if (anime4kConfig != null) 'anime4kConfig': anime4kConfig!.toJson(),
+    if (nvscalerConfig != null) 'nvscalerConfig': nvscalerConfig!.toJson(),
+  };
 
   factory ShaderPreset.fromJson(Map<String, dynamic> json) {
     // Try to find by ID first for built-in presets
@@ -233,10 +207,7 @@ class ShaderPreset {
     return ShaderPreset(
       id: id ?? 'custom',
       name: json['name'] as String? ?? 'Custom',
-      type: ShaderPresetType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => ShaderPresetType.none,
-      ),
+      type: ShaderPresetType.values.firstWhere((e) => e.name == json['type'], orElse: () => ShaderPresetType.none),
       anime4kConfig: json['anime4kConfig'] != null ? Anime4KConfig.fromJson(json['anime4kConfig']) : null,
       nvscalerConfig: json['nvscalerConfig'] != null ? NVScalerConfig.fromJson(json['nvscalerConfig']) : null,
     );

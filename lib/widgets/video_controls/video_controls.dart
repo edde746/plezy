@@ -477,7 +477,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       // Currently off - restore saved preset
       final shaderProvider = context.read<ShaderProvider>();
       final saved = shaderProvider.savedPreset;
-      final targetPreset = saved.isEnabled ? saved : ShaderPreset.allPresets.firstWhere((p) => p.isEnabled, orElse: () => ShaderPreset.allPresets[1]);
+      final targetPreset = saved.isEnabled
+          ? saved
+          : ShaderPreset.allPresets.firstWhere((p) => p.isEnabled, orElse: () => ShaderPreset.allPresets[1]);
       shaderService.applyPreset(targetPreset).then((_) {
         shaderProvider.setCurrentPreset(targetPreset);
         if (mounted) setState(() {});
@@ -1702,7 +1704,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                             onTogglePIPMode: (_isPipSupported && Platform.isAndroid)
                                                 ? widget.onTogglePIPMode
                                                 : null,
-                                            onCycleBoxFitMode: widget.player.playerType != 'exoplayer' ? widget.onCycleBoxFitMode : null,
+                                            onCycleBoxFitMode: widget.player.playerType != 'exoplayer'
+                                                ? widget.onCycleBoxFitMode
+                                                : null,
                                             onToggleFullscreen: _toggleFullscreen,
                                             onToggleAlwaysOnTop: _toggleAlwaysOnTop,
                                             onSwitchVersion: _switchMediaVersion,

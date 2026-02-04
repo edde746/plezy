@@ -759,9 +759,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         });
 
       // Find current episode in the sorted list
-      final currentIdx = sorted.indexWhere(
-        (ep) => ep.ratingKey == widget.metadata.ratingKey,
-      );
+      final currentIdx = sorted.indexWhere((ep) => ep.ratingKey == widget.metadata.ratingKey);
 
       if (currentIdx == -1) return;
 
@@ -1630,7 +1628,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // If player isn't available, navigate without preserving settings
     if (player == null) {
       if (mounted) {
-        navigateToVideoPlayer(context, metadata: episodeMetadata, usePushReplacement: true, isOffline: widget.isOffline);
+        navigateToVideoPlayer(
+          context,
+          metadata: episodeMetadata,
+          usePushReplacement: true,
+          isOffline: widget.isOffline,
+        );
       }
       return;
     }
@@ -1640,7 +1643,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (currentPlayer == null) {
       // Player already disposed, navigate without preserving settings
       if (mounted) {
-        navigateToVideoPlayer(context, metadata: episodeMetadata, usePushReplacement: true, isOffline: widget.isOffline);
+        navigateToVideoPlayer(
+          context,
+          metadata: episodeMetadata,
+          usePushReplacement: true,
+          isOffline: widget.isOffline,
+        );
       }
       return;
     }
@@ -1707,9 +1715,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       focusNode: _screenFocusNode,
       autofocus: true,
       onKeyEvent: (node, event) => KeyEventResult.handled,
-      child: _isPlayerInitialized && player != null
-          ? _buildVideoPlayer(context)
-          : _buildLoadingSpinner(),
+      child: _isPlayerInitialized && player != null ? _buildVideoPlayer(context) : _buildLoadingSpinner(),
     );
   }
 
