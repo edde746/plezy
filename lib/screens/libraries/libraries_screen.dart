@@ -8,7 +8,7 @@ import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
-import '../../services/gamepad_service.dart';
+import '../../mixins/tab_navigation_mixin.dart';
 import '../../../services/plex_client.dart';
 import '../../models/plex_library.dart';
 import '../../models/plex_metadata.dart';
@@ -23,7 +23,6 @@ import '../../utils/snackbar_helper.dart';
 import '../../utils/content_utils.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
-import '../main_screen.dart';
 import '../../services/storage_service.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/item_updatable.dart';
@@ -66,7 +65,14 @@ class LibrariesScreen extends StatefulWidget {
 }
 
 class _LibrariesScreenState extends State<LibrariesScreen>
-    with Refreshable, FullRefreshable, FocusableTab, LibraryLoadable, ItemUpdatable, SingleTickerProviderStateMixin {
+    with
+        Refreshable,
+        FullRefreshable,
+        FocusableTab,
+        LibraryLoadable,
+        ItemUpdatable,
+        SingleTickerProviderStateMixin,
+        TabNavigationMixin {
   @override
   PlexClient get client {
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
@@ -75,8 +81,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
     return context.getClientForServer(multiServerProvider.onlineServerIds.first);
   }
-
-  late TabController _tabController;
 
   // GlobalKeys for tabs to enable refresh
   final _recommendedTabKey = GlobalKey<State<LibraryRecommendedTab>>();
@@ -88,9 +92,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   String? _selectedLibraryGlobalKey;
   bool _isInitialLoad = true;
 
-  /// When true, suppress auto-focus in tabs (used when navigating via tab bar)
-  bool _suppressAutoFocus = false;
-
   Map<String, String> _selectedFilters = {};
   PlexSort? _selectedSort;
   bool _isSortDescending = false;
@@ -101,7 +102,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   int _requestId = 0;
   static const int _pageSize = 1000;
 
-  /// Flag to prevent _onTabChanged from focusing when we're programmatically changing tabs
+  /// Flag to prevent onTabChanged from focusing when we're programmatically changing tabs
   bool _isRestoringTab = false;
 
   /// Track which tabs have loaded data (used to trigger focus after tab restore)
@@ -116,6 +117,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _collectionsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_collections');
   final _playlistsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_playlists');
 
+  @override
+  List<FocusNode> get tabChipFocusNodes => [
+    _recommendedTabChipFocusNode,
+    _browseTabChipFocusNode,
+    _collectionsTabChipFocusNode,
+    _playlistsTabChipFocusNode,
+  ];
+
   // App bar action button focus
   late FocusNode _editButtonFocusNode;
   late FocusNode _refreshButtonFocusNode;
@@ -128,8 +137,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(_onTabChanged);
+    initTabNavigation();
 
     // Initialize action button focus nodes
     _editButtonFocusNode = FocusNode(debugLabel: 'EditButton');
@@ -141,10 +149,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeWithLibraries();
     });
-
-    // Register L1/R1 callbacks for tab navigation
-    GamepadService.onL1Pressed = _goToPreviousTab;
-    GamepadService.onR1Pressed = _goToNextTab;
   }
 
   /// Initialize the screen with libraries from the provider.
@@ -191,44 +195,25 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
   }
 
-  void _goToPreviousTab() {
-    if (_tabController.index > 0) {
-      setState(() {
-        _suppressAutoFocus = true;
-        _tabController.index = _tabController.index - 1;
-      });
-      _getTabChipFocusNode(_tabController.index).requestFocus();
-    }
-  }
-
-  void _goToNextTab() {
-    if (_tabController.index < _tabController.length - 1) {
-      setState(() {
-        _suppressAutoFocus = true;
-        _tabController.index = _tabController.index + 1;
-      });
-      _getTabChipFocusNode(_tabController.index).requestFocus();
-    }
-  }
-
-  void _onTabChanged() {
+  @override
+  void onTabChanged() {
     // Save tab index when changed (but not when restoring from storage)
-    if (_selectedLibraryGlobalKey != null && !_tabController.indexIsChanging) {
+    if (_selectedLibraryGlobalKey != null && !tabController.indexIsChanging) {
       // Only save if this was a user-initiated tab change, not a restore
       if (!_isRestoringTab) {
         StorageService.getInstance().then((storage) {
-          storage.saveLibraryTab(_selectedLibraryGlobalKey!, _tabController.index);
+          storage.saveLibraryTab(_selectedLibraryGlobalKey!, tabController.index);
         });
 
         // Focus first item in the current tab (only for user-initiated changes)
         // But not when navigating via tab bar (suppressAutoFocus is true)
-        if (!_suppressAutoFocus) {
+        if (!suppressAutoFocus) {
           _focusCurrentTab();
         }
       }
     }
     // Rebuild to update chip selection state
-    setState(() {});
+    super.onTabChanged();
   }
 
   /// Focus the first item in the currently active tab.
@@ -236,22 +221,22 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void _focusCurrentTab() {
     // Don't focus during tab animations - wait for animation to complete
     // This prevents race conditions during focus restoration
-    if (_tabController.indexIsChanging) {
+    if (tabController.indexIsChanging) {
       return;
     }
 
     // Re-enable auto-focus since user is navigating into tab content
     // Only call setState if the value actually changes to avoid unnecessary rebuilds
-    if (_suppressAutoFocus) {
+    if (suppressAutoFocus) {
       setState(() {
-        _suppressAutoFocus = false;
+        suppressAutoFocus = false;
       });
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final tabState = _getTabState(_tabController.index);
+      final tabState = _getTabState(tabController.index);
       if (tabState != null) {
         (tabState as dynamic).focusFirstItem();
       } else {
@@ -266,7 +251,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Focus without additional frame delay (used for retry)
   void _focusCurrentTabImmediate() {
-    final tabState = _getTabState(_tabController.index);
+    final tabState = _getTabState(tabController.index);
     if (tabState != null) {
       (tabState as dynamic).focusFirstItem();
     }
@@ -276,13 +261,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// For browse tab, this focuses the chips bar first so DOWN navigates to grid.
   /// For other tabs, focuses the first item directly.
   void _focusCurrentTabFromTabBar() {
-    if (_tabController.indexIsChanging) {
+    if (tabController.indexIsChanging) {
       return;
     }
 
-    if (_suppressAutoFocus) {
+    if (suppressAutoFocus) {
       setState(() {
-        _suppressAutoFocus = false;
+        suppressAutoFocus = false;
       });
     }
 
@@ -294,10 +279,10 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final tabState = _getTabState(_tabController.index);
+      final tabState = _getTabState(tabController.index);
       if (tabState != null) {
         // Browse tab has a chips bar - focus that first so DOWN navigates to grid
-        if (_tabController.index == 1) {
+        if (tabController.index == 1) {
           (tabState as dynamic).focusChipsBar();
         } else {
           (tabState as dynamic).focusFirstItem();
@@ -328,13 +313,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _loadedTabs.add(tabIndex);
 
     // Don't auto-focus if suppressed (e.g., when navigating via tab bar)
-    if (_suppressAutoFocus) return;
+    if (suppressAutoFocus) return;
 
     // Only focus if this is the currently active tab
-    if (_tabController.index == tabIndex && mounted) {
+    if (tabController.index == tabIndex && mounted) {
       // Use post-frame callback to ensure the widget tree is fully built
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _tabController.index == tabIndex && !_suppressAutoFocus) {
+        if (mounted && tabController.index == tabIndex && !suppressAutoFocus) {
           _focusCurrentTab();
         }
       });
@@ -349,38 +334,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void focusActiveTabIfReady() {
     if (_selectedLibraryGlobalKey == null) return;
     _focusCurrentTab();
-  }
-
-  /// Focus the currently selected tab chip in the tab bar.
-  /// Called when BACK is pressed in tab content.
-  void focusTabBar() {
-    setState(() {
-      _suppressAutoFocus = true;
-    });
-    final focusNode = _getTabChipFocusNode(_tabController.index);
-    focusNode.requestFocus();
-  }
-
-  /// Get the focus node for a tab chip by index
-  FocusNode _getTabChipFocusNode(int index) {
-    switch (index) {
-      case 0:
-        return _recommendedTabChipFocusNode;
-      case 1:
-        return _browseTabChipFocusNode;
-      case 2:
-        return _collectionsTabChipFocusNode;
-      case 3:
-        return _playlistsTabChipFocusNode;
-      default:
-        return _recommendedTabChipFocusNode;
-    }
-  }
-
-  /// Handle BACK from tab bar - navigate to sidenav
-  void _onTabBarBack() {
-    final focusScope = MainScreenFocusScope.of(context);
-    focusScope?.focusSidebar();
   }
 
   void _onEditFocusChange() {
@@ -402,7 +355,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     if (key.isLeftKey) {
       // Navigate back to last tab (Playlists)
-      _getTabChipFocusNode(3).requestFocus();
+      getTabChipFocusNode(3).requestFocus();
       return KeyEventResult.handled;
     }
     if (key.isRightKey) {
@@ -434,7 +387,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (librariesProvider.libraries.isNotEmpty) {
         _editButtonFocusNode.requestFocus();
       } else {
-        _getTabChipFocusNode(3).requestFocus();
+        getTabChipFocusNode(3).requestFocus();
       }
       return KeyEventResult.handled;
     }
@@ -454,8 +407,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
     _cancelToken?.cancel();
     _outerScrollController.dispose();
     _recommendedTabChipFocusNode.dispose();
@@ -466,9 +417,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _editButtonFocusNode.dispose();
     _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
     _refreshButtonFocusNode.dispose();
-    // Clear L1/R1 callbacks
-    GamepadService.onL1Pressed = null;
-    GamepadService.onR1Pressed = null;
+    disposeTabNavigation();
     super.dispose();
   }
 
@@ -550,7 +499,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       // Set flag to prevent _onTabChanged from triggering focus
       _isRestoringTab = true;
       // Use animateTo with zero duration for instant switch without animation race conditions
-      _tabController.animateTo(savedTabIndex, duration: Duration.zero);
+      tabController.animateTo(savedTabIndex, duration: Duration.zero);
       // Clear flag synchronously - animateTo with zero duration completes immediately
       _isRestoringTab = false;
     }
@@ -559,7 +508,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // However, on first load the tab might finish loading before the tab index
     // is restored. Check if the current tab has already loaded and focus if so.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _selectedLibraryGlobalKey == libraryGlobalKey && _loadedTabs.contains(_tabController.index)) {
+      if (mounted && _selectedLibraryGlobalKey == libraryGlobalKey && _loadedTabs.contains(tabController.index)) {
         _focusCurrentTab();
       }
     });
@@ -711,7 +660,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   // Refresh the currently active tab
   void _refreshCurrentTab() {
-    switch (_tabController.index) {
+    switch (tabController.index) {
       case 0: // Recommended tab
         final refreshable = _recommendedTabKey.currentState;
         if (refreshable is Refreshable) {
@@ -1004,13 +953,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Widget _buildTabChip(String label, int index) {
-    final isSelected = _tabController.index == index;
-    const tabCount = 4; // Recommended, Browse, Collections, Playlists
+    final isSelected = tabController.index == index;
 
     return FocusableTabChip(
       label: label,
       isSelected: isSelected,
-      focusNode: _getTabChipFocusNode(index),
+      focusNode: getTabChipFocusNode(index),
       onSelect: () {
         if (isSelected) {
           // Already selected - navigate to tab content
@@ -1018,7 +966,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         } else {
           // Switch to this tab
           setState(() {
-            _tabController.index = index;
+            tabController.index = index;
           });
         }
       },
@@ -1026,20 +974,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           ? () {
               final newIndex = index - 1;
               setState(() {
-                _suppressAutoFocus = true;
-                _tabController.index = newIndex;
+                suppressAutoFocus = true;
+                tabController.index = newIndex;
               });
-              _getTabChipFocusNode(newIndex).requestFocus();
+              getTabChipFocusNode(newIndex).requestFocus();
             }
-          : _onTabBarBack,
+          : onTabBarBack,
       onNavigateRight: index < tabCount - 1
           ? () {
               final newIndex = index + 1;
               setState(() {
-                _suppressAutoFocus = true;
-                _tabController.index = newIndex;
+                suppressAutoFocus = true;
+                tabController.index = newIndex;
               });
-              _getTabChipFocusNode(newIndex).requestFocus();
+              getTabChipFocusNode(newIndex).requestFocus();
             }
           : () {
               // Navigate to first action button (edit if libraries exist, else refresh)
@@ -1051,7 +999,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               }
             },
       onNavigateDown: _focusCurrentTabFromTabBar,
-      onBack: _onTabBarBack,
+      onBack: onTabBarBack,
     );
   }
 
@@ -1231,7 +1179,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               SliverFillRemaining(
                 child: TabBarView(
                   key: ValueKey(_selectedLibraryGlobalKey),
-                  controller: _tabController,
+                  controller: tabController,
                   // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
                   // See: https://github.com/flutter/flutter/issues/11132
                   physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
@@ -1239,32 +1187,32 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     LibraryRecommendedTab(
                       key: _recommendedTabKey,
                       library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                      isActive: _tabController.index == 0,
-                      suppressAutoFocus: _suppressAutoFocus,
+                      isActive: tabController.index == 0,
+                      suppressAutoFocus: suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(0),
                       onBack: focusTabBar,
                     ),
                     LibraryBrowseTab(
                       key: _browseTabKey,
                       library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                      isActive: _tabController.index == 1,
-                      suppressAutoFocus: _suppressAutoFocus,
+                      isActive: tabController.index == 1,
+                      suppressAutoFocus: suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(1),
                       onBack: focusTabBar,
                     ),
                     LibraryCollectionsTab(
                       key: _collectionsTabKey,
                       library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                      isActive: _tabController.index == 2,
-                      suppressAutoFocus: _suppressAutoFocus,
+                      isActive: tabController.index == 2,
+                      suppressAutoFocus: suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(2),
                       onBack: focusTabBar,
                     ),
                     LibraryPlaylistsTab(
                       key: _playlistsTabKey,
                       library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                      isActive: _tabController.index == 3,
-                      suppressAutoFocus: _suppressAutoFocus,
+                      isActive: tabController.index == 3,
+                      suppressAutoFocus: suppressAutoFocus,
                       onDataLoaded: () => _handleTabDataLoaded(3),
                       onBack: focusTabBar,
                     ),

@@ -20,6 +20,7 @@ import '../sort_bottom_sheet.dart';
 import '../state_messages.dart';
 import '../../../services/storage_service.dart';
 import '../../../services/settings_service.dart' show ViewMode, EpisodePosterMode;
+import '../../../mixins/grid_focus_node_mixin.dart';
 import '../../../mixins/item_updatable.dart';
 import '../../../i18n/strings.g.dart';
 import '../../main_screen.dart';
@@ -44,7 +45,7 @@ class LibraryBrowseTab extends BaseLibraryTab<PlexMetadata> {
 }
 
 class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBrowseTab>
-    with ItemUpdatable, LibraryTabFocusMixin {
+    with ItemUpdatable, LibraryTabFocusMixin, GridFocusNodeMixin {
   @override
   PlexClient get client => getClientForLibrary();
 
@@ -84,12 +85,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   final FocusNode _filtersChipFocusNode = FocusNode(debugLabel: 'filters_chip');
   final FocusNode _sortChipFocusNode = FocusNode(debugLabel: 'sort_chip');
 
-  // Focus tracking for grid items
-  int? _lastFocusedIndex;
-  int _contentVersion = 0;
-  int _lastFocusedContentVersion = 0;
-  final Map<int, FocusNode> _gridItemFocusNodes = {};
-
   // Scroll controller for the CustomScrollView
   final ScrollController _scrollController = ScrollController();
 
@@ -100,26 +95,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _groupingChipFocusNode.dispose();
     _filtersChipFocusNode.dispose();
     _sortChipFocusNode.dispose();
-    // Dispose all grid item focus nodes
-    for (final node in _gridItemFocusNodes.values) {
-      node.dispose();
-    }
-    _gridItemFocusNodes.clear();
+    disposeGridFocusNodes();
     super.dispose();
-  }
-
-  /// Get or create a focus node for a grid item at the given index
-  FocusNode _getGridItemFocusNode(int index) {
-    return _gridItemFocusNodes.putIfAbsent(index, () => FocusNode(debugLabel: 'browse_grid_item_$index'));
-  }
-
-  /// Clean up focus nodes for items that no longer exist
-  void _cleanupFocusNodes() {
-    final keysToRemove = _gridItemFocusNodes.keys.where((index) => index >= items.length).toList();
-    for (final key in keysToRemove) {
-      _gridItemFocusNodes[key]?.dispose();
-      _gridItemFocusNodes.remove(key);
-    }
   }
 
   // Override loadData to use our custom _loadContent
@@ -269,8 +246,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         items = [];
         // Increment content version when loading fresh content
         // This invalidates the last focused index
-        _contentVersion++;
-        _cleanupFocusNodes();
+        gridContentVersion++;
+        cleanupGridFocusNodes(items.length);
       }
     });
 
@@ -522,17 +499,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   void _navigateToGrid() {
     if (items.isEmpty) return;
 
-    // Check if we should restore focus to the last focused item
-    final shouldRestoreFocus =
-        _lastFocusedIndex != null && _lastFocusedContentVersion == _contentVersion && _lastFocusedIndex! < items.length;
-
-    final targetIndex = shouldRestoreFocus ? _lastFocusedIndex! : 0;
+    final targetIndex = shouldRestoreGridFocus && lastFocusedGridIndex! < items.length ? lastFocusedGridIndex! : 0;
 
     // Use firstItemFocusNode for index 0 (matches _buildMediaCardItem)
     if (targetIndex == 0) {
       firstItemFocusNode.requestFocus();
     } else {
-      _getGridItemFocusNode(targetIndex).requestFocus();
+      getGridItemFocusNode(targetIndex, prefix: 'browse_grid_item').requestFocus();
     }
   }
 
@@ -762,7 +735,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     // Use firstItemFocusNode for index 0 to maintain compatibility with base class
     // All other items get managed focus nodes for restoration
-    final focusNode = index == 0 ? firstItemFocusNode : _getGridItemFocusNode(index);
+    final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index, prefix: 'browse_grid_item');
 
     return FocusableMediaCard(
       key: Key(item.ratingKey),
@@ -772,13 +745,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       onNavigateUp: isFirstRow ? _navigateToChips : null,
       onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
       onBack: widget.onBack,
-      onFocusChange: (hasFocus) {
-        if (hasFocus) {
-          // Track the focused index and current content version
-          _lastFocusedIndex = index;
-          _lastFocusedContentVersion = _contentVersion;
-        }
-      },
+      onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
       onListRefresh: _loadItems,
     );
   }

@@ -15,6 +15,7 @@ import '../services/download_storage_service.dart';
 import '../services/plex_api_cache.dart';
 import '../utils/app_logger.dart';
 import '../utils/codec_utils.dart';
+import '../utils/global_key_utils.dart';
 import '../utils/plex_cache_parser.dart';
 
 /// Extension methods on AppDatabase for download operations
@@ -354,22 +355,18 @@ class DownloadManagerService {
       appLogger.d('Status updated to downloading');
 
       // Parse globalKey to get serverId and ratingKey
-      final parts = globalKey.split(':');
-      final serverId = parts[0];
-      final ratingKey = parts[1];
+      final parsed = parseGlobalKey(globalKey);
+      if (parsed == null) {
+        throw Exception('Invalid globalKey format: $globalKey');
+      }
+      final serverId = parsed.serverId;
+      final ratingKey = parsed.ratingKey;
 
       // Get metadata from cache
-      final cachedResponse = await _apiCache.get(serverId, '/library/metadata/$ratingKey');
-      if (cachedResponse == null) {
+      final metadata = await _apiCache.getMetadata(serverId, ratingKey);
+      if (metadata == null) {
         throw Exception('Metadata not found in cache for $globalKey');
       }
-
-      // Parse metadata from cached response
-      final firstMetadata = PlexCacheParser.extractFirstMetadata(cachedResponse);
-      if (firstMetadata == null) {
-        throw Exception('Invalid cached metadata for $globalKey');
-      }
-      final metadata = PlexMetadata.fromJson(firstMetadata).copyWith(serverId: serverId);
 
       // Get video playback data (includes URL, streams, markers, etc.)
       // This also caches the metadata with chapters/markers for offline use
@@ -860,15 +857,15 @@ class DownloadManagerService {
     }
 
     // Delete files from storage
-    final parts = globalKey.split(':');
-    if (parts.length != 2) {
+    final parsed = parseGlobalKey(globalKey);
+    if (parsed == null) {
       await _database.deleteDownload(globalKey);
       return;
     }
 
-    final serverId = parts[0];
-    final ratingKey = parts[1];
-    final metadata = await _getMetadataFromCache(serverId, ratingKey);
+    final serverId = parsed.serverId;
+    final ratingKey = parsed.ratingKey;
+    final metadata = await _apiCache.getMetadata(serverId, ratingKey);
 
     if (metadata == null) {
       // Fallback deletion without progress
@@ -935,7 +932,7 @@ class DownloadManagerService {
   Future<void> _deleteMediaFilesWithMetadata(String serverId, String ratingKey) async {
     try {
       // Get metadata from API cache
-      final metadata = await _getMetadataFromCache(serverId, ratingKey);
+      final metadata = await _apiCache.getMetadata(serverId, ratingKey);
 
       if (metadata == null) {
         // Fallback: Try database record
@@ -968,16 +965,6 @@ class DownloadManagerService {
     } catch (e, stack) {
       appLogger.e('Error deleting files', error: e, stackTrace: stack);
     }
-  }
-
-  /// Get metadata from API cache
-  Future<PlexMetadata?> _getMetadataFromCache(String serverId, String ratingKey) async {
-    final cachedData = await _apiCache.get(serverId, '/library/metadata/$ratingKey');
-    final metadataJson = PlexCacheParser.extractFirstMetadata(cachedData);
-    if (metadataJson != null) {
-      return PlexMetadata.fromJson(metadataJson).copyWith(serverId: serverId);
-    }
-    return null;
   }
 
   /// Get chapter thumb paths from cached metadata
@@ -1076,7 +1063,7 @@ class DownloadManagerService {
   Future<void> _deleteEpisodeFiles(PlexMetadata episode, String serverId) async {
     try {
       final parentMetadata = episode.grandparentRatingKey != null
-          ? await _getMetadataFromCache(serverId, episode.grandparentRatingKey!)
+          ? await _apiCache.getMetadata(serverId, episode.grandparentRatingKey!)
           : null;
       final showYear = parentMetadata?.year;
 
@@ -1113,7 +1100,7 @@ class DownloadManagerService {
   Future<void> _deleteSeasonFiles(PlexMetadata season, String serverId) async {
     try {
       final parentMetadata = season.parentRatingKey != null
-          ? await _getMetadataFromCache(serverId, season.parentRatingKey!)
+          ? await _apiCache.getMetadata(serverId, season.parentRatingKey!)
           : null;
       final showYear = parentMetadata?.year;
 

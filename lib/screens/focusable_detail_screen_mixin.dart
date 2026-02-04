@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
+import '../mixins/grid_focus_node_mixin.dart';
 import '../providers/settings_provider.dart';
 import '../utils/grid_size_calculator.dart';
 import '../widgets/app_icon.dart';
@@ -22,7 +23,9 @@ class AppBarButtonConfig {
 
 /// Mixin that provides common focus navigation functionality for detail screens.
 /// Handles app bar focus, back navigation, scroll-to-top, and grid item focus management.
-mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
+///
+/// Classes using this mixin must also use [GridFocusNodeMixin].
+mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocusNodeMixin<T> {
   // Scroll controller for scrolling to top when app bar is focused
   final ScrollController scrollController = ScrollController();
 
@@ -33,12 +36,6 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
 
   // Grid item focus
   final FocusNode firstItemFocusNode = FocusNode(debugLabel: 'detail_first_item');
-  final Map<int, FocusNode> gridItemFocusNodes = {};
-
-  // Focus restoration
-  int? lastFocusedIndex;
-  int contentVersion = 0;
-  int lastFocusedContentVersion = 0;
 
   // App bar focus state
   bool isAppBarFocused = false;
@@ -63,15 +60,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
     shuffleButtonFocusNode.dispose();
     deleteButtonFocusNode.dispose();
     firstItemFocusNode.dispose();
-    for (final node in gridItemFocusNodes.values) {
-      node.dispose();
-    }
-    gridItemFocusNodes.clear();
-  }
-
-  /// Get or create a focus node for a grid item at the given index
-  FocusNode getGridItemFocusNode(int index) {
-    return gridItemFocusNodes.putIfAbsent(index, () => FocusNode(debugLabel: 'detail_grid_item_$index'));
+    disposeGridFocusNodes();
   }
 
   /// Navigate from content to app bar
@@ -95,11 +84,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
   void navigateToGrid() {
     if (!hasItems) return;
 
-    // Check if we should restore focus to the last focused item
-    final shouldRestoreFocus =
-        lastFocusedIndex != null && lastFocusedContentVersion == contentVersion && lastFocusedIndex! >= 0;
-
-    final targetIndex = shouldRestoreFocus ? lastFocusedIndex! : 0;
+    final targetIndex = shouldRestoreGridFocus ? lastFocusedGridIndex! : 0;
 
     setState(() {
       isAppBarFocused = false;
@@ -108,7 +93,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
     if (targetIndex == 0) {
       firstItemFocusNode.requestFocus();
     } else {
-      getGridItemFocusNode(targetIndex).requestFocus();
+      getGridItemFocusNode(targetIndex, prefix: 'detail_grid_item').requestFocus();
     }
   }
 
@@ -242,14 +227,6 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
     }
   }
 
-  /// Track focus on a grid item. Call from onFocusChange of grid items.
-  void trackGridItemFocus(int index, bool hasFocus) {
-    if (hasFocus) {
-      lastFocusedIndex = index;
-      lastFocusedContentVersion = contentVersion;
-    }
-  }
-
   /// Build a standard focusable grid sliver for media items.
   /// Used by collection and smart playlist detail screens.
   Widget buildFocusableGrid({
@@ -275,7 +252,9 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T> {
                 itemBuilder: (context, index) {
                   final item = items[index];
                   final inFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
-                  final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index);
+                  final focusNode = index == 0
+                      ? firstItemFocusNode
+                      : getGridItemFocusNode(index, prefix: 'detail_grid_item');
 
                   return FocusableMediaCard(
                     key: Key(item.ratingKey),

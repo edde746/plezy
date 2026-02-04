@@ -5,7 +5,8 @@ import '../../models/plex_metadata.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../../services/gamepad_service.dart';
+import '../../utils/global_key_utils.dart';
+import '../../mixins/tab_navigation_mixin.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
@@ -24,103 +25,43 @@ class DownloadsScreen extends StatefulWidget {
   State<DownloadsScreen> createState() => DownloadsScreenState();
 }
 
-class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
+class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProviderStateMixin, TabNavigationMixin {
   // Focus nodes for tab chips
   final _queueTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_queue');
   final _tvShowsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_tv_shows');
   final _moviesTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_movies');
 
-  /// When true, suppress auto-focus in tabs (used when navigating via tab bar)
-  bool _suppressAutoFocus = true;
+  @override
+  List<FocusNode> get tabChipFocusNodes => [_queueTabChipFocusNode, _tvShowsTabChipFocusNode, _moviesTabChipFocusNode];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(_onTabChanged);
-
-    // Register L1/R1 callbacks for tab navigation
-    GamepadService.onL1Pressed = _goToPreviousTab;
-    GamepadService.onR1Pressed = _goToNextTab;
+    suppressAutoFocus = true; // Start suppressed
+    initTabNavigation();
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
     _queueTabChipFocusNode.dispose();
     _tvShowsTabChipFocusNode.dispose();
     _moviesTabChipFocusNode.dispose();
-    // Clear L1/R1 callbacks
-    GamepadService.onL1Pressed = null;
-    GamepadService.onR1Pressed = null;
+    disposeTabNavigation();
     super.dispose();
   }
 
-  void _goToPreviousTab() {
-    if (_tabController.index > 0) {
-      setState(() {
-        _suppressAutoFocus = true;
-        _tabController.index = _tabController.index - 1;
-      });
-      _getTabChipFocusNode(_tabController.index).requestFocus();
+  @override
+  void onTabChanged() {
+    if (!tabController.indexIsChanging) {
+      super.onTabChanged();
     }
-  }
-
-  void _goToNextTab() {
-    if (_tabController.index < _tabController.length - 1) {
-      setState(() {
-        _suppressAutoFocus = true;
-        _tabController.index = _tabController.index + 1;
-      });
-      _getTabChipFocusNode(_tabController.index).requestFocus();
-    }
-  }
-
-  void _onTabChanged() {
-    if (!_tabController.indexIsChanging) {
-      // Rebuild to update chip selection state
-      setState(() {});
-    }
-  }
-
-  /// Get the focus node for a tab chip by index
-  FocusNode _getTabChipFocusNode(int index) {
-    switch (index) {
-      case 0:
-        return _queueTabChipFocusNode;
-      case 1:
-        return _tvShowsTabChipFocusNode;
-      case 2:
-        return _moviesTabChipFocusNode;
-      default:
-        return _queueTabChipFocusNode;
-    }
-  }
-
-  /// Focus the currently selected tab chip in the tab bar.
-  /// Called when BACK is pressed in tab content.
-  void focusTabBar() {
-    setState(() {
-      _suppressAutoFocus = true;
-    });
-    final focusNode = _getTabChipFocusNode(_tabController.index);
-    focusNode.requestFocus();
-  }
-
-  /// Handle BACK from tab bar - navigate to sidenav
-  void _onTabBarBack() {
-    final focusScope = MainScreenFocusScope.of(context);
-    focusScope?.focusSidebar();
   }
 
   /// Focus the first item in the currently active tab
   void _focusCurrentTab() {
     // Re-enable auto-focus since user is navigating into tab content
     setState(() {
-      _suppressAutoFocus = false;
+      suppressAutoFocus = false;
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -130,13 +71,12 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
   }
 
   Widget _buildTabChip(String label, int index) {
-    final isSelected = _tabController.index == index;
-    const tabCount = 3; // Queue, TV Shows, Movies
+    final isSelected = tabController.index == index;
 
     return FocusableTabChip(
       label: label,
       isSelected: isSelected,
-      focusNode: _getTabChipFocusNode(index),
+      focusNode: getTabChipFocusNode(index),
       onSelect: () {
         if (isSelected) {
           // Already selected - navigate to tab content
@@ -144,7 +84,7 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
         } else {
           // Switch to this tab
           setState(() {
-            _tabController.index = index;
+            tabController.index = index;
           });
         }
       },
@@ -152,24 +92,24 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
           ? () {
               final newIndex = index - 1;
               setState(() {
-                _suppressAutoFocus = true;
-                _tabController.index = newIndex;
+                suppressAutoFocus = true;
+                tabController.index = newIndex;
               });
-              _getTabChipFocusNode(newIndex).requestFocus();
+              getTabChipFocusNode(newIndex).requestFocus();
             }
-          : _onTabBarBack,
+          : onTabBarBack,
       onNavigateRight: index < tabCount - 1
           ? () {
               final newIndex = index + 1;
               setState(() {
-                _suppressAutoFocus = true;
-                _tabController.index = newIndex;
+                suppressAutoFocus = true;
+                tabController.index = newIndex;
               });
-              _getTabChipFocusNode(newIndex).requestFocus();
+              getTabChipFocusNode(newIndex).requestFocus();
             }
           : null,
       onNavigateDown: _focusCurrentTab,
-      onBack: _onTabBarBack,
+      onBack: onTabBarBack,
     );
   }
 
@@ -230,13 +170,13 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                 // Tab content
                 Expanded(
                   child: TabBarView(
-                    controller: _tabController,
+                    controller: tabController,
                     children: [
                       Consumer2<DownloadProvider, MultiServerProvider>(
                         builder: (context, downloadProvider, serverProvider, _) {
                           // Helper to get client from globalKey (serverId:ratingKey)
                           getClient(String globalKey) {
-                            final serverId = globalKey.split(':').first;
+                            final serverId = parseGlobalKey(globalKey)?.serverId ?? globalKey;
                             return serverProvider.serverManager.getClient(serverId);
                           }
 
@@ -260,18 +200,18 @@ class DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProvi
                             onDelete: downloadProvider.deleteDownload,
                             onNavigateLeft: () => MainScreenFocusScope.of(context)?.focusSidebar(),
                             onBack: focusTabBar,
-                            suppressAutoFocus: _suppressAutoFocus,
+                            suppressAutoFocus: suppressAutoFocus,
                           );
                         },
                       ),
                       _DownloadsGridContent(
                         type: DownloadType.tvShows,
-                        suppressAutoFocus: _suppressAutoFocus,
+                        suppressAutoFocus: suppressAutoFocus,
                         onBack: focusTabBar,
                       ),
                       _DownloadsGridContent(
                         type: DownloadType.movies,
-                        suppressAutoFocus: _suppressAutoFocus,
+                        suppressAutoFocus: suppressAutoFocus,
                         onBack: focusTabBar,
                       ),
                     ],

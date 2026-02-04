@@ -18,6 +18,7 @@ import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
+import '../../mixins/grid_focus_node_mixin.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -30,7 +31,10 @@ class PlaylistDetailScreen extends StatefulWidget {
 }
 
 class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetailScreen>
-    with StandardItemLoader<PlaylistDetailScreen>, FocusableDetailScreenMixin<PlaylistDetailScreen> {
+    with
+        StandardItemLoader<PlaylistDetailScreen>,
+        GridFocusNodeMixin<PlaylistDetailScreen>,
+        FocusableDetailScreenMixin<PlaylistDetailScreen> {
   @override
   dynamic get mediaItem => widget.playlist;
 

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
+import '../models/plex_metadata.dart';
+import '../utils/plex_cache_parser.dart';
 
 /// Key-value cache for Plex API responses using Drift/SQLite.
 /// Stores raw JSON responses keyed by serverId:endpoint format.
@@ -108,6 +110,16 @@ class PlexApiCache {
       }
     }
     return keys;
+  }
+
+  /// Fetch and parse a [PlexMetadata] item from cache.
+  ///
+  /// Returns `null` when the endpoint is not cached or contains no metadata.
+  Future<PlexMetadata?> getMetadata(String serverId, String ratingKey) async {
+    final cached = await get(serverId, '/library/metadata/$ratingKey');
+    final json = PlexCacheParser.extractFirstMetadata(cached);
+    if (json == null) return null;
+    return PlexMetadata.fromJson(json).copyWith(serverId: serverId);
   }
 
   /// Clear all cached data (useful for debugging/testing)
