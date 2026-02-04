@@ -122,18 +122,17 @@ class GridSizeCalculator {
     return MediaQuery.of(context).size.width <= tabletBreakpoint;
   }
 
-  /// Calculates the number of columns in a grid based on screen width and density.
+  /// Calculates the number of columns for a given available width.
   ///
   /// Uses the same formula as Flutter's SliverGridDelegateWithMaxCrossAxisExtent:
   /// `((crossAxisExtent + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil()`
   ///
-  /// [horizontalPadding] should match the grid's total horizontal padding.
-  static int getColumnCount(BuildContext context, LibraryDensity density, {double horizontalPadding = 16}) {
-    final screenWidth = MediaQuery.of(context).size.width - horizontalPadding;
-    final maxCrossAxisExtent = getMaxCrossAxisExtent(context, density);
+  /// [crossAxisExtent] should come from layout constraints (e.g. `SliverLayoutBuilder`
+  /// or `LayoutBuilder`), not from `MediaQuery`, to account for sidebars or other
+  /// elements that reduce the grid's actual width.
+  static int getColumnCount(double crossAxisExtent, double maxCrossAxisExtent) {
     final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
-    // Match Flutter's grid delegate calculation
-    return ((screenWidth + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+    return ((crossAxisExtent + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
   }
 
   /// Check if the given index is in the first row of a grid with given column count.

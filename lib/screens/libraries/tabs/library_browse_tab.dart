@@ -723,24 +723,29 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       );
     } else {
       // In grid view, calculate columns and pass to item builder
-      final columnCount = GridSizeCalculator.getColumnCount(context, settingsProvider.libraryDensity);
       // Use 16:9 aspect ratio when browsing episodes with episode thumbnail mode
       final useWideRatio =
           _selectedGrouping == 'episodes' && settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
+      final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
       return SliverPadding(
         padding: const EdgeInsets.fromLTRB(8, _gridTopPadding, 8, 8),
-        sliver: SliverGrid.builder(
-          gridDelegate: MediaGridDelegate.createDelegate(
-            context: context,
-            density: settingsProvider.libraryDensity,
-            useWideAspectRatio: useWideRatio,
-          ),
-          itemCount: itemCount,
-          itemBuilder: (context, index) => _buildMediaCardItem(
-            index,
-            isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
-            isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
-          ),
+        sliver: SliverLayoutBuilder(
+          builder: (context, constraints) {
+            final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
+            return SliverGrid.builder(
+              gridDelegate: MediaGridDelegate.createDelegate(
+                context: context,
+                density: settingsProvider.libraryDensity,
+                useWideAspectRatio: useWideRatio,
+              ),
+              itemCount: itemCount,
+              itemBuilder: (context, index) => _buildMediaCardItem(
+                index,
+                isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
+                isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
+              ),
+            );
+          },
         ),
       );
     }

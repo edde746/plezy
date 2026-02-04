@@ -159,27 +159,35 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   Widget _buildFocusableGrid() {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
-        final columnCount = GridSizeCalculator.getColumnCount(context, settingsProvider.libraryDensity);
+        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
         return SliverPadding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-          sliver: SliverGrid.builder(
-            gridDelegate: MediaGridDelegate.createDelegate(context: context, density: settingsProvider.libraryDensity),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final inFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
-              final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index);
+          sliver: SliverLayoutBuilder(
+            builder: (context, constraints) {
+              final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
+              return SliverGrid.builder(
+                gridDelegate: MediaGridDelegate.createDelegate(
+                  context: context,
+                  density: settingsProvider.libraryDensity,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  final inFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
+                  final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index);
 
-              return FocusableMediaCard(
-                key: Key(item.ratingKey),
-                item: item,
-                focusNode: focusNode,
-                onRefresh: updateItem,
-                collectionId: widget.collection.ratingKey,
-                onListRefresh: loadItems,
-                onNavigateUp: inFirstRow ? navigateToAppBar : null,
-                onBack: handleBackFromContent,
-                onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                  return FocusableMediaCard(
+                    key: Key(item.ratingKey),
+                    item: item,
+                    focusNode: focusNode,
+                    onRefresh: updateItem,
+                    collectionId: widget.collection.ratingKey,
+                    onListRefresh: loadItems,
+                    onNavigateUp: inFirstRow ? navigateToAppBar : null,
+                    onBack: handleBackFromContent,
+                    onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                  );
+                },
               );
             },
           ),

@@ -7,7 +7,6 @@ import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/gamepad_service.dart';
 import '../../utils/grid_size_calculator.dart';
-import '../../utils/layout_constants.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
@@ -328,11 +327,6 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
     MainScreenFocusScope.of(context)?.focusSidebar();
   }
 
-  /// Calculate column count based on actual available width.
-  int _calculateColumnCount(double availableWidth, double maxCrossAxisExtent, double crossAxisSpacing) {
-    return ((availableWidth + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer2<DownloadProvider, SettingsProvider>(
@@ -348,13 +342,12 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
         // Extra top padding for focus decoration (scale + border extends beyond item bounds)
         const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
         final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
-        const crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
 
         // Use LayoutBuilder to get actual available width (accounting for sidebar)
         return LayoutBuilder(
           builder: (context, constraints) {
             final availableWidth = constraints.maxWidth - effectivePadding.left - effectivePadding.right;
-            final columnCount = _calculateColumnCount(availableWidth, maxCrossAxisExtent, crossAxisSpacing);
+            final columnCount = GridSizeCalculator.getColumnCount(availableWidth, maxCrossAxisExtent);
 
             return GridView.builder(
               padding: effectivePadding,

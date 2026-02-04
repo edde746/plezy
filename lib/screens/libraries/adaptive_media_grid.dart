@@ -80,13 +80,6 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
     MainScreenFocusScope.of(context)?.focusSidebar();
   }
 
-  /// Calculate column count based on actual available width.
-  /// Uses the same formula as Flutter's SliverGridDelegateWithMaxCrossAxisExtent.
-  int _calculateColumnCount(double availableWidth, double maxCrossAxisExtent) {
-    final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
-    return ((availableWidth + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
-  }
-
   /// Builds either a list or grid view based on the view mode
   Widget _buildItemsView(BuildContext context, ViewMode viewMode, LibraryDensity density) {
     final basePadding = padding ?? GridLayoutConstants.gridPadding;
@@ -120,7 +113,7 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
       return LayoutBuilder(
         builder: (context, constraints) {
           final availableWidth = constraints.maxWidth - horizontalPadding;
-          final columnCount = _calculateColumnCount(availableWidth, maxCrossAxisExtent);
+          final columnCount = GridSizeCalculator.getColumnCount(availableWidth, maxCrossAxisExtent);
 
           return GridView.builder(
             padding: effectivePadding,
