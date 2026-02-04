@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../models/plex_metadata.dart';
-import '../widgets/focusable_media_card.dart';
-import '../widgets/media_grid_delegate.dart';
-import '../utils/grid_size_calculator.dart';
 import '../widgets/desktop_app_bar.dart';
-import '../providers/settings_provider.dart';
 import '../i18n/strings.g.dart';
 import '../utils/dialogs.dart';
 import '../utils/app_logger.dart';
@@ -149,50 +144,16 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
           slivers: [
             CustomAppBar(title: Text(widget.collection.title), actions: buildFocusableAppBarActions()),
             ...buildStateSlivers(),
-            if (items.isNotEmpty) _buildFocusableGrid(),
+            if (items.isNotEmpty)
+              buildFocusableGrid(
+                items: items,
+                onRefresh: updateItem,
+                collectionId: widget.collection.ratingKey,
+                onListRefresh: loadItems,
+              ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildFocusableGrid() {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
-        return SliverPadding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-          sliver: SliverLayoutBuilder(
-            builder: (context, constraints) {
-              final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
-              return SliverGrid.builder(
-                gridDelegate: MediaGridDelegate.createDelegate(
-                  context: context,
-                  density: settingsProvider.libraryDensity,
-                ),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  final inFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
-                  final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index);
-
-                  return FocusableMediaCard(
-                    key: Key(item.ratingKey),
-                    item: item,
-                    focusNode: focusNode,
-                    onRefresh: updateItem,
-                    collectionId: widget.collection.ratingKey,
-                    onListRefresh: loadItems,
-                    onNavigateUp: inFirstRow ? navigateToAppBar : null,
-                    onBack: handleBackFromContent,
-                    onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
-                  );
-                },
-              );
-            },
-          ),
-        );
-      },
     );
   }
 }

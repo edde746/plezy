@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../../services/play_queue_launcher.dart';
 import '../../models/plex_playlist.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/provider_extensions.dart';
-import '../../widgets/focusable_media_card.dart';
-import '../../widgets/media_grid_delegate.dart';
-import '../../utils/grid_size_calculator.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/desktop_app_bar.dart';
-import '../../providers/settings_provider.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/snackbar_helper.dart';
 import '../base_media_list_detail_screen.dart';
+import '../focusable_detail_screen_mixin.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -33,7 +30,7 @@ class PlaylistDetailScreen extends StatefulWidget {
 }
 
 class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetailScreen>
-    with StandardItemLoader<PlaylistDetailScreen> {
+    with StandardItemLoader<PlaylistDetailScreen>, FocusableDetailScreenMixin<PlaylistDetailScreen> {
   @override
   dynamic get mediaItem => widget.playlist;
 
@@ -46,14 +43,41 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   @override
   IconData get emptyIcon => Symbols.playlist_play_rounded;
 
-  // Scroll controller for scrolling to top when app bar is focused
-  final ScrollController _scrollController = ScrollController();
+  @override
+  bool get hasItems => items.isNotEmpty;
 
-  // Focus management
+  @override
+  int get appBarButtonCount {
+    int count = 0;
+    if (items.isNotEmpty) count += 2; // play + shuffle
+    if (!widget.playlist.smart) count += 1; // delete
+    return count;
+  }
+
+  @override
+  List<AppBarButtonConfig> getAppBarButtons() {
+    final buttons = <AppBarButtonConfig>[];
+    if (items.isNotEmpty) {
+      buttons.add(AppBarButtonConfig(icon: Symbols.play_arrow_rounded, tooltip: t.discover.play, onPressed: playItems));
+      buttons.add(
+        AppBarButtonConfig(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
+      );
+    }
+    if (!widget.playlist.smart) {
+      buttons.add(
+        AppBarButtonConfig(
+          icon: Symbols.delete_rounded,
+          tooltip: t.playlists.delete,
+          onPressed: _deletePlaylist,
+          color: Colors.red,
+        ),
+      );
+    }
+    return buttons;
+  }
+
+  // Focus management for regular (non-smart) reorderable lists
   final FocusNode _listFocusNode = FocusNode(debugLabel: 'playlist_list');
-  final FocusNode _playButtonFocusNode = FocusNode(debugLabel: 'playlist_play');
-  final FocusNode _shuffleButtonFocusNode = FocusNode(debugLabel: 'playlist_shuffle');
-  final FocusNode _deleteButtonFocusNode = FocusNode(debugLabel: 'playlist_delete');
 
   // Navigation state for regular (non-smart) playlists
   int _focusedIndex = 0;
@@ -67,38 +91,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   // Estimated item height for scroll-into-view (card + vertical margins)
   static const double _estimatedItemHeight = 114.0;
 
-  // App bar focus state
-  bool _isAppBarFocused = false;
-  int _appBarFocusedButton = 0; // 0=play, 1=shuffle, 2=delete
-
-  // Flag to prevent PopScope from exiting when BACK was handled by a key handler
-  bool _backHandledByKeyEvent = false;
-
-  // Grid focus for smart playlists
-  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'playlist_first_item');
-  final Map<int, FocusNode> _gridItemFocusNodes = {};
-  int? _lastFocusedGridIndex;
-  int _contentVersion = 0;
-  int _lastFocusedContentVersion = 0;
-
   @override
   void dispose() {
-    _scrollController.dispose();
     _listFocusNode.dispose();
-    _playButtonFocusNode.dispose();
-    _shuffleButtonFocusNode.dispose();
-    _deleteButtonFocusNode.dispose();
-    _firstItemFocusNode.dispose();
-    for (final node in _gridItemFocusNodes.values) {
-      node.dispose();
-    }
-    _gridItemFocusNodes.clear();
+    disposeFocusResources();
     super.dispose();
-  }
-
-  /// Get or create a focus node for a grid item at the given index
-  FocusNode _getGridItemFocusNode(int index) {
-    return _gridItemFocusNodes.putIfAbsent(index, () => FocusNode(debugLabel: 'playlist_grid_item_$index'));
   }
 
   @override
@@ -109,7 +106,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   @override
   Future<void> loadItems() async {
     // Increment content version when loading fresh content
-    _contentVersion++;
+    contentVersion++;
     await super.loadItems();
 
     // Auto-focus after load if in keyboard mode
@@ -118,12 +115,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         if (!mounted) return;
         if (InputModeTracker.isKeyboardMode(context)) {
           setState(() {
-            _isAppBarFocused = false;
+            isAppBarFocused = false;
             _focusedIndex = 0;
             _focusedColumn = 0;
           });
           if (widget.playlist.smart) {
-            _firstItemFocusNode.requestFocus();
+            firstItemFocusNode.requestFocus();
           } else {
             _listFocusNode.requestFocus();
           }
@@ -135,6 +132,21 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   @override
   String getLoadSuccessMessage(int itemCount) {
     return 'Loaded $itemCount items for playlist: ${widget.playlist.title}';
+  }
+
+  /// Navigate from app bar down to content - overridden to handle both grid and list
+  @override
+  void navigateToGrid() {
+    if (!hasItems) return;
+
+    if (widget.playlist.smart) {
+      super.navigateToGrid();
+    } else {
+      setState(() {
+        isAppBarFocused = false;
+      });
+      _listFocusNode.requestFocus();
+    }
   }
 
   /// Get the correct PlexClient for this playlist's server
@@ -154,10 +166,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.deleted)));
+          showSuccessSnackBar(context, t.playlists.deleted);
           Navigator.pop(context); // Return to playlists screen
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorDeleting)));
+          showErrorSnackBar(context, t.playlists.errorDeleting);
         }
       }
     }
@@ -178,7 +190,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (movedItem.playlistItemID == null) {
       appLogger.e('Cannot reorder: item missing playlistItemID');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
+        showErrorSnackBar(context, t.playlists.errorReordering);
       }
       return;
     }
@@ -194,7 +206,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       if (afterItem.playlistItemID == null) {
         appLogger.e('Cannot reorder: after item missing playlistItemID');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
+          showErrorSnackBar(context, t.playlists.errorReordering);
         }
         return;
       }
@@ -225,7 +237,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           items.insert(oldIndex, item);
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
+        showErrorSnackBar(context, t.playlists.errorReordering);
       }
     }
   }
@@ -240,7 +252,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (movedItem.playlistItemID == null) {
       appLogger.e('Cannot persist move: item missing playlistItemID');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
+        showErrorSnackBar(context, t.playlists.errorReordering);
         // Revert the UI change
         setState(() {
           final item = items.removeAt(newIndex);
@@ -260,7 +272,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       if (afterItem.playlistItemID == null) {
         appLogger.e('Cannot persist move: after item missing playlistItemID');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
+          showErrorSnackBar(context, t.playlists.errorReordering);
           // Revert the UI change
           setState(() {
             final item = items.removeAt(newIndex);
@@ -291,7 +303,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           items.insert(originalIndex, item);
           _focusedIndex = originalIndex;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorReordering)));
+        showErrorSnackBar(context, t.playlists.errorReordering);
       }
     }
   }
@@ -303,7 +315,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (item.playlistItemID == null) {
       appLogger.e('Cannot remove: item missing playlistItemID');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorRemoving)));
+        showErrorSnackBar(context, t.playlists.errorRemoving);
       }
       return;
     }
@@ -323,7 +335,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
     if (mounted) {
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.itemRemoved)));
+        showSuccessSnackBar(context, t.playlists.itemRemoved);
       } else {
         // Revert on failure
         appLogger.e('Failed to remove playlist item, reverting UI');
@@ -331,7 +343,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           items.insert(index, item);
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.playlists.errorRemoving)));
+        showErrorSnackBar(context, t.playlists.errorRemoving);
       }
     }
   }
@@ -360,19 +372,19 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// Uses estimated item height instead of per-item GlobalKeys.
   void _ensureFocusedVisible() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) return;
+      if (!mounted || !scrollController.hasClients) return;
       final targetOffset = _focusedIndex * _estimatedItemHeight;
-      final viewportHeight = _scrollController.position.viewportDimension;
-      final currentOffset = _scrollController.offset;
+      final viewportHeight = scrollController.position.viewportDimension;
+      final currentOffset = scrollController.offset;
 
       // Check if the item is outside the visible area (with some padding)
       if (targetOffset < currentOffset || targetOffset > currentOffset + viewportHeight - _estimatedItemHeight) {
         // Scroll so the item sits ~25% from the top of the viewport
         final scrollTo = (targetOffset - viewportHeight * 0.25).clamp(
-          _scrollController.position.minScrollExtent,
-          _scrollController.position.maxScrollExtent,
+          scrollController.position.minScrollExtent,
+          scrollController.position.maxScrollExtent,
         );
-        _scrollController.animateTo(scrollTo, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+        scrollController.animateTo(scrollTo, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
       }
     });
   }
@@ -384,11 +396,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     final backResult = handleBackKeyAction(event, () {
       if (_movingIndex != null) {
         // Cancel move mode, set flag to prevent PopScope exit
-        _backHandledByKeyEvent = true;
+        backHandledByKeyEvent = true;
         _cancelMoveMode();
       } else {
         // Navigate to app bar on BACK, set flag to prevent PopScope exit
-        _handleBackFromContent();
+        handleBackFromContent();
       }
     });
     if (backResult != KeyEventResult.ignored) {
@@ -446,7 +458,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           _ensureFocusedVisible();
         } else {
           // First item - navigate to app bar
-          _navigateToAppBar();
+          navigateToAppBar();
         }
         return KeyEventResult.handled;
       }
@@ -504,192 +516,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     return KeyEventResult.ignored;
   }
 
-  /// Handle key events when app bar is focused
-  KeyEventResult _handleAppBarKeyEvent(FocusNode node, KeyEvent event) {
-    final key = event.logicalKey;
-    final hasDelete = !widget.playlist.smart;
-    final maxButton = hasDelete ? 2 : 1;
-
-    final backResult = handleBackKeyAction(event, () => Navigator.pop(context));
-    if (backResult != KeyEventResult.ignored) {
-      return backResult;
-    }
-
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
-
-    if (key.isLeftKey && _appBarFocusedButton > 0) {
-      setState(() => _appBarFocusedButton--);
-      _focusAppBarButton(_appBarFocusedButton);
-      return KeyEventResult.handled;
-    }
-    if (key.isRightKey && _appBarFocusedButton < maxButton) {
-      setState(() => _appBarFocusedButton++);
-      _focusAppBarButton(_appBarFocusedButton);
-      return KeyEventResult.handled;
-    }
-    if (key.isDownKey) {
-      // Return focus to list/grid
-      setState(() => _isAppBarFocused = false);
-      if (items.isNotEmpty) {
-        if (widget.playlist.smart) {
-          _navigateToGrid();
-        } else {
-          _listFocusNode.requestFocus();
-        }
-      }
-      return KeyEventResult.handled;
-    }
-    if (key.isSelectKey) {
-      _triggerAppBarButton(_appBarFocusedButton);
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
-
-  void _focusAppBarButton(int index) {
-    switch (index) {
-      case 0:
-        _playButtonFocusNode.requestFocus();
-        break;
-      case 1:
-        _shuffleButtonFocusNode.requestFocus();
-        break;
-      case 2:
-        _deleteButtonFocusNode.requestFocus();
-        break;
-    }
-  }
-
-  void _triggerAppBarButton(int index) {
-    switch (index) {
-      case 0:
-        playItems();
-        break;
-      case 1:
-        shufflePlayItems();
-        break;
-      case 2:
-        if (!widget.playlist.smart) _deletePlaylist();
-        break;
-    }
-  }
-
-  /// Navigate focus from app bar down to the grid
-  void _navigateToGrid() {
-    if (items.isEmpty) return;
-
-    // Check if we should restore focus to the last focused item
-    final shouldRestoreFocus =
-        _lastFocusedGridIndex != null &&
-        _lastFocusedContentVersion == _contentVersion &&
-        _lastFocusedGridIndex! < items.length;
-
-    final targetIndex = shouldRestoreFocus ? _lastFocusedGridIndex! : 0;
-
-    if (targetIndex == 0) {
-      _firstItemFocusNode.requestFocus();
-    } else {
-      _getGridItemFocusNode(targetIndex).requestFocus();
-    }
-  }
-
-  /// Navigate from grid to app bar
-  void _navigateToAppBar() {
-    setState(() {
-      _isAppBarFocused = true;
-      _appBarFocusedButton = 0;
-    });
-    _playButtonFocusNode.requestFocus();
-    // Scroll to top to show the app bar
-    _scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
-  }
-
-  /// Handle BACK key from grid/list - navigate to app bar and set flag to prevent PopScope exit
-  void _handleBackFromContent() {
-    _backHandledByKeyEvent = true;
-    _navigateToAppBar();
-  }
-
-  /// Handle back navigation for PopScope
-  bool _handleBackNavigation() {
-    // If BACK was already handled by a key event, don't pop
-    if (_backHandledByKeyEvent) {
-      _backHandledByKeyEvent = false;
-      return false;
-    }
-
-    // If in move mode, cancel move instead of navigating
-    if (_movingIndex != null) {
-      _cancelMoveMode();
-      return false;
-    }
-
-    if (_isAppBarFocused) {
-      // Already on app bar, allow exit
-      return true;
-    } else {
-      // Focus app bar first
-      _navigateToAppBar();
-      return false;
-    }
-  }
-
-  /// Build focusable app bar actions
-  List<Widget> _buildFocusableAppBarActions() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
-
-    Widget buildFocusableButton({
-      required FocusNode focusNode,
-      required int buttonIndex,
-      required IconData icon,
-      required String tooltip,
-      required VoidCallback onPressed,
-      Color? color,
-    }) {
-      final isFocused = isKeyboardMode && _isAppBarFocused && _appBarFocusedButton == buttonIndex;
-      return Focus(
-        focusNode: focusNode,
-        onKeyEvent: _handleAppBarKeyEvent,
-        child: Container(
-          decoration: isFocused
-              ? BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(20))
-              : null,
-          child: IconButton(icon: AppIcon(icon, fill: 1), tooltip: tooltip, onPressed: onPressed, color: color),
-        ),
-      );
-    }
-
-    return [
-      if (items.isNotEmpty)
-        buildFocusableButton(
-          focusNode: _playButtonFocusNode,
-          buttonIndex: 0,
-          icon: Symbols.play_arrow_rounded,
-          tooltip: t.discover.play,
-          onPressed: playItems,
-        ),
-      if (items.isNotEmpty)
-        buildFocusableButton(
-          focusNode: _shuffleButtonFocusNode,
-          buttonIndex: 1,
-          icon: Symbols.shuffle_rounded,
-          tooltip: t.common.shuffle,
-          onPressed: shufflePlayItems,
-        ),
-      if (!widget.playlist.smart)
-        buildFocusableButton(
-          focusNode: _deleteButtonFocusNode,
-          buttonIndex: 2,
-          icon: Symbols.delete_rounded,
-          tooltip: t.playlists.delete,
-          onPressed: _deletePlaylist,
-          color: Colors.red,
-        ),
-    ];
-  }
-
   /// Cancel move mode if active, returns true if cancelled
   bool _cancelMoveMode() {
     if (_movingIndex != null) {
@@ -707,6 +533,23 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     return false;
   }
 
+  /// Handle back navigation for PopScope - extends mixin with move mode support
+  bool _handleBackNavigation() {
+    // If BACK was already handled by a key event, don't pop
+    if (backHandledByKeyEvent) {
+      backHandledByKeyEvent = false;
+      return false;
+    }
+
+    // If in move mode, cancel move instead of navigating
+    if (_movingIndex != null) {
+      _cancelMoveMode();
+      return false;
+    }
+
+    return handleBackNavigation();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
@@ -716,7 +559,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     final needsListFocus = !widget.playlist.smart && items.isNotEmpty;
 
     Widget scrollView = CustomScrollView(
-      controller: _scrollController,
+      controller: scrollController,
       slivers: [
         CustomAppBar(
           title: Column(
@@ -737,13 +580,13 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
                 ),
             ],
           ),
-          actions: _buildFocusableAppBarActions(),
+          actions: buildFocusableAppBarActions(),
         ),
         ...buildStateSlivers(),
         if (items.isNotEmpty)
           if (widget.playlist.smart)
             // Smart playlists: Use focusable grid view (cannot be reordered)
-            _buildSmartPlaylistGrid(isKeyboardMode)
+            buildFocusableGrid(items: items, onRefresh: updateItem)
           else
             // Regular playlists: Use sliver reorderable list
             _buildReorderableList(isKeyboardMode),
@@ -752,13 +595,13 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
     if (needsListFocus) {
       scrollView = Focus(
-        autofocus: isKeyboardMode && !_isAppBarFocused,
+        autofocus: isKeyboardMode && !isAppBarFocused,
         focusNode: _listFocusNode,
         onKeyEvent: _handleListKeyEvent,
         onFocusChange: (hasFocus) {
           if (hasFocus && mounted) {
             setState(() {
-              _isAppBarFocused = false;
+              isAppBarFocused = false;
             });
           }
         },
@@ -780,50 +623,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     );
   }
 
-  /// Build a focusable grid for smart playlists
-  Widget _buildSmartPlaylistGrid(bool isKeyboardMode) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
-        return SliverPadding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-          sliver: SliverLayoutBuilder(
-            builder: (context, constraints) {
-              final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
-              return SliverGrid.builder(
-                gridDelegate: MediaGridDelegate.createDelegate(
-                  context: context,
-                  density: settingsProvider.libraryDensity,
-                ),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final item = items[index];
-                  final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
-                  final focusNode = index == 0 ? _firstItemFocusNode : _getGridItemFocusNode(index);
-
-                  return FocusableMediaCard(
-                    key: Key(item.ratingKey),
-                    item: item,
-                    focusNode: focusNode,
-                    onRefresh: updateItem,
-                    onNavigateUp: isFirstRow ? _navigateToAppBar : null,
-                    onBack: _handleBackFromContent,
-                    onFocusChange: (hasFocus) {
-                      if (hasFocus) {
-                        _lastFocusedGridIndex = index;
-                        _lastFocusedContentVersion = _contentVersion;
-                      }
-                    },
-                  );
-                },
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
   /// Build a reorderable list for regular playlists with focus support
   Widget _buildReorderableList(bool isKeyboardMode) {
     return SliverReorderableList(
@@ -833,7 +632,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         final item = items[index];
         // Check keyboard mode directly to ensure we get latest value
         final inKeyboardMode = InputModeTracker.isKeyboardMode(context);
-        final isFocused = inKeyboardMode && index == _focusedIndex && !_isAppBarFocused;
+        final isFocused = inKeyboardMode && index == _focusedIndex && !isAppBarFocused;
         final isMoving = index == _movingIndex;
 
         return RepaintBoundary(

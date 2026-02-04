@@ -17,6 +17,25 @@ class PlexMediaInfo {
   int? getPartId() => partId;
 }
 
+/// Builds a track label from parts with the standard `' · '` joiner pattern.
+///
+/// Shared by both Plex track models and MPV track label utilities.
+/// If [title] is non-empty it is added first, then [language], then [extraParts].
+/// Falls back to `'$fallbackPrefix ${index + 1}'` when no parts are available.
+String buildTrackLabel({
+  String? title,
+  String? language,
+  List<String> extraParts = const [],
+  required int index,
+  String fallbackPrefix = 'Track',
+}) {
+  final parts = <String>[];
+  if (title != null && title.isNotEmpty) parts.add(title);
+  if (language != null && language.isNotEmpty) parts.add(language);
+  parts.addAll(extraParts);
+  return parts.isEmpty ? '$fallbackPrefix ${index + 1}' : parts.join(' · ');
+}
+
 /// Mixin for building track labels with a consistent pattern
 mixin TrackLabelBuilder {
   int get id;
@@ -31,12 +50,7 @@ mixin TrackLabelBuilder {
     if (displayTitle != null && displayTitle!.isNotEmpty) {
       return displayTitle!;
     }
-    final parts = <String>[];
-    if (language != null && language!.isNotEmpty) {
-      parts.add(language!);
-    }
-    parts.addAll(additionalParts);
-    return parts.isEmpty ? 'Track ${index ?? id}' : parts.join(' · ');
+    return buildTrackLabel(language: language, extraParts: additionalParts, index: (index ?? id) - 1);
   }
 }
 

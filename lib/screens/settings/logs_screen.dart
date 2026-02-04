@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../widgets/desktop_app_bar.dart';
 
 class LogsScreen extends StatefulWidget {
@@ -42,7 +43,7 @@ class _LogsScreenState extends State<LogsScreen> {
       MemoryLogOutput.clearLogs();
       _logs = [];
     });
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.messages.logsCleared)));
+    showSuccessSnackBar(context, t.messages.logsCleared);
   }
 
   void _copyAllLogs() {
@@ -63,7 +64,7 @@ class _LogsScreenState extends State<LogsScreen> {
       }
     }
     Clipboard.setData(ClipboardData(text: buffer.toString()));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.messages.logsCopied)));
+    showSuccessSnackBar(context, t.messages.logsCopied);
   }
 
   Color _getLevelColor(Level level) {

@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../utils/snackbar_helper.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 
@@ -255,7 +256,7 @@ class _SessionMenuSheet extends StatelessWidget {
 
   void _copySessionCode(BuildContext context, String sessionId) {
     Clipboard.setData(ClipboardData(text: sessionId));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.watchTogether.sessionCodeCopied)));
+    showSuccessSnackBar(context, t.watchTogether.sessionCodeCopied);
   }
 
   void _confirmLeave(BuildContext context) {

@@ -1,6 +1,10 @@
 import 'codec_utils.dart';
+import '../models/plex_media_info.dart' show buildTrackLabel;
 
 /// Utility for building track labels for audio and subtitle tracks.
+///
+/// Delegates to the shared [buildTrackLabel] function so Plex-model and
+/// MPV-player label logic stays consistent.
 class TrackLabelBuilder {
   TrackLabelBuilder._();
 
@@ -14,36 +18,30 @@ class TrackLabelBuilder {
     int? channelsCount,
     required int index,
   }) {
-    final parts = <String>[];
-    if (title != null && title.isNotEmpty) {
-      parts.add(title);
-    }
-    if (language != null && language.isNotEmpty) {
-      parts.add(language.toUpperCase());
-    }
+    final extraParts = <String>[];
     if (codec != null && codec.isNotEmpty) {
-      parts.add(CodecUtils.formatAudioCodec(codec));
+      extraParts.add(CodecUtils.formatAudioCodec(codec));
     }
     if (channelsCount != null) {
-      parts.add('${channelsCount}ch');
+      extraParts.add('${channelsCount}ch');
     }
-    return parts.isEmpty ? 'Audio Track ${index + 1}' : parts.join(' · ');
+    return buildTrackLabel(
+      title: title,
+      language: language?.toUpperCase(),
+      extraParts: extraParts,
+      index: index,
+      fallbackPrefix: 'Audio Track',
+    );
   }
 
   /// Build a label for a subtitle track.
   ///
   /// Combines title, language, and codec (with friendly codec names).
   static String buildSubtitleLabel({String? title, String? language, String? codec, required int index}) {
-    final parts = <String>[];
-    if (title != null && title.isNotEmpty) {
-      parts.add(title);
-    }
-    if (language != null && language.isNotEmpty) {
-      parts.add(language.toUpperCase());
-    }
+    final extraParts = <String>[];
     if (codec != null && codec.isNotEmpty) {
-      parts.add(CodecUtils.formatSubtitleCodec(codec));
+      extraParts.add(CodecUtils.formatSubtitleCodec(codec));
     }
-    return parts.isEmpty ? 'Track ${index + 1}' : parts.join(' · ');
+    return buildTrackLabel(title: title, language: language?.toUpperCase(), extraParts: extraParts, index: index);
   }
 }

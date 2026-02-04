@@ -1297,11 +1297,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
-                final messenger = ScaffoldMessenger.of(context);
                 await _settingsService.clearCache();
                 if (mounted) {
                   navigator.pop();
-                  messenger.showSnackBar(SnackBar(content: Text(t.settings.clearCacheSuccess)));
+                  showSuccessSnackBar(context, t.settings.clearCacheSuccess);
                 }
               },
               child: Text(t.common.clear),
@@ -1324,12 +1323,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             TextButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
-                final messenger = ScaffoldMessenger.of(context);
                 await _settingsService.resetAllSettings();
                 await _keyboardService?.resetToDefaults();
                 if (mounted) {
                   navigator.pop();
-                  messenger.showSnackBar(SnackBar(content: Text(t.settings.resetSettingsSuccess)));
+                  showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
                   // Reload settings
                   _loadSettings();
                 }
@@ -1641,11 +1639,10 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
             actions: [
               TextButton(
                 onPressed: () async {
-                  final messenger = ScaffoldMessenger.of(context);
                   await widget.keyboardService.resetToDefaults();
                   await _loadHotkeys();
                   if (mounted) {
-                    messenger.showSnackBar(SnackBar(content: Text(t.settings.shortcutsReset)));
+                    showSuccessSnackBar(context, t.settings.shortcutsReset);
                   }
                 },
                 child: Text(t.common.reset),
@@ -1696,20 +1693,14 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
           currentHotKey: currentHotkey,
           onHotKeyRecorded: (newHotkey) async {
             final navigator = Navigator.of(context);
-            final messenger = ScaffoldMessenger.of(context);
 
             // Check for conflicts
             final existingAction = widget.keyboardService.getActionForHotkey(newHotkey);
             if (existingAction != null && existingAction != action) {
               navigator.pop();
-              messenger.showSnackBar(
-                SnackBar(
-                  content: Text(
-                    t.settings.shortcutAlreadyAssigned(
-                      action: widget.keyboardService.getActionDisplayName(existingAction),
-                    ),
-                  ),
-                ),
+              showErrorSnackBar(
+                context,
+                t.settings.shortcutAlreadyAssigned(action: widget.keyboardService.getActionDisplayName(existingAction)),
               );
               return;
             }
@@ -1725,12 +1716,9 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
 
               navigator.pop();
 
-              messenger.showSnackBar(
-                SnackBar(
-                  content: Text(
-                    t.settings.shortcutUpdated(action: widget.keyboardService.getActionDisplayName(action)),
-                  ),
-                ),
+              showSuccessSnackBar(
+                context,
+                t.settings.shortcutUpdated(action: widget.keyboardService.getActionDisplayName(action)),
               );
             }
           },

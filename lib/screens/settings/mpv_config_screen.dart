@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/mpv_config_models.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/desktop_app_bar.dart';
 
@@ -202,7 +203,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.mpvConfig.presetSaved)));
+        showSuccessSnackBar(context, t.mpvConfig.presetSaved);
       }
     }
 
@@ -216,7 +217,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
     });
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.mpvConfig.presetLoaded)));
+      showAppSnackBar(context, t.mpvConfig.presetLoaded);
     }
   }
 
@@ -233,7 +234,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.mpvConfig.presetDeleted)));
+        showSuccessSnackBar(context, t.mpvConfig.presetDeleted);
       }
     }
   }

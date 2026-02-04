@@ -9,6 +9,7 @@ import '../utils/provider_extensions.dart';
 import '../services/play_queue_launcher.dart';
 import '../models/plex_playlist.dart';
 import '../utils/app_logger.dart';
+import '../utils/snackbar_helper.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
 import '../i18n/strings.g.dart';
@@ -86,7 +87,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   Future<void> _playWithShuffle(bool shuffle) async {
     if (items.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(emptyMessage)));
+        showAppSnackBar(context, emptyMessage);
       }
       return;
     }

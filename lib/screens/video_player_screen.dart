@@ -908,7 +908,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     } on PlaybackException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+        showErrorSnackBar(context, e.message);
       }
     } catch (e) {
       if (mounted) {
@@ -1323,12 +1323,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     appLogger.e('[Player ERROR] $error');
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(t.messages.failedPlayback(action: 'play', error: error)),
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    showErrorSnackBar(context, t.messages.failedPlayback(action: 'play', error: error));
   }
 
   /// Handle notification when native player switched from ExoPlayer to MPV
@@ -1336,9 +1331,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t.messages.switchingToCompatiblePlayer), duration: const Duration(seconds: 2)),
-      );
+      showAppSnackBar(context, t.messages.switchingToCompatiblePlayer);
     }
   }
 
