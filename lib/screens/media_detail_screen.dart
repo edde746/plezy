@@ -8,7 +8,7 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:readmore/readmore.dart';
+import '../widgets/collapsible_text.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focusable_wrapper.dart';
@@ -1471,26 +1471,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                           ),
                           const SizedBox(height: 12),
                           if (isTv)
-                            Text(
-                              metadata.summary!,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
-                            )
+                            Text(metadata.summary!, style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6))
                           else
-                            ReadMoreText(
-                              metadata.summary!,
-                              trimMode: TrimMode.Line,
-                              trimLines: isMobile ? 6 : 4,
-                              trimCollapsedText: t.common.showMore,
-                              trimExpandedText: '${metadata.summary!.endsWith('\n') ? '' : '\n'}${t.common.showLess}',
+                            CollapsibleText(
+                              text: metadata.summary!,
+                              maxLines: isMobile ? 6 : 4,
                               style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
-                              moreStyle: TextStyle(
-                                color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.4),
-                                fontWeight: FontWeight.w600,
-                              ),
-                              lessStyle: TextStyle(
-                                color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.4),
-                                fontWeight: FontWeight.w600,
-                              ),
                             ),
                           const SizedBox(height: 24),
                         ],
