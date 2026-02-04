@@ -54,7 +54,6 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   Future<void> loadItems() async {
-    contentVersion++;
     await super.loadItems();
     autoFocusFirstItemAfterLoad();
   }

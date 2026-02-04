@@ -109,8 +109,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   @override
   Future<void> loadItems() async {
-    // Increment content version when loading fresh content
-    contentVersion++;
     await super.loadItems();
 
     // Auto-focus after load if in keyboard mode

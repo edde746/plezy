@@ -1300,7 +1300,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 await _settingsService.clearCache();
                 if (mounted) {
                   navigator.pop();
-                  showSuccessSnackBar(context, t.settings.clearCacheSuccess);
+                  showSuccessSnackBar(this.context, t.settings.clearCacheSuccess);
                 }
               },
               child: Text(t.common.clear),
@@ -1327,7 +1327,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 await _keyboardService?.resetToDefaults();
                 if (mounted) {
                   navigator.pop();
-                  showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
+                  showSuccessSnackBar(this.context, t.settings.resetSettingsSuccess);
                   // Reload settings
                   _loadSettings();
                 }
@@ -1642,7 +1642,7 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
                   await widget.keyboardService.resetToDefaults();
                   await _loadHotkeys();
                   if (mounted) {
-                    showSuccessSnackBar(context, t.settings.shortcutsReset);
+                    showSuccessSnackBar(this.context, t.settings.shortcutsReset);
                   }
                 },
                 child: Text(t.common.reset),
@@ -1717,7 +1717,7 @@ class _KeyboardShortcutsScreenState extends State<_KeyboardShortcutsScreen> {
               navigator.pop();
 
               showSuccessSnackBar(
-                context,
+                this.context,
                 t.settings.shortcutUpdated(action: widget.keyboardService.getActionDisplayName(action)),
               );
             }

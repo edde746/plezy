@@ -777,6 +777,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _startPlayback() async {
     if (!mounted) return;
 
+    // Capture providers before async gaps
+    final offlineWatchService = widget.isOffline ? context.read<OfflineWatchSyncService>() : null;
+
     try {
       PlaybackInitializationResult result;
       Map<String, String>? plexHeaders;
@@ -810,9 +813,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // since the user may have watched further since downloading.
         Duration? resumePosition;
         if (widget.isOffline) {
-          final offlineWatchService = context.read<OfflineWatchSyncService>();
           final globalKey = '${widget.metadata.serverId}:${widget.metadata.ratingKey}';
-          final localOffset = await offlineWatchService.getLocalViewOffset(globalKey);
+          final localOffset = await offlineWatchService!.getLocalViewOffset(globalKey);
           if (localOffset != null && localOffset > 0) {
             resumePosition = Duration(milliseconds: localOffset);
             appLogger.d('Resuming offline playback from local progress: ${localOffset}ms');
