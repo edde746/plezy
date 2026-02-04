@@ -128,6 +128,8 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get delete => '삭제';
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
+	@override String get showMore => '더 보기';
+	@override String get showLess => '접기';
 }
 
 // Path: screens
@@ -1023,6 +1025,8 @@ extension on TranslationsKo {
 			'common.delete' => '삭제',
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
+			'common.showMore' => '더 보기',
+			'common.showLess' => '접기',
 			'screens.licenses' => '라이선스',
 			'screens.selectServer' => '서버 선택',
 			'screens.switchProfile' => '프로필 전환',
@@ -1502,10 +1506,10 @@ extension on TranslationsKo {
 			'playlists.errorReordering' => '재생 목록 항목 재정렬 실패',
 			'playlists.errorRemoving' => '재생 목록에서 제거 실패',
 			'watchTogether.title' => '함께 보기',
-			'watchTogether.description' => '친구 및 가족과 콘텐츠를 동시에 시청하세요',
-			'watchTogether.createSession' => '세션 생성',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.description' => '친구 및 가족과 콘텐츠를 동시에 시청하세요',
+			'watchTogether.createSession' => '세션 생성',
 			'watchTogether.creating' => '생성 중...',
 			'watchTogether.joinSession' => '세션 참여',
 			'watchTogether.joining' => '참가 중...',

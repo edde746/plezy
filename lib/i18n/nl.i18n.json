@@ -34,7 +34,9 @@
     "no": "Nee",
     "delete": "Verwijderen",
     "shuffle": "Willekeurig",
-    "addTo": "Toevoegen aan..."
+    "addTo": "Toevoegen aan...",
+    "showMore": "Meer tonen",
+    "showLess": "Minder tonen"
   },
   "screens": {
     "licenses": "Licenties",

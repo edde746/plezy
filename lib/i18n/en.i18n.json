@@ -34,7 +34,9 @@
     "no": "No",
     "delete": "Delete",
     "shuffle": "Shuffle",
-    "addTo": "Add to..."
+    "addTo": "Add to...",
+    "showMore": "Show more",
+    "showLess": "Show less"
   },
   "screens": {
     "licenses": "Licenses",

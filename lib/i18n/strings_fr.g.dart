@@ -128,6 +128,8 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get delete => 'Supprimer';
 	@override String get shuffle => 'Mélanger';
 	@override String get addTo => 'Ajouter à...';
+	@override String get showMore => 'Voir plus';
+	@override String get showLess => 'Voir moins';
 }
 
 // Path: screens
@@ -1021,6 +1023,8 @@ extension on TranslationsFr {
 			'common.delete' => 'Supprimer',
 			'common.shuffle' => 'Mélanger',
 			'common.addTo' => 'Ajouter à...',
+			'common.showMore' => 'Voir plus',
+			'common.showLess' => 'Voir moins',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
@@ -1500,10 +1504,10 @@ extension on TranslationsFr {
 			'watchTogether.title' => 'Regarder ensemble',
 			'watchTogether.description' => 'Regardez du contenu en synchronisation avec vos amis et votre famille',
 			'watchTogether.createSession' => 'Créer une session',
-			'watchTogether.creating' => 'Création...',
-			'watchTogether.joinSession' => 'Rejoindre la session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.creating' => 'Création...',
+			'watchTogether.joinSession' => 'Rejoindre la session',
 			'watchTogether.joining' => 'Rejoindre...',
 			'watchTogether.controlMode' => 'Mode de contrôle',
 			'watchTogether.controlModeQuestion' => 'Qui peut contrôler la lecture ?',

@@ -128,6 +128,8 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get delete => 'Verwijderen';
 	@override String get shuffle => 'Willekeurig';
 	@override String get addTo => 'Toevoegen aan...';
+	@override String get showMore => 'Meer tonen';
+	@override String get showLess => 'Minder tonen';
 }
 
 // Path: screens
@@ -1023,6 +1025,8 @@ extension on TranslationsNl {
 			'common.delete' => 'Verwijderen',
 			'common.shuffle' => 'Willekeurig',
 			'common.addTo' => 'Toevoegen aan...',
+			'common.showMore' => 'Meer tonen',
+			'common.showLess' => 'Minder tonen',
 			'screens.licenses' => 'Licenties',
 			'screens.selectServer' => 'Selecteer server',
 			'screens.switchProfile' => 'Wissel van profiel',
@@ -1502,10 +1506,10 @@ extension on TranslationsNl {
 			'collections.deleted' => 'Collectie verwijderd',
 			'collections.deleteFailed' => 'Collectie verwijderen mislukt',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
-			'collections.selectCollection' => 'Selecteer collectie',
 			_ => null,
 		} ?? switch (path) {
+			'collections.failedToLoadItems' => ({required Object error}) => 'Collectie-items laden mislukt: ${error}',
+			'collections.selectCollection' => 'Selecteer collectie',
 			'collections.createNewCollection' => 'Nieuwe collectie maken',
 			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer collectienaam in',

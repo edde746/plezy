@@ -193,6 +193,12 @@ class TranslationsCommonEn {
 
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
+
+	/// en: 'Show more'
+	String get showMore => 'Show more';
+
+	/// en: 'Show less'
+	String get showLess => 'Show less';
 }
 
 // Path: screens
@@ -2173,6 +2179,8 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.shuffle' => 'Shuffle',
 			'common.addTo' => 'Add to...',
+			'common.showMore' => 'Show more',
+			'common.showLess' => 'Show less',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -2652,10 +2660,10 @@ extension on Translations {
 			'watchTogether.title' => 'Watch Together',
 			'watchTogether.description' => 'Watch content in sync with friends and family',
 			'watchTogether.createSession' => 'Create Session',
-			'watchTogether.creating' => 'Creating...',
-			'watchTogether.joinSession' => 'Join Session',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.creating' => 'Creating...',
+			'watchTogether.joinSession' => 'Join Session',
 			'watchTogether.joining' => 'Joining...',
 			'watchTogether.controlMode' => 'Control Mode',
 			'watchTogether.controlModeQuestion' => 'Who can control playback?',

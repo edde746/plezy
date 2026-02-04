@@ -128,6 +128,8 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get delete => 'Löschen';
 	@override String get shuffle => 'Zufall';
 	@override String get addTo => 'Hinzufügen zu...';
+	@override String get showMore => 'Mehr anzeigen';
+	@override String get showLess => 'Weniger anzeigen';
 }
 
 // Path: screens
@@ -1023,6 +1025,8 @@ extension on TranslationsDe {
 			'common.delete' => 'Löschen',
 			'common.shuffle' => 'Zufall',
 			'common.addTo' => 'Hinzufügen zu...',
+			'common.showMore' => 'Mehr anzeigen',
+			'common.showLess' => 'Weniger anzeigen',
 			'screens.licenses' => 'Lizenzen',
 			'screens.selectServer' => 'Server auswählen',
 			'screens.switchProfile' => 'Profil wechseln',
@@ -1502,10 +1506,10 @@ extension on TranslationsDe {
 			'collections.deleted' => 'Sammlung gelöscht',
 			'collections.deleteFailed' => 'Sammlung konnte nicht gelöscht werden',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Sammlung konnte nicht gelöscht werden: ${error}',
-			'collections.failedToLoadItems' => ({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}',
-			'collections.selectCollection' => 'Sammlung auswählen',
 			_ => null,
 		} ?? switch (path) {
+			'collections.failedToLoadItems' => ({required Object error}) => 'Sammlungselemente konnten nicht geladen werden: ${error}',
+			'collections.selectCollection' => 'Sammlung auswählen',
 			'collections.createNewCollection' => 'Neue Sammlung erstellen',
 			'collections.collectionName' => 'Sammlungsname',
 			'collections.enterCollectionName' => 'Sammlungsnamen eingeben',
