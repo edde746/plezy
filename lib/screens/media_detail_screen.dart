@@ -1219,6 +1219,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
     final metadata = _fullMetadata ?? widget.metadata;
     final isShow = metadata.isShow;
     final isMobile = PlatformDetector.isMobile(context);
+    final isTv = PlatformDetector.isTV();
 
     KeyEventResult handleBack(FocusNode _, KeyEvent event) =>
         handleBackKeyNavigation(context, event, result: _watchStateChanged);
@@ -1469,22 +1470,28 @@ class _MediaDetailScreenState extends State<MediaDetailScreen> with WatchStateAw
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 12),
-                          ReadMoreText(
-                            metadata.summary!,
-                            trimMode: TrimMode.Line,
-                            trimLines: isMobile ? 6 : 4,
-                            trimCollapsedText: t.common.showMore,
-                            trimExpandedText: '${metadata.summary!.endsWith('\n') ? '' : '\n'}${t.common.showLess}',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
-                            moreStyle: TextStyle(
-                              color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.4),
-                              fontWeight: FontWeight.w600,
+                          if (isTv)
+                            Text(
+                              metadata.summary!,
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
+                            )
+                          else
+                            ReadMoreText(
+                              metadata.summary!,
+                              trimMode: TrimMode.Line,
+                              trimLines: isMobile ? 6 : 4,
+                              trimCollapsedText: t.common.showMore,
+                              trimExpandedText: '${metadata.summary!.endsWith('\n') ? '' : '\n'}${t.common.showLess}',
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
+                              moreStyle: TextStyle(
+                                color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.4),
+                                fontWeight: FontWeight.w600,
+                              ),
+                              lessStyle: TextStyle(
+                                color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.4),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                            lessStyle: TextStyle(
-                              color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.4),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
                           const SizedBox(height: 24),
                         ],
 
