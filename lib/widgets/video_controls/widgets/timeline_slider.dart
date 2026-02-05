@@ -60,7 +60,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
     final left = (pixelX - tooltipWidth / 2).clamp(0.0, sliderWidth - tooltipWidth);
     return Positioned(
       left: left,
-      top: -26,
+      top: -16,
       child: IgnorePointer(
         child: Container(
           width: tooltipWidth,
