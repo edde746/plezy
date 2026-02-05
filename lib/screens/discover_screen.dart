@@ -22,6 +22,7 @@ import 'profile/profile_switch_screen.dart';
 import '../providers/user_profile_provider.dart';
 import '../providers/settings_provider.dart';
 import '../mixins/refreshable.dart';
+import '../mixins/tab_visibility_aware.dart';
 import '../i18n/strings.g.dart';
 import '../mixins/item_updatable.dart';
 import '../mixins/watch_state_aware.dart';
@@ -53,6 +54,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         FullRefreshable,
         ItemUpdatable,
         WatchStateAware,
+        TabVisibilityAware,
         SingleTickerProviderStateMixin,
         WidgetsBindingObserver {
   static const Duration _heroAutoScrollDuration = Duration(seconds: 8);
@@ -468,6 +470,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       _isAutoScrollPaused = false;
     });
     _startAutoScroll();
+  }
+
+  @override
+  void onTabHidden() {
+    _autoScrollTimer?.cancel();
+    _indicatorAnimationController.stop();
+  }
+
+  @override
+  void onTabShown() {
+    if (!_isAutoScrollPaused) {
+      _startAutoScroll();
+    }
   }
 
   // Helper method to calculate visible dot range (max 5 dots)
@@ -1277,9 +1292,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               final maxWidth = dotSize * 3; // 24px for normal, 15px for small
                               final fillWidth = dotSize + ((maxWidth - dotSize) * _indicatorAnimationController.value);
                               final onSurface = Theme.of(context).colorScheme.onSurface;
-                              return AnimatedContainer(
-                                duration: tokens(context).slow,
-                                curve: Curves.easeInOut,
+                              return Container(
                                 margin: const EdgeInsets.symmetric(horizontal: 4),
                                 width: maxWidth,
                                 height: dotSize,

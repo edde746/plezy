@@ -14,6 +14,7 @@ import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
+import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/server_state_provider.dart';
@@ -496,9 +497,22 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   @override
+  void didPushNext() {
+    // Called when a child route is pushed on top (e.g., video player)
+    if (_currentIndex == 0 && !_isOffline) {
+      if (_discoverKey.currentState case final TabVisibilityAware aware) {
+        aware.onTabHidden();
+      }
+    }
+  }
+
+  @override
   void didPopNext() {
     // Called when returning to this route from a child route (e.g., from video player)
     if (_currentIndex == 0 && !_isOffline) {
+      if (_discoverKey.currentState case final TabVisibilityAware aware) {
+        aware.onTabShown();
+      }
       _onDiscoverBecameVisible();
     }
   }
@@ -593,8 +607,19 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     // Skip online-only screen logic in offline mode
     if (!_isOffline) {
+      // Pause/resume discover auto-scroll when switching tabs
+      if (previousIndex == 0 && index != 0) {
+        if (_discoverKey.currentState case final TabVisibilityAware aware) {
+          aware.onTabHidden();
+        }
+      }
       // Notify discover screen when it becomes visible via tab switch
       if (index == 0) {
+        if (previousIndex != 0) {
+          if (_discoverKey.currentState case final TabVisibilityAware aware) {
+            aware.onTabShown();
+          }
+        }
         _onDiscoverBecameVisible();
       }
       // Ensure the libraries screen applies focus when brought into view
