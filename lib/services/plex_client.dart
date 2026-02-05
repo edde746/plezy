@@ -6,7 +6,6 @@ import '../models/plex_config.dart';
 import '../models/play_queue_response.dart';
 import '../models/plex_file_info.dart';
 import '../models/plex_filter.dart';
-import '../models/plex_first_character.dart';
 import '../models/plex_hub.dart';
 import '../models/plex_library.dart';
 import '../models/plex_media_info.dart';
@@ -1123,20 +1122,6 @@ class PlexClient {
   Future<List<PlexFilter>> getLibraryFilters(String sectionId) async {
     final response = await _dio.get('/library/sections/$sectionId/filters');
     return _extractDirectoryList(response, PlexFilter.fromJson);
-  }
-
-  /// Get first characters (alphabet index) for a library section
-  Future<List<PlexFirstCharacter>> getFirstCharacters(
-    String sectionId, {
-    int? type,
-    Map<String, String>? filters,
-  }) async {
-    final queryParams = <String, dynamic>{};
-    if (type != null) queryParams['type'] = type;
-    if (filters != null) queryParams.addAll(filters);
-
-    final response = await _dio.get('/library/sections/$sectionId/firstCharacter', queryParameters: queryParams);
-    return _extractDirectoryList(response, PlexFirstCharacter.fromJson);
   }
 
   /// Get filter values (e.g., list of genres, years, etc.)

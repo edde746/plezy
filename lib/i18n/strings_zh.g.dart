@@ -886,6 +886,24 @@ class _TranslationsWatchTogetherZh implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => '创建会话失败';
 	@override String get failedToJoin => '加入会话失败';
 	@override String get sessionCodeCopied => '会话代码已复制到剪贴板';
+	@override String get inviteFriends => 'Invite Friends';
+	@override String get invite => 'Invite';
+	@override String get searchFriends => 'Search friends...';
+	@override String get noFriends => 'No friends yet';
+	@override String get noFriendsFound => 'No friends found';
+	@override String get noFriendsDescription => 'Add friends on Plex to invite them to watch together';
+	@override String get failedToLoadFriends => 'Failed to load friends';
+	@override String get invitationReceived => 'Watch Together Invitation';
+	@override String invitesYouToWatch({required Object name}) => '${name} invites you to watch';
+	@override String get joinNow => 'Join Now';
+	@override String get decline => 'Decline';
+	@override String get accept => 'Accept';
+	@override String get invitationPending => 'Pending';
+	@override String get invitationAccepted => 'Joined';
+	@override String get invitationDeclined => 'Declined';
+	@override String get pendingInvitations => 'Pending Invitations';
+	@override String get noPendingInvitations => 'No pending invitations';
+	@override String get orShareCode => 'Or share session code';
 }
 
 // Path: shaders
@@ -1539,6 +1557,24 @@ extension on TranslationsZh {
 			'watchTogether.failedToCreate' => '创建会话失败',
 			'watchTogether.failedToJoin' => '加入会话失败',
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
+			'watchTogether.inviteFriends' => 'Invite Friends',
+			'watchTogether.invite' => 'Invite',
+			'watchTogether.searchFriends' => 'Search friends...',
+			'watchTogether.noFriends' => 'No friends yet',
+			'watchTogether.noFriendsFound' => 'No friends found',
+			'watchTogether.noFriendsDescription' => 'Add friends on Plex to invite them to watch together',
+			'watchTogether.failedToLoadFriends' => 'Failed to load friends',
+			'watchTogether.invitationReceived' => 'Watch Together Invitation',
+			'watchTogether.invitesYouToWatch' => ({required Object name}) => '${name} invites you to watch',
+			'watchTogether.joinNow' => 'Join Now',
+			'watchTogether.decline' => 'Decline',
+			'watchTogether.accept' => 'Accept',
+			'watchTogether.invitationPending' => 'Pending',
+			'watchTogether.invitationAccepted' => 'Joined',
+			'watchTogether.invitationDeclined' => 'Declined',
+			'watchTogether.pendingInvitations' => 'Pending Invitations',
+			'watchTogether.noPendingInvitations' => 'No pending invitations',
+			'watchTogether.orShareCode' => 'Or share session code',
 			'shaders.title' => '着色器',
 			'shaders.noShaderDescription' => '无视频增强',
 			'shaders.nvscalerDescription' => 'NVIDIA 图像缩放，使视频更清晰',

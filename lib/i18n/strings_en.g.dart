@@ -1889,6 +1889,60 @@ class TranslationsWatchTogetherEn {
 
 	/// en: 'Session code copied to clipboard'
 	String get sessionCodeCopied => 'Session code copied to clipboard';
+
+	/// en: 'Invite Friends'
+	String get inviteFriends => 'Invite Friends';
+
+	/// en: 'Invite'
+	String get invite => 'Invite';
+
+	/// en: 'Search friends...'
+	String get searchFriends => 'Search friends...';
+
+	/// en: 'No friends yet'
+	String get noFriends => 'No friends yet';
+
+	/// en: 'No friends found'
+	String get noFriendsFound => 'No friends found';
+
+	/// en: 'Add friends on Plex to invite them to watch together'
+	String get noFriendsDescription => 'Add friends on Plex to invite them to watch together';
+
+	/// en: 'Failed to load friends'
+	String get failedToLoadFriends => 'Failed to load friends';
+
+	/// en: 'Watch Together Invitation'
+	String get invitationReceived => 'Watch Together Invitation';
+
+	/// en: '${name} invites you to watch'
+	String invitesYouToWatch({required Object name}) => '${name} invites you to watch';
+
+	/// en: 'Join Now'
+	String get joinNow => 'Join Now';
+
+	/// en: 'Decline'
+	String get decline => 'Decline';
+
+	/// en: 'Accept'
+	String get accept => 'Accept';
+
+	/// en: 'Pending'
+	String get invitationPending => 'Pending';
+
+	/// en: 'Joined'
+	String get invitationAccepted => 'Joined';
+
+	/// en: 'Declined'
+	String get invitationDeclined => 'Declined';
+
+	/// en: 'Pending Invitations'
+	String get pendingInvitations => 'Pending Invitations';
+
+	/// en: 'No pending invitations'
+	String get noPendingInvitations => 'No pending invitations';
+
+	/// en: 'Or share session code'
+	String get orShareCode => 'Or share session code';
 }
 
 // Path: downloads
@@ -2657,6 +2711,24 @@ extension on Translations {
 			'watchTogether.failedToCreate' => 'Failed to create session',
 			'watchTogether.failedToJoin' => 'Failed to join session',
 			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
+			'watchTogether.inviteFriends' => 'Invite Friends',
+			'watchTogether.invite' => 'Invite',
+			'watchTogether.searchFriends' => 'Search friends...',
+			'watchTogether.noFriends' => 'No friends yet',
+			'watchTogether.noFriendsFound' => 'No friends found',
+			'watchTogether.noFriendsDescription' => 'Add friends on Plex to invite them to watch together',
+			'watchTogether.failedToLoadFriends' => 'Failed to load friends',
+			'watchTogether.invitationReceived' => 'Watch Together Invitation',
+			'watchTogether.invitesYouToWatch' => ({required Object name}) => '${name} invites you to watch',
+			'watchTogether.joinNow' => 'Join Now',
+			'watchTogether.decline' => 'Decline',
+			'watchTogether.accept' => 'Accept',
+			'watchTogether.invitationPending' => 'Pending',
+			'watchTogether.invitationAccepted' => 'Joined',
+			'watchTogether.invitationDeclined' => 'Declined',
+			'watchTogether.pendingInvitations' => 'Pending Invitations',
+			'watchTogether.noPendingInvitations' => 'No pending invitations',
+			'watchTogether.orShareCode' => 'Or share session code',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',

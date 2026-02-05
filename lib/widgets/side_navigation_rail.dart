@@ -16,6 +16,8 @@ import '../providers/libraries_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
+import '../watch_together/screens/watch_together_screen.dart';
+import '../watch_together/widgets/invitations_indicator.dart';
 
 /// Reusable navigation rail item widget that handles focus, selection, and interaction
 class NavigationRailItem extends StatelessWidget {
@@ -168,6 +170,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   static const _kSearch = 'search';
   static const _kDownloads = 'downloads';
   static const _kSettings = 'settings';
+  static const _kWatchTogether = 'watchTogether';
 
   // Unified focus state tracker for all nav items (main + libraries)
   late final FocusMemoryTracker _focusTracker;
@@ -237,7 +240,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
   /// Build the set of valid focus keys (main nav + current libraries)
   Set<String> _buildValidFocusKeys(List<PlexLibrary> libraries) {
-    return {_kHome, _kLibraries, _kSearch, _kDownloads, _kSettings, ...libraries.map((lib) => lib.globalKey)};
+    return {_kHome, _kLibraries, _kSearch, _kDownloads, _kSettings, _kWatchTogether, ...libraries.map((lib) => lib.globalKey)};
   }
 
   /// Reload libraries (called when servers change or profile switches)
@@ -390,6 +393,12 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                         focusNode: _focusTracker.get(_kSettings),
                         isCollapsed: isCollapsed,
                       ),
+
+                      // Watch Together (only in online mode)
+                      if (!widget.isOfflineMode) ...[
+                        const SizedBox(height: 8),
+                        _buildWatchTogetherItem(t, isCollapsed: isCollapsed),
+                      ],
                     ],
                   ),
                 ),
@@ -639,6 +648,39 @@ class SideNavigationRailState extends State<SideNavigationRail> {
         focusNode: focusNode,
         borderRadius: BorderRadius.circular(tokens(context).radiusSm),
         iconSize: 18,
+        onNavigateRight: widget.onNavigateToContent,
+      ),
+    );
+  }
+
+  Widget _buildWatchTogetherItem(dynamic t, {bool isCollapsed = false}) {
+    final isFocused = _focusTracker.isFocused(_kWatchTogether);
+    final focusNode = _focusTracker.get(_kWatchTogether);
+
+    return InvitationsIndicator(
+      child: NavigationRailItem(
+        icon: Symbols.group_rounded,
+        selectedIcon: Symbols.group_rounded,
+        label: Text(
+          Translations.of(context).watchTogether.title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: t.textMuted,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
+        isSelected: false,
+        isFocused: isFocused,
+        isCollapsed: isCollapsed,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
+          );
+        },
+        focusNode: focusNode,
         onNavigateRight: widget.onNavigateToContent,
       ),
     );

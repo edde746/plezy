@@ -886,6 +886,24 @@ class _TranslationsWatchTogetherNl implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => 'Sessie maken mislukt';
 	@override String get failedToJoin => 'Sessie deelnemen mislukt';
 	@override String get sessionCodeCopied => 'Sessiecode gekopieerd naar klembord';
+	@override String get inviteFriends => 'Invite Friends';
+	@override String get invite => 'Invite';
+	@override String get searchFriends => 'Search friends...';
+	@override String get noFriends => 'No friends yet';
+	@override String get noFriendsFound => 'No friends found';
+	@override String get noFriendsDescription => 'Add friends on Plex to invite them to watch together';
+	@override String get failedToLoadFriends => 'Failed to load friends';
+	@override String get invitationReceived => 'Watch Together Invitation';
+	@override String invitesYouToWatch({required Object name}) => '${name} invites you to watch';
+	@override String get joinNow => 'Join Now';
+	@override String get decline => 'Decline';
+	@override String get accept => 'Accept';
+	@override String get invitationPending => 'Pending';
+	@override String get invitationAccepted => 'Joined';
+	@override String get invitationDeclined => 'Declined';
+	@override String get pendingInvitations => 'Pending Invitations';
+	@override String get noPendingInvitations => 'No pending invitations';
+	@override String get orShareCode => 'Or share session code';
 }
 
 // Path: shaders
@@ -1539,6 +1557,24 @@ extension on TranslationsNl {
 			'watchTogether.failedToCreate' => 'Sessie maken mislukt',
 			'watchTogether.failedToJoin' => 'Sessie deelnemen mislukt',
 			'watchTogether.sessionCodeCopied' => 'Sessiecode gekopieerd naar klembord',
+			'watchTogether.inviteFriends' => 'Invite Friends',
+			'watchTogether.invite' => 'Invite',
+			'watchTogether.searchFriends' => 'Search friends...',
+			'watchTogether.noFriends' => 'No friends yet',
+			'watchTogether.noFriendsFound' => 'No friends found',
+			'watchTogether.noFriendsDescription' => 'Add friends on Plex to invite them to watch together',
+			'watchTogether.failedToLoadFriends' => 'Failed to load friends',
+			'watchTogether.invitationReceived' => 'Watch Together Invitation',
+			'watchTogether.invitesYouToWatch' => ({required Object name}) => '${name} invites you to watch',
+			'watchTogether.joinNow' => 'Join Now',
+			'watchTogether.decline' => 'Decline',
+			'watchTogether.accept' => 'Accept',
+			'watchTogether.invitationPending' => 'Pending',
+			'watchTogether.invitationAccepted' => 'Joined',
+			'watchTogether.invitationDeclined' => 'Declined',
+			'watchTogether.pendingInvitations' => 'Pending Invitations',
+			'watchTogether.noPendingInvitations' => 'No pending invitations',
+			'watchTogether.orShareCode' => 'Or share session code',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Geen videoverbetering',
 			'shaders.nvscalerDescription' => 'NVIDIA-beeldschaling voor scherpere video',

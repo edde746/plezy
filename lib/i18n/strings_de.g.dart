@@ -886,6 +886,24 @@ class _TranslationsWatchTogetherDe implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => 'Sitzung konnte nicht erstellt werden';
 	@override String get failedToJoin => 'Sitzung konnte nicht beigetreten werden';
 	@override String get sessionCodeCopied => 'Sitzungscode in Zwischenablage kopiert';
+	@override String get inviteFriends => 'Invite Friends';
+	@override String get invite => 'Invite';
+	@override String get searchFriends => 'Search friends...';
+	@override String get noFriends => 'No friends yet';
+	@override String get noFriendsFound => 'No friends found';
+	@override String get noFriendsDescription => 'Add friends on Plex to invite them to watch together';
+	@override String get failedToLoadFriends => 'Failed to load friends';
+	@override String get invitationReceived => 'Watch Together Invitation';
+	@override String invitesYouToWatch({required Object name}) => '${name} invites you to watch';
+	@override String get joinNow => 'Join Now';
+	@override String get decline => 'Decline';
+	@override String get accept => 'Accept';
+	@override String get invitationPending => 'Pending';
+	@override String get invitationAccepted => 'Joined';
+	@override String get invitationDeclined => 'Declined';
+	@override String get pendingInvitations => 'Pending Invitations';
+	@override String get noPendingInvitations => 'No pending invitations';
+	@override String get orShareCode => 'Or share session code';
 }
 
 // Path: shaders
@@ -1539,6 +1557,24 @@ extension on TranslationsDe {
 			'watchTogether.failedToCreate' => 'Sitzung konnte nicht erstellt werden',
 			'watchTogether.failedToJoin' => 'Sitzung konnte nicht beigetreten werden',
 			'watchTogether.sessionCodeCopied' => 'Sitzungscode in Zwischenablage kopiert',
+			'watchTogether.inviteFriends' => 'Invite Friends',
+			'watchTogether.invite' => 'Invite',
+			'watchTogether.searchFriends' => 'Search friends...',
+			'watchTogether.noFriends' => 'No friends yet',
+			'watchTogether.noFriendsFound' => 'No friends found',
+			'watchTogether.noFriendsDescription' => 'Add friends on Plex to invite them to watch together',
+			'watchTogether.failedToLoadFriends' => 'Failed to load friends',
+			'watchTogether.invitationReceived' => 'Watch Together Invitation',
+			'watchTogether.invitesYouToWatch' => ({required Object name}) => '${name} invites you to watch',
+			'watchTogether.joinNow' => 'Join Now',
+			'watchTogether.decline' => 'Decline',
+			'watchTogether.accept' => 'Accept',
+			'watchTogether.invitationPending' => 'Pending',
+			'watchTogether.invitationAccepted' => 'Joined',
+			'watchTogether.invitationDeclined' => 'Declined',
+			'watchTogether.pendingInvitations' => 'Pending Invitations',
+			'watchTogether.noPendingInvitations' => 'No pending invitations',
+			'watchTogether.orShareCode' => 'Or share session code',
 			'shaders.title' => 'Shader',
 			'shaders.noShaderDescription' => 'Keine Videoverbesserung',
 			'shaders.nvscalerDescription' => 'NVIDIA-Bildskalierung für schärferes Video',

@@ -1090,140 +1090,137 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
     return Scaffold(
-      body: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: CustomScrollView(
-          controller: _outerScrollController,
-          slivers: [
-            DesktopSliverAppBar(
-              title: _buildAppBarTitle(visibleLibraries),
-              pinned: true,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              surfaceTintColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              actions: [
-                if (allLibraries.isNotEmpty)
-                  Focus(
-                    focusNode: _editButtonFocusNode,
-                    onKeyEvent: _handleEditKeyEvent,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: _isEditFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: const AppIcon(Symbols.edit_rounded, fill: 1),
-                        tooltip: t.libraries.manageLibraries,
-                        onPressed: _showLibraryManagementSheet,
-                      ),
-                    ),
-                  ),
+      body: CustomScrollView(
+        controller: _outerScrollController,
+        slivers: [
+          DesktopSliverAppBar(
+            title: _buildAppBarTitle(visibleLibraries),
+            pinned: true,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            surfaceTintColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            scrolledUnderElevation: 0,
+            actions: [
+              if (allLibraries.isNotEmpty)
                 Focus(
-                  focusNode: _refreshButtonFocusNode,
-                  onKeyEvent: _handleRefreshKeyEvent,
+                  focusNode: _editButtonFocusNode,
+                  onKeyEvent: _handleEditKeyEvent,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                      color: _isEditFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: IconButton(
-                      icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
-                      tooltip: t.common.refresh,
-                      onPressed: _refreshCurrentTab,
+                      icon: const AppIcon(Symbols.edit_rounded, fill: 1),
+                      tooltip: t.libraries.manageLibraries,
+                      onPressed: _showLibraryManagementSheet,
                     ),
                   ),
                 ),
-              ],
-            ),
-            if (isLoadingLibraries)
-              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-            else if (_errorMessage != null && visibleLibraries.isEmpty)
-              SliverFillRemaining(
-                child: ErrorStateWidget(
-                  message: _errorMessage!,
-                  icon: Symbols.error_outline_rounded,
-                  onRetry: () {
-                    final librariesProvider = context.read<LibrariesProvider>();
-                    librariesProvider.refresh();
-                  },
-                ),
-              )
-            else if (visibleLibraries.isEmpty)
-              SliverFillRemaining(
-                child: EmptyStateWidget(message: t.libraries.noLibrariesFound, icon: Symbols.video_library_rounded),
-              )
-            else ...[
-              // Tab selector chips (only on mobile - desktop has them in app bar)
-              if (_selectedLibraryGlobalKey != null && !PlatformDetector.shouldUseSideNavigation(context))
-                SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildTabChip(t.libraries.tabs.recommended, 0),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.libraries.tabs.browse, 1),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.libraries.tabs.collections, 2),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.libraries.tabs.playlists, 3),
-                        ],
-                      ),
-                    ),
+              Focus(
+                focusNode: _refreshButtonFocusNode,
+                onKeyEvent: _handleRefreshKeyEvent,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: IconButton(
+                    icon: const AppIcon(Symbols.refresh_rounded, fill: 1),
+                    tooltip: t.common.refresh,
+                    onPressed: _refreshCurrentTab,
                   ),
                 ),
-
-              // Tab content
-              if (_selectedLibraryGlobalKey != null)
-                SliverFillRemaining(
-                  child: TabBarView(
-                    key: ValueKey(_selectedLibraryGlobalKey),
-                    controller: tabController,
-                    // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
-                    // See: https://github.com/flutter/flutter/issues/11132
-                    physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
-                    children: [
-                      LibraryRecommendedTab(
-                        key: _recommendedTabKey,
-                        library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                        isActive: tabController.index == 0,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onDataLoaded: () => _handleTabDataLoaded(0),
-                        onBack: focusTabBar,
-                      ),
-                      LibraryBrowseTab(
-                        key: _browseTabKey,
-                        library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                        isActive: tabController.index == 1,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onDataLoaded: () => _handleTabDataLoaded(1),
-                        onBack: focusTabBar,
-                      ),
-                      LibraryCollectionsTab(
-                        key: _collectionsTabKey,
-                        library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                        isActive: tabController.index == 2,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onDataLoaded: () => _handleTabDataLoaded(2),
-                        onBack: focusTabBar,
-                      ),
-                      LibraryPlaylistsTab(
-                        key: _playlistsTabKey,
-                        library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
-                        isActive: tabController.index == 3,
-                        suppressAutoFocus: suppressAutoFocus,
-                        onDataLoaded: () => _handleTabDataLoaded(3),
-                        onBack: focusTabBar,
-                      ),
-                    ],
-                  ),
-                ),
+              ),
             ],
+          ),
+          if (isLoadingLibraries)
+            const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+          else if (_errorMessage != null && visibleLibraries.isEmpty)
+            SliverFillRemaining(
+              child: ErrorStateWidget(
+                message: _errorMessage!,
+                icon: Symbols.error_outline_rounded,
+                onRetry: () {
+                  final librariesProvider = context.read<LibrariesProvider>();
+                  librariesProvider.refresh();
+                },
+              ),
+            )
+          else if (visibleLibraries.isEmpty)
+            SliverFillRemaining(
+              child: EmptyStateWidget(message: t.libraries.noLibrariesFound, icon: Symbols.video_library_rounded),
+            )
+          else ...[
+            // Tab selector chips (only on mobile - desktop has them in app bar)
+            if (_selectedLibraryGlobalKey != null && !PlatformDetector.shouldUseSideNavigation(context))
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildTabChip(t.libraries.tabs.recommended, 0),
+                        const SizedBox(width: 8),
+                        _buildTabChip(t.libraries.tabs.browse, 1),
+                        const SizedBox(width: 8),
+                        _buildTabChip(t.libraries.tabs.collections, 2),
+                        const SizedBox(width: 8),
+                        _buildTabChip(t.libraries.tabs.playlists, 3),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+            // Tab content
+            if (_selectedLibraryGlobalKey != null)
+              SliverFillRemaining(
+                child: TabBarView(
+                  key: ValueKey(_selectedLibraryGlobalKey),
+                  controller: tabController,
+                  // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
+                  // See: https://github.com/flutter/flutter/issues/11132
+                  physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
+                  children: [
+                    LibraryRecommendedTab(
+                      key: _recommendedTabKey,
+                      library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                      isActive: tabController.index == 0,
+                      suppressAutoFocus: suppressAutoFocus,
+                      onDataLoaded: () => _handleTabDataLoaded(0),
+                      onBack: focusTabBar,
+                    ),
+                    LibraryBrowseTab(
+                      key: _browseTabKey,
+                      library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                      isActive: tabController.index == 1,
+                      suppressAutoFocus: suppressAutoFocus,
+                      onDataLoaded: () => _handleTabDataLoaded(1),
+                      onBack: focusTabBar,
+                    ),
+                    LibraryCollectionsTab(
+                      key: _collectionsTabKey,
+                      library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                      isActive: tabController.index == 2,
+                      suppressAutoFocus: suppressAutoFocus,
+                      onDataLoaded: () => _handleTabDataLoaded(2),
+                      onBack: focusTabBar,
+                    ),
+                    LibraryPlaylistsTab(
+                      key: _playlistsTabKey,
+                      library: allLibraries.firstWhere((lib) => lib.globalKey == _selectedLibraryGlobalKey),
+                      isActive: tabController.index == 3,
+                      suppressAutoFocus: suppressAutoFocus,
+                      onDataLoaded: () => _handleTabDataLoaded(3),
+                      onBack: focusTabBar,
+                    ),
+                  ],
+                ),
+              ),
           ],
-        ),
+        ],
       ),
     );
   }

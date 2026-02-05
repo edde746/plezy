@@ -5,6 +5,7 @@ import 'storage_service.dart';
 import 'plex_client.dart';
 import '../models/plex_user_profile.dart';
 import '../models/plex_home.dart';
+import '../models/plex_friend.dart';
 import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
 import '../utils/connection_constants.dart';
@@ -203,6 +204,20 @@ class PlexAuthService {
     );
 
     return UserSwitchResponse.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Get friends list for the authenticated user
+  Future<List<PlexFriend>> getFriends(String authToken) async {
+    final response = await _dio.get(
+      '$_plexApiBase/friends',
+      options: _getCommonOptions(authToken: authToken),
+    );
+
+    final List<dynamic> friendsJson = response.data as List<dynamic>;
+    return friendsJson
+        .map((json) => PlexFriend.fromJson(json as Map<String, dynamic>))
+        .where((friend) => friend.isAccepted)
+        .toList();
   }
 }
 

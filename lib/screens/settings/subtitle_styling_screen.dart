@@ -4,10 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
-import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
-import '../../widgets/tv_color_picker.dart';
-import '../../widgets/tv_number_spinner.dart';
 
 class SubtitleStylingScreen extends StatefulWidget {
   const SubtitleStylingScreen({super.key});
@@ -154,63 +151,6 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
         .toUpperCase();
   }
 
-  void _showTvSpinnerDialog({
-    required String title,
-    required int currentValue,
-    required int min,
-    required int max,
-    int step = 1,
-    String? suffix,
-    required ValueChanged<int> onSave,
-  }) {
-    int spinnerValue = currentValue;
-    final saveFocusNode = FocusNode();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(title),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TvNumberSpinner(
-                    value: spinnerValue,
-                    min: min,
-                    max: max,
-                    step: step,
-                    suffix: suffix,
-                    autofocus: true,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        spinnerValue = value;
-                      });
-                    },
-                    onConfirm: () => saveFocusNode.requestFocus(),
-                    onCancel: () => Navigator.pop(dialogContext),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-                TextButton(
-                  focusNode: saveFocusNode,
-                  onPressed: () {
-                    onSave(spinnerValue);
-                    Navigator.pop(dialogContext);
-                  },
-                  child: Text(t.common.save),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    ).then((_) => saveFocusNode.dispose());
-  }
-
   Future<void> _showColorPicker(String title, String currentColor, Function(String) onColorSelected) async {
     Color initialColor = _hexToColor(currentColor);
 
@@ -240,40 +180,6 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
 
     final hexColor = _colorToHex(selectedColor);
     onColorSelected(hexColor);
-  }
-
-  void _showTvColorPicker(String title, String currentColor, Function(String) onColorSelected) {
-    Color pickerColor = _hexToColor(currentColor);
-    final saveFocusNode = FocusNode();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(title),
-              content: TvColorPicker(
-                initialColor: pickerColor,
-                onColorChanged: (color) => setDialogState(() => pickerColor = color),
-                onConfirm: () => saveFocusNode.requestFocus(),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-                TextButton(
-                  focusNode: saveFocusNode,
-                  onPressed: () {
-                    onColorSelected(_colorToHex(pickerColor));
-                    Navigator.pop(dialogContext);
-                  },
-                  child: Text(t.common.save),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    ).then((_) => saveFocusNode.dispose());
   }
 
   @override
@@ -308,37 +214,21 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             ),
           ),
           // Font Size Slider
-          if (PlatformDetector.isTV())
-            ListTile(
-              title: Text(t.subtitlingStyling.fontSize),
-              trailing: Text('$_fontSize'),
-              onTap: () => _showTvSpinnerDialog(
-                title: t.subtitlingStyling.fontSize,
-                currentValue: _fontSize,
-                min: 30,
-                max: 80,
-                onSave: (value) {
-                  setState(() => _fontSize = value);
-                  _settingsService.setSubtitleFontSize(value);
-                },
-              ),
-            )
-          else
-            _StylingSliderSection(
-              label: t.subtitlingStyling.fontSize,
-              value: _fontSize,
-              min: 30,
-              max: 80,
-              divisions: 50,
-              onChanged: (value) {
-                setState(() {
-                  _fontSize = value.toInt();
-                });
-              },
-              onChangeEnd: (value) {
-                _settingsService.setSubtitleFontSize(_fontSize);
-              },
-            ),
+          _StylingSliderSection(
+            label: t.subtitlingStyling.fontSize,
+            value: _fontSize,
+            min: 30,
+            max: 80,
+            divisions: 50,
+            onChanged: (value) {
+              setState(() {
+                _fontSize = value.toInt();
+              });
+            },
+            onChangeEnd: (value) {
+              _settingsService.setSubtitleFontSize(_fontSize);
+            },
+          ),
           const Divider(),
           // Text Color
           _ColorSettingTile(
@@ -346,50 +236,31 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             currentColor: _textColor,
             hexToColor: _hexToColor,
             onTap: () {
-              final onColorSelected = (String color) {
-                setState(() => _textColor = color);
+              _showColorPicker(t.subtitlingStyling.textColor, _textColor, (color) {
+                setState(() {
+                  _textColor = color;
+                });
                 _settingsService.setSubtitleTextColor(color);
-              };
-              if (PlatformDetector.isTV()) {
-                _showTvColorPicker(t.subtitlingStyling.textColor, _textColor, onColorSelected);
-              } else {
-                _showColorPicker(t.subtitlingStyling.textColor, _textColor, onColorSelected);
-              }
+              });
             },
           ),
           const Divider(),
           // Border Size Slider
-          if (PlatformDetector.isTV())
-            ListTile(
-              title: Text(t.subtitlingStyling.borderSize),
-              trailing: Text('$_borderSize'),
-              onTap: () => _showTvSpinnerDialog(
-                title: t.subtitlingStyling.borderSize,
-                currentValue: _borderSize,
-                min: 0,
-                max: 5,
-                onSave: (value) {
-                  setState(() => _borderSize = value);
-                  _settingsService.setSubtitleBorderSize(value);
-                },
-              ),
-            )
-          else
-            _StylingSliderSection(
-              label: t.subtitlingStyling.borderSize,
-              value: _borderSize,
-              min: 0,
-              max: 5,
-              divisions: 5,
-              onChanged: (value) {
-                setState(() {
-                  _borderSize = value.toInt();
-                });
-              },
-              onChangeEnd: (value) {
-                _settingsService.setSubtitleBorderSize(_borderSize);
-              },
-            ),
+          _StylingSliderSection(
+            label: t.subtitlingStyling.borderSize,
+            value: _borderSize,
+            min: 0,
+            max: 5,
+            divisions: 5,
+            onChanged: (value) {
+              setState(() {
+                _borderSize = value.toInt();
+              });
+            },
+            onChangeEnd: (value) {
+              _settingsService.setSubtitleBorderSize(_borderSize);
+            },
+          ),
           const Divider(),
           // Border Color
           _ColorSettingTile(
@@ -397,53 +268,32 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             currentColor: _borderColor,
             hexToColor: _hexToColor,
             onTap: () {
-              final onColorSelected = (String color) {
-                setState(() => _borderColor = color);
+              _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, (color) {
+                setState(() {
+                  _borderColor = color;
+                });
                 _settingsService.setSubtitleBorderColor(color);
-              };
-              if (PlatformDetector.isTV()) {
-                _showTvColorPicker(t.subtitlingStyling.borderColor, _borderColor, onColorSelected);
-              } else {
-                _showColorPicker(t.subtitlingStyling.borderColor, _borderColor, onColorSelected);
-              }
+              });
             },
           ),
           const Divider(),
           // Background Opacity Slider
-          if (PlatformDetector.isTV())
-            ListTile(
-              title: Text(t.subtitlingStyling.backgroundOpacity),
-              trailing: Text('$_backgroundOpacity%'),
-              onTap: () => _showTvSpinnerDialog(
-                title: t.subtitlingStyling.backgroundOpacity,
-                currentValue: _backgroundOpacity,
-                min: 0,
-                max: 100,
-                step: 5,
-                suffix: '%',
-                onSave: (value) {
-                  setState(() => _backgroundOpacity = value);
-                  _settingsService.setSubtitleBackgroundOpacity(value);
-                },
-              ),
-            )
-          else
-            _StylingSliderSection(
-              label: t.subtitlingStyling.backgroundOpacity,
-              value: _backgroundOpacity,
-              min: 0,
-              max: 100,
-              divisions: 20,
-              valueFormatter: (value) => '$value%',
-              onChanged: (value) {
-                setState(() {
-                  _backgroundOpacity = value.toInt();
-                });
-              },
-              onChangeEnd: (value) {
-                _settingsService.setSubtitleBackgroundOpacity(_backgroundOpacity);
-              },
-            ),
+          _StylingSliderSection(
+            label: t.subtitlingStyling.backgroundOpacity,
+            value: _backgroundOpacity,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            valueFormatter: (value) => '$value%',
+            onChanged: (value) {
+              setState(() {
+                _backgroundOpacity = value.toInt();
+              });
+            },
+            onChangeEnd: (value) {
+              _settingsService.setSubtitleBackgroundOpacity(_backgroundOpacity);
+            },
+          ),
           const Divider(),
           // Background Color
           _ColorSettingTile(
@@ -451,15 +301,12 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
             currentColor: _backgroundColor,
             hexToColor: _hexToColor,
             onTap: () {
-              final onColorSelected = (String color) {
-                setState(() => _backgroundColor = color);
+              _showColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, (color) {
+                setState(() {
+                  _backgroundColor = color;
+                });
                 _settingsService.setSubtitleBackgroundColor(color);
-              };
-              if (PlatformDetector.isTV()) {
-                _showTvColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, onColorSelected);
-              } else {
-                _showColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, onColorSelected);
-              }
+              });
             },
           ),
         ],

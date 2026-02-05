@@ -6,6 +6,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../utils/app_logger.dart';
 import '../models/sync_message.dart';
+import '../models/watch_invitation.dart';
 
 /// Error types that can occur in the peer service
 enum PeerErrorType { connectionFailed, peerDisconnected, dataChannelError, serverError, timeout, unknown }
@@ -39,12 +40,22 @@ class WatchTogetherPeerService {
   String? _myPeerId;
   bool _isHost = false;
 
+  // User registration for invitations
+  String? _registeredUserUUID;
+  bool _isRegistered = false;
+
   // Stream controllers for events
   final _peerConnectedController = StreamController<String>.broadcast();
   final _peerDisconnectedController = StreamController<String>.broadcast();
   final _messageReceivedController = StreamController<SyncMessage>.broadcast();
   final _errorController = StreamController<PeerError>.broadcast();
   final _connectionStateController = StreamController<bool>.broadcast();
+
+  // Invitation stream controllers
+  final _invitationReceivedController = StreamController<WatchInvitation>.broadcast();
+  final _invitationsListController = StreamController<List<WatchInvitation>>.broadcast();
+  final _inviteAcceptedController = StreamController<Map<String, String>>.broadcast();
+  final _inviteDeclinedController = StreamController<Map<String, String>>.broadcast();
 
   // Reconnection state
   int _reconnectAttempts = 0;
@@ -71,6 +82,24 @@ class WatchTogetherPeerService {
 
   /// Stream of connection state changes (true = connected, false = disconnected)
   Stream<bool> get onConnectionStateChanged => _connectionStateController.stream;
+
+  /// Stream of invitation received (push notification from relay)
+  Stream<WatchInvitation> get onInvitationReceived => _invitationReceivedController.stream;
+
+  /// Stream of invitations list (response to getInvitations or on register)
+  Stream<List<WatchInvitation>> get onInvitationsList => _invitationsListController.stream;
+
+  /// Stream of invite accepted events (userUUID, displayName)
+  Stream<Map<String, String>> get onInviteAccepted => _inviteAcceptedController.stream;
+
+  /// Stream of invite declined events (userUUID, displayName)
+  Stream<Map<String, String>> get onInviteDeclined => _inviteDeclinedController.stream;
+
+  /// Whether this user is registered for invitations
+  bool get isRegistered => _isRegistered;
+
+  /// Registered user UUID
+  String? get registeredUserUUID => _registeredUserUUID;
 
   /// Current session ID (null if not in a session)
   String? get sessionId => _sessionId;
@@ -204,6 +233,57 @@ class WatchTogetherPeerService {
           // Handled by _resetPongTimer already
           break;
 
+        case 'registered':
+          appLogger.d('WatchTogether: User registered: ${msg['userUUID']}');
+          _isRegistered = true;
+          break;
+
+        case 'invitation':
+          final invitationData = msg['invitation'] as Map<String, dynamic>?;
+          if (invitationData != null) {
+            try {
+              final invitation = WatchInvitation.fromJson(invitationData);
+              appLogger.d('WatchTogether: Invitation received from ${invitation.hostDisplayName}');
+              _invitationReceivedController.add(invitation);
+            } catch (e) {
+              appLogger.e('WatchTogether: Failed to parse invitation', error: e);
+            }
+          }
+          break;
+
+        case 'invitations':
+          final invitationsData = msg['invitations'] as List<dynamic>?;
+          if (invitationsData != null) {
+            try {
+              final invitations = invitationsData
+                  .map((data) => WatchInvitation.fromJson(data as Map<String, dynamic>))
+                  .toList();
+              appLogger.d('WatchTogether: Received ${invitations.length} pending invitations');
+              _invitationsListController.add(invitations);
+            } catch (e) {
+              appLogger.e('WatchTogether: Failed to parse invitations list', error: e);
+            }
+          }
+          break;
+
+        case 'inviteSent':
+          appLogger.d('WatchTogether: Invitation sent to ${msg['userUUID']}');
+          break;
+
+        case 'inviteAccepted':
+          final userUUID = msg['userUUID'] as String? ?? '';
+          final displayName = msg['displayName'] as String? ?? 'Unknown';
+          appLogger.d('WatchTogether: Invitation accepted by $displayName');
+          _inviteAcceptedController.add({'userUUID': userUUID, 'displayName': displayName});
+          break;
+
+        case 'inviteDeclined':
+          final userUUID = msg['userUUID'] as String? ?? '';
+          final displayName = msg['displayName'] as String? ?? 'Unknown';
+          appLogger.d('WatchTogether: Invitation declined by $displayName');
+          _inviteDeclinedController.add({'userUUID': userUUID, 'displayName': displayName});
+          break;
+
         default:
           appLogger.w('WatchTogether: Unknown server message type: $type');
       }
@@ -315,6 +395,9 @@ class WatchTogetherPeerService {
   ///
   /// Returns the session ID that others can use to join.
   Future<String> createSession() async {
+    // Save registered user UUID to re-register after connecting
+    final savedUserUUID = _registeredUserUUID;
+
     if (_channel != null) {
       await disconnect();
     }
@@ -341,6 +424,13 @@ class WatchTogetherPeerService {
         },
       );
 
+      // Re-register for invitations if was previously registered
+      if (savedUserUUID != null) {
+        _registeredUserUUID = savedUserUUID;
+        _sendRaw({'type': 'register', 'userUUID': savedUserUUID});
+        appLogger.d('WatchTogether: Re-registered user $savedUserUUID after creating session');
+      }
+
       appLogger.d('WatchTogether: Session created: $_sessionId');
       return _sessionId!;
     } catch (e) {
@@ -352,6 +442,9 @@ class WatchTogetherPeerService {
 
   /// Join an existing session as guest.
   Future<void> joinSession(String sessionId) async {
+    // Save registered user UUID to re-register after connecting
+    final savedUserUUID = _registeredUserUUID;
+
     if (_channel != null) {
       await disconnect();
     }
@@ -378,6 +471,13 @@ class WatchTogetherPeerService {
         },
       );
 
+      // Re-register for invitations if was previously registered
+      if (savedUserUUID != null) {
+        _registeredUserUUID = savedUserUUID;
+        _sendRaw({'type': 'register', 'userUUID': savedUserUUID});
+        appLogger.d('WatchTogether: Re-registered user $savedUserUUID after joining session');
+      }
+
       appLogger.d('WatchTogether: Joined session: $_sessionId');
     } catch (e) {
       appLogger.e('WatchTogether: Failed to join session', error: e);
@@ -400,6 +500,101 @@ class WatchTogetherPeerService {
     _sendRaw({'type': 'sendTo', 'to': peerId, 'payload': payload});
   }
 
+  // ========== Invitation Methods ==========
+
+  /// Register this user to receive invitations.
+  /// Should be called when the app starts or user logs in.
+  Future<void> registerUser(String userUUID) async {
+    _registeredUserUUID = userUUID;
+
+    // If not connected, connect first
+    if (_channel == null) {
+      try {
+        final channel = await _connectToRelay();
+        _channel = channel;
+        _listenToChannel(channel);
+        _startPingTimer();
+      } catch (e) {
+        appLogger.e('WatchTogether: Failed to connect for registration', error: e);
+        rethrow;
+      }
+    }
+
+    _sendRaw({'type': 'register', 'userUUID': userUUID});
+    appLogger.d('WatchTogether: Registering user $userUUID for invitations');
+  }
+
+  /// Send an invitation to a friend.
+  /// Requires an active session (must call createSession first).
+  void sendInvitation({
+    required String targetUserUUID,
+    required String displayName,
+    required String mediaTitle,
+    String? mediaThumb,
+  }) {
+    if (_sessionId == null || _registeredUserUUID == null) {
+      appLogger.e('WatchTogether: Cannot send invitation without active session and registered user');
+      return;
+    }
+
+    _sendRaw({
+      'type': 'invite',
+      'sessionId': _sessionId,
+      'userUUID': _registeredUserUUID,
+      'targetUserUUID': targetUserUUID,
+      'displayName': displayName,
+      'mediaTitle': mediaTitle,
+      if (mediaThumb != null) 'mediaThumb': mediaThumb,
+    });
+
+    appLogger.d('WatchTogether: Sending invitation to $targetUserUUID for session $_sessionId');
+  }
+
+  /// Accept an invitation and join the session.
+  void acceptInvitation(String sessionId, {String? displayName}) {
+    if (_registeredUserUUID == null) {
+      appLogger.e('WatchTogether: Cannot accept invitation without registered user');
+      return;
+    }
+
+    _sendRaw({
+      'type': 'acceptInvite',
+      'sessionId': sessionId,
+      'userUUID': _registeredUserUUID,
+      if (displayName != null) 'displayName': displayName,
+    });
+
+    appLogger.d('WatchTogether: Accepting invitation for session $sessionId');
+  }
+
+  /// Decline an invitation.
+  void declineInvitation(String sessionId, {String? displayName}) {
+    if (_registeredUserUUID == null) {
+      appLogger.e('WatchTogether: Cannot decline invitation without registered user');
+      return;
+    }
+
+    _sendRaw({
+      'type': 'declineInvite',
+      'sessionId': sessionId,
+      'userUUID': _registeredUserUUID,
+      if (displayName != null) 'displayName': displayName,
+    });
+
+    appLogger.d('WatchTogether: Declining invitation for session $sessionId');
+  }
+
+  /// Request the list of pending invitations.
+  void getInvitations() {
+    if (!_isRegistered) {
+      appLogger.e('WatchTogether: Cannot get invitations without being registered');
+      return;
+    }
+
+    _sendRaw({'type': 'getInvitations'});
+    appLogger.d('WatchTogether: Requesting pending invitations');
+  }
+
   /// Disconnect from all peers and close the session
   Future<void> disconnect() async {
     appLogger.d('WatchTogether: Disconnecting...');
@@ -419,6 +614,8 @@ class WatchTogetherPeerService {
     _myPeerId = null;
     _isHost = false;
     _reconnectAttempts = 0;
+    _isRegistered = false;
+    _registeredUserUUID = null;
 
     _connectionStateController.add(false);
   }
@@ -432,5 +629,9 @@ class WatchTogetherPeerService {
     _messageReceivedController.close();
     _errorController.close();
     _connectionStateController.close();
+    _invitationReceivedController.close();
+    _invitationsListController.close();
+    _inviteAcceptedController.close();
+    _inviteDeclinedController.close();
   }
 }

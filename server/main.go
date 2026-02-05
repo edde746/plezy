@@ -19,6 +19,7 @@ const (
 	cleanupInterval    = 5 * time.Minute
 	emptyRoomMaxAge    = 5 * time.Minute
 	roomMaxAge         = 24 * time.Hour
+	invitationMaxAge   = 5 * time.Minute
 	writeWait          = 10 * time.Second
 	pongWait           = 60 * time.Second
 	pingInterval       = 30 * time.Second
@@ -68,25 +69,56 @@ func (rl *rateLimiter) allow() bool {
 	return true
 }
 
+// --- Invitation ---
+
+type Invitation struct {
+	SessionID       string    `json:"sessionId"`
+	HostUserUUID    string    `json:"hostUserUUID"`
+	HostDisplayName string    `json:"hostDisplayName"`
+	TargetUserUUID  string    `json:"targetUserUUID"`
+	MediaTitle      string    `json:"mediaTitle"`
+	MediaThumb      string    `json:"mediaThumb,omitempty"`
+	CreatedAt       time.Time `json:"createdAt"`
+	ExpiresAt       time.Time `json:"expiresAt"`
+}
+
+// --- Connected User (for receiving invitations) ---
+
+type ConnectedUser struct {
+	UserUUID string
+	Conn     *websocket.Conn
+}
+
 // --- Messages ---
 
 type clientMsg struct {
-	Type      string          `json:"type"`
-	SessionID string          `json:"sessionId,omitempty"`
-	PeerID    string          `json:"peerId,omitempty"`
-	To        string          `json:"to,omitempty"`
-	Payload   json.RawMessage `json:"payload,omitempty"`
+	Type            string          `json:"type"`
+	SessionID       string          `json:"sessionId,omitempty"`
+	PeerID          string          `json:"peerId,omitempty"`
+	To              string          `json:"to,omitempty"`
+	Payload         json.RawMessage `json:"payload,omitempty"`
+	// Invitation fields
+	UserUUID        string          `json:"userUUID,omitempty"`
+	TargetUserUUID  string          `json:"targetUserUUID,omitempty"`
+	DisplayName     string          `json:"displayName,omitempty"`
+	MediaTitle      string          `json:"mediaTitle,omitempty"`
+	MediaThumb      string          `json:"mediaThumb,omitempty"`
 }
 
 type serverMsg struct {
-	Type      string          `json:"type"`
-	SessionID string          `json:"sessionId,omitempty"`
-	PeerID    string          `json:"peerId,omitempty"`
-	From      string          `json:"from,omitempty"`
-	Peers     []string        `json:"peers,omitempty"`
-	Code      string          `json:"code,omitempty"`
-	Message   string          `json:"message,omitempty"`
-	Payload   json.RawMessage `json:"payload,omitempty"`
+	Type        string          `json:"type"`
+	SessionID   string          `json:"sessionId,omitempty"`
+	PeerID      string          `json:"peerId,omitempty"`
+	From        string          `json:"from,omitempty"`
+	Peers       []string        `json:"peers,omitempty"`
+	Code        string          `json:"code,omitempty"`
+	Message     string          `json:"message,omitempty"`
+	Payload     json.RawMessage `json:"payload,omitempty"`
+	// Invitation fields
+	Invitation  *Invitation     `json:"invitation,omitempty"`
+	Invitations []Invitation    `json:"invitations,omitempty"`
+	UserUUID    string          `json:"userUUID,omitempty"`
+	DisplayName string          `json:"displayName,omitempty"`
 }
 
 // --- Room ---
@@ -141,12 +173,18 @@ func (r *Room) sendTo(targetID string, msg serverMsg) bool {
 // --- Server ---
 
 type Server struct {
-	rooms map[string]*Room
-	mu    sync.RWMutex
+	rooms       map[string]*Room
+	users       map[string]*ConnectedUser   // userUUID -> connection (for invitations)
+	invitations map[string][]Invitation     // targetUserUUID -> pending invitations
+	mu          sync.RWMutex
 }
 
 func newServer() *Server {
-	s := &Server{rooms: make(map[string]*Room)}
+	s := &Server{
+		rooms:       make(map[string]*Room),
+		users:       make(map[string]*ConnectedUser),
+		invitations: make(map[string][]Invitation),
+	}
 	go s.cleanupLoop()
 	return s
 }
@@ -157,6 +195,8 @@ func (s *Server) cleanupLoop() {
 	for range ticker.C {
 		s.mu.Lock()
 		now := time.Now()
+
+		// Cleanup old rooms
 		for id, room := range s.rooms {
 			room.mu.RLock()
 			empty := len(room.Peers) == 0
@@ -168,6 +208,24 @@ func (s *Server) cleanupLoop() {
 				delete(s.rooms, id)
 			}
 		}
+
+		// Cleanup expired invitations
+		for userUUID, invites := range s.invitations {
+			validInvites := make([]Invitation, 0)
+			for _, inv := range invites {
+				if now.Before(inv.ExpiresAt) {
+					validInvites = append(validInvites, inv)
+				} else {
+					log.Printf("cleanup: removing expired invitation for user %s (session %s)", userUUID, inv.SessionID)
+				}
+			}
+			if len(validInvites) == 0 {
+				delete(s.invitations, userUUID)
+			} else {
+				s.invitations[userUUID] = validInvites
+			}
+		}
+
 		s.mu.Unlock()
 	}
 }
@@ -214,6 +272,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	rl := newRateLimiter(rateBurst, rateSustained)
 	var currentRoom *Room
 	var currentPeerID string
+	var currentUserUUID string
 
 	// Cleanup on disconnect
 	defer func() {
@@ -226,6 +285,13 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 				PeerID: currentPeerID,
 			})
 			log.Printf("peer %s left room %s", currentPeerID, currentRoom.SessionID)
+		}
+		// Cleanup registered user
+		if currentUserUUID != "" {
+			s.mu.Lock()
+			delete(s.users, currentUserUUID)
+			s.mu.Unlock()
+			log.Printf("user %s unregistered", currentUserUUID)
 		}
 	}()
 
@@ -339,6 +405,185 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 
 		case "ping":
 			s.sendJSON(conn, serverMsg{Type: "pong"})
+
+		case "register":
+			// Register user to receive invitations
+			if msg.UserUUID == "" {
+				s.sendError(conn, "invalid_message", "userUUID required")
+				continue
+			}
+			s.mu.Lock()
+			// Remove old connection if exists
+			if old, exists := s.users[msg.UserUUID]; exists && old.Conn != conn {
+				log.Printf("user %s re-registering (replacing old connection)", msg.UserUUID)
+			}
+			s.users[msg.UserUUID] = &ConnectedUser{
+				UserUUID: msg.UserUUID,
+				Conn:     conn,
+			}
+			currentUserUUID = msg.UserUUID
+			// Get pending invitations for this user
+			pendingInvites := s.invitations[msg.UserUUID]
+			s.mu.Unlock()
+			log.Printf("user %s registered", msg.UserUUID)
+			s.sendJSON(conn, serverMsg{Type: "registered", UserUUID: msg.UserUUID})
+			// Send pending invitations
+			if len(pendingInvites) > 0 {
+				s.sendJSON(conn, serverMsg{Type: "invitations", Invitations: pendingInvites})
+			}
+
+		case "invite":
+			// Send invitation to a friend
+			if msg.SessionID == "" || msg.TargetUserUUID == "" || msg.UserUUID == "" {
+				s.sendError(conn, "invalid_message", "sessionId, userUUID, and targetUserUUID required")
+				continue
+			}
+			// Verify room exists
+			s.mu.RLock()
+			_, roomExists := s.rooms[msg.SessionID]
+			s.mu.RUnlock()
+			if !roomExists {
+				s.sendError(conn, "room_not_found", "Room does not exist")
+				continue
+			}
+
+			now := time.Now()
+			invitation := Invitation{
+				SessionID:       msg.SessionID,
+				HostUserUUID:    msg.UserUUID,
+				HostDisplayName: msg.DisplayName,
+				TargetUserUUID:  msg.TargetUserUUID,
+				MediaTitle:      msg.MediaTitle,
+				MediaThumb:      msg.MediaThumb,
+				CreatedAt:       now,
+				ExpiresAt:       now.Add(invitationMaxAge),
+			}
+
+			s.mu.Lock()
+			// Add to pending invitations
+			s.invitations[msg.TargetUserUUID] = append(s.invitations[msg.TargetUserUUID], invitation)
+			// Check if target user is online
+			targetUser, online := s.users[msg.TargetUserUUID]
+			s.mu.Unlock()
+
+			log.Printf("invitation sent from %s to %s for session %s", msg.UserUUID, msg.TargetUserUUID, msg.SessionID)
+			s.sendJSON(conn, serverMsg{Type: "inviteSent", SessionID: msg.SessionID, UserUUID: msg.TargetUserUUID})
+
+			// If target is online, push the invitation immediately
+			if online {
+				s.sendJSON(targetUser.Conn, serverMsg{Type: "invitation", Invitation: &invitation})
+			}
+
+		case "acceptInvite":
+			// Accept an invitation
+			if msg.SessionID == "" || msg.UserUUID == "" {
+				s.sendError(conn, "invalid_message", "sessionId and userUUID required")
+				continue
+			}
+			s.mu.Lock()
+			// Find and remove the invitation
+			invites := s.invitations[msg.UserUUID]
+			var acceptedInvite *Invitation
+			newInvites := make([]Invitation, 0)
+			for _, inv := range invites {
+				if inv.SessionID == msg.SessionID {
+					acceptedInvite = &inv
+				} else {
+					newInvites = append(newInvites, inv)
+				}
+			}
+			if len(newInvites) == 0 {
+				delete(s.invitations, msg.UserUUID)
+			} else {
+				s.invitations[msg.UserUUID] = newInvites
+			}
+			// Notify the host if they're online
+			var hostConn *websocket.Conn
+			if acceptedInvite != nil {
+				if hostUser, online := s.users[acceptedInvite.HostUserUUID]; online {
+					hostConn = hostUser.Conn
+				}
+			}
+			s.mu.Unlock()
+
+			if acceptedInvite == nil {
+				s.sendError(conn, "invitation_not_found", "Invitation not found or expired")
+				continue
+			}
+
+			log.Printf("invitation accepted by %s for session %s", msg.UserUUID, msg.SessionID)
+			s.sendJSON(conn, serverMsg{Type: "inviteAccepted", SessionID: msg.SessionID})
+
+			// Notify host
+			if hostConn != nil {
+				s.sendJSON(hostConn, serverMsg{
+					Type:        "inviteAccepted",
+					SessionID:   msg.SessionID,
+					UserUUID:    msg.UserUUID,
+					DisplayName: msg.DisplayName,
+				})
+			}
+
+		case "declineInvite":
+			// Decline an invitation
+			if msg.SessionID == "" || msg.UserUUID == "" {
+				s.sendError(conn, "invalid_message", "sessionId and userUUID required")
+				continue
+			}
+			s.mu.Lock()
+			// Find and remove the invitation
+			invites := s.invitations[msg.UserUUID]
+			var declinedInvite *Invitation
+			newInvites := make([]Invitation, 0)
+			for _, inv := range invites {
+				if inv.SessionID == msg.SessionID {
+					declinedInvite = &inv
+				} else {
+					newInvites = append(newInvites, inv)
+				}
+			}
+			if len(newInvites) == 0 {
+				delete(s.invitations, msg.UserUUID)
+			} else {
+				s.invitations[msg.UserUUID] = newInvites
+			}
+			// Notify the host if they're online
+			var hostConn *websocket.Conn
+			if declinedInvite != nil {
+				if hostUser, online := s.users[declinedInvite.HostUserUUID]; online {
+					hostConn = hostUser.Conn
+				}
+			}
+			s.mu.Unlock()
+
+			if declinedInvite == nil {
+				s.sendError(conn, "invitation_not_found", "Invitation not found or expired")
+				continue
+			}
+
+			log.Printf("invitation declined by %s for session %s", msg.UserUUID, msg.SessionID)
+			s.sendJSON(conn, serverMsg{Type: "inviteDeclined", SessionID: msg.SessionID})
+
+			// Notify host
+			if hostConn != nil {
+				s.sendJSON(hostConn, serverMsg{
+					Type:        "inviteDeclined",
+					SessionID:   msg.SessionID,
+					UserUUID:    msg.UserUUID,
+					DisplayName: msg.DisplayName,
+				})
+			}
+
+		case "getInvitations":
+			// Get pending invitations for the registered user
+			if currentUserUUID == "" {
+				s.sendError(conn, "not_registered", "Must register first")
+				continue
+			}
+			s.mu.RLock()
+			pendingInvites := s.invitations[currentUserUUID]
+			s.mu.RUnlock()
+			s.sendJSON(conn, serverMsg{Type: "invitations", Invitations: pendingInvites})
 
 		default:
 			s.sendError(conn, "invalid_message", "Unknown message type")

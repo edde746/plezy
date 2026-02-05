@@ -39,13 +39,6 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
     _currentSort = widget.selectedSort;
     _currentDescending = widget.isSortDescending;
     _initialFocusNode = FocusNode(debugLabel: 'SortBottomSheetInitialFocus');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final ctx = _initialFocusNode.context;
-      if (ctx != null) {
-        Scrollable.ensureVisible(ctx, alignment: 0.5);
-      }
-    });
   }
 
   @override
@@ -68,7 +61,6 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
       _currentDescending = descending;
     });
     widget.onSortChanged(sort, descending);
-    Navigator.pop(context);
   }
 
   void _handleClear() {
@@ -123,9 +115,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                         return KeyEventResult.ignored;
                       },
                       child: FocusableRadioListTile<PlexSort>(
-                        focusNode: (widget.selectedSort?.key == sort.key || (widget.selectedSort == null && index == 0))
-                            ? _initialFocusNode
-                            : null,
+                        focusNode: index == 0 ? _initialFocusNode : null,
                         title: Text(sort.title),
                         value: sort,
                         groupValue: _currentSort,

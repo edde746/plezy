@@ -14,7 +14,6 @@ import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
-import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/server_state_provider.dart';
@@ -24,6 +23,7 @@ import '../providers/playback_state_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../providers/offline_mode_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/desktop_window_padding.dart';
@@ -37,6 +37,10 @@ import 'settings/settings_screen.dart';
 import 'video_player_screen.dart';
 import '../services/watch_next_service.dart';
 import '../watch_together/watch_together.dart';
+import '../watch_together/models/watch_invitation.dart';
+import '../watch_together/widgets/invitation_banner.dart';
+import '../watch_together/widgets/invitations_indicator.dart';
+import '../models/plex_home_user.dart';
 
 /// Provides access to the main screen's focus control.
 class MainScreenFocusScope extends InheritedWidget {
@@ -100,6 +104,12 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
   bool _isSidebarFocused = false;
 
+  // Current invitation to display as banner
+  WatchInvitation? _currentInvitation;
+
+  // Listener for UserProfileProvider (used when currentUser is not immediately available)
+  VoidCallback? _userProfileListener;
+
   @override
   void initState() {
     super.initState();
@@ -141,9 +151,64 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
         _contentFocusScope.requestFocus();
       }
 
+      // Register for Watch Together invitations if online
+      _registerWatchTogether();
+
       // Check for updates on startup
       _checkForUpdatesOnStartup();
     });
+  }
+
+  /// Helper to register the current user for Watch Together invitations
+  void _registerWatchTogether() {
+    appLogger.d('WatchTogether: _registerWatchTogether called, isOffline=$_isOffline');
+    if (_isOffline) return;
+    try {
+      final userProfile = context.read<UserProfileProvider>();
+      final currentUser = userProfile.currentUser;
+      appLogger.d('WatchTogether: currentUser=${currentUser?.displayName ?? "null"}, uuid=${currentUser?.uuid ?? "null"}');
+      if (currentUser != null) {
+        _doRegisterWatchTogether(currentUser);
+      } else {
+        // currentUser not yet available (common on PC due to timing differences)
+        // Listen for changes and register when user becomes available
+        appLogger.d('WatchTogether: Waiting for currentUser...');
+        _userProfileListener = _createUserProfileListener();
+        userProfile.addListener(_userProfileListener!);
+      }
+    } catch (e) {
+      appLogger.e('WatchTogether: Failed to register for invitations', error: e);
+    }
+  }
+
+  /// Creates a listener that registers for Watch Together when currentUser becomes available
+  VoidCallback _createUserProfileListener() {
+    return () {
+      final userProfile = context.read<UserProfileProvider>();
+      final currentUser = userProfile.currentUser;
+      if (currentUser != null) {
+        // Remove listener before registering to avoid duplicate calls
+        if (_userProfileListener != null) {
+          userProfile.removeListener(_userProfileListener!);
+          _userProfileListener = null;
+        }
+        _doRegisterWatchTogether(currentUser);
+      }
+    };
+  }
+
+  /// Performs the actual Watch Together registration
+  void _doRegisterWatchTogether(PlexHomeUser user) {
+    try {
+      appLogger.d('WatchTogether: Calling registerForInvitations for ${user.displayName}...');
+      context.read<WatchTogetherProvider>().registerForInvitations(
+            userUUID: user.uuid,
+            displayName: user.displayName,
+          );
+      appLogger.d('WatchTogether: Registered ${user.displayName}');
+    } catch (e) {
+      appLogger.e('WatchTogether: Registration failed', error: e);
+    }
   }
 
   Future<void> _checkForUpdatesOnStartup() async {
@@ -233,9 +298,45 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
           navigator.pop();
         }
       };
+      // Set up invitation received callback
+      watchTogether.onInvitationReceived = (invitation) {
+        appLogger.d('WatchTogether: Invitation received from ${invitation.hostDisplayName}');
+        if (!mounted) return;
+        _showInvitationBanner(invitation);
+      };
     } catch (e) {
       appLogger.w('Could not set up Watch Together callback', error: e);
     }
+  }
+
+  void _showInvitationBanner(WatchInvitation invitation) {
+    setState(() {
+      _currentInvitation = invitation;
+    });
+  }
+
+  void _dismissInvitationBanner() {
+    setState(() {
+      _currentInvitation = null;
+    });
+  }
+
+  Future<void> _acceptInvitation() async {
+    final invitation = _currentInvitation;
+    if (invitation == null) return;
+
+    _dismissInvitationBanner();
+    final watchTogether = context.read<WatchTogetherProvider>();
+    await watchTogether.acceptInvitation(invitation);
+  }
+
+  void _declineInvitation() {
+    final invitation = _currentInvitation;
+    if (invitation == null) return;
+
+    _dismissInvitationBanner();
+    final watchTogether = context.read<WatchTogetherProvider>();
+    watchTogether.declineInvitation(invitation);
   }
 
   /// Set up Watch Next deep link handling for Android TV launcher taps
@@ -349,6 +450,15 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       windowManager.setPreventClose(false);
     }
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
+    // Clean up UserProfile listener if still attached
+    if (_userProfileListener != null) {
+      try {
+        context.read<UserProfileProvider>().removeListener(_userProfileListener!);
+      } catch (_) {
+        // Context may not be available during dispose
+      }
+      _userProfileListener = null;
+    }
     _sidebarFocusScope.dispose();
     _contentFocusScope.dispose();
     super.dispose();
@@ -440,6 +550,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       final userProfileProvider = context.userProfile;
       userProfileProvider.initialize().then((_) {
         userProfileProvider.setDataInvalidationCallback(_invalidateAllScreens);
+        _registerWatchTogether();
       });
     }
   }
@@ -497,22 +608,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   @override
-  void didPushNext() {
-    // Called when a child route is pushed on top (e.g., video player)
-    if (_currentIndex == 0 && !_isOffline) {
-      if (_discoverKey.currentState case final TabVisibilityAware aware) {
-        aware.onTabHidden();
-      }
-    }
-  }
-
-  @override
   void didPopNext() {
     // Called when returning to this route from a child route (e.g., from video player)
     if (_currentIndex == 0 && !_isOffline) {
-      if (_discoverKey.currentState case final TabVisibilityAware aware) {
-        aware.onTabShown();
-      }
       _onDiscoverBecameVisible();
     }
   }
@@ -577,6 +675,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       refreshable.fullRefresh();
     }
 
+    // Re-register for Watch Together with the new profile data
+    _registerWatchTogether();
+
     // Full refresh libraries screen (clear filters and reload for new profile)
     if (_librariesKey.currentState case final FullRefreshable refreshable) {
       refreshable.fullRefresh();
@@ -607,19 +708,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     // Skip online-only screen logic in offline mode
     if (!_isOffline) {
-      // Pause/resume discover auto-scroll when switching tabs
-      if (previousIndex == 0 && index != 0) {
-        if (_discoverKey.currentState case final TabVisibilityAware aware) {
-          aware.onTabHidden();
-        }
-      }
       // Notify discover screen when it becomes visible via tab switch
       if (index == 0) {
-        if (previousIndex != 0) {
-          if (_discoverKey.currentState case final TabVisibilityAware aware) {
-            aware.onTabShown();
-          }
-        }
         _onDiscoverBecameVisible();
       }
       // Ensure the libraries screen applies focus when brought into view
@@ -748,6 +838,18 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                           ),
                         ),
                       ),
+                      // Invitation banner overlay
+                      if (_currentInvitation != null)
+                        Positioned(
+                          top: MediaQuery.of(context).padding.top + 16,
+                          left: contentLeftPadding + 16,
+                          right: 16,
+                          child: AnimatedInvitationBanner(
+                            invitation: _currentInvitation!,
+                            onAccept: _acceptInvitation,
+                            onDecline: _declineInvitation,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -759,7 +861,38 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
 
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: Stack(
+        children: [
+          IndexedStack(index: _currentIndex, children: _screens),
+          // Invitation banner overlay for mobile
+          if (_currentInvitation != null)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 16,
+              left: 16,
+              right: 16,
+              child: AnimatedInvitationBanner(
+                invitation: _currentInvitation!,
+                onAccept: _acceptInvitation,
+                onDecline: _declineInvitation,
+              ),
+            ),
+          // Pending invitations badge for mobile (navigate to Watch Together)
+          if (!_isOffline)
+            Positioned(
+              bottom: 80, // Above bottom navigation
+              right: 16,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
+                  );
+                },
+                child: const PendingInvitationsBadge(),
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: _selectTab,

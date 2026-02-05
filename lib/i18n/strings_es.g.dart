@@ -863,6 +863,24 @@ class _TranslationsWatchTogetherEs implements TranslationsWatchTogetherEn {
 	@override String get failedToCreate => 'Error al crear la sesión';
 	@override String get failedToJoin => 'Error al unirse a la sesión';
 	@override String get sessionCodeCopied => 'Código de sesión copiado al portapapeles';
+	@override String get inviteFriends => 'Invitar Amigos';
+	@override String get invite => 'Invitar';
+	@override String get searchFriends => 'Buscar amigos...';
+	@override String get noFriends => 'Sin amigos aún';
+	@override String get noFriendsFound => 'No se encontraron amigos';
+	@override String get noFriendsDescription => 'Añade amigos en Plex para invitarlos a ver juntos';
+	@override String get failedToLoadFriends => 'Error al cargar amigos';
+	@override String get invitationReceived => 'Invitación Ver Juntos';
+	@override String invitesYouToWatch({required Object name}) => '${name} te invita a ver';
+	@override String get joinNow => 'Unirse Ahora';
+	@override String get decline => 'Rechazar';
+	@override String get accept => 'Aceptar';
+	@override String get invitationPending => 'Pendiente';
+	@override String get invitationAccepted => 'Unido';
+	@override String get invitationDeclined => 'Rechazado';
+	@override String get pendingInvitations => 'Invitaciones Pendientes';
+	@override String get noPendingInvitations => 'Sin invitaciones pendientes';
+	@override String get orShareCode => 'O comparte el código de sesión';
 }
 
 // Path: downloads
@@ -1525,6 +1543,24 @@ extension on TranslationsEs {
 			'watchTogether.failedToCreate' => 'Error al crear la sesión',
 			'watchTogether.failedToJoin' => 'Error al unirse a la sesión',
 			'watchTogether.sessionCodeCopied' => 'Código de sesión copiado al portapapeles',
+			'watchTogether.inviteFriends' => 'Invitar Amigos',
+			'watchTogether.invite' => 'Invitar',
+			'watchTogether.searchFriends' => 'Buscar amigos...',
+			'watchTogether.noFriends' => 'Sin amigos aún',
+			'watchTogether.noFriendsFound' => 'No se encontraron amigos',
+			'watchTogether.noFriendsDescription' => 'Añade amigos en Plex para invitarlos a ver juntos',
+			'watchTogether.failedToLoadFriends' => 'Error al cargar amigos',
+			'watchTogether.invitationReceived' => 'Invitación Ver Juntos',
+			'watchTogether.invitesYouToWatch' => ({required Object name}) => '${name} te invita a ver',
+			'watchTogether.joinNow' => 'Unirse Ahora',
+			'watchTogether.decline' => 'Rechazar',
+			'watchTogether.accept' => 'Aceptar',
+			'watchTogether.invitationPending' => 'Pendiente',
+			'watchTogether.invitationAccepted' => 'Unido',
+			'watchTogether.invitationDeclined' => 'Rechazado',
+			'watchTogether.pendingInvitations' => 'Invitaciones Pendientes',
+			'watchTogether.noPendingInvitations' => 'Sin invitaciones pendientes',
+			'watchTogether.orShareCode' => 'O comparte el código de sesión',
 			'downloads.title' => 'Descargas',
 			'downloads.manage' => 'Gestionar',
 			'downloads.tvShows' => 'Series de TV',

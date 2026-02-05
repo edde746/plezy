@@ -36,7 +36,9 @@ class _CollapsibleTextState extends State<CollapsibleText> {
         String displayText = widget.text;
         if (!_expanded) {
           // Find where to truncate to leave room for the badge on the last line
-          final cutPoint = textPainter.getPositionForOffset(Offset(constraints.maxWidth - 54, textPainter.height - 1));
+          final cutPoint = textPainter.getPositionForOffset(
+            Offset(constraints.maxWidth - 54, textPainter.height - 1),
+          );
           displayText = widget.text.substring(0, cutPoint.offset).trimRight();
         }
         textPainter.dispose();
@@ -47,7 +49,11 @@ class _CollapsibleTextState extends State<CollapsibleText> {
             TextSpan(
               children: [
                 TextSpan(text: displayText, style: style),
-                if (!_expanded) WidgetSpan(alignment: PlaceholderAlignment.middle, child: _buildBadge(context)),
+                if (!_expanded)
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: _buildBadge(context),
+                  ),
               ],
             ),
           ),

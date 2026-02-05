@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -8,15 +6,10 @@ import '../../../focus/dpad_navigator.dart';
 import '../../../../services/plex_client.dart';
 import '../../../models/plex_metadata.dart';
 import '../../../models/plex_filter.dart';
-import '../../../models/plex_first_character.dart';
 import '../../../models/plex_sort.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/grid_size_calculator.dart';
-import '../../../utils/layout_constants.dart';
-import '../../../widgets/alpha_jump_bar.dart';
-import '../../../widgets/alpha_jump_helper.dart';
-import '../../../widgets/alpha_scroll_handle.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
 import '../../../widgets/media_grid_delegate.dart';
@@ -29,7 +22,6 @@ import '../../../services/storage_service.dart';
 import '../../../services/settings_service.dart' show ViewMode, EpisodePosterMode;
 import '../../../mixins/grid_focus_node_mixin.dart';
 import '../../../mixins/item_updatable.dart';
-import '../../../utils/platform_detector.dart';
 import '../../../i18n/strings.g.dart';
 import '../../main_screen.dart';
 import 'base_library_tab.dart';
@@ -81,27 +73,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   bool _isSortDescending = false;
   String _selectedGrouping = 'all'; // all, seasons, episodes, folders
 
-  // Alpha jump bar state
-  List<PlexFirstCharacter> _firstCharacters = [];
-  AlphaJumpHelper _alphaHelper = AlphaJumpHelper(const []);
-  int _currentFirstVisibleIndex = 0;
-  int _currentColumnCount = 1;
-  double _lastCrossAxisExtent = 0;
-  double _effectiveTopPadding = _gridTopPadding;
-  final FocusNode _alphaJumpBarFocusNode = FocusNode(debugLabel: 'alpha_jump_bar');
-  // When the user taps a letter, pin the highlight so scroll-based recalculation
-  // doesn't immediately override it (e.g. when the letter has fewer items than a full row).
-  bool _hasJumpPin = false;
-  // True while a jump-triggered animateTo is in progress — suppresses all
-  // scroll-based letter recalculation to prevent flashing.
-  bool _isJumpScrolling = false;
-  // Incremented on each jump so that overlapping animations don't clobber each other.
-  int _jumpScrollGeneration = 0;
-
-  // Scroll activity tracking (for phone scroll handle)
-  bool _isScrollActive = false;
-  Timer? _scrollActivityTimer;
-
   // Pagination state
   int _currentPage = 0;
   bool _hasMoreItems = true;
@@ -118,21 +89,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   final ScrollController _scrollController = ScrollController();
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScrollChanged);
-  }
-
-  @override
   void dispose() {
     _cancelToken?.cancel();
-    _scrollActivityTimer?.cancel();
-    _scrollController.removeListener(_onScrollChanged);
     _scrollController.dispose();
     _groupingChipFocusNode.dispose();
     _filtersChipFocusNode.dispose();
     _sortChipFocusNode.dispose();
-    _alphaJumpBarFocusNode.dispose();
     disposeGridFocusNodes();
     super.dispose();
   }
@@ -221,9 +183,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       _selectedSort = null;
       _isSortDescending = false;
       _selectedGrouping = _getDefaultGrouping();
-      _firstCharacters = [];
-      _alphaHelper = AlphaJumpHelper(const []);
-      _currentFirstVisibleIndex = 0;
     });
 
     try {
@@ -260,8 +219,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         }
       });
 
-      // Load items and first characters in parallel
-      await Future.wait([_loadItems(), _loadFirstCharacters()]);
+      // Load items
+      await _loadItems();
     } catch (e) {
       _handleLoadError(e, currentRequestId);
     }
@@ -460,7 +419,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         storage.saveLibraryGrouping(widget.library.globalKey, pendingGrouping);
       });
       _loadItems();
-      _loadFirstCharacters();
     });
   }
 
@@ -484,7 +442,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           await storage.saveLibraryFilters(filters, sectionId: widget.library.globalKey);
 
           _loadItems();
-          _loadFirstCharacters();
         },
       ),
     );
@@ -523,7 +480,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           _isSortDescending = false;
         });
         _loadItems();
-        _loadFirstCharacters();
       } else if (pendingSort != null &&
           (pendingSort!.key != _selectedSort?.key || pendingDescending != _isSortDescending)) {
         setState(() {
@@ -534,7 +490,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           storage.saveLibrarySort(widget.library.globalKey, pendingSort!.key, descending: pendingDescending);
         });
         _loadItems();
-        _loadFirstCharacters();
       }
     });
   }
@@ -562,185 +517,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
     MainScreenFocusScope.of(context)?.focusSidebar();
-  }
-
-  /// Navigate focus to the alpha jump bar
-  void _navigateToAlphaJumpBar() {
-    _alphaJumpBarFocusNode.requestFocus();
-  }
-
-  /// Whether the device is a phone (not tablet/desktop/TV).
-  bool _isPhone(BuildContext context) => PlatformDetector.isPhone(context);
-
-  /// Whether the alpha jump bar should be shown.
-  /// Only shown when sorting by title (titleSort) and not in folders mode.
-  bool get _shouldShowAlphaJumpBar {
-    if (_selectedGrouping == 'folders') return false;
-    if (_firstCharacters.isEmpty) return false;
-    // Show when no sort is selected (default is titleSort) or when explicitly sorting by title
-    final sortKey = _selectedSort?.key ?? '';
-    return sortKey.isEmpty || sortKey.startsWith('titleSort');
-  }
-
-  /// Fetch first characters for the current library/filter state
-  Future<void> _loadFirstCharacters() async {
-    final client = getClientForLibrary();
-    final filterParams = Map<String, String>.from(_selectedFilters);
-    final typeId = _getGroupingTypeId();
-
-    try {
-      final chars = await client.getFirstCharacters(
-        widget.library.key,
-        type: typeId.isNotEmpty ? int.tryParse(typeId) : null,
-        filters: filterParams.isNotEmpty ? filterParams : null,
-      );
-      if (mounted) {
-        setState(() {
-          _firstCharacters = chars;
-          _alphaHelper = AlphaJumpHelper(chars);
-        });
-      }
-    } catch (_) {
-      // Non-critical — hide the bar on failure
-      if (mounted) {
-        setState(() {
-          _firstCharacters = [];
-          _alphaHelper = AlphaJumpHelper(const []);
-        });
-      }
-    }
-  }
-
-  /// Track scroll position to highlight the current letter in the jump bar
-  void _onScrollChanged() {
-    if (!_shouldShowAlphaJumpBar || _currentColumnCount < 1) return;
-
-    // During a jump animation, skip all processing to avoid flashing.
-    if (_isJumpScrolling) return;
-
-    // If pinned from a completed jump, the next scroll event must be
-    // user-initiated (touch drag, mouse wheel, etc.) — clear the pin
-    // and resume normal tracking.
-    if (_hasJumpPin) {
-      _hasJumpPin = false;
-    }
-
-    _updateVisibleIndex();
-  }
-
-  /// Recompute the first-visible-index from the current scroll offset.
-  void _updateVisibleIndex() {
-    final offset = _scrollController.offset;
-    final firstInRow = _itemIndexFromScrollOffset(offset);
-    // Use the last item in the first visible row so the highlighted letter
-    // updates as soon as items with a new letter appear in that row.
-    final lastInRow = (firstInRow + _currentColumnCount - 1).clamp(0, items.length - 1);
-    if (lastInRow != _currentFirstVisibleIndex) {
-      setState(() => _currentFirstVisibleIndex = lastInRow);
-    }
-  }
-
-  /// Compute the first visible item index from a scroll offset.
-  /// The visible area starts below the chips bar, so we offset accordingly.
-  int _itemIndexFromScrollOffset(double offset) {
-    if (_lastCrossAxisExtent <= 0 || _currentColumnCount < 1) return 0;
-
-    final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
-    final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
-    final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
-    if (rowHeight <= 0) return 0;
-
-    // The visible area starts at _chipsBarHeight from the viewport top.
-    // Grid content starts at _effectiveTopPadding in scroll coordinates.
-    // First visible row = (offset + chipsBarHeight - effectiveTopPadding) / rowHeight
-    final contentOffset = (offset + _chipsBarHeight - _effectiveTopPadding).clamp(0.0, double.infinity);
-    final row = (contentOffset / rowHeight).floor();
-    return (row * _currentColumnCount).clamp(0, items.length - 1);
-  }
-
-  /// Scroll to the item at [targetIndex], loading more pages if necessary.
-  /// Pins the index so scroll events during the animation don't override
-  /// the highlighted letter. The pin is cleared on the next user scroll.
-  ///
-  /// The [targetIndex] comes from [AlphaJumpHelper] which derives cumulative
-  /// indices from the `firstCharacters` API. That API may count by display
-  /// title (e.g. "The Simpsons" → T), while the grid sorts by `titleSort`
-  /// (e.g. "Simpsons" → S). We correct for this by searching the loaded
-  /// items' `titleSort` for the true start of the target letter.
-  void _jumpToIndex(int targetIndex) {
-    _jumpScrollGeneration++;
-    _isJumpScrolling = true;
-
-    // Determine the intended letter from the helper's model
-    final targetLetter = _alphaHelper.currentLetter(targetIndex);
-
-    // Correct the index using actual items' titleSort when available
-    final correctedIndex = _findFirstItemForLetter(targetLetter) ?? targetIndex;
-
-    _hasJumpPin = true;
-    setState(() => _currentFirstVisibleIndex = correctedIndex);
-
-    if (correctedIndex < items.length) {
-      _scrollToItemIndex(correctedIndex);
-    } else {
-      _loadUntilIndex(correctedIndex);
-    }
-  }
-
-  /// Returns the first character (A-Z or #) of an item's sort title.
-  static String _sortTitleFirstChar(String title) {
-    if (title.isEmpty) return '#';
-    final ch = title[0].toUpperCase();
-    return ch.codeUnitAt(0) >= 65 && ch.codeUnitAt(0) <= 90 ? ch : '#';
-  }
-
-  /// Find the index of the first loaded item whose `titleSort` starts with
-  /// [letter]. Returns null if no match is found (e.g. items not yet loaded).
-  int? _findFirstItemForLetter(String letter) {
-    for (int i = 0; i < items.length; i++) {
-      final sortTitle = items[i].titleSort ?? items[i].title;
-      if (_sortTitleFirstChar(sortTitle) == letter) return i;
-    }
-    return null;
-  }
-
-  /// Scroll the grid so that [index] is visible just below the chips bar
-  void _scrollToItemIndex(int index) {
-    if (_currentColumnCount < 1 || _lastCrossAxisExtent <= 0 || !_scrollController.hasClients) {
-      _isJumpScrolling = false;
-      return;
-    }
-
-    final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
-    final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
-    final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
-    final targetRow = index ~/ _currentColumnCount;
-    // Position the target row right below the chips bar
-    final offset = _effectiveTopPadding + targetRow * rowHeight - _chipsBarHeight;
-
-    final gen = _jumpScrollGeneration;
-    _scrollController
-        .animateTo(
-          offset.clamp(0.0, _scrollController.position.maxScrollExtent),
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        )
-        .then((_) {
-          // Only clear the flag if no newer jump has started.
-          if (mounted && gen == _jumpScrollGeneration) {
-            _isJumpScrolling = false;
-          }
-        });
-  }
-
-  /// Load pages until [targetIndex] is loaded, then scroll to it
-  Future<void> _loadUntilIndex(int targetIndex) async {
-    while (items.length <= targetIndex && _hasMoreItems) {
-      await _loadItems(loadMore: true);
-    }
-    if (mounted) {
-      _scrollToItemIndex(targetIndex.clamp(0, items.length - 1));
-    }
   }
 
   @override
@@ -772,28 +548,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         Positioned.fill(child: _buildScrollableContent()),
         // Chips bar on top with solid background
         Positioned(top: 0, left: 0, right: 0, child: _buildChipsBar()),
-        // Alpha jump bar / scroll handle on the right edge
-        if (_shouldShowAlphaJumpBar)
-          Positioned(
-            top: _chipsBarHeight,
-            right: 0,
-            bottom: 0,
-            child: _isPhone(context)
-                ? AlphaScrollHandle(
-                    firstCharacters: _firstCharacters,
-                    onJump: _jumpToIndex,
-                    currentFirstVisibleIndex: _currentFirstVisibleIndex,
-                    isScrolling: _isScrollActive,
-                  )
-                : AlphaJumpBar(
-                    firstCharacters: _firstCharacters,
-                    onJump: _jumpToIndex,
-                    currentFirstVisibleIndex: _currentFirstVisibleIndex,
-                    focusNode: _alphaJumpBarFocusNode,
-                    onNavigateLeft: _navigateToGrid,
-                    onBack: widget.onBack,
-                  ),
-          ),
       ],
     );
   }
@@ -804,16 +558,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       onNotification: (notification) {
         if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 300 && _hasMoreItems && !isLoading) {
           _loadItems(loadMore: true);
-        }
-        // Track scroll activity for phone scroll handle
-        if (notification is ScrollStartNotification) {
-          if (!_isScrollActive) setState(() => _isScrollActive = true);
-          _scrollActivityTimer?.cancel();
-        } else if (notification is ScrollEndNotification) {
-          _scrollActivityTimer?.cancel();
-          _scrollActivityTimer = Timer(const Duration(milliseconds: 100), () {
-            if (mounted) setState(() => _isScrollActive = false);
-          });
         }
         return false;
       },
@@ -929,27 +673,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     ];
   }
 
-  // Top padding for grid content = chips bar height + extra space for focus decoration.
-  // Chips bar is ~48px, focus ring extends ~6px beyond item bounds.
-  // On phone there's no D-pad focus decoration so extra clearance is unnecessary.
+  // Top padding for grid content = chips bar height + extra space for focus decoration
+  // Chips bar is ~48px, focus ring extends ~6px beyond item bounds
   static const double _gridTopPadding = _chipsBarHeight + 12.0;
-  static const double _gridTopPaddingPhone = _chipsBarHeight;
-
-  /// Width of the alpha jump bar widget
-  static const double _alphaJumpBarWidth = 28.0;
 
   /// Builds either a sliver list or sliver grid based on the view mode
   Widget _buildItemsSliver(BuildContext context, SettingsProvider settingsProvider) {
     final itemCount = items.length + (_hasMoreItems && isLoading ? 1 : 0);
-    final isPhone = _isPhone(context);
-    final topPadding = isPhone ? _gridTopPaddingPhone : _gridTopPadding;
-    _effectiveTopPadding = topPadding;
-    final rightPadding = _shouldShowAlphaJumpBar && !isPhone ? _alphaJumpBarWidth : 8.0;
 
     if (settingsProvider.viewMode == ViewMode.list) {
       // In list view, all items are in a single column (first column)
       return SliverPadding(
-        padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
+        padding: const EdgeInsets.fromLTRB(8, _gridTopPadding, 8, 8),
         sliver: SliverList.builder(
           itemCount: itemCount,
           itemBuilder: (context, index) => _buildMediaCardItem(
@@ -966,13 +701,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           _selectedGrouping == 'episodes' && settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
       final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
       return SliverPadding(
-        padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
+        padding: const EdgeInsets.fromLTRB(8, _gridTopPadding, 8, 8),
         sliver: SliverLayoutBuilder(
           builder: (context, constraints) {
             final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
-            // Cache grid metrics for alpha jump bar scroll calculations
-            _lastCrossAxisExtent = constraints.crossAxisExtent;
-            _currentColumnCount = columnCount;
             return SliverGrid.builder(
               gridDelegate: MediaGridDelegate.createDelegate(
                 context: context,
@@ -984,7 +716,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
                 index,
                 isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
                 isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
-                isLastColumn: (index % columnCount) == (columnCount - 1),
               ),
             );
           },
@@ -993,12 +724,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     }
   }
 
-  Widget _buildMediaCardItem(
-    int index, {
-    required bool isFirstRow,
-    required bool isFirstColumn,
-    bool isLastColumn = false,
-  }) {
+  Widget _buildMediaCardItem(int index, {required bool isFirstRow, required bool isFirstColumn}) {
     if (index >= items.length) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
@@ -1018,7 +744,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       onRefresh: updateItem,
       onNavigateUp: isFirstRow ? _navigateToChips : null,
       onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
-      onNavigateRight: isLastColumn && _shouldShowAlphaJumpBar && !_isPhone(context) ? _navigateToAlphaJumpBar : null,
       onBack: widget.onBack,
       onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
       onListRefresh: _loadItems,
